@@ -1,7 +1,6 @@
 ! $Id$
 ! Description:
 ! This file contains tunable model parameters.
-! C4, C14, and nu9 are only relevant when l_tke_aniso is true.   
 
 &clubb_params_nl 
 C1          = 2.400000 ! Low Skewness in C1 Skewness Function. Units [-]

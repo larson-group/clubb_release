@@ -36,7 +36,7 @@ class TestConfigFlags:
         """get_default_config_flags returns a ConfigFlags with 67 fields."""
         flags = get_default_config_flags()
         assert isinstance(flags, ConfigFlags)
-        assert len(flags) == 67
+        assert len(flags) == 66
 
     def test_default_integer_flags_positive(self):
         """Integer enum flags should be positive (valid enum values)."""
@@ -48,7 +48,6 @@ class TestConfigFlags:
         """Logical flags should be Python bools."""
         flags = get_default_config_flags()
         assert isinstance(flags.l_use_precip_frac, bool)
-        assert isinstance(flags.l_tke_aniso, bool)
 
     def test_known_defaults(self):
         """Some known defaults from model_flags.F90."""
@@ -56,7 +55,6 @@ class TestConfigFlags:
         assert flags.l_use_precip_frac is True
         assert flags.l_predict_upwp_vpwp is True
         assert flags.l_ho_nontrad_coriolis is False
-        assert flags.l_tke_aniso is True
         assert flags.l_damp_wp2_using_em is True
         assert flags.l_mono_flux_lim_thlm is True
         assert flags.l_add_dycore_grid is False
@@ -70,8 +68,8 @@ class TestConfigFlags:
     def test_modified_flags(self):
         """Can modify a flag and store it."""
         flags = get_default_config_flags()
-        modified = flags._replace(l_tke_aniso=False)
-        assert modified.l_tke_aniso is False
+        modified = flags._replace(l_damp_wp2_using_em=False)
+        assert modified.l_damp_wp2_using_em is False
         init_config_flags(modified)
 
 

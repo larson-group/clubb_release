@@ -556,7 +556,6 @@ class TestClipCovarsDenom:
             vp2=np.full(shape, 0.3),
             wp2=np.full(shape, 0.5),
             sclrp2=np.zeros((ngrdcol, nzm, 1)),
-            l_tke_aniso=flags.l_tke_aniso,
             l_linearize_pbl_winds=False,
             l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
             wprtp_cl_num=0,

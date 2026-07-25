@@ -10,7 +10,7 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     lhs_splat_wp2, lhs_splat_wp3, &
     wprtp, wpthlp, rtp2, thlp2, clubb_params, &
     iipdf_type, penta_solve_method, fill_holes_type, &
-    l_min_wp2_from_corr_wx, l_upwind_xm_ma, l_tke_aniso, l_standard_term_ta, &
+    l_min_wp2_from_corr_wx, l_upwind_xm_ma,  l_standard_term_ta, &
     l_partial_upwind_wp3, l_damp_wp2_using_em, l_use_c11_richardson, &
     l_damp_wp3_skw_squared, l_lmm_stepping, &
     l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
@@ -41,7 +41,7 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   integer, intent(in) :: iipdf_type, penta_solve_method, fill_holes_type
   logical, intent(in) :: &
-    l_min_wp2_from_corr_wx, l_upwind_xm_ma, l_tke_aniso, l_standard_term_ta, &
+    l_min_wp2_from_corr_wx, l_upwind_xm_ma,  l_standard_term_ta, &
     l_partial_upwind_wp3, l_damp_wp2_using_em, l_use_c11_richardson, l_damp_wp3_skw_squared, &
     l_lmm_stepping, l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
     l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis
@@ -60,7 +60,7 @@ subroutine f2py_advance_wp2_wp3(nzm, nzt, ngrdcol, dt, &
     lhs_splat_wp2, lhs_splat_wp3, stored_pdf_implicit_coefs_terms, &
     wprtp, wpthlp, rtp2, thlp2, clubb_params, stored_nu_vert_res_dep, &
     iipdf_type, penta_solve_method, fill_holes_type, &
-    l_min_wp2_from_corr_wx, l_upwind_xm_ma, l_tke_aniso, l_standard_term_ta, &
+    l_min_wp2_from_corr_wx, l_upwind_xm_ma,  l_standard_term_ta, &
     l_partial_upwind_wp3, l_damp_wp2_using_em, l_use_c11_richardson, l_damp_wp3_skw_squared, &
     l_lmm_stepping, l_use_tke_in_wp3_pr_turb_term, l_use_tke_in_wp2_wp3_k_dfsn, &
     l_use_wp3_lim_with_smth_heaviside, l_wp2_fill_holes_tke, l_ho_nontrad_coriolis, &

@@ -325,23 +325,6 @@ module pdf_hydromet_microphys_wrapper
       ! be interpolated back to thermodynamic (midpoint) grid levels for
       ! further use.
 
-      ! Calculate TKE
-      ! em is calculated but never used??
-      ! if ( .not. clubb_config_flags%l_tke_aniso ) then
-      !   ! tke is assumed to be 3/2 of wp2
-      !   do k = 1, gr%nzm
-      !     do i = 1, ngrdcol
-      !       em(i,k) = three_halves * wp2(i,k)
-      !     end do
-      !   end do
-      ! else
-      !   do k = 1, gr%nzm
-      !     do i = 1, ngrdcol
-      !       em(i,k) = one_half * ( wp2(i,k) + vp2(i,k) + up2(i,k) )
-      !     end do
-      !   end do
-      ! endif
-
       ! Rather than using the seed just to intialize the random number generator at the first timestep, we use it every
       ! timestep. Thus this seed defines the randoms, that way we can reproduce results for restart runs by using a 
       ! reproducible seed. If we didn't do it this way, we would have to save the internal state of the random number 

@@ -110,7 +110,6 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, err_info):
         "l_predict_upwp_vpwp": False,
         "l_upwind_xm_ma": bool(flags.l_upwind_xm_ma),
         "l_uv_nudge": bool(flags.l_uv_nudge),
-        "l_tke_aniso": bool(flags.l_tke_aniso),
         "l_lmm_stepping": bool(flags.l_lmm_stepping),
         "l_linearize_pbl_winds": bool(flags.l_linearize_pbl_winds),
         "l_do_expldiff_rtm_thlm": True,

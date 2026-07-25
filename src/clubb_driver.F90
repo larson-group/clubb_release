@@ -1061,8 +1061,6 @@ module clubb_driver
                                       ! affects rtm, thlm, sclrm, um and vm.
       l_uv_nudge,                   & ! For wind speed nudging.
       l_rtm_nudge,                  & ! For rtm nudging
-      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
-                                      ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
                                       ! compute the varibles that are output from high order
                                       ! closure
@@ -1215,7 +1213,7 @@ module clubb_driver
     saturation_formula, grid_remap_method, &
     grid_adapt_in_time_method, fill_holes_type, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, &
-    l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
+    l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
     l_use_cloud_cover, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
@@ -1492,7 +1490,6 @@ module clubb_driver
                                             l_upwind_xm_ma, & ! Intent(out)
                                             l_uv_nudge, & ! Intent(out)
                                             l_rtm_nudge, & ! Intent(out)
-                                            l_tke_aniso, & ! Intent(out)
                                             l_vert_avg_closure, & ! Intent(out)
                                             l_trapezoidal_rule_zt, & ! Intent(out)
                                             l_trapezoidal_rule_zm, & ! Intent(out)
@@ -2029,7 +2026,6 @@ module clubb_driver
                                                   l_upwind_xm_ma, & ! Intent(in)
                                                   l_uv_nudge, & ! Intent(in)
                                                   l_rtm_nudge, & ! Intent(in)
-                                                  l_tke_aniso, & ! Intent(in)
                                                   l_vert_avg_closure, & ! Intent(in)
                                                   l_trapezoidal_rule_zt, & ! Intent(in)
                                                   l_trapezoidal_rule_zm, & ! Intent(in)
@@ -2457,9 +2453,8 @@ module clubb_driver
       clubb_config_flags%l_upwind_xm_ma           = model_flags_array(4)
       clubb_config_flags%l_vert_avg_closure       = model_flags_array(5)
       clubb_config_flags%l_standard_term_ta       = model_flags_array(6)
-      clubb_config_flags%l_tke_aniso              = model_flags_array(7)
-      clubb_config_flags%l_use_cloud_cover        = model_flags_array(8)
-      clubb_config_flags%l_rcm_supersat_adj       = model_flags_array(9)
+      clubb_config_flags%l_use_cloud_cover        = model_flags_array(7)
+      clubb_config_flags%l_rcm_supersat_adj       = model_flags_array(8)
 
       if ( clubb_config_flags%l_vert_avg_closure ) then
         clubb_config_flags%l_trapezoidal_rule_zt    = .true.
@@ -5495,8 +5490,6 @@ module clubb_driver
 
     !!!! Initialize w'^2 based on initial TKE !!!
 
-    if ( clubb_config_flags%l_tke_aniso ) then
-
       ! TKE:  em = (1/2) * ( w'^2 + u'^2 + v'^2 )
       ! Evenly divide TKE into its component
       ! contributions (w'^2, u'^2, and v'^2).
@@ -5536,16 +5529,6 @@ module clubb_driver
 
       end if
 
-    else
-
-      ! TKE:  em = (3/2) * w'^2
-
-      wp2  = (2.0_core_rknd/3.0_core_rknd) * em
-      up2  = zero
-      vp2  = zero
-      upwp = zero
-
-    end if ! l_tke_aniso
 
     ! Moved this to be more general -dschanen July 16 2007
     if ( clubb_config_flags%l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then

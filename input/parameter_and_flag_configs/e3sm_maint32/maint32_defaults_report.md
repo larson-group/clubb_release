@@ -131,7 +131,6 @@ Primary sources checked:
 | `l_upwind_xpyp_ta` | `.true.` | Found as a source default constant in E3SM `model_flags.F90`. |
 | `l_godunov_upwind_xpyp_ta` | `.false.` | Current-only Godunov variant not found in E3SM maint-3.2; shut off. |
 | `l_upwind_xm_ma` | `.true.` | Found as a source default constant in E3SM `model_flags.F90`. |
-| `l_tke_aniso` | `.true.` | Found as a source default constant in E3SM `model_flags.F90`. |
 | `l_vert_avg_closure` | `.true.` | Found as `clubb_vert_avg_closure` default `.true.` in E3SM XML and as a source default in E3SM `model_flags.F90`. |
 | `l_standard_term_ta` | `.false.` | Found as a source default constant in E3SM `model_flags.F90`. |
 | `l_partial_upwind_wp3` | `.false.` | Current-only option not found in E3SM maint-3.2; shut off. |

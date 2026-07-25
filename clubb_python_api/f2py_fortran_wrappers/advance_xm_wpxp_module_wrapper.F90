@@ -28,7 +28,6 @@ subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport,
     l_godunov_upwind_wpxp_ta, &
     l_upwind_xm_ma, &
     l_uv_nudge, &
-    l_tke_aniso, &
     l_diag_lscale_from_tau, &
     l_use_c7_richardson, &
     l_lmm_stepping, &
@@ -82,7 +81,7 @@ subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport,
   logical, intent(in) :: &
     l_implemented, l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
     l_diffuse_rtm_and_thlm, l_stability_correct_kh_n2_zm, l_godunov_upwind_wpxp_ta, &
-    l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_diag_lscale_from_tau, l_use_c7_richardson, &
+    l_upwind_xm_ma, l_uv_nudge,  l_diag_lscale_from_tau, l_use_c7_richardson, &
     l_lmm_stepping, l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
     l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix
   integer, intent(inout) :: wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num
@@ -114,7 +113,7 @@ subroutine f2py_advance_xm_wpxp(nzm, nzt, ngrdcol, sclr_dim, sclr_dim_transport,
     iipdf_type, penta_solve_method, tridiag_solve_method, fill_holes_type, &
     l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
     l_diffuse_rtm_and_thlm, l_stability_correct_kh_n2_zm, l_godunov_upwind_wpxp_ta, &
-    l_upwind_xm_ma, l_uv_nudge, l_tke_aniso, l_diag_lscale_from_tau, l_use_c7_richardson, &
+    l_upwind_xm_ma, l_uv_nudge,  l_diag_lscale_from_tau, l_use_c7_richardson, &
     l_lmm_stepping, l_enable_relaxed_clipping, l_linearize_pbl_winds, &
     l_mono_flux_lim_thlm, l_mono_flux_lim_rtm, l_mono_flux_lim_um, &
     l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, &

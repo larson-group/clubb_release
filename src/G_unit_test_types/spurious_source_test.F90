@@ -443,8 +443,6 @@ module spurious_source_test
                                       ! affects rtm, thlm, sclrm, um and vm.
       l_uv_nudge,                   & ! For wind speed nudging.
       l_rtm_nudge,                  & ! For rtm nudging
-      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
-                                      ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
                                       ! compute the varibles that are output from high order
                                       ! closure
@@ -558,7 +556,6 @@ module spurious_source_test
                                              l_upwind_xm_ma, &
                                              l_uv_nudge, &
                                              l_rtm_nudge, &
-                                             l_tke_aniso, &
                                              l_vert_avg_closure, &
                                              l_trapezoidal_rule_zt, &
                                              l_trapezoidal_rule_zm, &
@@ -1004,7 +1001,6 @@ module spurious_source_test
                              l_godunov_upwind_wpxp_ta, &
                              l_upwind_xm_ma, &
                              l_uv_nudge, &
-                             l_tke_aniso, &
                              l_diag_Lscale_from_tau, &
                              l_use_C7_Richardson, &
                              l_lmm_stepping, &

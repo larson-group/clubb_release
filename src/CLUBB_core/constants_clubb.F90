@@ -322,10 +322,9 @@ module constants_clubb
              * rg_tol
 
   ! Minimum value for em (turbulence kinetic energy)
-  ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );
-  ! otherwise, em = (3/2) * wp2.  Since up2, vp2, and wp2 all have
-  ! the same minimum threshold value of w_tol_sqd, em cannot be less
-  ! than (3/2) * w_tol_sqd.  Thus, em_min = (3/2) * w_tol_sqd.
+  ! With anisotropic TKE, em = (1/2) * ( up2 + vp2 + wp2 ).  Since
+  ! up2, vp2, and wp2 all have the same minimum threshold value of
+  ! w_tol_sqd, em cannot be less than (3/2) * w_tol_sqd.
   real( kind = core_rknd ), parameter, public :: &
     em_min = 1.5_core_rknd * w_tol_sqd  ! [m^2/s^2]
 

@@ -111,11 +111,6 @@ l_input_xpwp_sfc | logical
   Flag used to determine whether or not to read in the surface momentum
   fluxes upwp_sfc and vpwp_sfc.
 
-l_tke_aniso | logical
-  Flag for enabling anisotropic TKE.  
-  When this is true:  TKE = ( u'^2 + v'^2 + w'^2 ) / 2.
-  When this is false: TKE =  3 ( w'^2 ) / 2.
-
 l_uv_nudge | logical
   Flag for horizontal wind speed nudging.
 

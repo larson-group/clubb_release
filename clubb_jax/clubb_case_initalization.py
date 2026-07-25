@@ -127,29 +127,22 @@ def _initialize_em_profile(runtype: str, gr, um: np.ndarray):
 
 
 def _initialize_turbulence_state(runtype: str, gr, dt_main: float,
-                                 fcor_y: np.ndarray, l_tke_aniso: bool,
-                                 um: np.ndarray):
+                                 fcor_y: np.ndarray, um: np.ndarray):
     """Mirror initialize_clubb() em/wp2/up2/vp2/upwp initialization."""
     em, um_adj = _initialize_em_profile(runtype, gr, um)
 
-    if l_tke_aniso:
-        wp2 = (2.0 / 3.0) * em
-        up2 = (2.0 / 3.0) * em
-        vp2 = (2.0 / 3.0) * em
-        upwp = np.zeros_like(em)
+    wp2 = (2.0 / 3.0) * em
+    up2 = (2.0 / 3.0) * em
+    vp2 = (2.0 / 3.0) * em
+    upwp = np.zeros_like(em)
 
-        if str(runtype).strip() == "coriolis_test":
-            w_tol_sqd = w_tol**2
-            wp2 = (1.0 / 3.0) * em + w_tol_sqd
-            up2 = (3.0 / 3.0) * em + w_tol_sqd
-            vp2 = (2.0 / 3.0) * em + w_tol_sqd
-            em = em + 1.5 * w_tol_sqd
-            upwp = 0.5 * dt_main * fcor_y[:, None] * (up2 - wp2)
-    else:
-        wp2 = (2.0 / 3.0) * em
-        up2 = np.zeros_like(em)
-        vp2 = np.zeros_like(em)
-        upwp = np.zeros_like(em)
+    if str(runtype).strip() == "coriolis_test":
+        w_tol_sqd = w_tol**2
+        wp2 = (1.0 / 3.0) * em + w_tol_sqd
+        up2 = (3.0 / 3.0) * em + w_tol_sqd
+        vp2 = (2.0 / 3.0) * em + w_tol_sqd
+        em = em + 1.5 * w_tol_sqd
+        upwp = 0.5 * dt_main * fcor_y[:, None] * (up2 - wp2)
 
     return em, wp2, up2, vp2, upwp, um_adj
 
@@ -679,7 +672,6 @@ def init_clubb_case(namelist_path: str) -> dict:
         gr=gr,
         dt_main=dt_main,
         fcor_y=fcor_y,
-        l_tke_aniso=bool(flags.l_tke_aniso),
         um=um,
     )
 

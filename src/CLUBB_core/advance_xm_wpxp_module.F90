@@ -85,7 +85,6 @@ module advance_xm_wpxp_module
                               l_godunov_upwind_wpxp_ta, &
                               l_upwind_xm_ma, &
                               l_uv_nudge, &
-                              l_tke_aniso, &
                               l_diag_Lscale_from_tau, &
                               l_use_C7_Richardson, &
                               l_lmm_stepping, &
@@ -340,8 +339,6 @@ module advance_xm_wpxp_module
                                       ! differencing for turbulent or mean advection terms.
                                       ! It affects rtm, thlm, sclrm, um and vm.
       l_uv_nudge,                   & ! For wind speed nudging
-      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                                      ! (u'^2 + v'^2 + w'^2)
       l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                       ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
@@ -867,7 +864,6 @@ module advance_xm_wpxp_module
                                             fill_holes_type,                                & ! In
                                             l_diffuse_rtm_and_thlm,                         & ! In
                                             l_upwind_xm_ma,                                 & ! In
-                                            l_tke_aniso,                                    & ! In
                                             l_enable_relaxed_clipping,                      & ! In
                                             l_mono_flux_lim_thlm,                           & ! In
                                             l_mono_flux_lim_rtm,                            & ! In
@@ -908,7 +904,6 @@ module advance_xm_wpxp_module
                                           l_ho_trad_coriolis,                              & ! In
                                           l_diffuse_rtm_and_thlm,                          & ! In
                                           l_upwind_xm_ma,                                  & ! In
-                                          l_tke_aniso,                                     & ! In
                                           l_enable_relaxed_clipping,                       & ! In
                                           l_perturbed_wind,                                & ! In
                                           l_mono_flux_lim_thlm,                            & ! In
@@ -2589,7 +2584,6 @@ module advance_xm_wpxp_module
                                             l_ho_trad_coriolis, &
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
-                                            l_tke_aniso, &
                                             l_enable_relaxed_clipping, &
                                             l_perturbed_wind, &
                                               l_mono_flux_lim_thlm, &
@@ -2789,7 +2783,6 @@ module advance_xm_wpxp_module
                                    ! than a centered differencing for turbulent
                                    ! or mean advection terms. It affects rtm,
                                    ! thlm, sclrm, um and vm.
-      l_tke_aniso,               & ! For anisotropic turbulent kinetic energy,
                                    ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_enable_relaxed_clipping, & ! Flag to relax clipping on wpxp in
                                    ! xm_wpxp_clipping_and_stats
@@ -3469,7 +3462,6 @@ module advance_xm_wpxp_module
            tridiag_solve_method, &                        ! Intent(in)
            fill_holes_type, &                             ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
-           l_tke_aniso, &                                 ! Intent(in)
            l_enable_relaxed_clipping, &                   ! Intent(in)
            l_mono_flux_lim_thlm, &                        ! Intent(in)
            l_mono_flux_lim_rtm, &                         ! Intent(in)
@@ -3501,7 +3493,6 @@ module advance_xm_wpxp_module
            tridiag_solve_method, &                        ! Intent(in)
            fill_holes_type, &                             ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
-           l_tke_aniso, &                                 ! Intent(in)
            l_enable_relaxed_clipping, &                   ! Intent(in)
            l_mono_flux_lim_thlm, &                        ! Intent(in)
            l_mono_flux_lim_rtm, &                         ! Intent(in)
@@ -3539,7 +3530,6 @@ module advance_xm_wpxp_module
              tridiag_solve_method, &                                 ! Intent(in)
              fill_holes_type, &                                      ! Intent(in)
              l_upwind_xm_ma, &                                       ! Intent(in)
-             l_tke_aniso, &                                          ! Intent(in)
              l_enable_relaxed_clipping, &                            ! Intent(in)
              l_mono_flux_lim_thlm, &                                 ! Intent(in)
              l_mono_flux_lim_rtm, &                                  ! Intent(in)
@@ -3575,7 +3565,6 @@ module advance_xm_wpxp_module
             tridiag_solve_method,                         & ! Intent(in)
             fill_holes_type,                              & ! Intent(in)
             l_upwind_xm_ma,                               & ! Intent(in)
-            l_tke_aniso,                                  & ! Intent(in)
             l_enable_relaxed_clipping,                    & ! Intent(in)
             l_mono_flux_lim_thlm,                         & ! Intent(in)
             l_mono_flux_lim_rtm,                          & ! Intent(in)
@@ -3607,7 +3596,6 @@ module advance_xm_wpxp_module
             tridiag_solve_method,                         & ! Intent(in)
             fill_holes_type,                              & ! Intent(in)
             l_upwind_xm_ma,                               & ! Intent(in)
-            l_tke_aniso,                                  & ! Intent(in)
             l_enable_relaxed_clipping,                    & ! Intent(in)
             l_mono_flux_lim_thlm,                         & ! Intent(in)
             l_mono_flux_lim_rtm,                          & ! Intent(in)
@@ -3641,7 +3629,6 @@ module advance_xm_wpxp_module
                tridiag_solve_method,                         & ! Intent(in)
                fill_holes_type,                              & ! Intent(in)
                l_upwind_xm_ma,                               & ! Intent(in)
-               l_tke_aniso,                                  & ! Intent(in)
                l_enable_relaxed_clipping,                    & ! Intent(in)
                l_mono_flux_lim_thlm,                         & ! Intent(in)
                l_mono_flux_lim_rtm,                          & ! Intent(in)
@@ -3672,7 +3659,6 @@ module advance_xm_wpxp_module
                tridiag_solve_method,                         & ! Intent(in)
                fill_holes_type,                              & ! Intent(in)
                l_upwind_xm_ma,                               & ! Intent(in)
-               l_tke_aniso,                                  & ! Intent(in)
                l_enable_relaxed_clipping,                    & ! Intent(in)
                l_mono_flux_lim_thlm,                         & ! Intent(in)
                l_mono_flux_lim_rtm,                          & ! Intent(in)
@@ -3726,7 +3712,6 @@ module advance_xm_wpxp_module
                                               fill_holes_type, &
                                               l_diffuse_rtm_and_thlm, &
                                               l_upwind_xm_ma, &
-                                              l_tke_aniso, &
                                               l_enable_relaxed_clipping, &
                                               l_mono_flux_lim_thlm, &
                                               l_mono_flux_lim_rtm, &
@@ -3876,7 +3861,6 @@ module advance_xm_wpxp_module
                                    ! than a centered differencing for turbulent
                                    ! or mean advection terms. It affects rtm,
                                    ! thlm, sclrm, um and vm.
-      l_tke_aniso,               & ! For anisotropic turbulent kinetic energy,
                                    ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_enable_relaxed_clipping, & ! Flag to relax clipping on wpxp in
                                    ! xm_wpxp_clipping_and_stats
@@ -4032,7 +4016,6 @@ module advance_xm_wpxp_module
            tridiag_solve_method, &                        ! Intent(in)
            fill_holes_type, &                             ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
-           l_tke_aniso, &                                 ! Intent(in)
            l_enable_relaxed_clipping, &                   ! Intent(in)
            l_mono_flux_lim_thlm, &                        ! Intent(in)
            l_mono_flux_lim_rtm, &                         ! Intent(in)
@@ -4144,7 +4127,6 @@ module advance_xm_wpxp_module
            tridiag_solve_method, &                        ! Intent(in)
            fill_holes_type, &                             ! Intent(in)
            l_upwind_xm_ma, &                              ! Intent(in)
-           l_tke_aniso, &                                 ! Intent(in)
            l_enable_relaxed_clipping, &                   ! Intent(in)
            l_mono_flux_lim_thlm, &                        ! Intent(in)
            l_mono_flux_lim_rtm, &                         ! Intent(in)
@@ -4260,7 +4242,6 @@ module advance_xm_wpxp_module
              tridiag_solve_method, &                                 ! Intent(in)
              fill_holes_type, &                                      ! Intent(in)
              l_upwind_xm_ma, &                                       ! Intent(in)
-             l_tke_aniso, &                                          ! Intent(in)
              l_enable_relaxed_clipping, &                            ! Intent(in)
              l_mono_flux_lim_thlm, &                                 ! Intent(in)
              l_mono_flux_lim_rtm, &                                  ! Intent(in)
@@ -4420,7 +4401,6 @@ module advance_xm_wpxp_module
                tridiag_solve_method, &
                fill_holes_type, &
                l_upwind_xm_ma, &
-               l_tke_aniso, &
                l_enable_relaxed_clipping, &
                l_mono_flux_lim_thlm, &
                l_mono_flux_lim_rtm, &
@@ -4562,7 +4542,6 @@ module advance_xm_wpxp_module
                                    ! than a centered differencing for turbulent
                                    ! or mean advection terms. It affects rtm,
                                    ! thlm, sclrm, um and vm.
-      l_tke_aniso,               & ! For anisotropic turbulent kinetic energy,
                                    ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_enable_relaxed_clipping, & ! Flag to relax clipping on wpxp in
                                    ! xm_wpxp_clipping_and_stats
@@ -5150,47 +5129,25 @@ module advance_xm_wpxp_module
       end if
     else ! clipping for upwp or vpwp
 
-      if ( l_tke_aniso ) then
-        if ( present( wpxp_cl_num ) ) wpxp_cl_num = wpxp_cl_num + 1
-        call clip_covar( nzm, ngrdcol, solve_type_cl, wp2, xp2,        & ! In
-                         wpxp, wpxp_chnge )                              ! In/Out
-        if ( present( wpxp_cl_num ) .and. stats%l_sample ) then
-          !$acc update host( wpxp )
-          if ( solve_type_cl == clip_upwp ) then
-            if ( wpxp_cl_num == wpxp_cl_max ) then
-              call stats_finalize_budget( "upwp_cl", wpxp / dt, stats )
-            else
-              call stats_update_budget( "upwp_cl", wpxp / dt, stats )
-            end if
-          elseif ( solve_type_cl == clip_vpwp ) then
-            if ( wpxp_cl_num == wpxp_cl_max ) then
-              call stats_finalize_budget( "vpwp_cl", wpxp / dt, stats )
-            else
-              call stats_update_budget( "vpwp_cl", wpxp / dt, stats )
-            end if
+      if ( present( wpxp_cl_num ) ) wpxp_cl_num = wpxp_cl_num + 1
+      call clip_covar( nzm, ngrdcol, solve_type_cl, wp2, xp2,        & ! In
+                       wpxp, wpxp_chnge )                              ! In/Out
+      if ( present( wpxp_cl_num ) .and. stats%l_sample ) then
+        !$acc update host( wpxp )
+        if ( solve_type_cl == clip_upwp ) then
+          if ( wpxp_cl_num == wpxp_cl_max ) then
+            call stats_finalize_budget( "upwp_cl", wpxp / dt, stats )
+          else
+            call stats_update_budget( "upwp_cl", wpxp / dt, stats )
+          end if
+        elseif ( solve_type_cl == clip_vpwp ) then
+          if ( wpxp_cl_num == wpxp_cl_max ) then
+            call stats_finalize_budget( "vpwp_cl", wpxp / dt, stats )
+          else
+            call stats_update_budget( "vpwp_cl", wpxp / dt, stats )
           end if
         end if
-      else
-        if ( present( wpxp_cl_num ) ) wpxp_cl_num = wpxp_cl_num + 1
-        call clip_covar( nzm, ngrdcol, solve_type_cl, wp2, wp2,        & ! In
-                         wpxp, wpxp_chnge )                              ! In/Out
-        if ( present( wpxp_cl_num ) .and. stats%l_sample ) then
-          !$acc update host( wpxp )
-          if ( solve_type_cl == clip_upwp ) then
-            if ( wpxp_cl_num == wpxp_cl_max ) then
-              call stats_finalize_budget( "upwp_cl", wpxp / dt, stats )
-            else
-              call stats_update_budget( "upwp_cl", wpxp / dt, stats )
-            end if
-          elseif ( solve_type_cl == clip_vpwp ) then
-            if ( wpxp_cl_num == wpxp_cl_max ) then
-              call stats_finalize_budget( "vpwp_cl", wpxp / dt, stats )
-            else
-              call stats_update_budget( "vpwp_cl", wpxp / dt, stats )
-            end if
-          end if
-        end if
-       end if ! l_tke_aniso
+      end if
     end if ! solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
 
     ! Adjusting xm based on clipping for w'x'.

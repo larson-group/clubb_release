@@ -188,7 +188,7 @@ module parameters_tunable
     C2rt        = 2.000000_core_rknd ! C2 coef. for the rtp2_dp1 term      [-]
     C2thl       = 2.000000_core_rknd ! C2 coef. for the thlp2_dp1 term     [-]
     C2rtthl     = 2.000000_core_rknd ! C2 coef. for the rtpthlp_dp1 term   [-]
-    C4          = 2.000000_core_rknd ! Used only when l_tke_aniso is true  [-]
+    C4          = 2.000000_core_rknd ! Pressure term coefficient for w'^2  [-]
     C_uu_shr    = 0.400000_core_rknd ! Coef. in pressure terms (shear): w'^2 eqn   [-]
     C_uu_buoy   = 0.300000_core_rknd ! Coef. in pressure terms (buoyancy): w'^2 eqn [-]
     C6rt        = 2.000000_core_rknd ! Low Skewness in C6rt Skw. Function  [-]

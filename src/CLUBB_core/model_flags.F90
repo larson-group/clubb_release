@@ -249,8 +249,6 @@ module model_flags
                                       ! affects rtm, thlm, sclrm, um and vm.
       l_uv_nudge,                   & ! For wind speed nudging.
       l_rtm_nudge,                  & ! For rtm nudging
-      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
-                                      ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
                                       ! compute the varibles that are output from high order
                                       ! closure
@@ -364,7 +362,6 @@ module model_flags
                                                  l_upwind_xm_ma, &
                                                  l_uv_nudge, &
                                                  l_rtm_nudge, &
-                                                 l_tke_aniso, &
                                                  l_vert_avg_closure, &
                                                  l_trapezoidal_rule_zt, &
                                                  l_trapezoidal_rule_zm, &
@@ -475,8 +472,6 @@ module model_flags
                                       ! affects rtm, thlm, sclrm, um and vm.
       l_uv_nudge,                   & ! For wind speed nudging.
       l_rtm_nudge,                  & ! For rtm nudging
-      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
-                                      ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
                                       ! compute the varibles that are output from high order
                                       ! closure
@@ -590,7 +585,6 @@ module model_flags
     l_upwind_xm_ma = .true.
     l_uv_nudge = .false.
     l_rtm_nudge = .false.
-    l_tke_aniso = .true.
     l_vert_avg_closure  = .false.
     l_trapezoidal_rule_zt = .false.
     l_trapezoidal_rule_zm = .false.
@@ -662,7 +656,6 @@ module model_flags
                                                      l_upwind_xm_ma, &
                                                      l_uv_nudge, &
                                                      l_rtm_nudge, &
-                                                     l_tke_aniso, &
                                                      l_vert_avg_closure, &
                                                      l_trapezoidal_rule_zt, &
                                                      l_trapezoidal_rule_zm, &
@@ -775,8 +768,6 @@ module model_flags
                                       ! affects rtm, thlm, sclrm, um and vm.
       l_uv_nudge,                   & ! For wind speed nudging.
       l_rtm_nudge,                  & ! For rtm nudging
-      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
-                                      ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
                                       ! compute the varibles that are output from high order
                                       ! closure
@@ -896,7 +887,6 @@ module model_flags
     clubb_config_flags%l_upwind_xm_ma = l_upwind_xm_ma
     clubb_config_flags%l_uv_nudge = l_uv_nudge
     clubb_config_flags%l_rtm_nudge = l_rtm_nudge
-    clubb_config_flags%l_tke_aniso = l_tke_aniso
     clubb_config_flags%l_vert_avg_closure  = l_vert_avg_closure
     clubb_config_flags%l_trapezoidal_rule_zt = l_trapezoidal_rule_zt
     clubb_config_flags%l_trapezoidal_rule_zm = l_trapezoidal_rule_zm
@@ -989,7 +979,6 @@ module model_flags
     write(iunit,*) "l_upwind_xm_ma = ", clubb_config_flags%l_upwind_xm_ma
     write(iunit,*) "l_uv_nudge = ", clubb_config_flags%l_uv_nudge
     write(iunit,*) "l_rtm_nudge = ", clubb_config_flags%l_rtm_nudge
-    write(iunit,*) "l_tke_aniso = ", clubb_config_flags%l_tke_aniso
     write(iunit,*) "l_vert_avg_closure = ", clubb_config_flags%l_vert_avg_closure
     write(iunit,*) "l_trapezoidal_rule_zt = ", clubb_config_flags%l_trapezoidal_rule_zt
     write(iunit,*) "l_trapezoidal_rule_zm = ", clubb_config_flags%l_trapezoidal_rule_zm

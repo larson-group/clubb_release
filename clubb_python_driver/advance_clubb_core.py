@@ -274,11 +274,7 @@ def advance_clubb_core(
     )
 
     # Compute tke (turbulent kinetic energy).
-    if not clubb_config_flags.l_tke_aniso:
-        # tke is assumed to be 3/2 of wp2.
-        em = three_halves * wp2
-    else:
-        em = 0.5 * (wp2 + vp2 + up2)
+    em = 0.5 * (wp2 + vp2 + up2)
 
     if clubb_config_flags.l_call_pdf_closure_twice:
         w_1_zm = pdf_params_zm.w_1.copy()
@@ -506,7 +502,6 @@ def advance_clubb_core(
                 clubb_config_flags.l_godunov_upwind_wpxp_ta,
                 clubb_config_flags.l_upwind_xm_ma,
                 clubb_config_flags.l_uv_nudge,
-                clubb_config_flags.l_tke_aniso,
                 clubb_config_flags.l_diag_Lscale_from_tau,
                 clubb_config_flags.l_use_C7_Richardson,
                 clubb_config_flags.l_lmm_stepping,
@@ -606,7 +601,7 @@ def advance_clubb_core(
                 nzm, ngrdcol, sclr_dim,
                 dt,
                 rtp2, thlp2, up2, vp2, wp2,
-                sclrp2, clubb_config_flags.l_tke_aniso,
+                sclrp2,
                 clubb_config_flags.l_linearize_pbl_winds,
                 clubb_config_flags.l_predict_upwp_vpwp,
                 wprtp_cl_num, wpthlp_cl_num,
@@ -643,7 +638,6 @@ def advance_clubb_core(
                 clubb_config_flags.fill_holes_type,
                 clubb_config_flags.l_min_wp2_from_corr_wx,
                 clubb_config_flags.l_upwind_xm_ma,
-                clubb_config_flags.l_tke_aniso,
                 clubb_config_flags.l_standard_term_ta,
                 clubb_config_flags.l_partial_upwind_wp3,
                 clubb_config_flags.l_damp_wp2_using_em,
@@ -670,7 +664,7 @@ def advance_clubb_core(
                 nzm, ngrdcol, sclr_dim,
                 dt,
                 rtp2, thlp2, up2, vp2, wp2,
-                sclrp2, clubb_config_flags.l_tke_aniso,
+                sclrp2,
                 clubb_config_flags.l_linearize_pbl_winds,
                 clubb_config_flags.l_predict_upwp_vpwp,
                 wprtp_cl_num, wpthlp_cl_num,
@@ -701,7 +695,6 @@ def advance_clubb_core(
                 clubb_config_flags.l_predict_upwp_vpwp,
                 clubb_config_flags.l_upwind_xm_ma,
                 clubb_config_flags.l_uv_nudge,
-                clubb_config_flags.l_tke_aniso,
                 clubb_config_flags.l_lmm_stepping,
                 clubb_config_flags.l_linearize_pbl_winds,
                 clubb_config_flags.l_do_expldiff_rtm_thlm,

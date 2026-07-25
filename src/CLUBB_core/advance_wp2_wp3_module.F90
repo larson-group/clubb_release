@@ -81,7 +81,6 @@ module advance_wp2_wp3_module
                               fill_holes_type,                               & ! intent(in)
                               l_min_wp2_from_corr_wx,                        & ! intent(in)
                               l_upwind_xm_ma,                                & ! intent(in)
-                              l_tke_aniso,                                   & ! intent(in)
                               l_standard_term_ta,                            & ! intent(in)
                               l_partial_upwind_wp3,                          & ! intent(in)
                               l_damp_wp2_using_em,                           & ! intent(in)
@@ -281,8 +280,6 @@ module advance_wp2_wp3_module
                                     ! differencing approximation rather than a centered differencing
                                     ! for turbulent or mean advection terms. It affects rtm, thlm,
                                     ! sclrm, um and vm.
-      l_tke_aniso,                & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                                    ! (u'^2 + v'^2 + w'^2)
       l_standard_term_ta,         & ! Use the standard discretization for the turbulent advection
                                     ! terms. Setting to .false. means that a_1 and a_3 are pulled
                                     ! outside of the derivative in advance_wp2_wp3_module.F90 and in
@@ -818,7 +815,6 @@ module advance_wp2_wp3_module
     end if 
     
     ! Calculate "over-implicit" pressure terms for w'2 and w'3
-    if ( l_tke_aniso ) then
       call wp2_term_pr1_rhs( nzm, ngrdcol, gr, clubb_params(:,iC4), & ! intent(in)
                              up2, vp2, invrs_tau_C4_zm,             & ! intent(in)
                              rhs_pr1_wp2 )                            ! intent(out)
@@ -830,7 +826,6 @@ module advance_wp2_wp3_module
       call wp2_term_pr1_lhs( nzm, ngrdcol, gr,                      & ! intent(in)
                              clubb_params(:,iC4), invrs_tau_C4_zm,  & ! intent(in)
                              lhs_pr1_wp2 )                            ! intent(out)
-    end if
                         
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -978,7 +973,6 @@ module advance_wp2_wp3_module
                    lhs_splat_wp2, lhs_splat_wp3,                                    & ! intent(in)
                    clubb_params,                                                    & ! intent(in)
                    iiPDF_type,                                                      & ! intent(in)
-                   l_tke_aniso,                                                     & ! intent(in)
                    l_use_tke_in_wp2_wp3_K_dfsn,                                     & ! intent(in)
                    l_ho_nontrad_coriolis,                                           & ! intent(in)
                    stats,                                                           & ! intent(inout)
@@ -1053,7 +1047,6 @@ module advance_wp2_wp3_module
                    lhs_tp_wp3,                                              & ! intent(in)
                    lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, lhs_dp1_wp2,             & ! intent(in)
                    lhs_pr1_wp3, lhs_pr1_wp2, lhs_splat_wp2, lhs_splat_wp3,  & ! intent(in)
-                   l_tke_aniso,                                             & ! intent(in)
                    lhs )                                                      ! intent(out)
     
     if ( l_lmm_stepping ) then
@@ -1088,7 +1081,6 @@ module advance_wp2_wp3_module
                      penta_solve_method,                          & ! intent(in)
                      fill_holes_type,                              & ! intent(in)
                      l_min_wp2_from_corr_wx,                      & ! intent(in)
-                     l_tke_aniso,                                 & ! intent(in)
                      l_use_tke_in_wp2_wp3_K_dfsn,                 & ! intent(in)
                      l_use_wp3_lim_with_smth_Heaviside,           & ! intent(in)
                      l_wp2_fill_holes_tke,                        & ! intent(in)
@@ -1278,7 +1270,6 @@ module advance_wp2_wp3_module
                          penta_solve_method, &
                          fill_holes_type, &
                          l_min_wp2_from_corr_wx, &
-                         l_tke_aniso, &
                          l_use_tke_in_wp2_wp3_K_dfsn, &
                          l_use_wp3_lim_with_smth_Heaviside, &
                          l_wp2_fill_holes_tke, &
@@ -1419,8 +1410,6 @@ module advance_wp2_wp3_module
                                     ! the overall correlation of w and x (w and rt, as well as w
                                     ! and theta-l) within the limits of -max_mag_correlation_flux
                                     ! to max_mag_correlation_flux.
-      l_tke_aniso,                & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                                    ! (u'^2 + v'^2 + w'^2)
       l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
       l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
       l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
@@ -1738,7 +1727,6 @@ module advance_wp2_wp3_module
           ! w'^2 term ac is completely implicit; call stat_update_var_pt.
           call stats_update( "wp2_ac", stats_tmp_zm, stats )
 
-        if ( l_tke_aniso ) then
             stats_tmp_zm = zero
             do k = 2, nzm-1
               do i = 1, ngrdcol
@@ -1750,7 +1738,6 @@ module advance_wp2_wp3_module
             ! call stat_end_update_pt.
             ! w'^2 term pr1 has both implicit and explicit components.
             call stats_finalize_budget( "wp2_pr1", stats_tmp_zm, stats )
-        end if
           stats_tmp_zm = zero
           do k = 2, nzm-1
             do i = 1, ngrdcol
@@ -2062,7 +2049,6 @@ module advance_wp2_wp3_module
                        lhs_tp_wp3, &
                        lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, lhs_dp1_wp2, &
                        lhs_pr1_wp3, lhs_pr1_wp2, lhs_splat_wp2, lhs_splat_wp3, &
-                       l_tke_aniso, &
                        lhs )
                        
     ! Description:
@@ -2139,10 +2125,6 @@ module advance_wp2_wp3_module
       lhs_ac_pr2_wp3, &   ! Accumulation terms of w'^3 and w'^3 pressure term 2
       lhs_pr1_wp3, &      ! Dissipation terms 1 for w'^3
       lhs_splat_wp3       ! LHS coefficient of wp3 splatting term  [1/s]
-
-    logical, intent(in) :: &
-      l_tke_aniso ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                  ! (u'^2 + v'^2 + w'^2)
 
     ! ----------------------- Output Variable -----------------------
     real( kind = core_rknd ), dimension(ndiags5,ngrdcol,2*nzm-1), intent(out) :: &
@@ -2305,8 +2287,6 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
 
     ! LHS pressure term 1 (pr1) for wp2
-    if ( l_tke_aniso ) then
-
       ! Note:  An "over-implicit" weighted time step is applied to this term.
       !        A weighting factor of greater than 1 may be used to make the term
       !        more numerically stable (see note below for w'^3 LHS turbulent
@@ -2327,7 +2307,6 @@ module advance_wp2_wp3_module
       end do
       !$acc end parallel loop
 
-    endif
 
     ! Add implicit splatting to wp2
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2397,7 +2376,6 @@ module advance_wp2_wp3_module
                        lhs_splat_wp2, lhs_splat_wp3, &
                        clubb_params, &
                        iiPDF_type, &
-                       l_tke_aniso, &
                        l_use_tke_in_wp2_wp3_K_dfsn, &
                        l_ho_nontrad_coriolis, &
                        stats,         &
@@ -2535,8 +2513,6 @@ module advance_wp2_wp3_module
                     ! two-component PDF.
 
     logical, intent(in) :: &
-      l_tke_aniso,          &        ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                                     ! (u'^2 + v'^2 + w'^2)
       l_use_tke_in_wp2_wp3_K_dfsn, & ! Use TKE in eddy diffusion for wp2 and wp3
       l_ho_nontrad_coriolis          ! Flag to implement the nontraditional Coriolis terms in the
                                      ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
@@ -2687,8 +2663,6 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
     end if
 
-    if ( l_tke_aniso ) then
-
       ! Add pressure terms and splat terms
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 2, nzm-1
@@ -2707,7 +2681,6 @@ module advance_wp2_wp3_module
         end do
       end do
       !$acc end parallel loop
-    end if
 
     if ( l_ho_nontrad_coriolis ) then
 
@@ -3084,7 +3057,6 @@ module advance_wp2_wp3_module
 
             call stats_begin_budget( "wp2_dp2", stats_tmp_zm, stats )
           end if
-        if ( l_tke_aniso ) then
             stats_tmp_zm = zero
             do k = 2, nzm-1
               do i = 1, ngrdcol
@@ -3110,7 +3082,6 @@ module advance_wp2_wp3_module
             !        make the term more numerically stable (see note below for
             !        w'^3 RHS turbulent advection (ta) term).
             call stats_update_budget( "wp2_pr1", stats_tmp_zm, stats )
-        end if
           ! ----------- w'3 -----------
           stats_tmp_zt = zero
           do k = 2, nzt-1

@@ -42,7 +42,6 @@ module advance_windm_edsclrm_module
                                     l_predict_upwp_vpwp, &
                                     l_upwind_xm_ma, &
                                     l_uv_nudge, &
-                                    l_tke_aniso, &
                                     l_lmm_stepping, &
                                     l_linearize_pbl_winds, &
                                     l_do_expldiff_rtm_thlm, &
@@ -187,8 +186,6 @@ module advance_windm_edsclrm_module
                                ! approximation rather than a centered differencing for turbulent or
                                ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
       l_uv_nudge,            & ! For wind speed nudging
-      l_tke_aniso,           & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                               ! (u'^2 + v'^2 + w'^2)
       l_lmm_stepping,        & ! Apply Linear Multistep Method (LMM) Stepping
       l_linearize_pbl_winds,  & ! Flag (used by E3SM) to linearize PBL winds
       l_do_expldiff_rtm_thlm   ! Explicitly diffuse rtm and thlm with eddy scalars
@@ -663,7 +660,6 @@ module advance_windm_edsclrm_module
         call stats_update( "vm_ref", vm_ref, stats )
       end if
 
-      if ( l_tke_aniso ) then
 
         ! Clipping for u'w'
         !
@@ -730,51 +726,7 @@ module advance_windm_edsclrm_module
             call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
           end if
         end if
-      else
 
-        ! intent(in) this case, it is assumed that
-        !   u'^2 == v'^2 == w'^2, and the variables `up2' and `vp2' do not
-        ! interact with any other variables.
-        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
-          !$acc update host( upwp )
-          if ( upwp_cl_num == 0 ) then
-            call stats_begin_budget( "upwp_cl", upwp / dt, stats )
-          else
-            call stats_update_budget( "upwp_cl", -upwp / dt, stats )
-          end if
-        end if
-        upwp_cl_num = upwp_cl_num + 1
-        call clip_covar( nzm, ngrdcol, clip_upwp, wp2, wp2,        & ! intent(in)
-                         upwp, upwp_chnge )                          ! intent(inout)
-        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
-          !$acc update host( upwp )
-          if ( upwp_cl_num == upwp_cl_max ) then
-            call stats_finalize_budget( "upwp_cl", upwp / dt, stats )
-          else
-            call stats_update_budget( "upwp_cl", upwp / dt, stats )
-          end if
-        end if
-
-        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
-          !$acc update host( vpwp )
-          if ( vpwp_cl_num == 0 ) then
-            call stats_begin_budget( "vpwp_cl", vpwp / dt, stats )
-          else
-            call stats_update_budget( "vpwp_cl", -vpwp / dt, stats )
-          end if
-        end if
-        vpwp_cl_num = vpwp_cl_num + 1
-        call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, wp2,        & ! intent(in)
-                         vpwp, vpwp_chnge )                          ! intent(inout)
-        if ( stats%l_sample .and. l_predict_upwp_vpwp ) then
-          !$acc update host( vpwp )
-          if ( vpwp_cl_num == vpwp_cl_max ) then
-            call stats_finalize_budget( "vpwp_cl", vpwp / dt, stats )
-          else
-            call stats_update_budget( "vpwp_cl", vpwp / dt, stats )
-          end if
-        end if
-      endif ! l_tke_aniso
 
     endif ! .not. l_predict_upwp_vpwp
 
@@ -942,7 +894,6 @@ module advance_windm_edsclrm_module
       end do
       !$acc end parallel loop
       
-      if ( l_tke_aniso ) then
 
         ! Clipping for u'w'
         !
@@ -973,18 +924,7 @@ module advance_windm_edsclrm_module
         ! This is the third instance of v'w' clipping.
         call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, vp2,        & ! intent(in)
                          vpwp_pert, vpwp_chnge )                     ! intent(inout)
-      else
 
-        ! intent(in) this case, it is assumed that
-        !   u'^2 == v'^2 == w'^2, and the variables `up2' and `vp2' do not
-        ! interact with any other variables.
-        call clip_covar( nzm, ngrdcol, clip_upwp, wp2, wp2,        & ! intent(in)
-                         upwp_pert, upwp_chnge )                     ! intent(inout)
-
-        call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, wp2,        & ! intent(in)
-                         vpwp_pert, vpwp_chnge )                     ! intent(inout)
-        
-      end if ! l_tke_aniso
     end if ! l_perturbed_wind
 
     !----------------------------------------------------------------

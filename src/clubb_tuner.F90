@@ -590,8 +590,6 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! affects rtm, thlm, sclrm, um and vm.
     l_uv_nudge,                   & ! For wind speed nudging.
     l_rtm_nudge,                  & ! For rtm nudging
-    l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
-                                    ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
     l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
                                     ! compute the varibles that are output from high order
                                     ! closure
@@ -683,7 +681,7 @@ subroutine logical_flags_driver( current_date, current_time )
     saturation_formula, grid_remap_method, &
     grid_adapt_in_time_method, fill_holes_type, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, &
-    l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
+    l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
     l_use_cloud_cover, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
@@ -723,7 +721,6 @@ subroutine logical_flags_driver( current_date, current_time )
                                            l_upwind_xm_ma,                    & ! Intent(out)
                                            l_uv_nudge,                        & ! Intent(out)
                                            l_rtm_nudge,                       & ! Intent(out)
-                                           l_tke_aniso,                       & ! Intent(out)
                                            l_vert_avg_closure,                & ! Intent(out)
                                            l_trapezoidal_rule_zt,             & ! Intent(out)
                                            l_trapezoidal_rule_zm,             & ! Intent(out)
@@ -776,9 +773,8 @@ subroutine logical_flags_driver( current_date, current_time )
   model_flags_default(4) = l_upwind_xm_ma
   model_flags_default(5) = l_vert_avg_closure
   model_flags_default(6) = l_standard_term_ta
-  model_flags_default(7) = l_tke_aniso
-  model_flags_default(8) = l_use_cloud_cover
-  model_flags_default(9) = l_rcm_supersat_adj
+  model_flags_default(7) = l_use_cloud_cover
+  model_flags_default(8) = l_rcm_supersat_adj
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -852,16 +848,15 @@ subroutine logical_flags_driver( current_date, current_time )
       "Column 5 = vert_avg_closure   ", &
       "Column 6 = single_C2_Skw      ", &
       "Column 7 = standard_term_ta   ", &
-      "Column 8 = tke_aniso          ", &
-      "Column 9 = use_cloud_cover    "
+      "Column 8 = use_cloud_cover    "
   end if ! l_results_stdout
 
   ! Generate CSV file of the results
   filename_csv = "../output/clubb_model_flags_"//current_date//"_"//current_time//".csv"
   open(unit=iunit,file=trim( filename_csv ))
-  write(iunit,'(10A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
+  write(iunit,'(9A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
     "quintic_poly_interp, ", "vert_avg_closure, ", &
-    "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "use_cloud_cover, ", "Cost func."
+    "single_C2_Skw, ", "standard_term_ta, ", "use_cloud_cover, ", "Cost func."
   write(iunit,'(A30)') "Default flags:               ,"
   do j = 1, ndim
     write(iunit,'(L20,A2)',advance='no') model_flags_default(j), ", "
@@ -888,9 +883,8 @@ subroutine logical_flags_driver( current_date, current_time )
     l_upwind_xm_ma = model_flags_array(1,4)
     l_vert_avg_closure = model_flags_array(1,5)
     l_standard_term_ta = model_flags_array(1,6)
-    l_tke_aniso = model_flags_array(1,7)
-    l_use_cloud_cover = model_flags_array(1,8)
-    l_rcm_supersat_adj = model_flags_array(1,9)
+    l_use_cloud_cover = model_flags_array(1,7)
+    l_rcm_supersat_adj = model_flags_array(1,8)
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.

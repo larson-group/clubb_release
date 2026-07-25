@@ -176,7 +176,6 @@ module advance_clubb_core_module
     use constants_clubb, only: &
         em_min, &
         fstderr, &
-        three_halves, &
         zero_threshold, &
         zero, &
         two
@@ -900,24 +899,13 @@ module advance_clubb_core_module
                          thvm )
 
     ! Compute tke (turbulent kinetic energy).
-    if ( .not. clubb_config_flags%l_tke_aniso ) then
-      ! tke is assumed to be 3/2 of wp2.
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-          em(i,k) = three_halves * wp2(i,k)
-        end do
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        em(i,k) = 0.5_core_rknd * ( wp2(i,k) + vp2(i,k) + up2(i,k) )
       end do
-      !$acc end parallel loop
-    else
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-          em(i,k) = 0.5_core_rknd * ( wp2(i,k) + vp2(i,k) + up2(i,k) )
-        end do
-      end do
-      !$acc end parallel loop
-    end if
+    end do
+    !$acc end parallel loop
 
     if ( clubb_config_flags%l_call_pdf_closure_twice ) then
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1172,7 +1160,6 @@ module advance_clubb_core_module
                               clubb_config_flags%l_godunov_upwind_wpxp_ta,           & ! In
                               clubb_config_flags%l_upwind_xm_ma,                     & ! In
                               clubb_config_flags%l_uv_nudge,                         & ! In
-                              clubb_config_flags%l_tke_aniso,                        & ! In
                               clubb_config_flags%l_diag_Lscale_from_tau,             & ! In
                               clubb_config_flags%l_use_C7_Richardson,                & ! In
                               clubb_config_flags%l_lmm_stepping,                     & ! In
@@ -1269,7 +1256,7 @@ module advance_clubb_core_module
         call clip_covars_denom( nzm, ngrdcol, sclr_dim,                        & ! In
                                 dt,                                            & ! In
                                 rtp2, thlp2, up2, vp2, wp2,                    & ! In
-                                sclrp2, clubb_config_flags%l_tke_aniso,        & ! In
+                                sclrp2,                                      & ! In
                                 clubb_config_flags%l_linearize_pbl_winds,      & ! In
                                 clubb_config_flags%l_predict_upwp_vpwp,        & ! In
                                 stats,                                         & ! InOut
@@ -1305,7 +1292,6 @@ module advance_clubb_core_module
                               clubb_config_flags%fill_holes_type,                   & ! In
                               clubb_config_flags%l_min_wp2_from_corr_wx,            & ! In
                               clubb_config_flags%l_upwind_xm_ma,                    & ! In
-                              clubb_config_flags%l_tke_aniso,                       & ! In
                               clubb_config_flags%l_standard_term_ta,                & ! In
                               clubb_config_flags%l_partial_upwind_wp3,              & ! In
                               clubb_config_flags%l_damp_wp2_using_em,               & ! In
@@ -1337,7 +1323,7 @@ module advance_clubb_core_module
         call clip_covars_denom( nzm, ngrdcol, sclr_dim,                         & ! In
                                 dt,                                             & ! In
                                 rtp2, thlp2, up2, vp2, wp2,                    & ! In
-                                sclrp2, clubb_config_flags%l_tke_aniso,        & ! In
+                                sclrp2,                                      & ! In
                                 clubb_config_flags%l_linearize_pbl_winds,      & ! In
                                 clubb_config_flags%l_predict_upwp_vpwp,        & ! In
                                 stats,                                          & ! InOut
@@ -1365,7 +1351,6 @@ module advance_clubb_core_module
                                     clubb_config_flags%l_predict_upwp_vpwp,     & ! In
                                     clubb_config_flags%l_upwind_xm_ma,          & ! In
                                     clubb_config_flags%l_uv_nudge,              & ! In
-                                    clubb_config_flags%l_tke_aniso,             & ! In
                                     clubb_config_flags%l_lmm_stepping,          & ! In
                                     clubb_config_flags%l_linearize_pbl_winds,   & ! In
                                     clubb_config_flags%l_do_expldiff_rtm_thlm,  & ! In

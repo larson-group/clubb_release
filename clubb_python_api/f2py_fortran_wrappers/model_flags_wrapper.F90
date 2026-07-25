@@ -23,7 +23,7 @@ contains
       l_C2_cloud_frac, l_diffuse_rtm_and_thlm, &
       l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
-      l_uv_nudge, l_rtm_nudge, l_tke_aniso, &
+      l_uv_nudge, l_rtm_nudge,  &
       l_vert_avg_closure, l_trapezoidal_rule_zt, &
       l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
       l_standard_term_ta, l_partial_upwind_wp3, &
@@ -64,7 +64,7 @@ contains
       l_C2_cloud_frac, l_diffuse_rtm_and_thlm, &
       l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
-      l_uv_nudge, l_rtm_nudge, l_tke_aniso, &
+      l_uv_nudge, l_rtm_nudge,  &
       l_vert_avg_closure, l_trapezoidal_rule_zt, &
       l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
       l_standard_term_ta, l_partial_upwind_wp3, &
@@ -100,7 +100,7 @@ contains
       l_C2_cloud_frac, l_diffuse_rtm_and_thlm, &
       l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
-      l_uv_nudge, l_rtm_nudge, l_tke_aniso, &
+      l_uv_nudge, l_rtm_nudge,  &
       l_vert_avg_closure, l_trapezoidal_rule_zt, &
       l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
       l_standard_term_ta, l_partial_upwind_wp3, &
@@ -138,7 +138,7 @@ contains
       l_C2_cloud_frac, l_diffuse_rtm_and_thlm, &
       l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
-      l_uv_nudge, l_rtm_nudge, l_tke_aniso, &
+      l_uv_nudge, l_rtm_nudge,  &
       l_vert_avg_closure, l_trapezoidal_rule_zt, &
       l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
       l_standard_term_ta, l_partial_upwind_wp3, &
@@ -179,7 +179,7 @@ contains
       l_C2_cloud_frac, l_diffuse_rtm_and_thlm, &
       l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
-      l_uv_nudge, l_rtm_nudge, l_tke_aniso, &
+      l_uv_nudge, l_rtm_nudge,  &
       l_vert_avg_closure, l_trapezoidal_rule_zt, &
       l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
       l_standard_term_ta, l_partial_upwind_wp3, &
@@ -214,7 +214,7 @@ contains
       l_C2_cloud_frac, l_diffuse_rtm_and_thlm, &
       l_stability_correct_Kh_N2_zm, l_calc_thlp2_rad, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, &
-      l_uv_nudge, l_rtm_nudge, l_tke_aniso, &
+      l_uv_nudge, l_rtm_nudge,  &
       l_vert_avg_closure, l_trapezoidal_rule_zt, &
       l_trapezoidal_rule_zm, l_call_pdf_closure_twice, &
       l_standard_term_ta, l_partial_upwind_wp3, &

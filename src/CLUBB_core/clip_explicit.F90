@@ -45,7 +45,7 @@ module clip_explicit
   subroutine clip_covars_denom( nzm, ngrdcol, sclr_dim, &
                                 dt, &
                                 rtp2, thlp2, up2, vp2, wp2, &
-                                sclrp2, l_tke_aniso, &
+                                sclrp2,  &
                                 l_linearize_pbl_winds, &
                                 l_predict_upwp_vpwp, &
                                 stats, &
@@ -103,8 +103,6 @@ module clip_explicit
       sclrp2 ! sclr'^2  [{units vary}^2]
 
     logical, intent(in) :: &
-      l_tke_aniso,           & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                               ! (u'^2 + v'^2 + w'^2)
       l_linearize_pbl_winds, & ! Flag (used by E3SM) to linearize PBL winds
       l_predict_upwp_vpwp      ! Prognose u'w' and v'w'
 
@@ -259,7 +257,6 @@ module clip_explicit
     ! w'^2 is updated in advance_wp2_wp3.
 
     ! Clip u'w'
-    if ( l_tke_aniso ) then
       call clip_covar( nzm, ngrdcol, clip_upwp, wp2, up2,        & ! intent(in)
                        upwp, upwp_chnge )                          ! intent(inout)
 
@@ -267,16 +264,6 @@ module clip_explicit
         call clip_covar( nzm, ngrdcol, clip_upwp, wp2, up2,        & ! intent(in)
                          upwp_pert, upwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
-    else
-      ! In this case, up2 = wp2, and the variable `up2' does not interact
-      call clip_covar( nzm, ngrdcol, clip_upwp, wp2, wp2,        & ! intent(in)
-                       upwp, upwp_chnge )                          ! intent(inout)
-
-      if ( l_linearize_pbl_winds ) then
-          call clip_covar( nzm, ngrdcol, clip_upwp, wp2, wp2,        & ! intent(in)
-                           upwp_pert, upwp_chnge )                     ! intent(inout)
-      endif ! l_linearize_pbl_winds
-    end if
 
 
 
@@ -299,7 +286,6 @@ module clip_explicit
     ! The second instance of v'w' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    if ( l_tke_aniso ) then
       call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, vp2,        & ! intent(in)
                        vpwp, vpwp_chnge )                          ! intent(inout)
 
@@ -307,16 +293,6 @@ module clip_explicit
         call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, vp2,        & ! intent(in)
                          vpwp_pert, vpwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
-    else
-      ! In this case, vp2 = wp2, and the variable `vp2' does not interact
-      call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, wp2,        & ! intent(in)
-                       vpwp, vpwp_chnge )                          ! intent(inout)
-
-      if ( l_linearize_pbl_winds ) then
-        call clip_covar( nzm, ngrdcol, clip_vpwp, wp2, wp2,        & ! intent(in)
-                         vpwp_pert, vpwp_chnge )                     ! intent(inout)
-      endif ! l_linearize_pbl_winds
-    end if
 
     if ( stats%l_sample ) then
 

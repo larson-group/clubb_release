@@ -494,10 +494,7 @@ def advance_clubb_core(
     # ================================================================== #
     # Block J: TKE computation
     # ================================================================== #
-    if not flags.l_tke_aniso:
-        em = three_halves * wp2
-    else:
-        em = 0.5 * (wp2 + vp2 + up2)
+    em = 0.5 * (wp2 + vp2 + up2)
 
     sqrt_em_zt = np.maximum(
         clubb_api.zm2zt(gr=gr, nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, azm=em),
@@ -882,7 +879,6 @@ def advance_clubb_core(
                 l_stability_correct_kh_n2_zm=flags.l_stability_correct_Kh_N2_zm,
                 l_godunov_upwind_wpxp_ta=flags.l_godunov_upwind_wpxp_ta,
                 l_upwind_xm_ma=flags.l_upwind_xm_ma, l_uv_nudge=flags.l_uv_nudge,
-                l_tke_aniso=flags.l_tke_aniso,
                 l_diag_lscale_from_tau=flags.l_diag_Lscale_from_tau,
                 l_use_c7_richardson=flags.l_use_C7_Richardson,
                 l_lmm_stepping=flags.l_lmm_stepping,
@@ -955,7 +951,6 @@ def advance_clubb_core(
              wpsclrp, upwp_pert, vpwp_pert) = clubb_api.clip_covars_denom(
                 nzm=nzm, ngrdcol=ngrdcol, sclr_dim=sclr_dim, dt=dt,
                 rtp2=rtp2, thlp2=thlp2, up2=up2, vp2=vp2, wp2=wp2, sclrp2=sclrp2,
-                l_tke_aniso=flags.l_tke_aniso,
                 l_linearize_pbl_winds=flags.l_linearize_pbl_winds,
                 l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
                 wprtp_cl_num=wprtp_cl_num, wpthlp_cl_num=wpthlp_cl_num,
@@ -987,7 +982,7 @@ def advance_clubb_core(
                 penta_solve_method=flags.penta_solve_method,
                 fill_holes_type=flags.fill_holes_type,
                 l_min_wp2_from_corr_wx=flags.l_min_wp2_from_corr_wx,
-                l_upwind_xm_ma=flags.l_upwind_xm_ma, l_tke_aniso=flags.l_tke_aniso,
+                l_upwind_xm_ma=flags.l_upwind_xm_ma,
                 l_standard_term_ta=flags.l_standard_term_ta,
                 l_partial_upwind_wp3=flags.l_partial_upwind_wp3,
                 l_damp_wp2_using_em=flags.l_damp_wp2_using_em,
@@ -1010,7 +1005,6 @@ def advance_clubb_core(
              wpsclrp, upwp_pert, vpwp_pert) = clubb_api.clip_covars_denom(
                 nzm=nzm, ngrdcol=ngrdcol, sclr_dim=sclr_dim, dt=dt,
                 rtp2=rtp2, thlp2=thlp2, up2=up2, vp2=vp2, wp2=wp2, sclrp2=sclrp2,
-                l_tke_aniso=flags.l_tke_aniso,
                 l_linearize_pbl_winds=flags.l_linearize_pbl_winds,
                 l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
                 wprtp_cl_num=wprtp_cl_num, wpthlp_cl_num=wpthlp_cl_num,
@@ -1034,7 +1028,7 @@ def advance_clubb_core(
                 ts_nudge=ts_nudge, tridiag_solve_method=flags.tridiag_solve_method,
                 l_predict_upwp_vpwp=flags.l_predict_upwp_vpwp,
                 l_upwind_xm_ma=flags.l_upwind_xm_ma, l_uv_nudge=flags.l_uv_nudge,
-                l_tke_aniso=flags.l_tke_aniso, l_lmm_stepping=flags.l_lmm_stepping,
+                l_lmm_stepping=flags.l_lmm_stepping,
                 l_linearize_pbl_winds=flags.l_linearize_pbl_winds,
                 l_do_expldiff_rtm_thlm=flags.l_do_expldiff_rtm_thlm,
                 fill_holes_type=flags.fill_holes_type,

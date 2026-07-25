@@ -129,7 +129,6 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "fill_holes_type": int(flags.fill_holes_type),
         "l_min_wp2_from_corr_wx": bool(flags.l_min_wp2_from_corr_wx),
         "l_upwind_xm_ma": bool(flags.l_upwind_xm_ma),
-        "l_tke_aniso": bool(flags.l_tke_aniso),
         "l_standard_term_ta": bool(flags.l_standard_term_ta),
         "l_partial_upwind_wp3": bool(flags.l_partial_upwind_wp3),
         "l_damp_wp2_using_em": bool(flags.l_damp_wp2_using_em),
