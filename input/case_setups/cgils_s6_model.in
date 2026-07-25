@@ -211,7 +211,7 @@ stats_tout   = 3600.     ! Frequency of statistical output.  [s]
 ! Inputfields Settings
 ! You will not need to modify these if l_input_fields is false.
 &setfields
-datafile      = "../les_data/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc"
+datafile      = "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc"
 input_type    = "sam"
 l_input_um = .true. 
 l_input_vm = .true.

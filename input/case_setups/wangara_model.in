@@ -167,7 +167,7 @@ stats_tout   = 60.          ! Frequency of statistical output.  [s]
 ! Inputfields Settings
 ! You will not need to modify these if l_input_fields is false.
 &setfields
-datafile      = "../sam_benchmark_runs/WANGARA/WANGARA_64x64x80_100m_40m_LES.nc"
+datafile      = "../les_and_clubb_benchmark_runs/sam_benchmark_runs/WANGARA/WANGARA_64x64x80_100m_40m_LES.nc"
 input_type    = "SAM"
 l_input_wp3 = .true.
 l_input_up2 = .true.

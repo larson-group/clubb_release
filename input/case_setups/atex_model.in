@@ -165,7 +165,7 @@ stats_tout   = 60.      ! Frequency of statistical output.  [s]
 /
 
 &setfields
-datafile      = "../les_data/atex"
+datafile      = "../les_and_clubb_benchmark_runs/les_runs/atex"
 input_type    = "coamps_les"  ! input_type = "clubb" or "coamps_les"
 l_input_um = .true. 
 l_input_vm = .true.

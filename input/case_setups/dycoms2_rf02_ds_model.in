@@ -188,7 +188,7 @@ stats_tout   = 60.                ! Frequency of statistical output.  [s]
 ! Inputfields Settings
 ! You will not need to modify these if l_input_fields is false.
 &setfields
-datafile = "../sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc"
+datafile = "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc"
 input_type = "SAM"  ! input_type = "clubb", "coamps_les", or "SAM"
 l_input_um = .true. 
 l_input_vm = .true.

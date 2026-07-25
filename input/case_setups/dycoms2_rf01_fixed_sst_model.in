@@ -178,7 +178,7 @@ stats_tout   = 300.             ! Frequency of statistical output.  [s]
 /
 
 &setfields
-datafile      = "../les_data/DYCOMS_RF01_96x96x320_LES_fixed_sst.nc"
+datafile      = "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/DYCOMS_RF01_fixed_sst/DYCOMS_RF01_96x96x320_LES_fixed_sst.nc"
 input_type    = "SAM" 
 l_input_um = .true. 
 l_input_vm = .true.
