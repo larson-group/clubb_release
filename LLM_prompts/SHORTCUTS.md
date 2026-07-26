@@ -11,6 +11,14 @@ When a user request appears to match one of these shortcuts:
 
 ## Shortcuts
 
+### Update Host Models After CLUBB Changes
+
+Likely use when a CLUBB interface or behavior change has merged and the user asks to update one or more host-model repositories, publish branches, and open pull requests.
+
+Prompt:
+
+- `LLM_prompts/update_host_models_after_clubb_changes.md`
+
 ### Fix Python API
 
 Likely use when the user asks for things like:
