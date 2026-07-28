@@ -33,6 +33,7 @@ pipeline {
           sh '''run_scripts/run_scm_all.py -priority_cases -out_dir bicgstab_output -override penta_solve_method=3,tridiag_solve_method=2'''
         }
         sh '''rm bicgstab_output/dycoms2_rf02_ds_*'''
+        sh '''rm bicgstab_output/dycoms2_rf01_*'''
       }
     }
     stage('Plot') {
