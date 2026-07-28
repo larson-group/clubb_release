@@ -802,7 +802,7 @@ module advance_xp3_module
       do i = 1, ngrdcol
 
         ! Define the km1 index.
-        kp1 = max( k+1, nzt )
+        kp1 = min( k+1, nzt )
 
         ! Calculate the <x'^3> turbulent production (tp) term.
         term_tp(i,k) = term_tp_rhs( xp2_zt(i,k), wpxp(i,kp1), wpxp(i,k), &
