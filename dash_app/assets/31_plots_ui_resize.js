@@ -98,6 +98,21 @@
     hydrateWidth();
   }
 
-  document.addEventListener("DOMContentLoaded", tick);
-  window.setInterval(tick, 500);
+  function bindWhenMounted() {
+    tick();
+    document.addEventListener("click", function (event) {
+      if (!event.target.closest || !event.target.closest("#dashboard-tabs .tab")) return;
+      window.requestAnimationFrame(tick);
+      window.setTimeout(tick, 0);
+    }, true);
+    // Programmatic tab selection can replace the divider without a click.
+    // This lightweight fallback only queries two fixed ids.
+    window.setInterval(tick, 1500);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindWhenMounted);
+  } else {
+    bindWhenMounted();
+  }
 })();

@@ -1,6 +1,8 @@
 from dash import ALL, Input, Output, State, callback_context, no_update
 
 from .plot_types.budget_plot import PLOT as budget_plot
+from .plot_types.custom_plot import PLOT as custom_plot
+from .plot_types.pdf_contour_plot import PLOT as pdf_contour_plot
 from .plot_types.profile_plot import PLOT as profile_plot
 from .plot_types.shared import (
     average_length_label,
@@ -297,17 +299,21 @@ def register_control_callbacks(app):
     @app.callback(
         Output("plots-playback", "data", allow_duplicate=True),
         Input({"type": "budget-render-signal", "index": ALL}, "children"),
+        Input({"type": "custom-render-signal", "index": ALL}, "children"),
         Input({"type": "profile-render-signal", "index": ALL}, "children"),
+        Input({"type": "pdf_contour-render-signal", "index": ALL}, "children"),
         Input({"type": "subcolumn-render-signal", "index": ALL}, "children"),
         State({"type": "budget-render-signal", "index": ALL}, "id"),
+        State({"type": "custom-render-signal", "index": ALL}, "id"),
         State({"type": "profile-render-signal", "index": ALL}, "id"),
+        State({"type": "pdf_contour-render-signal", "index": ALL}, "id"),
         State({"type": "subcolumn-render-signal", "index": ALL}, "id"),
         State("plots-plot-order", "data"),
         State("plots-plot-state", "data"),
         State("plots-playback", "data"),
         prevent_initial_call=True,
     )
-    def unlock_playback(budget_signals, profile_signals, subcolumn_signals, budget_ids, profile_ids, subcolumn_ids, plot_order, plot_state, playback):
+    def unlock_playback(budget_signals, custom_signals, profile_signals, pdf_contour_signals, subcolumn_signals, budget_ids, custom_ids, profile_ids, pdf_contour_ids, subcolumn_ids, plot_order, plot_state, playback):
         """Release the playback lock once all time-dependent plots finish a frame."""
         current = dict(playback or {})
         if not current.get("inflight"):
@@ -316,7 +322,7 @@ def register_control_callbacks(app):
         if target_point is None:
             current["inflight"] = False
             return current
-        time_dependent_types = {budget_plot.plot_type_id, profile_plot.plot_type_id, subcolumn_plot.plot_type_id}
+        time_dependent_types = {budget_plot.plot_type_id, custom_plot.plot_type_id, pdf_contour_plot.plot_type_id, profile_plot.plot_type_id, subcolumn_plot.plot_type_id}
         relevant_ids = [
             int(plot_id)
             for plot_id in (plot_order or [])
@@ -329,7 +335,9 @@ def register_control_callbacks(app):
         signal_by_id = {}
         for ids, signals in (
             (budget_ids, budget_signals),
+            (custom_ids, custom_signals),
             (profile_ids, profile_signals),
+            (pdf_contour_ids, pdf_contour_signals),
             (subcolumn_ids, subcolumn_signals),
         ):
             for meta, value in zip(ids or [], signals or []):

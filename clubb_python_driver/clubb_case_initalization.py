@@ -652,12 +652,6 @@ def init_clubb_case(namelist_path: str) -> dict:
         l_implemented=False,
         l_input_fields=False,
     )
-    err_info = clubb_api.check_parameters(
-        ngrdcol=ngrdcol,
-        clubb_params=clubb_params,
-        lmin=lmin,
-        err_info=err_info,
-    )
     # Reset error codes set by check_clubb_settings warnings
     # (they are non-fatal but would cause advance_clubb_core to bail out)
     clubb_api.reset_err_code()

@@ -1,4 +1,6 @@
 from .budget_plot import PLOT as BUDGET_PLOT
+from .custom_plot import PLOT as CUSTOM_PLOT
+from .pdf_contour_plot import PLOT as PDF_CONTOUR_PLOT
 from .profile_plot import PLOT as PROFILE_PLOT
 from .subcolumn_plot import PLOT as SUBCOLUMN_PLOT
 from .timeheight_plot import PLOT as TIMEHEIGHT_PLOT
@@ -6,6 +8,8 @@ from .timeseries_plot import PLOT as TIMESERIES_PLOT
 
 PLOT_TYPES = {
     BUDGET_PLOT.plot_type_id: BUDGET_PLOT,
+    CUSTOM_PLOT.plot_type_id: CUSTOM_PLOT,
+    PDF_CONTOUR_PLOT.plot_type_id: PDF_CONTOUR_PLOT,
     PROFILE_PLOT.plot_type_id: PROFILE_PLOT,
     TIMESERIES_PLOT.plot_type_id: TIMESERIES_PLOT,
     TIMEHEIGHT_PLOT.plot_type_id: TIMEHEIGHT_PLOT,

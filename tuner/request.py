@@ -3,22 +3,38 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
+import re
+from functools import lru_cache
 
 from tuner.case_defaults import read_case_defaults
+from tuner.presets import apply_preset
 from utilities.benchmark_converter import supported_fields
 from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
+    DEFAULT_AGGREGATION_WEIGHTS,
     DEFAULT_AGGREGATION_MODE,
     DEFAULT_LOSS_MODE,
     DEFAULT_NUM_TIME_WINDOWS,
     LOSS_MODE_NAMES,
     LOSS_POLICY_CONSTANTS,
     LOSS_POLICY_VERSION,
+    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
+    TIME_WINDOW_AGGREGATION_SCOPES,
     WORST_QUANTILE_FRACTION,
+    normalize_aggregation_weights,
 )
 from tuner.tuning_strategy import normalize_strategy_config
-from utilities.create_case_namelist import resolve_tunable_config_dir
+from utilities.create_case_namelist import normalize_override_string, parse_override_pairs, resolve_tunable_config_dir
+from utilities.clubb_settings_validation import (
+    build_settings_schema,
+    canonical_flag_name,
+    canonical_parameter_name,
+    evaluate_settings,
+    is_independently_tunable,
+    setting_key,
+)
 
 
 REQUIRED_TUNABLE_CONFIG_FILES = (
@@ -30,8 +46,10 @@ REQUIRED_TUNABLE_CONFIG_FILES = (
 
 def load_request(request_path: Path) -> dict:
     """Load and validate the tuning request."""
-    request = json.loads(request_path.read_text(encoding="utf-8"))
+    request = apply_preset(json.loads(request_path.read_text(encoding="utf-8")))
 
+    request["config"] = _normalize_config(request.get("config"))
+    available_targets = _tunable_parameter_names(request["config"])
     cases, case_configs, case_defaults = _normalize_case_configs(request)
 
     selected_fields = [str(name).strip() for name in request.get("selected_fields", []) if str(name).strip()]
@@ -46,29 +64,71 @@ def load_request(request_path: Path) -> dict:
         raise RuntimeError("Tuning request must contain at least one parameter range")
     parameter_ranges = []
     seen_params = set()
+    owned_targets = set()
     for spec in raw_ranges:
+        if not isinstance(spec, dict):
+            raise RuntimeError("Each parameter range must be an object")
         name = str(spec.get("name", "")).strip()
         if not name:
             raise RuntimeError("Each parameter range must include a name")
         if name in seen_params:
             raise RuntimeError(f"Duplicate tuning parameter: {name}")
         seen_params.add(name)
+        raw_targets = spec.get("targets", [name])
+        if isinstance(raw_targets, str):
+            raw_targets = [raw_targets]
+        targets = [str(target).strip() for target in raw_targets or [] if str(target).strip()]
+        if not targets:
+            raise RuntimeError(f"{name} must include at least one physical target")
+        duplicate_targets = owned_targets.intersection(targets)
+        if duplicate_targets:
+            raise RuntimeError(
+                f"Physical tuning parameter(s) assigned by more than one range: {', '.join(sorted(duplicate_targets))}"
+            )
+        if len(targets) != len(set(targets)):
+            raise RuntimeError(f"{name} repeats a physical target")
+        unknown_targets = sorted(set(targets) - available_targets)
+        if unknown_targets:
+            raise RuntimeError(
+                f"Unknown tunable parameter target(s) for config {request['config']}: "
+                + ", ".join(unknown_targets)
+            )
+        owned_targets.update(targets)
         try:
             min_value = float(spec.get("min"))
             max_value = float(spec.get("max"))
         except (TypeError, ValueError):
             raise RuntimeError(f"Invalid numeric range for {name}")
+        if not math.isfinite(min_value) or not math.isfinite(max_value):
+            raise RuntimeError(f"{name} requires finite min and max")
         if min_value > max_value:
             raise RuntimeError(f"{name} requires min <= max")
-        parameter_ranges.append({"name": name, "min": min_value, "max": max_value})
+        parameter_ranges.append({"name": name, "targets": targets, "min": min_value, "max": max_value})
 
     request["case_name"] = cases[0]
     request["cases"] = cases
     request["case_configs"] = case_configs
     request["case_defaults"] = case_defaults
-    request["config"] = _normalize_config(request.get("config"))
+    request["override"] = normalize_override_string(request.get("override"))
+    resolution = evaluate_tune_settings(request["config"], request["override"])
+    resolution_errors = [issue for issue in resolution.get("issues", []) if issue.get("severity") == "error"]
+    if resolution_errors:
+        raise RuntimeError("; ".join(str(issue.get("message") or "Invalid CLUBB settings.") for issue in resolution_errors))
+    inactive_targets = sorted(
+        target
+        for spec in parameter_ranges
+        for target in spec["targets"]
+        if not is_independently_tunable(resolution.get("parameter_states", {}).get(target))
+    )
+    if inactive_targets:
+        details = "; ".join(
+            f"{name}: {resolution['parameter_states'][name]['reason']}" for name in inactive_targets
+        )
+        raise RuntimeError("Tune request selects inactive parameter(s): " + details)
+    parameter_ranges = apply_required_parameter_links(parameter_ranges, resolution)
     request["selected_fields"] = selected_fields
     request["parameter_ranges"] = parameter_ranges
+    request["settings_resolution"] = resolution
     request["batch_size"] = _positive_int(request.get("batch_size"), "Tuning request batch_size")
     request["max_workers"] = _positive_int(request.get("max_workers", 1), "Tuning request max_workers")
     request["case_weights"] = _normalize_weights(request.get("case_weights"), set(cases), "case")
@@ -88,6 +148,17 @@ def load_request(request_path: Path) -> dict:
         set(AGGREGATION_MODE_NAMES),
         "time_window_aggregation_mode",
     )
+    try:
+        request["aggregation_weights"] = normalize_aggregation_weights(
+            request.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS)
+        )
+    except ValueError as exc:
+        raise RuntimeError(str(exc)) from exc
+    request["time_window_aggregation_scope"] = _normalize_choice(
+        request.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE),
+        set(TIME_WINDOW_AGGREGATION_SCOPES),
+        "time_window_aggregation_scope",
+    )
     request.pop("time_window_mode", None)
     request.pop("num_time_windows", None)
     requested_loss_policy_version = request.get("loss_policy_version", LOSS_POLICY_VERSION)
@@ -99,6 +170,8 @@ def load_request(request_path: Path) -> dict:
     request["loss_policy_constants"] = dict(LOSS_POLICY_CONSTANTS)
     request["aggregation_options"] = {
         "worst_quantile_fraction": WORST_QUANTILE_FRACTION,
+        "quantile_weights": list(request["aggregation_weights"]),
+        "time_window_aggregation_scope": request["time_window_aggregation_scope"],
     }
 
     try:
@@ -138,6 +211,128 @@ def _normalize_config(raw_config) -> str:
             f"Tunable config '{config}' is missing required file(s): " + ", ".join(missing)
         )
     return config
+
+
+def _tunable_parameter_names(config: str) -> set[str]:
+    """Read the config's physical parameter names without importing Dash/F2PY.
+
+    The scheduler repeats this against the compiled API at launch time; this
+    early checked-in-config validation gives CLI/Dash users a useful error
+    before a worker process is created.
+    """
+    params_path = Path(resolve_tunable_config_dir(config)) / "tunable_parameters.in"
+    pattern = re.compile(r"^\s*([A-Za-z][A-Za-z0-9_]*)\s*=")
+    names = set()
+    for line in params_path.read_text(encoding="utf-8").splitlines():
+        match = pattern.match(line)
+        if match:
+            names.add(match.group(1))
+    if not names:
+        raise RuntimeError(f"Tunable config '{config}' has no readable parameter names")
+    return names
+
+
+def _parse_namelist_value(raw: str):
+    """Parse the scalar config values relevant to resolver decisions."""
+    text = str(raw).strip().rstrip(",")
+    if text.lower() in {".true.", "true", "t"}:
+        return True
+    if text.lower() in {".false.", "false", "f"}:
+        return False
+    try:
+        return int(text)
+    except ValueError:
+        return text
+
+
+def _read_namelist_assignments(path: Path) -> dict[str, str]:
+    """Read simple scalar namelist assignments without importing Dash."""
+    assignment = re.compile(r"^\s*([A-Za-z_]\w*)\s*=\s*([^!,/]+)")
+    values = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = assignment.match(line)
+        if match:
+            values[match.group(1)] = match.group(2).strip()
+    return values
+
+
+def _is_bool_literal(value: str) -> bool:
+    """Return whether a namelist scalar is a standard logical literal."""
+    return str(value).strip().lower() in {".true.", "true", "t", ".false.", "false", "f"}
+
+
+@lru_cache(maxsize=None)
+def settings_schema_for_tune_config(config: str) -> dict:
+    """Load one checked-in config into the shared UI-neutral settings schema."""
+    config_dir = Path(resolve_tunable_config_dir(config))
+    config_values = _read_namelist_assignments(config_dir / "configurable_model_flags.in")
+    flag_defaults = {
+        name: _parse_namelist_value(value)
+        for name, value in config_values.items()
+        if _is_bool_literal(value)
+    }
+    parameter_defaults = {
+        "flags": {
+            name: value
+            for name, value in config_values.items()
+            if not _is_bool_literal(value)
+        },
+        "tunable": _read_namelist_assignments(config_dir / "tunable_parameters.in"),
+        "silhs": _read_namelist_assignments(config_dir / "silhs_parameters.in"),
+    }
+    metadata = [
+        {"file": file_name, "name": name}
+        for file_name, values in parameter_defaults.items()
+        for name in values
+    ]
+    return build_settings_schema(flag_defaults, parameter_defaults, metadata)
+
+
+def evaluate_tune_settings(config: str, override: str = "") -> dict:
+    """Evaluate a Tune config and its override through the shared settings engine."""
+    schema = settings_schema_for_tune_config(config)
+    flag_defaults = dict(schema.get("flag_defaults") or {})
+    parameter_defaults = dict(schema.get("parameter_defaults") or {})
+    override_flags = {}
+    override_parameters = {}
+    for raw_name, value in parse_override_pairs(override):
+        flag_name = canonical_flag_name(raw_name)
+        parameter_name = canonical_parameter_name(raw_name)
+        if flag_name in flag_defaults:
+            override_flags[flag_name] = _parse_namelist_value(value)
+            continue
+        for file_name, defaults in parameter_defaults.items():
+            if parameter_name in dict(defaults or {}):
+                override_parameters[setting_key(file_name, parameter_name)] = value
+                break
+    return evaluate_settings(schema, flag_values=override_flags, parameter_values=override_parameters)
+
+
+def resolve_tune_settings(config: str, override: str = ""):
+    """Deprecated compatibility alias for :func:`evaluate_tune_settings`."""
+    return evaluate_tune_settings(config, override)
+
+
+def apply_required_parameter_links(parameter_ranges: list[dict], resolution: dict) -> list[dict]:
+    """Expand a sampled coordinate to all model-required equal targets."""
+    updated = [dict(spec, targets=list(spec["targets"])) for spec in parameter_ranges]
+    owned = {target for spec in updated for target in spec["targets"]}
+    for spec in updated:
+        targets = set(spec["targets"])
+        for relation in resolution.get("coupled_parameters", []):
+            members = set(relation["members"])
+            if not targets.intersection(members) or members.issubset(targets):
+                continue
+            missing = members - targets
+            conflict = missing.intersection(owned)
+            if conflict:
+                raise RuntimeError(
+                    "Required equal parameter link conflicts with another range: "
+                    + ", ".join(sorted(conflict))
+                )
+            spec["targets"].extend(sorted(missing))
+            owned.update(missing)
+    return updated
 
 
 def read_case_tuner_defaults(case_name: str, overrides: dict | None = None) -> dict:

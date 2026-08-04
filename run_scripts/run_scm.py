@@ -15,8 +15,8 @@ if CLUBB_ROOT not in sys.path:
     sys.path.insert(0, CLUBB_ROOT)
 
 from utilities.create_case_namelist import validate_multicol  # noqa: E402
+from utilities.output_paths import resolve_output_dir  # noqa: E402
 
-DEFAULT_OUTPUT_DIR = os.path.join(CLUBB_ROOT, "output")
 CREATE_CASE_NAMELIST = os.path.join(CLUBB_ROOT, "utilities", "create_case_namelist.py")
 INSTALL_DIR = os.path.join(CLUBB_ROOT, "install")
 SELECTED_INSTALL = os.path.join(INSTALL_DIR, "selected")
@@ -286,7 +286,11 @@ def main():
     )
 
     run_group.add_argument("-out_dir", metavar="[DIR]",
-        help="Output directory for results.\nDefault: output")
+        help=(
+            "Output directory for results. Bare names are rooted under output/ "
+            "(e.g. -out_dir test1 writes output/test1). Existing files with the "
+            "same names are overwritten. Default: output"
+        ))
 
     namelist_group.add_argument("-debug", metavar="[NUM]",
         help="Debug level (0–3) that controls CLUBB's runtime checks (0 is no checks).\nDefault specified in model file.")
@@ -302,7 +306,6 @@ def main():
         help="Stats output window start time (s). Default from model file or driver.")
     namelist_group.add_argument("-stats_tend", metavar="[SECONDS]", type=float,
         help="Stats output window end time (s). Default from model file or driver.")
-
     namelist_group.add_argument("-multicol", metavar="[NUM|SPEC]", type=validate_multicol,
         help=("Generate a multi-column parameter file. "
               "Use an integer for dup_tweak mode, e.g. -multicol 4, or an hr spec like "
@@ -335,8 +338,12 @@ def main():
     if (args.stats_tstart is None) != (args.stats_tend is None):
         parser.error("-stats_tstart and -stats_tend must be provided together.")
 
-    output_dir = os.path.abspath(args.out_dir) if args.out_dir else os.path.abspath(DEFAULT_OUTPUT_DIR)
+    try:
+        output_dir = str(resolve_output_dir(args.out_dir))
+    except ValueError as exc:
+        parser.error(str(exc))
     os.makedirs(output_dir, exist_ok=True)
+    print(f"Output directory: {output_dir}")
 
     clubb_input_namelist = create_case_namelist(args, output_dir)
     run_cmd, run_cwd, run_env = choose_run_command(args)

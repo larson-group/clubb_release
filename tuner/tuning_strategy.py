@@ -90,7 +90,7 @@ def normalize_strategy_config(request: dict) -> dict:
         }
         if unknown:
             raise ValueError("Unknown simann strategy option(s): " + ", ".join(sorted(unknown)))
-        max_iters = _int_from_raw(raw_options.get("max_iters", 2000), "simann max_iters")
+        max_iters = _int_from_raw(raw_options.get("max_iters", 200), "simann max_iters")
         if max_iters < 1:
             raise ValueError("simann max_iters must be >= 1")
         options["max_iters"] = max_iters
@@ -131,19 +131,47 @@ class BaseTuningStrategy:
         self.param_names = list(param_names)
         self.default_params_row = [float(value) for value in default_params_row]
         self.param_index = {name: idx for idx, name in enumerate(self.param_names)}
-        self.parameter_ranges = [dict(spec) for spec in parameter_ranges]
+        self.parameter_ranges = []
+        for raw_spec in parameter_ranges:
+            spec = dict(raw_spec)
+            name = str(spec.get("name", "")).strip()
+            raw_targets = spec.get("targets", [name])
+            if isinstance(raw_targets, str):
+                raw_targets = [raw_targets]
+            targets = [str(target).strip() for target in raw_targets or [] if str(target).strip()]
+            if not name or not targets:
+                raise ValueError("Each parameter range requires a name and at least one target")
+            spec["name"] = name
+            spec["targets"] = targets
+            self.parameter_ranges.append(spec)
         self.next_sample_id = 0
 
         if len(self.default_params_row) != len(self.param_names):
             raise ValueError("default_params_row length must match param_names length")
 
-        missing = [spec["name"] for spec in self.parameter_ranges if spec["name"] not in self.param_index]
+        missing = sorted(
+            {
+                target
+                for spec in self.parameter_ranges
+                for target in spec["targets"]
+                if target not in self.param_index
+            }
+        )
         if missing:
             raise ValueError("Unknown tunable parameter(s): " + ", ".join(sorted(missing)))
 
     def _sample_from_selected_params(self, selected_params: dict[str, float]) -> dict:
+        """Expand logical range coordinates into physical F2PY assignments."""
+        expanded = {}
+        for spec in self.parameter_ranges:
+            name = spec["name"]
+            if name not in selected_params:
+                continue
+            value = float(selected_params[name])
+            for target in spec["targets"]:
+                expanded[target] = value
         row = list(self.default_params_row)
-        for name, value in selected_params.items():
+        for name, value in expanded.items():
             row[self.param_index[name]] = float(value)
 
         sample_id = self.next_sample_id
@@ -151,7 +179,9 @@ class BaseTuningStrategy:
         return {
             "sample_id": sample_id,
             "param_row": row,
-            "selected_params": {name: float(value) for name, value in selected_params.items()},
+            # Persist physical names so status, result reruns, and namelist
+            # rendering reproduce every equality-constrained assignment.
+            "selected_params": {name: float(value) for name, value in expanded.items()},
             "all_params": {name: float(row[idx]) for idx, name in enumerate(self.param_names)},
         }
 

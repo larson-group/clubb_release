@@ -169,7 +169,7 @@ def init_stats(registry_path: str, output_path: str, ncol_batch: int,
 
     if len(param_names) != clubb_params.shape[1]:
         raise ValueError("param_names length must match clubb_params.shape[1].")
-    encoded_param_names = python_strings_to_fortran_char_matrix(param_names, width=28)
+    encoded_param_names = python_strings_to_fortran_char_matrix(param_names, width=32)
     # The compiled f2py wrapper currently exposes the legacy initializer
     # surface and does not accept the newer optional remap/radiation args.
     clubb_f2py.f2py_stats_init_with_params(

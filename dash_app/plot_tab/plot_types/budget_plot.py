@@ -154,9 +154,11 @@ class BudgetPlotType(BasePlotType):
         patch = Patch()
         for idx, spec in enumerate(trace_bundle["trace_specs"]):
             patch["data"][idx]["x"] = np.asarray(spec["x"], dtype=float).tolist()
-        if trace_bundle["x_range"]:
-            patch["layout"]["xaxis"]["range"] = list(trace_bundle["x_range"])
-        return patch
+        return shared.apply_patch_x_range(
+            patch,
+            trace_bundle["x_range"],
+            global_context.get("relayout_data"),
+        )
 
     def register_callbacks(self, app):
         @app.callback(

@@ -240,7 +240,7 @@ def main() -> int:
         shutil.copy2(rand_seed_file, rand_seed_tmp)
 
         if args.initial_output and not args.nightly:
-            initial_output_dir = CLUBB_ROOT / "initial_output"
+            initial_output_dir = OUTPUT_DIR / "tuner" / "initial_output"
             initial_output_dir.mkdir(parents=True, exist_ok=True)
             for case in cases_for_runs:
                 status = run_case_with_run_scm(

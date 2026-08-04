@@ -1,0 +1,78 @@
+#app-root .reports-tab-root {
+  display: flex;
+  min-height: calc(100vh - 54px);
+  background: var(--notes-bg);
+}
+#app-root .reports-directory-shell {
+  position: relative;
+  flex: 0 0 270px;
+  width: 270px;
+  min-width: 270px;
+  padding-top: 7.9rem;
+  background: #0c1424;
+  border-right: 1px solid var(--notes-border);
+}
+#app-root .reports-directory-header {
+  position: absolute;
+  inset: 0 0 auto;
+  padding: 1.1rem 1rem .75rem;
+}
+#app-root .reports-directory-header h2 { margin: .2rem 0 .35rem; font-size: 1.55rem; }
+.reports-directory-eyebrow {
+  color: #38bdf8 !important;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.reports-directory-intro { margin: 0; color: var(--notes-muted) !important; font-size: .82rem; line-height: 1.4; }
+#app-root .reports-directory { padding: 0 .65rem .8rem; gap: .45rem; }
+#app-root .reports-directory-card,
+#app-root .reports-directory-card-selected {
+  width: 100% !important;
+  min-height: 62px;
+  padding: .72rem .75rem !important;
+  border: 1px solid var(--notes-border) !important;
+  border-radius: .62rem !important;
+  background: var(--notes-panel) !important;
+  color: #c9d4e5 !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+#app-root .reports-directory-card:hover { border-color: #52647d !important; background: #172033 !important; }
+#app-root .reports-directory-card-selected {
+  background: #173457 !important;
+  color: #f8fafc !important;
+  border-color: #3a6b9f !important;
+  box-shadow: inset 3px 0 0 var(--notes-accent);
+}
+#app-root .reports-view { flex: 1 1 auto; min-width: 0; padding: 1rem; }
+#app-root .reports-frame {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 86px);
+  min-height: 680px;
+  border: 1px solid var(--notes-border);
+  border-radius: .8rem;
+  background: #0d1525;
+}
+#app-root .reports-frame-hidden, #app-root .reports-empty-state-hidden { display: none; }
+#app-root .reports-empty-state {
+  max-width: 650px;
+  margin: 8vh auto;
+  padding: 2rem;
+  border: 1px solid var(--notes-border);
+  border-radius: .8rem;
+  background: var(--notes-panel);
+}
+#app-root .reports-empty-state h2 { margin-top: 0; }
+
+@media (max-width: 980px) {
+  #app-root .reports-tab-root { display: block; min-height: 0; }
+  #app-root .reports-directory-shell { width: 100%; min-width: 0; padding-top: 0; border-right: 0; border-bottom: 1px solid var(--notes-border); }
+  #app-root .reports-directory-header { position: static; }
+  #app-root .reports-directory { display: flex !important; flex-direction: row !important; overflow-x: auto; padding: .55rem; }
+  #app-root .reports-directory-card, #app-root .reports-directory-card-selected { width: 260px !important; min-width: 260px !important; }
+  #app-root .reports-view { padding: .7rem; }
+  #app-root .reports-frame { height: calc(100vh - 250px); min-height: 520px; }
+}

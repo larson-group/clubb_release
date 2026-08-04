@@ -1,0 +1,58 @@
+#app-root .misc-tab-root { position: relative; }
+
+#app-root .misc-directory-header {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  width: 252px;
+  padding: 1.1rem 1rem .75rem;
+}
+#app-root .misc-directory-header h2 { margin: .2rem 0 .35rem; font-size: 1.55rem; }
+.misc-directory-eyebrow {
+  color: #38bdf8 !important;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.misc-directory-intro { margin: 0; color: var(--notes-muted) !important; font-size: .82rem; line-height: 1.4; }
+
+#app-root .misc-tabs-shell { display: flex !important; flex-direction: row; min-height: calc(100vh - 54px); align-items: stretch; }
+#app-root .misc-directory {
+  flex: 0 0 252px !important;
+  width: 252px !important;
+  min-width: 252px !important;
+  padding: 7.6rem .65rem .8rem;
+  gap: .45rem;
+  background: #0c1424 !important;
+  border-right: 1px solid var(--notes-border) !important;
+}
+#app-root .misc-directory-card,
+#app-root .misc-directory-card-selected {
+  width: 100% !important;
+  min-height: 70px;
+  padding: .72rem .75rem !important;
+  border: 1px solid var(--notes-border) !important;
+  border-radius: .62rem !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+#app-root .misc-directory-card { background: var(--notes-panel) !important; color: #c9d4e5 !important; }
+#app-root .misc-directory-card:hover { border-color: #52647d !important; background: #172033 !important; }
+#app-root .misc-directory-card-selected {
+  background: #173457 !important;
+  color: #f8fafc !important;
+  border-color: #3a6b9f !important;
+  box-shadow: inset 3px 0 0 var(--notes-accent);
+}
+.misc-directory-title { font-size: .86rem; font-weight: 750; line-height: 1.25; }
+.misc-directory-category { margin-top: .3rem; color: #8fa4bf !important; font-size: .69rem; letter-spacing: .04em; text-transform: uppercase; }
+.misc-directory-card-selected .misc-directory-category { color: #b9dcff !important; }
+#app-root .misc-report-content { flex: 1 1 auto; min-width: 0; background: var(--notes-bg); }
+
+@media (max-width: 980px) {
+  #app-root .misc-directory-header { position: static; width: auto; background: #0c1424; }
+  #app-root .misc-tabs-shell { flex-direction: column; min-height: 0; }
+  #app-root .misc-directory { flex: 0 0 auto !important; width: 100% !important; min-width: 0 !important; padding: .55rem; flex-direction: row !important; overflow-x: auto; border-right: 0 !important; border-bottom: 1px solid var(--notes-border) !important; }
+  #app-root .misc-directory-card, #app-root .misc-directory-card-selected { width: 260px !important; min-width: 260px !important; }
+}

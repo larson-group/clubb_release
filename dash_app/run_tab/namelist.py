@@ -158,25 +158,3 @@ def cleanup_temp_files(paths):
         except Exception:
             # Temporary-file cleanup should not make the dashboard brittle.
             pass
-
-
-def build_override_updates(flag_values, param_values, defaults_data, flag_names_data, param_meta):
-    """Build per-file namelist overrides from current UI settings versus defaults."""
-    updates = {"flags": {}, "tunable": {}, "silhs": {}}
-    if not defaults_data:
-        return updates
-    for name, values in zip(flag_names_data or [], flag_values or []):
-        current = bool(values)
-        default = bool(defaults_data["flags"].get(name))
-        if current != default:
-            updates["flags"][name] = ".true." if current else ".false."
-    for meta, value in zip(param_meta or [], param_values or []):
-        file_key = meta.get("file")
-        name = meta.get("name")
-        if not file_key or not name:
-            continue
-        default_value = defaults_data["params"][file_key].get(name)
-        current_value = normalize_numeric_display(value)
-        if current_value != normalize_numeric_display(default_value):
-            updates[file_key][name] = current_value
-    return updates

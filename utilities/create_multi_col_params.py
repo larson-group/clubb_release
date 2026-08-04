@@ -120,6 +120,11 @@ def parse_hypergrid_range_spec(spec_text):
     """
     Parse a custom hypergrid specification of the form:
       PARAM1/MIN:MAX/NPOINTS,PARAM2/MIN:MAX/NPOINTS,...
+
+    One coordinate may deliberately target an equal-value parameter group:
+      C6rt=C6thl/0:4/5
+    The group still consumes one hypergrid axis and assigns the same sampled
+    value to every target in each column.
     """
     specs = []
     for raw_item in (spec_text or "").split(","):
@@ -131,8 +136,9 @@ def parse_hypergrid_range_spec(spec_text):
             raise ValueError(
                 f"Invalid -hr entry '{item}'. Expected PARAM/MIN:MAX/NPOINTS."
             )
-        param_name = parts[0].strip()
-        if not param_name:
+        coordinate_name = parts[0].strip()
+        targets = tuple(name.strip() for name in coordinate_name.split("="))
+        if not coordinate_name or not targets or any(not name for name in targets):
             raise ValueError(f"Invalid -hr entry '{item}': missing parameter name.")
         try:
             min_text, max_text = parts[1].split(":", 1)
@@ -149,7 +155,8 @@ def parse_hypergrid_range_spec(spec_text):
             )
         specs.append(
             {
-                "name": param_name,
+                "name": "=".join(targets),
+                "targets": targets,
                 "min": min_value,
                 "max": max_value,
                 "npoints": npoints,
@@ -164,20 +171,29 @@ def custom_hypergrid(parsed_params, range_specs):
     """Create a hypergrid using explicit per-parameter ranges and point counts."""
     ngrdcol = 1
     param_grids = []
-    tweak_list = []
+    coordinates = []
+    claimed_targets = set()
     for spec in range_specs:
-        param_name = spec["name"]
-        if param_name not in parsed_params:
-            raise KeyError(f"Parameter '{param_name}' was not found in the input params file.")
-        tweak_list.append(param_name)
+        targets = tuple(spec.get("targets") or (spec["name"],))
+        duplicate_targets = claimed_targets.intersection(targets)
+        if duplicate_targets:
+            names = ", ".join(sorted(duplicate_targets))
+            raise ValueError(f"Parameter target(s) requested by more than one hypergrid coordinate: {names}.")
+        for param_name in targets:
+            if param_name not in parsed_params:
+                raise KeyError(f"Parameter '{param_name}' was not found in the input params file.")
+        claimed_targets.update(targets)
+        coordinates.append(targets)
         npoints = spec["npoints"]
         ngrdcol *= npoints
         param_grids.append(np.linspace(spec["min"], spec["max"], npoints))
 
     mesh = np.meshgrid(*param_grids, indexing='ij')
     clubb_params = duplicate_params(ngrdcol, parsed_params)
-    for i, param_name in enumerate(tweak_list):
-        clubb_params[param_name][:] = mesh[i].ravel()
+    for i, targets in enumerate(coordinates):
+        values = mesh[i].ravel()
+        for param_name in targets:
+            clubb_params[param_name][:] = values
 
     return clubb_params, ngrdcol
 

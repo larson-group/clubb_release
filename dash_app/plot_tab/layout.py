@@ -1,8 +1,12 @@
+import os
+
 from dash import dcc, html
+from dash_app.services import profiles as profile_service
+from dash_app.shared.components import styled_dropdown
 
 from .plot_types import shared
 from .plot_types.registry import PLOT_TYPES
-from .state import DEFAULT_OUTPUT_DIR, DEFAULT_OUTPUT_ENTRY, DEFAULT_PLAYBACK_INTERVAL_S
+from .state import DEFAULT_OUTPUT_DIR, DEFAULT_PLAYBACK_INTERVAL_S
 
 
 CASE_BUTTON_STYLE = {
@@ -11,15 +15,13 @@ CASE_BUTTON_STYLE = {
     "borderRadius": "4px",
     "fontSize": "16px",
 }
-DIR_ENTRY_STYLE = {"width": "420px", "fontSize": "14pt"}
 MODE_RADIO_LABEL_STYLE = {"display": "inline-block", "marginRight": "16px", "fontSize": "14pt"}
 SECTION_HEADING_STYLE = {"fontSize": "16pt"}
 RIGHT_PANE_STYLE = {
     "paddingLeft": "16px",
-    "height": "calc(100vh - 96px)",
+    "alignSelf": "start",
     "minHeight": 0,
-    "overflowY": "auto",
-    "overflowX": "auto",
+    "boxSizing": "border-box",
 }
 GRID_STYLE = {
     "display": "grid",
@@ -64,26 +66,57 @@ def benchmark_button(source, label, available, selected=False):
     )
 
 
-def directory_entry(index, value):
-    """Render one editable directory row in the header controls."""
-    return html.Div(
-        [
-            html.Label(f"Directory {index + 1}", style={"marginRight": "8px", "whiteSpace": "nowrap", "fontSize": "14pt"}),
-            dcc.Input(
-                id={"type": "plots-dir-entry", "index": index},
-                type="text",
-                value=value,
-                style=DIR_ENTRY_STYLE,
-            ),
-            html.Button(
-                "Remove",
-                id={"type": "plots-remove-dir", "index": index},
-                n_clicks=0,
-                style={"marginLeft": "8px", "fontSize": "14pt"},
-            ),
-        ],
-        style={"marginBottom": "10px", "display": "flex", "alignItems": "center", "gap": "0px"},
-    )
+def output_directory_options(records, selected_dirs=None):
+    """Render addable output folders, excluding folders already selected."""
+    selected = {str(path) for path in (selected_dirs or [])}
+    options = []
+    for record in records or []:
+        path = str(record["path"])
+        if path in selected:
+            continue
+        names = list(record.get("case_names") or [])
+        summary = ", ".join(names[:3])
+        if len(names) > 3:
+            summary += f" +{len(names) - 3}"
+        relative_path = str(record.get("relative_path") or path).strip("/")
+        short_name = relative_path.rsplit("/", 1)[-1] or relative_path
+        options.append(
+            {
+                "label": f"{short_name} · {summary}" if summary else short_name,
+                "value": path,
+            }
+        )
+    return options
+
+
+def selected_output_directory_chips(records, selected_dirs):
+    """Show selected folders compactly, without repeating their case summary."""
+    labels_by_path = {
+        str(record.get("path")): str(record.get("relative_path") or record.get("path") or "").strip("/").rsplit("/", 1)[-1]
+        for record in records or []
+    }
+    chips = []
+    for raw_path in selected_dirs or []:
+        path = str(raw_path or "").strip()
+        if not path:
+            continue
+        label = labels_by_path.get(path) or os.path.basename(path.rstrip(os.sep)) or path
+        chips.append(
+            html.Span(
+                [
+                    html.Span(label),
+                    html.Button(
+                        "×",
+                        id={"type": "plots-remove-output-dir", "path": path},
+                        n_clicks=0,
+                        title=f"Remove {label}",
+                        className="plots-output-dir-remove",
+                    ),
+                ],
+                className="plots-output-dir-chip",
+            )
+        )
+    return chips or [html.Small("No output folders selected.", className="plots-mutable-output-warning")]
 
 
 def render_plot_card(plot_id, plot_state, case_data):
@@ -106,6 +139,8 @@ def add_plot_controls_card():
             html.Div(
                 [
                     html.Button("Add plot", id="plots-add-profile", n_clicks=0, style=button_style),
+                    html.Button("Add Custom", id="plots-add-custom", n_clicks=0, style={**button_style, "marginTop": "10px"}),
+                    html.Button("Add PDF contours", id="plots-add-pdf-contour", n_clicks=0, style={**button_style, "marginTop": "10px"}),
                     html.Button("Add budget plot", id="plots-add-budget", n_clicks=0, style={**button_style, "marginTop": "10px"}),
                     html.Button("Add time-series plot", id="plots-add-timeseries", n_clicks=0, style={**button_style, "marginTop": "10px"}),
                     html.Button("Add time-height plot", id="plots-add-timeheight", n_clicks=0, style={**button_style, "marginTop": "10px"}),
@@ -132,11 +167,18 @@ def add_plot_controls_card():
 def render_plot_grid(plot_order, plot_state, case_data):
     """Render the ordered plot cards followed by the add-controls card."""
     children = []
+    seen_plot_ids = set()
     for plot_id in plot_order or []:
+        normalized_id = int(plot_id)
+        # A stale browser callback can transiently repeat an id in persisted
+        # order state.  Never mount duplicate pattern-matching component ids.
+        if normalized_id in seen_plot_ids:
+            continue
+        seen_plot_ids.add(normalized_id)
         state = (plot_state or {}).get(str(plot_id))
         if state is None:
             continue
-        children.append(render_plot_card(int(plot_id), state, case_data))
+        children.append(render_plot_card(normalized_id, state, case_data))
     children.append(add_plot_controls_card())
     return children
 
@@ -150,7 +192,7 @@ def child_id(child):
 
 def _initial_case_buttons(initial_state):
     """Render initial case buttons before callback hydration."""
-    cases = shared.scan_output_cases([DEFAULT_OUTPUT_DIR])
+    cases = profile_service.scan_case_outputs([DEFAULT_OUTPUT_DIR])
     selected_name = ((initial_state or {}).get("case_data") or {}).get("name")
     available_names = shared.ordered_case_names(cases.keys())
     if not available_names:
@@ -160,19 +202,57 @@ def _initial_case_buttons(initial_state):
 
 def _directory_case_selector(initial_state):
     """Build the combined directory/case selection header block."""
+    initial_dirs = [DEFAULT_OUTPUT_DIR]
+    initial_options = output_directory_options(
+        profile_service.discover_output_directories(),
+        initial_dirs,
+    )
     return html.Div(
         [
             html.Div(
                 [
                     html.Div(
                         [
-                            html.Div(id="plots-dir-list"),
+                            html.Div("Output folders", style={"fontWeight": "600", "marginBottom": "8px"}),
+                            styled_dropdown(
+                                id="plots-output-dir-picker",
+                                options=initial_options,
+                                value=None,
+                                multi=False,
+                                clearable=False,
+                                searchable=True,
+                                placeholder="Add an output folder",
+                                style={"minWidth": "360px", "width": "100%"},
+                            ),
+                            html.Div(
+                                selected_output_directory_chips(profile_service.discover_output_directories(), initial_dirs),
+                                id="plots-selected-output-dirs",
+                                className="plots-output-dir-chips",
+                            ),
                             html.Div(
                                 [
-                                    html.Button("Add directory", id="plots-add-dir-row", n_clicks=0, style={"fontSize": "14pt"}),
-                                    html.Button("Refresh", id="plots-refresh-cases", n_clicks=0, style={"fontSize": "14pt", "marginLeft": "8px"}),
+                                    html.Button("Add extra folder", id="plots-show-extra-dir", n_clicks=0),
+                                    html.Button("Refresh", id="plots-refresh-cases", n_clicks=0),
                                 ],
-                                style={"marginTop": "8px", "display": "flex", "alignItems": "center"},
+                                style={"marginTop": "8px", "display": "flex", "alignItems": "center", "gap": "8px"},
+                            ),
+                            html.Div(
+                                [
+                                    dcc.Input(
+                                        id="plots-extra-dir-input",
+                                        type="text",
+                                        placeholder="Path outside the discovered list",
+                                        style={"minWidth": "300px", "flex": "1 1 300px"},
+                                    ),
+                                    html.Button("Add", id="plots-add-extra-dir", n_clicks=0),
+                                ],
+                                id="plots-extra-dir-control",
+                                style={"display": "none", "marginTop": "8px", "alignItems": "center", "gap": "8px"},
+                            ),
+                            html.Small(id="plots-extra-dir-message", className="plots-mutable-output-warning"),
+                            html.Small(
+                                "Add several folders to compare their common cases.",
+                                className="plots-mutable-output-warning",
                             ),
                         ],
                         style={"display": "flex", "flexDirection": "column", "alignItems": "flex-start", "flex": "1 1 auto"},
@@ -212,13 +292,13 @@ def _directory_case_selector(initial_state):
 def _plots_stores(initial_state):
     """Build the stores and interval used to coordinate the plots tab."""
     return [
-        dcc.Store(id="plots-output-dir-entries", data=[DEFAULT_OUTPUT_ENTRY]),
         dcc.Store(id="plots-output-dirs", data=[DEFAULT_OUTPUT_DIR]),
         dcc.Store(id="plots-case-data", data=initial_state["case_data"]),
         dcc.Store(id="plots-enabled-benchmarks", data=initial_state["enabled_benchmarks"]),
         dcc.Store(id="plots-plot-order", data=initial_state["plot_order"]),
         dcc.Store(id="plots-plot-state", data=initial_state["plot_state"]),
         dcc.Store(id="plots-next-id", data=initial_state["next_id"]),
+        dcc.Store(id="plots-instance-snapshot", data=None),
         dcc.Store(id="plots-last-add-ts", data=0),
         dcc.Store(id="plots-param-data", data=None),
         dcc.Store(id="plots-param-names", data=None),
@@ -333,7 +413,7 @@ def _column_section(initial_state):
             labelStyle=MODE_RADIO_LABEL_STYLE,
             style={"marginBottom": "10px", "textAlign": "center"},
         ),
-        html.Div(id="plots-param-panel", style={"overflowY": "auto", "maxHeight": "none", "paddingRight": "8px", "marginTop": "10px"}),
+        html.Div(id="plots-param-panel", style={"paddingRight": "8px", "marginTop": "10px"}),
     ]
 
 
@@ -353,11 +433,18 @@ def build_layout(initial_state):
         [
             html.Div([_directory_case_selector(initial_state)], style={"marginBottom": "12px"}),
             *_plots_stores(initial_state),
+            html.Div(id="plots-help-modal"),
             html.Div(
                 [_left_pane(initial_state), html.Div(id="plots-pane-divider", className="plots-pane-divider"), _right_pane(initial_state)],
                 id="plots-tab-layout",
                 className="plots-tab-layout",
-                style={"display": "grid", "gridTemplateColumns": "minmax(0,1fr) 8px 540px", "gap": "16px", "marginTop": "16px"},
+                style={
+                    "display": "grid",
+                    "gridTemplateColumns": "minmax(0,1fr) 8px minmax(360px, min(540px, 34vw))",
+                    "gap": "16px",
+                    "marginTop": "16px",
+                    "alignItems": "start",
+                },
             ),
         ],
         style={"padding": "10px"},

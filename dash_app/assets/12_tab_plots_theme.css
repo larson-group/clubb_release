@@ -6,8 +6,81 @@
   color: #0f172a;
 }
 
+#app-root .plots-right-pane {
+  /* Keep the controls available while the plot grid continues to scroll. */
+  position: sticky;
+  top: 12px;
+  align-self: start;
+  min-height: 0;
+  max-height: calc(100vh - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
 .plots-tab-layout {
   align-items: stretch;
+}
+
+.plots-mutable-output-warning {
+  display: block;
+  margin-top: 8px;
+  max-width: 42rem;
+  color: #b45309;
+  font-size: .76rem;
+}
+
+.plots-output-dir-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  min-height: 28px;
+}
+
+.plots-output-dir-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px 4px 9px;
+  border: 1px solid #475569;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: .82rem;
+  line-height: 1;
+}
+
+.plots-output-dir-remove {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #475569;
+  color: #f8fafc;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 16px;
+}
+
+.plots-output-dir-remove:hover {
+  background: #b91c1c;
+}
+
+#app-root.theme-light .plots-output-dir-chip {
+  border-color: #94a3b8;
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+#app-root.theme-light .plots-output-dir-remove {
+  background: #64748b;
+}
+
+#app-root.theme-dark .plots-mutable-output-warning {
+  color: #fbbf24;
 }
 
 .plots-pane-divider {
@@ -159,31 +232,39 @@ body.plots-ui-dragging * {
   border-color: #cbd5e1;
 }
 
-#app-root .plots-card-info {
+#app-root .plots-card-help {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   border: 1px solid;
-  font-size: 11px;
+  padding: 0;
+  font-size: 16px;
   font-weight: 700;
-  cursor: help;
+  cursor: pointer;
   line-height: 1;
+  flex: 0 0 auto;
   user-select: none;
 }
 
-#app-root.theme-dark .plots-card-info {
+#app-root.theme-dark .plots-card-help {
   color: #ffffff;
   border-color: #64748b;
   background: #334155;
 }
 
-#app-root.theme-light .plots-card-info {
+#app-root.theme-light .plots-card-help {
   color: #ffffff;
   border-color: #64748b;
   background: #475569;
+}
+
+#app-root .plots-card-help:hover,
+#app-root .plots-card-help:focus-visible {
+  border-color: #38bdf8;
+  outline: 2px solid rgba(56, 189, 248, 0.35);
 }
 
 #app-root .plots-card-close {
@@ -240,6 +321,44 @@ body.plots-ui-dragging * {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 6px 50px;
   margin-top: 4px;
+}
+
+#app-root .plots-readonly-disclosure {
+  margin-top: 10px;
+  border: 1px solid;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+#app-root .plots-readonly-summary {
+  cursor: pointer;
+  padding: 8px 10px;
+  font-weight: 650;
+  user-select: none;
+}
+
+#app-root .plots-readonly-content {
+  padding: 4px 10px 10px;
+}
+
+#app-root.theme-dark .plots-readonly-disclosure {
+  border-color: #334155;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+#app-root.theme-dark .plots-readonly-summary {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+#app-root.theme-light .plots-readonly-disclosure {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+#app-root.theme-light .plots-readonly-summary {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 #app-root .plots-constant-param-row {
@@ -325,4 +444,97 @@ body.plots-ui-dragging * {
 
 #app-root.theme-light .plots-column-filter-row:nth-child(even) {
   background: rgba(148, 163, 184, 0.06);
+}
+
+#app-root .pdf-transport-view {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 3px;
+  margin-top: 8px;
+  padding: 3px;
+  border: 1px solid;
+  border-radius: 7px;
+}
+
+#app-root .pdf-transport-view label {
+  position: relative;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#app-root .pdf-transport-view input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#app-root.theme-dark .pdf-transport-view {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+#app-root.theme-dark .pdf-transport-view label {
+  color: #aebbd0;
+}
+
+#app-root.theme-dark .pdf-transport-view label:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+#app-root.theme-dark .pdf-transport-view label:has(input:checked) {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+#app-root.theme-light .pdf-transport-view {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+#app-root.theme-light .pdf-transport-view label {
+  color: #475569;
+}
+
+#app-root.theme-light .pdf-transport-view label:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+#app-root.theme-light .pdf-transport-view label:has(input:checked) {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+#app-root .pdf-contour-controls { display: grid; gap: .42rem; }
+#app-root .pdf-inline-control-row { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem .65rem; min-width: 0; }
+#app-root .pdf-color-signal-control { margin-top: .12rem; }
+#app-root .pdf-color-signal-label,
+#app-root .pdf-contour-smoothing-label,
+#app-root .pdf-compact-control-label { flex: 0 0 auto; margin: 0; color: #aebbd0; font-size: .73rem; font-weight: 800; letter-spacing: .045em; text-transform: uppercase; white-space: nowrap; }
+#app-root .pdf-color-signal-switch { display: flex; flex-wrap: wrap; gap: .35rem; }
+#app-root .pdf-color-signal-switch label { display: inline-flex; align-items: center; margin: 0; padding: .27rem .46rem; border: 1px solid #334155; border-radius: 999px; background: #0f172a; color: #aebbd0; cursor: pointer; font-size: .72rem; font-weight: 700; line-height: 1.2; transition: background .12s ease, border-color .12s ease, color .12s ease; }
+#app-root .pdf-color-signal-switch label:hover { border-color: #52647d; background: #1e293b; color: #f8fafc; }
+#app-root .pdf-color-signal-switch input { position: absolute; opacity: 0; pointer-events: none; }
+#app-root .pdf-color-signal-switch label:has(input:checked) { border-color: #38bdf8; background: #123c5c; color: #e0f2fe; box-shadow: inset 0 0 0 1px rgba(56,189,248,.22); }
+#app-root .pdf-contour-smoothing-control,
+#app-root .pdf-height-control { min-height: 28px; }
+#app-root .pdf-compact-slider { width: min(330px, 42vw); min-width: 170px; margin: 0 4px 0 0; align-self: center; }
+#app-root .pdf-inline-control-row .pdf-compact-slider .rc-slider,
+#app-root .pdf-inline-control-row .pdf-compact-slider.rc-slider { margin-top: 0; margin-bottom: 0; }
+
+#app-root.theme-light .pdf-color-signal-label,
+#app-root.theme-light .pdf-contour-smoothing-label,
+#app-root.theme-light .pdf-compact-control-label { color: #475569; }
+#app-root.theme-light .pdf-color-signal-switch label { border-color: #cbd5e1; background: #f8fafc; color: #475569; }
+#app-root.theme-light .pdf-color-signal-switch label:hover { background: #e2e8f0; color: #0f172a; }
+#app-root.theme-light .pdf-color-signal-switch label:has(input:checked) { border-color: #0284c7; background: #e0f2fe; color: #075985; }
+
+@media (max-width: 680px) {
+  #app-root .pdf-compact-slider { width: 100%; min-width: 0; flex: 1 1 100%; }
 }

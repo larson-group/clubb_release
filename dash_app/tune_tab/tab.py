@@ -3,11 +3,17 @@
 from dash import dcc
 
 from tuner.system_defaults import default_max_workers
-from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE
+from tuner.taylor_metrics import (
+    DEFAULT_AGGREGATION_MODE,
+    DEFAULT_AGGREGATION_WEIGHTS,
+    DEFAULT_LOSS_MODE,
+    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
+)
 
 from .callbacks_display import register_display_callbacks
 from .callbacks_runs import register_run_callbacks
 from .callbacks_settings import register_settings_callbacks
+from .callbacks_workspaces import register_workspace_callbacks
 from .discovery import (
     available_fields_for_cases,
     available_tunable_configs,
@@ -28,17 +34,26 @@ def build_initial_tune_state():
     tunable_names = load_tunable_names(selected_config)
     tunable_default_ranges = load_tunable_default_ranges(selected_config)
     cases = sorted(case_data.keys())
-    selected_cases = [cases[0]] if cases else []
+    # A fresh Tune workspace should be immediately runnable without relying
+    # on alphabetical case ordering.  Revisions intentionally bypass this
+    # default and hydrate the exact request they were branched from.
+    selected_cases = ["arm"] if "arm" in case_data else [cases[0]] if cases else []
     selected_case_defaults = case_data.get(selected_cases[0], {}) if selected_cases else {}
     field_options = available_fields_for_cases(selected_cases, case_data)
     max_name_len = max((len(name) for name in tunable_names), default=16)
     right_pane_width_px = max(360, min(760, int(180 + max_name_len * 7.5)))
     status = empty_status_payload()
     status_text = "state: idle | samples: 0 | best smart loss: --"
+    initial_parameter_names = ("C4", "C8", "C11")
     initial_param_rows = [
-        {"id": 0, "param": "C4", "min": "1", "max": "4"},
-        {"id": 1, "param": "C8", "min": "0.1", "max": "0.9"},
-        {"id": 2, "param": "C11", "min": "0.1", "max": "0.9"},
+        {
+            "id": index,
+            "param": name,
+            "min": tunable_default_ranges.get(name, {}).get("min", ""),
+            "max": tunable_default_ranges.get(name, {}).get("max", ""),
+        }
+        for index, name in enumerate(initial_parameter_names)
+        if name in tunable_default_ranges
     ]
     initial_case_rows = []
     if selected_cases:
@@ -74,12 +89,15 @@ def build_initial_tune_state():
         ],
         "batch_size": 8,
         "max_workers": default_max_workers(),
-        "strategy_mode": None,
+        "strategy_mode": "random",
         "loss_mode": DEFAULT_LOSS_MODE,
         "aggregation_mode": DEFAULT_AGGREGATION_MODE,
-        "random_max_samples": 100,
+        "aggregation_weights": list(DEFAULT_AGGREGATION_WEIGHTS),
+        "time_window_aggregation_scope": DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
+        "scm_override": "",
+        "random_max_samples": 2000,
         "resolve_spacing": 0.1,
-        "simann_max_iters": 2000,
+        "simann_max_iters": 200,
         "simann_initial_temp": 1.0,
         "simann_final_temp": 1.0e-12,
         "initial_case_rows": initial_case_rows,
@@ -98,5 +116,6 @@ def build_tab(app):
     register_settings_callbacks(app)
     register_run_callbacks(app)
     register_display_callbacks(app)
+    register_workspace_callbacks(app)
 
     return dcc.Tab(label="Tune", value="tune", children=build_layout(initial_state))

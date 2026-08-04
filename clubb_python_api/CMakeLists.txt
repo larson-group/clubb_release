@@ -112,6 +112,10 @@ add_custom_command(
     COMMAND "${CMAKE_COMMAND}" -E rm -rf "${F2PY_WORK_DIR}"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${F2PY_WORK_DIR}"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${F2PY_RUNTIME_DIR}"
+    # NumPy 2.5's Python 3.14 F2PY path attempts to touch this generated C
+    # source before creating it.  Pre-create it so builds from the Dash venv
+    # remain valid; F2PY replaces it with the generated module source.
+    COMMAND "${CMAKE_COMMAND}" -E touch "${F2PY_WORK_DIR}/clubb_f2pymodule.c"
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${F2PY_PYF_FILE}" "${F2PY_PYF_IN_BUILD}"
     COMMAND "${CMAKE_COMMAND}" -E chdir "${F2PY_WORK_DIR}"
         "${CMAKE_COMMAND}" -E env

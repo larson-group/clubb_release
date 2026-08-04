@@ -175,6 +175,10 @@ class TestClubbParams:
         params = init_clubb_params(1, iunit=10, filename="")
         assert np.all(np.isfinite(params))
 
+    def test_parameter_names_are_not_truncated(self):
+        """The F2PY character matrix preserves current tunable names."""
+        assert "z_displace" in get_param_names()
+
     def test_multi_column_params(self):
         """Each column gets the same defaults."""
         ngrdcol = 3

@@ -11,6 +11,14 @@
   let lastContainerScrollTop = null;
   let lastWindowScrollY = null;
 
+  // The workspace persistence helper calls this when Run's Clear action is
+  // used.  The Set is deliberately module-local so it otherwise survives
+  // console re-renders; Clear must discard it explicitly.
+  window.dashboardRunConsoleState = window.dashboardRunConsoleState || {};
+  window.dashboardRunConsoleState.clearOpenCases = function () {
+    openCases.clear();
+  };
+
   function storeNode() {
     return document.getElementById(STORE_ID);
   }

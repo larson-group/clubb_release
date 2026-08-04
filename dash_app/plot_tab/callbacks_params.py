@@ -2,7 +2,13 @@ from dash import ALL, Input, Output, State, dcc, html, no_update
 import itertools
 import math
 
-from .plot_types.shared import closest_column, load_compare_param_values, load_param_values
+from .plot_types.shared import (
+    closest_column,
+    load_compare_flag_values,
+    load_compare_param_values,
+    load_flag_values,
+    load_param_values,
+)
 from .state import format_column_values
 
 
@@ -39,6 +45,69 @@ def _constant_param_grid(constant_params):
         ],
         className="plots-constant-param-grid",
     )
+
+
+def _read_only_value_grid(entries):
+    """Render arbitrary read-only name/value strings using the parameter grid."""
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(name, className="plots-constant-param-name"),
+                    html.Div(str(value), className="plots-constant-param-value"),
+                ],
+                className="plots-constant-param-row",
+            )
+            for name, value in entries
+        ],
+        className="plots-constant-param-grid",
+    )
+
+
+def _read_only_disclosure(title, content, count=None):
+    """Return one collapsed-by-default optional-information section."""
+    label = f"{title} ({count})" if count is not None else title
+    return html.Details(
+        [
+            html.Summary(label, className="plots-readonly-summary"),
+            html.Div(content, className="plots-readonly-content"),
+        ],
+        open=False,
+        className="plots-readonly-disclosure",
+    )
+
+
+def _append_read_only_sections(children, constant_params, param_data):
+    """Append constant tunables and saved model flags below interactive controls."""
+    if constant_params:
+        children.append(
+            _read_only_disclosure(
+                "Constant parameters",
+                _constant_param_grid(constant_params),
+                len(constant_params),
+            )
+        )
+    flags = sorted((param_data.get("flags") or {}).items())
+    flag_mismatches = list(param_data.get("flag_mismatches") or [])
+    flag_rows = flags + flag_mismatches
+    if flag_rows:
+        children.append(
+            _read_only_disclosure(
+                "Configurable flags",
+                _read_only_value_grid(flag_rows),
+                len(flag_rows),
+            )
+        )
+    else:
+        message = (
+            "No saved configurable flag namelist was found beside this output."
+            if not param_data.get("has_flags")
+            else "No configurable flags were recorded."
+        )
+        children.append(
+            _read_only_disclosure("Configurable flags", html.Div(message))
+        )
+    return children
 
 
 def _column_param_values(params, col_idx, ncols):
@@ -242,7 +311,9 @@ def register_param_callbacks(app):
             return None, None
         ncols = max(int(case_data.get("columns_len") or 1), 1)
         if case_data.get("compare_mode"):
-            params, has_clubb_params, has_param_names, mismatched_params, _per_file = load_compare_param_values(case_data.get("files") or [])
+            files = case_data.get("files") or []
+            params, has_clubb_params, has_param_names, mismatched_params, _per_file = load_compare_param_values(files)
+            flags, flag_mismatches, has_flags = load_compare_flag_values(files)
             varied = [name for name, values in params.items() if len(values) == ncols and len(set(values)) > 1]
             allow_param_selection = _is_regular_hypergrid(params, varied, ncols)
             constant_params = [
@@ -258,9 +329,14 @@ def register_param_callbacks(app):
                 "has_param_names": has_param_names,
                 "constant_params": constant_params,
                 "mismatched_params": mismatched_params,
+                "flags": flags,
+                "flag_mismatches": flag_mismatches,
+                "has_flags": has_flags,
                 "allow_column_param_selection": allow_param_selection,
             }, varied
-        params, has_clubb_params, has_param_names = load_param_values(case_data.get("files") or [])
+        files = case_data.get("files") or []
+        params, has_clubb_params, has_param_names = load_param_values(files)
+        flags, has_flags = load_flag_values(files)
         varied = [name for name, values in params.items() if len(values) == ncols and len(set(values)) > 1]
         allow_param_selection = _is_regular_hypergrid(params, varied, ncols)
         constant_params = [
@@ -276,6 +352,9 @@ def register_param_callbacks(app):
             "has_param_names": has_param_names,
             "constant_params": constant_params,
             "mismatched_params": [],
+            "flags": flags,
+            "flag_mismatches": [],
+            "has_flags": has_flags,
             "allow_column_param_selection": allow_param_selection,
         }, varied
 
@@ -352,23 +431,15 @@ def register_param_callbacks(app):
         if param_names:
             if column_mode != "all" and not allow_param_selection:
                 column_params = _column_param_values(params, col_idx, ncols)
-                if column_params:
-                    children.append(html.Div("Constant parameters", style={"fontWeight": "600", "marginTop": "6px", "marginBottom": "8px"}))
-                    children.append(_constant_param_grid(column_params))
-                return children
-            if constant_params:
-                children.append(html.Div("Constant parameters", style={"fontWeight": "600", "marginTop": "6px", "marginBottom": "8px"}))
-                children.append(_constant_param_grid(constant_params))
-            return children
+                return _append_read_only_sections(children, column_params, param_data)
+            return _append_read_only_sections(children, constant_params, param_data)
         if not has_clubb_params:
             children.append(html.Div("No clubb_params field found in the selected stats file."))
         elif not has_param_names:
             children.append(html.Div("clubb_params found, but param_name is missing from the selected stats file."))
         else:
             children.append(html.Div("All clubb_params are constant across columns."))
-            if constant_params:
-                children.append(_constant_param_grid(constant_params))
-        return children
+        return _append_read_only_sections(children, constant_params, param_data)
 
     @app.callback(
         Output("plots-column-filters", "data"),

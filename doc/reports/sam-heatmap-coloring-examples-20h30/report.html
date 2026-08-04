@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SAM heatmap color signals: ARM 20.5 h / 1900 m</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0d1525; --panel:#162237; --panel2:#101a2c; --line:#30425f; --ink:#e8edf5; --muted:#a9b8cd; --accent:#38bdf8; --gold:#f59e0b; --blue:#2563eb; --red:#ef4444; --green:#34d399; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.65 Inter,ui-sans-serif,system-ui,sans-serif; }
+    main { width:100%; max-width:none; margin:0; padding:48px clamp(22px,3.2vw,76px) 72px; } header { border-bottom:1px solid var(--line); padding-bottom:28px; margin-bottom:32px; }
+    h1,h2,h3 { font-family:Georgia,serif; } h1 { max-width:850px; margin:0 0 12px; font-size:clamp(2.15rem,5vw,3.55rem); line-height:1.08; } h2 { margin:44px 0 13px; font-size:1.72rem; line-height:1.2; } h3 { margin:0 0 8px; font-size:1.1rem; } p { color:#d9e1ed; } .summary { max-width:880px; color:var(--muted); font-size:1.13rem; } .meta { display:flex; flex-wrap:wrap; gap:9px 13px; color:var(--muted); font-size:.84rem; } .tag { padding:2px 9px; color:#bfe7ff; border:1px solid #356182; border-radius:999px; font-weight:700; }
+    .callout { margin:24px 0; padding:17px 20px; border-left:4px solid var(--accent); border-radius:0 10px 10px 0; background:var(--panel); } .callout p { margin:0; color:var(--muted); } .callout-warning { border-color:var(--gold); } .callout-success { border-color:var(--green); }
+    .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin:24px 0; } .metric { padding:17px; border:1px solid var(--line); border-radius:11px; background:var(--panel); } .metric span,.metric small { display:block; color:var(--muted); font-size:.83rem; } .metric strong { display:block; margin:4px 0; color:var(--gold); font:700 1.55rem Georgia,serif; }
+    .equation { margin:20px 0; padding:17px 21px; overflow:auto; color:#f8fafc; border:1px solid var(--line); border-radius:10px; background:#101a2c; font:1.18rem/1.8 ui-monospace,SFMono-Regular,Consolas,monospace; } .equation small { color:var(--muted); }
+    figure { margin:26px 0; overflow:hidden; border:1px solid var(--line); border-radius:12px; background:var(--panel2); } figcaption { padding:12px 15px; color:var(--muted); font-size:.9rem; } figure img,svg { display:block; width:100%; height:auto; } .legend-row { display:flex; flex-wrap:wrap; gap:13px; padding:14px 18px 2px; color:var(--muted); font-size:.86rem; } .dot { display:inline-block; width:11px; height:11px; margin-right:5px; border-radius:99px; }
+    table { width:100%; margin:18px 0; border-collapse:separate; border-spacing:0; overflow:hidden; border:1px solid var(--line); border-radius:11px; } th,td { padding:12px 13px; vertical-align:top; text-align:left; border-bottom:1px solid var(--line); } th { background:#1b2a42; color:#cfe8ff; font-size:.85rem; } td { color:#d8e0ec; } tr:last-child td { border-bottom:0; } code { padding:.08rem .28rem; border-radius:4px; background:#202e45; color:#e6f1ff; font: .9em ui-monospace,SFMono-Regular,Consolas,monospace; } pre { margin:18px 0; padding:18px; overflow:auto; border:1px solid var(--line); border-radius:11px; background:#08111f; color:#d9e8f7; font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace; } ul,ol { color:#d9e1ed; } li { margin:.35rem 0; } .source { color:#86cffa; font:600 .86rem ui-monospace,SFMono-Regular,Consolas,monospace; } footer { margin-top:52px; padding-top:18px; color:var(--muted); border-top:1px solid var(--line); font-size:.85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>SAM heatmap color signals: ARM 20.5 h / 1900 m</h1>
+      <p class="summary">A self-contained ARM rendering at 1900 m: probability only alongside the current cloud-water, total-water, saturation-excess, thermal, and rtp2-style signals.</p>
+      <div class="meta"><span>Published 2026-07-22</span><span class="tag">SAM</span><span class="tag">heatmaps</span><span class="tag">cloud transport</span><span>Revision: working tree</span></div>
+    </header>
+
+    <section class="callout callout-success">
+      <h3>Answer at a glance</h3>
+      <p>Gold denotes populated probability mass, blue/red denote positive/negative local cloud-water transport contribution, and pale colors denote overlap. The display is excellent for locating physically consequential plumes, but its intensity is deliberately not a universal density scale: probability and transport are separately log-normalized and combined through a quantized bivariate palette.</p>
+    </section>
+
+    <section class="callout callout-warning">
+      <h3>Correct ARM clock alignment</h3>
+      <p>20.5 h is the CLUBB ARM case-clock time (73,800 s), not the raw-SAM filename time. ARM starts its CLUBB clock at 41,400 s, while raw SAM names planes by elapsed LES seconds. This report reproduces the Plot tab's midpoint mapping for the 73,800–73,860 s window: 73,830 − 41,400 = 32,430 s, whose nearest one-minute raw plane is 32,400 s (540 min). Thus the figure is genuinely the requested 20.5 h CLUBB timeframe at 1900 m, with the raw-SAM elapsed-time provenance shown separately.</p>
+    </section>
+
+    <div class="metrics">
+      <div class="metric"><span>Dynamic Plot tab palette</span><strong>16 × 31</strong><small>496 probability/sign-magnitude color states</small></div>
+      <div class="metric"><span>Static w–rₜ atlas palette</span><strong>8 × 15</strong><small>120 palette codes packed into one PNG byte</small></div>
+      <div class="metric"><span>Robust cap</span><strong>99.5th</strong><small>positive-bin percentile before log normalization</small></div>
+      <div class="metric"><span>Current canonical signal</span><strong>w′r<sub>c</sub>′</strong><small>local cloud-water covariance contribution</small></div>
+    </div>
+
+    <h2>1. What becomes a SAM heatmap bin?</h2>
+    <p>A raw horizontal SAM plane is loaded from an <code>OUT_3D/*_micro.nc</code> snapshot. The active reader flattens one model level’s <code>W</code>, <code>RT</code>, <code>THL</code>, <code>CHI</code>, and <code>RC</code> into samples. A projection then uses <em>w</em> on the vertical axis and one scalar on the horizontal axis: r<sub>t</sub>, χ, or r<sub>c</sub>.</p>
+    <p>For a bin <em>b</em> containing samples <em>i</em>, the probability field used by the current Plot tab and static atlas is</p>
+    <div class="equation">P<sub>b</sub> = n<sub>b</sub> / N<br><small>n<sub>b</sub> = number of horizontal cells in bin b; N = all cells in the sampled plane.</small></div>
+    <p>Historical experimental laboratory views used unnormalized counts in their color encoder. They are archived and are not part of the active Plot-tab comparison path.</p>
+
+    <h2>2. The signed field behind blue and red</h2>
+    <p>The intended modern convention is the binwise contribution to the domain covariance between vertical velocity and cloud water:</p>
+    <div class="equation">T<sub>b</sub><sup>(r<sub>c</sub>)</sup> = (1 / N) Σ<sub>i ∈ b</sub> (w<sub>i</sub> − w̄)(r<sub>c,i</sub> − r̄<sub>c</sub>) × 1000<br><small>Σ<sub>b</sub>T<sub>b</sub><sup>(r<sub>c</sub>)</sup> = w′r<sub>c</sub>′, in m s⁻¹ g kg⁻¹.</small></div>
+    <p>Positive bins are usually cloudy updrafts or relatively dry downdrafts; negative bins are cloudy downdrafts or relatively dry updrafts. This is why “blue” is not synonymous with “upward”: it is the sign of a <em>local covariance contribution</em>.</p>
+
+    <p class="source">Canonical raw-plane path: dash_app/plot_tab/plot_types/pdf_contour_plot.py → _raw_histogram_bundle</p>
+    <pre><code>probability = np.histogram2d(raw_x, raw_w, bins=(x_edges, y_edges))[0].T / raw_x.size
+centered_w = raw_w - float(snapshot.mean[0])
+centered_rc = np.asarray(snapshot.rc_samples) - float(snapshot.rcm)
+local_transport = centered_w * centered_rc * 1000.0
+signed_transport = np.histogram2d(
+    raw_x, raw_w, bins=(x_edges, y_edges), weights=local_transport
+)[0].T / raw_x.size</code></pre>
+
+    <section class="callout callout-warning">
+      <h3>One convention mismatch to fix before treating colors as interchangeable</h3>
+      <p>The active static atlas and Plot tab center both variables, using w′r<sub>c</sub>′. This makes their signed contribution maps directly comparable when their binning and normalization policies are also aligned.</p>
+    </section>
+
+    <h2>3. How the two fields become one color</h2>
+    <p>Both positive probability and the magnitude of signed transport are robustly log-normalized. Let <em>U</em> be the 99.5th percentile of positive bins for a field and <em>K</em> = 0.025<em>U</em>. The normalization is</p>
+    <div class="equation">L(x; U) = clip[ log(1 + max(x, 0) / K) / log(1 + U / K), 0, 1 ]</div>
+    <p>The result prevents one sharp plume core from making every weaker structure black. Probability gets <em>p</em> = L(P; U<sub>P</sub>); signed transport gets <em>s</em> = sign(T)L(|T|; U<sub>T</sub>). They are quantized, not passed as a conventional continuous scalar:</p>
+    <div class="equation">probability bin = round[15p] &nbsp;&nbsp;|&nbsp;&nbsp; signed bin = round[15s] + 15<br><small>16 probability levels × 31 signed levels in interactive Plotly figures.</small></div>
+
+    <figure>
+      <div class="legend-row"><span><i class="dot" style="background:#f59e0b"></i>probability / gold</span><span><i class="dot" style="background:#2563eb"></i>positive transport / blue</span><span><i class="dot" style="background:#ef4444"></i>negative transport / red</span><span><i class="dot" style="background:#dbeafe"></i>strong overlap / pale</span></div>
+      <svg viewBox="0 0 900 440" role="img" aria-label="Current bivariate palette for probability and signed transport">
+        <rect width="900" height="440" fill="#101a2c"/>
+        <text x="450" y="42" text-anchor="middle" fill="#e8edf5" font-family="Georgia" font-size="23">Current bivariate color logic</text>
+        <text x="450" y="418" text-anchor="middle" fill="#a9b8cd" font-family="system-ui" font-size="16">normalized probability p  →</text>
+        <text x="48" y="230" text-anchor="middle" transform="rotate(-90 48 230)" fill="#a9b8cd" font-family="system-ui" font-size="16">normalized signed transport s</text>
+        <g transform="translate(130 75)">
+          <g fill="#a9b8cd" font-family="system-ui" font-size="14"><text x="50" y="-14">0.00</text><text x="190" y="-14">0.25</text><text x="330" y="-14">0.50</text><text x="470" y="-14">0.75</text><text x="610" y="-14">1.00</text><text x="-62" y="45">+1.00</text><text x="-62" y="105">+0.50</text><text x="-62" y="165">0.00</text><text x="-62" y="225">−0.50</text><text x="-62" y="285">−1.00</text></g>
+          <g stroke="#0d1525" stroke-width="3">
+            <rect x="0" y="0" width="140" height="60" fill="rgb(37,99,235)"/><rect x="140" y="0" width="140" height="60" fill="rgb(112,140,206)"/><rect x="280" y="0" width="140" height="60" fill="rgb(152,165,198)"/><rect x="420" y="0" width="140" height="60" fill="rgb(177,184,202)"/><rect x="560" y="0" width="140" height="60" fill="rgb(194,200,212)"/>
+            <rect x="0" y="60" width="140" height="60" fill="rgb(26,61,138)"/><rect x="140" y="60" width="140" height="60" fill="rgb(107,119,149)"/><rect x="280" y="60" width="140" height="60" fill="rgb(154,155,164)"/><rect x="420" y="60" width="140" height="60" fill="rgb(174,166,158)"/><rect x="560" y="60" width="140" height="60" fill="rgb(193,177,154)"/>
+            <rect x="0" y="120" width="140" height="60" fill="rgb(15,23,42)"/><rect x="140" y="120" width="140" height="60" fill="rgb(72,57,34)"/><rect x="280" y="120" width="140" height="60" fill="rgb(130,90,26)"/><rect x="420" y="120" width="140" height="60" fill="rgb(188,124,19)"/><rect x="560" y="120" width="140" height="60" fill="rgb(245,158,11)"/>
+            <rect x="0" y="180" width="140" height="60" fill="rgb(127,46,55)"/><rect x="140" y="180" width="140" height="60" fill="rgb(180,102,86)"/><rect x="280" y="180" width="140" height="60" fill="rgb(213,137,109)"/><rect x="420" y="180" width="140" height="60" fill="rgb(230,148,106)"/><rect x="560" y="180" width="140" height="60" fill="rgb(247,159,103)"/>
+            <rect x="0" y="240" width="140" height="60" fill="rgb(239,68,68)"/><rect x="140" y="240" width="140" height="60" fill="rgb(244,115,94)"/><rect x="280" y="240" width="140" height="60" fill="rgb(246,141,115)"/><rect x="420" y="240" width="140" height="60" fill="rgb(248,161,135)"/><rect x="560" y="240" width="140" height="60" fill="rgb(250,176,156)"/>
+          </g>
+        </g>
+      </svg>
+      <figcaption>Exact RGB samples from <code>signed_bivariate_reference_rgb</code>. Darkness means neither field is strong; fully saturated red or blue can occur even at low probability if a sparse bin carries a large local contribution. Pale colors are intentional overlap, not a third physical variable.</figcaption>
+    </figure>
+
+    <p class="source">Shared color encoder: dash_app/shared/bivariate_heatmap.py</p>
+    <pre><code>strength = 1.0 - (1.0 - probability) * (1.0 - transport)
+mixture = transport / max(probability + transport, 1.0e-12)
+hue = (1.0 - mixture) * probability_color + mixture * transport_color
+color = (1.0 - strength) * dark + strength * hue
+overlap = min(probability, transport) ** 0.75
+color = (1.0 - 0.68 * overlap) * color + 0.68 * overlap * overlap_color</code></pre>
+
+    <h2>4. Why scales differ among views</h2>
+    <table>
+      <thead><tr><th>View</th><th>Binning / axes</th><th>Color cap</th><th>Important consequence</th></tr></thead>
+      <tbody>
+        <tr><td>Plot tab raw-SAM background</td><td>Raw plane binned on the shared analytic-PDF grid; nearest SAM time to the selected window midpoint and nearest height.</td><td>One 99.5th-positive cap for probability and |transport|, shared across the figure’s background panels.</td><td>Panel-to-panel geometry is comparable inside the figure. Hover reports raw and normalized values.</td></tr>
+        <tr><td>SAM w–rₜ static atlas</td><td>48 bins; axes fixed separately at each height from sampled times, with cloudy-tail protection.</td><td>For each height: 95th percentile across sampled times of each plane’s 99.5th-positive cap.</td><td>Time evolution at one height is intentionally comparable; colors are not a universal scale between heights.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. Coloring with a different variable</h2>
+    <p>The architecture generalizes cleanly. Keep probability as the gold channel and replace cloud water by a chosen scalar <em>q</em>:</p>
+    <div class="equation">T<sub>b</sub><sup>(q)</sup> = (1 / N) Σ<sub>i ∈ b</sub> (w<sub>i</sub> − w̄)(q<sub>i</sub> − q̄)</div>
+    <p>The bins still sum to w′q′, so the colored field has a precise moment interpretation. The label, units, hover text, and normalization metadata must change with <em>q</em>.</p>
+    <table>
+      <thead><tr><th>Candidate q</th><th>What blue/red would mean</th><th>Where it helps</th><th>Main caveat</th></tr></thead>
+      <tbody>
+        <tr><td>r<sub>c</sub> (current)</td><td>Positive/negative cloud-water covariance contribution.</td><td>Cloud transport and rare cloudy plumes.</td><td>Clear-air structure is intentionally weak; r<sub>c</sub>=0 carries a boundary mass in w–r<sub>c</sub>.</td></tr>
+        <tr><td>r<sub>t</sub></td><td>Positive/negative total-water covariance contribution, w′r<sub>t</sub>′.</td><td>Transport plumes that are moist but not yet cloudy; a useful companion to cloud-water transport.</td><td>Moist background variability can be broader than cloud transport, so use a shared robust cap and do not call it cloud transport.</td></tr>
+        <tr><td>χ</td><td>Positive/negative covariance with saturation excess.</td><td>w–χ: makes the cloud threshold and near-saturated transport branch explicit.</td><td>Interpretation depends on the thermodynamic χ definition; do not silently substitute a linearized CLUBB χ for raw SAM χ.</td></tr>
+        <tr><td>θ<sub>l</sub></td><td>Positive/negative thermal covariance contribution.</td><td>Buoyant/thermal plume structure and w–θ<sub>l</sub> comparisons.</td><td>Its sign does not mean moistening or cloud transport.</td></tr>
+        <tr><td>r<sub>t</sub>′²</td><td>Local contribution to w′r<sub>t</sub>′², a third-order tail moment.</td><td>Directly locating moisture-tail regions relevant to higher-order closure diagnostics.</td><td>This is not a covariance; normalization and the legend must say “third-moment contribution,” not transport.</td></tr>
+        <tr><td>Cloud indicator 1(r<sub>c</sub>&gt;0)</td><td>Cloud-occurrence contrast rather than a flux.</td><td>Separating frequent weak cloud from rare intense cloud transport.</td><td>It discards cloud-water magnitude and should be a separate diagnostic, not disguised as transport.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Matched raw-SAM example: probability plus five color signals</h3>
+    <p>These panels use the <strong>same</strong> ARM raw plane mapped from the CLUBB 20.5 h window (raw elapsed 540 min, 1900 m, 9,216 horizontal cells), the same 72×72 w–r<sub>t</sub> bins, and the same probability field. The first panel is probability only; in the other panels only the blue/red signal changes. This cleanly separates an alternate color signal from a different time, grid, or probability normalization.</p>
+    <figure>
+      <img src="figures/raw-sam-wrt-color-signals.png" alt="Six matched raw ARM SAM w-r_t heatmaps: probability only, followed by w-prime rc-prime, w-prime rt-prime, w-prime chi-prime, w-prime theta-l-prime, and w-prime rt-prime squared">
+      <figcaption><strong>Upper left: probability only.</strong> Gold now shows the population without a signed transport field. <strong>Upper middle: current cloud-water signal, w′r<sub>c</sub>′.</strong> At this clear 1900 m plane, r<sub>c</sub> is zero and it intentionally reduces to the same probability-only map. <strong>Upper right and lower left: w′r<sub>t</sub>′ and w′χ′.</strong> The broad moist-updraft/dry-downdraft organization appears. <strong>Lower middle: w′θ<sub>l</sub>′.</strong> This exposes thermal organization on the same physical plane. <strong>Lower right: w′r<sub>t</sub>′².</strong> This rtp2-style third-order kernel highlights total-water tails and is deliberately labelled as a third moment rather than transport. Each signed panel uses its own robust 99.5th-percentile magnitude cap, so compare sign and spatial placement rather than color saturation across variables.</figcaption>
+    </figure>
+    <p>The probability-only panel has no signed field. The covariance panels integrate to their named covariances when the corresponding scalar varies; the current cloud-water map is zero here because this 1900 m raw plane contains no cloud water. The rtp2-style panel instead integrates to the third-order moment w′r<sub>t</sub>′². It is useful for locating thermodynamic tails, but it must never be interpreted as a flux.</p>
+    <p class="source">Rendered, embedded artifact: <code>figures/raw-sam-wrt-color-signals.png</code> · reproduction script: <code>doc/reports/sam-heatmap-coloring-examples-20h30/generate_color_signal_examples.py</code> · raw metadata: <code>data/raw-sam-wrt-color-signals.json</code></p>
+
+    <section class="callout">
+      <h3>Do not encode a third independent field in the same RGB raster</h3>
+      <p>The current scheme already uses hue/lightness to encode probability, transport sign, transport magnitude, and overlap. Adding cloud fraction, r<sub>t</sub> anomaly, or buoyancy as another RGB interpretation would make the map non-invertible. Use a matched small multiple, contours, or hover values for a third quantity instead.</p>
+    </section>
+
+    <h2>6. Recommended next design</h2>
+    <ol>
+      <li>Keep one shared helper taking <code>q</code>, returning <code>P_b</code> and <code>T_b^(q)</code> with both <em>w</em> and <em>q</em> centered. Use it in the Plot tab and atlas generator.</li>
+      <li>Keep <code>q = r_c</code> as the cloud-transport default, but add a deliberately named signal selector: <code>r_c</code>, <code>r_t</code>, <code>χ</code>, <code>θ_l</code>, and (later) selected higher-moment kernels.</li>
+      <li>Make scale policy explicit: shared within a comparison figure, height-stable through atlas time, and never implied to be universal across unrelated planes.</li>
+      <li>Make the legend and hover state report raw <code>P_b</code>, raw <code>T_b^(q)</code>, normalized values, q units, and whether the source used raw SAM or analytic CLUBB.</li>
+      <li>For the transported-plume problem, start with paired w–r<sub>t</sub> plots: current <code>q=r_c</code> beside <code>q=r_t</code>. That separates actual cloud-water transport from the broader moist anomaly that may identify a plume before condensation.</li>
+    </ol>
+
+    <footer>Sources audited: <code>dash_app/shared/bivariate_heatmap.py</code>, <code>dash_app/misc_tab/sam_w_rt_neighborhood/atlas.py</code>, <code>utilities/sam_3d_reference.py</code>, and <code>dash_app/plot_tab/plot_types/pdf_contour_plot.py</code>.</footer>
+  </main>
+</body>
+</html>

@@ -1,5 +1,21 @@
 # Runtime dependencies for dash_app/app.py and its run/plot/tune tabs.
 dash~=3.4
+pytest>=8,<10
 plotly~=6.7
-numpy~=2.4
+numpy~=2.2
+scipy~=1.15
 netCDF4~=1.7
+# 3.9 has no CPython 3.14 wheels, causing the launcher to fall back to a
+# fragile source build.  3.10 retains this application's API usage and ships
+# compatible wheels for the dashboard's supported interpreter.
+matplotlib>=3.10,<3.11
+# ReportBuilder uses Pillow to cap published PNG/JPEG evidence at 1200 px.
+pillow>=10,<13
+mcp>=1.0,<2
+pydantic>=2,<3
+# Dash DiskcacheManager runs explicitly expensive callbacks in a separate
+# process.  This keeps the UI responsive without concurrent HDF5 access from
+# Flask request threads.
+diskcache>=5.6,<6
+multiprocess>=0.70,<0.71
+psutil>=5.9,<8

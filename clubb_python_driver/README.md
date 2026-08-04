@@ -55,7 +55,8 @@ This runs selected SCM cases through both:
 - the Python driver path
 - the normal Fortran standalone path
 
-and diffs the outputs with `run_bindiff_all.py`. Results are written under `python_driver_test_results/`.
+and diffs the outputs with `run_bindiff_all.py`. Results are written under
+`output/tests/python_driver_test_results/`.
 
 ## Unsupported Features
 

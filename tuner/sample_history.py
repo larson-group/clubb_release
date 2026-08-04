@@ -54,7 +54,11 @@ class SampleHistoryWriter:
         self.observations = self._build_observations()
         self.metadata = self._build_metadata()
         self.buffer: list[dict] = []
-        self.chunk_index = 1
+        # A stopped Tune revision may later continue in the same immutable
+        # execution directory.  Continue chunk numbering rather than
+        # overwriting the earlier raw observations.
+        existing_chunks = sample_history_paths(self.job_dir)
+        self.chunk_index = len(existing_chunks) + 1
 
     def append(self, entries: list[dict]) -> None:
         """Buffer completed sample entries and flush full chunks."""

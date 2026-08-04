@@ -147,7 +147,7 @@ the app:
 
 Arguments are passed through to `dash_app/app.py`.  For example:
 `
-./launch_dashboard.sh --port 8060 -debug
+./launch_dashboard.sh --port 23404 -debug
 `
 
 For manual setup, run this from the CLUBB directory:

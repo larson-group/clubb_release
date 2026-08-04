@@ -152,7 +152,7 @@ class TunerJob:
         cls,
         request: dict,
         *,
-        output_root: str | Path = REPO_ROOT / "output_tuner",
+        output_root: str | Path = REPO_ROOT / "output" / "tuner",
         job_dir: str | Path | None = None,
         prefix: str = "",
         initial_status: dict | None = None,
@@ -198,11 +198,18 @@ class TunerJob:
         atomic_write_json(job.results_path, _make_default_results(job.job_dir, request, initial_state))
         return job
 
-    def start(self) -> subprocess.Popen:
-        """Launch ``python -m tuner.tune_clubb`` for this job."""
+    def start(self, *, resume: bool = False) -> subprocess.Popen:
+        """Launch ``python -m tuner.tune_clubb`` for this job.
+
+        ``resume`` appends to the immutable execution log and clears a prior
+        graceful-stop request.  The scheduler restores its durable checkpoint
+        rather than recreating a new execution directory.
+        """
         if self.proc is not None:
             raise RuntimeError("This tuner job already owns a subprocess")
-        log_handle = open(self.log_path, "w", encoding="utf-8")
+        if resume:
+            write_control(self.control_path, stop_requested=False)
+        log_handle = open(self.log_path, "a" if resume else "w", encoding="utf-8")
         try:
             self.proc = subprocess.Popen(
                 [sys.executable, "-m", "tuner.tune_clubb", "--job-dir", str(self.job_dir)],

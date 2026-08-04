@@ -2,6 +2,8 @@
 
 from dash import dcc, html
 
+from dash_app.persistence import WORKSPACE_TOKEN
+
 from .state import MAX_RUN_PROCS
 
 
@@ -102,7 +104,7 @@ def build_select_actions(case_groups):
     """Render the case selection helper buttons."""
     return html.Div(
         [
-            html.Button("Deselect", id="run-deselect", n_clicks=0, style=run_action_button_style("#6b7280")),
+            html.Button("Deselect", id="run-deselect", n_clicks=0, className="run-select-action", style=run_action_button_style("#6b7280")),
             html.Button("Select all", id={"type": "run-group-button", "name": "all"}, n_clicks=0, disabled=not case_groups["all"], className="run-select-group-button", style=run_action_button_style("#111827", disabled=not case_groups["all"])),
             html.Button("Select standard", id={"type": "run-group-button", "name": "standard"}, n_clicks=0, disabled=not case_groups["standard"], className="run-select-group-button", style=run_action_button_style("#111827", disabled=not case_groups["standard"])),
             html.Button("Select priority", id={"type": "run-group-button", "name": "priority"}, n_clicks=0, disabled=not case_groups["priority"], className="run-select-group-button", style=run_action_button_style("#111827", disabled=not case_groups["priority"])),
@@ -110,14 +112,13 @@ def build_select_actions(case_groups):
             html.Button("Select short", id={"type": "run-group-button", "name": "short"}, n_clicks=0, disabled=not case_groups["short"], className="run-select-group-button", style=run_action_button_style("#111827", disabled=not case_groups["short"])),
         ],
         className="run-select-actions",
-        style={"display": "flex", "flexWrap": "wrap", "gap": "8px", "marginBottom": "6px"},
     )
 
 
 def build_case_buttons(cases):
     """Render all case buttons with the default unselected style."""
     return [
-        html.Button(case_name, id={"type": "run-case-button", "name": case_name}, n_clicks=0, style=case_button_style("#2563eb", False))
+        html.Button(case_name, id={"type": "run-case-button", "name": case_name}, n_clicks=0, className="run-case-button", style=case_button_style("#2563eb", False))
         for case_name in cases
     ]
 
@@ -125,12 +126,12 @@ def build_case_buttons(cases):
 def build_stats_buttons(stats_files, default_stats_name, no_stats_name):
     """Render stats-file selection buttons, including the synthetic none option."""
     buttons = [
-        html.Button(stats_name, id={"type": "run-stats-button", "name": stats_name}, n_clicks=0, style=stats_button_style(stats_name == default_stats_name))
+        html.Button(stats_name, id={"type": "run-stats-button", "name": stats_name}, n_clicks=0, className="run-stats-button", style=stats_button_style(stats_name == default_stats_name))
         for stats_name in stats_files
     ]
     if no_stats_name not in stats_files:
         buttons.append(
-            html.Button("none", id={"type": "run-stats-button", "name": no_stats_name}, n_clicks=0, style=stats_button_style(no_stats_name == default_stats_name))
+            html.Button("none", id={"type": "run-stats-button", "name": no_stats_name}, n_clicks=0, className="run-stats-button", style=stats_button_style(no_stats_name == default_stats_name))
         )
     return buttons
 
@@ -163,24 +164,56 @@ def build_optional_args_section():
         [
             html.Div(
                 [
-                    html.Div("Optional run args:", className="run-section-title", style={"flex": "0 0 auto", "marginRight": "2px"}),
-                    dcc.Input(id="run-opt-max-iters", type="text", value="", placeholder="max_iters", style={"width": "130px"}),
-                    dcc.Input(id="run-opt-debug", type="text", value="", placeholder="debug", style={"width": "130px"}),
-                    dcc.Input(id="run-opt-dt-main", type="text", value="", placeholder="dt_main", style={"width": "130px"}),
-                    dcc.Input(id="run-opt-dt-rad", type="text", value="", placeholder="dt_rad", style={"width": "130px"}),
-                    dcc.Input(id="run-opt-tout", type="text", value="", placeholder="tout", style={"width": "130px"}),
+                    html.Div("Execution options", className="run-setup-section-title"),
+                    html.Div("Optional limits and CLI settings", className="run-setup-section-note"),
                 ],
-                style={"display": "flex", "flexWrap": "wrap", "alignItems": "center", "gap": "8px"},
+                className="run-setup-section-heading",
             ),
             html.Div(
                 [
-                    html.Label("Output dir:", style={"whiteSpace": "nowrap", "alignSelf": "center"}),
-                    dcc.Input(id="run-opt-out-dir", type="text", value="output", placeholder="output", style={"width": "200px"}),
+                    dcc.Input(id="run-opt-max-iters", type="text", value="", placeholder="max_iters", className="run-quick-input", style={"width": "130px"}),
+                    dcc.Input(id="run-opt-debug", type="text", value="", placeholder="debug", className="run-quick-input", style={"width": "130px"}),
+                    dcc.Input(id="run-opt-dt-main", type="text", value="", placeholder="dt_main", className="run-quick-input", style={"width": "130px"}),
+                    dcc.Input(id="run-opt-dt-rad", type="text", value="", placeholder="dt_rad", className="run-quick-input", style={"width": "130px"}),
+                    dcc.Input(id="run-opt-tout", type="text", value="", placeholder="tout", className="run-quick-input", style={"width": "130px"}),
                 ],
-                style={"display": "flex", "alignItems": "center", "gap": "8px", "marginTop": "4px"},
+                className="run-option-input-row",
+            ),
+            html.Div(
+                [
+                    html.Label("Output", style={"whiteSpace": "nowrap", "alignSelf": "center"}),
+                    dcc.Input(
+                        id="run-opt-out-dir",
+                        type="text",
+                        value="dash_default",
+                        placeholder="test1 → output/test1",
+                        className="run-quick-input run-output-dir-input",
+                        style={"width": "200px"},
+                    ),
+                    html.Span(
+                        id="run-output-dir-warning",
+                        className="run-output-dir-warning run-output-dir-warning--hidden",
+                    ),
+                ],
+                className="run-option-detail-row",
+            ),
+            html.Div(
+                [
+                    html.Label("Extra args", htmlFor="run-opt-extra-args", style={"whiteSpace": "nowrap", "alignSelf": "center"}),
+                    dcc.Input(
+                        id="run-opt-extra-args",
+                        type="text",
+                        value="",
+                        debounce=True,
+                        placeholder="-max_iters 10 -dt_main 60",
+                        className="run-quick-input",
+                        style={"minWidth": "280px", "flex": "1 1 360px"},
+                    ),
+                ],
+                className="run-option-detail-row",
             ),
         ],
-        style={"marginTop": "2px"},
+        className="run-setup-section run-optional-args",
     )
 
 
@@ -206,6 +239,8 @@ def build_multicol_row(row, tunable_names):
                 placeholder="parameter",
                 clearable=True,
                 searchable=True,
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
                 className="clubb-dropdown",
                 style={"minWidth": "170px", "flex": "2 1 170px"},
             ),
@@ -214,6 +249,8 @@ def build_multicol_row(row, tunable_names):
                 type="text",
                 value=row.get("min", ""),
                 placeholder="min",
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
                 style={"width": "90px", "flex": "0 0 90px"},
             ),
             dcc.Input(
@@ -221,6 +258,8 @@ def build_multicol_row(row, tunable_names):
                 type="text",
                 value=row.get("max", ""),
                 placeholder="max",
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
                 style={"width": "90px", "flex": "0 0 90px"},
             ),
             dcc.Input(
@@ -228,6 +267,8 @@ def build_multicol_row(row, tunable_names):
                 type="text",
                 value=row.get("npoints", ""),
                 placeholder="npoints",
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
                 style={"width": "110px", "flex": "0 0 110px"},
             ),
             html.Button(
@@ -283,6 +324,8 @@ def build_run_limit_control(label, control_id, value, disabled=False, title=None
                 type="text",
                 value=str(value),
                 debounce=True,
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
                 disabled=disabled,
                 className="clubb-input run-limit-input",
             ),
@@ -296,6 +339,13 @@ def build_run_action_section():
     """Render the primary run/cancel/clear action buttons."""
     return html.Div(
         [
+            html.Div(
+                [
+                    html.Div("Launch", className="run-launch-title"),
+                    html.Div("Selected cases run with the settings above.", className="run-launch-note"),
+                ],
+                className="run-launch-intro",
+            ),
             html.Div(
                 [
                     html.Button("Run selected", id="run-button", n_clicks=0, className="run-button-run-selected", style=run_action_button_style("#111827")),
@@ -338,15 +388,37 @@ def build_left_header(case_groups, case_buttons, stats_buttons):
     """Render the left header block with selections and action controls."""
     return html.Div(
         [
-            build_select_actions(case_groups),
-            html.Div("Cases:", className="run-section-title"),
-            html.Div(case_buttons, className="run-case-buttons"),
-            html.Div([html.Div("Stats file:", className="run-section-title"), html.Div(stats_buttons, className="run-stats-buttons")], className="run-stats-section", style={"marginTop": "6px"}),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div("Cases", className="run-setup-section-title"),
+                            html.Div("Quick-select a group or choose individual cases.", className="run-setup-section-note"),
+                        ],
+                        className="run-setup-section-heading",
+                    ),
+                    build_select_actions(case_groups),
+                    html.Div(case_buttons, className="run-case-buttons"),
+                ],
+                className="run-setup-section run-cases-section",
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div("Statistics", className="run-setup-section-title"),
+                            html.Div("Select the requested CLUBB statistics definition.", className="run-setup-section-note"),
+                        ],
+                        className="run-setup-section-heading",
+                    ),
+                    html.Div(stats_buttons, className="run-stats-buttons"),
+                ],
+                className="run-setup-section run-stats-section",
+            ),
             build_optional_args_section(),
             build_run_action_section(),
         ],
         className="run-left-header",
-        style={"marginBottom": "10px"},
     )
 
 
@@ -371,6 +443,8 @@ def build_param_input(entry, label_width_px, value_width_px, display_value):
                 type="text",
                 value=display_value,
                 debounce=True,
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
                 className="run-param-value-input",
                 style={
                     "flex": f"0 0 {value_width_px}px",
@@ -386,24 +460,134 @@ def build_param_input(entry, label_width_px, value_width_px, display_value):
     )
 
 
-def build_flag_controls(flag_bools, is_true_func):
-    """Render the boolean flag checklist controls."""
+def linked_parameter_key(members):
+    """Return the stable UI key for one equal-value parameter group."""
+    return "=".join(str(member) for member in members)
+
+
+def build_linked_tunable_input(entries, members, value_width_px, normalize_numeric_display):
+    """Render a single visible value with hidden physical member inputs.
+
+    The hidden inputs retain the existing callback IDs and namelist plumbing;
+    a callback mirrors the visible logical value to every member.  This keeps
+    the Run request explicit while making an equality constraint obvious.
+    """
+    by_name = {str(entry["name"]): entry for entry in entries}
+    group_entries = [by_name[name] for name in members if name in by_name]
+    if len(group_entries) != len(members):
+        return []
+    group_key = linked_parameter_key(members)
+    display_value = normalize_numeric_display(group_entries[0]["value"])
+    # Keep a hidden physical row for each member.  The existing ALL-pattern
+    # style callback intentionally sees every ``run-param`` input and every
+    # matching ``run-param-container``.  Preserving that one-to-one shape
+    # avoids a linked group changing the callback's wildcard output length.
+    shadow_inputs = [
+        html.Div(
+            dcc.Input(
+                id={"type": "run-param", "file": "tunable", "name": entry["name"]},
+                type="text",
+                value=normalize_numeric_display(entry["value"]),
+                debounce=True,
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
+                className="run-linked-param-shadow",
+            ),
+            id={"type": "run-param-container", "file": "tunable", "name": entry["name"]},
+            className="run-param-container run-param-row--default",
+            style={"display": "none"},
+        )
+        for entry in group_entries
+    ]
+    return html.Div(
+        [
+            html.Div(
+                [html.Span(name, className="run-linked-param-name") for name in members],
+                className="run-linked-param-names",
+                title="These parameters are constrained to the same value by CLUBB.",
+            ),
+            html.Div("linked", className="run-linked-param-badge"),
+            dcc.Input(
+                id={"type": "run-linked-param", "group": group_key},
+                type="text",
+                value=display_value,
+                debounce=True,
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
+                className="run-param-value-input run-linked-param-value",
+                style={"width": f"{value_width_px}px", "minWidth": f"{value_width_px}px", "boxSizing": "border-box"},
+            ),
+            *shadow_inputs,
+        ],
+        id={"type": "run-linked-param-container", "group": group_key},
+        className="run-linked-param-container run-param-row--default",
+        # A linked control has one visible row per member plus its shared
+        # value.  Reserving compact grid tracks lets ordinary controls fill
+        # the other columns instead of stretching to this card's height.
+        style={"gridRow": f"span {max(2, len(members))}"},
+    )
+
+
+def build_flag_control(entry, is_true_func):
+    """Render one physical boolean flag control, retaining its stable ID."""
+    return html.Div(
+        [
+            dcc.Checklist(
+                id={"type": "run-flag", "name": entry["name"]},
+                className="run-flag-checklist",
+                options=[{"label": entry["name"], "value": "on"}],
+                value=["on"] if is_true_func(entry["value"]) else [],
+                persistence=WORKSPACE_TOKEN,
+                persistence_type="local",
+                labelStyle={"display": "inline-flex", "alignItems": "center", "gap": "6px"},
+            )
+        ],
+        id={"type": "run-flag-container", "name": entry["name"]},
+        className="run-param-container run-flag-container run-param-row--default",
+    )
+
+
+def build_flag_controls(flag_bools, is_true_func, relationships=None):
+    """Render boolean flags, grouping declared related options together."""
+    by_name = {str(entry["name"]): entry for entry in flag_bools}
+    relation_by_member = {
+        member: relation
+        for relation in (relationships or [])
+        for member in relation.get("members") or []
+    }
+    rendered_relationships: set[tuple[str, ...]] = set()
     controls = []
     for entry in flag_bools:
+        name = str(entry["name"])
+        relation = relation_by_member.get(name)
+        if not relation:
+            controls.append(build_flag_control(entry, is_true_func))
+            continue
+        members = tuple(str(member) for member in relation.get("members") or [])
+        if members in rendered_relationships:
+            continue
+        rendered_relationships.add(members)
+        related_entries = [by_name[member] for member in members if member in by_name]
         controls.append(
             html.Div(
                 [
-                    dcc.Checklist(
-                        id={"type": "run-flag", "name": entry["name"]},
-                        className="run-flag-checklist",
-                        options=[{"label": entry["name"], "value": "on"}],
-                        value=["on"] if is_true_func(entry["value"]) else [],
-                        labelStyle={"display": "inline-flex", "alignItems": "center", "gap": "6px"},
-                    )
+                    html.Div(
+                        [
+                            html.Span(relation.get("label", "linked"), className="run-linked-flag-badge"),
+                            html.Span(relation.get("description", "Related CLUBB settings."), className="run-linked-flag-description"),
+                        ],
+                        className="run-linked-flag-heading",
+                    ),
+                    html.Div(
+                        [build_flag_control(related, is_true_func) for related in related_entries],
+                        className="run-linked-flag-members",
+                    ),
                 ],
-                id={"type": "run-flag-container", "name": entry["name"]},
-                className="run-param-container run-flag-container",
-                style=field_style(False),
+                className="run-linked-flag-group",
+                # One track for the relationship note and one for every
+                # physical checkbox.  This makes the group an atomic card
+                # while preserving dense packing of the surrounding flags.
+                style={"gridRow": f"span {max(2, len(related_entries) + 1)}"},
             )
         )
     return controls
@@ -430,17 +614,34 @@ def build_flags_section(flag_controls):
     return [html.H4("Flags", className="run-settings-heading"), html.Div(flag_controls, className="run-param-list")]
 
 
-def build_tunable_section(tunable_entries, label_width_px, value_width_px, normalize_numeric_display):
+def build_tunable_controls(tunable_entries, linked_groups, label_width_px, value_width_px, normalize_numeric_display):
+    """Build logical tunable controls, collapsing active equal-value groups."""
+    active_groups = [tuple(group) for group in (linked_groups or [])]
+    group_by_member = {member: group for group in active_groups for member in group}
+    rendered_groups: set[tuple[str, ...]] = set()
+    controls = []
+    for entry in tunable_entries:
+        name = str(entry["name"])
+        group = group_by_member.get(name)
+        if group:
+            if group in rendered_groups:
+                continue
+            rendered_groups.add(group)
+            controls.append(build_linked_tunable_input(tunable_entries, group, value_width_px, normalize_numeric_display))
+            continue
+        controls.append(build_param_input({"file": "tunable", **entry}, label_width_px, value_width_px, normalize_numeric_display(entry["value"])))
+    return controls
+
+
+def build_tunable_section(tunable_entries, linked_groups, label_width_px, value_width_px, normalize_numeric_display):
     """Render tunable parameter inputs."""
     if not tunable_entries:
         return []
     return [
         html.H4("Tunables", className="run-settings-heading"),
         html.Div(
-            [
-                build_param_input({"file": "tunable", **entry}, label_width_px, value_width_px, normalize_numeric_display(entry["value"]))
-                for entry in tunable_entries
-            ],
+            build_tunable_controls(tunable_entries, linked_groups, label_width_px, value_width_px, normalize_numeric_display),
+            id="run-tunable-controls",
             className="run-param-list",
         ),
     ]
@@ -462,12 +663,12 @@ def build_silhs_section(silhs_entries, label_width_px, value_width_px, normalize
     ]
 
 
-def build_param_sections(flag_params, flag_controls, tunable_entries, silhs_entries, label_width_px, value_width_px, normalize_numeric_display):
+def build_param_sections(flag_params, flag_controls, tunable_entries, linked_groups, silhs_entries, label_width_px, value_width_px, normalize_numeric_display):
     """Build the full right-pane parameter section list."""
     sections = []
     sections.extend(build_flag_value_section(flag_params, label_width_px, value_width_px, normalize_numeric_display))
     sections.extend(build_flags_section(flag_controls))
-    sections.extend(build_tunable_section(tunable_entries, label_width_px, value_width_px, normalize_numeric_display))
+    sections.extend(build_tunable_section(tunable_entries, linked_groups, label_width_px, value_width_px, normalize_numeric_display))
     sections.extend(build_silhs_section(silhs_entries, label_width_px, value_width_px, normalize_numeric_display))
     return sections
 
@@ -484,6 +685,7 @@ def build_right_pane(initial_data):
             id="run-config-buttons",
             style={"marginBottom": "8px"},
         ),
+        html.Div(id="run-settings-resolution-note", className="run-settings-resolution-note"),
     ] + build_multicol_section(
         initial_data["tunable_names"],
         initial_data.get("multicol_rows"),
@@ -494,14 +696,20 @@ def build_layout(initial_data):
     """Assemble the full static run-tab layout from precomputed initial metadata."""
     return html.Div(
         [
-            dcc.Store(id="run-defaults", data=initial_data["defaults"]),
-            dcc.Store(id="run-defaults-by-key", data=initial_data["defaults_by_key"]),
-            dcc.Store(id="run-flag-names", data=initial_data["flag_names"]),
+            dcc.Store(id="run-settings-schema", data=initial_data.get("settings_schema") or {}),
             dcc.Store(id="run-param-meta", data=initial_data["param_meta"]),
             dcc.Store(id="run-tunable-names", data=initial_data["tunable_names"]),
             dcc.Store(id="run-tunable-default-ranges", data=initial_data["tunable_default_ranges"]),
+            dcc.Store(id="run-linked-parameter-groups", data=initial_data.get("linked_parameter_groups") or []),
             dcc.Store(id="run-tunable-configs", data=initial_data["tunable_configs"]),
             dcc.Store(id="run-selected-config", data=initial_data["selected_config"]),
+            dcc.Store(id="run-settings-resolution", data=initial_data.get("settings_resolution") or {}),
+            # A config button deliberately discards the saved per-field Run
+            # values before the server rebuilds the matching controls.
+            dcc.Store(id="run-config-reset-signal"),
+            # Ephemeral acknowledgement for the browser-side removal of
+            # transient Run local-storage entries after Clear.
+            dcc.Store(id="run-clear-persistence-signal"),
             dcc.Store(
                 id="run-multicol-rows-state",
                 data=initial_data.get("multicol_rows") or [{"id": 0, "param": "", "min": "", "max": "", "npoints": "4"}],
@@ -524,9 +732,17 @@ def build_layout(initial_data):
             dcc.Interval(id="run-interval", interval=500, disabled=True),
             html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell()], className="run-left-pane"),
             html.Div(id="run-pane-divider", className="run-pane-divider"),
-            html.Div(build_right_pane(initial_data), id="run-right-pane", className="run-right-pane", style={"paddingLeft": "16px", "paddingRight": "16px", "height": "calc(100vh - 96px)", "minHeight": 0, "overflowY": "auto", "overflowX": "auto"}),
+            # The settings pane intentionally grows with its controls.  It is
+            # part of the document flow, so the browser's main scrollbar—not
+            # a narrow nested pane—owns the reading position.
+            html.Div(
+                build_right_pane(initial_data),
+                id="run-right-pane",
+                className="run-right-pane",
+                style={"paddingLeft": "16px", "paddingRight": "16px"},
+            ),
         ],
         id="run-tab-layout",
         className="run-tab-layout",
-        style={"display": "grid", "gridTemplateColumns": f"minmax(0,1fr) 8px {initial_data['right_pane_width_px']}px", "gap": "16px", "padding": "10px", "overflowX": "auto"},
+        style={"display": "grid", "gridTemplateColumns": f"minmax(0,1fr) 8px {initial_data['right_pane_width_px']}px", "gap": "16px", "padding": "10px"},
     )

@@ -212,6 +212,9 @@ def build_layout(initial_data):
             dcc.Store(id="compile-build-statuses", data={}),
             dcc.Store(id="compile-build-failures", data={}),
             dcc.Store(id="compile-build-delete-target", data=None),
+            # "auto" is the normal policy; this store records an explicit
+            # toolchain choice so changing compiler modules does not erase it.
+            dcc.Store(id="compile-toolchain-mode", data="auto"),
             dcc.Store(id="compile-job", data={}),
             dcc.Store(id="compile-log", data=""),
             dcc.Store(id="compile-log-offset", data=0),

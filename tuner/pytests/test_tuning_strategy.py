@@ -2,8 +2,11 @@ from collections import deque
 import json
 import math
 from pathlib import Path
+import threading
+from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from tuner.sample_history import SAMPLE_HISTORY_DIR, SampleHistoryWriter, sample_history_paths
 from tuner.tuning_scheduler import TuningScheduler
@@ -18,10 +21,12 @@ from tuner.taylor_metrics import (
     blended_mean_max_loss,
     compute_field_loss_diagnostics,
     field_smart_loss,
+    normalize_aggregation_weights,
 )
 from tuner.request import load_request
 from tuner.job_runtime import TunerJob
-from tuner.status import renew_keepalive, should_stop, stop_reason, write_control
+from tuner import status as status_module
+from tuner.status import atomic_write_json, renew_keepalive, should_stop, stop_reason, write_control
 from utilities.create_case_namelist import build_tuner_namelist
 from tuner.enhanced_simann_strategy import EnhancedSimulatedAnnealingStrategy
 from tuner.tuning_strategy import (
@@ -34,7 +39,11 @@ from tuner.tuning_strategy import (
 def test_field_smart_loss_combines_centered_rmse_and_bias():
     metrics = {"centered_rmse_norm": 0.25, "bias_norm": -0.75}
 
-    assert field_smart_loss(metrics) == 1.0
+    assert field_smart_loss(metrics, "centered_rmse_bias") == 1.0
+
+
+def test_default_loss_mode_prefers_shape_first():
+    assert DEFAULT_LOSS_MODE == "shape_first"
 
 
 def test_compute_field_loss_diagnostics_all_named_modes():
@@ -150,6 +159,25 @@ def test_mean_worst_quantile_selects_worst_raw_losses_then_weights_subset():
     assert diagnostics["loss"] == 0.7 * weighted_mean + 0.3 * 10.0
 
 
+def test_quantile_weighted_aggregation_uses_best_to_worst_bin_weights():
+    diagnostics = aggregate_losses(
+        [1.0, 2.0, 3.0, 4.0],
+        aggregation_mode="quantile_weighted",
+        aggregation_weights=[0.1, 0.4, 0.4, 0.1],
+    )
+
+    assert diagnostics["loss"] == pytest.approx(2.5)
+    assert [item["mean"] for item in diagnostics["quantile_bin_means"]] == [1.0, 2.0, 3.0, 4.0]
+
+
+def test_quantile_weights_normalize_and_require_four_nonnegative_entries():
+    assert normalize_aggregation_weights([1.0, 4.0, 4.0, 1.0]) == [0.1, 0.4, 0.4, 0.1]
+    with pytest.raises(ValueError, match="exactly 4"):
+        normalize_aggregation_weights([0.1, 0.9])
+    with pytest.raises(ValueError, match="nonnegative"):
+        normalize_aggregation_weights([0.1, -0.1, 0.4, 0.6])
+
+
 def test_normalize_strategy_accepts_legacy_max_samples():
     strategy = normalize_strategy_config({"max_samples": "12"})
 
@@ -160,7 +188,7 @@ def test_normalize_strategy_accepts_simann_defaults():
     strategy = normalize_strategy_config({"strategy": "simann"})
 
     assert strategy["name"] == "simann"
-    assert strategy["options"]["max_iters"] == 2000
+    assert strategy["options"]["max_iters"] == 200
     assert strategy["options"]["initial_temp"] == 1.0
     assert strategy["options"]["max_final_temp"] == 1.0e-12
 
@@ -201,6 +229,46 @@ def test_keepalive_renewal_preserves_explicit_stop(tmp_path):
     assert stop_reason(control_path) == "stop_requested"
 
 
+def test_atomic_json_writers_do_not_share_a_temporary_path(tmp_path, monkeypatch):
+    """Overlapping control writers must not delete each other's staging file."""
+    control_path = tmp_path / "control.json"
+    original_replace = status_module.os.replace
+    first_replace_reached = threading.Event()
+    release_first_replace = threading.Event()
+    call_lock = threading.Lock()
+    replace_call_count = 0
+    failures = []
+
+    def pause_the_first_replace(source, destination):
+        nonlocal replace_call_count
+        with call_lock:
+            replace_call_count += 1
+            is_first = replace_call_count == 1
+        if is_first:
+            first_replace_reached.set()
+            assert release_first_replace.wait(timeout=2)
+        return original_replace(source, destination)
+
+    monkeypatch.setattr(status_module.os, "replace", pause_the_first_replace)
+
+    def first_writer():
+        try:
+            atomic_write_json(control_path, {"writer": "first"})
+        except Exception as exc:  # pragma: no cover - assertion below reports it
+            failures.append(exc)
+
+    worker = threading.Thread(target=first_writer)
+    worker.start()
+    assert first_replace_reached.wait(timeout=2)
+    atomic_write_json(control_path, {"writer": "second"})
+    release_first_replace.set()
+    worker.join(timeout=2)
+
+    assert not worker.is_alive()
+    assert failures == []
+    assert json.loads(control_path.read_text(encoding="utf-8"))["writer"] == "first"
+
+
 def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
     request_path = tmp_path / "request.json"
     request_path.write_text(
@@ -231,6 +299,8 @@ def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
 
     assert request["loss_mode"] == DEFAULT_LOSS_MODE
     assert request["aggregation_mode"] == DEFAULT_AGGREGATION_MODE
+    assert request["aggregation_weights"] == [0.1, 0.4, 0.4, 0.1]
+    assert request["time_window_aggregation_scope"] == "overall"
     assert request["config"] == "default"
     assert request["loss_policy_version"] == LOSS_POLICY_VERSION
     assert request["case_configs"] == [
@@ -552,6 +622,244 @@ def test_scheduler_packs_partial_pending_samples_with_default_rows(tmp_path):
     assert batch["params_batch"][2:] == [[1.0, 2.0], [1.0, 2.0]]
 
 
+def test_scheduler_stop_during_worker_initialization_is_graceful(tmp_path, monkeypatch):
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["bomex"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 1,
+            "max_workers": 1,
+            "strategy": {"name": "random", "options": {"max_samples": 2}},
+            "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
+        },
+        job_dir=tmp_path,
+        control_path=tmp_path / "control.json",
+        status_path=tmp_path / "status.json",
+        results_path=tmp_path / "results.json",
+    )
+    monkeypatch.setattr(scheduler, "_initialize_case_barrier", lambda _started_at: False)
+
+    assert scheduler.run() == 0
+    assert json.loads(scheduler.status_path.read_text())["state"] == "stopped"
+    assert json.loads(scheduler.results_path.read_text())["state"] == "stopped"
+
+
+def test_scheduler_rebalances_only_an_idle_extra_worker_to_the_slow_case(tmp_path, monkeypatch):
+    """A short-case warm actor can be safely repurposed at the next idle point."""
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["short", "long"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 1,
+            "max_workers": 3,
+            "strategy": {"name": "random", "options": {"max_samples": 4}},
+            "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
+        },
+        job_dir=tmp_path,
+        control_path=tmp_path / "control.json",
+        status_path=tmp_path / "status.json",
+        results_path=tmp_path / "results.json",
+    )
+    sent = []
+    scheduler.workers = [
+        SimpleNamespace(worker_id=0, case_name="short", state="idle", conn=SimpleNamespace(send=lambda value: sent.append(value))),
+        SimpleNamespace(worker_id=1, case_name="short", state="busy", conn=SimpleNamespace(send=lambda value: sent.append(value))),
+        SimpleNamespace(worker_id=2, case_name="long", state="busy", conn=SimpleNamespace(send=lambda value: sent.append(value))),
+    ]
+    scheduler.case_evaluation_seconds.update({"short": 1.0, "long": 10.0})
+    scheduler.batches = {4: {"batch_id": 4}}
+    scheduler.case_jobs = deque([
+        {"batch_id": 4, "case_name": "long"},
+        {"batch_id": 4, "case_name": "long"},
+        {"batch_id": 4, "case_name": "long"},
+    ])
+    scheduler.next_rebalance_monotonic = 0.0
+
+    scheduler._rebalance_warm_workers_if_due()
+
+    assert scheduler.workers[0].state == "stopping"
+    assert scheduler.pending_replacements == deque([{"from_case": "short", "to_case": "long"}])
+    assert scheduler.last_rebalance["from_case"] == "short"
+    assert scheduler.last_rebalance["to_case"] == "long"
+    assert scheduler.rebalance_interval_index == 0
+    assert sent == [{"type": "stop"}]
+
+
+def test_scheduler_reassigns_one_idle_worker_when_all_case_drains_are_under_five_seconds(tmp_path):
+    """An idle worker can help the largest short queue without batch churn."""
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["short", "long"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 1,
+            "max_workers": 2,
+            "strategy": {"name": "random", "options": {"max_samples": 4}},
+            "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
+        },
+        job_dir=tmp_path,
+        control_path=tmp_path / "control.json",
+        status_path=tmp_path / "status.json",
+        results_path=tmp_path / "results.json",
+    )
+    sent = []
+    scheduler.workers = [
+        SimpleNamespace(
+            worker_id=0,
+            case_name="short",
+            state="idle",
+            conn=SimpleNamespace(send=lambda value: sent.append(value)),
+        ),
+        SimpleNamespace(worker_id=1, case_name="long", state="busy"),
+    ]
+    scheduler.case_evaluation_seconds.update({"short": 0.2, "long": 1.0})
+    scheduler.batches = {4: {"batch_id": 4}}
+    scheduler.case_jobs = deque([{"batch_id": 4, "case_name": "long"}] * 4)
+    scheduler.next_rebalance_monotonic = 0.0
+
+    scheduler._rebalance_warm_workers_if_due()
+
+    assert scheduler.workers[0].state == "stopping"
+    assert scheduler.pending_replacements == deque([{"from_case": "short", "to_case": "long"}])
+    assert scheduler.last_rebalance["reason"] == "idle_short_drain"
+    assert sent == [{"type": "stop"}]
+
+
+def test_scheduler_never_rebalances_a_case_away_from_its_only_warm_worker(tmp_path):
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["short", "long"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 1,
+            "max_workers": 2,
+            "strategy": {"name": "random", "options": {"max_samples": 2}},
+            "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
+        },
+        job_dir=tmp_path,
+        control_path=tmp_path / "control.json",
+        status_path=tmp_path / "status.json",
+        results_path=tmp_path / "results.json",
+    )
+    scheduler.workers = [
+        SimpleNamespace(worker_id=0, case_name="short", state="idle"),
+        SimpleNamespace(worker_id=1, case_name="long", state="busy"),
+    ]
+    scheduler.case_evaluation_seconds.update({"short": 1.0, "long": 10.0})
+    scheduler.batches = {4: {"batch_id": 4}}
+    scheduler.case_jobs = deque([{"batch_id": 4, "case_name": "long"}] * 4)
+    scheduler.next_rebalance_monotonic = 0.0
+
+    scheduler._rebalance_warm_workers_if_due()
+
+    assert scheduler.workers[0].state == "idle"
+    assert not scheduler.pending_replacements
+
+
+def test_scheduler_marks_busy_donor_to_retire_after_current_batch(tmp_path):
+    """A rebalanced busy donor finishes safely instead of waiting for an idle poll."""
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["short", "long"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 1,
+            "max_workers": 3,
+            "strategy": {"name": "random", "options": {"max_samples": 4}},
+            "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
+        },
+        job_dir=tmp_path,
+        control_path=tmp_path / "control.json",
+        status_path=tmp_path / "status.json",
+        results_path=tmp_path / "results.json",
+    )
+    sent = []
+    scheduler.workers = [
+        SimpleNamespace(worker_id=0, case_name="short", state="busy", conn=SimpleNamespace(send=lambda value: sent.append(value))),
+        SimpleNamespace(worker_id=1, case_name="short", state="busy", conn=SimpleNamespace(send=lambda value: sent.append(value))),
+        SimpleNamespace(worker_id=2, case_name="long", state="busy", conn=SimpleNamespace(send=lambda value: sent.append(value))),
+    ]
+    scheduler.case_evaluation_seconds.update({"short": 1.0, "long": 10.0})
+    scheduler.batches = {4: {"batch_id": 4}}
+    scheduler.case_jobs = deque([{"batch_id": 4, "case_name": "long"}] * 3)
+    scheduler.next_rebalance_monotonic = 0.0
+
+    scheduler._rebalance_warm_workers_if_due()
+
+    assert scheduler.workers[0].state == "busy"
+    assert scheduler.workers[0].retire_after_batch is True
+    assert scheduler.pending_replacements == deque([{"from_case": "short", "to_case": "long"}])
+    assert sent == []
+
+
+def test_scheduler_reports_stale_compiled_python_api_parameter_names(tmp_path):
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["atex"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 1,
+            "max_workers": 1,
+            "strategy": {"name": "random", "options": {"max_samples": 1}},
+            "parameter_ranges": [{"name": "C_uu_shr", "min": 0.0, "max": 1.0}],
+        },
+        job_dir=tmp_path,
+        control_path=Path(tmp_path) / "control.json",
+        status_path=Path(tmp_path) / "status.json",
+        results_path=Path(tmp_path) / "results.json",
+    )
+    scheduler.param_names = ["C8"]
+
+    with pytest.raises(RuntimeError, match="compiled CLUBB Python API.*compile.py -python"):
+        scheduler._assert_compiled_parameter_compatibility()
+
+
+def test_scheduler_rejects_ranges_outside_compiled_fortran_hard_bounds(tmp_path):
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["atex"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 1,
+            "max_workers": 1,
+            "strategy": {"name": "random", "options": {"max_samples": 1}},
+            "parameter_ranges": [{"name": "C8", "min": -0.1, "max": 1.0}],
+        },
+        job_dir=tmp_path,
+        control_path=Path(tmp_path) / "control.json",
+        status_path=Path(tmp_path) / "status.json",
+        results_path=Path(tmp_path) / "results.json",
+    )
+    scheduler.param_names = ["C8"]
+    scheduler.parameter_hard_bounds = {
+        "C8": {"name": "C8", "min": 0.0, "max": 1.0}
+    }
+
+    with pytest.raises(RuntimeError, match="violate compiled CLUBB hard bounds.*C8"):
+        scheduler._assert_compiled_parameter_compatibility()
+
+
+def test_scheduler_honors_interior_compiled_fortran_hard_bounds(tmp_path):
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["atex"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 1,
+            "max_workers": 1,
+            "strategy": {"name": "random", "options": {"max_samples": 1}},
+            "parameter_ranges": [{"name": "C_uu_shr", "min": 0.0, "max": 0.5}],
+        },
+        job_dir=tmp_path,
+        control_path=Path(tmp_path) / "control.json",
+        status_path=Path(tmp_path) / "status.json",
+        results_path=Path(tmp_path) / "results.json",
+    )
+    scheduler.param_names = ["C_uu_shr"]
+    scheduler.parameter_hard_bounds = {
+        "C_uu_shr": {
+            "name": "C_uu_shr", "min": 1.0e-12, "max": 1.0 - 1.0e-12,
+        }
+    }
+
+    with pytest.raises(RuntimeError, match="requested min 0 must be >= 1e-12"):
+        scheduler._assert_compiled_parameter_compatibility()
+
+
 def test_scheduler_defaults_simann_chain_count_from_parallel_capacity(tmp_path):
     scheduler = TuningScheduler(
         request={
@@ -573,6 +881,28 @@ def test_scheduler_defaults_simann_chain_count_from_parallel_capacity(tmp_path):
     assert scheduler.request["strategy"]["options"]["chain_count"] == 32
     assert scheduler.max_pending_batches == 4
     assert scheduler.max_pending_samples == 32
+
+
+def test_scheduler_bounds_each_case_queue_to_twice_the_worker_count(tmp_path):
+    scheduler = TuningScheduler(
+        request={
+            "cases": ["arm", "bomex", "dycoms2_rf01"],
+            "selected_fields": ["cloud_frac"],
+            "batch_size": 2,
+            "max_workers": 4,
+            "strategy": {"name": "random", "options": {"max_samples": 20}},
+            "parameter_ranges": [{"name": "C8", "min": 10.0, "max": 11.0}],
+        },
+        job_dir=tmp_path,
+        control_path=Path(tmp_path) / "control.json",
+        status_path=Path(tmp_path) / "status.json",
+        results_path=Path(tmp_path) / "results.json",
+    )
+
+    assert scheduler.max_pending_case_jobs_per_case == 8
+    assert scheduler.max_pending_batches == 8
+    assert scheduler.max_pending_batches == scheduler.max_pending_case_jobs_per_case
+    assert scheduler.max_pending_samples == 16
 
 
 def test_scheduler_stores_selected_loss_and_aggregation_diagnostics(tmp_path):
@@ -659,6 +989,7 @@ def test_scheduler_handles_different_window_counts_by_case(tmp_path):
                 },
             },
             "selected_fields": ["cloud_frac"],
+            "loss_mode": "centered_rmse_bias",
             "batch_size": 1,
             "max_workers": 1,
             "strategy": {"name": "random", "options": {"max_samples": 1}},
@@ -704,6 +1035,10 @@ def test_scheduler_handles_different_window_counts_by_case(tmp_path):
     assert result["field_metrics"]["atex"]["cloud_frac"]["num_time_windows"] == 1
     assert result["field_metrics"]["bomex"]["cloud_frac"]["num_time_windows"] == 2
     assert len(result["field_metrics"]["bomex"]["cloud_frac"]["subwindows"]) == 2
+    assert result["time_window_aggregation_scope"] == "overall"
+    # The default policy ranks all three active time-window losses together:
+    # 0.2, 0.3, and 0.5.  The empty worst bin is renormalized away.
+    assert result["total_loss"] == pytest.approx((0.1 * 0.2 + 0.4 * 0.3 + 0.4 * 0.5) / 0.9)
 
 
 def test_sample_history_writer_stores_observation_axis_without_window_padding(tmp_path):

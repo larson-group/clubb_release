@@ -3,7 +3,6 @@
 from dash import (
     ALL,
     Input,
-    MATCH,
     Output,
     Patch,
     State,
@@ -12,10 +11,25 @@ from dash import (
     no_update,
 )
 
-from tunable_configs import tunable_config_names
+from dash_app.shared.tunable_configs import tunable_config_names
+from utilities.output_paths import resolve_output_dir
+from utilities.clubb_settings_validation import (
+    evaluate_settings,
+    is_independently_tunable,
+    linked_flag_updates,
+    linked_parameter_members as utility_linked_parameter_members,
+    values_by_name,
+    values_by_setting_key,
+)
 
 from .config_state import build_tunable_config_state
-from .layout import build_multicol_row, build_right_pane, field_style
+from .layout import (
+    build_multicol_row,
+    build_right_pane,
+    build_tunable_controls,
+    compute_width_hints,
+)
+from .namelist import normalize_numeric_display
 from .state import RUN_FINALIZED, RUN_LOCK, RUN_STATUS
 
 
@@ -36,6 +50,39 @@ def default_multicol_row(row_id, tunable_names, default_ranges=None, selected_pa
     row["min"] = derived.get("min", "")
     row["max"] = derived.get("max", "")
     return row
+
+
+def unchanged_multicol_bounds(param_values):
+    """Return wildcard-shaped no-op values for the multicol min/max controls."""
+    count = len(param_values or [])
+    return [no_update] * count, [no_update] * count
+
+
+def synchronized_flag_values(flag_ids, flag_values, trigger_id=None):
+    """Return live flags with only a declared checkbox-pair update applied."""
+    resolved = {
+        name: bool(value)
+        for name, value in values_by_name(flag_ids, flag_values).items()
+    }
+    if isinstance(trigger_id, dict) and trigger_id.get("type") == "run-flag":
+        name = str(trigger_id.get("name") or "")
+        resolved.update(linked_flag_updates(name, bool(resolved.get(name))))
+    return resolved
+
+
+def linked_groups_from_resolution(resolution, param_meta):
+    """Extract active equal-value tunable groups from the shared resolver."""
+    available = {
+        str(meta.get("name"))
+        for meta in (param_meta or [])
+        if isinstance(meta, dict) and meta.get("file") == "tunable" and meta.get("name")
+    }
+    groups = []
+    for members in (resolution or {}).get("linked_parameter_groups") or []:
+        members = [str(member) for member in members or []]
+        if len(members) >= 2 and all(member in available for member in members):
+            groups.append(members)
+    return groups
 
 
 def _fallback_rows_by_id(rows):
@@ -98,24 +145,227 @@ def invalidate_cached_run_results(completed_cases, failed_cases):
     return completed_update, failed_update
 
 
+def output_directory_warning(value):
+    """Return a concise overwrite warning for the selected output directory.
+
+    The SCM runner intentionally reuses an output directory. This helper is
+    advisory rather than a launch guard and never creates the path.
+    """
+    try:
+        path = resolve_output_dir(value)
+    except (TypeError, ValueError):
+        return "⚠ Output path is invalid.", "run-output-dir-warning run-output-dir-warning--warning"
+
+    try:
+        if path.exists() and not path.is_dir():
+            return "⚠ Output path is an existing file.", "run-output-dir-warning run-output-dir-warning--warning"
+        if not path.is_dir():
+            return "", "run-output-dir-warning run-output-dir-warning--hidden"
+        count = sum(1 for _entry in path.iterdir())
+    except OSError:
+        return "⚠ Could not inspect this output directory.", "run-output-dir-warning run-output-dir-warning--warning"
+
+    if count:
+        noun = "item" if count == 1 else "items"
+        return (
+            f"⚠ {count} existing {noun}; matching output files will be overwritten.",
+            "run-output-dir-warning run-output-dir-warning--warning",
+        )
+    return "", "run-output-dir-warning run-output-dir-warning--hidden"
+
+
 def register_settings_callbacks(app):
     """Register callbacks that track dirty state and changed-field styling."""
 
     @app.callback(
+        Output("run-output-dir-warning", "children"),
+        Output("run-output-dir-warning", "className"),
+        Input("run-opt-out-dir", "value"),
+    )
+    def show_output_directory_warning(output_directory):
+        """Make intentional output reuse visible before a Run launch."""
+        return output_directory_warning(output_directory)
+
+    @app.callback(
+        Output("run-settings-resolution", "data"),
+        Input({"type": "run-flag", "name": ALL}, "value"),
+        Input({"type": "run-param", "file": ALL, "name": ALL}, "value"),
+        State("run-settings-schema", "data"),
+        State({"type": "run-flag", "name": ALL}, "id"),
+        State({"type": "run-param", "file": ALL, "name": ALL}, "id"),
+    )
+    def resolve_live_settings(flag_values, param_values, schema, flag_ids, param_ids):
+        """Delegate all Run settings semantics to the shared evaluator.
+
+        An explicit checkbox-pair click has a companion update in a separate
+        Dash callback.  Apply that same declared update to this in-flight
+        value map so the displayed validation state never lags one callback
+        behind the checkbox state.
+        """
+        resolved_flags = synchronized_flag_values(
+            flag_ids,
+            flag_values,
+            callback_context.triggered_id,
+        )
+        return evaluate_settings(
+            schema or {},
+            flag_values=resolved_flags,
+            parameter_values=values_by_setting_key(param_ids, param_values),
+        )
+
+    @app.callback(
+        Output("run-settings-resolution-note", "children"),
+        Output("run-settings-resolution-note", "className"),
+        Input("run-settings-resolution", "data"),
+        prevent_initial_call=True,
+    )
+    def show_settings_resolution_note(resolution):
+        """Render settings consequences server-side for asset-reload safety."""
+        issues = [
+            item for item in (resolution or {}).get("issues", [])
+            if item.get("severity") == "error" or str(item.get("code") or "").startswith("forced_")
+        ]
+        if not issues:
+            return "", "run-settings-resolution-note"
+        message = " ".join(str(item.get("message") or "") for item in issues)
+        has_error = any(item.get("severity") == "error" for item in issues)
+        suffix = "run-settings-resolution-note--error" if has_error else "run-settings-resolution-note--derived"
+        return message, f"run-settings-resolution-note {suffix}"
+
+    @app.callback(
+        Output({"type": "run-flag", "name": ALL}, "value", allow_duplicate=True),
+        Output({"type": "run-param", "file": ALL, "name": ALL}, "value", allow_duplicate=True),
+        Input("run-settings-resolution", "data"),
+        Input({"type": "run-flag", "name": ALL}, "value"),
+        State({"type": "run-flag", "name": ALL}, "id"),
+        State({"type": "run-flag", "name": ALL}, "value"),
+        State({"type": "run-param", "file": ALL, "name": ALL}, "id"),
+        State({"type": "run-param", "file": ALL, "name": ALL}, "value"),
+        prevent_initial_call=True,
+    )
+    def apply_forced_settings(resolution, live_flag_values, flag_ids, flag_values, param_ids, param_values):
+        """Apply forced values and make opposite checkbox groups switchable."""
+        trigger_id = callback_context.triggered_id
+        if isinstance(trigger_id, dict) and trigger_id.get("type") == "run-flag":
+            try:
+                source_index = list(flag_ids or []).index(trigger_id)
+            except ValueError:
+                source_index = -1
+            source_is_enabled = source_index >= 0 and bool((live_flag_values or [])[source_index])
+            related_updates = linked_flag_updates(trigger_id.get("name"), source_is_enabled)
+            if related_updates:
+                return (
+                    [
+                        (["on"] if desired else [])
+                        if (desired := related_updates.get((component_id or {}).get("name"))) is not None
+                        and (live_flag_values or [])[index] != (["on"] if desired else [])
+                        else no_update
+                        for index, component_id in enumerate(flag_ids or [])
+                    ],
+                    [no_update for _ in (param_ids or [])],
+                )
+            return [no_update for _ in (flag_ids or [])], [no_update for _ in (param_ids or [])]
+
+        # All remaining triggers come from the shared resolver.
+        forced_parameters = dict((resolution or {}).get("forced_parameters") or {})
+        updated_flags = [no_update for _ in (flag_ids or [])]
+        updated_params = [no_update for _ in (param_ids or [])]
+        for index, component_id in enumerate(param_ids or []):
+            if (component_id or {}).get("file") != "tunable":
+                continue
+            name = component_id.get("name")
+            if name in forced_parameters:
+                desired = str(forced_parameters[name])
+                if index >= len(param_values or []) or str((param_values or [])[index]) != desired:
+                    updated_params[index] = desired
+        return updated_flags, updated_params
+
+    @app.callback(
+        Output({"type": "run-param", "file": "tunable", "name": ALL}, "value", allow_duplicate=True),
+        Input({"type": "run-linked-param", "group": ALL}, "value"),
+        State({"type": "run-linked-param", "group": ALL}, "id"),
+        State({"type": "run-param", "file": "tunable", "name": ALL}, "id"),
+        State({"type": "run-param", "file": "tunable", "name": ALL}, "value"),
+        prevent_initial_call=True,
+    )
+    def mirror_linked_parameter_value(linked_values, linked_ids, param_ids, param_values):
+        """Expand one visible linked control into its physical namelist members."""
+        trigger_id = callback_context.triggered_id
+        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "run-linked-param":
+            return [no_update for _ in (param_ids or [])]
+        group = str(trigger_id.get("group") or "")
+        try:
+            position = list(linked_ids or []).index(trigger_id)
+        except ValueError:
+            return [no_update for _ in (param_ids or [])]
+        if position >= len(linked_values or []):
+            return [no_update for _ in (param_ids or [])]
+        desired = "" if (linked_values or [])[position] is None else str((linked_values or [])[position])
+        members = set(utility_linked_parameter_members(group))
+        return [
+            desired
+            if (component_id or {}).get("name") in members
+            and str((param_values or [])[index]) != desired
+            else no_update
+            for index, component_id in enumerate(param_ids or [])
+        ]
+
+    @app.callback(
+        Output("run-tunable-controls", "children"),
+        Output("run-linked-parameter-groups", "data"),
+        Input("run-settings-resolution", "data"),
+        State("run-linked-parameter-groups", "data"),
+        State("run-param-meta", "data"),
+        State({"type": "run-param", "file": "tunable", "name": ALL}, "id"),
+        State({"type": "run-param", "file": "tunable", "name": ALL}, "value"),
+        prevent_initial_call=True,
+    )
+    def rebuild_linked_tunable_controls(resolution, current_groups, param_meta, param_ids, param_values):
+        """Rebuild only when a flag activates or releases a link rule.
+
+        Ordinary value edits leave the component tree alone, preserving focus
+        and browser persistence.  The resolver is the only source of group
+        membership, so the conditional C1/C14 rule remains consistent with
+        CLUBB's validation logic.
+        """
+        desired_groups = linked_groups_from_resolution(resolution, param_meta)
+        if desired_groups == list(current_groups or []):
+            return no_update, no_update
+        values_by_name = {
+            str((component_id or {}).get("name") or ""): value
+            for component_id, value in zip(param_ids or [], param_values or [])
+        }
+        forced = dict((resolution or {}).get("forced_parameters") or {})
+        for group in desired_groups:
+            forced_value = next((forced[name] for name in group if name in forced), None)
+            if forced_value is not None:
+                values_by_name[group[0]] = forced_value
+        entries = [
+            {"name": str(meta["name"]), "value": values_by_name.get(str(meta["name"]), "")}
+            for meta in (param_meta or [])
+            if isinstance(meta, dict) and meta.get("file") == "tunable" and meta.get("name")
+        ]
+        label_width_px, value_width_px, _ = compute_width_hints([entry["name"] for entry in entries])
+        return (
+            build_tunable_controls(entries, desired_groups, label_width_px, value_width_px, normalize_numeric_display),
+            desired_groups,
+        )
+
+    @app.callback(
         Output("run-selected-config", "data"),
-        Output("run-defaults", "data"),
-        Output("run-defaults-by-key", "data"),
-        Output("run-flag-names", "data"),
+        Output("run-settings-schema", "data"),
         Output("run-param-meta", "data"),
         Output("run-tunable-names", "data"),
         Output("run-tunable-default-ranges", "data"),
+        Output("run-linked-parameter-groups", "data", allow_duplicate=True),
+        Output("run-settings-resolution", "data", allow_duplicate=True),
         Output("run-right-pane", "children"),
         Output("run-multicol-next-id", "data", allow_duplicate=True),
         Output("run-multicol-row-order", "data", allow_duplicate=True),
         Output("run-multicol-rows-state", "data", allow_duplicate=True),
         Output("run-completed-cases", "data", allow_duplicate=True),
         Output("run-failed-cases", "data", allow_duplicate=True),
-        Input({"type": "run-config-button", "name": ALL}, "n_clicks"),
+        Input("run-config-reset-signal", "data"),
         State("run-tunable-configs", "data"),
         State("run-selected-config", "data"),
         State("run-multicol-next-id", "data"),
@@ -130,7 +380,7 @@ def register_settings_callbacks(app):
         prevent_initial_call=True,
     )
     def select_tunable_config(
-        _clicks,
+        reset_signal,
         configs,
         current_config,
         next_id,
@@ -144,41 +394,36 @@ def register_settings_callbacks(app):
         failed_cases,
     ):
         """Switch the run tab to another tunable config and rebuild config-dependent controls."""
-        trigger_id = callback_context.triggered_id
-        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "run-config-button":
+        if not isinstance(reset_signal, dict):
             return (no_update,) * 13
 
-        config_name = str(trigger_id.get("name", "")).strip()
+        config_name = str(reset_signal.get("name", "")).strip()
         if not config_name or config_name not in tunable_config_names(configs):
             return (no_update,) * 13
-        if config_name == current_config:
-            return (no_update,) * 13
-
         config_state = build_tunable_config_state(config_name, configs)
-        multicol_rows = multicol_rows_from_values(
-            row_order,
-            multicol_param_values,
-            multicol_min_values,
-            multicol_max_values,
-            multicol_npoint_values,
-            config_state["tunable_names"],
-            config_state["tunable_default_ranges"],
-            saved_multicol_rows,
-        )
+        # A config button is an explicit reset to that config's complete
+        # checked-in state.  Do not preserve a previous workspace's parameter
+        # grid or live right-pane values under a newly selected config.
+        multicol_rows = [
+            default_multicol_row(
+                0,
+                config_state["tunable_names"],
+                config_state["tunable_default_ranges"],
+            )
+        ]
         multicol_row_order = [row["id"] for row in multicol_rows]
-        multicol_next_id = max([int(row_id) for row_id in multicol_row_order], default=-1) + 1
-        multicol_next_id = max(int(next_id or 0), multicol_next_id)
+        multicol_next_id = 1
         right_pane_data = {"tunable_configs": configs or [], "multicol_rows": multicol_rows, **config_state}
         completed_update, failed_update = invalidate_cached_run_results(completed_cases, failed_cases)
 
         return (
             config_state["selected_config"],
-            config_state["defaults"],
-            config_state["defaults_by_key"],
-            config_state["flag_names"],
+            config_state["settings_schema"],
             config_state["param_meta"],
             config_state["tunable_names"],
             config_state["tunable_default_ranges"],
+            config_state["linked_parameter_groups"],
+            config_state["settings_resolution"],
             build_right_pane(right_pane_data),
             multicol_next_id,
             multicol_row_order,
@@ -189,15 +434,37 @@ def register_settings_callbacks(app):
 
     app.clientside_callback(
         ClientsideFunction(
-            namespace="runTab",
-            function_name="syncParamRowClass",
+            namespace="dashboardWorkspace",
+            function_name="resetRunConfigControls",
         ),
-        Output({"type": "run-param-container", "file": MATCH, "name": MATCH}, "className"),
-        Input({"type": "run-param", "file": MATCH, "name": MATCH}, "value"),
-        Input({"type": "run-param", "file": MATCH, "name": MATCH}, "disabled"),
-        State({"type": "run-param", "file": MATCH, "name": MATCH}, "id"),
-        State("run-defaults-by-key", "data"),
+        Output("run-config-reset-signal", "data"),
+        Input({"type": "run-config-button", "name": ALL}, "n_clicks"),
+        State({"type": "run-config-button", "name": ALL}, "id"),
         prevent_initial_call=True,
+    )
+
+    app.clientside_callback(
+        ClientsideFunction(
+            namespace="runTab",
+            function_name="syncAllParamRowClasses",
+        ),
+        Output({"type": "run-param-container", "file": ALL, "name": ALL}, "className"),
+        Input("run-settings-resolution", "data"),
+        State({"type": "run-param", "file": ALL, "name": ALL}, "id"),
+    )
+
+    app.clientside_callback(
+        ClientsideFunction(namespace="runTab", function_name="syncAllFlagRowClasses"),
+        Output({"type": "run-flag-container", "name": ALL}, "className"),
+        Input("run-settings-resolution", "data"),
+        State({"type": "run-flag", "name": ALL}, "id"),
+    )
+
+    app.clientside_callback(
+        ClientsideFunction(namespace="runTab", function_name="syncLinkedParamRowClasses"),
+        Output({"type": "run-linked-param-container", "group": ALL}, "className"),
+        Input("run-settings-resolution", "data"),
+        State({"type": "run-linked-param-container", "group": ALL}, "id"),
     )
 
     @app.callback(
@@ -284,21 +551,21 @@ def register_settings_callbacks(app):
         """Fill multicol min/max from the selected parameter's default value."""
         trigger_id = callback_context.triggered_id
         if not isinstance(trigger_id, dict) or trigger_id.get("type") != "run-hr-param":
-            return no_update, no_update
+            return unchanged_multicol_bounds(param_values)
 
         row_id = trigger_id.get("index")
         current_order = list(row_order or [])
         if row_id not in current_order:
-            return no_update, no_update
+            return unchanged_multicol_bounds(param_values)
         row_pos = current_order.index(row_id)
 
         values = list(param_values or [])
         if row_pos >= len(values):
-            return no_update, no_update
+            return unchanged_multicol_bounds(param_values)
         param_name = values[row_pos]
         derived_range = (default_ranges or {}).get(param_name)
         if not derived_range:
-            return no_update, no_update
+            return unchanged_multicol_bounds(param_values)
 
         updated_min = list(min_values or [])
         updated_max = list(max_values or [])
@@ -320,42 +587,19 @@ def register_settings_callbacks(app):
         return not any(str(value or "").strip() for value in (multicol_param_values or []))
 
     @app.callback(
-        Output({"type": "run-flag-container", "name": ALL}, "style"),
         Output("run-completed-cases", "data", allow_duplicate=True),
         Output("run-failed-cases", "data", allow_duplicate=True),
         Input({"type": "run-flag", "name": ALL}, "value"),
-        State("run-defaults", "data"),
-        State("run-flag-names", "data"),
         State("run-completed-cases", "data"),
         State("run-failed-cases", "data"),
         prevent_initial_call=True,
     )
-    def sync_flag_styles_and_invalidate(flag_values, defaults_data, flag_names_data, completed_cases, failed_cases):
-        """Update only the affected flag row and invalidate stale run results."""
-        flag_names = flag_names_data or []
+    def invalidate_after_flag_edit(_flag_values, completed_cases, failed_cases):
+        """Invalidate results after a user changes a boolean model flag."""
         trigger_id = callback_context.triggered_id
-        completed_update, failed_update = invalidate_cached_run_results(
-            completed_cases, failed_cases
-        )
-
-        if not flag_names:
-            return [], completed_update, failed_update
-
-        if isinstance(trigger_id, dict) and trigger_id.get("type") == "run-flag":
-            triggered_name = trigger_id.get("name")
-            if triggered_name in flag_names:
-                flag_styles = [no_update] * len(flag_names)
-                index = flag_names.index(triggered_name)
-                current = bool((flag_values or [])[index]) if index < len(flag_values or []) else False
-                changed = current != defaults_data["flags"].get(triggered_name)
-                flag_styles[index] = field_style(changed)
-                return flag_styles, completed_update, failed_update
-
-        flag_styles = []
-        for name, values in zip(flag_names, flag_values or []):
-            current = bool(values)
-            flag_styles.append(field_style(current != defaults_data["flags"].get(name)))
-        return flag_styles, completed_update, failed_update
+        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "run-flag":
+            return no_update, no_update
+        return invalidate_cached_run_results(completed_cases, failed_cases)
 
     @app.callback(
         Output("run-completed-cases", "data", allow_duplicate=True),
@@ -401,11 +645,23 @@ def register_settings_callbacks(app):
             return no_update, no_update
         return invalidate_cached_run_results(completed_cases, failed_cases)
 
-    app.clientside_callback(
-        ClientsideFunction(namespace="runTab", function_name="syncMulticolDisabled"),
+    @app.callback(
         Output({"type": "run-param", "file": "tunable", "name": ALL}, "disabled"),
         Input({"type": "run-hr-param", "index": ALL}, "value"),
+        Input("run-settings-resolution", "data"),
         State({"type": "run-param", "file": "tunable", "name": ALL}, "id"),
         State({"type": "run-param", "file": "tunable", "name": ALL}, "disabled"),
         prevent_initial_call=True,
     )
+    def sync_tunable_disabled(multicol_param_values, resolution, tunable_ids, current_disabled):
+        """Disable hypergrid-owned, inactive, and derived tunable controls."""
+        claimed = {str(value).strip() for value in (multicol_param_values or []) if str(value).strip()}
+        states = dict((resolution or {}).get("parameter_states") or {})
+        output = []
+        for index, component_id in enumerate(tunable_ids or []):
+            name = (component_id or {}).get("name")
+            state = dict(states.get(name) or {})
+            disabled = name in claimed or not is_independently_tunable(state)
+            current = bool((current_disabled or [])[index]) if index < len(current_disabled or []) else False
+            output.append(no_update if disabled == current else disabled)
+        return output

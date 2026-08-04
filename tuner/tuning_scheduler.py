@@ -5,7 +5,10 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass
 import multiprocessing
+import os
 from pathlib import Path
+import pickle
+import tempfile
 import time
 import traceback
 
@@ -14,15 +17,19 @@ from tuner.tuning_strategy import build_tuning_strategy
 from tuner.tuning_worker import worker_main
 from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
+    DEFAULT_AGGREGATION_WEIGHTS,
     DEFAULT_AGGREGATION_MODE,
     DEFAULT_LOSS_MODE,
     LOSS_METRIC_NAMES,
     LOSS_MODE_NAMES,
     LOSS_POLICY_CONSTANTS,
     LOSS_POLICY_VERSION,
+    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
+    TIME_WINDOW_AGGREGATION_SCOPES,
     WORST_QUANTILE_FRACTION,
     aggregate_losses,
     compute_field_loss_diagnostics,
+    normalize_aggregation_weights,
 )
 from tuner.status import (
     RESULTS_FILE_LIMIT,
@@ -36,6 +43,17 @@ from tuner.status import (
 
 POLL_INTERVAL_SECONDS = 0.05
 STATUS_HEARTBEAT_SECONDS = 1.0
+# Rebalancing intentionally starts responsively, then becomes cheap for long
+# jobs.  These are elapsed intervals between checks, not a busy polling loop.
+REBALANCE_INTERVALS_SECONDS = (5.0, 10.0, 15.0)
+REBALANCE_IMBALANCE_RATIO = 2.5
+# Do not churn warm F2PY actors when every case queue will clear essentially
+# immediately.  Relative imbalance is useful only once there is enough work
+# to amortize an actor restart.
+REBALANCE_MIN_DRAIN_SECONDS = 5.0
+REBALANCE_MIN_WARM_WORKERS_PER_CASE = 1
+EVALUATION_TIME_EWMA_ALPHA = 0.30
+BEST_LOSS_HISTORY_LIMIT = 300
 
 
 @dataclass
@@ -49,6 +67,8 @@ class WorkerHandle:
     worker_dir: Path
     state: str = "starting"
     current_batch_id: int | None = None
+    current_job_started_monotonic: float | None = None
+    retire_after_batch: bool = False
 
 
 class TuningScheduler:
@@ -75,6 +95,7 @@ class TuningScheduler:
         }
         self.case_defaults = dict(request.get("case_defaults", {}))
         self.config = str(request.get("config") or "default").strip() or "default"
+        self.override = str(request.get("override") or "").strip()
         self.selected_fields = list(request["selected_fields"])
         self.batch_size = int(request["batch_size"])
         self.max_workers = int(request["max_workers"])
@@ -106,6 +127,12 @@ class TuningScheduler:
         self.loss_mode = request.get("loss_mode", DEFAULT_LOSS_MODE)
         self.aggregation_mode = request.get("aggregation_mode", DEFAULT_AGGREGATION_MODE)
         self.time_window_aggregation_mode = request.get("time_window_aggregation_mode", self.aggregation_mode)
+        self.aggregation_weights = normalize_aggregation_weights(
+            request.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS)
+        )
+        self.time_window_aggregation_scope = str(
+            request.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE)
+        )
         self.case_num_time_windows = {
             case_name: int(
                 self.case_configs.get(case_name, {}).get(
@@ -121,6 +148,8 @@ class TuningScheduler:
             raise RuntimeError(f"Unknown aggregation mode: {self.aggregation_mode}")
         if self.time_window_aggregation_mode not in AGGREGATION_MODE_NAMES:
             raise RuntimeError(f"Unknown time window aggregation mode: {self.time_window_aggregation_mode}")
+        if self.time_window_aggregation_scope not in TIME_WINDOW_AGGREGATION_SCOPES:
+            raise RuntimeError(f"Unknown time window aggregation scope: {self.time_window_aggregation_scope}")
         invalid_window_cases = [
             case_name for case_name, count in self.case_num_time_windows.items()
             if count < 1
@@ -135,9 +164,12 @@ class TuningScheduler:
         self.loss_policy_constants = dict(LOSS_POLICY_CONSTANTS)
         self.aggregation_options = {
             "worst_quantile_fraction": WORST_QUANTILE_FRACTION,
+            "quantile_weights": list(self.aggregation_weights),
+            "time_window_aggregation_scope": self.time_window_aggregation_scope,
         }
         self.request["loss_mode"] = self.loss_mode
         self.request["config"] = self.config
+        self.request["override"] = self.override
         self.request["aggregation_mode"] = self.aggregation_mode
         self.request["case_configs"] = [
             {
@@ -157,18 +189,25 @@ class TuningScheduler:
         self.request.pop("time_window_mode", None)
         self.request.pop("num_time_windows", None)
         self.request["time_window_aggregation_mode"] = self.time_window_aggregation_mode
+        self.request["aggregation_weights"] = list(self.aggregation_weights)
+        self.request["time_window_aggregation_scope"] = self.time_window_aggregation_scope
         self.request["loss_policy_version"] = self.loss_policy_version
         self.request["loss_policy_constants"] = dict(self.loss_policy_constants)
         self.request["aggregation_options"] = dict(self.aggregation_options)
+        # Each batch contributes one case job to every selected case. Keep up
+        # to two workers' worth of jobs queued *per case*, so a slower case
+        # retains enough visible backlog for the drain-time balancer to act.
+        self.max_pending_case_jobs_per_case = 2 * self.max_workers
+        case_job_limited_batches = self.max_pending_case_jobs_per_case
         if self.adaptive_strategy:
-            self.max_pending_samples = self.simann_chain_count
-            self.max_pending_batches = max(
+            chain_limited_batches = max(
                 1,
                 (self.simann_chain_count + self.batch_size - 1) // self.batch_size,
             )
+            self.max_pending_batches = min(chain_limited_batches, case_job_limited_batches)
         else:
-            self.max_pending_batches = max(1, 2 * self.max_workers)
-            self.max_pending_samples = self.max_pending_batches * self.batch_size
+            self.max_pending_batches = case_job_limited_batches
+        self.max_pending_samples = self.max_pending_batches * self.batch_size
         self.worker_cap = max(self.max_workers, len(self.cases))
         self.results_file_limit = RESULTS_FILE_LIMIT
 
@@ -180,17 +219,35 @@ class TuningScheduler:
         self.completed_batches = 0
         self.best_results: list[dict] = []
         self.best_results_by_case: dict[str, list[dict]] = {case_name: [] for case_name in self.cases}
+        self.best_loss_history: list[dict[str, float | int]] = []
         self.pending_samples = deque()
         self.completed_samples = deque()
         self.batches: dict[int, dict] = {}
         self.case_jobs = deque()
+        self.started_monotonic = time.monotonic()
+        # A CLUBB/F2PY loss session owns global Fortran state and therefore
+        # remains bound to one case.  We can still adapt the *pool* safely by
+        # retiring only idle warm workers and spawning their replacement for a
+        # backlogged case.  No in-flight evaluation is ever interrupted.
+        self.case_evaluation_seconds: dict[str, float | None] = {
+            case_name: None for case_name in self.cases
+        }
+        self.case_completed_evaluations: dict[str, int] = {
+            case_name: 0 for case_name in self.cases
+        }
+        self.pending_replacements: deque[dict[str, str]] = deque()
+        self.rebalance_interval_index = 0
+        self.next_rebalance_monotonic = self.started_monotonic + REBALANCE_INTERVALS_SECONDS[0]
+        self.last_rebalance: dict[str, object] | None = None
         self.strategy = None
         self.sample_history_writer: SampleHistoryWriter | None = None
         self.param_names: list[str] | None = None
+        self.parameter_hard_bounds: dict[str, dict] | None = None
         self.default_params_row: list[float] | None = None
         self.error_message = ""
-        self.started_monotonic = time.monotonic()
+        self.elapsed_before_resume_seconds = 0.0
         self.last_status_write = 0.0
+        self.checkpoint_path = self.job_dir / "resume_checkpoint.pkl"
 
     def run(self) -> int:
         """Run the full tuning lifecycle and return a process exit code."""
@@ -198,7 +255,31 @@ class TuningScheduler:
         self._write_public_state("initializing", started_at, started_at, force=True)
 
         try:
-            self._initialize_case_barrier(started_at)
+            if not self._initialize_case_barrier(started_at):
+                finished_at = utc_now_iso()
+                write_status(
+                    self.status_path,
+                    state="stopped",
+                    job_dir=self.job_dir,
+                    samples_evaluated=self.samples_evaluated,
+                    elapsed_seconds=self._elapsed_seconds(),
+                    best_results=self.best_results,
+                    metrics=self._metrics(),
+                )
+                write_results(
+                    self.results_path,
+                    state="stopped",
+                    job_dir=self.job_dir,
+                    request=self.request,
+                    samples_evaluated=self.samples_evaluated,
+                    best_results=self.best_results,
+                    best_results_by_case=self.best_results_by_case,
+                    started_at=started_at,
+                    updated_at=finished_at,
+                    finished_at=finished_at,
+                )
+                return 0
+            self._assert_compiled_parameter_compatibility()
             self._initialize_sample_history_writer()
             seed = self.request.get("seed")
             self.strategy = build_tuning_strategy(
@@ -208,12 +289,14 @@ class TuningScheduler:
                 parameter_ranges=self.request["parameter_ranges"],
                 seed=None if seed is None else int(seed),
             )
+            self._restore_resume_checkpoint()
             self.request["total_samples"] = self.strategy.estimated_sample_count()
             self._write_public_state("running", started_at, utc_now_iso(), force=True)
 
             stopping = False
             while True:
                 self._poll_workers()
+                self._start_pending_replacements()
                 self._drain_completed_samples()
                 if self.error_message:
                     raise RuntimeError(self.error_message)
@@ -228,6 +311,7 @@ class TuningScheduler:
                     if self._active_evaluations() == 0:
                         finished_at = utc_now_iso()
                         self._close_sample_history()
+                        self._write_resume_checkpoint()
                         write_status(
                             self.status_path,
                             state="stopped",
@@ -256,12 +340,14 @@ class TuningScheduler:
 
                 self._fill_pending_samples()
                 self._pack_pending_batches()
+                self._rebalance_warm_workers_if_due()
                 self._dispatch_jobs()
 
                 if self._is_finished():
                     self._stop_all_workers()
                     finished_at = utc_now_iso()
                     self._close_sample_history()
+                    self._remove_resume_checkpoint()
                     write_status(
                         self.status_path,
                         state="finished",
@@ -292,6 +378,7 @@ class TuningScheduler:
             self.error_message = f"{exc}\n{traceback.format_exc(limit=10)}"
             self._stop_all_workers()
             self._close_sample_history(suppress_errors=True)
+            self._remove_resume_checkpoint()
             finished_at = utc_now_iso()
             write_status(
                 self.status_path,
@@ -318,8 +405,81 @@ class TuningScheduler:
             )
             return 1
 
-    def _initialize_case_barrier(self, started_at: str) -> None:
-        """Start one worker per case and wait until metadata are validated."""
+    def _assert_compiled_parameter_compatibility(self) -> None:
+        """Fail clearly when the Python F2PY build predates the selected config.
+
+        Worker metadata comes from ``clubb_api.get_param_names()``, i.e. the
+        actual compiled API that will evaluate every candidate.  Comparing it
+        with the request here keeps a namelist/API rename mismatch from being
+        mistaken for a strategy error or allowing a partial Tune launch.
+        """
+        available = set(self.param_names or [])
+        requested = {
+            str(target).strip()
+            for spec in self.request.get("parameter_ranges", [])
+            for target in (
+                spec.get("targets", [spec.get("name")])
+                if not isinstance(spec.get("targets", [spec.get("name")]), str)
+                else [spec.get("targets")]
+            )
+        }
+        missing = sorted(name for name in requested if name and name not in available)
+        if missing:
+            raise RuntimeError(
+                "The selected Tune configuration requests parameter(s) absent from "
+                "the compiled CLUBB Python API: "
+                + ", ".join(missing)
+                + ". Rebuild the Python API from this checkout (./compile.py -python) "
+                "before running Tune."
+            )
+
+        self._assert_requested_ranges_within_hard_bounds()
+
+    def _assert_requested_ranges_within_hard_bounds(self) -> None:
+        """Reject a Tune envelope outside the compiled Fortran contract.
+
+        Request parsing validates syntax and checked-in configuration names.
+        This check deliberately runs after worker initialization because the
+        worker's F2PY module is the exact CLUBB build that will score samples.
+        """
+        if self.parameter_hard_bounds is None:
+            raise RuntimeError(
+                "The compiled CLUBB Python API did not return parameter hard bounds. "
+                "Rebuild it from this checkout (./compile.py -python)."
+            )
+
+        violations: list[str] = []
+        for spec in self.request.get("parameter_ranges", []):
+            name = str(spec.get("name", "")).strip()
+            requested_min = float(spec["min"])
+            requested_max = float(spec["max"])
+            raw_targets = spec.get("targets", [name])
+            targets = [raw_targets] if isinstance(raw_targets, str) else list(raw_targets)
+            for target in targets:
+                target = str(target).strip()
+                bound = self.parameter_hard_bounds.get(target)
+                if bound is None:
+                    violations.append(f"{target}: no compiled hard-bound metadata")
+                    continue
+                lower = bound.get("min")
+                upper = bound.get("max")
+                if lower is not None and requested_min < float(lower):
+                    violations.append(
+                        f"{target}: requested min {requested_min:g} must be >= {float(lower):g}"
+                    )
+                if upper is not None and requested_max > float(upper):
+                    violations.append(
+                        f"{target}: requested max {requested_max:g} must be <= {float(upper):g}"
+                    )
+
+        if violations:
+            raise RuntimeError(
+                "Requested Tune range(s) violate compiled CLUBB hard bounds: "
+                + "; ".join(violations)
+            )
+
+    def _initialize_case_barrier(self, started_at: str) -> bool:
+        """Start one worker per case and report whether initialization completed."""
         for case_name in self.cases:
             self._start_worker(case_name)
 
@@ -329,14 +489,14 @@ class TuningScheduler:
                 raise RuntimeError(self.error_message)
             if self._should_stop():
                 self._stop_all_workers()
-                raise RuntimeError("Tuning stopped during worker initialization")
+                return False
             initialized_cases = {
                 worker.case_name
                 for worker in self.workers
                 if worker.state in {"idle", "busy"}
             }
             if all(case_name in initialized_cases for case_name in self.cases):
-                return
+                return True
             self._write_public_state("initializing", started_at, utc_now_iso())
             time.sleep(POLL_INTERVAL_SECONDS)
 
@@ -354,6 +514,7 @@ class TuningScheduler:
             "num_time_windows": self.case_num_time_windows.get(case_name, 1),
             "case_defaults": self.case_defaults.get(case_name, {}),
             "config": self.config,
+            "override": self.override,
         }
         process = self.ctx.Process(target=worker_main, args=(child_conn, payload))
         process.start()
@@ -405,9 +566,15 @@ class TuningScheduler:
             self._handle_initialized(worker, message)
             return
         if message_type == "result":
-            worker.state = "idle"
+            self._record_worker_evaluation_time(worker)
             worker.current_batch_id = None
+            worker.current_job_started_monotonic = None
             self._handle_result(message)
+            if worker.retire_after_batch:
+                worker.retire_after_batch = False
+                self._stop_worker(worker)
+            else:
+                worker.state = "idle"
             return
         if message_type == "error":
             worker.state = "failed"
@@ -430,6 +597,28 @@ class TuningScheduler:
             self.param_names = param_names
         elif param_names != self.param_names:
             self.error_message = f"Worker parameter names for {worker.case_name} did not match canonical order"
+            worker.state = "failed"
+            return
+
+        raw_bounds = list(message.get("hard_parameter_bounds", []))
+        bounds_by_name = {
+            str(item.get("name", "")).strip(): dict(item)
+            for item in raw_bounds
+            if isinstance(item, dict) and str(item.get("name", "")).strip()
+        }
+        if set(bounds_by_name) != set(param_names):
+            self.error_message = (
+                f"Worker for {worker.case_name} did not return hard-bound metadata "
+                "for every compiled tunable parameter"
+            )
+            worker.state = "failed"
+            return
+        if self.parameter_hard_bounds is None:
+            self.parameter_hard_bounds = bounds_by_name
+        elif bounds_by_name != self.parameter_hard_bounds:
+            self.error_message = (
+                f"Worker hard-bound metadata for {worker.case_name} did not match canonical metadata"
+            )
             worker.state = "failed"
             return
 
@@ -526,11 +715,15 @@ class TuningScheduler:
             scaled_rmse_case_sum = {}
             smart_losses = []
             smart_weights = []
+            all_window_losses = []
+            all_window_weights = []
             scaled_rmse_sum = 0.0
             for case_name in self.cases:
                 case_window_count = self.case_num_time_windows.get(case_name, 1)
                 case_smart_losses = []
                 case_smart_weights = []
+                case_window_losses = []
+                case_window_weights = []
                 field_metrics[case_name] = {}
                 field_loss[case_name] = {}
                 scaled_rmse_by_field[case_name] = {}
@@ -560,11 +753,13 @@ class TuningScheduler:
                         subwindow_losses,
                         None,
                         self.time_window_aggregation_mode,
+                        self.aggregation_weights,
                     )
                     scaled_rmse_aggregation = aggregate_losses(
                         subwindow_scaled_rmse_values,
                         None,
                         self.time_window_aggregation_mode,
+                        self.aggregation_weights,
                     )
                     scaled_rmse = float(scaled_rmse_aggregation["loss"])
                     smart_loss = float(subwindow_aggregation["loss"])
@@ -578,6 +773,7 @@ class TuningScheduler:
                             "smart_loss": smart_loss,
                             "num_time_windows": case_window_count,
                             "time_window_aggregation_mode": self.time_window_aggregation_mode,
+                            "time_window_aggregation_scope": self.time_window_aggregation_scope,
                             "time_window_aggregation": subwindow_aggregation,
                             "representative_window_index": int(worst_window["window_index"]),
                             "subwindows": subwindows,
@@ -588,6 +784,9 @@ class TuningScheduler:
                     field_loss[case_name][field_name] = smart_loss
                     field_metrics[case_name][field_name] = metrics
                     scaled_rmse_by_field[case_name][field_name] = scaled_rmse
+                    field_weight = float(self.field_weights.get(field_name, 1.0))
+                    case_window_losses.extend(subwindow_losses)
+                    case_window_weights.extend([field_weight] * len(subwindow_losses))
                 case_weight = float(self.case_weights.get(case_name, 1.0))
                 for field_name, field_scaled_rmse in scaled_rmse_by_field[case_name].items():
                     field_weight = float(self.field_weights.get(field_name, 1.0))
@@ -598,20 +797,63 @@ class TuningScheduler:
                     case_smart_weights.append(field_weight)
                     smart_losses.append(smart_loss)
                     smart_weights.append(combined_weight)
-                case_aggregation = aggregate_losses(
-                    case_smart_losses,
-                    case_smart_weights,
-                    self.aggregation_mode,
-                )
+                if self.aggregation_mode == "quantile_weighted":
+                    # New policy: rank the individual time-window losses, not
+                    # already-aggregated field means.  ``overall`` pools these
+                    # case/field/window samples below; ``by_case`` first
+                    # computes this per-case objective and then averages cases.
+                    case_aggregation = aggregate_losses(
+                        case_window_losses,
+                        case_window_weights,
+                        "quantile_weighted",
+                        self.aggregation_weights,
+                    )
+                    all_window_losses.extend(case_window_losses)
+                    all_window_weights.extend([case_weight * weight for weight in case_window_weights])
+                else:
+                    case_aggregation = aggregate_losses(
+                        case_smart_losses,
+                        case_smart_weights,
+                        self.aggregation_mode,
+                    )
                 case_loss[case_name] = float(case_aggregation["loss"])
                 case_loss_diagnostics[case_name] = case_aggregation
                 scaled_rmse_case_sum[case_name] = float(sum(scaled_rmse_by_field[case_name].values()))
 
-            total_loss_diagnostics = aggregate_losses(
-                smart_losses,
-                smart_weights,
-                self.aggregation_mode,
-            )
+            if self.aggregation_mode == "quantile_weighted":
+                if self.time_window_aggregation_scope == "overall":
+                    total_loss_diagnostics = aggregate_losses(
+                        all_window_losses,
+                        all_window_weights,
+                        "quantile_weighted",
+                        self.aggregation_weights,
+                    )
+                else:
+                    active_case_pairs = [
+                        (float(case_loss[case_name]), float(self.case_weights.get(case_name, 1.0)))
+                        for case_name in self.cases
+                        if float(self.case_weights.get(case_name, 1.0)) > 0.0
+                    ]
+                    case_weight_sum = sum(weight for _loss, weight in active_case_pairs)
+                    case_mean = (
+                        sum(loss * weight for loss, weight in active_case_pairs) / case_weight_sum
+                        if case_weight_sum > 0.0 else 0.0
+                    )
+                    total_loss_diagnostics = {
+                        "aggregation_mode": "quantile_weighted",
+                        "time_window_aggregation_scope": "by_case",
+                        "quantile_weights": list(self.aggregation_weights),
+                        "active_item_count": len(active_case_pairs),
+                        "excluded_item_count": len(self.cases) - len(active_case_pairs),
+                        "weighted_mean": float(case_mean),
+                        "loss": float(case_mean),
+                    }
+            else:
+                total_loss_diagnostics = aggregate_losses(
+                    smart_losses,
+                    smart_weights,
+                    self.aggregation_mode,
+                )
             total_loss = float(total_loss_diagnostics["loss"])
 
             entry = {
@@ -624,6 +866,8 @@ class TuningScheduler:
                 "config": self.config,
                 "case_configs": list(self.request.get("case_configs", [])),
                 "time_window_aggregation_mode": self.time_window_aggregation_mode,
+                "time_window_aggregation_scope": self.time_window_aggregation_scope,
+                "aggregation_weights": list(self.aggregation_weights),
                 "loss_policy_version": self.loss_policy_version,
                 "loss_policy_constants": dict(self.loss_policy_constants),
                 "aggregation_options": dict(self.aggregation_options),
@@ -647,11 +891,18 @@ class TuningScheduler:
         completed = []
         while self.completed_samples:
             entry = self.completed_samples.popleft()
+            previous_best = float(self.best_results[0]["total_loss"]) if self.best_results else float("inf")
             self.best_results = self._update_best_results(
                 self.best_results,
                 entry,
                 key=lambda item: float(item["total_loss"]),
             )
+            entry_loss = float(entry["total_loss"])
+            if entry_loss < previous_best:
+                self.best_loss_history.append(
+                    {"sample_count": self.samples_evaluated + len(completed) + 1, "loss": entry_loss}
+                )
+                self.best_loss_history = self.best_loss_history[-BEST_LOSS_HISTORY_LIMIT:]
             for case_name in self.cases:
                 self.best_results_by_case[case_name] = self._update_best_results(
                     self.best_results_by_case.get(case_name, []),
@@ -743,6 +994,7 @@ class TuningScheduler:
         )
         worker.state = "busy"
         worker.current_batch_id = int(job["batch_id"])
+        worker.current_job_started_monotonic = time.monotonic()
 
     def _idle_worker(self, case_name: str) -> WorkerHandle | None:
         for worker in self.workers:
@@ -754,6 +1006,214 @@ class TuningScheduler:
         if len([worker for worker in self.workers if worker.state != "failed"]) >= self.worker_cap:
             return False
         return not any(worker.case_name == case_name and worker.state == "starting" for worker in self.workers)
+
+    def _record_worker_evaluation_time(self, worker: WorkerHandle) -> None:
+        """Update the case's stable batch-duration estimate after a result."""
+        started = worker.current_job_started_monotonic
+        if started is None:
+            return
+        duration = max(0.0, time.monotonic() - started)
+        case_name = worker.case_name
+        previous = self.case_evaluation_seconds.get(case_name)
+        if previous is None:
+            self.case_evaluation_seconds[case_name] = duration
+        else:
+            self.case_evaluation_seconds[case_name] = (
+                EVALUATION_TIME_EWMA_ALPHA * duration
+                + (1.0 - EVALUATION_TIME_EWMA_ALPHA) * previous
+            )
+        self.case_completed_evaluations[case_name] = (
+            self.case_completed_evaluations.get(case_name, 0) + 1
+        )
+
+    def _queued_jobs_by_case(self) -> dict[str, int]:
+        """Return outstanding valid case jobs, grouped by initialized case."""
+        counts = {case_name: 0 for case_name in self.cases}
+        for job in self.case_jobs:
+            if job.get("batch_id") in self.batches and job.get("case_name") in counts:
+                counts[job["case_name"]] += 1
+        return counts
+
+    def _warm_workers_by_case(self) -> dict[str, int]:
+        """Count usable warm workers; stopping/failed actors are excluded."""
+        counts = {case_name: 0 for case_name in self.cases}
+        for worker in self.workers:
+            if worker.case_name in counts and worker.state in {"idle", "busy", "starting"}:
+                counts[worker.case_name] += 1
+        return counts
+
+    def _estimated_case_drain_seconds(
+        self,
+        case_name: str,
+        *,
+        queued_jobs: int,
+        warm_workers: int,
+    ) -> float | None:
+        """Estimate queue drain time from observed batch timings.
+
+        A case with no observed completion remains eligible for work, but is
+        not used to make a timing-driven reassignment until at least one
+        result has established its cost.  This avoids guessing during the
+        expensive F2PY/Fortran initialization phase.
+        """
+        duration = self.case_evaluation_seconds.get(case_name)
+        if queued_jobs <= 0:
+            return 0.0
+        if duration is None or warm_workers <= 0:
+            return None
+        return float(queued_jobs) * float(duration) / float(warm_workers)
+
+    def _rebalance_warm_workers_if_due(self) -> None:
+        """Move one warm actor toward the case with the longest queue.
+
+        Workers cannot change cases in-process because ``init_clubb_loss``
+        owns process-global CLUBB state.  An idle donor stops immediately; a
+        busy donor is marked to retire after its current batch.  Both paths
+        are followed by one replacement process for the target case.  We keep
+        one warm worker for each active case and make at most one move at a
+        progressively slower 5/10/15-second reassessment cadence.
+        """
+        now = time.monotonic()
+        if now < self.next_rebalance_monotonic:
+            return
+        self.rebalance_interval_index = min(
+            self.rebalance_interval_index + 1,
+            len(REBALANCE_INTERVALS_SECONDS) - 1,
+        )
+        interval = REBALANCE_INTERVALS_SECONDS[self.rebalance_interval_index]
+        self.next_rebalance_monotonic = now + interval
+
+        if self.pending_replacements:
+            return
+        queued = self._queued_jobs_by_case()
+        warm = self._warm_workers_by_case()
+        drain = {
+            case_name: self._estimated_case_drain_seconds(
+                case_name,
+                queued_jobs=queued[case_name],
+                warm_workers=warm[case_name],
+            )
+            for case_name in self.cases
+        }
+        eligible_targets = [
+            case_name for case_name in self.cases
+            if queued[case_name] > 0 and drain[case_name] is not None
+        ]
+        if not eligible_targets:
+            return
+        target = max(eligible_targets, key=lambda case_name: float(drain[case_name] or 0.0))
+        target_drain = float(drain[target] or 0.0)
+
+        # Normally actor churn is not worthwhile when every measured queue
+        # drains in under five seconds.  The one useful exception is an
+        # already-idle actor: it has no in-flight work to protect and can be
+        # repurposed immediately for the case with the largest short drain.
+        # Make only one such transfer per check, including when the donor is
+        # that case's last warm actor; its empty queue does not justify
+        # reserving a process while another case is still waiting.
+        all_drains_short = (
+            all(value is not None for value in drain.values())
+            and max((float(value or 0.0) for value in drain.values()), default=0.0)
+            < REBALANCE_MIN_DRAIN_SECONDS
+        )
+        if all_drains_short:
+            idle_donors = [
+                worker for worker in self.workers
+                if worker.state == "idle"
+                and worker.case_name != target
+                and not getattr(worker, "retire_after_batch", False)
+            ]
+            if not idle_donors:
+                return
+            donor = min(
+                idle_donors,
+                key=lambda worker: (
+                    float(drain[worker.case_name] or 0.0),
+                    worker.worker_id,
+                ),
+            )
+            self._schedule_replacement(
+                donor=donor,
+                target=target,
+                target_drain=target_drain,
+                donor_drain=drain[donor.case_name],
+                now=now,
+                reason="idle_short_drain",
+            )
+            return
+
+        donor_candidates = [
+            worker for worker in self.workers
+            if worker.state in {"idle", "busy"}
+            and worker.case_name != target
+            and warm.get(worker.case_name, 0) > REBALANCE_MIN_WARM_WORKERS_PER_CASE
+            and not getattr(worker, "retire_after_batch", False)
+        ]
+        if not donor_candidates:
+            return
+
+        # Prefer an idle donor when one exists.  Otherwise select the worker
+        # with the shortest projected drain and let it finish its one active
+        # batch before retiring; this is event-driven, not another 5-second
+        # reassessment wait.
+        donor = min(
+            donor_candidates,
+            key=lambda worker: (
+                0 if worker.state == "idle" else 1,
+                float(drain[worker.case_name])
+                if drain[worker.case_name] is not None else float("inf"),
+                worker.worker_id,
+            ),
+        )
+        donor_drain = drain[donor.case_name]
+        if donor_drain is not None and target_drain < REBALANCE_IMBALANCE_RATIO * float(donor_drain):
+            return
+
+        self._schedule_replacement(
+            donor=donor,
+            target=target,
+            target_drain=target_drain,
+            donor_drain=donor_drain,
+            now=now,
+            reason="drain_imbalance",
+        )
+
+    def _schedule_replacement(
+        self,
+        *,
+        donor: WorkerHandle,
+        target: str,
+        target_drain: float,
+        donor_drain: float | None,
+        now: float,
+        reason: str,
+    ) -> None:
+        """Retire one donor and queue its replacement for ``target``."""
+        self.pending_replacements.append({"from_case": donor.case_name, "to_case": target})
+        self.last_rebalance = {
+            "from_case": donor.case_name,
+            "to_case": target,
+            "target_drain_seconds": target_drain,
+            "donor_drain_seconds": donor_drain,
+            "reason": reason,
+            "at_elapsed_seconds": self._elapsed_seconds(),
+        }
+        if donor.state == "idle":
+            self._stop_worker(donor)
+        else:
+            donor.retire_after_batch = True
+        # A successful move changes the queue geometry.  Reassess quickly so
+        # a still-backlogged case can receive another actor without waiting
+        # for the no-op backoff cadence.  Only successive checks that make no
+        # move grow from 5 to 10 and finally 15 seconds.
+        self.rebalance_interval_index = 0
+        self.next_rebalance_monotonic = now + REBALANCE_INTERVALS_SECONDS[0]
+
+    def _start_pending_replacements(self) -> None:
+        """Start rebalanced actors only after their donor has fully exited."""
+        while self.pending_replacements and len(self.workers) < self.worker_cap:
+            replacement = self.pending_replacements.popleft()
+            self._start_worker(str(replacement["to_case"]))
 
     def _stop_all_workers(self) -> None:
         for worker in list(self.workers):
@@ -792,23 +1252,131 @@ class TuningScheduler:
             and self._active_evaluations() == 0
         )
 
+    def _write_resume_checkpoint(self) -> None:
+        """Persist enough scheduler state to continue a gracefully stopped run.
+
+        The checkpoint is local to a user-created execution directory.  It
+        preserves the strategy's random/adaptive state, not just the count of
+        completed samples, so random, grid, and simulated-annealing modes all
+        continue from their prior proposal state.
+        """
+        if self.strategy is None:
+            return
+        payload = {
+            "version": 1,
+            "strategy": self.strategy,
+            "samples_evaluated": self.samples_evaluated,
+            "completed_batches": self.completed_batches,
+            "next_batch_id": self.next_batch_id,
+            "best_results": self.best_results,
+            "best_results_by_case": self.best_results_by_case,
+            "best_loss_history": self.best_loss_history,
+            "elapsed_seconds": self._elapsed_seconds(),
+        }
+        descriptor, temp_name = tempfile.mkstemp(
+            prefix=f".{self.checkpoint_path.name}.", suffix=".tmp", dir=self.job_dir
+        )
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            os.replace(temp_name, self.checkpoint_path)
+        finally:
+            try:
+                Path(temp_name).unlink()
+            except FileNotFoundError:
+                pass
+
+    def _restore_resume_checkpoint(self) -> None:
+        """Restore a prior graceful-stop checkpoint when this execution resumes."""
+        if not self.checkpoint_path.is_file():
+            return
+        try:
+            with self.checkpoint_path.open("rb") as handle:
+                payload = pickle.load(handle)
+            if int(payload.get("version", 0)) != 1 or payload.get("strategy") is None:
+                raise ValueError("unsupported checkpoint")
+            self.strategy = payload["strategy"]
+            self.samples_evaluated = int(payload.get("samples_evaluated", 0))
+            self.completed_batches = int(payload.get("completed_batches", 0))
+            self.next_batch_id = int(payload.get("next_batch_id", 0))
+            self.best_results = list(payload.get("best_results", []))
+            self.best_results_by_case = {
+                str(name): list(values)
+                for name, values in dict(payload.get("best_results_by_case", {})).items()
+            }
+            for case_name in self.cases:
+                self.best_results_by_case.setdefault(case_name, [])
+            self.best_loss_history = [
+                {"sample_count": int(item["sample_count"]), "loss": float(item["loss"])}
+                for item in list(payload.get("best_loss_history", []))[-BEST_LOSS_HISTORY_LIMIT:]
+                if isinstance(item, dict) and "sample_count" in item and "loss" in item
+            ]
+            self.elapsed_before_resume_seconds = float(payload.get("elapsed_seconds", 0.0))
+        except Exception as exc:
+            raise RuntimeError(f"Could not restore stopped tuning revision: {exc}") from exc
+
+    def _remove_resume_checkpoint(self) -> None:
+        try:
+            self.checkpoint_path.unlink()
+        except FileNotFoundError:
+            pass
+
     def _active_evaluations(self) -> int:
         return sum(1 for worker in self.workers if worker.state == "busy")
 
     def _metrics(self) -> dict:
+        queued = self._queued_jobs_by_case()
+        warm = self._warm_workers_by_case()
+        case_workers = {}
+        for case_name in self.cases:
+            active = sum(
+                1 for worker in self.workers
+                if worker.case_name == case_name and worker.state == "busy"
+            )
+            idle = sum(
+                1 for worker in self.workers
+                if worker.case_name == case_name and worker.state == "idle"
+            )
+            estimated = self._estimated_case_drain_seconds(
+                case_name,
+                queued_jobs=queued[case_name],
+                warm_workers=warm[case_name],
+            )
+            case_workers[case_name] = {
+                "warm_workers": warm[case_name],
+                "active_workers": active,
+                "idle_workers": idle,
+                "queued_jobs": queued[case_name],
+                "mean_evaluation_seconds": self.case_evaluation_seconds[case_name],
+                "estimated_drain_seconds": estimated,
+                "completed_evaluations": self.case_completed_evaluations[case_name],
+            }
         return {
             "active_evaluations": self._active_evaluations(),
             "idle_workers": sum(1 for worker in self.workers if worker.state == "idle"),
             "initialized_workers": sum(1 for worker in self.workers if worker.state in {"idle", "busy"}),
             "queued_case_jobs": len(self.case_jobs),
+            "case_worker_metrics": case_workers,
+            "worker_rebalance": {
+                "next_check_in_seconds": max(0.0, self.next_rebalance_monotonic - time.monotonic()),
+                "next_interval_seconds": REBALANCE_INTERVALS_SECONDS[
+                    min(self.rebalance_interval_index, len(REBALANCE_INTERVALS_SECONDS) - 1)
+                ],
+                "pending_replacements": len(self.pending_replacements),
+                "last_move": dict(self.last_rebalance or {}),
+            },
             "completed_batches": self.completed_batches,
+            "best_loss_history": list(self.best_loss_history),
             "total_samples": None if self.strategy is None else self.strategy.estimated_sample_count(),
+            "selected_fields": list(self.selected_fields),
             "loss_mode": self.loss_mode,
             "aggregation_mode": self.aggregation_mode,
             "case_window_counts": dict(self.case_num_time_windows),
             "case_configs": list(self.request.get("case_configs", [])),
             "config": self.config,
             "time_window_aggregation_mode": self.time_window_aggregation_mode,
+            "time_window_aggregation_scope": self.time_window_aggregation_scope,
+            "aggregation_weights": list(self.aggregation_weights),
             "loss_policy_version": self.loss_policy_version,
             "loss_policy_constants": dict(self.loss_policy_constants),
             "aggregation_options": dict(self.aggregation_options),
@@ -816,7 +1384,7 @@ class TuningScheduler:
         }
 
     def _elapsed_seconds(self) -> float:
-        return time.monotonic() - self.started_monotonic
+        return self.elapsed_before_resume_seconds + time.monotonic() - self.started_monotonic
 
     def _write_public_state(self, state: str, started_at: str, updated_at: str, *, force: bool = False) -> None:
         now = time.monotonic()

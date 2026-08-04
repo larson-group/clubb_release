@@ -9,9 +9,9 @@ pipeline {
               module load intel netcdf-fortran
               ./compile.py
               ulimit -s 8388608
-              run_scripts/run_scm_all.py -multicol 4 -max_iters 500 -out_dir standalone_output_ifx
-              run_scripts/run_scm_all.py -multicol 4 -max_iters 500 -out_dir driver_test_output_ifx -driver_test
-              run_scripts/run_bindiff_all.py standalone_output_ifx driver_test_output_ifx'''
+              run_scripts/run_scm_all.py -multicol 4 -max_iters 500 -out_dir driver_test/standalone_ifx
+              run_scripts/run_scm_all.py -multicol 4 -max_iters 500 -out_dir driver_test/driver_ifx -driver_test
+              run_scripts/run_bindiff_all.py output/driver_test/standalone_ifx output/driver_test/driver_ifx'''
       }
     }
     stage('min_cases + multi_col with nvhpc + openacc') {
@@ -21,10 +21,10 @@ pipeline {
               ./compile.py -gpu openacc'''
         lock( "GPU_${env.NODE_NAME}" ) {
           sh '''ulimit -s 8388608
-                run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir standalone_output_nvhpc -override penta_solve_method=2,tridiag_solve_method=2,l_lh_straight_mc=.true.
-                run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test_output_nvhpc -driver_test -override penta_solve_method=2,tridiag_solve_method=2,l_lh_straight_mc=.true.'''
+                run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test/standalone_nvhpc -override penta_solve_method=2,tridiag_solve_method=2,l_lh_straight_mc=.true.
+                run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test/driver_nvhpc -driver_test -override penta_solve_method=2,tridiag_solve_method=2,l_lh_straight_mc=.true.'''
         }
-        sh '''run_scripts/run_bindiff_all.py standalone_output_nvhpc driver_test_output_nvhpc'''
+        sh '''run_scripts/run_bindiff_all.py output/driver_test/standalone_nvhpc output/driver_test/driver_nvhpc'''
       }
     }
   }

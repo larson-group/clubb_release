@@ -18,7 +18,8 @@ module parameters_tunable
   !   None
   !-----------------------------------------------------------------------
 
-  use constants_clubb, only: eps ! Epsilon
+  use constants_clubb, only: &
+    eps, one, zero ! Constants
 
   use parameter_indices, only: nparams ! Variable(s)
 
@@ -32,7 +33,15 @@ module parameters_tunable
 
   public :: set_default_parameters, check_parameters_api, init_clubb_params_api, &
             read_param_minmax, read_param_constraints, &
-            calc_derrived_params, nu_vertical_res_dep
+            calc_derrived_params, get_parameter_hard_bounds_api, &
+            nu_vertical_res_dep
+
+  ! ``no_*_bound`` denotes an open endpoint in parameter_hard_bounds.
+  real( kind = core_rknd ), parameter, private :: &
+    no_lower_bound = -huge(one), &
+    no_upper_bound =  huge(one), &
+    strictly_positive = tiny(one), &
+    strictly_less_than_one = one - epsilon(one)
 
   type nu_vertical_res_dep
     real( kind = core_rknd ), allocatable, dimension(:) :: &
@@ -55,9 +64,11 @@ module parameters_tunable
   ! tuner will break!
   !                    ***** IMPORTANT *****
   !***************************************************************
-  character(len=28), dimension(nparams), parameter, public :: &
+  integer, parameter, public :: parameter_name_length = 32
+
+  character(len=parameter_name_length), dimension(nparams), parameter, public :: &
   params_list = &
-     (/"C1                          ", "C1b                         ", &
+     (/ character(len=parameter_name_length) :: "C1                          ", "C1b                         ", &
        "C1c                         ", &
        "C2rt                        ", "C2thl                       ", &
        "C2rtthl                     ", "C4                          ", &
@@ -109,6 +120,119 @@ module parameters_tunable
        "Richardson_num_max          ", "a3_coef_min                 ", &
        "a_const                     ", "bv_efold                    ", &
        "wpxp_Ri_exp                 ", "z_displace                  "/)
+
+  ! Hard configuration bounds in the same order as params_list.
+  !
+  ! Rows are [minimum, maximum].  ``no_lower_bound`` and ``no_upper_bound``
+  ! mean the corresponding endpoint is open.  ``strictly_positive`` and
+  ! ``strictly_less_than_one`` encode the few open physical endpoints without
+  ! requiring separate per-parameter metadata.  These are rejection limits,
+  ! not recommended tuning intervals.
+  real( kind = core_rknd ), dimension(2,nparams), parameter, public :: &
+  parameter_hard_bounds = reshape( (/ &
+    zero,                 no_upper_bound, & ! C1
+    zero,                 no_upper_bound, & ! C1b
+    zero,                 no_upper_bound, & ! C1c
+    zero,                 no_upper_bound, & ! C2rt
+    zero,                 no_upper_bound, & ! C2thl
+    zero,                 no_upper_bound, & ! C2rtthl
+    zero,                 no_upper_bound, & ! C4
+    zero,                 one, & ! C_uu_shr
+    zero,                 one, & ! C_uu_buoy
+    zero,                 no_upper_bound, & ! C6rt
+    zero,                 no_upper_bound, & ! C6rtb
+    zero,                 no_upper_bound, & ! C6rtc
+    zero,                 no_upper_bound, & ! C6thl
+    zero,                 no_upper_bound, & ! C6thlb
+    zero,                 no_upper_bound, & ! C6thlc
+    zero,                 one, & ! C7
+    zero,                 one, & ! C7b
+    zero,                 no_upper_bound, & ! C7c
+    zero,                 no_upper_bound, & ! C8
+    zero,                 no_upper_bound, & ! C8b
+    zero,                 no_upper_bound, & ! C10
+    zero,                 one, & ! C11
+    zero,                 one, & ! C11b
+    zero,                 no_upper_bound, & ! C11c
+    zero,                 no_upper_bound, & ! C12
+    zero,                 no_upper_bound, & ! C13
+    zero,                 no_upper_bound, & ! C14
+    zero,                 no_upper_bound, & ! C_wp2_pr_dfsn
+    zero,                 no_upper_bound, & ! C_wp3_pr_tp
+    zero,                 no_upper_bound, & ! C_wp3_pr_turb
+    zero,                 no_upper_bound, & ! C_wp3_pr_dfsn
+    zero,                 no_upper_bound, & ! C_wp2_splat
+    zero,                 no_upper_bound, & ! C6rt_Lscale0
+    zero,                 no_upper_bound, & ! C6thl_Lscale0
+    zero,                 no_upper_bound, & ! C7_Lscale0
+    zero,                 no_upper_bound, & ! wpxp_L_thresh
+    zero,                 no_upper_bound, & ! c_K
+    zero,                 no_upper_bound, & ! c_K1
+    zero,                 no_upper_bound, & ! nu1
+    zero,                 no_upper_bound, & ! c_K2
+    zero,                 no_upper_bound, & ! nu2
+    zero,                 no_upper_bound, & ! c_K6
+    zero,                 no_upper_bound, & ! nu6
+    zero,                 no_upper_bound, & ! c_K8
+    zero,                 no_upper_bound, & ! nu8
+    zero,                 no_upper_bound, & ! c_K9
+    zero,                 no_upper_bound, & ! nu9
+    zero,                 no_upper_bound, & ! nu10
+    zero,                 no_upper_bound, & ! c_K_hm
+    zero,                 no_upper_bound, & ! c_K_hmb
+    zero,                 no_upper_bound, & ! K_hm_min_coef
+    zero,                 no_upper_bound, & ! nu_hm
+    strictly_positive,    no_upper_bound, & ! slope_coef_spread_DG_means_w
+    strictly_positive,    no_upper_bound, & ! pdf_component_stdev_factor_w
+    zero,                 strictly_less_than_one, & ! coef_spread_DG_means_rt
+    zero,                 strictly_less_than_one, & ! coef_spread_DG_means_thl
+    zero,                 no_upper_bound, & ! gamma_coef
+    zero,                 no_upper_bound, & ! gamma_coefb
+    zero,                 no_upper_bound, & ! gamma_coefc
+    zero,                 no_upper_bound, & ! mu
+    zero,                 3.0_core_rknd, & ! beta
+    zero,                 no_upper_bound, & ! lmin_coef
+    strictly_positive,    one, & ! omicron
+    -one + epsilon(one),  no_upper_bound, & ! zeta_vrnce_rat
+    zero,                 one, & ! upsilon_precip_frac_rat
+    zero,                 no_upper_bound, & ! lambda0_stability_coef
+    zero,                 no_upper_bound, & ! mult_coef
+    zero,                 no_upper_bound, & ! taumin
+    zero,                 no_upper_bound, & ! taumax
+    zero,                 no_upper_bound, & ! Lscale_mu_coef
+    zero,                 no_upper_bound, & ! Lscale_pert_coef
+    zero,                 no_upper_bound, & ! alpha_corr
+    zero,                 no_upper_bound, & ! Skw_denom_coef
+    zero,                 no_upper_bound, & ! c_K10
+    zero,                 no_upper_bound, & ! c_K10h
+    zero,                 no_upper_bound, & ! thlp2_rad_coef
+    zero,                 no_upper_bound, & ! thlp2_rad_cloud_frac_thresh
+    zero,                 no_upper_bound, & ! up2_sfc_coef
+    zero,                 no_upper_bound, & ! Skw_max_mag
+    zero,                 no_upper_bound, & ! C_invrs_tau_bkgnd
+    zero,                 no_upper_bound, & ! C_invrs_tau_sfc
+    zero,                 no_upper_bound, & ! C_invrs_tau_shear
+    zero,                 no_upper_bound, & ! C_invrs_tau_N2
+    zero,                 no_upper_bound, & ! C_invrs_tau_N2_wp2
+    zero,                 no_upper_bound, & ! C_invrs_tau_N2_xp2
+    zero,                 no_upper_bound, & ! C_invrs_tau_N2_wpxp
+    zero,                 no_upper_bound, & ! C_invrs_tau_N2_clear_wp3
+    zero,                 no_upper_bound, & ! C_invrs_tau_wpxp_Ri
+    zero,                 no_upper_bound, & ! C_invrs_tau_wpxp_N2_thresh
+    zero,                 no_upper_bound, & ! xp3_coef_base
+    zero,                 no_upper_bound, & ! xp3_coef_slope
+    zero,                 no_upper_bound, & ! altitude_threshold
+    zero,                 no_upper_bound, & ! rtp2_clip_coef
+    zero,                 no_upper_bound, & ! Cx_min
+    zero,                 no_upper_bound, & ! Cx_max
+    zero,                 no_upper_bound, & ! Richardson_num_min
+    zero,                 no_upper_bound, & ! Richardson_num_max
+    one,                   3.0_core_rknd, & ! a3_coef_min
+    zero,                 no_upper_bound, & ! a_const
+    zero,                 no_upper_bound, & ! bv_efold
+    zero,                 no_upper_bound, & ! wpxp_Ri_exp
+    zero,                 no_upper_bound & ! z_displace
+    /), (/ 2, nparams /) )
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -355,16 +479,18 @@ module parameters_tunable
     wpxp_Ri_exp = .5_core_rknd  ! Exponent determining the influence of
                                 ! the Richardson number on invrs_tau_wpxp
     z_displace = 25.0_core_rknd   ! displacement of log law profile above ground   [m]
+
     return
 
   end subroutine set_default_parameters
 
   !=============================================================================
-  subroutine check_parameters_api( ngrdcol, clubb_params, lmin, &
-                                   err_info )
+  subroutine check_parameters_api( ngrdcol, clubb_params, err_info )
 
     ! Description:
-    ! Subroutine to setup model parameters
+    !   Compatibility parameter-only validation.  New callers should use
+    !   check_clubb_settings_api, which invokes this routine before checking
+    !   flags and mixed parameter/flag consistency rules.
 
     ! References:
     ! None
@@ -372,19 +498,14 @@ module parameters_tunable
 
 
     use constants_clubb, only: &
-        three,   & ! Variable(s)
-        one,     &
-        zero,    &
-        fstderr
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        fstderr ! File unit
 
     use error_code, only: &
         clubb_fatal_error              ! Constant
 
     use parameter_indices, only: &
-        izeta_vrnce_rat
+        iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
+        iC6rt_Lscale0, iC6thl_Lscale0 ! Parameter indices
 
     use err_info_type_module, only: &
       err_info_type        ! Type
@@ -398,302 +519,150 @@ module parameters_tunable
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
       clubb_params  ! Tuneable model parameters      [-]
 
-    real( kind = core_rknd ), intent(in) :: &
-      lmin    ! Min. value for the length scale    [m]
-
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 
-    integer :: k, i    ! loop variable
-
-    real( kind = core_rknd ) :: &
-      C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
-      C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
-      C7, C7b, C7c, C8, C8b, C10, &
-      C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
-      C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
-      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-      c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
-      c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-      slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
-      coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-      gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
-      omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
-      lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
-      Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
-      rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-      C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
-      C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
-      C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
+    integer :: i    ! Grid-column loop variable
 
     !-------------------- Begin code --------------------
 
-    ! This should have ngrdcol dimensions, but doesn't yet 
-    if ( lmin < 1.0_core_rknd ) then
+    call check_parameter_hard_bounds( ngrdcol, clubb_params, err_info )
 
-      write(fstderr, *) err_info%err_header(i)
-      ! Constraints on mixing length
-      write(fstderr,*) "lmin = ", lmin
-      write(fstderr,*) "lmin is < 1.0_core_rknd"
-      ! Error in grid column i -> set ith entry to clubb_fatal_error
-      err_info%err_code(ngrdcol) = clubb_fatal_error
-
-    endif ! lmin < 1.0
-
-      
     do i = 1, ngrdcol
-
-      ! Ensure all variables are greater than 0, and zeta_vrnce_rat is greater than -1
-      do k = 1, nparams
-
-        if ( k /= izeta_vrnce_rat .and. clubb_params(i,k) < zero ) then
-
-            write(fstderr, *) err_info%err_header(i)
-            write(fstderr,*) params_list(k), " = ", clubb_params(i,k)
-            write(fstderr,*) params_list(k), " must satisfy 0.0 <= ", params_list(k)
-            ! Error in grid column i -> set ith entry to clubb_fatal_error
-            err_info%err_code(i) = clubb_fatal_error
-
-        else if ( clubb_params(i,k) < -one ) then
-
-            write(fstderr, *) err_info%err_header(i)
-            write(fstderr,*) "zeta_vrnce_rat = ", zeta_vrnce_rat
-            write(fstderr,*) "zeta_vrnce_rat must satisfy -1.0 <= zeta_vrnce_rat"
-            ! Error in grid column i -> set ith entry to clubb_fatal_error
-            err_info%err_code(i) = clubb_fatal_error
-
-        end if
-
-      end do
-
-      call unpack_parameters &
-              ( clubb_params(i,:), & ! intent(in)
-                C1, C1b, C1c, C2rt, C2thl, C2rtthl, & ! intent(out)
-                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & ! intent(out)
-                C7, C7b, C7c, C8, C8b, C10, & ! intent(out)
-                C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, & ! intent(out)
-                C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & ! intent(out)
-                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, & ! intent(out)
-                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, & ! intent(out)
-                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & ! intent(out)
-                slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, & ! intent(out)
-                coef_spread_DG_means_rt, coef_spread_DG_means_thl, & ! intent(out)
-                gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, & ! intent(out)
-                omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, & ! intent(out)
-                lambda0_stability_coef, mult_coef, taumin, taumax, & ! intent(out)
-                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, & ! intent(out)
-                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, & ! intent(out)
-                thlp2_rad_cloud_frac_thresh, up2_sfc_coef, & ! intent(out)
-                Skw_max_mag, xp3_coef_base, xp3_coef_slope, & ! intent(out)
-                altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, & ! intent(out)
-                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & ! intent(out)
-                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, & ! intent(out)
-                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, & ! intent(out)
-                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, & ! intent(out)
-                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, & ! intent(out)
-                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace ) ! intent(out)
-
-      if ( beta < zero .or. beta > three ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraints on beta
-        write(fstderr,*) "beta = ", beta
-        write(fstderr,*) "beta cannot be < 0 or > 3"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! beta < 0 or beta > 3
-
-      if ( slope_coef_spread_DG_means_w <= zero ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraint on slope_coef_spread_DG_means_w
-        write(fstderr,*) "slope_coef_spread_DG_means_w = ", &
-                          slope_coef_spread_DG_means_w
-        write(fstderr,*) "slope_coef_spread_DG_means_w cannot be <= 0"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! slope_coef_spread_DG_means_w <= 0
-
-      if ( pdf_component_stdev_factor_w <= zero ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraint on pdf_component_stdev_factor_w
-        write(fstderr,*) "pdf_component_stdev_factor_w = ", &
-                          pdf_component_stdev_factor_w
-        write(fstderr,*) "pdf_component_stdev_factor_w cannot be <= 0"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! pdf_component_stdev_factor_w <= 0
-
-      if ( coef_spread_DG_means_rt < zero &
-          .or. coef_spread_DG_means_rt >= one ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraint on coef_spread_DG_means_rt
-        write(fstderr,*) "coef_spread_DG_means_rt = ", coef_spread_DG_means_rt
-        write(fstderr,*) "coef_spread_DG_means_rt cannot be < 0 or >= 1"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! coef_spread_DG_means_rt < 0 or coef_spread_DG_means_rt >= 1
-
-      if ( coef_spread_DG_means_thl < zero &
-          .or. coef_spread_DG_means_thl >= one ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraint on coef_spread_DG_means_thl
-        write(fstderr,*) "coef_spread_DG_means_thl = ", coef_spread_DG_means_thl
-        write(fstderr,*) "coef_spread_DG_means_thl cannot be < 0 or >= 1"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! coef_spread_DG_means_thl < 0 or coef_spread_DG_means_thl >= 1
-
-      if ( omicron <= zero .or. omicron > one ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraints on omicron
-        write(fstderr,*) "omicron = ", omicron
-        write(fstderr,*) "omicron cannot be <= 0 or > 1"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! omicron <= 0 or omicron > 1
-
-      if ( zeta_vrnce_rat <= -one ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraints on zeta_vrnce_rat
-        write(fstderr,*) "zeta_vrnce_rat = ", zeta_vrnce_rat
-        write(fstderr,*) "zeta_vrnce_rat cannot be <= -1"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! zeta_vrnce_rat <= -1
-
-      if ( upsilon_precip_frac_rat < zero &
-          .or. upsilon_precip_frac_rat > one ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraints on upsilon_precip_frac_rat
-        write(fstderr,*) "upsilon_precip_frac_rat = ", upsilon_precip_frac_rat
-        write(fstderr,*) "upsilon_precip_frac_rat cannot be < 0 or > 1"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! upsilon_precip_frac_rat < 0 or upsilon_precip_frac_rat > 1
-
-      if ( mu < zero ) then
-
-        write(fstderr, *) err_info%err_header(i)
-        ! Constraints on entrainment rate, mu.
-        write(fstderr,*) "mu = ", mu
-        write(fstderr,*) "mu cannot be < 0"
-        ! Error in grid column i -> set ith entry to clubb_fatal_error
-        err_info%err_code(i) = clubb_fatal_error
-
-      endif ! mu < 0.0
 
       ! The C6rt parameters must be set equal to the C6thl parameters.
       ! Otherwise, the wpthlp pr1 term will be calculated inconsistently.
 
-      if ( abs(C6rt - C6thl) > abs(C6rt + C6thl) / 2 * eps ) then
+      if ( abs(clubb_params(i,iC6rt) - clubb_params(i,iC6thl)) > &
+           abs(clubb_params(i,iC6rt) + clubb_params(i,iC6thl)) / 2 * eps ) then
           write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C6rt = ", C6rt
-          write(fstderr,*) "C6thl = ", C6thl
+          write(fstderr,*) "C6rt = ", clubb_params(i,iC6rt)
+          write(fstderr,*) "C6thl = ", clubb_params(i,iC6thl)
           write(fstderr,*) "C6rt and C6thl must be equal."
           ! Error in grid column i -> set ith entry to clubb_fatal_error
           err_info%err_code(i) = clubb_fatal_error
       endif ! C6rt /= C6thl
 
-      if ( abs(C6rtb - C6thlb) > abs(C6rtb + C6thlb) / 2 * eps ) then
+      if ( abs(clubb_params(i,iC6rtb) - clubb_params(i,iC6thlb)) > &
+           abs(clubb_params(i,iC6rtb) + clubb_params(i,iC6thlb)) / 2 * eps ) then
           write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C6rtb = ", C6rtb
-          write(fstderr,*) "C6thlb = ", C6thlb
+          write(fstderr,*) "C6rtb = ", clubb_params(i,iC6rtb)
+          write(fstderr,*) "C6thlb = ", clubb_params(i,iC6thlb)
           write(fstderr,*) "C6rtb and C6thlb must be equal."
           ! Error in grid column i -> set ith entry to clubb_fatal_error
           err_info%err_code(i) = clubb_fatal_error
       endif ! C6rtb /= C6thlb
 
-      if ( abs(C6rtc - C6thlc) > abs(C6rtc + C6thlc) / 2 * eps ) then
+      if ( abs(clubb_params(i,iC6rtc) - clubb_params(i,iC6thlc)) > &
+           abs(clubb_params(i,iC6rtc) + clubb_params(i,iC6thlc)) / 2 * eps ) then
           write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C6rtc = ", C6rtc
-          write(fstderr,*) "C6thlc = ", C6thlc
+          write(fstderr,*) "C6rtc = ", clubb_params(i,iC6rtc)
+          write(fstderr,*) "C6thlc = ", clubb_params(i,iC6thlc)
           write(fstderr,*) "C6rtc and C6thlc must be equal."
           ! Error in grid column i -> set ith entry to clubb_fatal_error
           err_info%err_code(i) = clubb_fatal_error
       endif ! C6rtc /= C6thlc
 
-      if ( abs(C6rt_Lscale0 - C6thl_Lscale0) > abs(C6rt_Lscale0 + C6thl_Lscale0) / 2 * eps ) then
+      if ( abs(clubb_params(i,iC6rt_Lscale0) - clubb_params(i,iC6thl_Lscale0)) > &
+           abs(clubb_params(i,iC6rt_Lscale0) + clubb_params(i,iC6thl_Lscale0)) / 2 * eps ) then
           write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C6rt_Lscale0 = ", C6rt_Lscale0
-          write(fstderr,*) "C6thl_Lscale0 = ", C6thl_Lscale0
+          write(fstderr,*) "C6rt_Lscale0 = ", clubb_params(i,iC6rt_Lscale0)
+          write(fstderr,*) "C6thl_Lscale0 = ", clubb_params(i,iC6thl_Lscale0)
           write(fstderr,*) "C6rt_Lscale0 and C6thl_Lscale0 must be equal."
           ! Error in grid column i -> set ith entry to clubb_fatal_error
           err_info%err_code(i) = clubb_fatal_error
       endif ! C6rt_Lscale0 /= C6thl_Lscale0
-
-
-      if ( C1 < zero ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C1 = ", C1
-          write(fstderr,*) "C1 must satisfy 0.0 <= C1"
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
-      end if
-
-      if ( C7 > one .or. C7 < zero ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C7 = ", C7
-          write(fstderr,*) "C7 must satisfy 0.0 <= C7 <= 1.0"
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
-      end if
-
-      if ( C7b > one .or. C7b < zero ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C7b = ", C7b
-          write(fstderr,*) "C7b must satisfy 0.0 <= C7b <= 1.0"
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
-      end if
-
-      if ( C11 > one .or. C11 < zero ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C11 = ", C11
-          write(fstderr,*) "C11 must satisfy 0.0 <= C11 <= 1.0"
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
-      end if
-
-      if ( C11b > one .or. C11b < zero ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C11b = ", C11b
-          write(fstderr,*) "C11b must satisfy 0.0 <= C11b <= 1.0"
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
-      end if
-
-      if ( C_wp2_splat < zero ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "C_wp2_splat = ", C_wp2_splat
-          write(fstderr,*) "C_wp2_splat must satisfy C_wp2_splat >= 0"
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
-      end if
 
     end do
 
     return
 
   end subroutine check_parameters_api
+
+  !=============================================================================
+  subroutine get_parameter_hard_bounds_api( nparams_in, hard_bounds )
+
+    ! Description:
+    !   Return Fortran's authoritative 2 x nparams hard-bound table.  Row 1
+    !   is minimum and row 2 is maximum; huge endpoints denote no bound.
+    !   These are rejection limits, not recommended tuning intervals.
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    integer, intent(in) :: &
+      nparams_in ! Caller-supplied parameter count [#]
+
+    real( kind = core_rknd ), intent(out), dimension(2,nparams_in) :: &
+      hard_bounds ! Parameter bounds: [minimum, maximum] [-]
+
+    if ( nparams_in /= nparams ) then
+      error stop "get_parameter_hard_bounds_api: nparams mismatch"
+    end if
+
+    hard_bounds = parameter_hard_bounds
+
+  end subroutine get_parameter_hard_bounds_api
+
+  !=============================================================================
+  subroutine check_parameter_hard_bounds( ngrdcol, clubb_params, err_info )
+
+    use constants_clubb, only: &
+      fstderr ! Constant
+
+    use error_code, only: &
+      clubb_fatal_error ! Constant
+
+    use err_info_type_module, only: &
+      err_info_type ! Type
+
+    implicit none
+
+    integer, intent(in) :: &
+      ngrdcol ! Number of grid columns [#]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
+      clubb_params ! Tunable model parameters [-]
+
+    type(err_info_type), intent(inout) :: &
+      err_info ! Shared CLUBB error state
+
+    integer :: &
+      i, k ! Grid-column and parameter indices
+
+    logical :: &
+      below_lower, above_upper, has_lower, has_upper ! Bound state
+
+    do i = 1, ngrdcol
+      do k = 1, nparams
+        has_lower   = ( parameter_hard_bounds(1,k) > no_lower_bound )
+        has_upper   = ( parameter_hard_bounds(2,k) < no_upper_bound )
+        below_lower = ( has_lower .and. clubb_params(i,k) < parameter_hard_bounds(1,k) )
+        above_upper = ( has_upper .and. clubb_params(i,k) > parameter_hard_bounds(2,k) )
+
+        if ( below_lower .or. above_upper ) then
+
+          write(fstderr, *) err_info%err_header(i)
+          write(fstderr, *) trim(params_list(k)), " = ", clubb_params(i,k)
+
+          if ( has_lower .and. has_upper ) then
+            write(fstderr, *) trim(params_list(k)), " is outside hard configuration bounds: ", &
+              parameter_hard_bounds(1,k), parameter_hard_bounds(2,k)
+          elseif ( has_lower ) then
+            write(fstderr, *) trim(params_list(k)), " violates lower hard configuration bound: ", &
+              parameter_hard_bounds(1,k)
+          else
+            write(fstderr, *) trim(params_list(k)), " violates upper hard configuration bound: ", &
+              parameter_hard_bounds(2,k)
+          end if
+
+          err_info%err_code(i) = clubb_fatal_error
+
+        end if
+      end do
+    end do
+
+  end subroutine check_parameter_hard_bounds
 
   !=============================================================================
   subroutine calc_derrived_params( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
@@ -826,6 +795,10 @@ module parameters_tunable
     ! TODO: using "clubb_params(ngrdcol,ilmin_coef)", but lmin should really be
     ! changed to dimension(ngrdcol) to avoid this
     lmin = clubb_params(ngrdcol,ilmin_coef) * lmin_deltaz ! New fixed value
+
+    if ( lmin < 1.0_core_rknd ) then
+      error stop "lmin is < 1.0_core_rknd"
+    end if
 
     ! Using ngrdcol here as well for temporary backward compatibility, same as above
     mixt_frac_max_mag = 1.0_core_rknd &

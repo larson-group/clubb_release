@@ -156,9 +156,14 @@ class SubcolumnPlotType(BasePlotType):
         patch = Patch()
         for idx in range(trace_bundle["profiles"].shape[1]):
             patch["data"][idx]["x"] = np.asarray(trace_bundle["profiles"][:, idx], dtype=float).tolist()
-        if trace_bundle["x_range"]:
-            patch["layout"]["xaxis"]["range"] = list(trace_bundle["x_range"])
-        return patch, trace_bundle["note"]
+        return (
+            shared.apply_patch_x_range(
+                patch,
+                trace_bundle["x_range"],
+                global_context.get("relayout_data"),
+            ),
+            trace_bundle["note"],
+        )
 
     def register_callbacks(self, app):
         @app.callback(

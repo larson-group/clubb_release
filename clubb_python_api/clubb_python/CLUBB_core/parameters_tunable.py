@@ -34,6 +34,25 @@ def get_param_names() -> list[str]:
     return fortran_char_matrix_to_python_strings(clubb_f2py.f2py_get_param_names(_get_nparams()))
 
 
+def get_parameter_hard_bounds(nparams_in: int) -> list[dict]:
+    """Return Fortran-owned scalar validity bounds in parameter-list order.
+
+    The Fortran table is a direct ``[minimum, maximum]`` catalog.  ``None``
+    denotes an open endpoint.  Values already lie inside strict physical
+    endpoints, so clients need no separate strictness metadata.
+    """
+    hard_bounds = clubb_f2py.f2py_get_parameter_hard_bounds(int(nparams_in))
+    no_bound = np.finfo(hard_bounds.dtype).max
+    return [
+        {
+            "name": name,
+            "min": float(hard_bounds[0, idx]) if hard_bounds[0, idx] > -no_bound else None,
+            "max": float(hard_bounds[1, idx]) if hard_bounds[1, idx] < no_bound else None,
+        }
+        for idx, name in enumerate(get_param_names())
+    ]
+
+
 def calc_derrived_params(
     gr: Grid, ngrdcol: int, grid_type: int,
     deltaz: np.ndarray,
@@ -55,8 +74,8 @@ def calc_derrived_params(
     return get_fortran_nu_vert_res_dep(int(ngrdcol)), float(lmin), float(mixt_frac_max_mag)
 
 
-def check_parameters(ngrdcol: int, clubb_params, lmin: float, err_info: ErrInfo):
+def check_parameters(ngrdcol: int, clubb_params, err_info: ErrInfo):
     """Validate tunable parameters."""
     set_fortran_err_info(err_info)
-    clubb_f2py.f2py_check_parameters(f_arr(clubb_params), lmin, ngrdcol=int(ngrdcol))
+    clubb_f2py.f2py_check_parameters(f_arr(clubb_params), ngrdcol=int(ngrdcol))
     return get_fortran_err_info()

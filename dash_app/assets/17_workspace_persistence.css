@@ -1,0 +1,186 @@
+.dashboard-workspace-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--Dash-Stroke-Strong, #334155);
+  background: var(--Dash-Fill-Inverse-Weak, #111827);
+}
+
+.dashboard-workspace-label {
+  color: var(--Dash-Font-Primary, #e2e8f0);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.dashboard-workspace-detail,
+.dashboard-workspace-status {
+  color: var(--Dash-Font-Secondary, #94a3b8);
+  font-size: 11px;
+}
+
+.dashboard-workspace-button {
+  padding: 5px 9px;
+  border: 1px solid var(--Dash-Stroke-Strong, #475569);
+  border-radius: 6px;
+  color: var(--Dash-Font-Primary, #e2e8f0);
+  background: var(--Dash-Fill-Inverse-Medium, #1e293b);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.dashboard-workspace-button:hover {
+  border-color: #38bdf8;
+}
+
+.dashboard-workspace-reset {
+  border-color: #b45309;
+  color: #fef3c7;
+}
+
+/* Bottom-left menu for global controls.  This deliberately lives in the
+   existing workspace asset so it is available immediately to a running Dash
+   development server rather than relying on discovery of a newly added file. */
+#app-root .dashboard-utility-toggle {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 1201;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid #64748b;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #f8fafc;
+  cursor: pointer;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+#app-root .dashboard-utility-drawer {
+  position: fixed;
+  left: 14px;
+  bottom: 61px;
+  z-index: 1200;
+  width: min(286px, calc(100vw - 28px));
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #475569;
+  border-radius: 9px;
+  background: #0f172a;
+  box-shadow: 0 12px 28px rgba(2, 6, 23, .42);
+  display: grid;
+  gap: 7px;
+  transform-origin: bottom left;
+  transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
+}
+
+#app-root .dashboard-utility-drawer-closed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(10px) scale(.98);
+}
+
+#app-root .dashboard-utility-drawer-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+#app-root .dashboard-utility-section-title {
+  padding: 1px 3px 0;
+  color: #94a3b8;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+#app-root .dashboard-utility-item {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: #1e293b;
+  color: #e2e8f0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+#app-root .dashboard-utility-item:hover,
+#app-root .dashboard-utility-toggle:hover { border-color: #38bdf8; }
+
+#app-root .dashboard-utility-drawer .dashboard-workspace-toolbar {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #111c30;
+}
+
+#app-root .dashboard-utility-drawer .dashboard-workspace-label,
+#app-root .dashboard-utility-drawer .dashboard-workspace-detail { display: none; }
+
+#app-root .dashboard-utility-drawer .dashboard-workspace-button,
+#app-root .dashboard-utility-drawer #dashboard-workspace-import {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#app-root .dashboard-utility-drawer .dashboard-workspace-button {
+  padding: 7px 9px;
+  text-align: left;
+}
+
+#app-root .dashboard-utility-drawer .dashboard-workspace-status:empty { display: none; }
+#app-root .dashboard-mcp-endpoint {
+  margin-top: .55rem;
+  padding-top: .55rem;
+  border-top: 1px solid #334155;
+  display: grid;
+  gap: .28rem;
+}
+#app-root .dashboard-mcp-endpoint-help,
+#app-root .dashboard-mcp-endpoint-instance {
+  color: #94a3b8;
+  font-size: .68rem;
+  line-height: 1.35;
+}
+#app-root .dashboard-mcp-endpoint-label {
+  color: #cbd5e1;
+  font-size: .68rem;
+  font-weight: 700;
+}
+#app-root .dashboard-mcp-endpoint-field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: .28rem .35rem;
+  border: 1px solid #475569;
+  border-radius: .25rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: .68rem;
+}
+
+#app-root.theme-light .dashboard-utility-toggle,
+#app-root.theme-light .dashboard-utility-item { background: #ffffff; color: #0f172a; border-color: #94a3b8; }
+#app-root.theme-light .dashboard-utility-drawer { background: #f8fafc; border-color: #94a3b8; box-shadow: 0 12px 28px rgba(15, 23, 42, .2); }
+#app-root.theme-light .dashboard-utility-section-title { color: #475569; }
+#app-root.theme-light .dashboard-mcp-endpoint { border-top-color: #cbd5e1; }
+#app-root.theme-light .dashboard-mcp-endpoint-help,
+#app-root.theme-light .dashboard-mcp-endpoint-instance { color: #64748b; }
+#app-root.theme-light .dashboard-mcp-endpoint-label { color: #334155; }
+#app-root.theme-light .dashboard-mcp-endpoint-field { border-color: #94a3b8; background: #ffffff; color: #0f172a; }
+#app-root.theme-light .dashboard-utility-drawer .dashboard-workspace-toolbar { background: #ffffff; border-color: #cbd5e1; }

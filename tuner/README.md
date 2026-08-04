@@ -31,7 +31,7 @@ module for Python loss runs.
 The normal Dash tuning path is:
 
 1. `dash_app/tune_tab/runtime.py` creates a unique job directory under
-   `output_tuner/`.
+   `output/tuner/`.
 2. Dash writes `request.json`, `control.json`, and an initial `status.json`.
 3. Dash starts `python -m tuner.tune_clubb --job-dir <dir>` as a subprocess and
    logs stdout/stderr to `worker.log`.
@@ -86,7 +86,11 @@ leased unless their `control.json` explicitly enables keepalive.
 - `cases`: legacy list of case names. A single legacy `case_name` is also
   accepted and normalized into `case_configs`.
 - `selected_fields`: CLUBB-facing field names to compare.
-- `parameter_ranges`: list of objects with `name`, `min`, and `max`.
+- `parameter_ranges`: logical sampling coordinates with `name`, `min`, `max`,
+  and optional physical `targets`.  Omitting `targets` means `[name]`; linked
+  targets receive the same sampled value and must be unique across the request.
+- `preset`: optional provenance name from `tuner/presets.json`.  Saved requests
+  retain it alongside their fully expanded cases, fields, ranges, and override.
 - `batch_size`: number of parameter columns evaluated per loss-driver call.
 - `max_workers`: maximum concurrent case evaluations.
 - `strategy`: tuning algorithm config.
@@ -99,6 +103,22 @@ Case defaults are read from `tuner/case_defaults.json`. LES benchmark files are
 owned by that file only and are not request-overridable. Fields are selected
 separately by the request and must be normalized CLUBB-facing names supported by
 the benchmark converter.
+
+## Presets and linked command-line ranges
+
+`run_scripts/run_tuner_job.py --list-presets` lists the checked-in experiment
+presets.  A preset supplies its normal cases, fields, parameter coordinates, and required
+override; explicitly supplied `-cases`, `-fields`, or `-params` replace that
+piece.  For example:
+
+```text
+python run_scripts/run_tuner_job.py --preset wpxp -strategy random:2000
+```
+
+Use `PARAM:MIN:MAX` for an ordinary range and
+`PARAM=PARAM:MIN:MAX` for an equality-constrained linked range, for example
+`-params C6rt=C6thl:0:4`.  The sampler treats it as one coordinate while the
+saved result and generated top-result namelist retain both physical names.
 
 ## Benchmark Normalization
 
@@ -125,10 +145,15 @@ Fortran loss driver.
   evaluations to finish, stopping workers, and writing final status/results.
 
 The ranking loss is selected by the request's versioned Python loss policy.  The
-default policy, `taylor_metrics_v1`, preserves the historical behavior:
-`loss_mode = centered_rmse_bias` and `aggregation_mode = mean_max`.  In that
-mode, the per-field smart loss is `centered_rmse_norm + abs(bias_norm)`, and the
-aggregated loss is `0.6 * weighted_mean_loss + 0.4 * max_active_loss`.
+default policy uses `loss_mode = centered_rmse_bias` and
+`aggregation_mode = quantile_weighted`.  Each active time-window loss is sorted
+best-to-worst, divided into four equally populated bins, and the bin means are
+combined with normalized best-to-worst weights `0.1, 0.4, 0.4, 0.1`.
+`time_window_aggregation_scope = overall` pools all active case/field/window
+losses before this calculation; `by_case` applies it within each case and then
+takes the case-weighted mean.  Requests retain both the supplied weights and
+scope.  Legacy `mean_max` and `mean_worst_quantile` requests remain supported
+for reproducibility.
 
 Other selectable loss modes use the explicit diagnostics returned by the
 Fortran loss driver: `scaled_rmse`, correlation, standard-deviation ratio,

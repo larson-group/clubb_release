@@ -19,11 +19,16 @@ from typing import Callable, Iterable
 import numpy as np
 from netCDF4 import Dataset
 
+try:
+    from .les_chi_moments import derive_chi_moments
+except ImportError:  # Support direct execution as utilities/benchmark_converter.py.
+    from les_chi_moments import derive_chi_moments
+
 
 TIME_DIM_NAMES = {"t", "time"}
 Z_DIM_NAMES = {"z", "zm", "zt", "altitude", "height", "lev"}
 SOURCE_TYPES = {"sam", "coamps"}
-CONVERTER_VERSION = "0.3"
+CONVERTER_VERSION = "0.8"
 NORMALIZED_BENCHMARK_FORMAT = "NETCDF3_64BIT_OFFSET"
 _TIME_UNITS_RE = re.compile(r"^\s*([A-Za-z]+)\s+since\s+(.+?)\s*$")
 
@@ -128,6 +133,7 @@ class BenchmarkContext:
         self.time_units = normalized_time["units"]
         self.time_origin_offset_seconds = normalized_time["origin_offset_seconds"]
         self.z_units = self._coord_units(self.z_dim)
+        self.derived_cache: dict[str, object] = {}
 
     def _find_dim(self, candidates: set[str]) -> str | None:
         lowered = {name.lower(): name for name in self.dataset.dimensions}
@@ -165,11 +171,21 @@ class BenchmarkContext:
             raise MissingFieldError(f"{name} does not have time and z dimensions")
 
         arr = np.ma.filled(var[:], np.nan).astype(float, copy=False)
+        # Several SAM profile diagnostics, notably WCLD/QTCLD/QCCLD, encode
+        # unavailable clear-air values as -9999 without declaring a NetCDF
+        # missing_value attribute.  Do not let those sentinels contaminate
+        # time averages or Dash ratios in the normalized benchmark.
+        arr = np.where((arr <= -9.0e3) | (np.abs(arr) >= 9.0e30), np.nan, arr)
         time_axis = dims.index(self.time_dim)
         z_axis = dims.index(self.z_dim)
         arr = np.moveaxis(arr, (time_axis, z_axis), (0, 1))
         if arr.ndim > 2:
-            arr = np.nanmean(arr, axis=tuple(range(2, arr.ndim)))
+            mean_axes = tuple(range(2, arr.ndim))
+            valid_count = np.sum(np.isfinite(arr), axis=mean_axes)
+            valid_sum = np.nansum(arr, axis=mean_axes)
+            averaged = np.full(valid_sum.shape, np.nan)
+            np.divide(valid_sum, valid_count, out=averaged, where=valid_count > 0)
+            arr = averaged
         arr = np.asarray(arr, dtype=float) * float(scale)
 
         return FieldData(
@@ -307,6 +323,23 @@ def _sam_wprtp_flux(ctx: BenchmarkContext) -> FieldData:
     )
 
 
+def _sam_wprcp(ctx: BenchmarkContext) -> FieldData:
+    """Return SAM's resolved cloud-water flux in CLUBB mixing-ratio units."""
+    if ctx.has_raw("WPRCP"):
+        return ctx.read_raw("WPRCP")
+
+    qcflux = ctx.read_raw("QCFLUX")
+    rho = ctx.read_raw("RHO")
+    _require_same_grid(qcflux, rho)
+    return _derived(
+        qcflux,
+        qcflux.data / (rho.data * 2.5104e6),
+        formula="QCFLUX/(RHO*2.5104e6)",
+        source_variables=_source_vars(qcflux, rho),
+        units="(m/s) (kg/kg)",
+    )
+
+
 def _sam_rtm(ctx: BenchmarkContext) -> FieldData:
     if ctx.has_raw("RTM"):
         return ctx.read_raw("RTM")
@@ -351,6 +384,8 @@ def _sam_rtp2(ctx: BenchmarkContext) -> FieldData:
 
 
 def _sam_thlp2(ctx: BenchmarkContext) -> FieldData:
+    if ctx.has_raw("THLP2"):
+        return ctx.read_raw("THLP2")
     if ctx.has_raw("TL2"):
         return _sam_add_optional(ctx, "TL2", "THLP2_SGS")
     return ctx.read_raw("THLP2")
@@ -506,6 +541,10 @@ def _sam_skthl(ctx: BenchmarkContext) -> FieldData:
 
 
 def _sam_wpthvp(ctx: BenchmarkContext) -> FieldData:
+    # WPTHVP is SAM's directly diagnosed covariance and is the closest match
+    # to CLUBB. TVFLUX is retained only as the established fallback formula.
+    if ctx.has_raw("WPTHVP"):
+        return ctx.read_raw("WPTHVP")
     if ctx.has_raw("TVFLUX") and ctx.has_raw("RHO"):
         tvflux = ctx.read_raw("TVFLUX")
         rho = ctx.read_raw("RHO")
@@ -516,7 +555,7 @@ def _sam_wpthvp(ctx: BenchmarkContext) -> FieldData:
             formula="TVFLUX/(RHO*1004)",
             source_variables=_source_vars(tvflux, rho),
         )
-    return ctx.read_raw("WPTHVP")
+    raise MissingFieldError("WPTHVP or TVFLUX+RHO")
 
 
 def _coamps_sum_or_raw(ctx: BenchmarkContext, first_name: str, second_name: str, fallback_name: str) -> FieldData:
@@ -658,6 +697,26 @@ def get_precip_frac(ctx: BenchmarkContext) -> FieldData:
     return ctx.read_raw("precip_frac")
 
 
+def get_p_in_pa(ctx: BenchmarkContext) -> FieldData:
+    """Return environmental pressure in the Pa units used by CLUBB."""
+    if ctx.source_type == "sam":
+        return ctx.first_raw(
+            (
+                ("PRES", 100.0, "Pa"),
+                ("p_in_Pa", 1.0, "Pa"),
+                ("P_IN_PA", 1.0, "Pa"),
+            )
+        )
+    return ctx.first_raw(
+        (
+            ("p_in_Pa", 1.0, "Pa"),
+            ("pm", 1.0, "Pa"),
+            ("pres", 1.0, "Pa"),
+            ("pressure", 1.0, "Pa"),
+        )
+    )
+
+
 def get_radht(ctx: BenchmarkContext) -> FieldData:
     if ctx.source_type == "sam":
         return ctx.read_raw("RADQR", scale=1.15741e-5, units="K/s")
@@ -666,12 +725,52 @@ def get_radht(ctx: BenchmarkContext) -> FieldData:
 
 def get_rcm(ctx: BenchmarkContext) -> FieldData:
     if ctx.source_type == "sam":
+        if ctx.has_raw("RCM"):
+            return ctx.read_raw("RCM")
         return ctx.first_raw((("QCL", 0.001, "kg/kg"), ("QC", 0.001, "kg/kg")))
     return ctx.first_raw(("qcm", "rcm"))
 
 
+def get_rcm_in_cloud(ctx: BenchmarkContext) -> FieldData:
+    if ctx.source_type == "sam":
+        return ctx.read_raw("QCCLD", scale=0.001, units="kg/kg")
+    return ctx.first_raw(("rcm_in_cloud", "qcm_in_cloud", "rlm_in_cloud"))
+
+
 def get_rcp2(ctx: BenchmarkContext) -> FieldData:
-    return _raw_by_source(ctx, sam=("QC2",), coamps=("qcp2", "rcp2", "rlp2"))
+    return _raw_by_source(
+        ctx,
+        sam=("RCP2", ("QC2", 1.0e-6, "kg2/kg2")),
+        coamps=("qcp2", "rcp2", "rlp2"),
+    )
+
+
+def get_rho(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("RHO",), coamps=("rho",))
+
+
+def get_shear(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("SHEAR",), coamps=("shear",))
+
+
+def get_wp2_bp(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("W2BUOY",), coamps=("wp2_bp",))
+
+
+def get_upwp_bp(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("WUBUOY",), coamps=("upwp_bp",))
+
+
+def get_vpwp_bp(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("WVBUOY",), coamps=("vpwp_bp",))
+
+
+def get_wprtp_bp(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("QWBUOY",), coamps=("wprtp_bp",))
+
+
+def get_wpthlp_bp(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("THLWBUOY",), coamps=("wpthlp_bp",))
 
 
 def get_rgm(ctx: BenchmarkContext) -> FieldData:
@@ -712,6 +811,12 @@ def get_rtm(ctx: BenchmarkContext) -> FieldData:
     return ctx.first_raw(("qtm", "rtm"))
 
 
+def get_rtm_in_cloud(ctx: BenchmarkContext) -> FieldData:
+    if ctx.source_type == "sam":
+        return ctx.read_raw("QTCLD", scale=0.001, units="kg/kg")
+    return ctx.first_raw(("rtm_in_cloud", "qtm_in_cloud"))
+
+
 def get_rtp2(ctx: BenchmarkContext) -> FieldData:
     if ctx.source_type == "sam":
         return _sam_rtp2(ctx)
@@ -728,6 +833,10 @@ def get_rtp3(ctx: BenchmarkContext) -> FieldData:
 
 def get_rtpthlp(ctx: BenchmarkContext) -> FieldData:
     return _raw_by_source(ctx, sam=("RTPTHLP_SGS", "RTPTHLP", "TQ"), coamps=("qtpthlp", "rtpthlp"))
+
+
+def get_rtprcp(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("RTPRCP",), coamps=("qtpqcp", "rtprcp", "rtprlp"))
 
 
 def get_rtpthvp(ctx: BenchmarkContext) -> FieldData:
@@ -788,6 +897,10 @@ def get_thlpthvp(ctx: BenchmarkContext) -> FieldData:
     return _raw_by_source(ctx, sam=("thlpthvp", "THLPTHVP"), coamps=("thlpthvp",))
 
 
+def get_thlprcp(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("THLPRCP",), coamps=("thlpqcp", "thlprcp", "thlprlp"))
+
+
 def get_wp2(ctx: BenchmarkContext) -> FieldData:
     if ctx.source_type == "sam":
         return _sam_wp2_equivalent(ctx)
@@ -816,6 +929,20 @@ def get_wlsm(ctx: BenchmarkContext) -> FieldData:
 
 def get_wm(ctx: BenchmarkContext) -> FieldData:
     return get_wlsm(ctx)
+
+
+def get_w_in_cloud(ctx: BenchmarkContext) -> FieldData:
+    if ctx.source_type == "sam":
+        return ctx.read_raw("WCLD", units="m/s")
+    return ctx.first_raw(("w_in_cloud", "wm_in_cloud"))
+
+
+def get_wrc_cloud(ctx: BenchmarkContext) -> FieldData:
+    """Return the domain-mean w*rc product contributed by cloudy samples."""
+
+    if ctx.source_type == "sam":
+        return ctx.read_raw("QCWCLD", scale=0.001, units="(m/s) (kg/kg)")
+    return ctx.first_raw(("wrc_cloud", "wrcl_cloud", "wqcl_cloud"))
 
 
 def get_wp3(ctx: BenchmarkContext) -> FieldData:
@@ -848,6 +975,10 @@ def get_wp2thvp(ctx: BenchmarkContext) -> FieldData:
     return _raw_by_source(ctx, sam=("WP2THVP",), coamps=("wp2thvp",))
 
 
+def get_wp2rcp(ctx: BenchmarkContext) -> FieldData:
+    return _raw_by_source(ctx, sam=("WP2RCP",), coamps=("wp2qcp", "wp2rcp", "wp2rlp"))
+
+
 def get_wp2up2(ctx: BenchmarkContext) -> FieldData:
     return _raw_by_source(ctx, sam=("WP2UP2",), coamps=("wp2up2",))
 
@@ -866,6 +997,12 @@ def get_wpnrp(ctx: BenchmarkContext) -> FieldData:
 
 def get_wprrp(ctx: BenchmarkContext) -> FieldData:
     return _raw_by_source(ctx, sam=("WPRRP",), coamps=("wprrp",))
+
+
+def get_wprcp(ctx: BenchmarkContext) -> FieldData:
+    if ctx.source_type == "sam":
+        return _sam_wprcp(ctx)
+    return ctx.first_raw(("wpqcp", "wprcp", "wprlp"))
 
 
 def get_wprtp(ctx: BenchmarkContext) -> FieldData:
@@ -936,6 +1073,91 @@ def get_thlm(ctx: BenchmarkContext) -> FieldData:
     return ctx.read_raw("thlm")
 
 
+def _les_chi_fields(ctx: BenchmarkContext) -> dict[str, FieldData]:
+    """Create converter-backed chi moments used by custom plots."""
+    cache_key = "les_chi_fields"
+    cached = ctx.derived_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    fields = {
+        "rtm": get_rtm(ctx),
+        "thlm": get_thlm(ctx),
+        "p_in_Pa": get_p_in_pa(ctx),
+        "rtp2": get_rtp2(ctx),
+        "thlp2": get_thlp2(ctx),
+        "rtpthlp": get_rtpthlp(ctx),
+        "wprtp": get_wprtp(ctx),
+        "wpthlp": get_wpthlp(ctx),
+        "wp2": get_wp2(ctx),
+    }
+    _require_same_grid(*fields.values())
+    moments = derive_chi_moments(
+        fields["rtm"].data,
+        fields["thlm"].data,
+        fields["p_in_Pa"].data,
+        fields["rtp2"].data,
+        fields["thlp2"].data,
+        fields["rtpthlp"].data,
+        fields["wprtp"].data,
+        fields["wpthlp"].data,
+        fields["wp2"].data,
+    )
+    mean_sources = _source_vars(fields["rtm"], fields["thlm"], fields["p_in_Pa"])
+    moment_sources = _source_vars(*fields.values())
+    base = fields["rtm"]
+
+    def make_field(data, units, long_name, formula, source_variables):
+        return FieldData(
+            data=np.asarray(data, dtype=float),
+            time=base.time,
+            z=base.z,
+            units=units,
+            long_name=long_name,
+            source_variables=source_variables,
+            formula=formula,
+            source_detail=formula,
+        )
+
+    result = {
+        "chi": make_field(
+            moments["mean_chi"],
+            "kg/kg",
+            "LES-derived mean extended cloud water",
+            "CLUBB linearized chi mean from rtm,thlm,p_in_Pa",
+            mean_sources,
+        ),
+        "chip2": make_field(
+            moments["var_chi"],
+            "(kg/kg)^2",
+            "LES-derived variance of extended cloud water",
+            "crt^2*rtp2-2*crt*cthl*rtpthlp+cthl^2*thlp2",
+            moment_sources,
+        ),
+        "wpchi": make_field(
+            moments["covar_w_chi"],
+            "(m/s) (kg/kg)",
+            "LES-derived covariance of w and extended cloud water",
+            "crt*wprtp-cthl*wpthlp",
+            moment_sources,
+        ),
+    }
+    ctx.derived_cache[cache_key] = result
+    return result
+
+
+def get_chi(ctx: BenchmarkContext) -> FieldData:
+    return _les_chi_fields(ctx)["chi"]
+
+
+def get_chip2(ctx: BenchmarkContext) -> FieldData:
+    return _les_chi_fields(ctx)["chip2"]
+
+
+def get_wpchi(ctx: BenchmarkContext) -> FieldData:
+    return _les_chi_fields(ctx)["wpchi"]
+
+
 def get_um(ctx: BenchmarkContext) -> FieldData:
     if ctx.source_type == "sam":
         return ctx.read_raw("U")
@@ -969,6 +1191,8 @@ FIELD_RESOLVERS: dict[str, Resolver] = {
     "W2": get_w2,
     "bv_freq_sqd": get_bv_freq_sqd,
     "bv_freq_sqd_smth": get_bv_freq_sqd_smth,
+    "chi": get_chi,
+    "chip2": get_chip2,
     "cloud_frac": get_cloud_frac,
     "em": get_em,
     "ice_supersat_frac": get_ice_supersat_frac,
@@ -979,10 +1203,13 @@ FIELD_RESOLVERS: dict[str, Resolver] = {
     "invrs_tau_xp2_zm": get_invrs_tau_xp2_zm,
     "invrs_tau_zm": get_invrs_tau_zm,
     "ncm": get_ncm,
+    "p_in_Pa": get_p_in_pa,
     "precip_frac": get_precip_frac,
     "radht": get_radht,
     "rcm": get_rcm,
+    "rcm_in_cloud": get_rcm_in_cloud,
     "rcp2": get_rcp2,
+    "rho": get_rho,
     "rgm": get_rgm,
     "rim": get_rim,
     "rrm": get_rrm,
@@ -991,16 +1218,20 @@ FIELD_RESOLVERS: dict[str, Resolver] = {
     "rrm_evap": get_rrm_evap,
     "rsm": get_rsm,
     "rtm": get_rtm,
+    "rtm_in_cloud": get_rtm_in_cloud,
     "rtp2": get_rtp2,
     "rtp2_zt": get_rtp2_zt,
     "rtp3": get_rtp3,
+    "rtprcp": get_rtprcp,
     "rtpthlp": get_rtpthlp,
     "rtpthvp": get_rtpthvp,
     "sclr1m": get_sclr1m,
     "sclr1p2": get_sclr1p2,
     "sclr2m": get_sclr2m,
     "sclr2p2": get_sclr2p2,
+    "shear": get_shear,
     "thlp3": get_thlp3,
+    "thlprcp": get_thlprcp,
     "thlpthvp": get_thlpthvp,
     "thlm": get_thlm,
     "thlp2": get_thlp2,
@@ -1008,13 +1239,19 @@ FIELD_RESOLVERS: dict[str, Resolver] = {
     "um": get_um,
     "up2": get_up2,
     "upwp": get_upwp,
+    "upwp_bp": get_upwp_bp,
     "vm": get_vm,
     "vp2": get_vp2,
     "vpwp": get_vpwp,
+    "vpwp_bp": get_vpwp_bp,
     "w_up_in_cloud": get_w_up_in_cloud,
+    "w_in_cloud": get_w_in_cloud,
+    "wrc_cloud": get_wrc_cloud,
     "wlsm": get_wlsm,
     "wm": get_wm,
     "wp2": get_wp2,
+    "wp2_bp": get_wp2_bp,
+    "wp2rcp": get_wp2rcp,
     "wp2_zt": get_wp2_zt,
     "wp2rtp": get_wp2rtp,
     "wp2thlp": get_wp2thlp,
@@ -1024,12 +1261,16 @@ FIELD_RESOLVERS: dict[str, Resolver] = {
     "wp3": get_wp3,
     "wp4": get_wp4,
     "wpNrp": get_wpnrp,
+    "wpchi": get_wpchi,
+    "wprcp": get_wprcp,
     "wprrp": get_wprrp,
     "wprtp": get_wprtp,
+    "wprtp_bp": get_wprtp_bp,
     "wprtp_zt": get_wprtp_zt,
     "wprtp2": get_wprtp2,
     "wprtpthlp": get_wprtpthlp,
     "wpthlp": get_wpthlp,
+    "wpthlp_bp": get_wpthlp_bp,
     "wpthlp_zt": get_wpthlp_zt,
     "wpthlp2": get_wpthlp2,
     "wpthvp": get_wpthvp,

@@ -1,0 +1,201 @@
+.shared-notecard-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4vh 4vw;
+  box-sizing: border-box;
+  background: rgba(2, 6, 23, 0.58);
+  backdrop-filter: blur(2px);
+}
+
+.shared-notecard-panel {
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  border: 1px solid;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+.shared-notecard-size-small {
+  width: min(520px, 92vw);
+  max-height: 72vh;
+}
+
+.shared-notecard-size-medium {
+  width: min(760px, 92vw);
+  max-height: 82vh;
+}
+
+.shared-notecard-size-large {
+  width: min(1080px, 94vw);
+  max-height: 88vh;
+}
+
+.shared-notecard-size-full {
+  width: 90vw;
+  height: 90vh;
+}
+
+#app-root.theme-dark .shared-notecard-panel {
+  background: #0f172a;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+#app-root.theme-light .shared-notecard-panel {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.shared-notecard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 0 0 auto;
+  border-bottom: 1px solid;
+  padding: 14px 16px;
+}
+
+#app-root.theme-dark .shared-notecard-header {
+  border-color: #334155;
+  background: #111827;
+}
+
+#app-root.theme-light .shared-notecard-header {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.shared-notecard-header-text {
+  min-width: 0;
+}
+
+.shared-notecard-title {
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.shared-notecard-subtitle {
+  margin-top: 4px;
+  overflow: hidden;
+  color: #94a3b8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+.shared-notecard-close {
+  flex: 0 0 auto;
+  border: 1px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+#app-root.theme-dark .shared-notecard-close {
+  background: #1e293b;
+  border-color: #64748b;
+  color: #e2e8f0;
+}
+
+#app-root.theme-light .shared-notecard-close {
+  background: #ffffff;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.shared-notecard-close:hover,
+.shared-notecard-close:focus-visible {
+  border-color: #38bdf8;
+  outline: 2px solid rgba(56, 189, 248, 0.35);
+}
+
+.shared-notecard-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 20px 22px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.shared-notecard-body-code {
+  display: flex;
+  padding: 0;
+}
+
+.shared-notecard-code {
+  flex: 1 1 auto;
+  margin: 0;
+  overflow: auto;
+  padding: 14px;
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+#app-root.theme-dark .shared-notecard-code {
+  background: #020617;
+}
+
+#app-root.theme-light .shared-notecard-code {
+  background: #ffffff;
+}
+
+.shared-information-content {
+  display: grid;
+  gap: 16px;
+}
+
+.shared-notecard-section {
+  border-top: 1px solid;
+  padding-top: 14px;
+}
+
+.shared-notecard-overview-section {
+  border-top: 0;
+  padding-top: 0;
+}
+
+#app-root.theme-dark .shared-notecard-section {
+  border-color: #334155;
+}
+
+#app-root.theme-light .shared-notecard-section {
+  border-color: #cbd5e1;
+}
+
+.shared-notecard-section-title {
+  margin: 0 0 7px;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.shared-notecard-section p {
+  margin: 6px 0;
+}
+
+.shared-notecard-section ul {
+  margin: 7px 0 0;
+  padding-left: 22px;
+}
+
+.shared-notecard-section li + li {
+  margin-top: 5px;
+}
+
+.shared-notecard-overview {
+  font-size: 15px;
+}

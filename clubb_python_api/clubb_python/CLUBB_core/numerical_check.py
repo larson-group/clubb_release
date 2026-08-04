@@ -47,7 +47,7 @@ def check_clubb_settings(
     clubb_config_flags: ConfigFlags,
     err_info: ErrInfo,
 ):
-    """Validate CLUBB configuration settings."""
+    """Validate the complete CLUBB configuration, including parameters."""
     set_fortran_config_flags(clubb_config_flags)
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_check_clubb_settings(

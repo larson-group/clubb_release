@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-import sys
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 TUNABLE_CONFIG_ROOT = REPO_ROOT / "input" / "parameter_and_flag_configs"
 REQUIRED_TUNABLE_CONFIG_FILES = (
     "tunable_parameters.in",
@@ -15,8 +14,7 @@ REQUIRED_TUNABLE_CONFIG_FILES = (
     "silhs_parameters.in",
 )
 
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+TUNABLE_PARAMETER_RENAMES: dict[str, str] = {}
 
 from utilities.create_case_namelist import resolve_tunable_config_dir  # noqa: E402
 
@@ -68,3 +66,20 @@ def tunable_config_file(config_name=None, filename="tunable_parameters.in"):
 def tunable_params_file_for_config(config_name=None):
     """Return the tunable parameter file for a config name or directory."""
     return tunable_config_file(config_name, "tunable_parameters.in")
+
+
+def canonical_tunable_parameter_name(name, available_names):
+    """Resolve one documented historic name when its successor is available.
+
+    This never invents a parameter.  The selected configuration remains the
+    authority: an alias is accepted only when its declared successor appears
+    in that configuration's current namelist.
+    """
+    candidate = str(name or "").strip()
+    available = set(available_names or [])
+    if candidate in available:
+        return candidate
+    successor = TUNABLE_PARAMETER_RENAMES.get(candidate)
+    if successor in available:
+        return successor
+    return candidate

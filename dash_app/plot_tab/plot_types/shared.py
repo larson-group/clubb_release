@@ -1,7 +1,6 @@
 import glob
 import os
 import re
-import sys
 from collections import OrderedDict
 from dataclasses import dataclass
 
@@ -11,11 +10,14 @@ from dash import dcc, html
 from netCDF4 import Dataset, chartostring
 
 from ..case_definitions import load_case_definitions
+from dash_app.shared.netcdf import (
+    file_signature as _file_signature,
+    find_dimension as find_dim,
+    time_units_factor,
+)
 from .budget_groups import BUDGET_GROUPS
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
 
 from tuner.case_defaults import read_case_defaults  # noqa: E402
 
@@ -136,14 +138,6 @@ SOURCE_LINE_DASHES = [
     "longdash",
     "longdashdot",
 ]
-
-
-def _file_signature(path):
-    try:
-        stat = os.stat(path)
-    except OSError:
-        return (path, None, None)
-    return (path, stat.st_mtime_ns, stat.st_size)
 
 
 def _freeze_cached_value(value):
@@ -422,6 +416,21 @@ def dataset_metadata_for_path(path):
         ds.close()
 
 
+def readable_dataset_metadata_for_path(path):
+    """Return metadata when a live NetCDF output is readable, otherwise ``None``.
+
+    CLUBB writes the conventional ``*_stats.nc`` path in place.  During a
+    rerun, a Dash callback can therefore observe the file after it has been
+    truncated but before NetCDF has finished writing its header.  Optional
+    live views should treat that short interval as unavailable rather than
+    surfacing a server traceback to the user.
+    """
+    try:
+        return dataset_metadata_for_path(path)
+    except (FileNotFoundError, OSError, ValueError):
+        return None
+
+
 def dataset_info_for_var(paths, var_name):
     for path in paths or []:
         meta = dataset_metadata_for_path(path)
@@ -437,13 +446,6 @@ def dataset_infos_for_var(paths, var_name):
         if var_name in meta["vars"]:
             matches.append((path, meta))
     return matches
-
-
-def find_dim(dim_names, candidates):
-    for dim_name in dim_names:
-        if dim_name.lower() in candidates:
-            return dim_name
-    return None
 
 
 def find_subcolumn_dim(dim_names):
@@ -474,19 +476,6 @@ def mean_over_axis(data, axis):
         out_shape = arr.shape[:axis] + arr.shape[axis + 1 :]
         return np.full(out_shape, np.nan, dtype=float)
     return np.mean(arr, axis=axis)
-
-
-def time_units_factor(units):
-    if not units:
-        return 1.0
-    unit = units.split()[0].lower()
-    if unit in {"s", "sec", "secs", "second", "seconds"}:
-        return 1.0
-    if unit in {"min", "mins", "minute", "minutes"}:
-        return 60.0
-    if unit in {"h", "hr", "hrs", "hour", "hours"}:
-        return 3600.0
-    return 1.0
 
 
 def time_values_seconds(ds_info):
@@ -1307,6 +1296,18 @@ def relayout_y_range(relayout_data):
     return relayout_axis_range(relayout_data, "yaxis")
 
 
+def apply_patch_x_range(patch, x_range, relayout_data):
+    """Autoscale a data patch only when the user has not manually zoomed x.
+
+    Plotly ``uirevision`` preserves client interaction only while a callback
+    does not explicitly overwrite the corresponding layout range.  Centralize
+    that guard so time-point patches update traces without undoing a zoom.
+    """
+    if x_range and relayout_axis_range(relayout_data, "xaxis") is None:
+        patch["layout"]["xaxis"]["range"] = list(x_range)
+    return patch
+
+
 def apply_relayout_ranges(fig, relayout_data):
     """Preserve user x/y zoom ranges on a freshly rebuilt Plotly figure."""
     if not isinstance(relayout_data, dict):
@@ -1427,14 +1428,18 @@ def plot_graph_shell_style(size_value):
     return {"height": f"{figure_height_for_size(size_value)}px"}
 
 
-def make_plot_card(controls, graph_id, size_button=None, size_value="normal", subtitle=None, card_id=None, close_button_id=None, render_signal_id=None, graph_shell_id=None, size_store_id=None):
+def make_plot_card(controls, graph_id, size_button=None, size_value="normal", subtitle=None, help_button_id=None, card_id=None, close_button_id=None, render_signal_id=None, graph_shell_id=None, size_store_id=None):
     title_children = []
-    if subtitle:
+    if help_button_id is not None:
         title_children.append(
-            html.Span(
-                "i",
-                className="plots-card-info",
-                title=subtitle,
+            html.Button(
+                "?",
+                id=help_button_id,
+                type="button",
+                n_clicks=0,
+                className="plots-card-help",
+                title=subtitle or "Open plot information",
+                **{"aria-label": "Open plot information"},
             )
         )
     header = html.Div(
@@ -1449,7 +1454,7 @@ def make_plot_card(controls, graph_id, size_button=None, size_value="normal", su
             ),
             html.Button("x", id=close_button_id, className="plots-card-close", title="Close plot") if close_button_id is not None else html.Div(),
         ],
-        style={"display": "flex", "justifyContent": "space-between", "alignItems": "center", "gap": "10px", "marginBottom": "10px"},
+        style={"display": "flex", "justifyContent": "space-between", "alignItems": "flex-start", "gap": "10px", "marginBottom": "10px"},
     )
     return html.Div(
         [
@@ -1624,7 +1629,12 @@ def build_case_data(case_name, files, directories=None):
         ]
         if default_height_range[1] < default_height_range[0]:
             default_height_range.reverse()
-        height_step = max((float(height_slider_max) - float(height_slider_min)) / 500.0, 1.0)
+        height_step = collection_nominal_height_spacing(collection)
+        if height_step is None:
+            height_step = max(
+                (float(height_slider_max) - float(height_slider_min)) / 500.0,
+                1.0,
+            )
         time_source = collection.primary_time_source()
         pyplotgen_selection = minutes_to_slider_selection(
             time_source,
@@ -1862,6 +1872,31 @@ def collection_height_bounds(collection):
             height_min = local_min if height_min is None else min(height_min, local_min)
             height_max = local_max if height_max is None else max(height_max, local_max)
     return height_min, height_max
+
+
+def collection_nominal_height_spacing(collection):
+    """Return the median native thermodynamic-level spacing for UI stepping."""
+    spacings = []
+    for ds_info in collection.datasets:
+        seen_z_dims = set()
+        for info in ds_info.var_info.values():
+            z_dim = info.get("z_dim")
+            if z_dim is None or z_dim in seen_z_dims:
+                continue
+            seen_z_dims.add(z_dim)
+            z_values = np.asarray(get_z_values(ds_info, z_dim), dtype=float)
+            z_values = np.sort(z_values[np.isfinite(z_values)])
+            if z_values.size < 2:
+                continue
+            differences = np.diff(z_values)
+            spacings.extend(
+                float(value)
+                for value in differences
+                if np.isfinite(value) and value > 1.0e-9
+            )
+    if not spacings:
+        return None
+    return float(np.median(spacings))
 
 
 def _tz_plot_data_key(path, var_name, meta):
@@ -2699,6 +2734,101 @@ def load_compare_param_values(paths):
     missing_names = sorted(set.union(*name_sets) - set(common_names)) if name_sets else []
     mismatched.extend((name, "Missing in at least one compared output") for name in missing_names)
     return matched, True, True, mismatched, per_file
+
+
+def _normalize_flag_value(value):
+    """Return a compact, comparable display value for a namelist flag."""
+    text = str(value or "").strip().rstrip(",").strip()
+    lower = text.lower()
+    if lower in {".true.", "true", "t"}:
+        return "True"
+    if lower in {".false.", "false", "f"}:
+        return "False"
+    try:
+        numeric = float(text.replace("D", "E").replace("d", "e"))
+    except ValueError:
+        return text
+    return f"{numeric:g}"
+
+
+def _case_input_candidates(stats_path):
+    path = str(stats_path or "")
+    suffix = "_stats.nc"
+    if not path.endswith(suffix):
+        return []
+    prefix = path[: -len(suffix)]
+    return [prefix + ".in", prefix + "_setup.txt"]
+
+
+def _load_flag_values_for_path(stats_path):
+    """Read the actual configurable CLUBB flag namelist saved beside a run."""
+    assignment = re.compile(r"^\s*([A-Za-z_]\w*)\s*=\s*(.*?)\s*,?\s*$")
+    group_name = "configurable_clubb_flags_nl"
+    for candidate in _case_input_candidates(stats_path):
+        try:
+            with open(candidate, "r", encoding="utf-8", errors="replace") as handle:
+                lines = handle.readlines()
+        except OSError:
+            continue
+        in_group = False
+        found_group = False
+        values = {}
+        for line in lines:
+            stripped = line.strip()
+            if not in_group:
+                if stripped.lower().lstrip("&") == group_name:
+                    in_group = True
+                    found_group = True
+                continue
+            if stripped.startswith("---"):
+                if values:
+                    break
+                continue
+            if stripped == "/" or stripped.startswith("&"):
+                break
+            body = line.split("!", 1)[0]
+            match = assignment.match(body)
+            if match:
+                name, value = match.groups()
+                values[name] = _normalize_flag_value(value)
+        if found_group:
+            return values, True
+    return {}, False
+
+
+def load_flag_values(paths):
+    """Load read-only configured flags from the first run with saved inputs."""
+    for path in paths or []:
+        flags, has_flags = _load_flag_values_for_path(path)
+        if has_flags:
+            return flags, True
+    return {}, False
+
+
+def load_compare_flag_values(paths):
+    """Return identical flags and mismatches across compared output runs."""
+    per_file = []
+    availability = []
+    for path in paths or []:
+        flags, has_flags = _load_flag_values_for_path(path)
+        per_file.append(flags)
+        availability.append(has_flags)
+    if not per_file:
+        return {}, [], False
+    if not all(availability):
+        return {}, [("Flags", "Saved run flags missing from at least one output")], any(availability)
+    names = sorted(set().union(*(set(flags) for flags in per_file)))
+    matched = {}
+    mismatched = []
+    for name in names:
+        values = [flags.get(name) for flags in per_file]
+        if any(value is None for value in values):
+            mismatched.append((name, "Missing in at least one compared output"))
+        elif all(value == values[0] for value in values[1:]):
+            matched[name] = values[0]
+        else:
+            mismatched.append((name, "Mismatch across compared outputs"))
+    return matched, mismatched, True
 
 
 def closest_column(param_values, selection):

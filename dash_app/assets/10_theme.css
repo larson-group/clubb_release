@@ -23,11 +23,19 @@ body,
   --Dash-Text-Disabled: #94a3b8;
   --Dash-Shading-Strong: rgba(2, 6, 23, 0.75);
   --Dash-Shading-Weak: rgba(2, 6, 23, 0.45);
+  --shared-notecard-background: #0f172a;
+  --shared-notecard-header: #1e293b;
+  --shared-notecard-border: #475569;
+  --shared-notecard-text: #e2e8f0;
 }
 
 #app-root.theme-light {
   background: #f8fafc;
   color: #0f172a;
+  --shared-notecard-background: #f8fafc;
+  --shared-notecard-header: #ffffff;
+  --shared-notecard-border: #94a3b8;
+  --shared-notecard-text: #0f172a;
 }
 
 #app-root.theme-dark .dash-tabs,

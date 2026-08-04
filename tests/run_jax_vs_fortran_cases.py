@@ -33,7 +33,7 @@ DEFAULT_CASES = {
     "wangara":                None,
 }
 
-RESULTS_DIRNAME = "jax_driver_test_results"
+RESULTS_DIRNAME = Path("output") / "tests" / "jax_driver_test_results"
 JAX_OUTPUT_DIRNAME = "jax_output"
 FORTRAN_OUTPUT_DIRNAME = "fortran_output"
 SUMMARY_FILENAME = "case_compare_summary.json"

@@ -23,7 +23,10 @@ LOSS_METRIC_NAMES = (
 
 LOSS_POLICY_VERSION = "taylor_metrics_v1"
 
-DEFAULT_LOSS_MODE = "centered_rmse_bias"
+# Prefer the shape-sensitive objective for fresh Tune experiments.  Existing
+# saved requests retain their explicit loss mode, so this only changes new
+# workspaces and requests that omit the field.
+DEFAULT_LOSS_MODE = "shape_first"
 LOSS_MODE_NAMES = (
     "scaled_rmse",
     "centered_rmse_bias",
@@ -34,11 +37,21 @@ LOSS_MODE_NAMES = (
     "decomposed_taylor",
 )
 
-DEFAULT_AGGREGATION_MODE = "mean_max"
+DEFAULT_AGGREGATION_MODE = "quantile_weighted"
 AGGREGATION_MODE_NAMES = (
+    "quantile_weighted",
     "mean_max",
     "mean_worst_quantile",
 )
+
+# Four equally populated bins are formed after sorting active losses from best
+# to worst.  The values control the importance of those bins, not the number of
+# samples admitted to them.  They are deliberately normalized at use time so a
+# user can enter intuitive relative weights in either the CLI or Dash.
+DEFAULT_AGGREGATION_WEIGHTS = (0.1, 0.4, 0.4, 0.1)
+AGGREGATION_WEIGHT_COUNT = len(DEFAULT_AGGREGATION_WEIGHTS)
+TIME_WINDOW_AGGREGATION_SCOPES = ("overall", "by_case")
+DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE = "overall"
 
 DEFAULT_NUM_TIME_WINDOWS = 1
 
@@ -63,6 +76,7 @@ LOSS_POLICY_CONSTANTS = {
     "worst_quantile_mean_weight": WORST_QUANTILE_MEAN_WEIGHT,
     "worst_quantile_weight": WORST_QUANTILE_WEIGHT,
     "worst_quantile_fraction": WORST_QUANTILE_FRACTION,
+    "default_quantile_weights": list(DEFAULT_AGGREGATION_WEIGHTS),
 }
 
 
@@ -292,12 +306,44 @@ def _active_loss_pairs(losses: list[float], weights: list[float] | None) -> tupl
     return active_pairs, excluded_count
 
 
+def normalize_aggregation_weights(values=None) -> list[float]:
+    """Return four finite, nonnegative quantile weights with unit sum.
+
+    The public request keeps the user's relative values for provenance, but the
+    numerical aggregation always uses this normalized form.  Requiring exactly
+    four entries avoids a silent change in the meaning of the best-to-worst
+    quartile controls.
+    """
+    raw_values = DEFAULT_AGGREGATION_WEIGHTS if values is None else values
+    if isinstance(raw_values, str):
+        raw_values = [item.strip() for item in raw_values.split(",") if item.strip()]
+    try:
+        weights = [float(value) for value in raw_values]
+    except (TypeError, ValueError) as exc:
+        raise ValueError("aggregation_weights must contain four finite nonnegative numbers") from exc
+    if len(weights) != AGGREGATION_WEIGHT_COUNT:
+        raise ValueError(f"aggregation_weights must contain exactly {AGGREGATION_WEIGHT_COUNT} numbers")
+    if any(not math.isfinite(value) or value < 0.0 for value in weights):
+        raise ValueError("aggregation_weights must contain four finite nonnegative numbers")
+    total = sum(weights)
+    if total <= 0.0:
+        raise ValueError("aggregation_weights must contain at least one positive number")
+    return [float(value / total) for value in weights]
+
+
 def aggregate_losses(
     losses: list[float],
     weights: list[float] | None = None,
     aggregation_mode: str = DEFAULT_AGGREGATION_MODE,
+    aggregation_weights=None,
 ) -> dict:
     """Aggregate active case-field losses and return diagnostics.
+
+    `quantile_weighted` sorts active losses best-to-worst, partitions them into
+    four equally populated bins, and combines their weighted means using the
+    supplied best-to-worst quantile weights.  Empty bins are omitted and the
+    remaining weights are renormalized, so one-window requests retain their
+    actual loss rather than being artificially scaled.
 
     `mean_max` is the historical blend: weighted mean rewards broad improvement,
     while the hard maximum rejects a parameter set that is very bad for one
@@ -318,6 +364,13 @@ def aggregate_losses(
         "weighted_mean": 0.0,
     }
     if not active_pairs:
+        if aggregation_mode == "quantile_weighted":
+            return {
+                **base,
+                "quantile_weights": normalize_aggregation_weights(aggregation_weights),
+                "quantile_bin_means": [],
+                "loss": 0.0,
+            }
         if aggregation_mode == "mean_worst_quantile":
             return {**base, "worst_quantile_mean": 0.0, "loss": 0.0}
         return {**base, "max_loss": 0.0, "loss": 0.0}
@@ -325,6 +378,42 @@ def aggregate_losses(
     weighted_sum = sum(loss * weight for loss, weight in active_pairs)
     weight_sum = sum(weight for _loss, weight in active_pairs)
     weighted_mean = weighted_sum / weight_sum
+
+    if aggregation_mode == "quantile_weighted":
+        quantile_weights = normalize_aggregation_weights(aggregation_weights)
+        sorted_pairs = sorted(active_pairs, key=lambda pair: pair[0])
+        bins = [[] for _ in range(AGGREGATION_WEIGHT_COUNT)]
+        item_count = len(sorted_pairs)
+        for item_idx, pair in enumerate(sorted_pairs):
+            # Integer boundaries keep the bins contiguous and differ by at
+            # most one item, even when the number of time windows is not four.
+            bin_idx = min(AGGREGATION_WEIGHT_COUNT - 1, item_idx * AGGREGATION_WEIGHT_COUNT // item_count)
+            bins[bin_idx].append(pair)
+        bin_diagnostics = []
+        for bin_idx, bin_pairs in enumerate(bins):
+            if not bin_pairs:
+                continue
+            bin_weight_sum = sum(weight for _loss, weight in bin_pairs)
+            bin_mean = sum(loss * weight for loss, weight in bin_pairs) / bin_weight_sum
+            bin_diagnostics.append(
+                {
+                    "bin_index": bin_idx,
+                    "label": ("best", "lower_middle", "upper_middle", "worst")[bin_idx],
+                    "item_count": len(bin_pairs),
+                    "mean": float(bin_mean),
+                    "requested_weight": float(quantile_weights[bin_idx]),
+                }
+            )
+        active_quantile_weight = sum(item["requested_weight"] for item in bin_diagnostics)
+        loss = sum(item["mean"] * item["requested_weight"] for item in bin_diagnostics) / active_quantile_weight
+        return {
+            **base,
+            "weighted_mean": float(weighted_mean),
+            "quantile_weights": quantile_weights,
+            "quantile_bin_means": bin_diagnostics,
+            "active_quantile_weight": float(active_quantile_weight),
+            "loss": float(loss),
+        }
 
     if aggregation_mode == "mean_worst_quantile":
         worst_count = max(1, math.ceil(len(active_pairs) * WORST_QUANTILE_FRACTION))

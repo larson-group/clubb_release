@@ -18,8 +18,8 @@ Cases can be plain names, fixed windows, or split windows:
     bomex:7200:18000:2700
     case:t_start:t_end:t_out
 
-Parameters use PARAM:MIN:MAX. Strategies use MODE:SETTING, for example
-random:16 or resolve:0.9. Interactive runs ask whether to rerun the best result
+Parameters use PARAM:MIN:MAX, or PARAM=PARAM:MIN:MAX to link equal physical
+parameters. Strategies use MODE:SETTING, for example random:16 or resolve:0.9. Interactive runs ask whether to rerun the best result
 after tuning; Jenkins and other non-interactive callers should set -run_top to
 never, complete, window, or both.
 
@@ -27,7 +27,7 @@ Understanding
 -------------
 This script is a controller, not a loss calculator.
 
-It creates a TunerJob directory under output_tuner and writes the small files
+It creates a TunerJob directory under output/tuner and writes the small files
 that describe the job:
 
   - request.json: cases, fields, parameters, strategy, and loss settings
@@ -66,7 +66,7 @@ import time
 
 RUN_SCRIPTS = Path(__file__).resolve().parent
 CLUBB_ROOT = RUN_SCRIPTS.parent
-OUTPUT_TUNER_DIR = CLUBB_ROOT / "output_tuner"
+OUTPUT_TUNER_DIR = CLUBB_ROOT / "output" / "tuner"
 CLUBB_OUTPUT_DIR = CLUBB_ROOT / "output"
 RUN_SCM = RUN_SCRIPTS / "run_scm.py"
 RUN_SCM_LOSS = RUN_SCRIPTS / "run_scm_loss.py"
@@ -75,6 +75,7 @@ if str(CLUBB_ROOT) not in sys.path:
     sys.path.insert(0, str(CLUBB_ROOT))
 
 from tuner.job_runtime import TERMINAL_STATES, TunerJob, tuner_worker_env  # noqa: E402
+from tuner.presets import apply_preset, list_presets  # noqa: E402
 from tuner.status import read_json_or_default  # noqa: E402
 from tuner.system_defaults import default_max_workers  # noqa: E402
 from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE  # noqa: E402
@@ -139,15 +140,20 @@ def parse_case_spec(spec: str) -> dict:
 
 
 def parse_param_spec(spec: str) -> dict:
-    """Parse PARAM:MIN:MAX."""
+    """Parse PARAM:MIN:MAX or linked PARAM=PARAM:MIN:MAX."""
     parts = [part.strip() for part in str(spec).split(":")]
     if len(parts) != 3 or any(part == "" for part in parts):
-        raise argparse.ArgumentTypeError(f"Invalid param spec '{spec}'. Use PARAM:MIN:MAX.")
+        raise argparse.ArgumentTypeError(f"Invalid param spec '{spec}'. Use PARAM:MIN:MAX or PARAM=PARAM:MIN:MAX.")
+    targets = [item.strip() for item in parts[0].split("=") if item.strip()]
+    if not targets:
+        raise argparse.ArgumentTypeError(f"Invalid parameter target list '{parts[0]}'.")
+    if len(targets) != len(set(targets)):
+        raise argparse.ArgumentTypeError(f"Parameter target list '{parts[0]}' repeats a name.")
     min_value = _float_from_text(parts[1], f"{parts[0]} min")
     max_value = _float_from_text(parts[2], f"{parts[0]} max")
     if min_value > max_value:
         raise argparse.ArgumentTypeError(f"{parts[0]} requires min <= max")
-    return {"name": parts[0], "min": min_value, "max": max_value}
+    return {"name": targets[0], "targets": targets, "min": min_value, "max": max_value}
 
 
 def parse_strategy_spec(spec: str) -> dict:
@@ -197,17 +203,19 @@ def parse_strategy_spec(spec: str) -> dict:
 
 
 def build_request(args: argparse.Namespace) -> dict:
-    case_configs = [parse_case_spec(spec) for spec in _split_values(args.cases)]
-    if not case_configs:
-        raise argparse.ArgumentTypeError("-cases must include at least one case")
+    case_values = _split_values(args.cases)
+    field_values = _split_values(args.fields)
+    param_values = _split_values(args.params)
+    if not args.preset and not case_values:
+        raise argparse.ArgumentTypeError("-cases must include at least one case unless --preset is used")
+    if not args.preset and not field_values:
+        raise argparse.ArgumentTypeError("-fields must include at least one field unless --preset is used")
+    if not args.preset and not param_values:
+        raise argparse.ArgumentTypeError("-params must include at least one PARAM:MIN:MAX range unless --preset is used")
 
-    selected_fields = _split_values(args.fields)
-    if not selected_fields:
-        raise argparse.ArgumentTypeError("-fields must include at least one field")
-
-    parameter_ranges = [parse_param_spec(spec) for spec in _split_values(args.params)]
-    if not parameter_ranges:
-        raise argparse.ArgumentTypeError("-params must include at least one PARAM:MIN:MAX range")
+    case_configs = [parse_case_spec(spec) for spec in case_values]
+    selected_fields = field_values
+    parameter_ranges = [parse_param_spec(spec) for spec in param_values]
 
     strategy = parse_strategy_spec(args.strategy)
     batch_size = int(args.batch_size)
@@ -215,21 +223,31 @@ def build_request(args: argparse.Namespace) -> dict:
     if strategy["name"] == "simann":
         strategy["options"].setdefault("chain_count", max(1, max_workers * batch_size))
     request = {
-        "config": str(args.config or "default").strip() or "default",
-        "cases": [config["case_name"] for config in case_configs],
-        "case_configs": case_configs,
-        "selected_fields": selected_fields,
-        "parameter_ranges": parameter_ranges,
         "batch_size": batch_size,
         "max_workers": max_workers,
         "strategy": strategy,
         "loss_mode": args.loss_mode,
         "aggregation_mode": args.aggregation_mode,
         "time_window_aggregation_mode": args.aggregation_mode,
+        "aggregation_weights": list(args.aggregation_weights),
+        "time_window_aggregation_scope": args.aggregation_scope,
     }
+    if args.preset:
+        request["preset"] = args.preset
+    if case_values:
+        request["cases"] = [config["case_name"] for config in case_configs]
+        request["case_configs"] = case_configs
+    if field_values:
+        request["selected_fields"] = selected_fields
+    if param_values:
+        request["parameter_ranges"] = parameter_ranges
+    if args.config is not None:
+        request["config"] = str(args.config).strip() or "default"
+    if args.override is not None:
+        request["override"] = args.override
     if args.seed is not None:
         request["seed"] = int(args.seed)
-    return request
+    return apply_preset(request)
 
 
 def format_seconds(seconds: float | int | None) -> str:
@@ -375,6 +393,8 @@ def print_request_summary(
             ("config", str(request.get("config") or "default")),
             ("loss", request["loss_mode"]),
             ("aggregation", request["aggregation_mode"]),
+            ("aggregation_weights", ", ".join(f"{value:g}" for value in request.get("aggregation_weights", []))),
+            ("aggregation_scope", request.get("time_window_aggregation_scope", "overall")),
             ("poll_interval", f"{args.poll_interval:g} s"),
             ("post_run", f"{args.run_top}, top_n={args.top_n}, out={Path(args.run_out_dir).resolve()}"),
         ],
@@ -625,6 +645,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
+            "  python run_scripts/run_tuner_job.py --preset wpxp -strategy random:8\n"
             "  python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac "
             "-params C8:0.2:0.8 -strategy random:8\n"
             "  python run_scripts/run_tuner_job.py -cases arm:10800:21600:10800 bomex:7200:18000:2700 "
@@ -636,16 +657,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "-cases",
         nargs="+",
-        required=True,
         help="Case specs: CASE, CASE:T_START:T_END, or CASE:T_START:T_END:T_INTERVAL.",
     )
-    parser.add_argument("-fields", nargs="+", required=True, help="CLUBB-facing fields, comma-separated or space-separated.")
-    parser.add_argument("-params", nargs="+", required=True, help="Parameter ranges as PARAM:MIN:MAX.")
+    parser.add_argument("-fields", nargs="+", help="CLUBB-facing fields, comma-separated or space-separated.")
+    parser.add_argument("-params", nargs="+", help="Ranges as PARAM:MIN:MAX or linked PARAM=PARAM:MIN:MAX.")
+    parser.add_argument("--preset", help="Named tuner preset; explicit -cases/-fields/-params override its pieces.")
+    parser.add_argument("--list-presets", action="store_true", help="List available Tune presets and exit.")
     parser.add_argument(
         "-config",
-        default="default",
+        default=None,
         help="Tunable config name under input/parameter_and_flag_configs, or a config directory. Default: default.",
     )
+    parser.add_argument("-override", default=None, help="Optional comma-separated CLUBB key=value overrides.")
     parser.add_argument(
         "-strategy",
         default="random:8",
@@ -667,6 +690,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "-aggregation_mode",
         default=DEFAULT_AGGREGATION_MODE,
         help=f"Aggregation mode. Default: {DEFAULT_AGGREGATION_MODE}.",
+    )
+    parser.add_argument(
+        "-aggregation_weights",
+        nargs=4,
+        type=float,
+        default=(0.1, 0.4, 0.4, 0.1),
+        metavar=("BEST", "LOWER_MID", "UPPER_MID", "WORST"),
+        help="Best-to-worst quantile weights for quantile_weighted aggregation. Default: 0.1 0.4 0.4 0.1.",
+    )
+    parser.add_argument(
+        "-aggregation_scope",
+        choices=("overall", "by_case"),
+        default="overall",
+        help="Pool time-window samples globally or aggregate each case before averaging. Default: overall.",
     )
     parser.add_argument("-job_dir", help="Exact job directory to create. Must be empty if it exists.")
     parser.add_argument("-output_root", default=str(OUTPUT_TUNER_DIR), help="Root for generated job directories.")
@@ -695,6 +732,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    if args.list_presets:
+        for preset in list_presets():
+            print(f"{preset['name']}: {preset['description']}")
+        return 0
     try:
         request = build_request(args)
         args.request_cases = list(request["cases"])

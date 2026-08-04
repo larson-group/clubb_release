@@ -1,67 +1,45 @@
 (function() {
-  function normalize(rawValue) {
-    const text = rawValue === null || rawValue === undefined ? '' : String(rawValue).trim();
-    if (!text) {
-      return text;
-    }
-
-    const lower = text.toLowerCase();
-    const boolTrue = new Set(['.true.', 'true', 't']);
-    const boolFalse = new Set(['.false.', 'false', 'f']);
-    if (boolTrue.has(lower) || boolFalse.has(lower)) {
-      return text;
-    }
-    if (lower.includes('e')) {
-      return text;
-    }
-    if (!text.includes('.')) {
-      return text;
-    }
-
-    let trimmed = text.replace(/0+$/, '');
-    if (trimmed.endsWith('.')) {
-      trimmed += '0';
-    }
-    return trimmed;
-  }
 
   const clientside = window.dash_clientside = window.dash_clientside || {};
   clientside.runTab = clientside.runTab || {};
 
-  clientside.runTab.syncMulticolDisabled = function(multicolParamValues, tunableIds, currentDisabled) {
-    var claimed = new Set();
-    (multicolParamValues || []).forEach(function(v) {
-      if (v !== null && v !== undefined) {
-        var s = String(v).trim();
-        if (s) claimed.add(s);
-      }
-    });
-    return (tunableIds || []).map(function(id, i) {
-      var shouldDisable = claimed.has((id || {}).name);
-      if (shouldDisable === !!(currentDisabled || [])[i]) {
-        return window.dash_clientside.no_update;
-      }
-      return shouldDisable;
-    });
-  };
-
-  clientside.runTab.syncParamRowClass = function(value, disabled, inputId, defaultsByKey) {
-    const key = inputId && inputId.file && inputId.name
-      ? `${inputId.file}:${inputId.name}`
-      : '';
-    const defaults = defaultsByKey || {};
-    const currentValue = normalize(value);
-    const defaultValue = normalize(defaults[key]);
-    const classes = ['run-param-container'];
-
-    if (disabled) {
-      classes.push('run-param-row--changed-disabled');
-    } else if (currentValue !== defaultValue) {
-      classes.push('run-param-row--changed');
-    } else {
-      classes.push('run-param-row--default');
+  function classForState(state, baseClass) {
+    const classes = [baseClass];
+    switch ((state || {}).state) {
+      case 'invalid': classes.push('run-param-row--invalid'); break;
+      case 'inactive': classes.push('run-param-row--changed-disabled'); break;
+      case 'linked-changed': classes.push('run-param-row--changed'); break;
+      case 'linked': classes.push('run-param-row--default'); break;
+      case 'changed': classes.push('run-param-row--changed'); break;
+      default: classes.push('run-param-row--default'); break;
     }
-
     return classes.join(' ');
+  }
+
+  // The shared Python settings evaluator owns every semantic decision.  This
+  // browser callback only maps its already-resolved state to CSS classes.
+  clientside.runTab.syncAllParamRowClasses = function(resolution, inputIds) {
+    const states = (resolution || {}).control_states || {};
+    return (inputIds || []).map(function(inputId) {
+      const key = inputId && inputId.file && inputId.name ? `${inputId.file}:${inputId.name}` : '';
+      return classForState(states[key], 'run-param-container');
+    });
   };
+
+  clientside.runTab.syncAllFlagRowClasses = function(resolution, flagIds) {
+    const states = (resolution || {}).control_states || {};
+    return (flagIds || []).map(function(flagId) {
+      const name = flagId && flagId.name ? flagId.name : '';
+      return classForState(states[`flag:${name}`], 'run-param-container run-flag-container');
+    });
+  };
+
+  clientside.runTab.syncLinkedParamRowClasses = function(resolution, containerIds) {
+    const states = (resolution || {}).linked_group_states || {};
+    return (containerIds || []).map(function(containerId) {
+      const group = containerId && containerId.group ? containerId.group : '';
+      return classForState(states[group], 'run-linked-param-container');
+    });
+  };
+
 })();

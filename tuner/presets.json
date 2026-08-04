@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "presets": [
+    {
+      "name": "wpxp",
+      "label": "wpxp",
+      "description": "Scalar flux and scalar-skewness closure coefficients.",
+      "case_configs": [
+        {"case_name": "arm", "average_time_seconds": 3600},
+        {"case_name": "bomex", "average_time_seconds": 3600},
+        {"case_name": "dycoms2_rf01", "average_time_seconds": 3600}
+      ],
+      "selected_fields": ["wprtp", "wpthlp", "rtp2", "thlp2", "rtpthlp"],
+      "parameter_ranges": [
+        {"name": "C6rt", "targets": ["C6rt", "C6thl"]},
+        {"name": "C6rtb", "targets": ["C6rtb", "C6thlb"]},
+        {"name": "C6rtc", "targets": ["C6rtc", "C6thlc"]},
+        {"name": "C7"},
+        {"name": "C7b"},
+        {"name": "C7c"},
+        {"name": "C6rt_Lscale0", "targets": ["C6rt_Lscale0", "C6thl_Lscale0"]},
+        {"name": "C7_Lscale0"},
+        {"name": "wpxp_L_thresh"},
+        {"name": "c_K6"},
+        {"name": "nu6"},
+        {"name": "C_uu_shr"},
+        {"name": "altitude_threshold"}
+      ],
+      "override": "l_use_C7_Richardson=false"
+    },
+    {
+      "name": "xp2_xpyp",
+      "label": "xp2_xpyp",
+      "description": "Scalar variances, covariance, and horizontal-variance closure coefficients.",
+      "case_configs": [
+        {"case_name": "arm", "average_time_seconds": 3600},
+        {"case_name": "bomex", "average_time_seconds": 3600},
+        {"case_name": "dycoms2_rf01", "average_time_seconds": 3600}
+      ],
+      "selected_fields": ["rtp2", "thlp2", "rtpthlp", "up2", "vp2"],
+      "parameter_ranges": [
+        {"name": "C2rt"},
+        {"name": "C2thl"},
+        {"name": "C2rtthl"},
+        {"name": "C4"},
+        {"name": "C_uu_shr"},
+        {"name": "C_uu_buoy"},
+        {"name": "C14"},
+        {"name": "beta"},
+        {"name": "c_K2"},
+        {"name": "nu2"},
+        {"name": "c_K9"},
+        {"name": "nu9"},
+        {"name": "rtp2_clip_coef"}
+      ]
+    },
+    {
+      "name": "adg1_geometry",
+      "label": "ADG1 geometry",
+      "description": "Two-Gaussian ADG1 center and width geometry.",
+      "case_configs": [
+        {"case_name": "arm", "average_time_seconds": 3600},
+        {"case_name": "bomex", "average_time_seconds": 3600},
+        {"case_name": "dycoms2_rf01", "average_time_seconds": 3600}
+      ],
+      "selected_fields": ["cloud_frac", "rcm"],
+      "parameter_ranges": [
+        {"name": "slope_coef_spread_DG_means_w"},
+        {"name": "pdf_component_stdev_factor_w"},
+        {"name": "coef_spread_DG_means_rt"},
+        {"name": "coef_spread_DG_means_thl"},
+        {"name": "beta"},
+        {"name": "alpha_corr"},
+        {"name": "Skw_denom_coef"}
+      ]
+    },
+    {
+      "name": "wp23",
+      "label": "wp23",
+      "description": "Full vertical-velocity variance and skewness budget.",
+      "case_configs": [
+        {"case_name": "arm", "average_time_seconds": 3600},
+        {"case_name": "bomex", "average_time_seconds": 3600},
+        {"case_name": "dycoms2_rf01", "average_time_seconds": 3600}
+      ],
+      "selected_fields": ["wp2", "wp3", "Skw_zt"],
+      "parameter_ranges": [
+        {"name": "C1"},
+        {"name": "C1b"},
+        {"name": "C1c"},
+        {"name": "C4"},
+        {"name": "C_uu_shr"},
+        {"name": "C_uu_buoy"},
+        {"name": "C8"},
+        {"name": "C8b"},
+        {"name": "C11"},
+        {"name": "C11b"},
+        {"name": "C11c"},
+        {"name": "C12"},
+        {"name": "C_wp2_pr_dfsn"},
+        {"name": "C_wp3_pr_tp"},
+        {"name": "C_wp3_pr_turb"},
+        {"name": "C_wp3_pr_dfsn"},
+        {"name": "C_wp2_splat"},
+        {"name": "c_K1"},
+        {"name": "nu1"},
+        {"name": "c_K8"},
+        {"name": "nu8"},
+        {"name": "a3_coef_min"}
+      ]
+    }
+  ]
+}

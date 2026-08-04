@@ -1,21 +1,21 @@
+import os
+
 from dash import no_update
 
 from .plot_types.profile_plot import PLOT as profile_plot
 from .plot_types.registry import PLOT_TYPES
+from dash_app.services.profiles import build_case_metadata as build_case_data, scan_case_outputs as scan_output_cases
 from .plot_types.shared import (
     OUTPUT_DIR,
-    build_case_data,
     normalize_output_directory,
     ordered_case_names,
-    scan_output_cases,
     duration_slider_marks,
     start_time_slider_marks,
     snap_start_time_to_step,
     time_start_max_for_duration,
 )
 
-DEFAULT_OUTPUT_DIR = normalize_output_directory(OUTPUT_DIR)
-DEFAULT_OUTPUT_ENTRY = "output/"
+DEFAULT_OUTPUT_DIR = normalize_output_directory(os.path.join(OUTPUT_DIR, "dash_default"))
 DEFAULT_PLAYBACK_INTERVAL_S = 1.0
 PLAYBACK_INTERVAL_STEP_S = 0.1
 MIN_PLAYBACK_INTERVAL_S = 0.1
@@ -89,22 +89,6 @@ def clamp_height_range(value, height_min, height_max, fallback):
     if high < low:
         low, high = high, low
     return [low, high]
-
-
-def entry_list_or_default(dir_entries):
-    """Return the stored directory entries or the default single output entry."""
-    if dir_entries is None:
-        return [DEFAULT_OUTPUT_ENTRY]
-    entries = list(dir_entries)
-    return entries if entries else [""]
-
-
-def live_dir_entries(stored_entries, live_values):
-    """Prefer the currently typed directory values when they match the stored rows."""
-    entries = entry_list_or_default(stored_entries)
-    if live_values is not None and len(live_values) == len(entries):
-        return list(live_values)
-    return entries
 
 
 def empty_case_selection():

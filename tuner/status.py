@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import fcntl
 import json
+import os
 from pathlib import Path
+import tempfile
 
 
 STATUS_RESULT_LIMIT = 16
@@ -27,10 +30,32 @@ def _utc_from_iso(value: str) -> datetime | None:
 
 
 def atomic_write_json(path: Path, payload: dict) -> None:
-    """Write JSON atomically so readers never observe a partial file."""
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
-    tmp_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-    tmp_path.replace(path)
+    """Write JSON atomically so readers never observe a partial file.
+
+    Each writer uses its own sibling temporary file.  A fixed ``.tmp`` name is
+    unsafe here because Dash, the detached dashboard broker, and a graceful
+    stop request can all update a tuning control file concurrently.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    file_descriptor, temp_name = tempfile.mkstemp(
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        dir=path.parent,
+        text=True,
+    )
+    tmp_path = Path(temp_name)
+    try:
+        with os.fdopen(file_descriptor, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, indent=2, sort_keys=True))
+        os.replace(tmp_path, path)
+    finally:
+        # ``replace`` removes the temporary path on success.  Clean up if a
+        # write or replace fails before then.
+        try:
+            tmp_path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def read_json_or_default(path: Path, default: dict) -> dict:
@@ -73,19 +98,30 @@ def write_control(
     keepalive_action: str | None = None,
 ) -> None:
     """Update the canonical control file while preserving unrelated keys."""
-    payload = read_control(control_path)
-    if stop_requested is not None:
-        payload["stop_requested"] = bool(stop_requested)
-    if keepalive_required is not None:
-        payload["keepalive_required"] = bool(keepalive_required)
-    if keepalive_timeout_seconds is not None:
-        payload["keepalive_timeout_seconds"] = float(keepalive_timeout_seconds)
-    if keepalive_updated_at is not None:
-        payload["keepalive_updated_at"] = str(keepalive_updated_at)
-    if keepalive_action is not None:
-        payload["keepalive_action"] = str(keepalive_action)
-    payload.setdefault("stop_requested", False)
-    atomic_write_json(control_path, payload)
+    control_path = Path(control_path)
+    control_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = control_path.with_suffix(control_path.suffix + ".lock")
+    # Updating the control file is read-modify-write.  The adjacent advisory
+    # lock prevents a keepalive renewal from restoring a stale copy over a
+    # concurrent stop request.
+    with lock_path.open("a+", encoding="utf-8") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            payload = read_control(control_path)
+            if stop_requested is not None:
+                payload["stop_requested"] = bool(stop_requested)
+            if keepalive_required is not None:
+                payload["keepalive_required"] = bool(keepalive_required)
+            if keepalive_timeout_seconds is not None:
+                payload["keepalive_timeout_seconds"] = float(keepalive_timeout_seconds)
+            if keepalive_updated_at is not None:
+                payload["keepalive_updated_at"] = str(keepalive_updated_at)
+            if keepalive_action is not None:
+                payload["keepalive_action"] = str(keepalive_action)
+            payload.setdefault("stop_requested", False)
+            atomic_write_json(control_path, payload)
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 def renew_keepalive(
@@ -143,6 +179,8 @@ def summarize_for_status(best_results: list[dict]) -> list[dict]:
             "aggregation_mode": result.get("aggregation_mode"),
             "case_window_counts": dict(result.get("case_window_counts", {})),
             "time_window_aggregation_mode": result.get("time_window_aggregation_mode"),
+            "time_window_aggregation_scope": result.get("time_window_aggregation_scope"),
+            "aggregation_weights": list(result.get("aggregation_weights", [])),
             "loss_policy_version": result.get("loss_policy_version"),
         }
         if "scaled_rmse_sum" in result:
@@ -182,13 +220,22 @@ def write_status(
         "idle_workers": int(metrics.get("idle_workers", 0)),
         "initialized_workers": int(metrics.get("initialized_workers", 0)),
         "queued_case_jobs": int(metrics.get("queued_case_jobs", 0)),
+        "case_worker_metrics": {
+            str(case_name): dict(values)
+            for case_name, values in dict(metrics.get("case_worker_metrics", {})).items()
+        },
+        "worker_rebalance": dict(metrics.get("worker_rebalance", {})),
         "completed_batches": int(metrics.get("completed_batches", 0)),
+        "best_loss_history": [dict(item) for item in list(metrics.get("best_loss_history", []))[-300:]],
+        "selected_fields": [str(name) for name in list(metrics.get("selected_fields", []))],
         "config": metrics.get("config"),
         "loss_mode": metrics.get("loss_mode"),
         "aggregation_mode": metrics.get("aggregation_mode"),
         "case_window_counts": dict(metrics.get("case_window_counts", {})),
         "case_configs": list(metrics.get("case_configs", [])),
         "time_window_aggregation_mode": metrics.get("time_window_aggregation_mode"),
+        "time_window_aggregation_scope": metrics.get("time_window_aggregation_scope"),
+        "aggregation_weights": list(metrics.get("aggregation_weights", [])),
         "loss_policy_version": metrics.get("loss_policy_version"),
         "loss_policy_constants": dict(metrics.get("loss_policy_constants", {})),
         "aggregation_options": dict(metrics.get("aggregation_options", {})),
@@ -224,6 +271,8 @@ def write_results(
         "loss_mode": None if request is None else request.get("loss_mode"),
         "aggregation_mode": None if request is None else request.get("aggregation_mode"),
         "time_window_aggregation_mode": None if request is None else request.get("time_window_aggregation_mode"),
+        "time_window_aggregation_scope": None if request is None else request.get("time_window_aggregation_scope"),
+        "aggregation_weights": [] if request is None else list(request.get("aggregation_weights", [])),
         "loss_policy_version": None if request is None else request.get("loss_policy_version"),
         "loss_policy_constants": {} if request is None else dict(request.get("loss_policy_constants", {})),
         "aggregation_options": {} if request is None else dict(request.get("aggregation_options", {})),
@@ -247,6 +296,8 @@ def write_results(
                 "case_window_counts": dict(result.get("case_window_counts", {})),
                 "case_configs": list(result.get("case_configs", [])),
                 "time_window_aggregation_mode": result.get("time_window_aggregation_mode"),
+                "time_window_aggregation_scope": result.get("time_window_aggregation_scope"),
+                "aggregation_weights": list(result.get("aggregation_weights", [])),
                 "loss_policy_version": result.get("loss_policy_version"),
                 "loss_policy_constants": dict(result.get("loss_policy_constants", {})),
                 "aggregation_options": dict(result.get("aggregation_options", {})),
@@ -317,5 +368,7 @@ def _lightweight_case_result(case_name: str, result: dict, rank: int) -> dict:
         "aggregation_mode": result.get("aggregation_mode"),
         "case_window_counts": dict(result.get("case_window_counts", {})),
         "time_window_aggregation_mode": result.get("time_window_aggregation_mode"),
+        "time_window_aggregation_scope": result.get("time_window_aggregation_scope"),
+        "aggregation_weights": list(result.get("aggregation_weights", [])),
         "loss_policy_version": result.get("loss_policy_version"),
     }

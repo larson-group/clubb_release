@@ -1242,6 +1242,9 @@ module numerical_check
           iC6thlb,      &
           iC14
 
+      use parameters_tunable, only: &
+          check_parameters_api ! Procedure
+
       use constants_clubb, only:  &
           fstderr, &  ! Variable(s)
           one, &
@@ -1318,6 +1321,11 @@ module numerical_check
       !---------------------- Begin Code ----------------------
 
       call initialize_error_headers
+
+      ! This is the complete configuration-validation entry point.  The
+      ! parameter catalog and parameter-only relations belong to
+      ! parameters_tunable; flag and mixed consistency rules remain below.
+      call check_parameters_api( ngrdcol, params, err_info )
 
 #ifdef CLUBB_GPU
       if ( clubb_config_flags%penta_solve_method == lapack ) then

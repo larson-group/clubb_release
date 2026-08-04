@@ -8,7 +8,9 @@ from pathlib import Path
 import shutil
 import time
 
-from dash import ALL, Input, Output, State, callback_context, dcc, html, no_update
+from dash import ALL, Input, Output, State, callback_context, html, no_update
+
+from dash_app.shared.notecard import notecard
 
 from .discovery import (
     available_modules_after_stack,
@@ -36,8 +38,6 @@ from .runtime import (
     rebuild_failed_path_from_log,
     read_source_check_log,
     run_clubb_standards_check,
-    start_compile_job,
-    start_rebuild_job,
     update_active_job,
 )
 from .state import BUILD_DIR, INSTALL_DIR
@@ -199,6 +199,7 @@ def warning_is_blocking(warning):
             "Cannot load",
             "Select a compiler module",
             "No matching CLUBB toolchain",
+            "does not match the selected compiler module",
         ]
     )
 
@@ -230,6 +231,17 @@ def toolchain_options(discovery):
             label = f"{label} (other platform)"
         options.append({"label": label, "value": toolchain["path"]})
     return options
+
+
+def retained_toolchain_value(options, selected_toolchain):
+    """Keep a valid explicit choice; otherwise start from environment auto-detection."""
+    valid_values = {option["value"] for option in options}
+    return selected_toolchain if selected_toolchain in valid_values else "auto"
+
+
+def toolchain_selection_mode(toolchain):
+    """Classify the dropdown selection for compiler-module changes."""
+    return "manual" if toolchain and toolchain != "auto" else "auto"
 
 
 def render_detection(discovery):
@@ -350,6 +362,25 @@ def completed_rebuild_paths_for_ui(job, statuses=None):
     return set()
 
 
+def visible_failed_rebuild_paths(failures=None, statuses=None):
+    """Return failed rebuild paths that have not been superseded by a fresh current check."""
+    status_map = (statuses or {}).get("statuses") or {}
+    checked_at = float((statuses or {}).get("checked_at") or 0)
+    visible_paths = set()
+    for path, failure in (failures or {}).items():
+        status_info = status_map.get(path) or {}
+        failed_at = float((failure or {}).get("failed_at") or 0)
+        resolved_after_failure = (
+            status_info.get("status") == "current"
+            and checked_at > 0
+            and failed_at > 0
+            and checked_at >= failed_at
+        )
+        if not resolved_after_failure:
+            visible_paths.add(path)
+    return visible_paths
+
+
 def render_delete_confirmation(build):
     """Render the guarded delete confirmation row for one build."""
     return html.Div(
@@ -436,14 +467,21 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
     queued_rebuild_paths = set(rebuild_progress.get("queued_paths") or [])
     rebuilding_paths = set((job or {}).get("build_paths") or []) if job_running else set()
     completed_rebuild_paths = completed_rebuild_paths_for_ui(job, statuses)
-    failed_rebuild_paths = set((failures or {}).keys())
+    failure_records = dict(failures or {})
     if (job or {}).get("kind") == "rebuild" and (job or {}).get("status") == "failed":
         if job.get("failed_build_path"):
-            failed_rebuild_paths.add(job["failed_build_path"])
+            failure_records[job["failed_build_path"]] = {
+                "returncode": job.get("returncode"),
+                "failed_at": job.get("start_time") or time.time(),
+            }
         else:
             failed_path = rebuild_failed_path_from_log(job.get("log"))
             if failed_path:
-                failed_rebuild_paths.add(failed_path)
+                failure_records[failed_path] = {
+                    "returncode": job.get("returncode"),
+                    "failed_at": job.get("start_time") or time.time(),
+                }
+    failed_rebuild_paths = visible_failed_rebuild_paths(failure_records, statuses)
     items = []
     if delete_target == DELETE_ALL_BUILDS_TARGET:
         items.append(render_delete_all_confirmation(builds))
@@ -599,36 +637,31 @@ def render_source_check_warning(source_check):
     return html.Pre(children, className="compile-source-check-warning")
 
 
-def render_source_check_log_modal(log_payload=None, error=None):
+def render_source_check_log_notecard(log_payload=None, error=None):
     """Render the source-check log overlay."""
     path = (log_payload or {}).get("path", "")
     content = (log_payload or {}).get("content", "")
     title = "Source Check Log" if not error else "Source Check Log Error"
-    return html.Div(
-        [
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(title, className="compile-source-log-title"),
-                            html.Div(path or str(error), className="compile-source-log-path"),
-                        ],
-                        className="compile-source-log-header-text",
-                    ),
-                    html.Button(
-                        "Close",
-                        id={"type": "compile-source-check-log-close", "index": "source-check"},
-                        type="button",
-                        n_clicks=0,
-                        className="compile-source-log-close",
-                    ),
-                ],
-                className="compile-source-log-header",
-            ),
-            html.Pre(content if not error else str(error), className="compile-source-log-content"),
-        ],
-        className="compile-source-log-overlay",
-        role="dialog",
+    return notecard(
+        title,
+        html.Pre(
+            content if not error else str(error),
+            className="shared-notecard-code",
+            style={
+                "flex": "1 1 auto",
+                "margin": 0,
+                "overflow": "auto",
+                "padding": "14px",
+                "whiteSpace": "pre-wrap",
+                "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+                "fontSize": "13px",
+                "lineHeight": 1.4,
+            },
+        ),
+        {"type": "compile-source-check-log-close", "index": "source-check"},
+        subtitle=path or str(error),
+        size="full",
+        body_class_name="shared-notecard-body-code",
     )
 
 
@@ -790,6 +823,51 @@ def delete_all_existing_builds(builds):
 
 
 def register_compile_callbacks(app):
+    @app.callback(
+        Output("compile-job", "data", allow_duplicate=True),
+        Output("compile-log", "data", allow_duplicate=True),
+        Output("compile-log-offset", "data", allow_duplicate=True),
+        Output("compile-interval", "disabled", allow_duplicate=True),
+        Output("compile-interval", "n_intervals", allow_duplicate=True),
+        Input("dashboard-request", "data"),
+        prevent_initial_call=True,
+    )
+    def adopt_agent_compile(request):
+        """Show an agent-started compile in the ordinary Compile tab console."""
+        if not request or request.get("tab") != "compile" or request.get("operation") != "start" or not request.get("job"):
+            return (no_update,) * 5
+        job = dict(request["job"])
+        job["broker_managed"] = True
+        job["status"] = "running"
+        header = f"--- Agent-started compile ---\n{job.get('command') or ''}\n\n"
+        return job, header, 0, False, 0
+
+    @app.callback(
+        Output("compile-job", "data", allow_duplicate=True),
+        Output("compile-log", "data", allow_duplicate=True),
+        Output("compile-log-offset", "data", allow_duplicate=True),
+        Output("compile-interval", "disabled", allow_duplicate=True),
+        Output("compile-interval", "n_intervals", allow_duplicate=True),
+        Input("dashboard-broker-jobs", "data"),
+        prevent_initial_call=True,
+    )
+    def restore_broker_compile(jobs):
+        """Reattach the Compile tab after Dash reloads while its broker lives on."""
+        record = dict((jobs or {}).get("compile") or {})
+        source_job = record.get("job")
+        if not isinstance(source_job, dict):
+            return (no_update,) * 5
+        state = str(record.get("state") or "")
+        job = dict(source_job)
+        job["broker_managed"] = True
+        job["status"] = state or "running"
+        job["returncode"] = record.get("returncode")
+        header = f"--- Agent-broker compile ---\n{job.get('command') or ''}\n\n"
+        tail = str(record.get("log_tail") or "")
+        log = header + tail
+        running = state in {"running", "stopping"}
+        return job, log, int(record.get("log_offset") or len(tail)), not running, 0
+
     """Register compile tab callbacks."""
 
     @app.callback(
@@ -880,8 +958,8 @@ def register_compile_callbacks(app):
             updated_discovery,
             render_build_list(updated_discovery, statuses, failures, delete_target, job),
             render_build_status_summary(updated_discovery, statuses),
-            html.Div(f"Selected build and applied compile settings: {build.get('name')}", className="compile-muted"),
-            settings["toolchain"],
+            html.Div(f"Selected build and applied compile settings: {build.get('name')} (toolchain remains Auto unless selected explicitly).", className="compile-muted"),
+            no_update,
             settings["precision"],
             settings["gpu"],
             settings["flags"],
@@ -972,8 +1050,18 @@ def register_compile_callbacks(app):
             label = build.get("name") or "selected build"
             name = label
         try:
-            job = start_rebuild_job(selected_builds, discovery, label)
-        except RuntimeError as exc:
+            from dash_app.shared.broker_client import perform_action
+
+            result = perform_action(
+                "launch_rebuild_request",
+                {"builds": selected_builds, "discovery": discovery or {}, "label": label},
+                internal=True,
+            )
+            job = dict(result.get("job") or {})
+            if not job:
+                raise RuntimeError("dashboard broker did not return rebuild job metadata")
+            job["broker_managed"] = True
+        except (OSError, RuntimeError, ValueError) as exc:
             return no_update, append_log_tail("", f"{exc}\n"), no_update, no_update, no_update, html.Div(str(exc), className="compile-warning"), {}
         header = f"--- Running rebuild job ---\n{job['command']}\n\n"
         message = html.Div(f"Started rebuild: {name}", className="compile-muted")
@@ -998,13 +1086,6 @@ def register_compile_callbacks(app):
         env_options = environment_options(discovery)
         env_values = [option["value"] for option in env_options if not option.get("disabled")]
         env_value = selected_env if selected_env in env_values else (env_values[0] if env_values else None)
-        tc_options = toolchain_options(discovery)
-        tc_values = [option["value"] for option in tc_options]
-        selected_build_toolchain = ((discovery or {}).get("selected_build_settings") or {}).get("toolchain")
-        if selected_build_toolchain in tc_values:
-            tc_value = selected_build_toolchain
-        else:
-            tc_value = selected_toolchain if selected_toolchain in tc_values else "auto"
         compiler_options = lmod_compiler_options(discovery)
         compiler_values = [option["value"] for option in compiler_options if not option.get("disabled")]
         selected_build_lmod_compiler = ((discovery or {}).get("selected_build_settings") or {}).get("lmod_compiler")
@@ -1012,6 +1093,9 @@ def register_compile_callbacks(app):
             compiler_value = selected_build_lmod_compiler
         else:
             compiler_value = selected_lmod_compiler if selected_lmod_compiler in compiler_values else first_enabled_value(compiler_options)
+
+        tc_options = toolchain_options(discovery)
+        tc_value = retained_toolchain_value(tc_options, selected_toolchain)
         native_style = {"display": "none"} if lmod_available(discovery) else {}
         lmod_style = {} if lmod_available(discovery) else {"display": "none"}
         return (
@@ -1025,6 +1109,24 @@ def register_compile_callbacks(app):
             compiler_options,
             compiler_value,
         )
+
+    @app.callback(
+        Output("compile-toolchain-mode", "data"),
+        Input("compile-toolchain-select", "value"),
+        prevent_initial_call=True,
+    )
+    def record_toolchain_selection(toolchain):
+        return toolchain_selection_mode(toolchain)
+
+    @app.callback(
+        Output("compile-toolchain-select", "value", allow_duplicate=True),
+        Input("compile-lmod-compiler", "value"),
+        State("compile-toolchain-mode", "data"),
+        prevent_initial_call=True,
+    )
+    def use_auto_toolchain_for_compiler_module(_compiler_module, selection_mode):
+        """Let compile.py infer the selected module's toolchain unless overridden."""
+        return no_update if selection_mode == "manual" else "auto"
 
     @app.callback(
         Output("compile-build-statuses", "data"),
@@ -1069,7 +1171,7 @@ def register_compile_callbacks(app):
         State("compile-source-check", "data"),
         prevent_initial_call=True,
     )
-    def update_source_check_log_modal(open_clicks, close_clicks, source_check):
+    def update_source_check_log_notecard(open_clicks, close_clicks, source_check):
         trigger_id = callback_context.triggered_id
         if isinstance(trigger_id, dict) and trigger_id.get("type") == "compile-source-check-log-close":
             return ""
@@ -1080,8 +1182,8 @@ def register_compile_callbacks(app):
         try:
             log_payload = read_source_check_log((source_check or {}).get("log"))
         except RuntimeError as exc:
-            return render_source_check_log_modal(error=exc)
-        return render_source_check_log_modal(log_payload=log_payload)
+            return render_source_check_log_notecard(error=exc)
+        return render_source_check_log_notecard(log_payload=log_payload)
 
     @app.callback(
         Output("compile-rebuild-all", "disabled"),
@@ -1215,8 +1317,20 @@ def register_compile_callbacks(app):
             log = "Cannot start compile with the current selection:\n" + "\n".join(f"- {warning}" for warning in warnings) + "\n"
             return {}, log, 0, True, no_update, {}
         try:
-            job = start_compile_job(discovery, env_id, options)
-        except RuntimeError as exc:
+            # Compile lifecycle belongs to the durable broker even for the
+            # native button, so a Dash reload cannot create a second compile.
+            from dash_app.shared.broker_client import perform_action
+
+            result = perform_action(
+                "launch_compile_request",
+                {"options": options, "env_id": env_id},
+                internal=True,
+            )
+            job = dict(result.get("job") or {})
+            if not job:
+                raise RuntimeError("dashboard broker did not return compile job metadata")
+            job["broker_managed"] = True
+        except (OSError, RuntimeError, ValueError) as exc:
             return no_update, append_log_tail("", f"{exc}\n"), no_update, no_update, no_update, {}
         action_label = {
             "compile-start": "compile job",
@@ -1238,6 +1352,31 @@ def register_compile_callbacks(app):
     def cancel_compile(_n_clicks, job, log_text):
         if not job or job.get("status") != "running":
             return no_update, no_update, no_update
+        if job.get("broker_managed"):
+            # The durable broker, not this potentially reloaded Dash worker,
+            # owns the subprocess and its process group.
+            try:
+                from dash_app.shared.broker_client import perform_action
+
+                perform_action("stop_compile", {}, internal=True)
+            except (OSError, RuntimeError, ValueError):
+                return no_update, no_update, no_update
+            updated = dict(job)
+            updated["status"] = "stopping"
+            return updated, append_log_tail(log_text or "", "--- Stop requested from dashboard; waiting for broker ---\n"), False
+        status = poll_compile_job(job)
+        if status is not None:
+            lost_job = status == "lost"
+            returncode = 1 if lost_job else status
+            updated = finish_compile_job(job, returncode)
+            runtime_txt = format_runtime(time.time() - float(job.get("start_time", time.time())))
+            job_label = "Rebuild" if job.get("kind") == "rebuild" else "Compile"
+            label = "completed" if returncode == 0 else f"failed (exit {returncode})"
+            if log_text and not log_text.endswith("\n"):
+                log_text += "\n"
+            if lost_job:
+                log_text = append_log_tail(log_text or "", "--- Job process is no longer running; marking it failed. ---\n")
+            return updated, append_log_tail(log_text or "", f"--- {job_label} {label}; runtime: {runtime_txt} ---\n"), True
         if not job_process_is_live(job):
             updated = finish_compile_job(job, 1)
             if log_text and not log_text.endswith("\n"):
@@ -1293,12 +1432,6 @@ def register_compile_callbacks(app):
                 updated_job = dict(updated_job)
                 updated_job["failed_build_path"] = failed_path
         updated_failures = update_build_failures(build_failures, job, returncode, failed_path)
-        source_check = no_update
-        build_completed = returncode == 0 or (
-            job.get("kind") == "compile" and "Build completed successfully" in updated_log
-        )
-        if build_completed and job.get("kind") in {"compile", "rebuild"}:
-            source_check = run_clubb_standards_check()
         job_label = "Rebuild" if job.get("kind") == "rebuild" else "Compile"
         label = "completed" if returncode == 0 else f"failed (exit {returncode})"
         if updated_log and not updated_log.endswith("\n"):
@@ -1306,7 +1439,7 @@ def register_compile_callbacks(app):
         if lost_job:
             updated_log = append_log_tail(updated_log, "--- Job process is no longer running; marking it failed. ---\n")
         updated_log = append_log_tail(updated_log, f"--- {job_label} {label}; runtime: {runtime_txt} ---\n")
-        return updated_log, updated_job, new_offset, True, updated_failures, source_check
+        return updated_log, updated_job, new_offset, True, updated_failures, no_update
 
     @app.callback(
         Output("compile-discovery", "data", allow_duplicate=True),
@@ -1363,7 +1496,7 @@ def register_compile_callbacks(app):
             summary_text = f"running | pid {job.get('pid')} | elapsed {runtime_txt} | last output {quiet_txt} ago"
             status_class = "compile-status-running"
         elif status == "completed":
-            summary_text = f"completed | exit 0"
+            summary_text = "completed | exit 0"
             status_class = "compile-status-good"
         elif status == "cancelled":
             summary_text = "cancelled"

@@ -80,6 +80,47 @@ body.tune-ui-dragging * {
   color: #334155;
 }
 
+.tune-workspace-name-input {
+  letter-spacing: 0.01em;
+  border-radius: 7px;
+}
+
+/* Match the compile tab's moving green/red rebuild stripes.  The signal is
+ * deliberately reserved for an active Tune revision outside the workspace
+ * currently shown in this tab, so it is an attention cue rather than a
+ * duplicate state indicator for the selected run. */
+@keyframes tune-workspace-active-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 67.88225px 67.88225px;
+  }
+}
+
+#app-root .tune-workspace-change-active {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(22, 163, 74, 0.78) 0,
+    rgba(22, 163, 74, 0.78) 12px,
+    rgba(220, 38, 38, 0.78) 12px,
+    rgba(220, 38, 38, 0.78) 24px
+  ) !important;
+  background-size: 67.88225px 67.88225px;
+  border: 1px solid #facc15 !important;
+  animation: tune-workspace-active-stripes 1400ms linear infinite;
+}
+
+#app-root.theme-dark .tune-workspace-controls {
+  background: rgba(30, 41, 59, 0.42);
+  border-radius: 8px;
+}
+
+#app-root.theme-light .tune-workspace-controls {
+  background: rgba(226, 232, 240, 0.48);
+  border-radius: 8px;
+}
+
 #app-root.theme-dark .tune-case-config-row {
   background: #111827;
   border-color: #334155 !important;
@@ -159,6 +200,209 @@ body.tune-ui-dragging * {
   font-size: 12px;
 }
 
+.tune-right-tabs {
+  min-height: 100%;
+}
+
+.tune-right-tab {
+  padding: 9px 13px !important;
+  border: 1px solid #334155 !important;
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+  font-weight: 700;
+}
+
+.tune-right-tab--selected {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-top: 2px solid #38bdf8 !important;
+}
+
+#app-root.theme-light .tune-right-tab {
+  background: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+#app-root.theme-light .tune-right-tab--selected {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-top-color: #0284c7 !important;
+}
+
+.tune-runtime-pane {
+  padding-top: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tune-runtime-status-card {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.tune-runtime-status-content {
+  display: grid;
+  gap: 12px;
+}
+
+.tune-runtime-state {
+  padding: 7px 9px;
+  border-radius: 5px;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.tune-runtime-state--running,
+.tune-runtime-state--initializing {
+  background: #0369a1;
+}
+
+.tune-runtime-state--finished {
+  background: #15803d;
+}
+
+.tune-runtime-state--stopping,
+.tune-runtime-state--stopped {
+  background: #b45309;
+}
+
+.tune-runtime-state--error {
+  background: #b91c1c;
+}
+
+.tune-runtime-state--idle {
+  background: #475569;
+}
+
+.tune-runtime-rate-summary {
+  display: flex;
+  gap: 18px;
+}
+
+.tune-runtime-rate-summary > div {
+  display: grid;
+  gap: 1px;
+}
+
+.tune-runtime-rate-summary strong {
+  font-size: 21px;
+  line-height: 1;
+}
+
+.tune-runtime-rate-summary span,
+.tune-runtime-progress-detail,
+.tune-worker-queue-detail {
+  font-size: 11px;
+  opacity: 0.78;
+}
+
+.tune-runtime-progress-panel {
+  display: grid;
+  gap: 5px;
+}
+
+.tune-runtime-progress-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.tune-runtime-progress-track,
+.tune-worker-queue-track {
+  display: flex;
+  height: 15px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.28);
+}
+
+.tune-runtime-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #38bdf8;
+  transition: width 180ms ease-out;
+}
+
+.tune-runtime-empty {
+  opacity: 0.75;
+  font-size: 12px;
+  align-self: center;
+}
+
+.tune-worker-queue-panel {
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+  padding-top: 10px;
+}
+
+.tune-worker-queue-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.tune-worker-queue-grid {
+  display: grid;
+  gap: 9px;
+}
+
+.tune-worker-queue-row {
+  display: grid;
+  gap: 5px;
+}
+
+.tune-worker-queue-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.tune-worker-queue-header span,
+.tune-worker-queue-detail {
+  opacity: 0.78;
+}
+
+.tune-worker-active-fill {
+  min-width: 0;
+  height: 100%;
+  background: #22c55e;
+  transition: width 180ms ease-out;
+}
+
+.tune-worker-queued-fill {
+  min-width: 0;
+  height: 100%;
+  background: #ef4444;
+  transition: width 180ms ease-out;
+}
+
+.tune-runtime-loss-graph {
+  height: 310px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tune-runtime-error {
+  margin-top: 12px;
+}
+
+.tune-runtime-message {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+  white-space: pre-wrap;
+}
+
 #app-root.theme-dark .tune-status-card {
   background: #0f172a;
   border-color: #334155;
@@ -184,12 +428,59 @@ body.tune-ui-dragging * {
   min-width: 960px;
 }
 
-.tune-landscape-controls {
+.tune-landscape-toolbar {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px 12px 12px;
+  margin-bottom: 12px;
+}
+
+.tune-landscape-intro {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.tune-landscape-heading {
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tune-landscape-caption {
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.tune-landscape-toolbar > .tune-landscape-control-group {
   display: grid;
-  grid-template-columns: repeat(8, minmax(110px, 1fr));
+}
+
+.tune-landscape-toolbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
   gap: 8px;
-  align-items: end;
-  margin-bottom: 8px;
+  align-items: start;
+}
+
+.tune-landscape-toolbar > .tune-landscape-intro {
+  grid-column: 1 / -1;
+}
+
+.tune-landscape-control-group {
+  min-width: 0;
+}
+
+.tune-landscape-control-label {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  margin: 0 0 4px 2px;
+  text-transform: uppercase;
 }
 
 .tune-landscape-control {
@@ -224,6 +515,88 @@ body.tune-ui-dragging * {
   min-width: 0;
 }
 
+.tune-diagnostics-control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 4px 5px;
+}
+
+.tune-segmented-control {
+  display: inline-flex;
+  align-items: stretch;
+  gap: .2rem;
+  padding: .22rem;
+  border: 1px solid #334155;
+  border-radius: .6rem;
+  background: #0b1220;
+}
+
+#app-root.theme-light .tune-landscape-toolbar,
+#app-root.theme-light .tune-segmented-control {
+  border-color: #cbd5e1;
+  background: rgba(248, 250, 252, 0.8);
+}
+
+.tune-segmented-control label {
+  position: relative;
+  margin: 0;
+  padding: .48rem .72rem;
+  border-radius: .42rem;
+  color: #aebbd0;
+  font-size: .84rem;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .12s ease, color .12s ease;
+}
+
+.tune-segmented-control label:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.tune-segmented-control label:has(input:checked) {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, .32);
+}
+
+.tune-segmented-control input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#app-root.theme-light .tune-segmented-control label { color: #475569; }
+#app-root.theme-light .tune-segmented-control label:hover { background: #e2e8f0; color: #0f172a; }
+
+#app-root.theme-light .tune-landscape-heading {
+  color: #0f172a;
+}
+
+#app-root.theme-light .tune-landscape-caption,
+#app-root.theme-light .tune-landscape-control-label {
+  color: #475569;
+}
+
+.tune-diagnostics-label {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tune-taylor-window-display {
+  width: 154px;
+  min-width: 154px;
+}
+
+#app-root.theme-dark .tune-diagnostics-label {
+  color: #cbd5e1;
+}
+
 .tune-taylor-graph,
 .tune-parameter-box-graph,
 .tune-landscape-graph {
@@ -231,6 +604,18 @@ body.tune-ui-dragging * {
   border-radius: 6px;
   overflow: hidden;
   height: 430px;
+}
+
+@media (max-width: 1250px) {
+  .tune-landscape-toolbar {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .tune-landscape-intro {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
 }
 
 .tune-results-table {

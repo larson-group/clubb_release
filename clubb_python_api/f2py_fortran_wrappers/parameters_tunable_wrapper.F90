@@ -1,6 +1,6 @@
 ! parameters_tunable_wrapper.F90 — wrappers extracted from util_wrappers.F90 for module parameters_tunable
 
-subroutine f2py_check_parameters(ngrdcol, clubb_params, lmin)
+subroutine f2py_check_parameters(ngrdcol, clubb_params)
 
   use clubb_precision, only: core_rknd
   use parameter_indices, only: nparams
@@ -11,9 +11,7 @@ subroutine f2py_check_parameters(ngrdcol, clubb_params, lmin)
 
   integer, intent(in) :: ngrdcol
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
-  real(core_rknd), intent(in) :: lmin
-
-  call check_parameters_api(ngrdcol, clubb_params, lmin, stored_err_info)
+  call check_parameters_api(ngrdcol, clubb_params, stored_err_info)
 
 end subroutine f2py_check_parameters
 
@@ -51,13 +49,13 @@ end subroutine f2py_init_clubb_params
 
 subroutine f2py_get_param_names(nparams_in, param_names)
 
-  use parameters_tunable, only: params_list
+  use parameters_tunable, only: params_list, parameter_name_length
   use parameter_indices, only: nparams
 
   implicit none
 
   integer, intent(in) :: nparams_in
-  character(kind=1), dimension(nparams_in, 28), intent(out) :: param_names
+  character(kind=1), dimension(nparams_in, parameter_name_length), intent(out) :: param_names
   integer :: i, j
 
   if ( nparams_in /= nparams ) then
@@ -67,12 +65,31 @@ subroutine f2py_get_param_names(nparams_in, param_names)
   param_names = ' '
 
   do i = 1, nparams_in
-    do j = 1, 28
+    do j = 1, parameter_name_length
       param_names(i, j) = params_list(i)(j:j)
     end do
   end do
 
 end subroutine f2py_get_param_names
+
+subroutine f2py_get_parameter_hard_bounds(nparams_in, hard_bounds)
+
+  use clubb_precision, only: core_rknd
+  use parameter_indices, only: nparams
+  use parameters_tunable, only: get_parameter_hard_bounds_api
+
+  implicit none
+
+  integer, intent(in) :: nparams_in
+  real(core_rknd), dimension(2,nparams_in), intent(out) :: hard_bounds
+
+  if ( nparams_in /= nparams ) then
+    error stop "f2py_get_parameter_hard_bounds: nparams mismatch"
+  end if
+
+  call get_parameter_hard_bounds_api( nparams_in, hard_bounds )
+
+end subroutine f2py_get_parameter_hard_bounds
 
 subroutine f2py_init_clubb_params_file(ngrdcol, filename, flen, nparams_in, clubb_params) &
   bind(C, name="f2py_init_clubb_params_file_")

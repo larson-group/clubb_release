@@ -111,7 +111,6 @@ module advance_xp2_xpyp_module
         cloud_frac_min, &
         fstderr, &
         two, &
-        one, &
         two_thirds, &
         one_half, &
         one_third, &
@@ -460,38 +459,6 @@ module advance_xp2_xpyp_module
                           wp3_on_wp2, wp3_on_wp2_zt )
 
     wp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, wp2(:,:), w_tol_sqd )
-
-    if ( clubb_at_least_debug_level_api( 1 ) ) then
-
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-
-        ! Assertion check for C_uu_shr
-        if ( clubb_params(i,iC_uu_shr) > one &
-            .or. clubb_params(i,iC_uu_shr) < zero ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "The C_uu_shr variable is outside the valid range"
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
-        end if
-
-        if ( clubb_params(i,iC_uu_buoy) > one &
-            .or. clubb_params(i,iC_uu_buoy) < zero ) then
-          write(fstderr, *) err_info%err_header(i)
-          write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
-          ! Error in grid column i -> set ith entry to clubb_fatal_error
-          err_info%err_code(i) = clubb_fatal_error
-        end if
-
-      end do
-      !$acc end parallel loop
-
-      !$acc update host( err_info%err_code )
-      if ( any(err_info%err_code == clubb_fatal_error) ) then
-        return
-      end if
-
-    end if
 
     ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
     if ( l_C2_cloud_frac ) then
@@ -4264,7 +4231,7 @@ module advance_xp2_xpyp_module
     if ( l_explicit_turbulent_adv_xpyp ) then
         
       ! The turbulent advection of <x'y'> is handled explicitly, the
-      ! terms are calculated only for the RHS matrices. The 
+      ! terms are calculated only for the RHS matrices. The
       ! term_wpxpyp_explicit terms are equal to <w'x'y'> as calculated using PDF
       ! parameters, which are general for any PDF type. The values of
       ! <w'x'y'> are calculated on thermodynamic levels.
@@ -4509,7 +4476,7 @@ module advance_xp2_xpyp_module
       ! The turbulent advection of <x'y'> is handled implicitly or
       ! semi-implicitly.
 
-      if ( iiPDF_type == iiPDF_ADG1 ) then  
+      if ( iiPDF_type == iiPDF_ADG1 ) then
           
         ! The ADG1 PDF is used.
         

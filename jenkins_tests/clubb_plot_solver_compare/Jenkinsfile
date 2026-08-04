@@ -17,12 +17,12 @@ pipeline {
     }
     stage('Run Lapack') {
       steps {
-        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
+        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir solver_compare/lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
       }
     }
     stage('Run custom_lu') {
       steps {
-        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir custom_lu_output -override penta_solve_method=2,tridiag_solve_method=2'''
+        sh '''run_scripts/run_scm_all.py -priority_cases -out_dir solver_compare/custom_lu_output -override penta_solve_method=2,tridiag_solve_method=2'''
       }
     }
     stage('Run bicgstab') {
@@ -30,17 +30,17 @@ pipeline {
         // there is no tridiag bicgstab method, just use the custom tridiag_lu tridiag method
         // wrap in this catch since we currently expect dycoms2_rf02_ds to fail
         catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-          sh '''run_scripts/run_scm_all.py -priority_cases -out_dir bicgstab_output -override penta_solve_method=3,tridiag_solve_method=2'''
+          sh '''run_scripts/run_scm_all.py -priority_cases -out_dir solver_compare/bicgstab_output -override penta_solve_method=3,tridiag_solve_method=2'''
         }
-        sh '''rm bicgstab_output/dycoms2_rf02_ds_*'''
-        sh '''rm bicgstab_output/dycoms2_rf01_*'''
+          sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf02_ds_*'''
+          sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf01_*'''
       }
     }
     stage('Plot') {
       steps {
-        sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c lapack_output custom_lu_output bicgstab_output -o ${commit}_solver'
+        sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c output/solver_compare/lapack_output output/solver_compare/custom_lu_output output/solver_compare/bicgstab_output -o output/${commit}_solver'
         sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_solver_plots/${branch_name}'"
-        sh "scp -r *_solver carson:/home/pub/web_plots/clubb_solver_plots/${branch_name}"
+        sh "scp -r output/${commit}_solver carson:/home/pub/web_plots/clubb_solver_plots/${branch_name}"
         sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_solver_plots/'"
       }
     }

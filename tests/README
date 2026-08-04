@@ -8,6 +8,23 @@ Examples below assume they are run from the repo root. Most tests require CLUBB
 to have already been compiled with the executable or Python API variant they
 exercise.
 
+## Pytest suites
+
+The repository-level pytest entry point is `tests/run_pytests.sh`.  It keeps fast
+unit tests separate from environment-specific test suites:
+
+- `tests/run_pytests.sh -unit` runs the safe default suite in `utilities/pytests/`
+  and `tuner/pytests/`.
+- `tests/run_pytests.sh -dash` runs Dash tests with `.venv-dash/bin/python`.  Install
+  `dash_app/requirements.txt` into that environment first.
+- `tests/run_pytests.sh -api` runs the compiled F2PY suite and therefore requires
+  `./compile.py -python` first.
+- `tests/run_pytests.sh -all` runs all three suites in that order.
+
+Bare `python3 -m pytest` intentionally runs only the fast unit suite. SCM,
+GPU, and other expensive scripts below remain explicit test harnesses rather
+than accidental pytest collection.
+
 ## Test Scripts
 
 ### `check_budget_balance.py`

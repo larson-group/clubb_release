@@ -1,0 +1,44 @@
+{
+  "source_file": "/run/media/guntherhuebler/Extra_NVME_970/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017_3D_RECREATIONS/arm_3d/OUT_3D/GCSSARM_96x96x110_67m_40m_1s_16_0000032400_micro.nc",
+  "clubb_window_start_seconds": 73800,
+  "clubb_window_duration_seconds": 60,
+  "clubb_model_time_initial_seconds": 41400,
+  "sam_target_seconds": 32430,
+  "elapsed_minutes": 540.0,
+  "height_m": 1900.0,
+  "sample_count": 9216,
+  "bins": 72,
+  "probability_upper": 0.022133246527777782,
+  "signals": {
+    "probability": {
+      "formula": "No signed contribution",
+      "robust_positive_upper": 0.0,
+      "integrated_moment": 0.0
+    },
+    "wprcp": {
+      "formula": "w\u2032r\u1d9c\u2032  [m s\u207b\u00b9 g kg\u207b\u00b9]",
+      "robust_positive_upper": 0.0010773135610438326,
+      "integrated_moment": 0.045392406651077716
+    },
+    "wprtp": {
+      "formula": "w\u2032r\u209c\u2032  [m s\u207b\u00b9 g kg\u207b\u00b9]",
+      "robust_positive_upper": 0.003846289730093243,
+      "integrated_moment": 0.1540964460375685
+    },
+    "wpchi": {
+      "formula": "w\u2032\u03c7\u2032  [m s\u207b\u00b9 g kg\u207b\u00b9]",
+      "robust_positive_upper": 0.001617905549193201,
+      "integrated_moment": 0.06755635977567719
+    },
+    "wpthlp": {
+      "formula": "w\u2032\u03b8\u2097\u2032  [m K s\u207b\u00b9]",
+      "robust_positive_upper": 0.001990931640645471,
+      "integrated_moment": -0.09096488690315999
+    },
+    "wprtp2": {
+      "formula": "w\u2032r\u209c\u2032\u00b2  [m s\u207b\u00b9 (g kg\u207b\u00b9)\u00b2]",
+      "robust_positive_upper": 0.02160838706781222,
+      "integrated_moment": 0.7375349458834556
+    }
+  }
+}

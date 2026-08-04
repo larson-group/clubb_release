@@ -1,46 +1,23 @@
 """Build run-tab tunable-config dependent UI metadata."""
 
-from tunable_configs import (
+from dash_app.shared.tunable_configs import (
     available_tunable_configs,
     default_tunable_config_name,
     tunable_config_file,
     tunable_config_names,
+)
+from utilities.clubb_settings_validation import (
+    build_settings_schema,
+    evaluate_settings,
 )
 
 from .layout import build_flag_controls, build_param_sections, compute_width_hints
 from .namelist import is_bool_value, is_true, normalize_numeric_display, read_namelist_entries
 
 
-def _parse_tunable_default(value):
-    """Parse a scalar Fortran namelist value as a float."""
-    try:
-        return float(str(value).strip().replace("D", "E").replace("d", "e"))
-    except (TypeError, ValueError):
-        return None
-
-
 def _format_range_value(value):
     """Format an auto-filled range endpoint compactly."""
     return f"{float(value):.6g}"
-
-
-def _tunable_default_ranges(tunable_entries):
-    """Return default min/max ranges derived from tunable parameter defaults."""
-    ranges = {}
-    for entry in tunable_entries:
-        default_value = _parse_tunable_default(entry.get("value"))
-        if default_value is None:
-            continue
-        low = default_value / 4.0
-        high = default_value * 4.0
-        if low > high:
-            low, high = high, low
-        ranges[entry["name"]] = {
-            "default": _format_range_value(default_value),
-            "min": _format_range_value(low),
-            "max": _format_range_value(high),
-        }
-    return ranges
 
 
 def _select_config_name(config_name=None, configs=None):
@@ -83,25 +60,57 @@ def build_tunable_config_state(config_name=None, configs=None):
             "silhs": {entry["name"]: entry["value"] for entry in silhs_entries},
         },
     }
-    defaults_by_key = {
-        f"{entry['file']}:{entry['name']}": normalize_numeric_display(entry["value"])
-        for entry in param_entries
-    }
-    flag_controls = build_flag_controls(flag_bools, is_true)
+    settings_schema = build_settings_schema(
+        defaults["flags"],
+        defaults["params"],
+        [{"file": entry["file"], "name": entry["name"]} for entry in param_entries],
+    )
+    settings_resolution = evaluate_settings(settings_schema)
+    schema_bounds = settings_schema["hard_bounds"]
+    active_flag_relationships = [
+        relation
+        for relation in settings_resolution["flag_relationships"]
+        if all(member in set(flag_names) for member in relation["members"])
+    ]
+    flag_controls = build_flag_controls(flag_bools, is_true, active_flag_relationships)
+    active_linked_groups = [
+        list(group)
+        for group in settings_resolution["linked_parameter_groups"]
+        if all(name in {entry["name"] for entry in tunable_entries} for name in group)
+    ]
 
     return {
         "selected_config": selected_config,
-        "defaults": defaults,
-        "defaults_by_key": defaults_by_key,
-        "flag_names": flag_names,
         "tunable_names": [entry["name"] for entry in tunable_entries],
-        "tunable_default_ranges": _tunable_default_ranges(tunable_entries),
-        "param_meta": [{"file": entry["file"], "name": entry["name"]} for entry in param_entries],
+        "tunable_default_ranges": {
+            name: {key: _format_range_value(value) for key, value in item.items()}
+            for name, item in settings_resolution["tunable_default_ranges"].items()
+        },
+        "linked_parameter_groups": active_linked_groups,
+        "settings_resolution": settings_resolution,
+        "settings_schema": settings_schema,
+        "tunable_entries": tunable_entries,
+        "param_meta": [
+            {
+                "file": entry["file"],
+                "name": entry["name"],
+                **(
+                    {
+                        "min": schema_bounds.get(entry["name"], {}).get("min"),
+                        "max": schema_bounds.get(entry["name"], {}).get("max"),
+                    }
+                    if entry["file"] == "tunable"
+                    else {}
+                ),
+            }
+            for entry in param_entries
+        ],
         "right_pane_width_px": right_pane_width_px,
         "param_sections": build_param_sections(
             flag_params,
             flag_controls,
             tunable_entries,
+            active_linked_groups,
             silhs_entries,
             label_width_px,
             value_width_px,

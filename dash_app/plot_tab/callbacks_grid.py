@@ -1,12 +1,14 @@
 import re
 
-from dash import ALL, MATCH, Input, Output, Patch, State, callback_context, no_update
+from dash import ALL, MATCH, Input, Output, State, callback_context, no_update
 
-from .layout import add_plot_controls_card, child_id, render_plot_card, render_plot_grid
+from .layout import render_plot_grid
 from .plot_types.registry import PLOT_TYPES
 from .plot_types.specs import PLOT_FAMILY_SPECS
 from .plot_types import shared
 from .state import default_plot_state
+from dash_app.services import plots as plot_service
+from dash_app.shared.activity import acknowledge_ui_request, set_plot_instances
 
 
 _SEARCH_TOKEN_RE = re.compile(r"[_\-\s]+")
@@ -81,6 +83,24 @@ def _ranked_dropdown_options(options, search_value, selected_value):
     return matched
 
 
+def render_plot_help_notecard(trigger, trigger_value, plot_state):
+    """Return the requested plot help dialog, close it, or ignore mount events."""
+    if not isinstance(trigger_value, (int, float)) or trigger_value <= 0:
+        return no_update
+    if isinstance(trigger, dict) and trigger.get("type") == "plots-help-close":
+        return ""
+    if not (
+        isinstance(trigger, dict) and trigger.get("type") == "plots-help-open"
+    ):
+        return no_update
+    plot_id = str(trigger.get("index"))
+    plot_type = ((plot_state or {}).get(plot_id) or {}).get("plot_type")
+    module = PLOT_TYPES.get(plot_type)
+    if module is None:
+        return no_update
+    return module.help_dialog({"type": "plots-help-close", "index": plot_id})
+
+
 def register_dropdown_search_callback(app, spec):
     """Register one dropdown-options callback that reorders options by search relevance."""
     module = PLOT_TYPES[spec.plot_type_id]
@@ -129,16 +149,184 @@ def register_grid_callbacks(app):
     @app.callback(
         Output("plots-plot-container", "children"),
         Input("plots-case-data", "data"),
-        State("plots-plot-order", "data"),
+        Input("plots-plot-order", "data"),
         State("plots-plot-state", "data"),
     )
     def render_plot_container(case_data, plot_order, plot_state):
         """Render the plot grid from the current ordered plot state."""
         return render_plot_grid(plot_order or [], plot_state or {}, case_data)
 
+    def next_available_plot_id(plot_order, plot_state, next_id):
+        """Choose an id not already mounted, even after a stale UI callback."""
+        return plot_service.next_plot_id(plot_order, plot_state, next_id)
+
+    @app.callback(
+        Output("plots-instance-snapshot", "data"),
+        Input("plots-case-data", "data"),
+        Input("plots-plot-order", "data"),
+        Input("plots-plot-state", "data"),
+        State("plots-next-id", "data"),
+        State("dashboard-request", "data"),
+    )
+    def synchronize_plot_instances(case_data, plot_order, plot_state, next_id, dashboard_request):
+        """Publish a safe current-card snapshot for typed Plot inspection."""
+        snapshot = {
+            "case": str((case_data or {}).get("name") or ""),
+            "output_dirs": [str(path) for path in (case_data or {}).get("output_dirs") or []],
+            "plots": plot_service.list_plot_instances(plot_order, plot_state),
+            "next_id": int(next_id or 0),
+        }
+        set_plot_instances(snapshot)
+        request_id = (dashboard_request or {}).get("id") if isinstance(dashboard_request, dict) else None
+        if request_id and (dashboard_request or {}).get("operation") in {"set_view", "add_budget", "remove"}:
+            acknowledge_ui_request(request_id)
+        return snapshot
+
+    @app.callback(
+        Output("plots-help-modal", "children"),
+        Input({"type": "plots-help-open", "index": ALL}, "n_clicks"),
+        Input({"type": "plots-help-close", "index": ALL}, "n_clicks"),
+        State("plots-plot-state", "data"),
+        prevent_initial_call=True,
+    )
+    def update_plot_help_notecard(_open_clicks, _close_clicks, plot_state):
+        """Open one plot-family help dialog or close the active dialog."""
+        trigger = callback_context.triggered_id
+        trigger_value = (
+            callback_context.triggered[0].get("value")
+            if callback_context.triggered
+            else None
+        )
+        return render_plot_help_notecard(trigger, trigger_value, plot_state)
     for spec in PLOT_FAMILY_SPECS.values():
-        register_plot_state_sync_callback(app, spec.plot_type_id, spec.dropdown_type)
-        register_dropdown_search_callback(app, spec)
+        if spec.dropdown_type is not None:
+            register_plot_state_sync_callback(app, spec.plot_type_id, spec.dropdown_type)
+            register_dropdown_search_callback(app, spec)
+
+    @app.callback(
+        Output("plots-plot-state", "data", allow_duplicate=True),
+        Input({"type": "custom-expression", "index": ALL}, "value"),
+        State({"type": "custom-expression", "index": ALL}, "id"),
+        State("plots-plot-state", "data"),
+        prevent_initial_call=True,
+    )
+    def sync_custom_expression_state(values, ids, current_state):
+        """Persist custom expression text for custom plot cards."""
+        updated = dict(current_state or {})
+        changed = False
+        for meta, value in zip(ids or [], values or []):
+            idx = str(meta.get("index"))
+            if idx not in updated:
+                continue
+            entry = dict(updated[idx])
+            entry["plot_type"] = "custom"
+            entry["expression"] = str(value or "")
+            updated[idx] = entry
+            changed = True
+        return updated if changed else no_update
+
+    @app.callback(
+        Output("plots-plot-state", "data", allow_duplicate=True),
+        Input({"type": "pdf-height", "index": ALL}, "value"),
+        State({"type": "pdf-height", "index": ALL}, "id"),
+        State("plots-plot-state", "data"),
+        prevent_initial_call=True,
+    )
+    def sync_pdf_height_state(values, ids, current_state):
+        """Persist the local height selected on each PDF-contour card."""
+        updated = dict(current_state or {})
+        changed = False
+        for meta, value in zip(ids or [], values or []):
+            idx = str(meta.get("index"))
+            if idx not in updated or value is None:
+                continue
+            entry = dict(updated[idx])
+            selected_height = float(value)
+            if (
+                entry.get("plot_type") == "pdf_contour"
+                and entry.get("height") == selected_height
+            ):
+                continue
+            entry["plot_type"] = "pdf_contour"
+            entry["height"] = selected_height
+            updated[idx] = entry
+            changed = True
+        return updated if changed else no_update
+
+    @app.callback(
+        Output("plots-plot-state", "data", allow_duplicate=True),
+        Input({"type": "pdf-transport-view", "index": ALL}, "value"),
+        State({"type": "pdf-transport-view", "index": ALL}, "id"),
+        State("plots-plot-state", "data"),
+        prevent_initial_call=True,
+    )
+    def sync_pdf_transport_view_state(values, ids, current_state):
+        """Persist the transport coloring selected on each PDF-contour card."""
+        updated = dict(current_state or {})
+        changed = False
+        for meta, value in zip(ids or [], values or []):
+            idx = str(meta.get("index"))
+            if idx not in updated or value not in {"upward", "downward", "signed"}:
+                continue
+            entry = dict(updated[idx])
+            entry["plot_type"] = "pdf_contour"
+            entry["transport_view"] = value
+            updated[idx] = entry
+            changed = True
+        return updated if changed else no_update
+
+    @app.callback(
+        Output("plots-plot-state", "data", allow_duplicate=True),
+        Input({"type": "pdf-color-signal", "index": ALL}, "value"),
+        State({"type": "pdf-color-signal", "index": ALL}, "id"),
+        State("plots-plot-state", "data"),
+        prevent_initial_call=True,
+    )
+    def sync_pdf_color_signal_state(values, ids, current_state):
+        """Persist the selected raw-SAM moment signal on each contour card."""
+        updated = dict(current_state or {})
+        changed = False
+        allowed = {"probability", "wprcp", "wprtp", "wpchi", "wpthlp", "wprtp2"}
+        for meta, value in zip(ids or [], values or []):
+            idx = str(meta.get("index"))
+            if idx not in updated or value not in allowed:
+                continue
+            entry = dict(updated[idx])
+            if entry.get("color_signal") == value:
+                continue
+            entry["plot_type"] = "pdf_contour"
+            entry["color_signal"] = value
+            updated[idx] = entry
+            changed = True
+        return updated if changed else no_update
+
+    @app.callback(
+        Output("plots-plot-state", "data", allow_duplicate=True),
+        Input({"type": "pdf-contour-smoothing", "index": ALL}, "value"),
+        State({"type": "pdf-contour-smoothing", "index": ALL}, "id"),
+        State("plots-plot-state", "data"),
+        prevent_initial_call=True,
+    )
+    def sync_pdf_contour_smoothing_state(values, ids, current_state):
+        """Persist the raw-SAM contour smoothing width for each PDF card."""
+        updated = dict(current_state or {})
+        changed = False
+        for meta, value in zip(ids or [], values or []):
+            idx = str(meta.get("index"))
+            try:
+                smoothing = min(max(float(value), 0.0), 3.0)
+            except (TypeError, ValueError):
+                continue
+            if idx not in updated:
+                continue
+            entry = dict(updated[idx])
+            if entry.get("contour_smoothing_bins") == smoothing:
+                continue
+            entry["plot_type"] = "pdf_contour"
+            entry["contour_smoothing_bins"] = smoothing
+            updated[idx] = entry
+            changed = True
+        return updated if changed else no_update
 
     @app.callback(
         Output({"type": "plots-size-store", "index": MATCH}, "data"),
@@ -219,8 +407,9 @@ def register_grid_callbacks(app):
         Output("plots-plot-state", "data", allow_duplicate=True),
         Output("plots-next-id", "data", allow_duplicate=True),
         Output("plots-last-add-ts", "data", allow_duplicate=True),
-        Output("plots-plot-container", "children", allow_duplicate=True),
         Input("plots-add-budget", "n_clicks_timestamp"),
+        Input("plots-add-custom", "n_clicks_timestamp"),
+        Input("plots-add-pdf-contour", "n_clicks_timestamp"),
         Input("plots-add-profile", "n_clicks_timestamp"),
         Input("plots-add-timeseries", "n_clicks_timestamp"),
         Input("plots-add-timeheight", "n_clicks_timestamp"),
@@ -230,15 +419,16 @@ def register_grid_callbacks(app):
         State("plots-plot-state", "data"),
         State("plots-next-id", "data"),
         State("plots-last-add-ts", "data"),
-        State("plots-plot-container", "children"),
         prevent_initial_call=True,
     )
-    def add_plot(budget_ts, profile_ts, timeseries_ts, timeheight_ts, subcolumn_ts, case_data, plot_order, plot_state, next_id, last_add_ts, current_children):
+    def add_plot(budget_ts, custom_ts, pdf_contour_ts, profile_ts, timeseries_ts, timeheight_ts, subcolumn_ts, case_data, plot_order, plot_state, next_id, last_add_ts):
         """Append one new plot card of the requested family and move the add-card to the end."""
         if not case_data:
-            return no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
         timestamps = {
             "plots-add-budget": budget_ts or 0,
+            "plots-add-custom": custom_ts or 0,
+            "plots-add-pdf-contour": pdf_contour_ts or 0,
             "plots-add-profile": profile_ts or 0,
             "plots-add-timeseries": timeseries_ts or 0,
             "plots-add-timeheight": timeheight_ts or 0,
@@ -247,63 +437,61 @@ def register_grid_callbacks(app):
         latest_button = max(timestamps, key=timestamps.get)
         latest_ts = timestamps[latest_button]
         if latest_ts <= int(last_add_ts or 0):
-            return no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
         plot_type = next(
             spec.plot_type_id for spec in PLOT_FAMILY_SPECS.values() if spec.add_button_id == latest_button
         )
         module = PLOT_TYPES[plot_type]
         if not module.supports_case_data(case_data):
-            return no_update, no_update, no_update, no_update, no_update
-        plot_id = int(next_id or 0)
+            return no_update, no_update, no_update, no_update
+        plot_id = next_available_plot_id(plot_order, plot_state, next_id)
         state = default_plot_state(case_data, plot_id, plot_type=plot_type, existing_state=plot_state)
-        updated_order = list(plot_order or [])
-        updated_state = dict(plot_state or {})
-        updated_order.append(plot_id)
-        updated_state[str(plot_id)] = state
-        if current_children:
-            patched_children = Patch()
-            patched_children[-1] = render_plot_card(plot_id, state, case_data)
-            patched_children.append(add_plot_controls_card())
-        else:
-            patched_children = render_plot_grid(updated_order, updated_state, case_data)
-        return updated_order, updated_state, plot_id + 1, latest_ts, patched_children
+        transition = plot_service.append_plot_instance(
+            case_data,
+            plot_order,
+            plot_state,
+            next_id,
+            plot_type=plot_type,
+            state=state,
+        )
+        return transition.plot_order, transition.plot_state, transition.next_id, latest_ts
 
     @app.callback(
         Output("plots-plot-order", "data", allow_duplicate=True),
         Output("plots-plot-state", "data", allow_duplicate=True),
-        Output("plots-plot-container", "children", allow_duplicate=True),
         Input({"type": "plots-close", "index": ALL}, "n_clicks_timestamp"),
         State({"type": "plots-close", "index": ALL}, "id"),
+        Input("dashboard-request", "data"),
         State("plots-case-data", "data"),
         State("plots-plot-order", "data"),
         State("plots-plot-state", "data"),
-        State("plots-plot-container", "children"),
+        State("plots-next-id", "data"),
         prevent_initial_call=True,
     )
-    def remove_plot(timestamps, ids, case_data, plot_order, plot_state, current_children):
-        """Remove one plot card and keep the remaining grid order intact."""
+    def remove_plot(timestamps, ids, dashboard_request, case_data, plot_order, plot_state, next_id):
+        """Remove one native or typed-requested card through the shared service."""
+        if (
+            isinstance(dashboard_request, dict)
+            and dashboard_request.get("tab") == "plots"
+            and dashboard_request.get("operation") == "remove"
+        ):
+            transition = plot_service.remove_plot_instance(
+                dashboard_request.get("plot_id"),
+                plot_order,
+                plot_state,
+                next_id,
+            )
+            return transition.plot_order, transition.plot_state
         if not timestamps or not ids:
-            return no_update, no_update, no_update
+            return no_update, no_update
         indexed = [(ts, meta) for ts, meta in zip(timestamps, ids) if ts]
         if not indexed:
-            return no_update, no_update, no_update
+            return no_update, no_update
         _, target = max(indexed, key=lambda pair: pair[0])
-        plot_id = int(target.get("index"))
-        updated_order = [int(idx) for idx in (plot_order or []) if int(idx) != plot_id]
-        updated_state = dict(plot_state or {})
-        updated_state.pop(str(plot_id), None)
-        if current_children:
-            remove_index = None
-            for idx, child in enumerate(current_children):
-                child_meta = child_id(child)
-                if isinstance(child_meta, dict) and child_meta.get("type") == "plots-card" and int(child_meta.get("index")) == plot_id:
-                    remove_index = idx
-                    break
-            if remove_index is not None:
-                patched_children = Patch()
-                del patched_children[remove_index]
-            else:
-                patched_children = no_update
-        else:
-            patched_children = render_plot_grid(updated_order, updated_state, case_data)
-        return updated_order, updated_state, patched_children
+        transition = plot_service.remove_plot_instance(
+            target.get("index"),
+            plot_order,
+            plot_state,
+            next_id,
+        )
+        return transition.plot_order, transition.plot_state

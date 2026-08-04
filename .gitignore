@@ -23,4 +23,6 @@ run_scripts/tmp_dup_params.in
 *.pyc
 .venv*/
 
+/worklog.md
+
 input/parameter_and_flag_configs/**/*_tmp.in

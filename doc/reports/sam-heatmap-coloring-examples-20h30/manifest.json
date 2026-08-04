@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "sam-heatmap-coloring-examples-20h30",
+  "title": "SAM heatmap colors: ARM 20.5 h / 1900 m",
+  "summary": "Probability-only and five selectable color signals for the ARM 20.5 h CLUBB timeframe at 1900 m, with its raw-SAM elapsed-time mapping documented.",
+  "created_at": "2026-07-22T00:00:00Z",
+  "tags": [
+    "SAM",
+    "heatmaps",
+    "visualization",
+    "cloud transport"
+  ],
+  "entrypoint": "report.html",
+  "source_revision": "working tree"
+}

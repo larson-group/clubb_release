@@ -486,8 +486,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  python tests/analyze_tuner_sample_history.py output_tuner/job\n"
-            "  python tests/analyze_tuner_sample_history.py output_tuner/new_tuner_test "
+            "  python tests/analyze_tuner_sample_history.py output/tuner/job\n"
+            "  python tests/analyze_tuner_sample_history.py output/tuner/new_tuner_test "
             "-metric all -modes 5 -top 10 -min_samples 8 --require_param_variation\n"
         ),
     )

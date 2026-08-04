@@ -1,18 +1,19 @@
 import ast
 import hashlib
 import os
-import re
-import sys
 import tempfile
 from collections import OrderedDict
-from datetime import datetime
 
 import numpy as np
 from netCDF4 import Dataset
 
+from dash_app.shared.netcdf import (
+    file_signature as _file_signature,
+    find_dimension as _find_dim,
+    time_values_to_seconds as _time_values_seconds,
+)
+
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
 
 from utilities.benchmark_converter import (
     CONVERTER_VERSION,
@@ -26,8 +27,6 @@ PYPLOTGEN_ROOT = os.path.join(REPO_ROOT, "postprocessing", "pyplotgen")
 Z_DIM_NAMES = {"z", "zm", "zt", "altitude", "height", "lev"}
 T_DIM_NAMES = {"t", "time"}
 BENCHMARK_SOURCES = ("sam", "coamps")
-_TIME_UNITS_RE = re.compile(r"^\s*([A-Za-z]+)\s+since\s+(.+?)\s*$")
-
 _CACHE_MAX_ENTRIES = 256
 _CATALOG_CACHE = OrderedDict()
 _DATA_CACHE = OrderedDict()
@@ -48,17 +47,57 @@ def available_benchmark_sources(case_data):
     return list(benchmarks.get("available_sources") or [])
 
 
+def normalized_benchmark_supported_fields():
+    return tuple(sorted(_SUPPORTED_NORMALIZED_FIELDS))
+
+
 def sanitize_enabled_sources(case_data, enabled_sources):
     available = set(available_benchmark_sources(case_data))
     return [source for source in (enabled_sources or []) if source in available]
 
 
-def _file_signature(path):
-    try:
-        stat = os.stat(path)
-    except OSError:
-        return (path, None, None)
-    return (path, stat.st_mtime_ns, stat.st_size)
+def resolve_enabled_sources(case_data, requested_sources=None, *, strict=False):
+    """Resolve the selected benchmark sources for one Plot-tab case.
+
+    ``None`` means preserve the caller's current/default selection.  Explicit
+    selections are normalized, deduplicated, and limited to sources whose
+    benchmark files are present for this case.  MCP requests use ``strict`` so
+    an unavailable source is rejected instead of being silently ignored;
+    browser toggles use the permissive mode for the existing UI contract.
+    """
+    available = available_benchmark_sources(case_data)
+    available_set = set(available)
+    if requested_sources is None:
+        return []
+    if isinstance(requested_sources, str) or not isinstance(requested_sources, (list, tuple)):
+        raise ValueError("benchmark_sources must be an array of source names")
+    normalized = []
+    for raw_source in requested_sources:
+        source = str(raw_source or "").strip().lower()
+        if not source:
+            continue
+        if source not in normalized:
+            normalized.append(source)
+    unavailable = [source for source in normalized if source not in available_set]
+    if unavailable and strict:
+        available_text = ", ".join(available) or "none"
+        raise ValueError(
+            "benchmark source(s) unavailable for this case: "
+            + ", ".join(unavailable)
+            + f"; available: {available_text}"
+        )
+    return [source for source in normalized if source in available_set]
+
+
+def toggle_enabled_source(case_data, current_sources, source):
+    """Apply one native benchmark-button toggle through the shared validator."""
+    value = str(source or "").strip().lower()
+    current = resolve_enabled_sources(case_data, current_sources)
+    if value in current:
+        current.remove(value)
+    else:
+        current.append(value)
+    return resolve_enabled_sources(case_data, current, strict=True)
 
 
 def _cached_lru(cache, max_entries, key, builder):
@@ -122,54 +161,6 @@ def build_case_benchmark_info(case_def):
         "available_sources": available,
         "var_group_names": [str(name) for name in (case_def.get("var_groups") or []) if name],
     }
-
-
-def _find_dim(dim_names, candidates):
-    for dim_name in dim_names:
-        if dim_name.lower() in candidates:
-            return dim_name
-    return None
-
-
-def _time_units_factor(units):
-    if not units:
-        return 1.0
-    unit = units.split()[0].lower()
-    if unit in {"s", "sec", "secs", "second", "seconds"}:
-        return 1.0
-    if unit in {"min", "mins", "minute", "minutes"}:
-        return 60.0
-    if unit in {"h", "hr", "hrs", "hour", "hours"}:
-        return 3600.0
-    return 1.0
-
-
-def _parse_time_origin(origin_text):
-    text = str(origin_text or "").strip().replace("T", " ")
-    if text.endswith("Z"):
-        text = text[:-1].strip()
-    for fmt in (
-        "%Y-%m-%d %H:%M:%S.%f",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d",
-    ):
-        try:
-            return datetime.strptime(text, fmt)
-        except ValueError:
-            continue
-    return None
-
-
-def _time_values_seconds(values, units):
-    arr = np.asarray(values, dtype=float)
-    match = _TIME_UNITS_RE.match(str(units or ""))
-    if match:
-        origin = _parse_time_origin(match.group(2))
-        if origin is not None:
-            midnight = origin.replace(hour=0, minute=0, second=0, microsecond=0)
-            return arr * float(_time_units_factor(match.group(1))) + (origin - midnight).total_seconds()
-    return arr * float(_time_units_factor(units))
 
 
 def _slider_value_to_index(value, max_len):
@@ -485,19 +476,28 @@ def _source_paths(case_data, source_name):
     return dict(((case_data or {}).get("benchmarks") or {}).get(source_name) or {})
 
 
-def _normalized_cache_path(path, source_name):
+def _normalized_field_names(fields=None):
+    requested = _SUPPORTED_NORMALIZED_FIELDS if fields is None else fields
+    return tuple(sorted(set(requested) & _SUPPORTED_NORMALIZED_FIELDS))
+
+
+def _normalized_cache_path(path, source_name, fields=None):
     signature = _file_signature(path)
-    digest = hashlib.sha256(repr((source_name, CONVERTER_VERSION, signature)).encode("utf-8")).hexdigest()[:20]
+    field_names = _normalized_field_names(fields)
+    digest = hashlib.sha256(
+        repr((source_name, CONVERTER_VERSION, signature, field_names)).encode("utf-8")
+    ).hexdigest()[:20]
     safe_name = os.path.basename(path).replace(os.sep, "_")
     cache_dir = os.path.join(tempfile.gettempdir(), "clubb_dash_benchmark_converter")
     return os.path.join(cache_dir, f"{source_name}_{digest}_{safe_name}")
 
 
-def _ensure_normalized_benchmark(path, source_name):
-    key = ("normalized_benchmark", source_name, CONVERTER_VERSION, _file_signature(path))
+def _ensure_normalized_benchmark(path, source_name, fields=None):
+    field_names = _normalized_field_names(fields)
+    key = ("normalized_benchmark", source_name, CONVERTER_VERSION, _file_signature(path), field_names)
 
     def _build():
-        cache_path = _normalized_cache_path(path, source_name)
+        cache_path = _normalized_cache_path(path, source_name, field_names)
         if os.path.isfile(cache_path):
             return {"path": cache_path, "status": {}}
 
@@ -508,7 +508,7 @@ def _ensure_normalized_benchmark(path, source_name):
                 path,
                 tmp_path,
                 source_type=source_name,
-                fields=sorted(_SUPPORTED_NORMALIZED_FIELDS),
+                fields=field_names,
             )
             os.replace(tmp_path, cache_path)
             return {"path": cache_path, "status": status}
@@ -523,10 +523,10 @@ def _ensure_normalized_benchmark(path, source_name):
     return _cached_lru(_SOURCE_CACHE, _CACHE_MAX_ENTRIES, key, _build)
 
 
-def _normalized_source_paths(case_data, source_name):
+def _normalized_source_paths(case_data, source_name, fields=None):
     normalized = {}
     for label, path in _source_paths(case_data, source_name).items():
-        result = _ensure_normalized_benchmark(path, source_name)
+        result = _ensure_normalized_benchmark(path, source_name, fields=fields)
         normalized_path = (result or {}).get("path")
         if normalized_path and os.path.isfile(normalized_path):
             normalized[label] = normalized_path
@@ -1143,3 +1143,39 @@ def extract_benchmark_profile(case_data, source_name, clubb_var, time_mode, time
         "long_name": data["long_name"],
         "z_units": data["z_units"],
     }
+
+
+def extract_normalized_benchmark_profiles(
+    case_data,
+    source_name,
+    clubb_vars,
+    time_mode,
+    time_range,
+    time_point,
+):
+    """Return converter-backed profiles for a group of CLUBB-facing field names.
+
+    The requested fields are normalized together so custom expressions only
+    convert the LES data they actually reference.
+    """
+    field_names = _normalized_field_names(clubb_vars)
+    if not field_names:
+        return {}
+    clubb_window = _resolve_clubb_window(case_data, time_mode, time_range, time_point)
+    source_paths = _normalized_source_paths(case_data, source_name, fields=field_names)
+    if not source_paths:
+        return {}
+
+    profiles = {}
+    for field_name in field_names:
+        data = _reduce_profile_data(_get_profile_data(source_paths, field_name), clubb_window)
+        if data is None or "profile" not in data:
+            continue
+        profiles[field_name] = {
+            "z_values": np.asarray(data["z_values"], dtype=float),
+            "profile": np.asarray(data["profile"], dtype=float),
+            "units": data["units"],
+            "long_name": data["long_name"],
+            "z_units": data["z_units"],
+        }
+    return profiles

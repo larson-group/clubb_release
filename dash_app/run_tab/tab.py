@@ -10,7 +10,7 @@ from .config_state import build_tunable_config_state
 from .discovery import load_available_cases, load_case_groups, load_stats_choices
 from .layout import build_case_buttons, build_layout, build_stats_buttons
 from .state import DEFAULT_STATS_NAME, NO_STATS_NAME
-from tunable_configs import available_tunable_configs, default_tunable_config_name
+from dash_app.shared.tunable_configs import available_tunable_configs, default_tunable_config_name
 
 
 def build_initial_run_state():

@@ -381,9 +381,11 @@ class ProfilePlotType(BasePlotType):
         patch = Patch()
         for idx, spec in enumerate(trace_bundle["trace_specs"]):
             patch["data"][idx]["x"] = np.asarray(spec["x"], dtype=float).tolist()
-        if trace_bundle["x_range"]:
-            patch["layout"]["xaxis"]["range"] = list(trace_bundle["x_range"])
-        return patch
+        return shared.apply_patch_x_range(
+            patch,
+            trace_bundle["x_range"],
+            global_context.get("relayout_data"),
+        )
 
     def _build_compare_patch(self, files, var_name, case_data, global_context):
         trace_bundle = self._compare_trace_specs(files, var_name, case_data, global_context)
@@ -392,9 +394,11 @@ class ProfilePlotType(BasePlotType):
         patch = Patch()
         for idx, spec in enumerate(trace_bundle["trace_specs"]):
             patch["data"][idx]["x"] = np.asarray(spec["x"], dtype=float).tolist()
-        if trace_bundle["x_range"]:
-            patch["layout"]["xaxis"]["range"] = list(trace_bundle["x_range"])
-        return patch
+        return shared.apply_patch_x_range(
+            patch,
+            trace_bundle["x_range"],
+            global_context.get("relayout_data"),
+        )
 
     def build_figure(self, state, global_context):
         case_data = global_context.get("case_data") or {}

@@ -87,7 +87,7 @@ That script runs a curated set of SCM cases through both:
 - the normal Fortran standalone path
 
 and compares the outputs with `run_bindiff_all.py`. Results are written under
-`jax_driver_test_results/`.
+`output/tests/jax_driver_test_results/`.
 
 You can also run individual SCM cases through the regular SCM entry point:
 

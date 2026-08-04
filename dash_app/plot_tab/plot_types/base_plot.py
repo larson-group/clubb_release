@@ -1,6 +1,9 @@
 from dash import dcc, html
 
+from dash_app.shared.notecard import information_body, notecard
+
 from . import shared
+from .help_content import PLOT_HELP
 
 
 class BasePlotType:
@@ -44,6 +47,9 @@ class BasePlotType:
     def size_toggle_id(self, plot_id):
         return {"type": "plots-size-toggle", "index": plot_id}
 
+    def help_button_id(self, plot_id):
+        return {"type": "plots-help-open", "index": plot_id}
+
     def size_store_id(self, plot_id):
         return {"type": "plots-size-store", "index": plot_id}
 
@@ -70,6 +76,15 @@ class BasePlotType:
     def card_subtitle(self, case_data):
         return self._subtitle
 
+    def help_dialog(self, close_button_id):
+        spec = PLOT_HELP[self.plot_type_id]
+        return notecard(
+            spec["title"],
+            information_body(spec["overview"], spec.get("sections")),
+            close_button_id,
+            size=spec.get("size", "medium"),
+        )
+
     def auxiliary_components(self, plot_id):
         return []
 
@@ -92,6 +107,7 @@ class BasePlotType:
         size_button = html.Button(size_text, id=self.size_toggle_id(plot_id), className=size_class, title="Toggle plot size")
         return shared.make_plot_card(
             subtitle=self.card_subtitle(case_data),
+            help_button_id=self.help_button_id(plot_id),
             controls=controls,
             size_button=size_button,
             size_value=size_value,

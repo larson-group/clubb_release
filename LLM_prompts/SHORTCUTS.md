@@ -13,7 +13,7 @@ When a user request appears to match one of these shortcuts:
 
 ### Update Host Models After CLUBB Changes
 
-Likely use when a CLUBB interface or behavior change has merged and the user asks to update one or more host-model repositories, publish branches, and open pull requests.
+Use when a CLUBB change affects a host-consumed Fortran/C API or interface: an exported `_api` routine's signature or semantics, public types/constants, generated wrappers, or host-facing flags/configuration. This workflow is for host-owned compatibility changes only. Never modify, copy, synchronize, reformat, or otherwise include vendored CLUBB/SILHS source in a host-model PR; source synchronization is a separate process. Do not use this shortcut for Dash/MCP changes or Python-only wrapper changes unless the host model directly consumes the changed interface. If host repositories are not provided, audit the branch and report the exact host-owned call-site change needed; do not clone or edit external repositories implicitly.
 
 Prompt:
 
@@ -85,3 +85,24 @@ Before using, confirm whether the user wants:
 - behavior-preserving refactor plus formatting
 - full call-site and wrapper updates
 - source code edits now, or only a review/checklist
+
+### Work Through CLUBB Dash
+
+Likely use when the user asks to:
+
+- connect to, attach to, use, open, or control the Dash dashboard
+- compile, run a case, inspect output, make or save plots, navigate a tab, or
+  configure/launch/inspect a tuning job
+- investigate a result, especially when the dashboard can show the relevant
+  profiles, contours, run console, Tune settings, or activity log
+- create, update, or view a static investigation report
+
+Prompt:
+
+- `LLM_prompts/dash_app_workflow.md`
+
+Before using, determine whether there is one unambiguous open dashboard with a
+live browser view.  Do not silently start another dashboard when none is open,
+and do not guess between multiple instances.  Read the prompt before taking
+dashboard actions; it defines the required connection, persistence, report,
+and fallback behavior.

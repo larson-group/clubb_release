@@ -12,12 +12,12 @@ from utilities.create_case_namelist import (
     create_loss_case_namelist,
     validate_multicol,
 )
+from utilities.output_paths import resolve_output_dir
 from run_scm import choose_install_dir, python_runtime_dir_from_install, run_case
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults
 
 RUN_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
 CLUBB_ROOT = os.path.join(RUN_SCRIPTS, "..")
-DEFAULT_OUTPUT_DIR = os.path.join(CLUBB_ROOT, "output")
 
 
 def choose_run_command(args):
@@ -149,7 +149,10 @@ def main():
     parser.add_argument("-flags", metavar="[FILE]",
         help="Model flags file. Used to override flags file defined by --config")
     parser.add_argument("-out_dir", metavar="[DIR]",
-        help="Output directory for generated namelists, logs, and stats. Defaults to output.")
+        help=(
+            "Output directory for generated namelists, logs, and stats. Bare names are "
+            "rooted under output/; defaults to output."
+        ))
     parser.add_argument("-multicol", metavar="[NUM|SPEC]", type=validate_multicol,
         help=("Generate a multi-column parameter file. "
               "Use an integer for dup_tweak mode, e.g. -multicol 4, or an hr spec like "
@@ -248,8 +251,12 @@ def main():
                 sys.exit("Each case config requires case_name")
             args.case_configs[case_name] = dict(raw_config)
 
-    output_dir = os.path.abspath(args.out_dir) if args.out_dir else os.path.abspath(DEFAULT_OUTPUT_DIR)
+    try:
+        output_dir = str(resolve_output_dir(args.out_dir))
+    except ValueError as exc:
+        parser.error(str(exc))
     os.makedirs(output_dir, exist_ok=True)
+    print(f"Output directory: {output_dir}")
 
     run_cmd, run_cwd, run_env = choose_run_command(args)
 

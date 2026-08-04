@@ -55,7 +55,7 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         parameter_ranges: Iterable[dict],
         initial_temp: float = 1.0,
         max_final_temp: float = 1.0e-12,
-        max_iters: int = 2000,
+        max_iters: int = 200,
         chain_count: int = 1,
         stp_adjst_shift: float = 0.5,
         stp_adjst_factor: float = 1.0,

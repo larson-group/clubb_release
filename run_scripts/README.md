@@ -20,7 +20,7 @@ Examples:
   Runs the `bomex` case with the default compiled executable and default output
   directory.
 
-- `python3 run_scripts/run_scm.py -out_dir output/bomex_short -max_iters 10 bomex`
+- `python3 run_scripts/run_scm.py -out_dir bomex_short -max_iters 10 bomex`
   Runs `bomex` for only 10 iterations and writes output under
   `output/bomex_short`.
 

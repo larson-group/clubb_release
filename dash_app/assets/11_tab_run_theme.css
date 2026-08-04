@@ -7,13 +7,161 @@
 }
 
 .run-tab-layout {
-  align-items: stretch;
+  align-items: start;
 }
 
 .run-left-pane,
 .run-right-pane {
   box-sizing: border-box;
   min-width: 0;
+}
+
+/* Keep the settings pane in normal document flow.  A very long flag or
+   tunable list should extend the tab and use the browser scrollbar, rather
+   than introducing a second, narrow scrollbar beside the controls. */
+.run-right-pane {
+  height: auto !important;
+  min-height: 0;
+  overflow: visible !important;
+  align-self: start;
+}
+
+/* Main Run setup: a short sequence of distinct decisions rather than one
+   undifferentiated row of controls. */
+.run-left-header {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  width: 100%;
+  max-width: none;
+}
+
+.run-setup-intro {
+  display: grid;
+  gap: 3px;
+  padding: 4px 2px 6px;
+}
+
+.run-setup-title,
+.run-launch-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.run-setup-subtitle,
+.run-setup-section-note,
+.run-launch-note {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.run-setup-section {
+  display: grid;
+  gap: 10px;
+  padding: 13px 15px;
+  border: 1px solid;
+  border-radius: 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.run-setup-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 3px 16px;
+}
+
+.run-setup-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.run-select-actions,
+.run-case-buttons,
+.run-stats-buttons,
+.run-option-input-row,
+.run-option-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.run-select-actions {
+  padding-bottom: 2px;
+}
+
+.run-select-actions > button,
+.run-case-buttons > button,
+.run-stats-buttons > button {
+  margin: 0 !important;
+}
+
+.run-select-actions > button {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+
+.run-case-buttons {
+  gap: 6px;
+}
+
+.run-case-buttons > button {
+  min-width: 94px;
+  padding: 7px 12px !important;
+  border-radius: 7px !important;
+  font-size: 14px !important;
+  line-height: 1.15;
+}
+
+.run-stats-buttons > button {
+  padding: 6px 10px !important;
+  border-radius: 7px !important;
+  font-size: 13px;
+}
+
+.run-option-input-row {
+  gap: 8px;
+}
+
+.run-option-detail-row {
+  gap: 10px;
+}
+
+.run-option-detail-row > label {
+  flex: 0 0 74px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.run-output-dir-warning {
+  flex: 1 1 280px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.run-output-dir-warning--hidden {
+  display: none;
+}
+
+#app-root .run-quick-input {
+  min-height: 32px;
+  box-sizing: border-box;
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.run-output-dir-input {
+  max-width: min(100%, 300px);
 }
 
 .run-pane-divider {
@@ -43,6 +191,13 @@
 .run-param-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  /* Every ordinary control occupies one compact track.  Relationship cards
+     explicitly span only the tracks their heading and members require; dense
+     placement then fills the adjacent space instead of enlarging every item
+     in the same visual row. */
+  grid-auto-flow: row dense;
+  grid-auto-rows: 29px;
+  align-items: start;
   gap: 6px clamp(16px, 3vw, 36px);
 }
 
@@ -85,6 +240,32 @@
   margin: 10px auto 8px auto;
 }
 
+.run-settings-resolution-note {
+  display: none;
+  margin: 0 0 10px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.run-settings-resolution-note--derived,
+.run-settings-resolution-note--error {
+  display: block;
+}
+
+.run-settings-resolution-note--derived {
+  color: #c4b5fd;
+  background: rgba(109, 40, 217, 0.14);
+  border: 1px solid rgba(139, 92, 246, 0.62);
+}
+
+.run-settings-resolution-note--error {
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.7);
+}
+
 #app-root.theme-dark .run-settings-heading {
   background: #1e293b;
   border-color: #334155;
@@ -103,6 +284,86 @@
   min-width: 0;
   overflow: hidden;
   width: 100%;
+  min-height: 29px;
+  /* Ordinary controls intentionally share one surface.  Zebra striping was
+     tied to visual row order, which is not stable when dense placement moves
+     controls around relationship cards or when the pane changes column count.
+     Semantic colors below carry the useful information instead. */
+  background-color: transparent;
+}
+
+#app-root.theme-dark .run-param-container {
+  background-color: rgba(30, 41, 59, 0.68);
+}
+
+#app-root.theme-light .run-param-container {
+  background-color: rgba(241, 245, 249, 0.88);
+}
+
+.run-linked-param-container {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  background: rgba(109, 40, 217, 0.08);
+  min-height: 0;
+  align-self: stretch;
+}
+
+.run-linked-param-names {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.run-linked-param-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.run-linked-param-badge {
+  padding: 2px 5px;
+  border: 1px solid rgba(167, 139, 250, 0.7);
+  border-radius: 999px;
+  color: #ddd6fe;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#app-root.theme-light .run-linked-param-container {
+  border-color: rgba(109, 40, 217, 0.45);
+  background: rgba(221, 214, 254, 0.38);
+}
+
+#app-root.theme-light .run-linked-param-badge {
+  border-color: rgba(109, 40, 217, 0.48);
+  color: #5b21b6;
+}
+
+@media (max-width: 480px) {
+  .run-linked-param-container {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .run-linked-param-value {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100% !important;
+  }
 }
 
 .run-param-row--default {
@@ -123,8 +384,103 @@
   filter: grayscale(0.25);
 }
 
+.run-param-row--invalid {
+  outline: 3px solid #ff2638;
+  box-shadow: 0 0 0 2px rgba(255, 38, 56, 0.34), 0 0 14px rgba(255, 38, 56, 0.20);
+  background: rgba(185, 28, 28, 0.18) !important;
+  opacity: 1;
+  filter: none;
+}
+
+.run-param-row--invalid-disabled {
+  /* Invalid state deliberately wins over changed-from-default yellow. */
+  outline: 3px solid #ff2638;
+  box-shadow: 0 0 0 2px rgba(255, 38, 56, 0.34), 0 0 14px rgba(255, 38, 56, 0.20);
+  background: rgba(185, 28, 28, 0.18) !important;
+  opacity: 1;
+  filter: none;
+}
+
+.run-param-row--linked-disabled {
+  outline: 2px solid #8b5cf6;
+  opacity: 0.62;
+  filter: grayscale(0.18);
+}
+
+.run-linked-flag-group {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 5px;
+  background: rgba(109, 40, 217, 0.08);
+  min-height: 0;
+  align-self: stretch;
+}
+
+.run-linked-flag-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.run-linked-flag-badge {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border: 1px solid rgba(167, 139, 250, 0.7);
+  border-radius: 999px;
+  color: #ddd6fe;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.run-linked-flag-description {
+  min-width: 0;
+  color: #c4b5fd;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.run-linked-flag-members {
+  display: grid;
+  gap: 2px;
+}
+
+/* Keep the physical members readable against their purple relationship card
+   without creating a second visual status color. */
+#app-root.theme-dark .run-linked-flag-members .run-param-container {
+  background-color: rgba(15, 23, 42, 0.42);
+}
+
+#app-root.theme-light .run-linked-flag-members .run-param-container {
+  background-color: rgba(255, 255, 255, 0.58);
+}
+
+#app-root.theme-light .run-linked-flag-group {
+  border-color: rgba(109, 40, 217, 0.45);
+  background: rgba(221, 214, 254, 0.38);
+}
+
+#app-root.theme-light .run-linked-flag-badge {
+  border-color: rgba(109, 40, 217, 0.48);
+  color: #5b21b6;
+}
+
+#app-root.theme-light .run-linked-flag-description {
+  color: #6d28d9;
+}
+
 .run-flag-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
   justify-content: flex-start;
+  min-height: 29px;
 }
 
 .run-flag-checklist {
@@ -236,7 +592,18 @@ body.run-ui-dragging * {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin-top: 4px;
+  padding: 13px 15px;
+  border: 1px solid;
+  border-radius: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.run-launch-intro {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 190px;
+  min-width: 0;
 }
 
 .run-primary-actions {
@@ -248,8 +615,7 @@ body.run-ui-dragging * {
 
 .run-primary-actions > button {
   margin: 0 !important;
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
+  padding: 9px 14px !important;
 }
 
 .run-limit-panel {
@@ -296,6 +662,76 @@ body.run-ui-dragging * {
 #app-root #run-batch-size:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+#app-root.theme-dark .run-setup-title,
+#app-root.theme-dark .run-launch-title,
+#app-root.theme-dark .run-setup-section-title {
+  color: #f8fafc;
+}
+
+#app-root.theme-dark .run-setup-subtitle,
+#app-root.theme-dark .run-setup-section-note,
+#app-root.theme-dark .run-launch-note {
+  color: #94a3b8;
+}
+
+#app-root.theme-dark .run-setup-section,
+#app-root.theme-dark .run-action-bar {
+  background: linear-gradient(135deg, #111c31 0%, #101827 100%);
+  border-color: #26354c;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.16);
+}
+
+#app-root.theme-dark .run-left-header .run-quick-input {
+  background: #0b1220 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+}
+
+#app-root.theme-dark .run-left-header .run-quick-input::placeholder {
+  color: #64748b;
+}
+
+#app-root.theme-dark .run-option-detail-row > label {
+  color: #cbd5e1;
+}
+
+#app-root.theme-dark .run-output-dir-warning--warning {
+  color: #fbbf24;
+}
+
+#app-root.theme-light .run-setup-title,
+#app-root.theme-light .run-launch-title,
+#app-root.theme-light .run-setup-section-title {
+  color: #0f172a;
+}
+
+#app-root.theme-light .run-setup-subtitle,
+#app-root.theme-light .run-setup-section-note,
+#app-root.theme-light .run-launch-note {
+  color: #64748b;
+}
+
+#app-root.theme-light .run-setup-section,
+#app-root.theme-light .run-action-bar {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-color: #d9e2ef;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+#app-root.theme-light .run-left-header .run-quick-input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+#app-root.theme-light .run-option-detail-row > label {
+  color: #475569;
+}
+
+#app-root.theme-light .run-output-dir-warning--warning {
+  color: #b45309;
 }
 
 /* Run selected stays green in both themes */
@@ -366,4 +802,27 @@ body.run-ui-dragging * {
   background-color: #ffffff;
   border-color: #cbd5e1;
   color: #0f172a;
+}
+
+@media (max-width: 760px) {
+  .run-setup-section {
+    padding: 11px;
+  }
+
+  .run-setup-section-heading {
+    display: grid;
+  }
+
+  .run-option-detail-row > label {
+    flex-basis: 100%;
+  }
+
+  .run-option-detail-row > input {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .run-launch-intro {
+    flex-basis: 100%;
+  }
 }

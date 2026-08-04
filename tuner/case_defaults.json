@@ -7,7 +7,7 @@
   "arm": {
     "les_stats_file": "input/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc",
     "altitude_comparison_range": [20.0, 4300.0],
-    "time_average_range": [54000, 93600]
+    "time_average_range": [61200, 82800]
   },
   "atex": {
     "les_stats_file": "input/les_and_clubb_benchmark_runs/les_runs/atex_coamps_sm.nc",
@@ -22,7 +22,7 @@
   "dycoms2_rf01": {
     "les_stats_file": "input/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc",
     "altitude_comparison_range": [15.0, 1185.0],
-    "time_average_range": [25260, 28800]
+    "time_average_range": [25260, 28860]
   },
   "dycoms2_rf02_do": {
     "les_stats_file": "input/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_dr_nosed/DYCOMS_RF02_128x128x96_dr_nosed.nc",

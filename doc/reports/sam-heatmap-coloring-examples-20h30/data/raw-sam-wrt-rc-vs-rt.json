@@ -1,0 +1,12 @@
+{
+  "source_file": "/run/media/guntherhuebler/Extra_NVME_970/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017_3D_RECREATIONS/arm_3d/OUT_3D/GCSSARM_96x96x110_67m_40m_1s_16_0000017640_micro.nc",
+  "elapsed_minutes": 294.0,
+  "height_m": 820.0,
+  "sample_count": 9216,
+  "bins": 72,
+  "probability_upper": 0.002495659722222222,
+  "rc_signal_upper_m_per_s_g_per_kg": 2.3744423312317086e-05,
+  "rt_signal_upper_m_per_s_g_per_kg": 0.0005214696001614887,
+  "integrated_wprcp_m_per_s_g_per_kg": 0.001665200148744044,
+  "integrated_wprtp_m_per_s_g_per_kg": 0.051114818996960174
+}

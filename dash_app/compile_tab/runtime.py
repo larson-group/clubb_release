@@ -6,7 +6,6 @@ import json
 import os
 from pathlib import Path
 import shlex
-import shutil
 import signal
 import subprocess
 import sys
@@ -144,6 +143,7 @@ for index, spec in enumerate(compile_specs, start=1):
         print(f"=== Rebuild failed for {build_path}: {exc} ===", flush=True)
 
     if returncode != 0:
+        write_progress(None, completed_paths, "failed")
         failure = f"=== Rebuild failed for {build_path} with exit {returncode} ==="
         print(failure, flush=True)
         try:
@@ -446,6 +446,26 @@ def matching_toolchain_compilers(discovery):
         for item in (discovery or {}).get("toolchains", [])
         if item.get("matches_host")
     }
+
+
+def toolchain_compiler(discovery, toolchain_path):
+    """Return the discovered compiler family for a selected toolchain path."""
+    if not toolchain_path or toolchain_path == "auto":
+        return ""
+    for item in (discovery or {}).get("toolchains", []):
+        if item.get("path") == toolchain_path:
+            return str(item.get("compiler") or "")
+    return _toolchain_compiler(toolchain_path)
+
+
+def preferred_toolchain_for_compiler(discovery, compiler):
+    """Return the host-matching toolchain for one canonical compiler family."""
+    compiler = str(compiler or "").strip()
+    matches = [
+        item for item in (discovery or {}).get("toolchains", [])
+        if item.get("compiler") == compiler and item.get("matches_host") and item.get("path")
+    ]
+    return str(matches[0]["path"]) if matches else "auto"
 
 
 def validated_build_path(build_path):
@@ -842,6 +862,12 @@ def build_warnings(discovery, env_id, options):
         diagnostics = environment.get("diagnostics", {})
         if not canonical:
             warnings.append("No compiler was detected from the selected module stack.")
+        selected_toolchain_compiler = toolchain_compiler(discovery, options.get("toolchain"))
+        if canonical and selected_toolchain_compiler and selected_toolchain_compiler != canonical:
+            warnings.append(
+                "Selected toolchain "
+                f"({selected_toolchain_compiler}) does not match the selected compiler module ({canonical})."
+            )
         elif (options.get("toolchain") or "auto") == "auto" and canonical not in matching_toolchain_compilers(discovery):
             warnings.append(f"No matching CLUBB toolchain was found for compiler family {canonical}.")
         if not diagnostics.get("cmake"):
@@ -1057,9 +1083,14 @@ def pid_is_live(pid):
 
 def job_process_is_live(job):
     """Return whether a stored job still has a running process."""
+    # A durable agent broker owns this process rather than this Dash worker.
+    # Its browser view is refreshed from the broker snapshot, so a fresh Dash
+    # process must not mistake the absent local Popen handle for a failed job.
+    if (job or {}).get("broker_managed"):
+        return str(job.get("status") or "running") == "running"
     if not job or job.get("status") != "running":
         return False
-    if job.get("kind") == "rebuild" and rebuild_returncode_from_log(job.get("log")) is not None:
+    if rebuild_returncode(job) is not None:
         return False
     with COMPILE_LOCK:
         proc = COMPILE_PROC.get("proc")
@@ -1090,6 +1121,32 @@ def rebuild_returncode_from_log(log_path):
         except ValueError:
             return 1
     return None
+
+
+def rebuild_returncode_from_progress(progress_path):
+    """Recover a finished rebuild helper return code from the progress file."""
+    if not progress_path:
+        return None
+    try:
+        payload = json.loads(Path(progress_path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    state = payload.get("state")
+    if state == "complete":
+        return 0
+    if state == "failed":
+        return 1
+    return None
+
+
+def rebuild_returncode(job):
+    """Recover a finished rebuild helper return code from its persisted files."""
+    if (job or {}).get("kind") != "rebuild":
+        return None
+    recovered = rebuild_returncode_from_log(job.get("log"))
+    if recovered is not None:
+        return recovered
+    return rebuild_returncode_from_progress(job.get("progress"))
 
 
 def read_rebuild_progress(job):
@@ -1137,10 +1194,11 @@ def rebuild_failed_path_from_log(log_path):
 
 def poll_compile_job(job):
     """Return the latest process return code for a stored job."""
-    if job and job.get("kind") == "rebuild":
-        recovered = rebuild_returncode_from_log(job.get("log"))
-        if recovered is not None:
-            return recovered
+    if (job or {}).get("broker_managed"):
+        return None
+    recovered = rebuild_returncode(job)
+    if recovered is not None:
+        return recovered
     with COMPILE_LOCK:
         proc = COMPILE_PROC.get("proc")
         active = COMPILE_PROC.get("job")

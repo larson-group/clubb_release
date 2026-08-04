@@ -88,15 +88,15 @@ subroutine f2py_stats_init_with_params(registry_path, output_path, ncol, &
   real(core_rknd), dimension(nzt), intent(in) :: zt
   real(core_rknd), dimension(nzm), intent(in) :: zm
   real(core_rknd), dimension(ncol, nparams), intent(in) :: clubb_params
-  character(kind=1), dimension(nparams, 28), intent(in) :: param_names
-  character(len=28), dimension(nparams) :: param_names_fortran
+  character(kind=1), dimension(nparams, 32), intent(in) :: param_names
+  character(len=32), dimension(nparams) :: param_names_fortran
   real(time_precision), parameter :: missing_time = -1.0e30_time_precision
   integer :: i, j
   logical :: has_stats_tstart, has_stats_tend
 
   do i = 1, nparams
     param_names_fortran(i) = ' '
-    do j = 1, 28
+    do j = 1, 32
       param_names_fortran(i)(j:j) = param_names(i, j)
     end do
   end do

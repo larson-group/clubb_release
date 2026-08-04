@@ -58,7 +58,7 @@
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class', 'style'],
+      attributeFilter: ['class', 'style', 'open'],
     });
     window.addEventListener('resize', scheduleUpdate);
     scheduleUpdate();

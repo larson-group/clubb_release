@@ -15,6 +15,20 @@ pipeline {
               bash clubb_python_api/run_pytests.sh -v'''
       }
     }
+    stage('Run fast Python unit tests') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              bash tests/run_pytests.sh -unit'''
+      }
+    }
+    stage('Run settings-validation parity') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              python3 tests/run_clubb_settings_validation_test.py'''
+      }
+    }
     stage('Run Python vs Fortran cases') {
       steps {
         sh '''source /etc/profile.d/larson-group.sh

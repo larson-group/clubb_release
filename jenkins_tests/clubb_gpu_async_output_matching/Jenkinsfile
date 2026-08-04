@@ -25,11 +25,11 @@ pipeline {
       steps {
         lock( "GPU_${env.NODE_NAME}" ) {
           sh '''ulimit -s 8388608
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output arm
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output atex
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output bomex
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output -override l_lh_straight_mc=true rico_silhs
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir normal_gpu_output -override l_lh_straight_mc=true mpace_b_silhs'''
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/normal arm
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/normal atex
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/normal bomex
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/normal -override l_lh_straight_mc=true rico_silhs
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/normal -override l_lh_straight_mc=true mpace_b_silhs'''
         }
       }
     }
@@ -49,17 +49,17 @@ pipeline {
       steps {
         lock( "GPU_${env.NODE_NAME}" ) {
           sh '''ulimit -s 8388608
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output arm
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output atex
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output bomex
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output -override l_lh_straight_mc=true rico_silhs
-                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir async_gpu_output -override l_lh_straight_mc=true mpace_b_silhs'''
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/async arm
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/async atex
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/async bomex
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/async -override l_lh_straight_mc=true rico_silhs
+                run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats input/stats/multi_col_stats.in -debug 0 -out_dir gpu_async/async -override l_lh_straight_mc=true mpace_b_silhs'''
         }
       }
     }
     stage('Compare Outputs') {
       steps {
-        sh '''run_scripts/run_bindiff_all.py normal_gpu_output async_gpu_output -v 2'''
+        sh '''run_scripts/run_bindiff_all.py output/gpu_async/normal output/gpu_async/async -v 2'''
       }
     }
   }

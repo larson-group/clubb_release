@@ -8,7 +8,7 @@ import sys
 import tempfile
 import time
 
-from .namelist import cleanup_temp_files, write_temp_namelist
+from .namelist import write_temp_namelist
 from .state import (
     CUDA_MPS_LOG_DIR,
     CUDA_MPS_PIPE_DIR,
@@ -29,7 +29,7 @@ from .state import (
     STATS_DIR,
     set_child_stack_limit,
 )
-from tunable_configs import tunable_config_file
+from dash_app.shared.tunable_configs import tunable_config_file
 
 
 def ensure_cuda_mps():
@@ -200,11 +200,51 @@ def snapshot_active_cases():
         return {name: dict(data) for name, data in RUN_ACTIVE_CASES.items()}
 
 
+def pid_is_alive(pid):
+    """Return whether a broker-owned process still exists.
+
+    Broker children are deliberately not registered in this Dash process's
+    in-memory ``Popen`` map. PID probing therefore provides the small,
+    cross-process liveness bridge needed for Run-tab adoption.
+    """
+    try:
+        numeric_pid = int(pid)
+        if numeric_pid < 1:
+            return False
+        os.kill(numeric_pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        # A live process can be owned by a different local UID in unusual
+        # launch environments. It is safer to leave its durable broker
+        # record active than to falsely render it as completed.
+        return True
+    except (OSError, TypeError, ValueError):
+        return False
+    return True
+
+
 def clean_cli_option(value):
     """Normalize optional CLI values by stripping whitespace and None."""
     if value is None:
         return ""
     return str(value).strip()
+
+
+def split_extra_cli_args(value):
+    """Split free-form run_scm.py arguments using shell-like quoting rules."""
+    cleaned = clean_cli_option(value)
+    if not cleaned:
+        return []
+    return shlex.split(cleaned)
+
+
+def extra_cli_args(cli_options):
+    """Return normalized free-form CLI tokens stored in run-tab options."""
+    value = (cli_options or {}).get("extra_args")
+    if isinstance(value, (list, tuple)):
+        return [cleaned for cleaned in (clean_cli_option(item) for item in value) if cleaned]
+    return split_extra_cli_args(value)
 
 
 def normalize_task_limit(value):
@@ -232,6 +272,7 @@ def build_case_command(case_name, stats_name, cli_options=None, config_name=None
         value = clean_cli_option(cli_options.get(key))
         if value:
             cmd.extend([flag, value])
+    cmd.extend(extra_cli_args(cli_options))
     cmd.append(case_name)
     return " ".join(shlex.quote(str(part)) for part in cmd)
 
@@ -273,6 +314,7 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None, confi
         cmd.extend(["-flags", flags_path])
     if silhs_path:
         cmd.extend(["-silhs_params", silhs_path])
+    cmd.extend(extra_cli_args(cli_options))
     cmd.append(case_name)
 
     log_file = tempfile.NamedTemporaryFile(delete=False, prefix="clubb_run_", suffix=".log", dir="/tmp")
@@ -298,26 +340,6 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None, confi
     }
     mark_case_started(case_name, proc, proc_data)
     return proc_data
-
-
-def launch_from_queue(running, queued, logs, max_run_procs=None):
-    """Launch queued cases until the run concurrency limit is reached."""
-    queue = list(queued or [])
-    launched = False
-    limit = normalize_task_limit(max_run_procs)
-    while queue and len(running) < limit:
-        item = queue.pop(0)
-        case_name = item.get("case")
-        stats_name = item.get("stats") or DEFAULT_STATS_NAME
-        config_name = item.get("config") or "default"
-        overrides = item.get("overrides") or {"flags": {}, "tunable": {}, "silhs": {}}
-        cli_options = item.get("cli_options") or {}
-        if not case_name or case_name in running or is_case_active(case_name) or get_cached_status(case_name) is not None:
-            continue
-        running[case_name] = start_case_process(case_name, stats_name, overrides, cli_options, config_name)
-        logs[case_name] = f"--- Running {case_name} ({stats_name}, config {config_name}) ---\n"
-        launched = True
-    return queue, launched
 
 
 def extract_progress(log_text):
@@ -360,3 +382,22 @@ def format_eta(seconds):
     total = max(0, int(round(float(seconds))))
     mins, secs = divmod(total, 60)
     return f"{mins}m {secs:02d}s"
+
+
+def refresh_running_runtimes(runtimes, running_cases, now):
+    """Return runtime values refreshed for every visible active case.
+
+    The broker may be quiet for several seconds while a process is healthy.
+    Console ETA is derived from this store, so it must advance independently
+    of log output.
+    """
+    updated = dict(runtimes or {})
+    for case_name, proc_data in (running_cases or {}).items():
+        start_time = (proc_data or {}).get("start_time")
+        if start_time is None:
+            continue
+        try:
+            updated[str(case_name)] = max(0.0, float(now) - float(start_time))
+        except (TypeError, ValueError):
+            continue
+    return updated

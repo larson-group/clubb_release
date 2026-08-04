@@ -1,6 +1,6 @@
 """Callbacks for run-tab case and stats selection state."""
 
-from dash import ALL, Input, Output, State, callback_context, no_update
+from dash import ALL, ClientsideFunction, Input, Output, State, callback_context, no_update
 
 from .layout import case_button_style, stats_button_style
 from .runtime import snapshot_status_lists
@@ -107,3 +107,17 @@ def register_selection_callbacks(app, case_groups):
     def deselect_all(_n_clicks):
         """Clear all currently selected cases."""
         return []
+
+    # A dcc.Store normally writes its new empty value to local storage itself.
+    # Clear is intentionally belt-and-suspenders: remove the two transient
+    # Run keys directly as well, so an old browser value can never rehydrate a
+    # selection or an opened console after an explicit clear.
+    app.clientside_callback(
+        ClientsideFunction(
+            namespace="dashboardWorkspace",
+            function_name="clearRunTransientState",
+        ),
+        Output("run-clear-persistence-signal", "data"),
+        Input("run-clear", "n_clicks"),
+        prevent_initial_call=True,
+    )

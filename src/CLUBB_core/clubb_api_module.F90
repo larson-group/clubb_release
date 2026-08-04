@@ -2336,7 +2336,7 @@ contains
     real( kind = core_rknd ), intent(inout) :: &
       mixt_frac_max_mag, &
       lmin    ! Min. value for the length scale    [m]
-      
+
     ! Local variables
     real( kind = core_rknd ), dimension(1) ::  &
       deltaz_col  ! Change per height level        [m]

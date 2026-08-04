@@ -47,6 +47,7 @@ def worker_main(conn, init_payload: dict) -> None:
     num_time_windows = int(init_payload.get("num_time_windows", 1))
     case_defaults = dict(init_payload.get("case_defaults") or {})
     config = init_payload.get("config") or "default"
+    override = init_payload.get("override") or None
     worker_dir = Path(init_payload.get("worker_dir")).resolve()
     original_cwd = os.getcwd()
     initialized = False
@@ -65,6 +66,7 @@ def worker_main(conn, init_payload: dict) -> None:
             batch_size=batch_size,
             duplicate_params_for_batch=True,
             disable_stats_storage=True,
+            override=override,
         )
 
         os.chdir(RUN_SCRIPTS)
@@ -74,6 +76,8 @@ def worker_main(conn, init_payload: dict) -> None:
         )
         initialized = True
         param_names = list(clubb_api.get_param_names())
+        nparams = len(clubb_api.get_param_names())
+        hard_parameter_bounds = list(clubb_api.get_parameter_hard_bounds(nparams))
 
         conn.send(
             {
@@ -82,6 +86,11 @@ def worker_main(conn, init_payload: dict) -> None:
                 "worker_dir": str(worker_dir),
                 "field_names": list(field_names),
                 "param_names": param_names,
+                # The worker owns the compiled F2PY module that will score
+                # candidates.  Return its Fortran-owned hard envelope so the
+                # scheduler cannot propose values that this exact build will
+                # reject during model setup.
+                "hard_parameter_bounds": hard_parameter_bounds,
                 "default_params": np.asarray(default_params, dtype=float).tolist(),
             }
         )

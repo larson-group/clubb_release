@@ -4,27 +4,31 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 
-from run_tab.discovery import load_available_cases
-from run_tab.namelist import read_namelist_entries
-from tunable_configs import (
-    available_tunable_configs,
-    default_tunable_config_name,
-    tunable_config_names,
+from dash_app.run_tab.discovery import load_available_cases
+from dash_app.run_tab.namelist import read_namelist_entries
+from dash_app.shared.tunable_configs import (
+    available_tunable_configs as _available_tunable_configs,
+    default_tunable_config_name as _default_tunable_config_name,
+    tunable_config_names as _tunable_config_names,
     tunable_params_file_for_config,
 )
 
 from .state import REPO_ROOT
 
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
+
+# Keep the historical Tune-discovery import surface while the canonical
+# implementations live in shared configuration discovery.
+available_tunable_configs = _available_tunable_configs
+default_tunable_config_name = _default_tunable_config_name
+tunable_config_names = _tunable_config_names
 
 from tuner.case_defaults import (  # noqa: E402
     CASE_DEFAULTS_PATH,
     DEFAULT_LOSS_FIELDS,
     load_case_defaults as load_tuner_case_defaults,
 )
+from tuner.parameter_ranges import default_parameter_ranges  # noqa: E402
 from utilities.benchmark_converter import supported_fields  # noqa: E402
 
 
@@ -79,36 +83,26 @@ def load_tunable_names(config_name=None):
     return [entry["name"] for entry in read_namelist_entries(tunable_params_file_for_config(config_name))]
 
 
-def _parse_tunable_default(value):
-    """Parse a scalar Fortran namelist value as a float."""
-    try:
-        return float(str(value).strip().replace("D", "E").replace("d", "e"))
-    except (TypeError, ValueError):
-        return None
-
-
 def _format_tune_range_value(value):
     """Format an auto-filled tune range endpoint compactly."""
     return f"{float(value):.6g}"
 
 
 def load_tunable_default_ranges(config_name=None):
-    """Return default min/max ranges derived from the selected tunable namelist."""
-    ranges = {}
-    for entry in read_namelist_entries(tunable_params_file_for_config(config_name)):
-        default_value = _parse_tunable_default(entry.get("value"))
-        if default_value is None:
-            continue
-        low = default_value / 4.0
-        high = default_value * 4.0
-        if low > high:
-            low, high = high, low
-        ranges[entry["name"]] = {
-            "default": _format_tune_range_value(default_value),
-            "min": _format_tune_range_value(low),
-            "max": _format_tune_range_value(high),
+    """Return Fortran-bound-aware, UI-formatted default Tune ranges.
+
+    The shared resolver uses the compiled Fortran hard-bound table whenever an
+    endpoint exists and uses the legacy quarter-to-four-times-default envelope
+    only on open sides.
+    """
+    return {
+        name: {
+            "default": _format_tune_range_value(item["default"]),
+            "min": _format_tune_range_value(item["min"]),
+            "max": _format_tune_range_value(item["max"]),
         }
-    return ranges
+        for name, item in default_parameter_ranges(config_name).items()
+    }
 
 
 def available_fields_for_case(case_defaults):

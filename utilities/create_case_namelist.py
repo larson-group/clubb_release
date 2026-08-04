@@ -226,12 +226,20 @@ def parse_override_pairs(override_string):
     return [(key, value) for key, value in pairs if key]
 
 
+def normalize_override_string(override_string):
+    """Return an override value, accepting an optional leading ``-override``."""
+    value = "" if override_string is None else str(override_string).strip()
+    if value.lower().startswith("-override"):
+        value = value[len("-override"):].lstrip(" =")
+    return value
+
+
 def override_value(override_string, clubb_in_text):
     """
     Apply overrides from -override KEY1=val1,KEY2=val2,... to the aggregate text.
     Values may also be comma-separated column lists, e.g. C8=0.8,0.7,C11=1.0,1.1.
     """
-    for key, val in parse_override_pairs(override_string):
+    for key, val in parse_override_pairs(normalize_override_string(override_string)):
         replacement = f"{key} = {val}"
 
         assignment_re = re.compile(rf"(?im)^(\s*){re.escape(key)}\s*=.*$")

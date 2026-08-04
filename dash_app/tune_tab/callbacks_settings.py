@@ -12,13 +12,16 @@ from .discovery import (
 )
 from .layout import DEFAULT_AVERAGE_TIME_SECONDS, build_case_config_row, build_param_range_row
 from .runtime import empty_status_payload
+from dash_app.shared.tunable_configs import canonical_tunable_parameter_name
+from utilities.clubb_settings_validation import is_independently_tunable
 
-from tuner.taylor_metrics import AGGREGATION_MODE_NAMES, LOSS_MODE_NAMES
+from tuner.taylor_metrics import LOSS_MODE_NAMES, TIME_WINDOW_AGGREGATION_SCOPES
+from tuner.request import evaluate_tune_settings
 
 
 def blank_param_range_row(row_id):
     """Return one empty tuning-range row record."""
-    return {"id": row_id, "param": "", "min": "", "max": ""}
+    return {"id": row_id, "param": "", "targets": [], "min": "", "max": ""}
 
 
 def blank_case_config_row(row_id):
@@ -106,20 +109,42 @@ def average_time_class_names(time_start_values, time_end_values, average_time_va
     return classes
 
 
+def wildcard_no_update(values):
+    """Return one Dash ``no_update`` value for each matched ALL component."""
+    return [no_update for _ in (values or [])]
+
+
+def removal_click_is_real(click_values, row_order, row_id):
+    """Return whether a pattern-matched remove control was actually clicked.
+
+    Dash can invoke an ``ALL`` input when a freshly hydrated row is inserted.
+    Its new remove button has ``n_clicks=0`` and must not be mistaken for a
+    request to delete the row that the workspace loader just created.
+    """
+    try:
+        position = list(row_order or []).index(row_id)
+        return int((click_values or [])[position] or 0) > 0
+    except (IndexError, TypeError, ValueError):
+        return False
+
+
 def parameter_options_by_row(param_values, tunable_names):
     """Return dropdown options that exclude parameters selected in other rows."""
-    selected_by_row = [
-        value.strip()
+    canonical_values = [
+        canonical_tunable_parameter_name(value, tunable_names)
         for value in (param_values or [])
-        if isinstance(value, str) and value.strip()
+    ]
+    selected_by_row = [
+        value
+        for value in canonical_values
+        if value
     ]
     selected_counts = {}
     for name in selected_by_row:
         selected_counts[name] = selected_counts.get(name, 0) + 1
 
     options_by_row = []
-    for current_value in param_values or []:
-        current_name = current_value.strip() if isinstance(current_value, str) else ""
+    for current_name in canonical_values:
         row_options = []
         for name in tunable_names or []:
             if selected_counts.get(name, 0) == 0 or name == current_name:
@@ -140,7 +165,7 @@ def sanitize_param_values_for_config(param_values, min_values, max_values, tunab
         updated_max.append("")
 
     for idx, raw_name in enumerate(updated_params):
-        name = raw_name.strip() if isinstance(raw_name, str) else ""
+        name = canonical_tunable_parameter_name(raw_name, valid_names)
         if not name:
             continue
         if name not in valid_names:
@@ -148,6 +173,7 @@ def sanitize_param_values_for_config(param_values, min_values, max_values, tunab
             updated_min[idx] = ""
             updated_max[idx] = ""
             continue
+        updated_params[idx] = name
         derived = (default_ranges or {}).get(name, {})
         if not str(updated_min[idx] or "").strip() and derived.get("min"):
             updated_min[idx] = derived["min"]
@@ -221,22 +247,22 @@ def register_settings_callbacks(app):
         return no_update
 
     @app.callback(
-        Output("tune-aggregation-mode", "data"),
-        Input("tune-aggregation-mean-max", "n_clicks"),
-        Input("tune-aggregation-mean-worst-quantile", "n_clicks"),
+        Output("tune-time-window-aggregation-scope", "data"),
+        Input("tune-aggregation-overall", "n_clicks"),
+        Input("tune-aggregation-by-case", "n_clicks"),
         State("tune-active-job", "data"),
         prevent_initial_call=True,
     )
-    def select_aggregation_mode(_mean_max_clicks, _worst_quantile_clicks, active_job):
-        """Persist the selected loss aggregation policy mode."""
+    def select_aggregation_scope(_overall_clicks, _by_case_clicks, active_job):
+        """Persist whether quantile weighting pools all windows or each case."""
         if active_job:
             return no_update
         mode_by_button = {
-            "tune-aggregation-mean-max": "mean_max",
-            "tune-aggregation-mean-worst-quantile": "mean_worst_quantile",
+            "tune-aggregation-overall": "overall",
+            "tune-aggregation-by-case": "by_case",
         }
         selected = mode_by_button.get(callback_context.triggered_id)
-        if selected in AGGREGATION_MODE_NAMES:
+        if selected in TIME_WINDOW_AGGREGATION_SCOPES:
             return selected
         return no_update
 
@@ -267,18 +293,36 @@ def register_settings_callbacks(app):
     ):
         """Persist the selected tunable config and refresh parameter metadata."""
         if active_job:
-            return no_update, no_update, no_update, no_update, no_update, no_update
+            return (
+                no_update,
+                no_update,
+                no_update,
+                wildcard_no_update(param_values),
+                wildcard_no_update(min_values),
+                wildcard_no_update(max_values),
+            )
 
         trigger_id = callback_context.triggered_id
         if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-config-button":
-            return no_update, no_update, no_update, no_update, no_update, no_update
+            return (
+                no_update,
+                no_update,
+                no_update,
+                wildcard_no_update(param_values),
+                wildcard_no_update(min_values),
+                wildcard_no_update(max_values),
+            )
 
         config_name = str(trigger_id.get("name", "")).strip()
         if not config_name or config_name not in tunable_config_names(configs):
-            return no_update, no_update, no_update, no_update, no_update, no_update
-        if config_name == current_config:
-            return no_update, no_update, no_update, no_update, no_update, no_update
-
+            return (
+                no_update,
+                no_update,
+                no_update,
+                wildcard_no_update(param_values),
+                wildcard_no_update(min_values),
+                wildcard_no_update(max_values),
+            )
         tunable_names = load_tunable_names(config_name)
         default_ranges = load_tunable_default_ranges(config_name)
         updated_params, updated_min, updated_max = sanitize_param_values_for_config(
@@ -321,7 +365,7 @@ def register_settings_callbacks(app):
 
         if isinstance(trigger_id, dict) and trigger_id.get("type") == "tune-case-remove":
             remove_id = trigger_id.get("index")
-            if remove_id not in current_order:
+            if remove_id not in current_order or not removal_click_is_real(_remove_clicks, current_order, remove_id):
                 return no_update, no_update, no_update
             patch = Patch()
             del patch[current_order.index(remove_id)]
@@ -339,7 +383,7 @@ def register_settings_callbacks(app):
     def sync_case_dropdown_options(case_values, case_data, active_job):
         """Remove already-selected cases from the other case dropdown rows."""
         if active_job:
-            return no_update
+            return wildcard_no_update(case_values)
         return case_options_by_row(case_values or [], sorted((case_data or {}).keys()))
 
     @app.callback(
@@ -372,20 +416,38 @@ def register_settings_callbacks(app):
     ):
         """Fill editable case settings from case defaults when a case is selected."""
         if active_job:
-            return no_update, no_update, no_update, no_update, no_update
+            return tuple(wildcard_no_update(case_values) for _ in range(5))
 
         trigger_id = callback_context.triggered_id
         if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-case-name":
-            return no_update, no_update, no_update, no_update, no_update
+            return tuple(wildcard_no_update(case_values) for _ in range(5))
 
         row_id = trigger_id.get("index")
         current_order = list(row_order or [])
         if row_id not in current_order:
-            return no_update, no_update, no_update, no_update, no_update
+            return tuple(wildcard_no_update(case_values) for _ in range(5))
         row_pos = current_order.index(row_id)
         case_name = (case_values or [None])[row_pos] if row_pos < len(case_values or []) else None
         if not case_name or case_name not in (case_data or {}):
-            return no_update, no_update, no_update, no_update, no_update
+            return tuple(wildcard_no_update(case_values) for _ in range(5))
+
+        # A workspace loader supplies a complete saved window in the same
+        # render that creates its case dropdown.  Preserve those explicit
+        # values if Dash reports the newly inserted dropdown as an input
+        # change; defaults are only appropriate for a genuinely blank added
+        # row.
+        hydrated_values = [
+            time_start_values,
+            time_end_values,
+            average_time_values,
+            altitude_min_values,
+            altitude_max_values,
+        ]
+        if all(
+            row_pos < len(values or []) and (values or [])[row_pos] not in (None, "")
+            for values in hydrated_values
+        ):
+            return tuple(wildcard_no_update(case_values) for _ in range(5))
 
         defaults = case_config_row_from_defaults(row_id, case_name, case_data)
         outputs = [
@@ -445,7 +507,7 @@ def register_settings_callbacks(app):
 
         if isinstance(trigger_id, dict) and trigger_id.get("type") == "tune-range-remove":
             remove_id = trigger_id.get("index")
-            if remove_id not in current_order:
+            if remove_id not in current_order or not removal_click_is_real(_remove_clicks, current_order, remove_id):
                 return no_update, no_update, no_update
             patch = Patch()
             del patch[current_order.index(remove_id)]
@@ -455,14 +517,83 @@ def register_settings_callbacks(app):
         return no_update, no_update, no_update
 
     @app.callback(
+        Output("tune-settings-resolution", "data"),
+        Output("tune-settings-resolution-note", "children"),
+        Output("tune-settings-resolution-note", "style"),
+        Input("tune-selected-config", "data"),
+        Input("tune-scm-override", "value"),
+    )
+    def resolve_tune_controls(selected_config, override):
+        """Expose mode restrictions before a Tune worker is started."""
+        try:
+            resolution = evaluate_tune_settings(selected_config or "default", override or "")
+        except (OSError, ValueError) as exc:
+            return {}, str(exc), {"display": "block", "marginTop": "5px", "marginBottom": "5px", "color": "#fecaca"}
+        issues = [issue for issue in resolution.get("issues", []) if issue.get("severity") == "error"]
+        if not issues:
+            return resolution, "", {"display": "none"}
+        return (
+            resolution,
+            " ".join(str(issue.get("message") or "") for issue in issues),
+            {"display": "block", "marginTop": "5px", "marginBottom": "5px", "color": "#fecaca"},
+        )
+
+    @app.callback(
         Output({"type": "tune-range-param", "index": ALL}, "options"),
         Input({"type": "tune-range-param", "index": ALL}, "value"),
         Input("tune-range-row-order", "data"),
         Input("tune-tunable-names", "data"),
+        Input("tune-settings-resolution", "data"),
     )
-    def sync_parameter_options(param_values, _row_order, tunable_names):
+    def sync_parameter_options(param_values, _row_order, tunable_names, resolution):
         """Hide parameters already selected in other tuning rows."""
-        return parameter_options_by_row(param_values or [], tunable_names or [])
+        states = dict((resolution or {}).get("parameter_states") or {})
+        active_names = [
+            name for name in (tunable_names or [])
+            if is_independently_tunable(states.get(name))
+        ]
+        return parameter_options_by_row(param_values or [], active_names)
+
+    @app.callback(
+        Output({"type": "tune-range-targets", "index": ALL}, "data"),
+        Output({"type": "tune-range-link-label", "index": ALL}, "children"),
+        Output({"type": "tune-range-link-label", "index": ALL}, "style"),
+        Input({"type": "tune-range-param", "index": ALL}, "value"),
+        State({"type": "tune-range-targets", "index": ALL}, "data"),
+        State("tune-range-row-order", "data"),
+        prevent_initial_call=True,
+    )
+    def unlink_manual_parameter_change(param_values, target_values, row_order):
+        """Keep linked preset targets until the row's selector is changed.
+
+        A range remains a single logical coordinate when its displayed first
+        target is untouched.  Selecting a different parameter is an explicit
+        manual edit, so that row becomes an ordinary one-target range.
+        """
+        trigger_id = callback_context.triggered_id
+        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-range-param":
+            return no_update, no_update, no_update
+        row_id = trigger_id.get("index")
+        order = list(row_order or [])
+        if row_id not in order:
+            return no_update, no_update, no_update
+        row_pos = order.index(row_id)
+        values = list(param_values or [])
+        existing = [list(item or []) for item in (target_values or [])]
+        if row_pos >= len(values):
+            return no_update, no_update, no_update
+        while len(existing) < len(values):
+            existing.append([])
+        param = str(values[row_pos] or "").strip()
+        current = [str(item).strip() for item in existing[row_pos] if str(item).strip()]
+        if not current or current[0] != param:
+            existing[row_pos] = [param] if param else []
+        labels = [" = ".join(targets) if len(targets) > 1 else "" for targets in existing]
+        styles = [
+            {"fontSize": "12px", "opacity": 0.8, "whiteSpace": "nowrap", "display": "inline-block" if label else "none"}
+            for label in labels
+        ]
+        return existing, labels, styles
 
     @app.callback(
         Output({"type": "tune-range-min", "index": ALL}, "value", allow_duplicate=True),
@@ -478,25 +609,35 @@ def register_settings_callbacks(app):
     def autofill_tune_range(_param_values, min_values, max_values, row_order, default_ranges, active_job):
         """Fill min/max from the selected parameter's default value."""
         if active_job:
-            return no_update, no_update
+            return wildcard_no_update(min_values), wildcard_no_update(max_values)
 
         trigger_id = callback_context.triggered_id
         if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-range-param":
-            return no_update, no_update
+            return wildcard_no_update(min_values), wildcard_no_update(max_values)
 
         row_id = trigger_id.get("index")
         current_order = list(row_order or [])
         if row_id not in current_order:
-            return no_update, no_update
+            return wildcard_no_update(min_values), wildcard_no_update(max_values)
         row_pos = current_order.index(row_id)
 
         param_values = list(_param_values or [])
         if row_pos >= len(param_values):
-            return no_update, no_update
+            return wildcard_no_update(min_values), wildcard_no_update(max_values)
         param_name = param_values[row_pos]
         derived_range = (default_ranges or {}).get(param_name)
         if not derived_range:
-            return no_update, no_update
+            return wildcard_no_update(min_values), wildcard_no_update(max_values)
+
+        # As with case windows, do not overwrite an explicit saved range
+        # merely because the loader inserted the corresponding dropdown.
+        if (
+            row_pos < len(min_values or [])
+            and row_pos < len(max_values or [])
+            and (min_values or [])[row_pos] not in (None, "")
+            and (max_values or [])[row_pos] not in (None, "")
+        ):
+            return wildcard_no_update(min_values), wildcard_no_update(max_values)
 
         updated_min = list(min_values or [])
         updated_max = list(max_values or [])
@@ -515,10 +656,23 @@ def register_settings_callbacks(app):
         Input({"type": "tune-case-name", "index": ALL}, "value"),
         State("tune-case-data", "data"),
         State("tune-active-job", "data"),
+        State("tune-workspace-selection", "data"),
     )
-    def sync_case_fields(case_values, case_data, active_job):
+    def sync_case_fields(case_values, case_data, active_job, workspace_selection):
         """Refresh field options and default field selection when the case changes."""
-        if active_job:
+        # Hydrated saved revisions already supply their exact selected fields.
+        # Do not replace them with the case's generic defaults merely because
+        # their saved case rows were rebuilt during load.
+        selection = dict(workspace_selection or {})
+        # A preset is rendered as a fresh ``mode: new`` draft before it owns a
+        # durable workspace ID.  Its newly inserted case rows still emit this
+        # callback, so treating only an existing ID as hydrated let the
+        # generic first-case defaults overwrite its deliberate field list.
+        # Keep that protection only while those exact preset cases remain;
+        # manually changing cases in a new draft must still refresh fields.
+        preset_cases = [str(name).strip() for name in selection.get("preset_case_names", []) if str(name).strip()]
+        is_preset_hydration = preset_cases and selected_case_names(case_values) == preset_cases
+        if active_job or selection.get("workspace_id") or is_preset_hydration:
             return no_update, no_update
 
         case_names = selected_case_names(case_values)
@@ -555,11 +709,16 @@ def register_settings_callbacks(app):
         Input("tune-max-workers", "value"),
         Input("tune-strategy-mode", "data"),
         Input("tune-loss-mode", "data"),
-        Input("tune-aggregation-mode", "data"),
+        Input("tune-time-window-aggregation-scope", "data"),
+        Input("tune-aggregation-weight-1", "value"),
+        Input("tune-aggregation-weight-2", "value"),
+        Input("tune-aggregation-weight-3", "value"),
+        Input("tune-aggregation-weight-4", "value"),
         Input("tune-selected-config", "data"),
         Input("tune-random-max-samples", "value"),
         Input("tune-resolve-spacing", "value"),
         State("tune-active-job", "data"),
+        State("tune-workspace-selection", "data"),
         prevent_initial_call=True,
     )
     def invalidate_tuning_state(
@@ -581,13 +740,23 @@ def register_settings_callbacks(app):
         _max_workers,
         _strategy_mode,
         _loss_mode,
-        _aggregation_mode,
+        _aggregation_scope,
+        _aggregation_weight_1,
+        _aggregation_weight_2,
+        _aggregation_weight_3,
+        _aggregation_weight_4,
         _selected_config,
         _random_max_samples,
         _resolve_spacing,
         active_job,
+        workspace_selection,
     ):
-        """Clear stale tuning results when inactive; active jobs keep polling."""
-        if active_job:
+        """Clear stale results only for an unsaved editable configuration.
+
+        Loading a durable revision intentionally updates the same controls.
+        Those hydration updates must preserve its retained results, including
+        after a Dash refresh, rather than behaving like a user edit.
+        """
+        if active_job or dict(workspace_selection or {}).get("workspace_id"):
             return no_update, no_update, no_update, no_update, no_update, no_update, no_update
         return {}, empty_status_payload(), [], [], {}, True, ""

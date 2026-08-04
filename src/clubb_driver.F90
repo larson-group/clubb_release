@@ -2837,7 +2837,6 @@ module clubb_driver
       zero_pdf_params_api, &
       calc_derrived_params_api, &
       check_clubb_settings_api, &
-      check_parameters_api, &
       clubb_at_least_debug_level_api, &
       zero_precip_fracs_api, &
       init_hydromet_pdf_params, & 
@@ -2873,8 +2872,6 @@ module clubb_driver
 
     call timer_start( "set_case_initial_conditions" )
 
-    ! Every case reset starts with fresh stats sampling state.  Batch-specific
-    ! logic below only changes which output column slice the run writes into.
     call stats_reset_api( stats )
 
     if ( present( batch_num ) ) then
@@ -3289,13 +3286,10 @@ module clubb_driver
                                      clubb_config_flags,  & ! intent(in)
                                      err_info )             ! Intent(inout)
 
-      call check_parameters_api( ngrdcol, clubb_params, lmin, & ! Intent(in)
-                                 err_info )                     ! Intent(inout)
-
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr, *) err_info%err_header_global
         write(fstderr, *) "Fatal error calling check_clubb_settings_api"
-        write(fstderr, *) "and/or check_parameters_api in set_case_initial_conditions"
+        write(fstderr, *) "in set_case_initial_conditions"
         call timer_stop( "set_case_initial_conditions" )
         return
       end if
