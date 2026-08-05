@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import secrets
 import time
 
 from dash import ALL, Input, Output, State, callback_context, no_update
@@ -39,6 +40,12 @@ from utilities.clubb_settings_validation import (
 def normalize_multicol_text(value):
     """Normalize one live multicol field into a stripped string."""
     return "" if value is None else str(value).strip()
+
+
+def fresh_batch_request_id(request_material):
+    """Return a fresh broker idempotency key for one Run Selected invocation."""
+    request_hash = hashlib.sha256(str(request_material).encode()).hexdigest()[:24]
+    return f"dash-run-batch-{secrets.token_urlsafe(12)}-{request_hash}"
 
 
 def build_multicol_spec(
@@ -807,7 +814,7 @@ def register_run_callbacks(app):
             sort_keys=True,
             default=str,
         )
-        batch_request_id = f"dash-run-batch-{int(_selected_clicks or 0)}-{hashlib.sha256(request_material.encode()).hexdigest()[:24]}"
+        batch_request_id = fresh_batch_request_id(request_material)
         queued, started_any, launch_failures = launch_broker_batch(
             running,
             queued,

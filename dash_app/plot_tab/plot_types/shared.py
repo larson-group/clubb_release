@@ -1527,6 +1527,7 @@ def _scan_cases_in_directory(directory):
 
 
 def scan_output_cases(directories=None):
+    """Return every available case and its files in selected-directory order."""
     if directories is None:
         raw_dirs = [OUTPUT_DIR]
     else:
@@ -1537,14 +1538,10 @@ def scan_output_cases(directories=None):
     dir_case_maps = [_scan_cases_in_directory(directory) for directory in normalized_dirs]
     if not dir_case_maps:
         return {}
-    if len(dir_case_maps) == 1:
-        return {case_name: [path] for case_name, path in dir_case_maps[0].items()}
-    common_cases = set(dir_case_maps[0].keys())
-    for case_map in dir_case_maps[1:]:
-        common_cases &= set(case_map.keys())
+    available_cases = set().union(*(case_map.keys() for case_map in dir_case_maps))
     return {
-        case_name: [case_map[case_name] for case_map in dir_case_maps]
-        for case_name in sorted(common_cases)
+        case_name: [case_map[case_name] for case_map in dir_case_maps if case_name in case_map]
+        for case_name in sorted(available_cases)
     }
 
 

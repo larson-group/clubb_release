@@ -2,7 +2,6 @@ import os
 
 from dash import dcc, html
 from dash_app.services import profiles as profile_service
-from dash_app.shared.components import styled_dropdown
 
 from .plot_types import shared
 from .plot_types.registry import PLOT_TYPES
@@ -66,57 +65,97 @@ def benchmark_button(source, label, available, selected=False):
     )
 
 
-def output_directory_options(records, selected_dirs=None):
-    """Render addable output folders, excluding folders already selected."""
+def _output_record_label(record, path):
+    label = str(record.get("label") or record.get("relative_path") or "").strip("/")
+    if label.startswith("output/"):
+        label = label.removeprefix("output/")
+    return label or os.path.basename(path.rstrip(os.sep)) or path
+
+
+def _output_case_summary(record):
+    names = list(record.get("case_names") or [])
+    return "Cases: " + (", ".join(names) if names else "none currently available")
+
+
+def _output_button_text(record, path):
+    count = int(record.get("case_count") or len(record.get("case_names") or []))
+    return f"{_output_record_label(record, path)} · {count}"
+
+
+def available_output_buttons(records, selected_dirs=None, expanded=False):
+    """Render the three newest or all currently unselected outputs."""
     selected = {str(path) for path in (selected_dirs or [])}
-    options = []
-    for record in records or []:
-        path = str(record["path"])
-        if path in selected:
-            continue
-        names = list(record.get("case_names") or [])
-        summary = ", ".join(names[:3])
-        if len(names) > 3:
-            summary += f" +{len(names) - 3}"
-        relative_path = str(record.get("relative_path") or path).strip("/")
-        short_name = relative_path.rsplit("/", 1)[-1] or relative_path
-        options.append(
-            {
-                "label": f"{short_name} · {summary}" if summary else short_name,
-                "value": path,
-            }
+    available = [
+        record
+        for record in (records or [])
+        if record.get("available", True) and str(record.get("path")) not in selected
+    ]
+    if not available:
+        return [html.Div("All outputs selected", className="plots-output-menu-empty")]
+    visible = available if expanded else available[:3]
+    return [
+        html.Button(
+            _output_button_text(record, str(record["path"])),
+            id={"type": "plots-add-output-dir", "path": str(record["path"])},
+            n_clicks=0,
+            n_clicks_timestamp=-1,
+            title=_output_case_summary(record),
+            className="plots-output-available-button",
         )
-    return options
+        for record in visible
+    ]
 
 
-def selected_output_directory_chips(records, selected_dirs):
-    """Show selected folders compactly, without repeating their case summary."""
-    labels_by_path = {
-        str(record.get("path")): str(record.get("relative_path") or record.get("path") or "").strip("/").rsplit("/", 1)[-1]
-        for record in records or []
-    }
-    chips = []
+def active_output_items(records, selected_dirs):
+    """Render every persisted active output, including unavailable directories."""
+    records_by_path = {str(record.get("path")): record for record in (records or [])}
+    items = []
     for raw_path in selected_dirs or []:
         path = str(raw_path or "").strip()
         if not path:
             continue
-        label = labels_by_path.get(path) or os.path.basename(path.rstrip(os.sep)) or path
-        chips.append(
+        record = records_by_path.get(path)
+        available = record is not None and bool(record.get("available", True))
+        if record is None:
+            record = {
+                "path": path,
+                "label": os.path.basename(path.rstrip(os.sep)) or path,
+                "case_names": [],
+                "case_count": 0,
+            }
+        label = _output_record_label(record, path)
+        status = [] if available else [
             html.Span(
+                "Unavailable",
+                className="plots-output-active-status plots-output-active-status--unavailable",
+            )
+        ]
+        items.append(
+            html.Div(
                 [
-                    html.Span(label),
+                    html.Span(
+                        _output_button_text(record, path),
+                        className="plots-output-active-label",
+                    ),
+                    *status,
                     html.Button(
                         "×",
                         id={"type": "plots-remove-output-dir", "path": path},
                         n_clicks=0,
+                        n_clicks_timestamp=-1,
                         title=f"Remove {label}",
                         className="plots-output-dir-remove",
                     ),
                 ],
-                className="plots-output-dir-chip",
+                title=_output_case_summary(record),
+                className=(
+                    "plots-output-active-item plots-output-active-item--unavailable"
+                    if not available
+                    else "plots-output-active-item"
+                ),
             )
         )
-    return chips or [html.Small("No output folders selected.", className="plots-mutable-output-warning")]
+    return items or [html.Small("No output folders selected.", className="plots-mutable-output-warning")]
 
 
 def render_plot_card(plot_id, plot_state, case_data):
@@ -196,77 +235,93 @@ def _initial_case_buttons(initial_state):
     selected_name = ((initial_state or {}).get("case_data") or {}).get("name")
     available_names = shared.ordered_case_names(cases.keys())
     if not available_names:
-        return [html.Div("No common cases found for single mode.")]
+        return [html.Div("No cases found in the active outputs.")]
     return [case_button(name, bool(cases.get(name)), selected=(name == selected_name)) for name in available_names]
 
 
 def _directory_case_selector(initial_state):
     """Build the combined directory/case selection header block."""
     initial_dirs = [DEFAULT_OUTPUT_DIR]
-    initial_options = output_directory_options(
-        profile_service.discover_output_directories(),
-        initial_dirs,
-    )
+    initial_catalog = profile_service.discover_output_directories(selected_dirs=initial_dirs)
     return html.Div(
         [
             html.Div(
                 [
                     html.Div(
                         [
-                            html.Div("Output folders", style={"fontWeight": "600", "marginBottom": "8px"}),
-                            styled_dropdown(
-                                id="plots-output-dir-picker",
-                                options=initial_options,
-                                value=None,
-                                multi=False,
-                                clearable=False,
-                                searchable=True,
-                                placeholder="Add an output folder",
-                                style={"minWidth": "360px", "width": "100%"},
-                            ),
-                            html.Div(
-                                selected_output_directory_chips(profile_service.discover_output_directories(), initial_dirs),
-                                id="plots-selected-output-dirs",
-                                className="plots-output-dir-chips",
-                            ),
                             html.Div(
                                 [
-                                    html.Button("Add extra folder", id="plots-show-extra-dir", n_clicks=0),
-                                    html.Button("Refresh", id="plots-refresh-cases", n_clicks=0),
-                                ],
-                                style={"marginTop": "8px", "display": "flex", "alignItems": "center", "gap": "8px"},
-                            ),
-                            html.Div(
-                                [
-                                    dcc.Input(
-                                        id="plots-extra-dir-input",
-                                        type="text",
-                                        placeholder="Path outside the discovered list",
-                                        style={"minWidth": "300px", "flex": "1 1 300px"},
+                                    html.Button(
+                                        [
+                                            html.Span(
+                                                ["Available data in ", html.Code("output/", className="plots-output-root-path")]
+                                            ),
+                                            html.Span("▾", className="plots-output-menu-chevron"),
+                                        ],
+                                        id="plots-output-menu-toggle",
+                                        n_clicks=0,
+                                        n_clicks_timestamp=-1,
+                                        className="plots-output-menu-header",
+                                        title="Show or hide all available output folders",
                                     ),
-                                    html.Button("Add", id="plots-add-extra-dir", n_clicks=0),
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                available_output_buttons(initial_catalog, initial_dirs, expanded=False),
+                                                id="plots-available-output-list",
+                                                className="plots-available-output-list",
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Button("Add extra folder", id="plots-show-extra-dir", n_clicks=0),
+                                                    html.Div(
+                                                        [
+                                                            dcc.Input(
+                                                                id="plots-extra-dir-input",
+                                                                type="text",
+                                                                placeholder="Path outside the discovered list",
+                                                            ),
+                                                            html.Button("Add", id="plots-add-extra-dir", n_clicks=0, n_clicks_timestamp=-1),
+                                                        ],
+                                                        id="plots-extra-dir-control",
+                                                        style={"display": "none"},
+                                                    ),
+                                                    html.Small(id="plots-extra-dir-message", className="plots-mutable-output-warning"),
+                                                ],
+                                                id="plots-output-menu-advanced",
+                                                className="plots-output-menu-advanced",
+                                            ),
+                                        ],
+                                        className="plots-output-menu-body",
+                                    ),
                                 ],
-                                id="plots-extra-dir-control",
-                                style={"display": "none", "marginTop": "8px", "alignItems": "center", "gap": "8px"},
+                                id="plots-output-menu",
+                                className="plots-output-menu",
                             ),
-                            html.Small(id="plots-extra-dir-message", className="plots-mutable-output-warning"),
-                            html.Small(
-                                "Add several folders to compare their common cases.",
-                                className="plots-mutable-output-warning",
+                            html.Div(
+                                [
+                                    html.Div("Active outputs", className="plots-output-active-heading"),
+                                    html.Div(
+                                        active_output_items(initial_catalog, initial_dirs),
+                                        id="plots-active-output-list",
+                                        className="plots-output-active-list",
+                                    ),
+                                ],
+                                className="plots-output-active-tray",
                             ),
                         ],
-                        style={"display": "flex", "flexDirection": "column", "alignItems": "flex-start", "flex": "1 1 auto"},
+                        className="plots-output-picker-row",
                     ),
-                    html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch", "margin": "0 16px"}),
+                    html.Div(className="plots-output-benchmark-divider"),
                     html.Div(
                         [
                             html.Div("Benchmarks", style={"fontWeight": "600", "marginBottom": "8px"}),
                             html.Div(id="plots-benchmark-button-container"),
                         ],
-                        style={"display": "flex", "flexDirection": "column", "justifyContent": "center", "minWidth": "220px"},
+                        className="plots-benchmark-column",
                     ),
                 ],
-                style={"padding": "12px", "display": "flex", "alignItems": "stretch"},
+                className="plots-output-benchmark-row",
             ),
             html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch"}),
             html.Div(
@@ -277,11 +332,8 @@ def _directory_case_selector(initial_state):
                 style={"padding": "12px", "minHeight": "100%"},
             ),
         ],
+        className="plots-directory-case-selector",
         style={
-            "display": "grid",
-            "gridTemplateColumns": "1fr 1px 1fr",
-            "gap": "16px",
-            "alignItems": "stretch",
             "padding": "12px",
             "border": "1px solid #d0d0d0",
             "borderRadius": "6px",
@@ -293,6 +345,8 @@ def _plots_stores(initial_state):
     """Build the stores and interval used to coordinate the plots tab."""
     return [
         dcc.Store(id="plots-output-dirs", data=[DEFAULT_OUTPUT_DIR]),
+        dcc.Store(id="plots-output-catalog", data=profile_service.discover_output_directories(selected_dirs=[DEFAULT_OUTPUT_DIR])),
+        dcc.Store(id="plots-output-menu-expanded", data=False),
         dcc.Store(id="plots-case-data", data=initial_state["case_data"]),
         dcc.Store(id="plots-enabled-benchmarks", data=initial_state["enabled_benchmarks"]),
         dcc.Store(id="plots-plot-order", data=initial_state["plot_order"]),
@@ -306,6 +360,7 @@ def _plots_stores(initial_state):
         dcc.Store(id="plots-selected-column", data=initial_state["selected_column"]),
         dcc.Store(id="plots-time-override", data=None),
         dcc.Store(id="plots-playback", data={"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False, "target_point": None}),
+        dcc.Interval(id="plots-output-refresh-interval", interval=10_000, disabled=True, n_intervals=0),
         dcc.Interval(id="plots-playback-interval", interval=int(DEFAULT_PLAYBACK_INTERVAL_S * 1000), disabled=True, n_intervals=0),
     ]
 

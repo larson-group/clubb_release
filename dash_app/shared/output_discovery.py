@@ -47,6 +47,18 @@ def _label_records(records: list[dict]) -> None:
             record["label"] = str(record["path"])
 
 
+def _file_fingerprint(path: Path) -> dict[str, int] | None:
+    """Return JSON-serializable metadata for a readable stats file."""
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return {
+        "mtime_ns": int(stat.st_mtime_ns),
+        "size_bytes": int(stat.st_size),
+    }
+
+
 def _discover(
     roots: Iterable[str | Path],
     *,
@@ -80,23 +92,29 @@ def _discover(
                 and recursive
                 and depth < max_depth
             ]
-            stats_paths = [
-                directory / name
-                for name in sorted(file_names)
-                if name.endswith(STATS_SUFFIX) and has_netcdf_signature(directory / name)
-            ]
-            if not stats_paths:
+            stats_files = []
+            for name in sorted(file_names):
+                path = directory / name
+                if not name.endswith(STATS_SUFFIX) or not has_netcdf_signature(path):
+                    continue
+                fingerprint = _file_fingerprint(path)
+                if fingerprint is not None:
+                    stats_files.append((path, fingerprint))
+            if not stats_files:
                 continue
             relative_text = relative.as_posix() if relative.parts else ""
             base_label = root.name if not relative_text else f"{root.name}/{relative_text}"
             cases = {
                 path.name[: -len(STATS_SUFFIX)]: str(path)
-                for path in stats_paths
+                for path, _fingerprint in stats_files
             }
-            try:
-                modified = float(directory.stat().st_mtime)
-            except OSError:
-                modified = 0.0
+            case_fingerprints = {
+                path.name[: -len(STATS_SUFFIX)]: fingerprint
+                for path, fingerprint in stats_files
+            }
+            latest_stats_modified_ns = max(
+                fingerprint["mtime_ns"] for _path, fingerprint in stats_files
+            )
             directory_record = {
                 "path": str(directory),
                 "key": str(directory),
@@ -105,10 +123,14 @@ def _discover(
                 "label": base_label,
                 "case_names": sorted(cases),
                 "cases": cases,
-                "modified": modified,
+                "case_count": len(cases),
+                "case_fingerprints": case_fingerprints,
+                "latest_stats_modified_ns": latest_stats_modified_ns,
+                "modified": latest_stats_modified_ns / 1_000_000_000.0,
+                "available": True,
             }
             directories.append(directory_record)
-            for path in stats_paths:
+            for path, fingerprint in stats_files:
                 case = path.name[: -len(STATS_SUFFIX)]
                 files.append(
                     {
@@ -119,16 +141,18 @@ def _discover(
                         "relative_path": f"{relative_text + '/' if relative_text else ''}{path.name}",
                         "label": f"{base_label}/{path.name}",
                         "case": case,
-                        "modified": float(path.stat().st_mtime),
+                        "fingerprint": fingerprint,
+                        "modified": fingerprint["mtime_ns"] / 1_000_000_000.0,
                     }
                 )
-            if max_directories is not None and len(directories) >= max_directories:
-                break
-        if max_directories is not None and len(directories) >= max_directories:
-            break
     _label_records(directories)
     _label_records(files)
     directories.sort(key=lambda item: (-float(item["modified"]), str(item["label"])))
+    for index, record in enumerate(directories):
+        record["recency_index"] = index
+        record["is_newest"] = index == 0
+    if max_directories is not None:
+        directories = directories[:max_directories]
     files.sort(key=lambda item: (str(item["label"]), str(item["path"])))
     return directories, files
 

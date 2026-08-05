@@ -7,10 +7,10 @@ from .benchmark_overlay import (
     sanitize_enabled_sources,
 )
 from .layout import (
+    active_output_items,
+    available_output_buttons,
     benchmark_button,
     case_button,
-    output_directory_options,
-    selected_output_directory_chips,
 )
 from .plot_types.registry import PLOT_TYPES
 from dash_app.services.profiles import (
@@ -53,6 +53,49 @@ def _is_same_case(current_case_data, case_name, output_dirs):
     )
 
 
+def _normalize_output_dirs(output_dirs):
+    """Normalize and de-duplicate selection state without pruning missing paths."""
+    normalized = []
+    seen = set()
+    for raw_entry in output_dirs or []:
+        candidate = str(raw_entry or "").strip()
+        if not candidate:
+            continue
+        path = normalize_output_directory(candidate)
+        if path not in seen:
+            normalized.append(path)
+            seen.add(path)
+    return normalized
+
+
+def _update_output_dirs(output_dirs, action, path):
+    """Apply one explicit add/remove action while preserving every other path."""
+    selected = _normalize_output_dirs(output_dirs)
+    normalized = normalize_output_directory(str(path or ""))
+    if action == "add" and normalized not in selected:
+        return [*selected, normalized]
+    if action == "remove":
+        return [candidate for candidate in selected if candidate != normalized]
+    return selected
+
+
+def _catalog_tracking_paths(records, selected_dirs):
+    """Keep active paths and previously added external paths in the catalog."""
+    tracked = _normalize_output_dirs(selected_dirs)
+    for record in records or []:
+        if record.get("catalog_origin") != "external":
+            continue
+        path = str(record.get("path") or "")
+        if path and path not in tracked:
+            tracked.append(path)
+    return tracked
+
+
+def _triggered_click_is_positive():
+    triggered = callback_context.triggered[0] if callback_context.triggered else None
+    return bool(triggered) and _is_positive_click(triggered.get("value"))
+
+
 def _clear_plot_runtime_state(clear_shared=True, clear_benchmarks=True):
     if clear_shared:
         clear_all_caches()
@@ -85,92 +128,120 @@ def register_case_callbacks(app):
         }
 
     @app.callback(
-        Output("plots-output-dir-picker", "options"),
-        Output("plots-selected-output-dirs", "children"),
-        Input("plots-output-dirs", "data"),
-        Input("plots-refresh-cases", "n_clicks"),
+        Output("plots-output-refresh-interval", "disabled"),
+        Input("dashboard-tabs", "value"),
     )
-    def refresh_output_directory_picker(selected_dirs, _refresh_clicks):
-        """Rescan addable folders and render compact selected-folder chips."""
-        selected = [
-            normalize_output_directory(str(path).strip())
-            for path in selected_dirs or []
-            if str(path or "").strip() and os.path.isdir(normalize_output_directory(str(path).strip()))
-        ]
-        records = discover_output_directories()
+    def enable_output_refresh(active_tab):
+        """Poll only while Plot is the active top-level tab."""
+        return active_tab != "plots"
+
+    @app.callback(
+        Output("plots-output-catalog", "data"),
+        Input("dashboard-tabs", "value"),
+        Input("plots-output-refresh-interval", "n_intervals"),
+        State("plots-output-dirs", "data"),
+        State("plots-output-catalog", "data"),
+        prevent_initial_call=True,
+    )
+    def refresh_output_catalog(active_tab, _intervals, selected_dirs, current_catalog):
+        """Refresh on Plot activation and each active ten-second interval."""
+        if active_tab != "plots":
+            return no_update
+        tracked = _catalog_tracking_paths(current_catalog, selected_dirs)
+        return discover_output_directories(selected_dirs=tracked)
+
+    @app.callback(
+        Output("plots-output-menu-expanded", "data"),
+        Input("plots-output-menu-toggle", "n_clicks_timestamp"),
+        State("plots-output-menu-expanded", "data"),
+        prevent_initial_call=True,
+    )
+    def toggle_output_menu(_timestamp, expanded):
+        if not _triggered_click_is_positive():
+            return no_update
+        return not bool(expanded)
+
+    @app.callback(
+        Output("plots-available-output-list", "children"),
+        Output("plots-active-output-list", "children"),
+        Output("plots-output-menu", "className"),
+        Input("plots-output-catalog", "data"),
+        Input("plots-output-dirs", "data"),
+        Input("plots-output-menu-expanded", "data"),
+    )
+    def render_output_controls(records, selected_dirs, expanded):
+        selected = _normalize_output_dirs(selected_dirs)
+        known_paths = {str(record.get("path")) for record in (records or [])}
+        if any(path not in known_paths for path in selected):
+            records = discover_output_directories(selected_dirs=selected)
+        menu_class = "plots-output-menu plots-output-menu--expanded" if expanded else "plots-output-menu"
         return (
-            output_directory_options(records, selected),
-            selected_output_directory_chips(records, selected),
+            available_output_buttons(records, selected, expanded=bool(expanded)),
+            active_output_items(records, selected),
+            menu_class,
         )
 
     @app.callback(
         Output("plots-output-dirs", "data"),
         Output("plots-extra-dir-input", "value"),
         Output("plots-extra-dir-message", "children"),
-        Input("plots-output-dir-picker", "value"),
-        Input("plots-add-extra-dir", "n_clicks"),
-        Input({"type": "plots-remove-output-dir", "path": ALL}, "n_clicks"),
+        Output("plots-output-catalog", "data", allow_duplicate=True),
+        Input({"type": "plots-add-output-dir", "path": ALL}, "n_clicks_timestamp"),
+        Input("plots-add-extra-dir", "n_clicks_timestamp"),
+        Input({"type": "plots-remove-output-dir", "path": ALL}, "n_clicks_timestamp"),
         State("plots-output-dirs", "data"),
         State("plots-extra-dir-input", "value"),
+        State("plots-output-catalog", "data"),
         prevent_initial_call=True,
     )
-    def build_output_dirs(selected_dir, _add_extra, _remove_clicks, current_output_dirs, extra_dir):
-        """Add or remove one output folder while retaining a compact selection."""
-        selected = []
-        seen = set()
-        for raw_entry in current_output_dirs or []:
-            candidate = str(raw_entry or "").strip()
-            if not candidate:
-                continue
-            normalized = normalize_output_directory(candidate)
-            if not os.path.isdir(normalized):
-                continue
-            if normalized in seen:
-                continue
-            seen.add(normalized)
-            selected.append(normalized)
+    def build_output_dirs(_add_clicks, _add_extra, _remove_clicks, current_output_dirs, extra_dir, catalog):
+        """Move one clicked output between the available menu and active tray."""
+        if not _triggered_click_is_positive():
+            return no_update, no_update, no_update, no_update
+        selected = _normalize_output_dirs(current_output_dirs)
+        seen = set(selected)
 
         trigger = callback_context.triggered_id
-        if trigger == "plots-output-dir-picker":
-            candidate = str(selected_dir or "").strip()
-            if candidate:
-                normalized = normalize_output_directory(candidate)
-                if os.path.isdir(normalized) and normalized not in seen:
-                    selected.append(normalized)
+        if isinstance(trigger, dict) and trigger.get("type") == "plots-add-output-dir":
+            normalized = normalize_output_directory(str(trigger.get("path") or ""))
+            discovered = {str(record.get("path")) for record in (catalog or [])}
+            if normalized not in discovered or normalized in seen:
+                return no_update, no_update, no_update, no_update
+            selected = _update_output_dirs(selected, "add", normalized)
         elif trigger == "plots-add-extra-dir":
             candidate = str(extra_dir or "").strip()
             if not candidate:
-                return no_update, no_update, "Enter a directory path before adding it."
+                return no_update, no_update, "Enter a directory path before adding it.", no_update
             normalized = normalize_output_directory(candidate)
             if not os.path.isdir(normalized):
-                return no_update, no_update, f"Not found: {normalized}"
+                return no_update, no_update, f"Not found: {normalized}", no_update
             if normalized not in seen:
-                selected.append(normalized)
+                selected = _update_output_dirs(selected, "add", normalized)
             else:
-                return no_update, no_update, "That folder is already selected."
+                return no_update, no_update, "That folder is already selected.", no_update
         elif isinstance(trigger, dict) and trigger.get("type") == "plots-remove-output-dir":
             removed = normalize_output_directory(str(trigger.get("path") or ""))
-            selected = [path for path in selected if path != removed]
+            selected = _update_output_dirs(selected, "remove", removed)
         else:
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
         if selected == list(current_output_dirs or []):
-            return no_update, no_update, no_update
-        return selected, "" if trigger == "plots-add-extra-dir" else no_update, ""
+            return no_update, no_update, no_update, no_update
+        tracked = _catalog_tracking_paths(catalog, selected)
+        updated_catalog = discover_output_directories(selected_dirs=tracked)
+        return selected, "" if trigger == "plots-add-extra-dir" else no_update, "", updated_catalog
 
     @app.callback(
         Output("plots-case-button-container", "children"),
         Input("plots-output-dirs", "data"),
         Input("plots-case-data", "data"),
-        Input("plots-refresh-cases", "n_clicks"),
     )
-    def render_case_buttons(output_dirs, case_data, _refresh_clicks):
+    def render_case_buttons(output_dirs, case_data):
         """Render the case buttons for the active directory set and selection."""
         cases = scan_output_cases(output_dirs)
         selected_name = case_data.get("name") if case_data else None
         available_names = ordered_case_names(cases.keys())
         if not available_names:
-            mode = "compare" if len(output_dirs or []) > 1 else "single"
-            return [html.Div(f"No common cases found for {mode} mode.")]
+            return [html.Div("No cases found in the active outputs.")]
         return [case_button(name, bool(cases.get(name)), selected=(name == selected_name)) for name in available_names]
 
     @app.callback(
@@ -199,7 +270,6 @@ def register_case_callbacks(app):
         Output("plots-time-override", "data", allow_duplicate=True),
         Input({"type": "plots-case-button", "name": ALL}, "n_clicks"),
         Input("plots-output-dirs", "data"),
-        Input("plots-refresh-cases", "n_clicks"),
         Input("dashboard-request", "data"),
         State("plots-plot-order", "data"),
         State("plots-plot-state", "data"),
@@ -223,7 +293,6 @@ def register_case_callbacks(app):
     def select_case(
         _clicks,
         output_dirs,
-        _refresh_clicks,
         agent_request,
         plot_order,
         plot_state,
@@ -238,7 +307,7 @@ def register_case_callbacks(app):
     ):
         """Select a case and refresh global controls without resetting same-case reloads."""
         trigger = callback_context.triggered_id
-        if trigger in ("plots-output-dirs", "plots-refresh-cases"):
+        if trigger == "plots-output-dirs":
             cases = scan_output_cases(output_dirs)
             available_names = ordered_case_names(cases.keys())
             if not available_names:
@@ -257,14 +326,16 @@ def register_case_callbacks(app):
                 return (no_update,) * 23
             case_name = requested_case
         elif isinstance(trigger, dict):
+            if not _triggered_click_is_positive():
+                return (no_update,) * 23
             case_name = trigger.get("name")
         else:
             return (no_update,) * 23
         files = scan_output_cases(output_dirs).get(case_name, [])
         if not case_name or not files:
             return (no_update,) * 23
-        same_case = _is_same_case(current_case_data, case_name, output_dirs)
         case_data = build_case_data(case_name, files, output_dirs)
+        same_case = _is_same_case(current_case_data, case_name, case_data.get("output_dirs"))
         case_data["preserve_plot_view"] = bool(same_case)
         updated_order = list(plot_order or [])
         updated_state = remap_plot_types_for_case_mode(plot_state, case_data)

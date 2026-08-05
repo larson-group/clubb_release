@@ -1,8 +1,8 @@
 import re
 
-from dash import ALL, MATCH, Input, Output, State, callback_context, no_update
+from dash import ALL, MATCH, Input, Output, Patch, State, callback_context, no_update
 
-from .layout import render_plot_grid
+from .layout import child_id, render_plot_card, render_plot_grid
 from .plot_types.registry import PLOT_TYPES
 from .plot_types.specs import PLOT_FAMILY_SPECS
 from .plot_types import shared
@@ -101,6 +101,66 @@ def render_plot_help_notecard(trigger, trigger_value, plot_state):
     return module.help_dialog({"type": "plots-help-close", "index": plot_id})
 
 
+def _renderable_plot_order(plot_order, plot_state):
+    """Return unique ordered ids that currently have renderable state."""
+    result = []
+    seen = set()
+    for raw_plot_id in plot_order or []:
+        plot_id = int(raw_plot_id)
+        if plot_id in seen or str(plot_id) not in (plot_state or {}):
+            continue
+        result.append(plot_id)
+        seen.add(plot_id)
+    return result
+
+
+def _mounted_plot_order(children):
+    """Read mounted card ids, returning None when the grid shape is unknown."""
+    plot_ids = []
+    add_card_count = 0
+    for child in children or []:
+        component_id = child_id(child)
+        if component_id == "plots-add-card":
+            add_card_count += 1
+        elif isinstance(component_id, dict) and component_id.get("type") == "plots-card":
+            plot_ids.append(int(component_id.get("index")))
+        else:
+            return None
+    if add_card_count != 1:
+        return None
+    return plot_ids
+
+
+def update_plot_grid_children(plot_order, plot_state, case_data, current_children):
+    """Patch a one-card add/remove without remounting unaffected plot cards."""
+    desired = _renderable_plot_order(plot_order, plot_state)
+    mounted = _mounted_plot_order(current_children)
+    if mounted is None:
+        return render_plot_grid(desired, plot_state or {}, case_data)
+    if mounted == desired:
+        return no_update
+
+    added = [plot_id for plot_id in desired if plot_id not in mounted]
+    removed = [plot_id for plot_id in mounted if plot_id not in desired]
+    if len(added) == 1 and not removed:
+        added_id = added[0]
+        added_index = desired.index(added_id)
+        if desired[:added_index] + desired[added_index + 1:] == mounted:
+            patch = Patch()
+            patch.insert(
+                added_index,
+                render_plot_card(added_id, plot_state[str(added_id)], case_data),
+            )
+            return patch
+    if len(removed) == 1 and not added:
+        removed_index = mounted.index(removed[0])
+        if mounted[:removed_index] + mounted[removed_index + 1:] == desired:
+            patch = Patch()
+            del patch[removed_index]
+            return patch
+    return render_plot_grid(desired, plot_state or {}, case_data)
+
+
 def register_dropdown_search_callback(app, spec):
     """Register one dropdown-options callback that reorders options by search relevance."""
     module = PLOT_TYPES[spec.plot_type_id]
@@ -151,10 +211,22 @@ def register_grid_callbacks(app):
         Input("plots-case-data", "data"),
         Input("plots-plot-order", "data"),
         State("plots-plot-state", "data"),
+        State("plots-plot-container", "children"),
     )
-    def render_plot_container(case_data, plot_order, plot_state):
-        """Render the plot grid from the current ordered plot state."""
-        return render_plot_grid(plot_order or [], plot_state or {}, case_data)
+    def render_plot_container(case_data, plot_order, plot_state, current_children):
+        """Render case changes fully but patch isolated card additions/removals."""
+        case_triggered = any(
+            item.get("prop_id") == "plots-case-data.data"
+            for item in (callback_context.triggered or [])
+        )
+        if case_triggered and not bool((case_data or {}).get("preserve_plot_view")):
+            return render_plot_grid(plot_order or [], plot_state or {}, case_data)
+        return update_plot_grid_children(
+            plot_order or [],
+            plot_state or {},
+            case_data,
+            current_children,
+        )
 
     def next_available_plot_id(plot_order, plot_state, next_id):
         """Choose an id not already mounted, even after a stale UI callback."""

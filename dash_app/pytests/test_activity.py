@@ -59,6 +59,33 @@ def test_broker_job_snapshot_survives_activity_reset_hook(tmp_path, monkeypatch)
     assert jobs["runs"]["arm"]["log_tail"] == "running arm\n"
 
 
+def test_active_job_count_is_generic_across_broker_job_groups():
+    jobs = {
+        "compile": {"state": "finished"},
+        "runs": {
+            "arm": {"state": "running"},
+            "bomex": {"state": "queued"},
+            "rico": {"state": "error"},
+        },
+        "future_kind": [
+            {"state": "submitting"},
+            {"state": "stopping"},
+            {"state": "success"},
+        ],
+    }
+
+    assert activity.count_active_jobs(jobs) == 4
+
+
+def test_active_job_count_treats_an_active_record_as_one_job():
+    aggregate_job = {
+        "state": "running",
+        "metadata": {"state": "running"},
+    }
+
+    assert activity.count_active_jobs(aggregate_job) == 1
+
+
 def test_legacy_agent_state_is_dropped_on_read(tmp_path, monkeypatch):
     monkeypatch.setattr(activity, "ACTIVITY_PATH", Path(tmp_path) / "activity.json")
     monkeypatch.setattr(activity, "LOCK_PATH", Path(tmp_path) / "activity.lock")

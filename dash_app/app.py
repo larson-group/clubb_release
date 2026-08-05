@@ -207,6 +207,7 @@ def main():
         suppress_callback_exceptions=True,
         eager_loading=True,
         title=_app_title(),
+        update_title=None,
         background_callback_manager=create_background_manager(REPO_ROOT),
     )
     register_static_report_routes(app)
@@ -253,7 +254,7 @@ def main():
     app.layout = html.Div(
         [
             dcc.Store(id="theme-store", data="dark"),
-            dashboard_handoff(),
+            dashboard_handoff(_app_title()),
             dcc.Tabs(tabs, id="dashboard-tabs", value="tutorial"),
             utility_drawer(endpoint_details),
         ],

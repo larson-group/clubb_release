@@ -24,6 +24,7 @@ restrict_existing(_LEGACY_ACTIVITY_PATH)
 restrict_existing(_LEGACY_LOCK_PATH)
 MAX_EVENTS = 120
 UI_HANDOFF_RETRY_SECONDS = 30.0
+ACTIVE_JOB_STATES = frozenset({"queued", "submitting", "running", "stopping"})
 
 
 def _initial_state() -> dict[str, Any]:
@@ -81,6 +82,17 @@ def broker_jobs() -> dict[str, Any]:
         "tune": dict(jobs.get("tune") or {}) or None,
         "loss_runs": {str(name): dict(value or {}) for name, value in (jobs.get("loss_runs") or {}).items()},
     }
+
+
+def count_active_jobs(jobs: Any) -> int:
+    """Count active broker job records without depending on job categories."""
+    if isinstance(jobs, dict):
+        if str(jobs.get("state") or "") in ACTIVE_JOB_STATES:
+            return 1
+        return sum(count_active_jobs(value) for value in jobs.values())
+    if isinstance(jobs, (list, tuple)):
+        return sum(count_active_jobs(value) for value in jobs)
+    return 0
 
 
 @contextmanager

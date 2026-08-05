@@ -3,6 +3,7 @@ from dash_app.run_tab.callbacks_runs import (
     discard_terminal_broker_runs,
     expand_linked_parameter_values,
     launch_broker_batch,
+    fresh_batch_request_id,
 )
 
 
@@ -16,6 +17,15 @@ def test_multicol_spec_preserves_current_parameter_names():
     )
 
     assert spec == "C_uu_shr/0:3/6,C_uu_buoy/0.1:1.2/4"
+
+
+def test_fresh_batch_request_ids_do_not_reuse_browser_click_state():
+    first = fresh_batch_request_id("same selected cases and settings")
+    second = fresh_batch_request_id("same selected cases and settings")
+
+    assert first != second
+    assert first.startswith("dash-run-batch-")
+    assert first.rsplit("-", 1)[1] == second.rsplit("-", 1)[1]
 
 
 def test_multicol_spec_rejects_unknown_complete_parameter_rows():

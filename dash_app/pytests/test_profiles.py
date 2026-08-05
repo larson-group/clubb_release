@@ -19,8 +19,8 @@ def test_discover_output_directories_finds_direct_stats_files_and_sorts_newest(t
     _write_netcdf_signature(older / "arm_stats.nc")
     _write_netcdf_signature(newer / "bomex_stats.nc")
     (ignored / "notes.txt").write_text("not output")
-    os.utime(older, (100.0, 100.0))
-    os.utime(newer, (200.0, 200.0))
+    os.utime(older / "arm_stats.nc", (100.0, 100.0))
+    os.utime(newer / "bomex_stats.nc", (200.0, 200.0))
 
     records = discover_output_directories(tmp_path)
 
@@ -30,6 +30,8 @@ def test_discover_output_directories_finds_direct_stats_files_and_sorts_newest(t
     ]
     assert records[0]["case_names"] == ["bomex"]
     assert records[1]["case_names"] == ["arm"]
+    assert records[0]["label"] == "output/nested/newer"
+    assert records[0]["case_count"] == 1
 
 
 def test_discover_output_directories_rejects_unreadable_stats_signature(tmp_path):
@@ -51,3 +53,31 @@ def test_discover_output_directories_skips_agent_artifacts_even_when_they_contai
     records = discover_output_directories(tmp_path)
 
     assert [record["relative_path"] for record in records] == ["output/dash_default"]
+
+
+def test_selected_external_directory_is_included_with_direct_case_metadata(tmp_path):
+    output_root = tmp_path / "output"
+    external = tmp_path / "external-run"
+    output_root.mkdir()
+    external.mkdir()
+    _write_netcdf_signature(external / "arm_stats.nc")
+
+    records = discover_output_directories(output_root, selected_dirs=[str(external)])
+
+    assert len(records) == 1
+    assert records[0]["path"] == str(external.resolve())
+    assert records[0]["label"] == str(external.resolve())
+    assert records[0]["available"] is True
+    assert records[0]["case_count"] == 1
+
+
+def test_selected_missing_directory_remains_as_unavailable_catalog_record(tmp_path):
+    output_root = tmp_path / "output"
+    output_root.mkdir()
+    missing = tmp_path / "missing"
+
+    records = discover_output_directories(output_root, selected_dirs=[str(missing)])
+
+    assert records[0]["path"] == str(missing.resolve())
+    assert records[0]["available"] is False
+    assert records[0]["case_count"] == 0

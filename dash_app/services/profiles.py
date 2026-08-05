@@ -12,6 +12,7 @@ from typing import Any
 
 from utilities.output_paths import OUTPUT_ROOT
 from dash_app.shared.output_discovery import discover_stats_directories
+from dash_app.shared.netcdf import file_signature
 from dash_app.plot_tab.plot_types.shared import (
     build_case_data,
     scan_output_cases,
@@ -42,7 +43,18 @@ def scan_case_outputs(output_dirs: list[str] | None = None) -> dict[str, list[st
     return scan_output_cases(output_dirs)
 
 
-def discover_output_directories(root: Path | None = None) -> list[dict[str, Any]]:
+def _output_label(path: Path, output_root: Path) -> str:
+    try:
+        relative = path.relative_to(output_root).as_posix()
+    except ValueError:
+        return str(path)
+    return "output" if not relative else f"output/{relative}"
+
+
+def discover_output_directories(
+    root: Path | None = None,
+    selected_dirs: list[str] | None = None,
+) -> list[dict[str, Any]]:
     """Find output subdirectories that directly contain readable stats files.
 
     Discovery is intentionally shallow and bounded enough for an interactive
@@ -57,17 +69,75 @@ def discover_output_directories(root: Path | None = None) -> list[dict[str, Any]
         max_directories=_MAX_DISCOVERED_OUTPUT_DIRECTORIES,
         max_scanned_directories=_MAX_OUTPUT_DIRECTORY_SCAN,
     )
-    # Preserve the established Plot-picker label contract: discovery beneath
-    # any supplied root is presented as an ``output/...`` location.
+    known_paths = {str(record["path"]) for record in records}
+    for raw_path in selected_dirs or []:
+        selected_path = Path(raw_path).expanduser().resolve()
+        selected_text = str(selected_path)
+        if selected_text in known_paths:
+            continue
+        direct_records = discover_stats_directories(
+            [selected_path],
+            recursive=False,
+            max_depth=0,
+            max_directories=1,
+            max_scanned_directories=1,
+        )
+        if direct_records:
+            record = direct_records[0]
+        else:
+            record = {
+                "path": selected_text,
+                "key": selected_text,
+                "root": selected_text,
+                "relative_path": "",
+                "case_names": [],
+                "cases": {},
+                "case_count": 0,
+                "case_fingerprints": {},
+                "latest_stats_modified_ns": 0,
+                "modified": 0.0,
+                "available": False,
+            }
+        records.append(record)
+        known_paths.add(selected_text)
+
+    # Preserve the established Plot-picker label contract beneath output/;
+    # advanced external folders retain their full path for clarity.
     for record in records:
-        relative = str(record.get("relative_path") or "")
-        record["relative_path"] = "output" if not relative else f"output/{relative}"
+        path = Path(str(record["path"])).resolve()
+        label = _output_label(path, output_root)
+        record["relative_path"] = label
+        record["label"] = label
+        record["catalog_origin"] = "external" if label.startswith("/") else "output"
+    records.sort(key=lambda item: (-float(item.get("modified") or 0.0), str(item["label"])))
+    newest_available_assigned = False
+    for index, record in enumerate(records):
+        record["recency_index"] = index
+        record["is_newest"] = bool(record.get("available")) and not newest_available_assigned
+        newest_available_assigned = newest_available_assigned or bool(record["is_newest"])
     return records
+
+
+def stats_file_fingerprints(files: list[str] | None) -> list[dict[str, Any]]:
+    """Return ordered, JSON-serializable fingerprints for Plot stats files."""
+    fingerprints = []
+    for path in files or []:
+        signature_path, modified_ns, size_bytes = file_signature(path)
+        fingerprints.append(
+            {
+                "path": str(signature_path),
+                "mtime_ns": modified_ns,
+                "size_bytes": size_bytes,
+            }
+        )
+    return fingerprints
 
 
 def build_case_metadata(case_name: str, files: list[str], output_dirs: list[str] | None = None) -> dict[str, Any]:
     """Build the canonical case metadata consumed by Plot controls and export."""
-    return build_case_data(case_name, files, output_dirs)
+    metadata = build_case_data(case_name, files, output_dirs)
+    metadata["stats_fingerprints"] = stats_file_fingerprints(files)
+    return metadata
 
 
 def load_case_data(repo_root: Path, case_name: str, *, required: bool, output_dirs: list[str] | None = None) -> dict[str, Any] | None:
