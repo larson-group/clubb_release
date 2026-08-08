@@ -1,0 +1,59 @@
+commit 110ac18b98f0f290b51ea65fa6d452a4a6b12284
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Aug 5 16:08:46 2026 -0500
+
+    Small improvements to dash app, mainly plots tab output picker
+
+commit 4b6a1f233bafc1d0a52abf1924d830b2391a7407
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Aug 4 12:43:23 2026 -0500
+
+    Mainly dash updates and a little source changes to improve parameter/flag checking. See https://github.com/larson-group/clubb/pull/1336 for details
+
+commit 034f61908b84f2574a06cc7da3db70d50696e69d
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Jul 28 12:46:09 2026 -0500
+
+    The old mixing length calculation seems to be making dycoms2_rf02 fail when using the bicgstab solver. This case was always unstable with bicgstab, so it seemed more like luck before that it was passing. This change just removes the failed output data to prevent pyplotgen from crashing
+
+commit c15480a71ed50936412eb66827a86bf69c490a37
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Jul 28 12:14:17 2026 -0500
+
+    Recently a commit removed the l_tke_aniso flag, which is BFB unless that flag is enabled. That flag was used in the clubb_BFB_varying_flags_gfortran_test, causing it to fail even though we don't care since it only failed for a removed flag, so RESOLVED:8ab3902e812c2883976b4f1f57c085d682666d92
+
+commit 765ae7c30cda88e01b27cd1ee4277d54e4fcb752
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Jul 27 21:06:01 2026 -0500
+
+    Fixing bug in advance_xp3 code. This is BFB because advance_xp3 is hardcoded to false.
+
+commit bf9986a7c169085e4f89733f84407bd222075934
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Jul 27 20:59:56 2026 -0500
+
+    Archiving experimental files that were used to explore some crazy PDF diagnosis methods. Much of this is sporatic LLM generated code and reports. These two methods were tested and did work well when using LES input to model the PDF, but were extemely noisy and unstable in free running clubb. The 'parcel tracking' one performs a mixing-length-like calculation to evolve a persistent 3rd gaussian, then computes a residual ADG1 pair to balance everything out and adhere to clubbs predicted moments. The second one (dubbed trivariate even though they're technically all trivariate) is a 2 Gaussian method that allows for many more degrees of freedom in how we place Gaussian centers and allocate covariance - it does this in part by taking into account rt and thl skewness, which require calculating rtp3 and thlp3. This trivate actually does really well when modelled using LES data, but it's heavy reliance on xp3 terms makes it extremely noisy and bad in clubb - this is why this code also includes a much more sophisticated (and barely tested) advance_xp3_module.F90, as an attempt to make this less worse for the trivariate pdf.
+
+commit 7e9b710922cae26f2bcaf92b858ba00bc6b5f040
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sat Jul 25 20:55:01 2026 -0500
+
+    Adding prompt to automate updating host models
+
+commit c743a1427c73d47a5515a8d34c6de40cc266a3fd
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sat Jul 25 15:29:18 2026 -0500
+
+    Making les paths in _model.in files correct
+
+commit 8ab3902e812c2883976b4f1f57c085d682666d92
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sat Jul 25 13:44:53 2026 -0500
+
+    Removing the l_tke_aniso flag
+
+commit afbbe1126523c6ff7a4bb8091f72a242280490ba
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sat Jul 25 13:41:38 2026 -0500
+
+    Setting l_diag_Lscale_from_tau to false caused dycoms2_rf01_fixed_sst to start failing the python vs fortran test. The differences were small and occured at a late timestep, so to fix the test I put a limiter on the number of timesteps the test runs.
