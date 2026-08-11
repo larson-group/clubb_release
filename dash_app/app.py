@@ -11,6 +11,7 @@ import pkgutil
 import socket
 import sys
 import threading
+import uuid
 import webbrowser
 
 from dash import ClientsideFunction, Dash, dcc, html, Input, Output, State
@@ -52,6 +53,27 @@ if not hasattr(pkgutil, "find_loader"):
 DEFAULT_PORT = 23404
 SELECTED_PORT_ENV = "CLUBB_DASH_SELECTED_PORT"
 BROWSER_OPENED_ENV = "CLUBB_DASH_BROWSER_OPENED"
+DASH_GENERATION = uuid.uuid4().hex
+
+
+def _register_dashboard_generation_route(app: Dash) -> None:
+    """Let an already-open browser detect that its Dash process was replaced."""
+
+    marker = "{%config%}"
+    generation_script = (
+        f'<script>window.__CLUBB_DASH_GENERATION__ = "{DASH_GENERATION}";</script>'
+    )
+    app.index_string = app.index_string.replace(
+        marker,
+        f"{generation_script}\n            {marker}",
+        1,
+    )
+
+    @app.server.get("/_clubb-dashboard-generation")
+    def _dashboard_generation():
+        return {"generation": DASH_GENERATION}, {"Cache-Control": "no-store"}
+
+
 def _port_is_available(host: str, port: int) -> bool:
     addrinfos = socket.getaddrinfo(
         host,
@@ -210,6 +232,7 @@ def main():
         update_title=None,
         background_callback_manager=create_background_manager(REPO_ROOT),
     )
+    _register_dashboard_generation_route(app)
     register_static_report_routes(app)
 
     tabs = [

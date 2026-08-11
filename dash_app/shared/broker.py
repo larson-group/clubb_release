@@ -25,9 +25,10 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from flask import Flask, jsonify
+import psutil
 from werkzeug.serving import make_server
 
-from .activity import REPO_ROOT, broker_jobs, publish_event, set_broker_metadata, update_broker_job
+from .activity import REPO_ROOT, broker_jobs, count_active_jobs, publish_event, set_broker_metadata, update_broker_job
 from . import dashboard_registry
 from dash_app.agent_integration.broker_endpoint import (
     process_started_at as broker_process_started_at,
@@ -37,27 +38,20 @@ from dash_app.agent_integration.broker_endpoint import (
 from .gateway import API_PREFIX, BROKER_LOCK_PATH, BROKER_LOG_PATH, CONNECTION_PATH, install_gateway_routes, read_connection, update_connection_endpoint, update_connection_logs, write_connection
 from .broker_protocol import BROKER_PROTOCOL_VERSION
 from .provenance import runtime_source_fingerprint
+from .manager_lease import LEASE_TIMEOUT_SECONDS, MANAGER_REQUIRED_ENV, manager_lease_is_live
 
 
 BROKER_START_TIMEOUT_SECONDS = 8.0
+BROKER_WORK_STOP_TIMEOUT_SECONDS = 12.0
+_STARTED_BROKER_PROCESSES: list[subprocess.Popen[Any]] = []
 
 
 def _pid_is_alive(pid: Any) -> bool:
     try:
-        numeric_pid = int(pid)
-    except (TypeError, ValueError):
+        process = psutil.Process(int(pid))
+        return process.status() != psutil.STATUS_ZOMBIE
+    except (psutil.Error, TypeError, ValueError, OSError):
         return False
-    if numeric_pid < 1:
-        return False
-    try:
-        os.kill(numeric_pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    except OSError:
-        return False
-    return True
 
 
 def connection_is_live(connection: dict[str, Any], *, timeout: float = 0.5) -> bool:
@@ -92,6 +86,8 @@ def _connection_is_compatible(connection: dict[str, Any]) -> bool:
 
 def _connection_is_stale(connection: dict[str, Any], expected_fingerprint: str | None) -> bool:
     """Return whether a live broker was started from different runtime code."""
+    if os.environ.get(MANAGER_REQUIRED_ENV) == "1" and not bool(connection.get("manager_required")):
+        return True
     if not expected_fingerprint:
         return False
     return str(connection.get("runtime_fingerprint") or "") != str(expected_fingerprint)
@@ -160,15 +156,33 @@ def _start_broker_process() -> None:
     BROKER_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with BROKER_LOG_PATH.open("a", encoding="utf-8") as log_file:
         os.chmod(BROKER_LOG_PATH, 0o600)
-        subprocess.Popen(  # noqa: S603 - fixed module command, never agent-provided text
+        process = subprocess.Popen(  # noqa: S603 - fixed module command, never agent-provided text
             command,
             cwd=str(REPO_ROOT),
             stdin=subprocess.DEVNULL,
             stdout=log_file,
             stderr=subprocess.STDOUT,
+            # Signal isolation keeps a terminal Ctrl-C ordered through the
+            # manager. This is still its direct child, not an orphan: the
+            # manager lease makes abrupt parent death terminal as well.
             start_new_session=True,
             close_fds=True,
         )
+    _STARTED_BROKER_PROCESSES.append(process)
+
+
+def reap_started_brokers() -> list[int]:
+    """Reap broker children launched by this process and return their exit codes."""
+    returncodes: list[int] = []
+    survivors: list[subprocess.Popen[Any]] = []
+    for process in _STARTED_BROKER_PROCESSES:
+        returncode = process.poll()
+        if returncode is None:
+            survivors.append(process)
+        else:
+            returncodes.append(int(returncode))
+    _STARTED_BROKER_PROCESSES[:] = survivors
+    return returncodes
 
 
 def ensure_broker(
@@ -329,10 +343,76 @@ def create_broker_app(connection: dict[str, Any]) -> Flask:
     return app
 
 
+def _stop_after_manager_lease_expires(server: Any, stop_event: threading.Event) -> None:
+    """Stop owned work if an abruptly lost manager is not replaced in time."""
+    while not stop_event.wait(1.0):
+        if manager_lease_is_live():
+            continue
+        reason = (
+            f"dashboard manager heartbeat expired after {LEASE_TIMEOUT_SECONDS:.0f} seconds; "
+            "stopping broker-owned work and the broker"
+        )
+        print(f"CLUBB runtime broker stopping: {reason}", file=sys.stderr, flush=True)
+        dashboard = dashboard_registry.dashboard_status()
+        if dashboard.get("status") == "available":
+            try:
+                dashboard_pid = int(dashboard["pid"])
+                os.killpg(os.getpgid(dashboard_pid), signal.SIGTERM)
+                deadline = time.monotonic() + 5.0
+                while (
+                    dashboard_registry.process_identity_is_live(
+                        dashboard_pid, dashboard.get("started_at")
+                    )
+                    and time.monotonic() < deadline
+                ):
+                    time.sleep(0.1)
+                if dashboard_registry.process_identity_is_live(
+                    dashboard_pid, dashboard.get("started_at")
+                ):
+                    os.killpg(os.getpgid(dashboard_pid), signal.SIGKILL)
+            except (KeyError, OSError, TypeError, ValueError) as exc:
+                print(f"Could not stop the orphaned Dash process: {exc}", file=sys.stderr, flush=True)
+        try:
+            from . import actions
+
+            result = actions.stop_all_broker_work(reason=reason)
+            if result.get("errors"):
+                print(
+                    "Some broker-owned workers could not be stopped cleanly: "
+                    + "; ".join(str(item) for item in result["errors"]),
+                    file=sys.stderr,
+                    flush=True,
+                )
+        except Exception as exc:
+            publish_event("broker", "Manager lease cleanup failed", str(exc), status="error")
+            print(f"Broker worker cleanup failed: {exc}", file=sys.stderr, flush=True)
+
+        deadline = time.monotonic() + BROKER_WORK_STOP_TIMEOUT_SECONDS
+        while count_active_jobs(broker_jobs()) and time.monotonic() < deadline:
+            if stop_event.wait(0.25):
+                return
+        stop_event.set()
+        server.shutdown()
+        return
+
+
 def serve() -> None:
-    """Run one detached loopback broker until explicitly terminated."""
+    """Run one loopback broker until its manager or an explicit stop ends it."""
     app = Flask("clubb_dashboard_runtime_broker")
     server = make_server("127.0.0.1", 0, app, threaded=True)
+    managed = os.environ.get(MANAGER_REQUIRED_ENV) == "1"
+    stop_event = threading.Event()
+
+    def request_shutdown(_signum: int, _frame: Any) -> None:
+        stop_event.set()
+        threading.Thread(target=server.shutdown, name="clubb-broker-shutdown", daemon=True).start()
+
+    previous_sigterm = signal.signal(signal.SIGTERM, request_shutdown)
+    previous_sigint = None
+    if managed:
+        # Ctrl-C belongs to the foreground manager, which performs the ordered
+        # Dash -> workers -> broker shutdown. The broker waits for that request.
+        previous_sigint = signal.signal(signal.SIGINT, signal.SIG_IGN)
     # The stable MCP endpoint validates this timestamp against the broker's
     # actual OS process creation time.  ``time.time()`` here would measure how
     # long imports/socket setup took and can fail that identity check on slower
@@ -350,6 +430,15 @@ def serve() -> None:
     _recover_scm_monitoring()
     server_thread = threading.Thread(target=server.serve_forever, name="clubb-broker-http", daemon=True)
     server_thread.start()
+    lease_thread = None
+    if managed:
+        lease_thread = threading.Thread(
+            target=_stop_after_manager_lease_expires,
+            args=(server, stop_event),
+            name="clubb-manager-lease",
+            daemon=True,
+        )
+        lease_thread.start()
     try:
         endpoint = start_broker_endpoint(
             connection,
@@ -363,8 +452,12 @@ def serve() -> None:
         update_connection_logs(log_paths)
         server_thread.join()
     finally:
+        stop_event.set()
         stop_broker_endpoint()
         server.shutdown()
+        signal.signal(signal.SIGTERM, previous_sigterm)
+        if previous_sigint is not None:
+            signal.signal(signal.SIGINT, previous_sigint)
 
 
 def main() -> None:

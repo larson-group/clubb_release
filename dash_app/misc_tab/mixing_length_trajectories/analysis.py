@@ -521,6 +521,10 @@ def inspect_dataset(path):
                 "Missing required CLUBB fields: " + ", ".join(missing)
             )
         times = np.asarray(dataset["time"][:], dtype=float)
+        if times.size == 0:
+            raise ValueError(
+                f"{path} contains no time records yet; wait for the writer or choose another file."
+            )
         column_count = len(dataset.dimensions.get("col", (0,))) or 1
     return {
         "path": path,
@@ -536,6 +540,16 @@ def load_dataset_record(path, record, column=0):
     record = int(np.clip(record, 0, metadata["record_count"] - 1))
     column = int(np.clip(column, 0, metadata["column_count"] - 1))
     with nc.Dataset(metadata["path"]) as dataset:
+        # The selected output may still be written by CLUBB. Re-check inside
+        # the load handle so a truncate/recreate between inspection and this
+        # read becomes a useful validation error instead of netCDF4 IndexError.
+        available_records = int(dataset["time"].shape[0])
+        if available_records == 0:
+            raise ValueError(
+                f"{metadata['path']} contains no time records yet; "
+                "wait for the writer or choose another file."
+            )
+        record = int(np.clip(record, 0, available_records - 1))
         mu = _parameter_value(dataset, "mu", column, 1.0e-3)
         lmin_coef = _parameter_value(dataset, "lmin_coef", column, 0.5)
         return DatasetRecord(

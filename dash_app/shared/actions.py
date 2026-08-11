@@ -76,6 +76,7 @@ from dash_app.tune_tab.runtime import (
     start_tuning_job,
     stop_loss_run,
     stop_active_tuning_job,
+    stop_tuning_job,
 )
 from tuner.workspaces import (
     create_revision as create_tune_workspace_revision,
@@ -155,6 +156,7 @@ _ARTIFACT_STORE = ArtifactStore()
 _BATCH_QUEUE_LOCK = threading.Lock()
 _BATCH_WATCHERS_LOCK = threading.Lock()
 _BATCH_WATCHERS: set[str] = set()
+_BROKER_SHUTTING_DOWN = threading.Event()
 # ``inspect_dashboard``/``invoke_dashboard`` survive only to make an agent's
 # work visible in an already-open browser.  Scientific actions must use the
 # typed MCP service, where they receive request-idempotency, durable job IDs,
@@ -1380,6 +1382,8 @@ def _start_queued_scm_batch_children_locked(batch_job_id: str) -> dict[str, Any]
 
 def _start_queued_scm_batch_children(batch_job_id: str) -> dict[str, Any] | None:
     """Serialize queue advancement so completion/recovery cannot double-start a child."""
+    if _BROKER_SHUTTING_DOWN.is_set():
+        return _batch_record(batch_job_id)
     with _BATCH_QUEUE_LOCK:
         return _start_queued_scm_batch_children_locked(batch_job_id)
 
@@ -2572,6 +2576,105 @@ def stop_run(case: str) -> dict[str, Any]:
     return {"status": "stop_requested", "case": case_name, "pid": proc_data.get("pid")}
 
 
+def stop_all_broker_work(*, reason: str = "dashboard manager is stopping") -> dict[str, Any]:
+    """Best-effort, idempotent shutdown of every broker-owned worker."""
+    _BROKER_SHUTTING_DOWN.set()
+    snapshot = broker_jobs()
+    requested: list[str] = []
+    errors: list[str] = []
+
+    compile_record = dict(snapshot.get("compile") or {})
+    if str(compile_record.get("state") or "") in {"running", "stopping"}:
+        try:
+            stop_compile()
+            requested.append("compile")
+            job_id = str(compile_record.get("job_id") or "")
+            if job_id:
+                _JOB_STORE.update(job_id, state="stopping")
+        except ValueError as exc:
+            errors.append(f"compile: {exc}")
+
+    for case, raw_record in (snapshot.get("runs") or {}).items():
+        record = dict(raw_record or {})
+        if str(record.get("state") or "") not in {"running", "stopping"}:
+            continue
+        try:
+            stop_run(str(case))
+            requested.append(f"SCM:{case}")
+            job_id = str(record.get("job_id") or "")
+            if job_id:
+                _JOB_STORE.update(job_id, state="stopping")
+        except ValueError as exc:
+            errors.append(f"SCM:{case}: {exc}")
+
+    tune_record = dict(snapshot.get("tune") or {})
+    if str(tune_record.get("state") or "") in {"running", "stopping"}:
+        job = dict(tune_record.get("job") or {})
+        try:
+            if not job:
+                raise ValueError("durable Tune process metadata is missing")
+            stop_tuning_job(job)
+            update_broker_job("tune", state="stopping")
+            requested.append("Tune")
+            job_id = str(tune_record.get("job_id") or "")
+            if job_id:
+                _JOB_STORE.update(job_id, state="stopping")
+        except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+            errors.append(f"Tune: {exc}")
+
+    for run_id, raw_record in (snapshot.get("loss_runs") or {}).items():
+        record = dict(raw_record or {})
+        if str(record.get("state") or "") not in {"running", "stopping"}:
+            continue
+        try:
+            update_broker_loss_run(str(run_id), **stop_loss_run(record))
+            requested.append(f"Tune-result:{run_id}")
+            job_id = str(record.get("job_id") or "")
+            if job_id:
+                _JOB_STORE.update(job_id, state="stopping")
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            errors.append(f"Tune-result:{run_id}: {exc}")
+
+    # A batch may have children that have not started yet and therefore do not
+    # appear in broker_jobs(). Mark them terminal so a later broker cannot
+    # recover and launch them after the manager has deliberately stopped.
+    for batch in _JOB_STORE.list_kind("scm_batch"):
+        if str(batch.get("state") or "") not in {"queued", "running"}:
+            continue
+        children: list[dict[str, Any]] = []
+        for raw_child in batch.get("children") or []:
+            child = dict(raw_child or {})
+            if str(child.get("state") or "") == "queued":
+                child["state"] = "cancelled"
+                child_id = str(child.get("job_id") or "")
+                if child_id:
+                    _JOB_STORE.update(child_id, state="cancelled")
+                    _ARTIFACT_STORE.release(child_id)
+            children.append(child)
+        updated = _JOB_STORE.update(
+            str(batch.get("job_id") or ""),
+            state="cancelled",
+            children=children,
+            finished_at_unix_seconds=time.time(),
+            cancellation_reason=str(reason)[:500],
+        )
+        if updated:
+            try:
+                _write_scm_batch_manifest(updated)
+            except OSError as exc:
+                errors.append(f"SCM batch manifest: {exc}")
+        requested.append(f"SCM-batch:{batch.get('batch_id') or batch.get('job_id')}")
+
+    publish_event(
+        "broker",
+        "Stopping broker-owned work",
+        f"{reason} | requested: {', '.join(requested) if requested else 'none'}"
+        + (f" | errors: {'; '.join(errors)}" if errors else ""),
+        status="error" if errors else "info",
+    )
+    return {"status": "stop_requested", "requested": requested, "errors": errors}
+
+
 def inspect_tuning() -> dict[str, Any]:
     """Return the current Tune worker's exact request and file-backed status."""
     job = active_tuning_job_data()
@@ -3443,6 +3546,10 @@ def allowed_action_names() -> list[str]:
 
 def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     """Dispatch only registered semantic operations; never execute raw commands."""
+    if action == "stop_all_broker_work":
+        return stop_all_broker_work(reason=str(payload.get("reason") or "dashboard manager is stopping"))
+    if _BROKER_SHUTTING_DOWN.is_set():
+        raise ValueError("the dashboard runtime broker is shutting down")
     # These typed domain mutations are accepted only through the gateway's
     # private internal-action path.  Keeping their validation and launch here
     # makes the detached broker own every watcher thread, so an MCP adapter

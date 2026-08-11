@@ -51,7 +51,10 @@ def _write_chunk(path: Path, chunk: bytes) -> None:
 def relay(path: Path, stream_name: str) -> None:
     terminal = sys.stdout.buffer if stream_name == "stdout" else sys.stderr.buffer
     while True:
-        chunk = sys.stdin.buffer.read(64 * 1024)
+        # BufferedReader.read(size) may wait for the entire 64 KiB request,
+        # hiding low-volume tracebacks until process shutdown. os.read returns
+        # as soon as any pipe data is available, keeping terminal and file live.
+        chunk = os.read(sys.stdin.fileno(), 64 * 1024)
         if not chunk:
             return
         terminal.write(chunk)

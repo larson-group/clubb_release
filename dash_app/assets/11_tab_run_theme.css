@@ -10,6 +10,145 @@
   align-items: start;
 }
 
+.run-config-save-modal--hidden {
+  display: none;
+}
+
+.run-config-save-panel {
+  width: min(620px, 92vw);
+}
+
+.run-config-save-header {
+  display: block;
+}
+
+.run-config-save-subtitle {
+  margin-top: 4px;
+  color: #94a3b8 !important;
+  font-size: 13px;
+}
+
+.run-config-save-form {
+  display: grid;
+  gap: 18px;
+}
+
+.run-config-save-field {
+  display: grid;
+  gap: 7px;
+}
+
+.run-config-save-field > label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#app-root .run-config-save-input,
+#app-root .run-config-save-note {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+#app-root .run-config-save-note {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.run-config-save-help {
+  color: #94a3b8 !important;
+  font-size: 12px;
+}
+
+.run-config-save-feedback {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 9px 11px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.run-config-save-feedback--error {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: #ef4444;
+  color: #fecaca !important;
+}
+
+.run-config-save-feedback--warning {
+  background: rgba(217, 119, 6, 0.14);
+  border-color: #f59e0b;
+  color: #fde68a !important;
+}
+
+#app-root.theme-light .run-config-save-feedback--error {
+  color: #991b1b !important;
+}
+
+#app-root.theme-light .run-config-save-feedback--warning {
+  color: #92400e !important;
+}
+
+.run-config-save-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  border-top: 1px solid;
+  padding: 13px 16px;
+}
+
+#app-root.theme-dark .run-config-save-footer {
+  background: #111827;
+  border-color: #334155;
+}
+
+#app-root.theme-light .run-config-save-footer {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.run-config-save-cancel,
+.run-config-save-submit {
+  border: 1px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.run-config-save-cancel {
+  background: transparent;
+  border-color: #64748b;
+  color: inherit;
+}
+
+.run-config-save-submit {
+  background: #238636;
+  border-color: #2ea043;
+  color: #ffffff;
+}
+
+.run-config-save-submit:hover,
+.run-config-save-submit:focus-visible {
+  background: #2ea043;
+  outline: 2px solid rgba(46, 160, 67, 0.3);
+}
+
+.run-config-save-submit--danger {
+  background: #b91c1c;
+  border-color: #ef4444;
+}
+
+.run-config-save-submit--danger:hover,
+.run-config-save-submit--danger:focus-visible {
+  background: #dc2626;
+  outline-color: rgba(239, 68, 68, 0.32);
+}
+
 .run-left-pane,
 .run-right-pane {
   box-sizing: border-box;

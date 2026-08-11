@@ -141,7 +141,12 @@ def register_callbacks(app):
     def update_mu_control(path, column):
         if path is None or column is None:
             return 3.0e-3, {}, 1.0e-3
-        record = load_dataset_record(path, 0, column)
+        try:
+            record = load_dataset_record(path, 0, column)
+        except (IndexError, OSError, RuntimeError, TypeError, ValueError):
+            # File metadata owns the visible validation message. This callback
+            # can race that validation when a newly-created NetCDF is empty.
+            return 3.0e-3, {}, 1.0e-3
         slider_max = max(3.0e-3, 2.0 * record.mu)
         marks = {
             1.0e-5: "0.00001",
@@ -192,7 +197,22 @@ def register_callbacks(app):
                 [],
                 "",
             )
-        record = load_dataset_record(path, record_index, column)
+        try:
+            record = load_dataset_record(path, record_index, column)
+        except (IndexError, OSError, RuntimeError, TypeError, ValueError) as error:
+            message = f"Could not load this record: {error}"
+            return (
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+                html.Span(message, className="mlt-error"),
+                message,
+            )
         file_mu = record.mu
         record = replace(record, mu=float(mu))
         result = compute_record(record)

@@ -3,12 +3,14 @@
 from pathlib import Path
 
 import numpy as np
+import netCDF4 as nc
 import pytest
 from dash import Dash, dcc
 
 from dash_app.misc_tab.mixing_length_trajectories import SUBTAB
 from dash_app.misc_tab.mixing_length_trajectories.analysis import (
     compute_record,
+    inspect_dataset,
     load_dataset_record,
     profile_metrics,
 )
@@ -86,6 +88,47 @@ def test_tab_builds_and_registers_callbacks():
     assert SUBTAB.title == "Mixing Length Trajectories"
     assert SUBTAB.page_value == "misc-mixing-length-trajectories"
     assert len(app.callback_map) == 5
+
+
+def _empty_stats_file(path):
+    from dash_app.misc_tab.mixing_length_trajectories.analysis import REQUIRED_VARIABLES
+
+    with nc.Dataset(path, "w") as dataset:
+        dataset.createDimension("time", None)
+        for name in REQUIRED_VARIABLES:
+            dimensions = ("time",) if name == "time" else ()
+            dataset.createVariable(name, "f8", dimensions)
+    return path
+
+
+def _registered_callback(app, name):
+    return next(
+        entry["callback"].__wrapped__
+        for entry in app.callback_map.values()
+        if entry["callback"].__name__ == name
+    )
+
+
+def test_empty_dataset_is_reported_before_record_indexing(tmp_path):
+    path = _empty_stats_file(tmp_path / "empty_stats.nc")
+
+    with pytest.raises(ValueError, match="contains no time records yet"):
+        inspect_dataset(path)
+
+
+def test_empty_dataset_callbacks_do_not_raise_dash_errors(tmp_path):
+    path = _empty_stats_file(tmp_path / "empty_stats.nc")
+    app = Dash(__name__, suppress_callback_exceptions=True)
+    register_callbacks(app)
+
+    update_mu = _registered_callback(app, "update_mu_control")
+    assert update_mu(str(path), 0) == (3.0e-3, {}, 1.0e-3)
+
+    update_diagnostics = _registered_callback(app, "update_diagnostics")
+    result = update_diagnostics(str(path), 0, 0, 1.0e-3)
+    assert len(result) == 10
+    assert result[8].className == "mlt-error"
+    assert "contains no time records yet" in result[9]
 
 
 def test_layout_keeps_figures_live_without_loading_replacement():

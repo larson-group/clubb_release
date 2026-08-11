@@ -10,7 +10,9 @@ usage() {
 Usage: ./launch_dashboard.sh [dash-app-args...]
 
 Creates or reuses a local Dash virtualenv, installs dash_app/requirements.txt,
-then launches dash_app/app.py. Arguments are passed through to the Dash app.
+then launches the foreground dashboard manager. Arguments are passed through
+to the Dash app. The manager owns the runtime broker and restarts Dash every
+10 seconds for up to 5 minutes after a crash.
 
 Environment:
   CLUBB_DASH_VENV  Virtualenv path. Default: .venv-dash
@@ -33,7 +35,6 @@ if [[ "${1:-}" == "--launcher-help" ]]; then
 fi
 
 requirements="$repo_root/dash_app/requirements.txt"
-app="$repo_root/dash_app/app.py"
 venv_dir="${CLUBB_DASH_VENV:-$repo_root/.venv-dash}"
 
 python_supports_dashboard() {
@@ -85,11 +86,11 @@ venv_python="$venv_dir/bin/python"
 echo "Installing Dash dependencies from dash_app/requirements.txt"
 "$venv_python" -m pip install -r "$requirements"
 
-echo "Starting CLUBB Dash app"
+echo "Starting CLUBB Dash manager"
 dash_log="$($venv_python -m dash_app.shared.runtime_logging prepare --repo "$repo_root")"
 
 # Keep both streams live in the launching terminal while forwarding them to
 # the private rotating runtime log. Separate relays preserve stdout/stderr.
 exec > >("$venv_python" -m dash_app.shared.runtime_logging relay --path "$dash_log" --stream stdout)
 exec 2> >("$venv_python" -m dash_app.shared.runtime_logging relay --path "$dash_log" --stream stderr)
-exec "$venv_python" "$app" "$@"
+exec "$venv_python" -m dash_app.manager "$@"

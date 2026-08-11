@@ -85,6 +85,15 @@ _LANDSCAPE_BINS = 28
 _LANDSCAPE_LOSS_LIKE_METRICS = {"total_loss", "raw:scaled_rmse", "raw:centered_rmse_norm"}
 
 
+def rendered_config_names(button_ids):
+    """Return names for the Tune config buttons mounted in this callback request."""
+    return [
+        str((component_id or {}).get("name") or "").strip()
+        for component_id in (button_ids or [])
+        if str((component_id or {}).get("name") or "").strip()
+    ]
+
+
 def _finite_float(value):
     """Return a finite float, or None for absent/non-finite values."""
     try:
@@ -2440,6 +2449,7 @@ def register_display_callbacks(app):
         Input({"type": "tune-range-param", "index": ALL}, "value"),
         Input({"type": "tune-range-min", "index": ALL}, "value"),
         Input({"type": "tune-range-max", "index": ALL}, "value"),
+        State({"type": "tune-config-button", "name": ALL}, "id"),
     )
     def render_tuning_state(
         status,
@@ -2457,7 +2467,7 @@ def register_display_callbacks(app):
         _aggregation_weight_3,
         _aggregation_weight_4,
         selected_config,
-        tunable_configs,
+        _tunable_configs,
         random_max_samples,
         resolve_spacing,
         simann_max_iters,
@@ -2473,6 +2483,7 @@ def register_display_callbacks(app):
         selected_param_names,
         min_values,
         max_values,
+        config_button_ids,
     ):
         """Render the current tuning status and best-results table."""
         param_names = [
@@ -2538,11 +2549,10 @@ def register_display_callbacks(app):
         add_disabled = controls_locked or selected_count >= len(tunable_names or [])
         case_disabled = [controls_locked] * len(selected_case_names or [])
         range_disabled = [controls_locked] * len(selected_param_names or [])
-        config_values = [
-            str(config.get("value", "")).strip()
-            for config in (tunable_configs or [])
-            if str(config.get("value", "")).strip()
-        ]
+        # The catalog Store can update one callback turn before its new button
+        # children mount. Size ALL-pattern returns from the exact rendered IDs
+        # that Dash used to construct this request's output specification.
+        config_values = rendered_config_names(config_button_ids)
         config_disabled = [controls_locked] * len(config_values)
         config_styles = [
             config_button_style(selected=value == selected_config, disabled=controls_locked)

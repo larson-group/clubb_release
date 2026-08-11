@@ -19,6 +19,7 @@ from .provenance import RUNTIME_FINGERPRINT_SCOPE
 from .activity import REPO_ROOT, read_activity
 from . import dashboard_registry
 from dash_app.shared.runtime import atomic_write_json, private_path, readable_private_paths, restrict_existing
+from dash_app.shared.manager_lease import MANAGER_REQUIRED_ENV
 
 
 _TOKEN = hashlib.sha256(str(REPO_ROOT).encode("utf-8")).hexdigest()[:16]
@@ -42,6 +43,7 @@ def write_connection(
         "url": f"http://127.0.0.1:{int(port)}{API_PREFIX}",
         "token": secrets.token_urlsafe(32),
         "repository": str(REPO_ROOT),
+        "manager_required": os.environ.get(MANAGER_REQUIRED_ENV) == "1",
     }
     if pid is not None:
         payload["pid"] = int(pid)

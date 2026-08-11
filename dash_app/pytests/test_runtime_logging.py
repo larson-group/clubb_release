@@ -1,5 +1,7 @@
 import os
 import stat
+import threading
+from types import SimpleNamespace
 from pathlib import Path
 
 from dash_app.shared import runtime_logging
@@ -19,6 +21,43 @@ def test_relay_preserves_stream_and_rotates_private_log(tmp_path, monkeypatch):
     assert path.read_bytes() == b"new"
     assert path.with_name("dash.log.1").read_bytes() == b"old!"
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+
+def test_relay_forwards_a_short_message_before_pipe_closes(tmp_path, monkeypatch):
+    read_fd, write_fd = os.pipe()
+    reader = os.fdopen(read_fd, "rb")
+    forwarded = threading.Event()
+
+    class Sink:
+        def write(self, _chunk):
+            return None
+
+        def flush(self):
+            return None
+
+    monkeypatch.setattr(
+        runtime_logging,
+        "sys",
+        SimpleNamespace(stdin=reader, stdout=SimpleNamespace(buffer=Sink()), stderr=SimpleNamespace(buffer=Sink())),
+    )
+    monkeypatch.setattr(
+        runtime_logging,
+        "_write_chunk",
+        lambda _path, chunk: forwarded.set() if chunk == b"short traceback\n" else None,
+    )
+    thread = threading.Thread(
+        target=runtime_logging.relay,
+        args=(tmp_path / "dash.log", "stderr"),
+        daemon=True,
+    )
+    thread.start()
+    try:
+        os.write(write_fd, b"short traceback\n")
+        assert forwarded.wait(1.0)
+    finally:
+        os.close(write_fd)
+        thread.join(timeout=1.0)
+        reader.close()
 
 
 def test_connection_log_metadata_contains_only_paths(tmp_path, monkeypatch):

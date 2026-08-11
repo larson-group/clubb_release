@@ -74,6 +74,10 @@ once the broker migration is ready. Dash registers its PID/start time and
 heartbeat with the broker; browser-targeted operations return
 `DASHBOARD_UNAVAILABLE` when no current browser is registered. Compile, Run,
 Tune, and artifact jobs remain broker-owned and continue without a browser.
+Under `./launch_dashboard.sh`, a foreground manager supervises both processes:
+it restarts an unhealthy Dash every 10 seconds for at most 5 minutes, while the
+broker enforces a 30-second manager lease so an abruptly lost launcher cannot
+leave the dashboard or scientific workers running indefinitely.
 
 The older `mcp-instances/` rotating records are migration-only. A broker
 startup terminates only the exact recorded legacy endpoint process (matching

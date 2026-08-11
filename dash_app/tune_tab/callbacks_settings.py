@@ -10,7 +10,12 @@ from .discovery import (
     load_tunable_names,
     tunable_config_names,
 )
-from .layout import DEFAULT_AVERAGE_TIME_SECONDS, build_case_config_row, build_param_range_row
+from .layout import (
+    DEFAULT_AVERAGE_TIME_SECONDS,
+    build_case_config_row,
+    build_config_buttons,
+    build_param_range_row,
+)
 from .runtime import empty_status_payload
 from dash_app.shared.tunable_configs import canonical_tunable_parameter_name
 from utilities.clubb_settings_validation import is_independently_tunable
@@ -185,6 +190,15 @@ def sanitize_param_values_for_config(param_values, min_values, max_values, tunab
 
 def register_settings_callbacks(app):
     """Register callbacks that manage case defaults and range-row state."""
+
+    @app.callback(
+        Output("tune-config-buttons", "children"),
+        Input("tune-tunable-configs", "data"),
+        Input("tune-selected-config", "data"),
+    )
+    def render_config_buttons(configs, selected_config):
+        """Refresh Tune's named-config choices after Run saves a config."""
+        return build_config_buttons(configs or [], selected_config)
 
     @app.callback(
         Output("tune-strategy-mode", "data"),

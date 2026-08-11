@@ -7,22 +7,34 @@ output. The app is intended to be run from an existing CLUBB checkout.
 ## Install
 
 The top-level launcher can create the local virtualenv, install dependencies,
-and start the app:
+and start the foreground dashboard manager:
 
 ```bash
 ./launch_dashboard.sh
 ```
 
-Arguments are passed through to `dash_app/app.py`, for example:
+The manager starts the runtime broker and Dash as child processes. Arguments
+are passed through to `dash_app/app.py`, for example:
 
 ```bash
 ./launch_dashboard.sh --port 23404 -debug
 ```
 
-Dash serves callbacks concurrently by default, so a large Plot-tab load does
-not block navigation or another tab.  If a particular
-host's NetCDF/HDF5 stack needs serialized callback execution for diagnosis,
-start it with `--single-threaded`.
+If Dash crashes or stops reporting its broker heartbeat, the manager retries it
+every 10 seconds for up to 5 minutes. A successful restart is selected without
+opening another browser tab. If Dash does not recover within that window, the
+manager reports the last failure, gracefully stops broker-owned work, stops the
+broker, and exits nonzero. `SIGINT`, `SIGTERM`, and terminal hangup use the same
+ordered shutdown.
+
+The broker also watches a private manager heartbeat. If the manager is killed
+without a chance to clean up, a replacement launcher can adopt the broker for
+30 seconds. After that grace period, the broker stops the orphaned Dash process
+group and active Compile/Run/Tune work, then exits.
+
+Dash serializes ordinary callbacks by default to protect NetCDF/HDF5 access.
+Explicitly expensive callbacks use isolated background worker processes. Use
+`--threaded` only for short diagnostics on a stack known to be thread-safe.
 
 For manual setup, run this from the repository root:
 
@@ -116,8 +128,9 @@ drawer, agent presence list, or bridge process.
 Runtime and application services live under `dash_app/shared/` and are imported
 directly by the dashboard and MCP adapter.
 
-Start Dash first. It starts (or reuses) a small localhost-only broker sidecar,
-prints the path to its private connection record, and opens the dashboard.
+Start the launcher first. Its manager starts (or reuses) a small localhost-only
+broker sidecar, prints the path to its private connection record, and opens the
+dashboard.
 Agents use the MCP adapter for one operation at a time; closing the adapter
 ends that transient connection. The durable broker continues to own
 Compile/Run/Tune/artifact workers and recovery across dashboard or adapter
@@ -125,8 +138,8 @@ restarts.
 
 ### Add the running dashboard to a Codex chat
 
-Each Dash process starts one loopback-only Streamable HTTP MCP endpoint bound
-to its own dashboard instance. Open the dashboard's bottom-left utilities menu
+The manager-owned broker starts one loopback-only Streamable HTTP MCP endpoint
+for the checkout. Open the dashboard's bottom-left utilities menu
 and copy the values under **MCP connection** into the chat's manual MCP-server
 setup:
 
@@ -134,15 +147,16 @@ setup:
 2. Enter the displayed **Server URL** (it ends in `/mcp`).
 3. Supply the displayed **Bearer token** when prompted for authentication.
 
-The displayed instance ID identifies the selected dashboard/broker pairing.
+The displayed instance ID identifies the selected checkout broker.
 The endpoint is authenticated with a random per-instance bearer token, checks
-the owning dashboard PID and start time, and routes every typed request to the
-broker connection captured at startup. It is valid only while that dashboard
-instance is alive. Normal shutdown removes its private record; crash recovery
-reconciles records by checking endpoint, dashboard, and broker liveness. The
+the owning broker PID and start time, and routes every typed request to the
+broker connection captured at startup. It is valid only while the checkout's
+broker is alive; Dash itself may restart around it. Normal
+shutdown removes its private record; crash recovery reconciles records by
+checking endpoint, dashboard, manager, and broker liveness. The
 endpoint is stateless HTTP and does not create a persistent agent chat/session.
-No Codex configuration file is edited automatically, and another dashboard
-instance has a different URL, token, and instance ID.
+No Codex configuration file is edited automatically, and another checkout has
+a different URL, token, and instance ID.
 
 The durable broker is intentionally separate from this endpoint. Removing an
 MCP endpoint does not stop active broker-owned jobs; a later dashboard or
@@ -288,7 +302,7 @@ against the current dashboard-owned Plot state before the handoff and again by
 the native removal callback; removed IDs are not reused during that dashboard
 session. There is intentionally no generic Plot update operation yet.
 All typed mutations cross the private internal broker boundary before launch.
-The detached broker—not the agent-owned stdio adapter—therefore owns process
+The manager-owned broker—not the agent-owned stdio adapter—therefore owns process
 watchers and terminal job updates. Closing or replacing an MCP adapter does not
 orphan active work; another adapter can reconnect, query the same `job_id`, and
 cancel it.

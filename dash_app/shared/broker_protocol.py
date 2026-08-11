@@ -12,6 +12,7 @@
 # Version 17 lets public MCP SCM requests select a directory below output/.
 # Version 18 lets MCP child runs use any directory below output/.
 # Version 19 fixes artifact retention ordering after active bundles are released.
+# Version 20 adds manager-owned graceful shutdown for every broker job family.
 # Runtime source fingerprints are metadata/lifecycle policy, not an API
 # contract, so they do not require a protocol bump.
-BROKER_PROTOCOL_VERSION = 19
+BROKER_PROTOCOL_VERSION = 20

@@ -1,4 +1,19 @@
+from dash import Dash, html
+
 from dash_app import app
+
+
+def test_dashboard_generation_route_is_process_specific_and_not_cached():
+    dash = Dash(__name__)
+    dash.layout = html.Div()
+    app._register_dashboard_generation_route(dash)
+
+    response = dash.server.test_client().get("/_clubb-dashboard-generation")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"generation": app.DASH_GENERATION}
+    assert response.headers["Cache-Control"] == "no-store"
+    assert f'window.__CLUBB_DASH_GENERATION__ = "{app.DASH_GENERATION}"' in dash.index_string
 
 
 def test_main_reopens_existing_dashboard_without_starting_second_dash(monkeypatch):

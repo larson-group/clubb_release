@@ -1,5 +1,7 @@
 """Callbacks for run-tab flag/parameter editing and multicol UI state."""
 
+import time
+
 from dash import (
     ALL,
     Input,
@@ -8,12 +10,14 @@ from dash import (
     State,
     ClientsideFunction,
     callback_context,
+    html,
     no_update,
 )
 
-from dash_app.shared.tunable_configs import tunable_config_names
+from dash_app.shared.tunable_configs import available_tunable_configs, tunable_config_names
 from utilities.output_paths import resolve_output_dir
 from utilities.clubb_settings_validation import (
+    apply_linked_parameter_values,
     evaluate_settings,
     is_independently_tunable,
     linked_flag_updates,
@@ -21,6 +25,7 @@ from utilities.clubb_settings_validation import (
     values_by_name,
     values_by_setting_key,
 )
+from utilities.save_tunable_config import normalize_config_name, save_tunable_config
 
 from .config_state import build_tunable_config_state
 from .layout import (
@@ -174,6 +179,32 @@ def output_directory_warning(value):
     return "", "run-output-dir-warning run-output-dir-warning--hidden"
 
 
+def settings_resolution_for_save(
+    schema,
+    flag_ids,
+    flag_values,
+    param_ids,
+    param_values,
+    linked_ids=None,
+    linked_values=None,
+):
+    """Resolve the live controls instead of relying on an asynchronously updated Store."""
+    parameters = values_by_setting_key(param_ids, param_values)
+    parameters = apply_linked_parameter_values(
+        parameters,
+        {
+            str((component_id or {}).get("group") or ""): value
+            for component_id, value in zip(linked_ids or [], linked_values or [])
+            if (component_id or {}).get("group")
+        },
+    )
+    return evaluate_settings(
+        schema or {},
+        flag_values=synchronized_flag_values(flag_ids, flag_values),
+        parameter_values=parameters,
+    )
+
+
 def register_settings_callbacks(app):
     """Register callbacks that track dirty state and changed-field styling."""
 
@@ -185,6 +216,162 @@ def register_settings_callbacks(app):
     def show_output_directory_warning(output_directory):
         """Make intentional output reuse visible before a Run launch."""
         return output_directory_warning(output_directory)
+
+    @app.callback(
+        Output("run-config-save-modal", "className"),
+        Output("run-config-save-name", "value"),
+        Output("run-config-save-note", "value"),
+        Output("run-config-save-feedback", "children"),
+        Output("run-config-save-request", "data"),
+        Output("run-config-save-overwrite", "data"),
+        Output("run-config-save-submit", "children"),
+        Output("run-config-save-submit", "className"),
+        Input("run-config-save", "n_clicks"),
+        Input("run-config-save-cancel", "n_clicks"),
+        Input("run-config-save-submit", "n_clicks"),
+        State("run-config-save-name", "value"),
+        State("run-config-save-note", "value"),
+        State("run-tunable-configs", "data"),
+        State("run-config-save-overwrite", "data"),
+        prevent_initial_call=True,
+    )
+    def manage_config_save_dialog(
+        open_clicks,
+        _cancel_clicks,
+        _submit_clicks,
+        name,
+        note,
+        configs,
+        overwrite_name,
+    ):
+        """Open the save form and require a second explicit overwrite click."""
+        trigger_id = callback_context.triggered_id
+        hidden = "shared-notecard-overlay run-config-save-modal--hidden"
+        visible = "shared-notecard-overlay"
+        default_button = "run-config-save-submit"
+
+        if trigger_id == "run-config-save" and open_clicks:
+            return visible, "", "", "", no_update, None, "Save config", default_button
+        if trigger_id == "run-config-save-cancel":
+            return hidden, "", "", "", no_update, None, "Save config", default_button
+        if trigger_id != "run-config-save-submit":
+            return (no_update,) * 8
+
+        try:
+            save_name = normalize_config_name(name)
+        except ValueError as exc:
+            feedback = html.Div(
+                str(exc),
+                className="run-config-save-feedback run-config-save-feedback--error",
+            )
+            return visible, no_update, no_update, feedback, no_update, None, "Save config", default_button
+
+        exists = any(
+            str(config.get("value") or "") == save_name
+            for config in (configs or [])
+            if isinstance(config, dict)
+        )
+        if exists and overwrite_name != save_name:
+            feedback = html.Div(
+                f"A config named {save_name} already exists. Confirm to replace it.",
+                className="run-config-save-feedback run-config-save-feedback--warning",
+            )
+            return (
+                visible,
+                no_update,
+                no_update,
+                feedback,
+                no_update,
+                save_name,
+                "Overwrite config",
+                "run-config-save-submit run-config-save-submit--danger",
+            )
+
+        request = {
+            "name": save_name,
+            "note": str(note or "").strip(),
+            "force": exists,
+            "nonce": time.time_ns(),
+        }
+        return hidden, "", "", "", request, None, "Save config", default_button
+
+    app.clientside_callback(
+        ClientsideFunction(
+            namespace="dashboardWorkspace",
+            function_name="selectSavedRunConfig",
+        ),
+        Output("run-config-reset-signal", "data", allow_duplicate=True),
+        Input("run-config-save-selection", "data"),
+        prevent_initial_call=True,
+    )
+
+    @app.callback(
+        Output("run-tunable-configs", "data"),
+        Output("tune-tunable-configs", "data"),
+        Output("run-config-save-selection", "data"),
+        Output("run-config-save-status", "children"),
+        Output("run-config-save-status", "hidden"),
+        Input("run-config-save-request", "data"),
+        State("run-selected-config", "data"),
+        State("run-settings-schema", "data"),
+        State({"type": "run-flag", "name": ALL}, "id"),
+        State({"type": "run-flag", "name": ALL}, "value"),
+        State({"type": "run-param", "file": ALL, "name": ALL}, "id"),
+        State({"type": "run-param", "file": ALL, "name": ALL}, "value"),
+        State({"type": "run-linked-param", "group": ALL}, "id"),
+        State({"type": "run-linked-param", "group": ALL}, "value"),
+        prevent_initial_call=True,
+    )
+    def save_named_config(
+        request,
+        selected_config,
+        schema,
+        flag_ids,
+        flag_values,
+        param_ids,
+        param_values,
+        linked_ids,
+        linked_values,
+    ):
+        """Pass the current Run overrides to the named-config save helper."""
+        if not request:
+            return (no_update,) * 5
+        try:
+            resolution = settings_resolution_for_save(
+                schema,
+                flag_ids,
+                flag_values,
+                param_ids,
+                param_values,
+                linked_ids,
+                linked_values,
+            )
+            errors = [
+                issue
+                for issue in (resolution or {}).get("issues", [])
+                if issue.get("severity") == "error"
+            ]
+            if errors:
+                raise ValueError("Resolve the current settings errors before saving.")
+            result = save_tunable_config(
+                selected_config,
+                (resolution or {}).get("overrides") or {},
+                request.get("name"),
+                request.get("note", ""),
+                force=bool(request.get("force")),
+            )
+            from tuner.request import settings_schema_for_tune_config
+
+            settings_schema_for_tune_config.cache_clear()
+        except (OSError, TypeError, ValueError) as exc:
+            configs = available_tunable_configs()
+            return configs, configs, no_update, f"Could not save config: {exc}", False
+
+        configs = available_tunable_configs()
+        action = "Overwrote" if result["overwritten"] else "Saved"
+        message = f"{action} {result['name']} ({len(result['edits'])} edits)."
+        selection = {"name": result["name"], "nonce": request.get("nonce")}
+        return configs, configs, selection, message, False
 
     @app.callback(
         Output("run-settings-resolution", "data"),

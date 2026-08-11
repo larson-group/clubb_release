@@ -56,7 +56,7 @@ outside the declared service.
 
 Treat an MCP **"Transport closed"** error as an adapter-launch failure, *not*
 as evidence that Dash is absent.  In particular, a Dash debug/source reload
-does not normally stop the detached broker.  Do not launch a second dashboard
+does not normally stop the manager-owned broker.  Do not launch a second dashboard
 in response to that error.  Refresh or restart the local agent's MCP adapter,
 then retry discovery; if the problem persists, report that the adapter itself
 needs attention separately from the dashboard/broker state.

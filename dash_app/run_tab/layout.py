@@ -153,9 +153,110 @@ def build_run_config_buttons(configs, selected_config):
                 style=run_config_button_style(selected=value == selected_config),
             )
         )
-    if buttons:
-        return html.Div(buttons, style={"display": "flex", "gap": "12px", "flexWrap": "wrap"})
-    return html.Div("No complete tunable configs found.", className="run-empty-message")
+    save_style = run_config_button_style(disabled=not buttons)
+    save_style.update(
+        {
+            "backgroundColor": "#0f766e" if buttons else "#9ca3af",
+            "border": "2px dashed #5eead4" if buttons else "2px dashed #cbd5e1",
+        }
+    )
+    buttons.append(
+        html.Button(
+            "Save config",
+            id="run-config-save",
+            n_clicks=0,
+            disabled=not buttons,
+            title="Save the current settings as a named config",
+            style=save_style,
+        )
+    )
+    return html.Div(buttons, style={"display": "flex", "gap": "12px", "flexWrap": "wrap"})
+
+
+def build_config_save_dialog():
+    """Render the name/note form used to save the current Run configuration."""
+    return html.Div(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            "Save configuration",
+                            id="run-config-save-dialog-title",
+                            className="shared-notecard-title",
+                        ),
+                        html.Div(
+                            "Clone the selected config with the current settings",
+                            className="run-config-save-subtitle",
+                        ),
+                    ],
+                    className="shared-notecard-header run-config-save-header",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Label("Config name", htmlFor="run-config-save-name"),
+                                dcc.Input(
+                                    id="run-config-save-name",
+                                    type="text",
+                                    value="",
+                                    placeholder="example: adg2_experiment",
+                                    className="run-config-save-input",
+                                ),
+                            ],
+                            className="run-config-save-field",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Note", htmlFor="run-config-save-note"),
+                                dcc.Textarea(
+                                    id="run-config-save-note",
+                                    value="",
+                                    placeholder="Optional context, purpose, or follow-up notes…",
+                                    className="run-config-save-note",
+                                ),
+                                html.Div(
+                                    "Saved in the new config's README.md.",
+                                    className="run-config-save-help",
+                                ),
+                            ],
+                            className="run-config-save-field",
+                        ),
+                        html.Div(id="run-config-save-feedback"),
+                    ],
+                    className="shared-notecard-body run-config-save-form",
+                ),
+                html.Div(
+                    [
+                        html.Button(
+                            "Cancel",
+                            id="run-config-save-cancel",
+                            type="button",
+                            n_clicks=0,
+                            className="run-config-save-cancel",
+                        ),
+                        html.Button(
+                            "Save config",
+                            id="run-config-save-submit",
+                            type="button",
+                            n_clicks=0,
+                            className="run-config-save-submit",
+                        ),
+                    ],
+                    className="run-config-save-footer",
+                ),
+            ],
+            className="shared-notecard-panel shared-notecard-size-small run-config-save-panel",
+            role="dialog",
+            **{
+                "aria-modal": "true",
+                "aria-labelledby": "run-config-save-dialog-title",
+            },
+        ),
+        id="run-config-save-modal",
+        className="shared-notecard-overlay run-config-save-modal--hidden",
+    )
 
 
 def build_optional_args_section():
@@ -707,6 +808,24 @@ def build_layout(initial_data):
             # A config button deliberately discards the saved per-field Run
             # values before the server rebuilds the matching controls.
             dcc.Store(id="run-config-reset-signal"),
+            dcc.Store(id="run-config-save-request"),
+            dcc.Store(id="run-config-save-selection"),
+            dcc.Store(id="run-config-save-overwrite"),
+            build_config_save_dialog(),
+            html.Div(
+                id="run-config-save-status",
+                hidden=True,
+                style={
+                    "position": "fixed",
+                    "right": "24px",
+                    "bottom": "24px",
+                    "zIndex": "2000",
+                    "padding": "10px 14px",
+                    "borderRadius": "6px",
+                    "backgroundColor": "#0f766e",
+                    "color": "white",
+                },
+            ),
             # Ephemeral acknowledgement for the browser-side removal of
             # transient Run local-storage entries after Clear.
             dcc.Store(id="run-clear-persistence-signal"),

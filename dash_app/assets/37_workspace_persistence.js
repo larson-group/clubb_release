@@ -163,10 +163,28 @@
         return "Cleared " + keys.length + " saved entries.";
       },
 
+      selectSavedRunConfig: function (selection) {
+        if (!selection || !selection.name) {
+          return noUpdate();
+        }
+        clearRunControlPersistence();
+        return selection;
+      },
+
       resetRunConfigControls: function (_clicks, buttonIds) {
         var context = window.dash_clientside.callback_context || {};
         var triggered = context.triggered_id;
         if (!triggered || triggered.type !== 'run-config-button' || !triggered.name) {
+          return noUpdate();
+        }
+        var triggeredIndex = (buttonIds || []).findIndex(function (buttonId) {
+          return buttonId &&
+            buttonId.type === triggered.type &&
+            buttonId.name === triggered.name;
+        });
+        if (triggeredIndex < 0 || Number((_clicks || [])[triggeredIndex] || 0) < 1) {
+          // Adding/rebuilding config buttons invokes an ALL-pattern callback
+          // with zero clicks. It is layout hydration, not user selection.
           return noUpdate();
         }
         clearRunControlPersistence();
