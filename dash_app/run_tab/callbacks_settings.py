@@ -31,6 +31,7 @@ from .config_state import build_tunable_config_state
 from .layout import (
     build_multicol_row,
     build_right_pane,
+    build_run_config_buttons,
     build_tunable_controls,
     compute_width_hints,
 )
@@ -295,20 +296,10 @@ def register_settings_callbacks(app):
         }
         return hidden, "", "", "", request, None, "Save config", default_button
 
-    app.clientside_callback(
-        ClientsideFunction(
-            namespace="dashboardWorkspace",
-            function_name="selectSavedRunConfig",
-        ),
-        Output("run-config-reset-signal", "data", allow_duplicate=True),
-        Input("run-config-save-selection", "data"),
-        prevent_initial_call=True,
-    )
-
     @app.callback(
         Output("run-tunable-configs", "data"),
         Output("tune-tunable-configs", "data"),
-        Output("run-config-save-selection", "data"),
+        Output("run-config-buttons", "children"),
         Output("run-config-save-status", "children"),
         Output("run-config-save-status", "hidden"),
         Input("run-config-save-request", "data"),
@@ -365,13 +356,14 @@ def register_settings_callbacks(app):
             settings_schema_for_tune_config.cache_clear()
         except (OSError, TypeError, ValueError) as exc:
             configs = available_tunable_configs()
-            return configs, configs, no_update, f"Could not save config: {exc}", False
+            buttons = build_run_config_buttons(configs, selected_config).children
+            return configs, configs, buttons, f"Could not save config: {exc}", False
 
         configs = available_tunable_configs()
         action = "Overwrote" if result["overwritten"] else "Saved"
         message = f"{action} {result['name']} ({len(result['edits'])} edits)."
-        selection = {"name": result["name"], "nonce": request.get("nonce")}
-        return configs, configs, selection, message, False
+        buttons = build_run_config_buttons(configs, selected_config).children
+        return configs, configs, buttons, message, False
 
     @app.callback(
         Output("run-settings-resolution", "data"),

@@ -809,7 +809,6 @@ def build_layout(initial_data):
             # values before the server rebuilds the matching controls.
             dcc.Store(id="run-config-reset-signal"),
             dcc.Store(id="run-config-save-request"),
-            dcc.Store(id="run-config-save-selection"),
             dcc.Store(id="run-config-save-overwrite"),
             build_config_save_dialog(),
             html.Div(

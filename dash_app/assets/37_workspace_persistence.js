@@ -163,14 +163,6 @@
         return "Cleared " + keys.length + " saved entries.";
       },
 
-      selectSavedRunConfig: function (selection) {
-        if (!selection || !selection.name) {
-          return noUpdate();
-        }
-        clearRunControlPersistence();
-        return selection;
-      },
-
       resetRunConfigControls: function (_clicks, buttonIds) {
         var context = window.dash_clientside.callback_context || {};
         var triggered = context.triggered_id;

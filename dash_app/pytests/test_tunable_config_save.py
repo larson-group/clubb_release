@@ -206,3 +206,50 @@ def test_save_resolution_uses_visible_linked_control_values():
 
     assert resolution["overrides"]["tunable"]["C6rt"] == "3.25"
     assert resolution["overrides"]["tunable"]["C6thl"] == "3.25"
+
+
+def test_save_completion_refreshes_choices_without_reselecting_config(monkeypatch):
+    app = Dash(__name__, suppress_callback_exceptions=True)
+    register_settings_callbacks(app)
+    callback_entry = next(
+        entry
+        for entry in app.callback_map.values()
+        if entry["callback"].__name__ == "save_named_config"
+    )
+    callback = callback_entry["callback"].__wrapped__
+    configs = [
+        {"label": "default", "value": "default"},
+        {"label": "saved", "value": "saved"},
+    ]
+    monkeypatch.setattr(
+        callbacks_settings,
+        "settings_resolution_for_save",
+        lambda *_args: {"issues": [], "overrides": {"flags": {"l_predict_upwp_vpwp": ".true."}}},
+    )
+    monkeypatch.setattr(
+        callbacks_settings,
+        "save_tunable_config",
+        lambda *_args, **_kwargs: {"name": "saved", "overwritten": False, "edits": ["flag"]},
+    )
+    monkeypatch.setattr(callbacks_settings, "available_tunable_configs", lambda: configs)
+
+    result = callback(
+        {"name": "saved", "nonce": 1},
+        "default",
+        {},
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    )
+
+    output_ids = [output.component_id for output in callback_entry["output"]]
+    assert "run-config-reset-signal" not in output_ids
+    assert "run-config-save-selection" not in output_ids
+    assert result[0] == result[1] == configs
+    assert [button.id for button in result[2]][-2:] == [
+        {"type": "run-config-button", "name": "saved"},
+        "run-config-save",
+    ]
