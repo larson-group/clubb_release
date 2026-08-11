@@ -4606,6 +4606,8 @@ module advance_xm_wpxp_module
       name_xm_matrix_condt_num, &
       name_xm_pd, &
       name_xm_cl, &
+      name_xm_hf_before, &
+      name_xm_hf_after, &
       name_wpxp_ma, &
       name_wpxp_ta, &
       name_wpxp_tp, &
@@ -4634,6 +4636,8 @@ module advance_xm_wpxp_module
       name_xm_ma = "rtm_ma"
       name_xm_pd = "rtm_pd"
       name_xm_cl = "rtm_cl"
+      name_xm_hf_before = "rtm_before_hf"
+      name_xm_hf_after = "rtm_after_hf"
       name_xm_matrix_condt_num = "rtm_matrix_condt_num"
       name_wpxp_ma = "wprtp_ma"
       name_wpxp_ta = "wprtp_ta"
@@ -4651,6 +4655,8 @@ module advance_xm_wpxp_module
       name_xm_ma = "thlm_ma"
       name_xm_pd = ""
       name_xm_cl = "thlm_cl"
+      name_xm_hf_before = "thlm_before_hf"
+      name_xm_hf_after = "thlm_after_hf"
       name_xm_matrix_condt_num = "thlm_matrix_condt_num"
       name_wpxp_ma = "wpthlp_ma"
       name_wpxp_ta = "wpthlp_ta"
@@ -4668,6 +4674,8 @@ module advance_xm_wpxp_module
       name_xm_ma = "um_ma"
       name_xm_pd = ""
       name_xm_cl = ""
+      name_xm_hf_before = ""
+      name_xm_hf_after = ""
       name_xm_matrix_condt_num = ""
       name_wpxp_ma = "upwp_ma"
       name_wpxp_ta = "upwp_ta"
@@ -4685,6 +4693,8 @@ module advance_xm_wpxp_module
       name_xm_ma = "vm_ma"
       name_xm_pd = ""
       name_xm_cl = ""
+      name_xm_hf_before = ""
+      name_xm_hf_after = ""
       name_xm_matrix_condt_num = ""
       name_wpxp_ma = "vpwp_ma"
       name_wpxp_ta = "vpwp_ta"
@@ -4701,6 +4711,8 @@ module advance_xm_wpxp_module
       name_xm_ma = ""
       name_xm_pd = ""
       name_xm_cl = ""
+      name_xm_hf_before = ""
+      name_xm_hf_after = ""
       name_xm_matrix_condt_num = ""
       name_wpxp_ma = ""
       name_wpxp_ta = ""
@@ -4956,6 +4968,11 @@ module advance_xm_wpxp_module
     if ( fill_holes_type /= 0 &
          .and. solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm  ) then 
 
+      if ( stats%l_sample .and. len_trim(name_xm_hf_before) > 0 ) then
+        !$acc update host( xm )
+        call stats_update( name_xm_hf_before, xm, stats )
+      end if
+
       if ( clubb_at_least_debug_level_api( 3 ) ) then
 
         !$acc update host( xm )
@@ -4989,6 +5006,11 @@ module advance_xm_wpxp_module
                                     gr%dzt, rho_ds_zt, gr%grid_dir_indx,  & ! In
                                     fill_holes_type,                       & ! In
                                     xm )                                    ! InOut
+
+      if ( stats%l_sample .and. len_trim(name_xm_hf_after) > 0 ) then
+        !$acc update host( xm )
+        call stats_update( name_xm_hf_after, xm, stats )
+      end if
       
     end if
 

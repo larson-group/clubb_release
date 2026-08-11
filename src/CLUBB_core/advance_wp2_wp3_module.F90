@@ -1896,6 +1896,10 @@ module advance_wp2_wp3_module
     end if
 
     if ( fill_holes_type /= 0 ) then
+
+      if ( stats%l_sample ) then
+        call stats_update( "wp2_before_hf", wp2, stats )
+      end if
       
       ! Debugging to check if wp2 hole-filling is conservative:
       ! Compute vertical_avg before and after hole-filling
@@ -1912,6 +1916,11 @@ module advance_wp2_wp3_module
                                     gr%dzm, rho_ds_zm, gr%grid_dir_indx, & ! In
                                     fill_holes_type,                      & ! In
                                     wp2 )                                  ! InOut
+
+      if ( stats%l_sample ) then
+        !$acc update host( wp2 )
+        call stats_update( "wp2_after_hf", wp2, stats )
+      end if
 
       if ( clubb_at_least_debug_level_api(3) ) then
         wp2_avg_after = vertical_avg(nzm, rho_ds_zm, wp2, gr%dzm)

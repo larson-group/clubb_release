@@ -6089,21 +6089,34 @@ module advance_xp2_xpyp_module
       xp2_np1   ! Variance for <n+1>          [units vary]
 
     !------------------- Local variables ------------------
-    character(len=32) :: name_pd
+    character(len=32) :: &
+      name_pd, &
+      name_hf_before, &
+      name_hf_after
 
     !------------------- Begin Code ------------------
 
     select case( solve_type )
     case ( xp2_xpyp_rtp2 )
       name_pd = "rtp2_pd"
+      name_hf_before = "rtp2_before_hf"
+      name_hf_after = "rtp2_after_hf"
     case ( xp2_xpyp_thlp2 )
       name_pd = "thlp2_pd"
+      name_hf_before = "thlp2_before_hf"
+      name_hf_after = "thlp2_after_hf"
     case ( xp2_xpyp_up2 )
       name_pd = "up2_pd"
+      name_hf_before = "up2_before_hf"
+      name_hf_after = "up2_after_hf"
     case ( xp2_xpyp_vp2 )
       name_pd = "vp2_pd"
+      name_hf_before = "vp2_before_hf"
+      name_hf_after = "vp2_after_hf"
     case default
       name_pd = ""
+      name_hf_before = ""
+      name_hf_after = ""
     end select
 
     if ( stats%l_sample ) then
@@ -6120,12 +6133,21 @@ module advance_xp2_xpyp_module
     ! of the hole.
     ! upper_hf_level = nz-1 since we are filling the zm levels
     if ( fill_holes_type /= 0 ) then
+      if ( stats%l_sample .and. len_trim(name_hf_before) > 0 ) then
+        call stats_update( name_hf_before, xp2_np1, stats )
+      end if
+
       call fill_holes_vertical_api( nzm, ngrdcol, tolerance,              & ! In
                                     gr%k_lb_zm + gr%grid_dir_indx,        & ! In
                                     gr%k_ub_zm - gr%grid_dir_indx,        & ! In
                                     gr%dzm, rho_ds_zm, gr%grid_dir_indx,  & ! In
                                     fill_holes_type,                      & ! In
                                     xp2_np1 )                               ! InOut
+
+      if ( stats%l_sample .and. len_trim(name_hf_after) > 0 ) then
+        !$acc update host( xp2_np1 )
+        call stats_update( name_hf_after, xp2_np1, stats )
+      end if
     end if
 
     if ( stats%l_sample ) then
