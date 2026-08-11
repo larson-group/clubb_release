@@ -121,7 +121,12 @@ Examples:
   Checks convergence of `cloud_frac` for `rico`.
 
 - `python3 tests/run_clubb_conv_test.py -p --case bomex --var rcm`
-  Runs the check and writes a convergence plot under `output/`.
+  Runs the check and writes a convergence plot plus final-profile comparisons
+  for every timestep under `output/`.
+
+- `python3 tests/run_clubb_conv_test.py -config Lscale`
+  Forwards unrecognized options to every `run_scm.py` invocation, allowing the
+  convergence test to use a parameter-and-flag configuration.
 
 ### `run_jax_vs_fortran_cases.py`
 
