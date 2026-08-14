@@ -153,6 +153,7 @@ def test_broker_passes_process_creation_time_to_stable_endpoint(monkeypatch):
     monkeypatch.setattr(broker, "install_gateway_routes", lambda *_args: None)
     monkeypatch.setattr(broker, "set_broker_metadata", lambda **_kwargs: None)
     monkeypatch.setattr(broker, "_recover_compile_monitoring", lambda: None)
+    monkeypatch.setattr(broker, "_recover_profile_monitoring", lambda: None)
     monkeypatch.setattr(broker, "_recover_tune_keepalive", lambda: None)
     monkeypatch.setattr(broker, "_recover_scm_monitoring", lambda: None)
     monkeypatch.setattr(
@@ -163,6 +164,7 @@ def test_broker_passes_process_creation_time_to_stable_endpoint(monkeypatch):
         ),
     )
     monkeypatch.setattr(broker, "update_connection_endpoint", lambda _endpoint: None)
+    monkeypatch.setattr(broker, "update_connection_logs", lambda _paths: None)
     monkeypatch.setattr(broker, "stop_broker_endpoint", lambda: None)
 
     broker.serve()

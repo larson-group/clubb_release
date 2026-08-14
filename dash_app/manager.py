@@ -53,6 +53,9 @@ def _active_job_labels(jobs: dict[str, Any] | None = None) -> list[str]:
     compile_job = snapshot.get("compile") or {}
     if str(compile_job.get("state") or "") in ACTIVE_JOB_STATES:
         labels.append("compile")
+    profile_job = snapshot.get("profile") or {}
+    if str(profile_job.get("state") or "") in ACTIVE_JOB_STATES:
+        labels.append("Profile")
     tune_job = snapshot.get("tune") or {}
     if str(tune_job.get("state") or "") in ACTIVE_JOB_STATES:
         labels.append("Tune")

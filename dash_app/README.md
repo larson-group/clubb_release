@@ -1,8 +1,51 @@
 # CLUBB Dash App
 
 The Dash app is a browser interface for common CLUBB workflows. It provides a
-run tab for launching CLUBB cases and a plots tab for inspecting CLUBB NetCDF
-output. The app is intended to be run from an existing CLUBB checkout.
+Run tab for launching CLUBB cases, a Profile tab for configurable process-based
+timing sweeps, and a Plots tab for inspecting CLUBB NetCDF output. The app is
+intended to be run from an existing CLUBB checkout.
+
+The Run, Profile, and Tune action areas each show the effective default CLUBB
+build next to their launch buttons. This read-only badge follows
+`install/selected` (or the same `install/latest` fallback used by
+`run_scm.py`) and updates when the Compile tab selects another build. Hover it
+for the resolved install and CMake paths, Fortran compiler, build type,
+precision, accelerator, OpenMP, and GPTL details. Explicit runner `-exe` or
+`-install_dir` options still override the displayed default.
+
+The Profile tab is a browser interface to `utilities/time_clubb.py`. Its top
+benchmark panel configures the case, process/per-process-batch-size sweep,
+repetitions, executable, configuration, overrides, and additional
+`run_scm.py` arguments. A direct one-second polling path reads the active
+summary and process rows and renders figures server-side, so results appear
+after each measured repetition while the broker-owned job is running; warmups
+remain hidden. Browser stores retain only compact timer/process choices rather
+than the growing raw timing table. The running row counter and all four figures
+are returned by the same callback response, so visible progress cannot advance
+independently of the plots. Stored profiles can be overlaid, compared with a baseline, or
+viewed as process distributions and exclusive-cost decompositions. The right
+rail has a profile-selection section above a separate set of shared comparison
+controls; plot-specific options remain beside the plot they affect. The
+profile chooser shows the three newest unselected results by default, expands
+to the full library, and displays active comparisons as removable pills. The
+benchmark-label field indicates when its normalized profile name already
+exists. Starting that benchmark asks for confirmation, then replaces the
+existing profile in place instead of creating a timestamped version; any older
+same-label/same-case versions are removed from the active comparison selection.
+
+The selected directory is a collection of compact, directly commit-able
+profile folders. Each benchmark creates `<profile-name>/` containing
+`README.md`, profile-wide `profile.json` provenance, one workload row per
+process-count/batch-size point in `batches.csv`, raw timer observations in
+`timings.csv`, and one representative input/setup/log/native-timing set under
+`logs/<batch-id>/`. Child processes otherwise run in temporary directories,
+which are deleted after each workload is aggregated. Warmups are retained with
+`phase=warmup` but excluded from the default plots. Dash derives statistical
+summaries in memory instead of storing duplicate summary files. **Export
+selected** downloads complete profiles as a ZIP; **Import** accepts those ZIPs
+on another machine or checkout. Provenance includes the effective vertical
+level count, observed model steps, source revision, executable checksum, host,
+timer backend, and time basis so Dash can flag potentially incomparable runs.
 
 ## Install
 

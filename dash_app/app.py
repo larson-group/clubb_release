@@ -28,6 +28,7 @@ from dash_app.compile_tab.tab import build_tab as build_compile_tab
 from dash_app.misc_tab.tab import build_tab as build_misc_tab
 from dash_app.persistence import enable_workspace_persistence, utility_drawer
 from dash_app.plot_tab.tab import build_tab as build_plots_tab
+from dash_app.profile_tab.tab import build_tab as build_profile_tab
 from dash_app.reports_tab.static import register_static_report_routes
 from dash_app.reports_tab.tab import build_tab as build_reports_tab
 from dash_app.run_tab.tab import build_tab as build_run_tab
@@ -37,6 +38,7 @@ from dash_app.shared.gateway import BROKER_LOG_PATH, read_connection, update_con
 from dash_app.shared.runtime import private_path
 from dash_app.shared.runtime_logging import dashboard_log_path
 from dash_app.shared.provenance import runtime_source_fingerprint
+from dash_app.shared.selected_build import register_selected_build_callback
 from dash_app.tune_tab.tab import build_tab as build_tune_tab
 from dash_app.tutorial_tab.tab import build_tab as build_tutorial_tab
 
@@ -239,6 +241,7 @@ def main():
         build_tutorial_tab(app),
         build_compile_tab(app),
         build_run_tab(app),
+        build_profile_tab(app),
         build_tune_tab(app),
         build_plots_tab(app),
         build_reports_tab(app),
@@ -277,6 +280,7 @@ def main():
     app.layout = html.Div(
         [
             dcc.Store(id="theme-store", data="dark"),
+            dcc.Interval(id="selected-build-refresh", interval=3000, n_intervals=0),
             dashboard_handoff(_app_title()),
             dcc.Tabs(tabs, id="dashboard-tabs", value="tutorial"),
             utility_drawer(endpoint_details),
@@ -323,6 +327,7 @@ def main():
         return "theme-dark", "Theme: Dark"
 
     register_dashboard_handoff_callbacks(app)
+    register_selected_build_callback(app)
 
     app.clientside_callback(
         ClientsideFunction(

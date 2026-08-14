@@ -311,6 +311,25 @@ def _recover_compile_monitoring() -> None:
         publish_event("broker", "Could not recover compile monitoring", str(exc), status="error")
 
 
+def _recover_profile_monitoring() -> None:
+    """Resume Profile timing status and CSV monitoring after a broker restart."""
+    record = dict(broker_jobs().get("profile") or {})
+    if str(record.get("state") or "") not in {"running", "stopping"}:
+        return
+    try:
+        from . import actions
+
+        actions._background(actions._watch_profile, record)
+        publish_event(
+            "broker",
+            "Resumed Profile timing monitoring",
+            str(record.get("output") or ""),
+            status="info",
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        update_broker_job("profile", state="error", recovery_error=str(exc))
+
+
 def stop_broker(*, timeout: float = 3.0) -> None:
     """Deliberately stop the detached broker, e.g. after editing broker code."""
     try:
@@ -426,6 +445,7 @@ def serve() -> None:
     install_gateway_routes(app, connection)
     set_broker_metadata(pid=os.getpid(), url=connection["url"], started_at=broker_started_at, state="running")
     _recover_compile_monitoring()
+    _recover_profile_monitoring()
     _recover_tune_keepalive()
     _recover_scm_monitoring()
     server_thread = threading.Thread(target=server.serve_forever, name="clubb-broker-http", daemon=True)

@@ -13,6 +13,7 @@
 # Version 18 lets MCP child runs use any directory below output/.
 # Version 19 fixes artifact retention ordering after active bundles are released.
 # Version 20 adds manager-owned graceful shutdown for every broker job family.
+# Version 21 adds the broker-owned Profile timing job used by the Profile tab.
 # Runtime source fingerprints are metadata/lifecycle policy, not an API
 # contract, so they do not require a protocol bump.
-BROKER_PROTOCOL_VERSION = 20
+BROKER_PROTOCOL_VERSION = 21

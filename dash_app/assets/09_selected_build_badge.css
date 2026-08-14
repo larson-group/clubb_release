@@ -1,0 +1,55 @@
+.selected-build-badge {
+  display: inline-flex;
+  min-height: 36px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, .72);
+  color: #cbd5e1;
+  cursor: help;
+  white-space: nowrap;
+}
+
+.selected-build-badge-label {
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.selected-build-badge-name {
+  padding: 0;
+  background: transparent;
+  color: #e2e8f0;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.selected-build-badge-ready { border-color: rgba(59, 130, 246, .58); }
+.selected-build-badge-fallback { border-color: rgba(245, 158, 11, .68); }
+.selected-build-badge-broken,
+.selected-build-badge-missing { border-color: rgba(239, 68, 68, .72); }
+
+#app-root.theme-light .selected-build-badge {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+#app-root.theme-light .selected-build-badge-label { color: #64748b; }
+#app-root.theme-light .selected-build-badge-name { color: #0f172a; }
+#app-root.theme-light .selected-build-badge-ready { border-color: #60a5fa; }
+#app-root.theme-light .selected-build-badge-fallback { border-color: #f59e0b; }
+#app-root.theme-light .selected-build-badge-broken,
+#app-root.theme-light .selected-build-badge-missing { border-color: #ef4444; }
+
+@media (max-width: 720px) {
+  .selected-build-badge {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+  }
+}

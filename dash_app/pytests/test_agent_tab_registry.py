@@ -23,7 +23,16 @@ def test_manifest_covers_every_top_level_dashboard_tab():
     manifest = actions.inspect_dashboard()
     tabs = {item["tab"]: item for item in manifest["tabs"]}
 
-    assert set(tabs) == {"tutorial", "compile", "run", "tune", "plots", "reports", "misc"}
+    assert set(tabs) == {
+        "tutorial",
+        "compile",
+        "run",
+        "profile",
+        "tune",
+        "plots",
+        "reports",
+        "misc",
+    }
     assert all(any(operation["name"] == "navigate" for operation in item["operations"]) for item in tabs.values())
     assert {operation["name"] for operation in tabs["plots"]["operations"]} >= {"set_view", "list", "remove"}
     assert {operation["name"] for operation in tabs["tune"]["operations"]} == {"navigate"}

@@ -202,3 +202,67 @@ def test_ui_gptl_flag_uses_the_shared_compile_option_path():
 
     assert options["gptl"] is True
     assert "-gptl" in runtime.build_compile_argv(options)
+
+
+def _install_selection_fixture(tmp_path, monkeypatch):
+    install_root = tmp_path / "install"
+    latest_target = install_root / "nvhpc_GPUopenacc_PRECdouble"
+    manual_target = install_root / "intel_PRECdouble"
+    latest_target.mkdir(parents=True)
+    manual_target.mkdir()
+    latest_link = install_root / "latest"
+    latest_link.symlink_to(latest_target)
+    monkeypatch.setattr(callbacks, "INSTALL_DIR", str(install_root))
+    return install_root, latest_target, manual_target, latest_link
+
+
+def test_new_compile_install_is_selected_only_once(tmp_path, monkeypatch):
+    install_root, latest_target, _manual_target, latest_link = _install_selection_fixture(
+        tmp_path, monkeypatch
+    )
+    callbacks.os.utime(
+        latest_link,
+        ns=(20_000_000_000, 20_000_000_000),
+        follow_symlinks=False,
+    )
+
+    assert callbacks.pending_latest_install_target(15.0) == str(latest_target.resolve())
+
+    callbacks.set_selected_install(latest_target)
+
+    assert callbacks.pending_latest_install_target(15.0) == ""
+    assert (install_root / "selected").resolve() == latest_target.resolve()
+
+
+def test_newer_manual_install_selection_blocks_stale_compile_restore(tmp_path, monkeypatch):
+    install_root, _latest_target, manual_target, latest_link = _install_selection_fixture(
+        tmp_path, monkeypatch
+    )
+    selected_link = install_root / "selected"
+    selected_link.symlink_to(manual_target)
+    callbacks.os.utime(
+        latest_link,
+        ns=(20_000_000_000, 20_000_000_000),
+        follow_symlinks=False,
+    )
+    callbacks.os.utime(
+        selected_link,
+        ns=(30_000_000_000, 30_000_000_000),
+        follow_symlinks=False,
+    )
+
+    assert callbacks.pending_latest_install_target(15.0) == ""
+    assert selected_link.resolve() == manual_target.resolve()
+
+
+def test_latest_install_older_than_compile_job_is_not_pending(tmp_path, monkeypatch):
+    _install_root, _latest_target, _manual_target, latest_link = _install_selection_fixture(
+        tmp_path, monkeypatch
+    )
+    callbacks.os.utime(
+        latest_link,
+        ns=(20_000_000_000, 20_000_000_000),
+        follow_symlinks=False,
+    )
+
+    assert callbacks.pending_latest_install_target(25.0) == ""

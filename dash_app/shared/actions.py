@@ -55,6 +55,15 @@ from dash_app.run_tab.runtime import get_proc, is_case_active, read_log_incremen
 from dash_app.run_tab.state import MAX_RUN_PROCS
 from dash_app.run_tab.state import DEFAULT_STATS_NAME
 from dash_app.plot_tab.plot_types.profile_plot import PLOT as profile_plot
+from dash_app.profile_tab.runtime import (
+    profile_process_status,
+    profile_results_complete,
+    read_log_tail as read_profile_log_tail,
+    read_profile_results,
+    release_profile_process,
+    start_profile_process,
+    stop_profile_process,
+)
 from dash_app.plot_tab.plot_types.shared import scan_output_cases
 from dash_app.services import plots as plot_service
 from dash_app.services.plots import validate_plot_request
@@ -170,6 +179,7 @@ _BROWSER_HANDOFF_OPERATIONS = {
     ("misc", "open_report"),
     ("compile", "navigate"),
     ("run", "navigate"),
+    ("profile", "navigate"),
     ("tune", "navigate"),
     ("plots", "navigate"),
     ("plots", "set_view"),
@@ -464,6 +474,49 @@ def _watch_compile(job: dict[str, Any], job_id: str | None = None) -> None:
                 _ARTIFACT_STORE.release(job_id)
             return
         time.sleep(0.75)
+
+
+def _watch_profile(job: dict[str, Any]) -> None:
+    """Mirror one timing wrapper into durable broker state and activity."""
+    while True:
+        run_id, rows = read_profile_results(job)
+        running, returncode = profile_process_status(job)
+        log_tail = read_profile_log_tail(job.get("log"))
+        if run_id:
+            job["run_id"] = run_id
+        update_broker_job(
+            "profile",
+            run_id=job.get("run_id") or "",
+            result_rows=len(rows),
+            log_tail=log_tail,
+        )
+        if not running:
+            record = dict(broker_jobs().get("profile") or {})
+            requested_stop = str(record.get("state") or "") == "stopping"
+            complete = profile_results_complete(job, rows)
+            success = returncode == 0 or (returncode is None and complete)
+            state = "finished" if success else ("stopped" if requested_stop else "error")
+            update_broker_job(
+                "profile",
+                state=state,
+                returncode=returncode,
+                run_id=job.get("run_id") or "",
+                result_rows=len(rows),
+                log_tail=log_tail,
+                finished_at=time.time(),
+            )
+            release_profile_process(job.get("pid"))
+            publish_event(
+                "profile",
+                "Profile timing finished"
+                if success
+                else ("Profile timing stopped" if requested_stop else "Profile timing failed"),
+                str(job.get("output") or ""),
+                status="success" if success else ("info" if requested_stop else "error"),
+                action={"type": "profile", "tab": "profile"},
+            )
+            return
+        time.sleep(0.5)
 
 
 def _watch_run(case: str, proc_data: dict[str, Any], job_id: str | None = None) -> None:
@@ -1944,6 +1997,30 @@ def launch_compile_request(options: dict[str, Any], *, env_id: str = "current", 
     return {"status": "started", "pid": job.get("pid"), "command": job.get("command"), "job": dict(job)}
 
 
+def launch_profile_request(settings: dict[str, Any]) -> dict[str, Any]:
+    """Start one process-based CLUBB timing sweep under broker ownership."""
+    existing = dict(broker_jobs().get("profile") or {})
+    if str(existing.get("state") or "") in {"running", "stopping"}:
+        raise ValueError("a Profile timing sweep is already active")
+    job = start_profile_process(dict(settings or {}))
+    record = {
+        **job,
+        "broker_managed": True,
+        "log_tail": "",
+        "returncode": None,
+    }
+    set_broker_job("profile", record)
+    publish_event(
+        "profile",
+        "Profile timing started",
+        str(job.get("command_display") or ""),
+        status="running",
+        action={"type": "profile", "tab": "profile"},
+    )
+    _background(_watch_profile, dict(job))
+    return {"status": "started", "job": record}
+
+
 def launch_rebuild_request(
     builds: list[dict[str, Any]],
     discovery: dict[str, Any],
@@ -2556,6 +2633,22 @@ def stop_compile() -> dict[str, Any]:
     return {"status": "stop_requested", "pid": job.get("pid")}
 
 
+def stop_profile() -> dict[str, Any]:
+    """Gracefully stop the broker-owned timing wrapper and its child groups."""
+    job = dict(broker_jobs().get("profile") or {})
+    if str(job.get("state") or "") not in {"running", "stopping"}:
+        raise ValueError("no broker-owned Profile timing sweep is running")
+    stop_profile_process(job)
+    update_broker_job("profile", state="stopping")
+    publish_event(
+        "profile",
+        "Profile timing stop requested",
+        str(job.get("log") or ""),
+        status="info",
+    )
+    return {"status": "stop_requested", "pid": job.get("pid")}
+
+
 def stop_run(case: str) -> dict[str, Any]:
     """Ask the broker-owned SCM case process to stop without requiring Dash state."""
     case_name = _validate_case(case)
@@ -2593,6 +2686,14 @@ def stop_all_broker_work(*, reason: str = "dashboard manager is stopping") -> di
                 _JOB_STORE.update(job_id, state="stopping")
         except ValueError as exc:
             errors.append(f"compile: {exc}")
+
+    profile_record = dict(snapshot.get("profile") or {})
+    if str(profile_record.get("state") or "") in {"running", "stopping"}:
+        try:
+            stop_profile()
+            requested.append("Profile")
+        except ValueError as exc:
+            errors.append(f"Profile: {exc}")
 
     for case, raw_record in (snapshot.get("runs") or {}).items():
         record = dict(raw_record or {})
@@ -2983,7 +3084,7 @@ def open_dashboard(tab: str) -> dict[str, Any]:
         "notes": "misc",
     }
     value = aliases.get(str(tab or "").strip(), str(tab or "").strip())
-    allowed = {"tutorial", "compile", "run", "tune", "plots", "reports", "misc"}
+    allowed = {"tutorial", "compile", "run", "profile", "tune", "plots", "reports", "misc"}
     if value not in allowed:
         raise ValueError(f"tab must be one of: {', '.join(sorted(allowed))}")
     event = publish_tab_request(value, f"Opening {value.replace('_', ' ').title()}")
@@ -3153,6 +3254,7 @@ def _register_dashboard_operations() -> None:
         "misc": ("Misc", "Interactive investigations and focused diagnostics."),
         "compile": ("Compile", "Configured CLUBB builds, logs, and build status."),
         "run": ("Run", "Checked-in SCM case execution and live output."),
+        "profile": ("Profile", "Concurrent CLUBB timing sweeps and performance plots."),
         "tune": ("Tune", "Structured parameter tuning, status, and result reruns."),
         "plots": ("Plots", "Profile and diagnostic plots backed by CLUBB NetCDF output."),
     }
@@ -3625,6 +3727,10 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         )
     if action == "launch_compile_request":
         return launch_compile_request(dict(payload.get("options") or {}), env_id=payload.get("env_id", "current"))
+    if action == "launch_profile_request":
+        return launch_profile_request(dict(payload.get("settings") or {}))
+    if action == "stop_profile":
+        return stop_profile()
     if action == "launch_rebuild_request":
         return launch_rebuild_request(
             list(payload.get("builds") or []),

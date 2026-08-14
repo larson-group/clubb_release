@@ -50,12 +50,17 @@ def test_broker_job_snapshot_survives_activity_reset_hook(tmp_path, monkeypatch)
         "compile",
         {"state": "running", "job": {"pid": 17, "log": "/tmp/compile.log"}, "log_tail": "building\n"},
     )
+    activity.set_broker_job(
+        "profile",
+        {"state": "running", "pid": 19, "log": "/tmp/profile.log", "log_tail": "timing\n"},
+    )
     activity.set_broker_run("arm", {"state": "running", "proc_data": {"pid": 18, "log": "/tmp/arm.log"}})
     activity.update_broker_run("arm", log_tail="running arm\n")
 
     jobs = activity.broker_jobs()
     assert jobs["compile"]["state"] == "running"
     assert jobs["compile"]["log_tail"] == "building\n"
+    assert jobs["profile"]["log_tail"] == "timing\n"
     assert jobs["runs"]["arm"]["log_tail"] == "running arm\n"
 
 
@@ -98,4 +103,4 @@ def test_legacy_agent_state_is_dropped_on_read(tmp_path, monkeypatch):
 
     assert "agents" not in snapshot
     assert "messages" not in snapshot
-    assert snapshot["version"] == 6
+    assert snapshot["version"] == 7

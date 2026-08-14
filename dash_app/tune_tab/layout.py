@@ -5,6 +5,7 @@ from __future__ import annotations
 from dash import dcc, html
 
 from dash_app.shared import styled_dropdown
+from dash_app.shared.selected_build import selected_build_badge
 from tuner.taylor_metrics import (
     DEFAULT_AGGREGATION_WEIGHTS,
     DEFAULT_LOSS_MODE,
@@ -374,6 +375,7 @@ def build_top_controls(initial_data):
                     ),
                     html.Div(
                         [
+                            selected_build_badge("tune-selected-build-badge"),
                             html.Button(
                                 "Start",
                                 id="tune-start-button",

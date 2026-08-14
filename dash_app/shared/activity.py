@@ -29,7 +29,7 @@ ACTIVE_JOB_STATES = frozenset({"queued", "submitting", "running", "stopping"})
 
 def _initial_state() -> dict[str, Any]:
     return {
-        "version": 6,
+        "version": 7,
         "next_id": 1,
         "events": [],
         "plot_request": None,
@@ -41,6 +41,7 @@ def _initial_state() -> dict[str, Any]:
         "broker": {},
         "jobs": {
             "compile": None,
+            "profile": None,
             "runs": {},
             "tune": None,
             "loss_runs": {},
@@ -65,6 +66,10 @@ def _read_state() -> dict[str, Any]:
     payload["version"] = defaults["version"]
     for key, value in defaults.items():
         payload.setdefault(key, value)
+    jobs = dict(payload.get("jobs") or {})
+    for key, value in defaults["jobs"].items():
+        jobs.setdefault(key, value)
+    payload["jobs"] = jobs
     return payload
 
 
@@ -78,6 +83,7 @@ def broker_jobs() -> dict[str, Any]:
     jobs = read_activity().get("jobs") or {}
     return {
         "compile": dict(jobs.get("compile") or {}) or None,
+        "profile": dict(jobs.get("profile") or {}) or None,
         "runs": {str(name): dict(value or {}) for name, value in (jobs.get("runs") or {}).items()},
         "tune": dict(jobs.get("tune") or {}) or None,
         "loss_runs": {str(name): dict(value or {}) for name, value in (jobs.get("loss_runs") or {}).items()},
@@ -413,8 +419,8 @@ def set_broker_metadata(**metadata: Any) -> dict[str, Any]:
 
 def set_broker_job(kind: str, payload: dict[str, Any] | None) -> dict[str, Any] | None:
     """Store one JSON-safe broker job record for a browser that reconnects later."""
-    if kind not in {"compile", "tune"}:
-        raise ValueError("broker job kind must be compile or tune")
+    if kind not in {"compile", "profile", "tune"}:
+        raise ValueError("broker job kind must be compile, profile, or tune")
     with _locked_state() as state:
         jobs = dict(state.get("jobs") or {})
         record = None if payload is None else dict(payload)
@@ -423,6 +429,7 @@ def set_broker_job(kind: str, payload: dict[str, Any] | None) -> dict[str, Any] 
         jobs[kind] = record
         jobs.setdefault("runs", {})
         jobs.setdefault("loss_runs", {})
+        jobs.setdefault("profile", None)
         state["jobs"] = jobs
         return None if record is None else dict(record)
 
@@ -444,6 +451,7 @@ def set_broker_run(case: str, payload: dict[str, Any] | None) -> dict[str, Any] 
             runs[name] = record
         jobs["runs"] = runs
         jobs.setdefault("compile", None)
+        jobs.setdefault("profile", None)
         jobs.setdefault("tune", None)
         jobs.setdefault("loss_runs", {})
         state["jobs"] = jobs
@@ -451,9 +459,9 @@ def set_broker_run(case: str, payload: dict[str, Any] | None) -> dict[str, Any] 
 
 
 def update_broker_job(kind: str, **updates: Any) -> dict[str, Any] | None:
-    """Merge status/log updates into one existing compile or tune broker job."""
-    if kind not in {"compile", "tune"}:
-        raise ValueError("broker job kind must be compile or tune")
+    """Merge status/log updates into an existing singular broker job."""
+    if kind not in {"compile", "profile", "tune"}:
+        raise ValueError("broker job kind must be compile, profile, or tune")
     with _locked_state() as state:
         jobs = dict(state.get("jobs") or {})
         current = jobs.get(kind)
@@ -465,6 +473,7 @@ def update_broker_job(kind: str, **updates: Any) -> dict[str, Any] | None:
         jobs[kind] = current
         jobs.setdefault("runs", {})
         jobs.setdefault("loss_runs", {})
+        jobs.setdefault("profile", None)
         state["jobs"] = jobs
         return dict(current)
 
@@ -483,6 +492,7 @@ def update_broker_run(case: str, **updates: Any) -> dict[str, Any] | None:
         runs[name] = current
         jobs["runs"] = runs
         jobs.setdefault("compile", None)
+        jobs.setdefault("profile", None)
         jobs.setdefault("tune", None)
         jobs.setdefault("loss_runs", {})
         state["jobs"] = jobs
@@ -506,6 +516,7 @@ def set_broker_loss_run(run_id: str, payload: dict[str, Any] | None) -> dict[str
             runs[name] = record
         jobs["loss_runs"] = runs
         jobs.setdefault("compile", None)
+        jobs.setdefault("profile", None)
         jobs.setdefault("runs", {})
         jobs.setdefault("tune", None)
         state["jobs"] = jobs
@@ -526,6 +537,7 @@ def update_broker_loss_run(run_id: str, **updates: Any) -> dict[str, Any] | None
         runs[name] = current
         jobs["loss_runs"] = runs
         jobs.setdefault("compile", None)
+        jobs.setdefault("profile", None)
         jobs.setdefault("runs", {})
         jobs.setdefault("tune", None)
         state["jobs"] = jobs

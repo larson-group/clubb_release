@@ -3,6 +3,7 @@
 from dash import dcc, html
 
 from dash_app.persistence import WORKSPACE_TOKEN
+from dash_app.shared.selected_build import selected_build_badge
 
 from .state import MAX_RUN_PROCS
 
@@ -449,6 +450,7 @@ def build_run_action_section():
             ),
             html.Div(
                 [
+                    selected_build_badge("run-selected-build-badge"),
                     html.Button("Run selected", id="run-button", n_clicks=0, className="run-button-run-selected", style=run_action_button_style("#111827")),
                     html.Button("Cancel runs", id="run-cancel", n_clicks=0, style=run_action_button_style("#b91c1c")),
                     html.Button("Clear", id="run-clear", n_clicks=0, style=run_action_button_style("#374151")),

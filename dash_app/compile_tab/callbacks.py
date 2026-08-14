@@ -718,6 +718,31 @@ def latest_install_target(updated_after=None):
     return ""
 
 
+def pending_latest_install_target(updated_after=None):
+    """Return a newly compiled install only until a newer selection has been made.
+
+    A terminal compile job can be restored whenever the shared broker snapshot
+    changes.  Comparing the symlink timestamps makes that callback idempotent:
+    selecting the compile result creates a newer ``install/selected`` link, and
+    a later manual selection remains newer still.
+    """
+    install_prefix = latest_install_target(updated_after)
+    if not install_prefix:
+        return ""
+
+    install_root = Path(INSTALL_DIR)
+    latest_path = install_root / "latest"
+    selected_path = install_root / "selected"
+    try:
+        latest_mtime_ns = latest_path.lstat().st_mtime_ns
+        if os.path.lexists(str(selected_path)):
+            if selected_path.lstat().st_mtime_ns >= latest_mtime_ns:
+                return ""
+    except OSError:
+        return ""
+    return install_prefix
+
+
 def find_build(discovery, build_path):
     """Return one discovered build by path."""
     return next(
@@ -1453,7 +1478,7 @@ def register_compile_callbacks(app):
             return no_update
         updated_discovery = discover_compile_state()
         if job.get("kind") == "compile" and job.get("status") != "cancelled":
-            install_prefix = latest_install_target(job.get("start_time"))
+            install_prefix = pending_latest_install_target(job.get("start_time"))
             if install_prefix:
                 try:
                     set_selected_install(install_prefix)
