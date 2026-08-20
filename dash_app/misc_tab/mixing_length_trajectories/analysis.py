@@ -509,7 +509,7 @@ def _parameter_value(dataset, name, column, fallback):
     return float(values[min(column, values.size - 1)])
 
 
-def inspect_dataset(path):
+def inspect_dataset(path, *, read_times=True):
     """Return selectable record/column metadata after validating a file."""
     path = Path(path).expanduser().resolve()
     with nc.Dataset(path) as dataset:
@@ -520,16 +520,21 @@ def inspect_dataset(path):
             raise ValueError(
                 "Missing required CLUBB fields: " + ", ".join(missing)
             )
-        times = np.asarray(dataset["time"][:], dtype=float)
-        if times.size == 0:
+        record_count = int(dataset["time"].shape[0])
+        if record_count == 0:
             raise ValueError(
                 f"{path} contains no time records yet; wait for the writer or choose another file."
             )
+        times = (
+            np.asarray(dataset["time"][:], dtype=float)
+            if read_times
+            else np.empty(0, dtype=float)
+        )
         column_count = len(dataset.dimensions.get("col", (0,))) or 1
     return {
         "path": path,
         "times": times,
-        "record_count": times.size,
+        "record_count": record_count,
         "column_count": column_count,
     }
 
@@ -636,7 +641,9 @@ def discover_netcdf_file_records(repo_root):
     for record in discover_stats_files(roots, exclude_dir_names=()):
         path = Path(record["path"])
         try:
-            inspect_dataset(path)
+            # Discovery needs only compatibility, not every timestep from
+            # every output file. The selected file loads its time axis later.
+            inspect_dataset(path, read_times=False)
         except (OSError, ValueError):
             continue
         compatible.append({**record, "path": str(path.resolve())})

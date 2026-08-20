@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
+import math
 import multiprocessing
 import os
 from pathlib import Path
@@ -105,8 +106,7 @@ class TuningScheduler:
             if isinstance(raw_strategy, dict)
             else str(raw_strategy).strip().lower()
         )
-        self.adaptive_strategy = self.strategy_name == "simann"
-        if self.adaptive_strategy:
+        if self.strategy_name == "simann":
             if not isinstance(raw_strategy, dict):
                 raw_strategy = {"name": "simann", "options": {}}
                 self.request["strategy"] = raw_strategy
@@ -114,14 +114,12 @@ class TuningScheduler:
             if options.get("chain_count") is None:
                 options["chain_count"] = max(1, self.max_workers * self.batch_size)
             try:
-                self.simann_chain_count = int(options["chain_count"])
+                simann_chain_count = int(options["chain_count"])
             except (TypeError, ValueError) as exc:
                 raise RuntimeError("simann chain_count must be an integer") from exc
-            if self.simann_chain_count < 1:
+            if simann_chain_count < 1:
                 raise RuntimeError("simann chain_count must be >= 1")
-            options["chain_count"] = self.simann_chain_count
-        else:
-            self.simann_chain_count = 0
+            options["chain_count"] = simann_chain_count
         self.case_weights = dict(request.get("case_weights", {}))
         self.field_weights = dict(request.get("field_weights", {}))
         self.loss_mode = request.get("loss_mode", DEFAULT_LOSS_MODE)
@@ -199,14 +197,7 @@ class TuningScheduler:
         # retains enough visible backlog for the drain-time balancer to act.
         self.max_pending_case_jobs_per_case = 2 * self.max_workers
         case_job_limited_batches = self.max_pending_case_jobs_per_case
-        if self.adaptive_strategy:
-            chain_limited_batches = max(
-                1,
-                (self.simann_chain_count + self.batch_size - 1) // self.batch_size,
-            )
-            self.max_pending_batches = min(chain_limited_batches, case_job_limited_batches)
-        else:
-            self.max_pending_batches = case_job_limited_batches
+        self.max_pending_batches = case_job_limited_batches
         self.max_pending_samples = self.max_pending_batches * self.batch_size
         self.worker_cap = max(self.max_workers, len(self.cases))
         self.results_file_limit = RESULTS_FILE_LIMIT
@@ -244,6 +235,11 @@ class TuningScheduler:
         self.param_names: list[str] | None = None
         self.parameter_hard_bounds: dict[str, dict] | None = None
         self.default_params_row: list[float] | None = None
+        self.baseline_case_metrics: dict[str, dict[str, dict]] = {
+            "clubb_default": {},
+            **({"override_defaults": {}} if self.override else {}),
+        }
+        self.baselines: dict[str, dict] = {}
         self.error_message = ""
         self.elapsed_before_resume_seconds = 0.0
         self.last_status_write = 0.0
@@ -274,12 +270,14 @@ class TuningScheduler:
                     samples_evaluated=self.samples_evaluated,
                     best_results=self.best_results,
                     best_results_by_case=self.best_results_by_case,
+                    baselines=self.baselines,
                     started_at=started_at,
                     updated_at=finished_at,
                     finished_at=finished_at,
                 )
                 return 0
             self._assert_compiled_parameter_compatibility()
+            self._finalize_baselines()
             self._initialize_sample_history_writer()
             seed = self.request.get("seed")
             self.strategy = build_tuning_strategy(
@@ -289,6 +287,13 @@ class TuningScheduler:
                 parameter_ranges=self.request["parameter_ranges"],
                 seed=None if seed is None else int(seed),
             )
+            pending_limit = self.strategy.pending_batch_limit(self.batch_size)
+            if pending_limit is not None:
+                self.max_pending_batches = min(
+                    self.max_pending_case_jobs_per_case,
+                    max(1, int(pending_limit)),
+                )
+                self.max_pending_samples = self.max_pending_batches * self.batch_size
             self._restore_resume_checkpoint()
             self.request["total_samples"] = self.strategy.estimated_sample_count()
             self._write_public_state("running", started_at, utc_now_iso(), force=True)
@@ -303,7 +308,6 @@ class TuningScheduler:
 
                 if not stopping and self._should_stop():
                     stopping = True
-                    self.pending_samples.clear()
                     self.case_jobs.clear()
                     self._stop_all_workers()
 
@@ -329,6 +333,7 @@ class TuningScheduler:
                             samples_evaluated=self.samples_evaluated,
                             best_results=self.best_results,
                             best_results_by_case=self.best_results_by_case,
+                            baselines=self.baselines,
                             started_at=started_at,
                             updated_at=finished_at,
                             finished_at=finished_at,
@@ -365,6 +370,7 @@ class TuningScheduler:
                         samples_evaluated=self.samples_evaluated,
                         best_results=self.best_results,
                         best_results_by_case=self.best_results_by_case,
+                        baselines=self.baselines,
                         started_at=started_at,
                         updated_at=finished_at,
                         finished_at=finished_at,
@@ -398,6 +404,7 @@ class TuningScheduler:
                 samples_evaluated=self.samples_evaluated,
                 best_results=self.best_results,
                 best_results_by_case=self.best_results_by_case,
+                baselines=self.baselines,
                 started_at=started_at,
                 updated_at=finished_at,
                 finished_at=finished_at,
@@ -481,7 +488,7 @@ class TuningScheduler:
     def _initialize_case_barrier(self, started_at: str) -> bool:
         """Start one worker per case and report whether initialization completed."""
         for case_name in self.cases:
-            self._start_worker(case_name)
+            self._start_worker(case_name, evaluate_baselines=True)
 
         while True:
             self._poll_workers()
@@ -500,7 +507,7 @@ class TuningScheduler:
             self._write_public_state("initializing", started_at, utc_now_iso())
             time.sleep(POLL_INTERVAL_SECONDS)
 
-    def _start_worker(self, case_name: str) -> WorkerHandle:
+    def _start_worker(self, case_name: str, *, evaluate_baselines: bool = False) -> WorkerHandle:
         """Spawn one worker process for a case."""
         worker_id = self.next_worker_id
         self.next_worker_id += 1
@@ -515,6 +522,7 @@ class TuningScheduler:
             "case_defaults": self.case_defaults.get(case_name, {}),
             "config": self.config,
             "override": self.override,
+            "evaluate_baselines": evaluate_baselines,
         }
         process = self.ctx.Process(target=worker_main, args=(child_conn, payload))
         process.start()
@@ -630,6 +638,25 @@ class TuningScheduler:
         if self.default_params_row is None:
             self.default_params_row = [float(value) for value in default_params[0]]
 
+        for baseline_name, baseline_message in dict(message.get("baselines") or {}).items():
+            if baseline_name not in self.baseline_case_metrics:
+                self.error_message = f"Worker for {worker.case_name} returned unknown baseline {baseline_name}"
+                worker.state = "failed"
+                return
+            if not baseline_message.get("available", True):
+                self.baseline_case_metrics[baseline_name][worker.case_name] = {
+                    "__baseline_unavailable__": str(
+                        baseline_message.get("unavailable_reason")
+                        or "CLUBB rejected this baseline parameter set"
+                    )
+                }
+                continue
+            case_metrics = self._case_metrics_from_message(baseline_message, worker.case_name)
+            if case_metrics is None:
+                worker.state = "failed"
+                return
+            self.baseline_case_metrics[baseline_name][worker.case_name] = case_metrics
+
         worker.state = "idle"
 
     def _initialize_sample_history_writer(self) -> None:
@@ -665,32 +692,43 @@ class TuningScheduler:
         if batch is None:
             return
 
+        case_metrics = self._case_metrics_from_message(message, case_name)
+        if case_metrics is None:
+            return
+
+        batch["case_loss_metrics"][case_name] = case_metrics
+
+        if all(case_name in batch["case_loss_metrics"] for case_name in self.cases):
+            self._complete_batch(batch_id, batch)
+
+    def _case_metrics_from_message(self, message: dict, case_name: str) -> dict | None:
+        """Validate one case result and return its canonical metric structure."""
         field_names = list(message.get("field_names", []))
         if field_names != self.selected_fields:
             self.error_message = f"Result field order for {case_name} did not match request"
-            return
+            return None
 
         metric_names = list(message.get("loss_metric_names", []))
         if metric_names != list(LOSS_METRIC_NAMES):
             self.error_message = f"Result loss metric names for {case_name} did not match expected names"
-            return
+            return None
 
         metric_arrays = message.get("loss_metrics_by_metric_window_field_and_column", {})
         if set(metric_arrays) != set(LOSS_METRIC_NAMES):
             self.error_message = f"Result loss metric keys for {case_name} did not match expected names"
-            return
+            return None
 
         expected_window_count = self.case_num_time_windows.get(case_name, 1)
         for metric_name in LOSS_METRIC_NAMES:
             metric_matrix = metric_arrays.get(metric_name, [])
             if len(metric_matrix) != expected_window_count:
                 self.error_message = f"Result {metric_name} shape for {case_name} did not match time-window count"
-                return
+                return None
             if any(len(window_matrix) != len(self.selected_fields) for window_matrix in metric_matrix):
                 self.error_message = f"Result {metric_name} shape for {case_name} did not match selected fields"
-                return
+                return None
 
-        batch["case_loss_metrics"][case_name] = {
+        return {
             field_name: {
                 metric_name: [
                     [float(value) for value in metric_arrays[metric_name][window_idx][field_idx]]
@@ -701,11 +739,9 @@ class TuningScheduler:
             for field_idx, field_name in enumerate(self.selected_fields)
         }
 
-        if all(case_name in batch["case_loss_metrics"] for case_name in self.cases):
-            self._complete_batch(batch_id, batch)
-
     def _complete_batch(self, batch_id: int, batch: dict) -> None:
         active_count = int(batch["active_sample_count"])
+        entries = []
         for col_idx in range(active_count):
             field_loss = {}
             scaled_rmse_by_field = {}
@@ -882,10 +918,80 @@ class TuningScheduler:
                 "scaled_rmse_by_field": scaled_rmse_by_field,
                 "field_metrics": field_metrics,
             }
-            self.completed_samples.append(entry)
+            if not batch.get("baseline_name"):
+                entry.update(self._improvement_scores(total_loss))
+            entries.append(entry)
 
-        self.completed_batches += 1
-        self.batches.pop(batch_id, None)
+        if batch.get("baseline_name"):
+            baseline = dict(entries[0])
+            for key in ("sample_id", "batch_id", "selected_params", "all_params"):
+                baseline.pop(key, None)
+            self.baselines[str(batch["baseline_name"])] = baseline
+        else:
+            self.completed_samples.extend(entries)
+            self.completed_batches += 1
+            self.batches.pop(batch_id, None)
+
+    def _finalize_baselines(self) -> None:
+        """Aggregate the one-column initialization baselines like candidates."""
+        for baseline_name, case_metrics in self.baseline_case_metrics.items():
+            missing = [case_name for case_name in self.cases if case_name not in case_metrics]
+            if missing:
+                raise RuntimeError(
+                    f"Baseline {baseline_name} was not evaluated for: {', '.join(missing)}"
+                )
+            unavailable_cases = {
+                case_name: str(metrics["__baseline_unavailable__"])
+                for case_name, metrics in case_metrics.items()
+                if "__baseline_unavailable__" in metrics
+            }
+            if unavailable_cases:
+                self.baselines[baseline_name] = {
+                    "available": False,
+                    "total_loss": None,
+                    "case_loss": {},
+                    "unavailable_cases": unavailable_cases,
+                }
+                continue
+            self._complete_batch(
+                -1,
+                {
+                    "baseline_name": baseline_name,
+                    "active_sample_count": 1,
+                    "sample_ids": [-1],
+                    "selected_params_by_sample": [{}],
+                    "all_params_by_sample": [{}],
+                    "case_loss_metrics": case_metrics,
+                },
+            )
+            self.baselines[baseline_name]["available"] = True
+
+    def _improvement_scores(self, candidate_loss: float) -> dict[str, float | None]:
+        """Return signed percent improvement relative to available baselines."""
+        scores = {}
+        candidate_loss = float(candidate_loss)
+        candidate_available = (
+            math.isfinite(candidate_loss)
+            and candidate_loss < float(LOSS_POLICY_CONSTANTS["invalid_scaled_rmse_penalty"])
+        )
+        for baseline_name, output_name in (
+            ("clubb_default", "improvement_vs_clubb_default_percent"),
+            ("override_defaults", "improvement_vs_override_defaults_percent"),
+        ):
+            baseline = self.baselines.get(baseline_name)
+            if baseline is None:
+                continue
+            baseline_value = baseline.get("total_loss")
+            baseline_loss = float("nan") if baseline_value is None else float(baseline_value)
+            scores[output_name] = (
+                100.0 * (baseline_loss - candidate_loss) / baseline_loss
+                if candidate_available
+                and baseline.get("available", True)
+                and math.isfinite(baseline_loss)
+                and baseline_loss > 0.0
+                else None
+            )
+        return scores
 
     def _drain_completed_samples(self) -> list[dict]:
         completed = []
@@ -1108,9 +1214,8 @@ class TuningScheduler:
         # drains in under five seconds.  The one useful exception is an
         # already-idle actor: it has no in-flight work to protect and can be
         # repurposed immediately for the case with the largest short drain.
-        # Make only one such transfer per check, including when the donor is
-        # that case's last warm actor; its empty queue does not justify
-        # reserving a process while another case is still waiting.
+        # Make only one such transfer per check. Every case retains one warm
+        # actor so later batches can never strand work in a workerless queue.
         all_drains_short = (
             all(value is not None for value in drain.values())
             and max((float(value or 0.0) for value in drain.values()), default=0.0)
@@ -1189,6 +1294,14 @@ class TuningScheduler:
         reason: str,
     ) -> None:
         """Retire one donor and queue its replacement for ``target``."""
+        warm_donors = sum(
+            worker.case_name == donor.case_name
+            and worker.state in {"idle", "busy", "starting"}
+            for worker in self.workers
+        )
+        if warm_donors <= REBALANCE_MIN_WARM_WORKERS_PER_CASE:
+            return
+
         self.pending_replacements.append({"from_case": donor.case_name, "to_case": target})
         self.last_rebalance = {
             "from_case": donor.case_name,
@@ -1265,6 +1378,9 @@ class TuningScheduler:
         payload = {
             "version": 1,
             "strategy": self.strategy,
+            "pending_samples": list(self.pending_samples),
+            "batches": self.batches,
+            "baselines": self.baselines,
             "samples_evaluated": self.samples_evaluated,
             "completed_batches": self.completed_batches,
             "next_batch_id": self.next_batch_id,
@@ -1296,6 +1412,15 @@ class TuningScheduler:
             if int(payload.get("version", 0)) != 1 or payload.get("strategy") is None:
                 raise ValueError("unsupported checkpoint")
             self.strategy = payload["strategy"]
+            self.pending_samples = deque(payload.get("pending_samples", []))
+            self.batches = dict(payload.get("batches", {}))
+            self.baselines = dict(payload.get("baselines", self.baselines))
+            self.case_jobs = deque(
+                {"batch_id": int(batch_id), "case_name": case_name}
+                for batch_id, batch in self.batches.items()
+                for case_name in self.cases
+                if case_name not in batch.get("case_loss_metrics", {})
+            )
             self.samples_evaluated = int(payload.get("samples_evaluated", 0))
             self.completed_batches = int(payload.get("completed_batches", 0))
             self.next_batch_id = int(payload.get("next_batch_id", 0))
@@ -1381,6 +1506,15 @@ class TuningScheduler:
             "loss_policy_constants": dict(self.loss_policy_constants),
             "aggregation_options": dict(self.aggregation_options),
             "control_stop_reason": stop_reason(self.control_path),
+            "baselines": {
+                name: {
+                    "available": baseline.get("available", True),
+                    "total_loss": baseline.get("total_loss"),
+                    "case_loss": dict(baseline.get("case_loss", {})),
+                    "unavailable_cases": dict(baseline.get("unavailable_cases", {})),
+                }
+                for name, baseline in self.baselines.items()
+            },
         }
 
     def _elapsed_seconds(self) -> float:
@@ -1408,6 +1542,7 @@ class TuningScheduler:
             samples_evaluated=self.samples_evaluated,
             best_results=self.best_results,
             best_results_by_case=self.best_results_by_case,
+            baselines=self.baselines,
             started_at=started_at,
             updated_at=updated_at,
         )

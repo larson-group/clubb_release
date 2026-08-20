@@ -163,12 +163,15 @@ def test_compact_profile_derives_dash_summary_and_ignores_warmups(tmp_path):
 
     summaries, processes = load_profiles(tmp_path, ["baseline"])
 
-    assert len(summaries) == 1
-    assert summaries[0]["columns_per_process"] == 4
-    assert summaries[0]["total_columns"] == 8
-    assert summaries[0]["timer_mean_seconds"] == pytest.approx(2.1)
-    assert summaries[0]["timer_max_seconds"] == pytest.approx(2.2)
-    assert summaries[0]["group_wall_seconds"] == pytest.approx(2.4)
+    assert len(summaries) == 2
+    timer = next(row for row in summaries if row["timer_name"] == "advance_clubb_to_end")
+    group_wall = next(row for row in summaries if row["timer_name"] == "__process_group_wall__")
+    assert timer["columns_per_process"] == 4
+    assert timer["total_columns"] == 8
+    assert timer["timer_mean_seconds"] == pytest.approx(2.1)
+    assert timer["timer_max_seconds"] == pytest.approx(2.2)
+    assert "group_wall_seconds" not in timer
+    assert group_wall["timer_max_seconds"] == pytest.approx(2.4)
     assert len(processes) == 2
     assert all(row["repetition"] == 1 for row in processes)
     assert processes[0]["timing_file"].endswith("arm.timing")

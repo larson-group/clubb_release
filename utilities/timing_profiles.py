@@ -215,6 +215,7 @@ def write_profile_readme(profile_dir: Path, manifest: dict[str, Any]) -> None:
         f"- Host: `{environment.get('hostname', '')}`",
         f"- CPU: `{environment.get('cpu_model', '')}`",
         f"- OpenMP threads per process: `{manifest.get('omp_num_threads', '')}`",
+        f"- Implementation: `{build.get('implementation', 'fortran')}`",
         f"- Executable: `{build.get('resolved_executable') or build.get('requested_executable', '')}`",
         f"- Executable SHA-256: `{build.get('executable_sha256', '')}`",
         f"- Timer backend(s): `{', '.join(results.get('timer_backends', []))}`",
@@ -343,6 +344,7 @@ def _catalog_record(manifest: dict[str, Any], profile_dir: Path) -> dict[str, An
         "time_bases": _number_list(results.get("time_bases")),
         "hostname": environment.get("hostname", ""),
         "cpu_model": environment.get("cpu_model", ""),
+        "implementation": build.get("implementation", "fortran"),
         "executable_sha256": build.get("executable_sha256", ""),
         "timing_rows": results.get("timing_rows", 0),
         "batches": results.get("batches_completed", 0),
@@ -409,6 +411,7 @@ def _derived_rows(profile_dir: Path) -> tuple[list[dict[str, Any]], list[dict[st
         return [], []
     batches = {row.get("batch_id", ""): row for row in _read_csv(profile_dir / BATCHES_FILE)}
     raw = [row for row in _read_csv(profile_dir / TIMINGS_FILE) if row.get("phase") == "measured"]
+    benchmark = dict(manifest.get("benchmark") or {})
     results_meta = dict(manifest.get("results") or {})
     backends = list(results_meta.get("timer_backends") or [])
     time_bases = list(results_meta.get("time_bases") or [])
@@ -424,6 +427,7 @@ def _derived_rows(profile_dir: Path) -> tuple[list[dict[str, Any]], list[dict[st
         "git_revision": str(manifest.get("git_revision") or ""),
         "forwarded_args": str(manifest.get("forwarded_args") or ""),
         "omp_num_threads": str(manifest.get("omp_num_threads") or ""),
+        "vertical_levels": benchmark.get("vertical_levels", ""),
     }
 
     by_execution: dict[tuple[str, int], list[dict[str, str]]] = {}
@@ -441,7 +445,7 @@ def _derived_rows(profile_dir: Path) -> tuple[list[dict[str, Any]], list[dict[st
         group_rows = [row for row in rows if row.get("timer") == GROUP_WALL_TIMER]
         group_wall = _floating(group_rows[-1].get("inclusive_s")) if group_rows else None
         execution_status = str(group_rows[-1].get("status") or "") if group_rows else ""
-        timer_rows = [row for row in rows if row.get("timer") and row.get("timer") != GROUP_WALL_TIMER]
+        timer_rows = [row for row in rows if row.get("timer")]
         failure_messages = list(
             dict.fromkeys(str(row.get("message") or "") for row in rows if str(row.get("message") or ""))
         )
@@ -495,7 +499,9 @@ def _derived_rows(profile_dir: Path) -> tuple[list[dict[str, Any]], list[dict[st
             grouped.setdefault(str(row["timer"]), {}).setdefault(_integer(row.get("process")), []).append(row)
         if not grouped:
             grouped[DEFAULT_ANALYSIS_TIMER] = {}
-        for timer_name, by_process in sorted(grouped.items()):
+        for timer_name, by_process in sorted(
+            grouped.items(), key=lambda item: (item[0] == GROUP_WALL_TIMER, item[0])
+        ):
             critical = [
                 max(process_timer_rows, key=lambda item: _floating(item.get("inclusive_s")) or 0.0)
                 for process_timer_rows in by_process.values()
@@ -510,7 +516,6 @@ def _derived_rows(profile_dir: Path) -> tuple[list[dict[str, Any]], list[dict[st
                     "status": status,
                     "successful_processes": len(successful_processes),
                     "processes_reported": len(seconds),
-                    "group_wall_seconds": group_wall if group_wall is not None else "",
                     "backend": backend,
                     "time_basis": time_basis,
                     "timer_name": timer_name,

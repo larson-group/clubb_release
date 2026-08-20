@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
 
 from dash import dcc, html
 from dash_app.services import profiles as profile_service
+from utilities.output_paths import OUTPUT_ROOT
 
 from .plot_types import shared
 from .plot_types.registry import PLOT_TYPES
@@ -82,7 +84,34 @@ def _output_button_text(record, path):
     return f"{_output_record_label(record, path)} · {count}"
 
 
-def available_output_buttons(records, selected_dirs=None, expanded=False):
+def _output_delete_button(path, confirmation=None):
+    """Render the guarded permanent-delete action for one output subdirectory."""
+    target = Path(path).expanduser().resolve()
+    root = Path(OUTPUT_ROOT).resolve()
+    deletable = target != root and root in target.parents
+    confirming = deletable and (confirmation or {}).get("path") == str(target)
+    return html.Button(
+        "Confirm" if confirming else "×",
+        id={"type": "plots-delete-output-dir", "path": str(target)},
+        n_clicks=0,
+        n_clicks_timestamp=-1,
+        disabled=not deletable,
+        title=(
+            "Click again within 3 seconds to permanently delete this output"
+            if confirming
+            else "Permanently delete this output directory"
+            if deletable
+            else "Only subdirectories inside output/ can be deleted here"
+        ),
+        className=(
+            "plots-output-dir-delete plots-output-dir-delete--confirm"
+            if confirming
+            else "plots-output-dir-delete"
+        ),
+    )
+
+
+def available_output_buttons(records, selected_dirs=None, expanded=False, delete_confirmation=None):
     """Render the three newest or all currently unselected outputs."""
     selected = {str(path) for path in (selected_dirs or [])}
     available = [
@@ -93,20 +122,29 @@ def available_output_buttons(records, selected_dirs=None, expanded=False):
     if not available:
         return [html.Div("All outputs selected", className="plots-output-menu-empty")]
     visible = available if expanded else available[:3]
-    return [
-        html.Button(
-            _output_button_text(record, str(record["path"])),
-            id={"type": "plots-add-output-dir", "path": str(record["path"])},
+    buttons = []
+    for record in visible:
+        path = str(record["path"])
+        add_button = html.Button(
+            _output_button_text(record, path),
+            id={"type": "plots-add-output-dir", "path": path},
             n_clicks=0,
             n_clicks_timestamp=-1,
             title=_output_case_summary(record),
             className="plots-output-available-button",
         )
-        for record in visible
-    ]
+        buttons.append(
+            html.Div(
+                [add_button, _output_delete_button(path, delete_confirmation)],
+                className="plots-output-menu-row",
+            )
+            if expanded
+            else add_button
+        )
+    return buttons
 
 
-def active_output_items(records, selected_dirs):
+def active_output_items(records, selected_dirs, expanded=False, delete_confirmation=None):
     """Render every persisted active output, including unavailable directories."""
     records_by_path = {str(record.get("path")): record for record in (records or [])}
     items = []
@@ -138,12 +176,13 @@ def active_output_items(records, selected_dirs):
                         className="plots-output-active-label",
                     ),
                     *status,
+                    *([_output_delete_button(path, delete_confirmation)] if expanded else []),
                     html.Button(
-                        "×",
+                        "−",
                         id={"type": "plots-remove-output-dir", "path": path},
                         n_clicks=0,
                         n_clicks_timestamp=-1,
-                        title=f"Remove {label}",
+                        title=f"Remove {label} from the comparison",
                         className="plots-output-dir-remove",
                     ),
                 ],
@@ -309,6 +348,19 @@ def _directory_case_selector(initial_state):
                                 ],
                                 className="plots-output-active-tray",
                             ),
+                            html.Div(
+                                [
+                                    html.Button(
+                                        html.Span("Generate PyPlotGen", id="plots-pyplotgen-run-label"),
+                                        id="plots-pyplotgen-run",
+                                        n_clicks=0,
+                                        className="plots-pyplotgen-button",
+                                        title="Generate a static PyPlotGen gallery from the active outputs",
+                                    ),
+                                    html.Div(id="plots-pyplotgen-status", className="plots-pyplotgen-status"),
+                                ],
+                                className="plots-pyplotgen-control",
+                            ),
                         ],
                         className="plots-output-picker-row",
                     ),
@@ -328,6 +380,7 @@ def _directory_case_selector(initial_state):
                 [
                     html.Div("Cases", style={"fontWeight": "600", "marginBottom": "8px"}),
                     html.Div(id="plots-case-button-container", children=_initial_case_buttons(initial_state)),
+                    html.Div(id="plots-output-pending-warning", className="plots-output-pending-warning"),
                 ],
                 style={"padding": "12px", "minHeight": "100%"},
             ),
@@ -345,8 +398,10 @@ def _plots_stores(initial_state):
     """Build the stores and interval used to coordinate the plots tab."""
     return [
         dcc.Store(id="plots-output-dirs", data=[DEFAULT_OUTPUT_DIR]),
+        dcc.Store(id="plots-loaded-output-dirs", data=[DEFAULT_OUTPUT_DIR]),
         dcc.Store(id="plots-output-catalog", data=profile_service.discover_output_directories(selected_dirs=[DEFAULT_OUTPUT_DIR])),
         dcc.Store(id="plots-output-menu-expanded", data=False),
+        dcc.Store(id="plots-output-delete-confirm", data=None),
         dcc.Store(id="plots-case-data", data=initial_state["case_data"]),
         dcc.Store(id="plots-enabled-benchmarks", data=initial_state["enabled_benchmarks"]),
         dcc.Store(id="plots-plot-order", data=initial_state["plot_order"]),
@@ -359,8 +414,13 @@ def _plots_stores(initial_state):
         dcc.Store(id="plots-column-filters", data={"indices": None, "filters": {}}),
         dcc.Store(id="plots-selected-column", data=initial_state["selected_column"]),
         dcc.Store(id="plots-time-override", data=None),
+        dcc.Store(id="plots-pyplotgen-action", data=None),
+        dcc.Store(id="plots-pyplotgen-popup", data=None),
+        dcc.Store(id="plots-pyplotgen-opened-run", data=None),
         dcc.Store(id="plots-playback", data={"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False, "target_point": None}),
+        dcc.Interval(id="plots-pyplotgen-progress-interval", interval=500, disabled=True, n_intervals=0),
         dcc.Interval(id="plots-output-refresh-interval", interval=10_000, disabled=True, n_intervals=0),
+        dcc.Interval(id="plots-output-delete-expiry", interval=250, disabled=True, n_intervals=0),
         dcc.Interval(id="plots-playback-interval", interval=int(DEFAULT_PLAYBACK_INTERVAL_S * 1000), disabled=True, n_intervals=0),
     ]
 

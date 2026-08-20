@@ -10,6 +10,7 @@ from dash import ALL, Input, Output, State, dcc, html, no_update
 import numpy as np
 import plotly.graph_objects as go
 
+from .callbacks_settings import parameter_group_specs
 from .layout import (
     action_button_style,
     build_results_placeholder,
@@ -526,6 +527,49 @@ def _result_params(result):
     return params if isinstance(params, dict) else {}
 
 
+def _parameter_box_context(request):
+    """Return saved Tune bounds and named-config defaults by physical parameter."""
+    ranges = {}
+    for spec in (request or {}).get("parameter_ranges", []) or []:
+        if not isinstance(spec, dict):
+            continue
+        low = _finite_float(spec.get("min"))
+        high = _finite_float(spec.get("max"))
+        if low is None or high is None or high < low:
+            continue
+        name = str(spec.get("name") or "").strip()
+        raw_targets = spec.get("targets", [name])
+        targets = [raw_targets] if isinstance(raw_targets, str) else list(raw_targets or [])
+        for target in targets:
+            target = str(target or "").strip()
+            if target:
+                ranges[target] = (low, high)
+
+    resolution = dict((request or {}).get("settings_resolution") or {})
+    default_ranges = dict(resolution.get("tunable_default_ranges") or {})
+    defaults = {}
+    for name, metadata in default_ranges.items():
+        value = _finite_float((metadata or {}).get("default")) if isinstance(metadata, dict) else None
+        if value is not None:
+            defaults[str(name)] = value
+
+    return {
+        "ranges": ranges,
+        "defaults": defaults,
+        "config": str((request or {}).get("config") or "selected config"),
+    }
+
+
+def _range_normalized_value(value, bounds):
+    """Map one parameter value onto its configured Tune interval."""
+    if not bounds:
+        return None
+    low, high = bounds
+    if high == low:
+        return 0.5
+    return (value - low) / (high - low)
+
+
 def _parameter_group_specs(best_results, best_results_by_case=None, selected_groups=None):
     """Return selected parameter-spread groups in plotting order."""
     by_case = best_results_by_case if isinstance(best_results_by_case, dict) else {}
@@ -587,7 +631,13 @@ def _collect_top_parameter_values(best_results, best_results_by_case=None, selec
     return param_names, grouped
 
 
-def build_parameter_box_figure(best_results, best_results_by_case=None, selected_groups=None):
+def build_parameter_box_figure(
+    best_results,
+    best_results_by_case=None,
+    selected_groups=None,
+    scale_mode="unscaled",
+    parameter_context=None,
+):
     """Build a box plot figure of selected parameter values in retained top results."""
     param_names, grouped_values = _collect_top_parameter_values(best_results, best_results_by_case, selected_groups)
     if not param_names:
@@ -597,6 +647,11 @@ def build_parameter_box_figure(best_results, best_results_by_case=None, selected
         )
 
     fig = go.Figure()
+    normalized = scale_mode == "normalized"
+    parameter_context = dict(parameter_context or {})
+    parameter_ranges = dict(parameter_context.get("ranges") or {})
+    config_defaults = dict(parameter_context.get("defaults") or {})
+    normalized_values = []
     group_keys = [group_key for group_key, _label, _results, _loss_key in _parameter_group_specs(best_results, best_results_by_case, selected_groups)]
     legend_seen = set()
     for group_idx, group_key in enumerate(group_keys):
@@ -605,10 +660,24 @@ def build_parameter_box_figure(best_results, best_results_by_case=None, selected
             group_data = grouped_values.get(name, {}).get(group_key)
             if not group_data:
                 continue
+            plot_values = []
+            hover_text = []
+            for raw_value, raw_hover in zip(group_data["values"], group_data["hover"]):
+                plot_value = _range_normalized_value(raw_value, parameter_ranges.get(name)) if normalized else raw_value
+                if plot_value is None:
+                    continue
+                plot_values.append(plot_value)
+                hover_text.append(
+                    raw_hover + (f"<br>Range position {plot_value:.1%}" if normalized else "")
+                )
+            if not plot_values:
+                continue
+            if normalized:
+                normalized_values.extend(plot_values)
             fig.add_trace(
                 go.Box(
-                    x=[name] * len(group_data["values"]),
-                    y=group_data["values"],
+                    x=[name] * len(plot_values),
+                    y=plot_values,
                     name=group_data["label"],
                     legendgroup=group_key,
                     showlegend=group_key not in legend_seen,
@@ -618,11 +687,57 @@ def build_parameter_box_figure(best_results, best_results_by_case=None, selected
                     marker={"size": 7, "color": color, "opacity": 0.72},
                     line={"color": color, "width": 1.2},
                     fillcolor="rgba(148, 163, 184, 0.20)",
-                    text=group_data["hover"],
+                    text=hover_text,
                     hovertemplate="%{text}<extra></extra>",
                 )
             )
             legend_seen.add(group_key)
+
+    if normalized:
+        default_x = []
+        default_y = []
+        default_hover = []
+        config_name = str(parameter_context.get("config") or "selected config")
+        for name in param_names:
+            default_value = _finite_float(config_defaults.get(name))
+            normalized_default = (
+                _range_normalized_value(default_value, parameter_ranges.get(name))
+                if default_value is not None
+                else None
+            )
+            if normalized_default is None:
+                continue
+            low, high = parameter_ranges[name]
+            default_x.append(name)
+            default_y.append(normalized_default)
+            default_hover.append(
+                "<br>".join(
+                    [
+                        name,
+                        f"{config_name} default {_fmt_metric(default_value, 6)}",
+                        f"Tune range [{_fmt_metric(low, 6)}, {_fmt_metric(high, 6)}]",
+                        f"Range position {normalized_default:.1%}",
+                    ]
+                )
+            )
+        if default_x:
+            normalized_values.extend(default_y)
+            fig.add_trace(
+                go.Scatter(
+                    x=default_x,
+                    y=default_y,
+                    mode="markers",
+                    name="Config default",
+                    marker={
+                        "symbol": "diamond",
+                        "size": 9,
+                        "color": "#111827",
+                        "line": {"color": "#f8fafc", "width": 1.2},
+                    },
+                    text=default_hover,
+                    hovertemplate="%{text}<extra></extra>",
+                )
+            )
 
     fig.update_layout(
         title={"text": "Top-16 Parameter Spread", "x": 0.02, "xanchor": "left"},
@@ -642,21 +757,41 @@ def build_parameter_box_figure(best_results, best_results_by_case=None, selected
         automargin=True,
         gridcolor="rgba(148, 163, 184, 0.18)",
     )
+    y_axis = {
+        "title": "fraction of tuning range" if normalized else "parameter value",
+        "zeroline": True,
+        "zerolinecolor": "#94a3b8",
+        "gridcolor": "rgba(148, 163, 184, 0.24)",
+    }
+    if normalized:
+        low = min([0.0] + normalized_values)
+        high = max([1.0] + normalized_values)
+        padding = 0.04 * max(1.0, high - low)
+        y_axis.update({"range": [low - padding, high + padding], "tickformat": ".0%"})
     fig.update_yaxes(
-        title="parameter value",
-        zeroline=True,
-        zerolinecolor="#94a3b8",
-        gridcolor="rgba(148, 163, 184, 0.24)",
+        **y_axis,
     )
 
     return fig
 
 
-def build_parameter_box_plot(best_results, best_results_by_case=None, selected_groups=None):
+def build_parameter_box_plot(
+    best_results,
+    best_results_by_case=None,
+    selected_groups=None,
+    scale_mode="unscaled",
+    parameter_context=None,
+):
     """Render a box plot of selected parameter values in the retained top results."""
     return dcc.Graph(
         id="tune-parameter-box-plot",
-        figure=build_parameter_box_figure(best_results, best_results_by_case, selected_groups),
+        figure=build_parameter_box_figure(
+            best_results,
+            best_results_by_case,
+            selected_groups,
+            scale_mode,
+            parameter_context,
+        ),
         className="tune-parameter-box-graph",
         config={"responsive": True, "displaylogo": False},
         style={"width": "100%", "minWidth": 0, "height": "430px"},
@@ -1756,7 +1891,14 @@ def build_field_interaction_figure(history, request, aggregation, case_value, fi
     return fig
 
 
-def _diagnostics_signature(best_results, best_results_by_case=None, selected_groups=None, window_display="average"):
+def _diagnostics_signature(
+    best_results,
+    best_results_by_case=None,
+    selected_groups=None,
+    window_display="average",
+    scale_mode="unscaled",
+    parameter_context=None,
+):
     """Return a stable signature for the plotted top-result diagnostics."""
     try:
         return json.dumps(
@@ -1765,12 +1907,23 @@ def _diagnostics_signature(best_results, best_results_by_case=None, selected_gro
                 "best_results_by_case": best_results_by_case or {},
                 "selected_groups": selected_groups or [],
                 "window_display": window_display or "average",
+                "scale_mode": scale_mode or "unscaled",
+                "parameter_context": parameter_context or {},
             },
             sort_keys=True,
             separators=(",", ":"),
         )
     except TypeError:
-        return repr((best_results or [], best_results_by_case or {}, selected_groups or [], window_display or "average"))
+        return repr(
+            (
+                best_results or [],
+                best_results_by_case or {},
+                selected_groups or [],
+                window_display or "average",
+                scale_mode or "unscaled",
+                parameter_context or {},
+            )
+        )
 
 
 def format_status_text(status):
@@ -1855,7 +2008,37 @@ def format_status_text(status):
         [html.Div("Case queues", className="tune-worker-queue-title"), html.Div(rows or [html.Div("Workers are initializing.", className="tune-runtime-empty")], className="tune-worker-queue-grid")],
         className="tune-worker-queue-panel",
     )
-    return html.Div([state_header, summary, progress_panel, case_panel], className="tune-runtime-status-content")
+    baseline_labels = {
+        "clubb_default": "CLUBB default",
+        "override_defaults": "Override defaults",
+    }
+    baseline_rows = []
+    for name, values in (status.get("baselines") or {}).items():
+        loss = _finite_float((values or {}).get("total_loss"))
+        unavailable = (values or {}).get("available") is False
+        unavailable_cases = (values or {}).get("unavailable_cases") or {}
+        baseline_rows.append(
+            html.Div(
+                [
+                    html.Span(baseline_labels.get(name, str(name))),
+                    html.Strong("unavailable" if unavailable else "--" if loss is None else f"{loss:.6g}"),
+                ],
+                className="tune-worker-queue-header",
+                title="; ".join(f"{case}: {reason}" for case, reason in unavailable_cases.items()),
+            )
+        )
+    baseline_panel = (
+        html.Div(
+            [html.Div("Baselines", className="tune-worker-queue-title"), *baseline_rows],
+            className="tune-worker-queue-panel",
+        )
+        if baseline_rows else None
+    )
+    panels = [state_header, summary, progress_panel]
+    if baseline_panel is not None:
+        panels.append(baseline_panel)
+    panels.append(case_panel)
+    return html.Div(panels, className="tune-runtime-status-content")
 
 
 def _runtime_best_loss_points(status):
@@ -1863,9 +2046,12 @@ def _runtime_best_loss_points(status):
     points = []
     for point in list((status or {}).get("best_loss_history", []) or [])[-300:]:
         try:
-            points.append((int(point["sample_count"]), float(point["loss"])))
+            sample_count = int(point["sample_count"])
         except (KeyError, TypeError, ValueError):
             continue
+        loss = _plot_diagnostic_float(point.get("loss"))
+        if loss is not None:
+            points.append((sample_count, loss))
     return points, repr(points)
 
 
@@ -1920,7 +2106,19 @@ def build_results_table(top_results, selected_param_names):
         html.Th("Smart Loss"),
         html.Th("Scaled RMSE Sum"),
     ]
-    header.extend(html.Th(name) for name in selected_param_names)
+    improvement_columns = [
+        ("improvement_vs_clubb_default_percent", "vs CLUBB default"),
+        ("improvement_vs_override_defaults_percent", "vs override defaults"),
+    ]
+    improvement_columns = [
+        item for item in improvement_columns if any(item[0] in result for result in top_results)
+    ]
+    header.extend(html.Th(label) for _key, label in improvement_columns)
+    specs = [
+        item if isinstance(item, dict) else {"label": str(item), "targets": [str(item)]}
+        for item in selected_param_names
+    ]
+    header.extend(html.Th(spec["label"]) for spec in specs)
 
     body_rows = []
     for row_index, result in enumerate(top_results, start=1):
@@ -1934,9 +2132,12 @@ def build_results_table(top_results, selected_param_names):
                 else f"{float(result.get('scaled_rmse_sum', result.get('simple_rms_sum', 0.0))):.6E}"
             ),
         ]
+        for key, _label in improvement_columns:
+            value = result.get(key)
+            row.append(html.Td("—" if value is None else f"{float(value):+.2f}%"))
         params = result.get("params", {})
-        for name in selected_param_names:
-            value = params.get(name)
+        for spec in specs:
+            value = params.get(spec["targets"][0])
             row.append(html.Td("" if value is None else f"{float(value):.6g}"))
         body_rows.append(html.Tr(row))
 
@@ -1956,6 +2157,11 @@ def mode_options_ready(
     simann_max_iters,
     simann_initial_temp,
     simann_final_temp,
+    adam_max_updates=None,
+    adam_learning_rate_percent=None,
+    adam_perturbation_percent=None,
+    adam_spsa_pairs=None,
+    batch_size=None,
 ):
     """Return whether the selected mode has the required options."""
     if strategy_mode == "random":
@@ -1986,7 +2192,54 @@ def mode_options_ready(
             return float(simann_initial_temp) > 0.0 and float(simann_final_temp) > 0.0
         except (TypeError, ValueError):
             return False
+    if strategy_mode == "adam":
+        try:
+            updates = float(adam_max_updates)
+            pairs = float(adam_spsa_pairs)
+            batch = float(batch_size)
+            learning = float(adam_learning_rate_percent)
+            perturbation = float(adam_perturbation_percent)
+        except (TypeError, ValueError):
+            return False
+        return (
+            int(updates) == updates
+            and updates >= 1
+            and int(pairs) == pairs
+            and pairs >= 1
+            and int(batch) == batch
+            and batch >= 1
+            and int(batch) % (2 * int(pairs)) == 0
+            and learning > 0.0
+            and 0.0 < perturbation <= 50.0
+        )
     return False
+
+
+def adam_layout_summary(batch_size, max_workers, case_names, max_updates, spsa_pairs, override=""):
+    """Describe the derived multi-chain layout and search cost."""
+    try:
+        batch_size = int(float(batch_size))
+        max_workers = int(float(max_workers))
+        max_updates = int(float(max_updates))
+        spsa_pairs = int(float(spsa_pairs))
+    except (TypeError, ValueError):
+        return "Enter valid Adam and scheduling values."
+    case_count = len([name for name in (case_names or []) if str(name or "").strip()])
+    columns_per_chain = 2 * spsa_pairs
+    if min(batch_size, max_workers, max_updates, spsa_pairs, case_count) < 1:
+        return "Enter valid Adam and scheduling values."
+    if batch_size % columns_per_chain:
+        return f"Batch size must be divisible by {columns_per_chain} (2 × SPSA pairs)."
+    chains_per_batch = batch_size // columns_per_chain
+    concurrent_batches = math.ceil(max_workers / case_count)
+    chains = chains_per_batch * concurrent_batches
+    evaluations = chains * (2 + columns_per_chain * max_updates)
+    baseline_evaluations = case_count * (2 if str(override or "").strip() else 1)
+    return (
+        f"{spsa_pairs} pair(s)/chain · {chains_per_batch} chain(s)/batch · "
+        f"{concurrent_batches} concurrent batch(es) · {chains} total chain(s) · "
+        f"{evaluations:,} candidate evaluations · {baseline_evaluations} baseline evaluation(s) separately"
+    )
 
 
 def case_window_setup_ready(
@@ -2078,6 +2331,22 @@ def register_display_callbacks(app):
     """Register result-table and status-display callbacks."""
 
     @app.callback(
+        Output("tune-config-save-open", "disabled"),
+        Output("tune-config-save-open", "style"),
+        Input("tune-status", "data"),
+        Input("tune-top-results", "data"),
+        Input("tune-best-results", "data"),
+        Input("tune-active-job", "data"),
+    )
+    def render_tuned_config_save_button(status, top_results, best_results, active_job):
+        """Enable config export only for a stable retained leaderboard."""
+        running = bool(active_job) or str((status or {}).get("state") or "") in {
+            "initializing", "running", "stopping",
+        }
+        disabled = running or not bool(top_results or best_results)
+        return disabled, action_button_style("#0f766e", disabled=disabled)
+
+    @app.callback(
         Output("tune-runtime-best-loss-graph", "figure"),
         Output("tune-runtime-loss-signature", "data"),
         Input("tune-status", "data"),
@@ -2104,7 +2373,9 @@ def register_display_callbacks(app):
         Output("tune-landscape-window", "options"),
         Output("tune-landscape-window", "value"),
         Input("tune-status", "data"),
-        Input({"type": "tune-range-param", "index": ALL}, "value"),
+        Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "id"),
+        Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
+        Input("tune-range-row-order", "data"),
         State("tune-landscape-x-param", "value"),
         State("tune-landscape-y-param", "value"),
         State("tune-landscape-metric", "value"),
@@ -2114,7 +2385,9 @@ def register_display_callbacks(app):
     )
     def sync_landscape_controls(
         status,
-        selected_param_names,
+        member_ids,
+        member_values,
+        range_row_order,
         current_x,
         current_y,
         current_metric,
@@ -2123,6 +2396,10 @@ def register_display_callbacks(app):
         current_window,
     ):
         """Keep landscape controls matched to available sample-history axes."""
+        selected_param_names = [
+            spec["targets"][0]
+            for spec in parameter_group_specs(member_ids, member_values, range_row_order)
+        ]
         job_dir = _job_dir_from_status(status)
         history = None
         if _sample_history_signature(job_dir):
@@ -2333,19 +2610,44 @@ def register_display_callbacks(app):
         Input("tune-best-results", "data"),
         Input("tune-best-results-by-case", "data"),
         Input("tune-parameter-box-groups", "value"),
+        Input("tune-parameter-box-scale", "value"),
         Input("tune-taylor-window-display", "value"),
+        State("tune-status", "data"),
         State("tune-diagnostics-signature", "data"),
     )
-    def render_diagnostics(best_results, best_results_by_case, selected_box_groups, window_display, previous_signature):
+    def render_diagnostics(
+        best_results,
+        best_results_by_case,
+        selected_box_groups,
+        scale_mode,
+        window_display,
+        status,
+        previous_signature,
+    ):
         """Update diagnostics figures without rebuilding the graph components."""
         best_results = best_results or []
         best_results_by_case = best_results_by_case or {}
-        signature = _diagnostics_signature(best_results, best_results_by_case, selected_box_groups, window_display)
+        request = _read_job_request(_job_dir_from_status(status))
+        parameter_context = _parameter_box_context(request)
+        signature = _diagnostics_signature(
+            best_results,
+            best_results_by_case,
+            selected_box_groups,
+            window_display,
+            scale_mode,
+            parameter_context,
+        )
         if signature == (previous_signature or ""):
             return no_update, no_update, no_update
         return (
             build_taylor_figure(best_results, window_display),
-            build_parameter_box_figure(best_results, best_results_by_case, selected_box_groups),
+            build_parameter_box_figure(
+                best_results,
+                best_results_by_case,
+                selected_box_groups,
+                scale_mode,
+                parameter_context,
+            ),
             signature,
         )
 
@@ -2365,9 +2667,11 @@ def register_display_callbacks(app):
         Output("tune-mode-random", "disabled"),
         Output("tune-mode-resolve", "disabled"),
         Output("tune-mode-simann", "disabled"),
+        Output("tune-mode-adam", "disabled"),
         Output("tune-mode-random", "style"),
         Output("tune-mode-resolve", "style"),
         Output("tune-mode-simann", "style"),
+        Output("tune-mode-adam", "style"),
         Output("tune-loss-mode-scaled-rmse", "disabled"),
         Output("tune-loss-mode-centered-rmse-bias", "disabled"),
         Output("tune-loss-mode-taylor-components", "disabled"),
@@ -2393,13 +2697,19 @@ def register_display_callbacks(app):
         Output("tune-random-options", "style"),
         Output("tune-resolve-options", "style"),
         Output("tune-simann-options", "style"),
+        Output("tune-adam-options", "style"),
         Output("tune-no-mode-options", "style"),
         Output("tune-resolve-total-samples", "children"),
+        Output("tune-adam-layout-summary", "children"),
         Output("tune-random-max-samples", "disabled"),
         Output("tune-resolve-spacing", "disabled"),
         Output("tune-simann-max-iters", "disabled"),
         Output("tune-simann-initial-temp", "disabled"),
         Output("tune-simann-final-temp", "disabled"),
+        Output("tune-adam-max-updates", "disabled"),
+        Output("tune-adam-learning-rate-percent", "disabled"),
+        Output("tune-adam-perturbation-percent", "disabled"),
+        Output("tune-adam-spsa-pairs", "disabled"),
         Output("tune-case-add", "disabled"),
         Output({"type": "tune-case-name", "index": ALL}, "disabled"),
         Output({"type": "tune-case-time-start", "index": ALL}, "disabled"),
@@ -2412,7 +2722,10 @@ def register_display_callbacks(app):
         Output("tune-batch-size", "disabled"),
         Output("tune-max-workers", "disabled"),
         Output("tune-range-add", "disabled"),
-        Output({"type": "tune-range-param", "index": ALL}, "disabled"),
+        Output("tune-range-add-locked", "disabled"),
+        Output({"type": "tune-range-member", "row": ALL, "member": ALL}, "disabled"),
+        Output({"type": "tune-range-member-add", "index": ALL}, "disabled"),
+        Output({"type": "tune-range-member-remove", "row": ALL, "member": ALL}, "disabled"),
         Output({"type": "tune-range-min", "index": ALL}, "disabled"),
         Output({"type": "tune-range-max", "index": ALL}, "disabled"),
         Output({"type": "tune-range-remove", "index": ALL}, "disabled"),
@@ -2439,14 +2752,23 @@ def register_display_callbacks(app):
         Input("tune-simann-max-iters", "value"),
         Input("tune-simann-initial-temp", "value"),
         Input("tune-simann-final-temp", "value"),
+        Input("tune-adam-max-updates", "value"),
+        Input("tune-adam-learning-rate-percent", "value"),
+        Input("tune-adam-perturbation-percent", "value"),
+        Input("tune-adam-spsa-pairs", "value"),
         Input("tune-tunable-names", "data"),
+        Input("tune-batch-size", "value"),
+        Input("tune-max-workers", "value"),
+        Input("tune-scm-override", "value"),
         Input({"type": "tune-case-name", "index": ALL}, "value"),
         Input({"type": "tune-case-time-start", "index": ALL}, "value"),
         Input({"type": "tune-case-time-end", "index": ALL}, "value"),
         Input({"type": "tune-case-average-time", "index": ALL}, "value"),
         Input({"type": "tune-case-altitude-min", "index": ALL}, "value"),
         Input({"type": "tune-case-altitude-max", "index": ALL}, "value"),
-        Input({"type": "tune-range-param", "index": ALL}, "value"),
+        Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "id"),
+        Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
+        Input("tune-range-row-order", "data"),
         Input({"type": "tune-range-min", "index": ALL}, "value"),
         Input({"type": "tune-range-max", "index": ALL}, "value"),
         State({"type": "tune-config-button", "name": ALL}, "id"),
@@ -2473,27 +2795,33 @@ def register_display_callbacks(app):
         simann_max_iters,
         simann_initial_temp,
         simann_final_temp,
+        adam_max_updates,
+        adam_learning_rate_percent,
+        adam_perturbation_percent,
+        adam_spsa_pairs,
         tunable_names,
+        _batch_size,
+        _max_workers,
+        _scm_override,
         selected_case_names,
         time_start_values,
         time_end_values,
         average_time_values,
         altitude_min_values,
         altitude_max_values,
-        selected_param_names,
+        member_ids,
+        member_values,
+        range_row_order,
         min_values,
         max_values,
         config_button_ids,
     ):
         """Render the current tuning status and best-results table."""
-        param_names = [
-            value.strip()
-            for value in (selected_param_names or [])
-            if isinstance(value, str) and value.strip()
-        ]
+        param_specs = parameter_group_specs(member_ids, member_values, range_row_order)
+        param_names = [spec["targets"][0] for spec in param_specs]
         status_text = format_status_text(status)
         scoreboard_results = list(top_results or best_results or [])
-        results_table = build_results_table(scoreboard_results, param_names)
+        results_table = build_results_table(scoreboard_results, param_specs)
         running = bool(active_job) or str((status or {}).get("state") or "") in {"initializing", "running", "stopping"}
         workspace_selection = dict(workspace_selection or {})
         workspace_readonly = str(workspace_selection.get("mode") or "") == "readonly"
@@ -2522,6 +2850,11 @@ def register_display_callbacks(app):
                     simann_max_iters,
                     simann_initial_temp,
                     simann_final_temp,
+                    adam_max_updates,
+                    adam_learning_rate_percent,
+                    adam_perturbation_percent,
+                    adam_spsa_pairs,
+                    _batch_size,
                 )
                 or not case_ready
             )
@@ -2545,10 +2878,21 @@ def register_display_callbacks(app):
             window_style = action_button_style("#2563eb", disabled=True)
         if complete_disabled and complete_label != "Running":
             complete_style = action_button_style("#2563eb", disabled=True)
-        selected_count = len(set(param_names))
+        selected_count = len({target for spec in param_specs for target in spec["targets"]})
         add_disabled = controls_locked or selected_count >= len(tunable_names or [])
         case_disabled = [controls_locked] * len(selected_case_names or [])
-        range_disabled = [controls_locked] * len(selected_param_names or [])
+        member_disabled = [controls_locked] * len(member_values or [])
+        group_rows = {
+            component_id.get("row")
+            for component_id in (member_ids or [])
+            if isinstance(component_id, dict)
+            and sum(
+                1
+                for other in (member_ids or [])
+                if isinstance(other, dict) and other.get("row") == component_id.get("row")
+            ) > 1
+        }
+        range_disabled = [controls_locked] * len(range_row_order or [])
         # The catalog Store can update one callback turn before its new button
         # children mount. Size ALL-pattern returns from the exact rendered IDs
         # that Dash used to construct this request's output specification.
@@ -2560,9 +2904,17 @@ def register_display_callbacks(app):
         ]
         resolve_total_text = resolve_total_samples_text(
             resolve_spacing,
-            selected_param_names,
+            param_names,
             min_values,
             max_values,
+        )
+        adam_summary = adam_layout_summary(
+            _batch_size,
+            _max_workers,
+            selected_case_names,
+            adam_max_updates,
+            adam_spsa_pairs,
+            _scm_override,
         )
         return (
             status_text,
@@ -2580,9 +2932,11 @@ def register_display_callbacks(app):
             controls_locked,
             controls_locked,
             controls_locked,
+            controls_locked,
             mode_button_style(selected=strategy_mode == "random", disabled=controls_locked),
             mode_button_style(selected=strategy_mode == "resolve", disabled=controls_locked),
             mode_button_style(selected=strategy_mode == "simann", disabled=controls_locked),
+            mode_button_style(selected=strategy_mode == "adam", disabled=controls_locked),
             controls_locked,
             controls_locked,
             controls_locked,
@@ -2608,8 +2962,14 @@ def register_display_callbacks(app):
             mode_options_block_style(strategy_mode == "random"),
             mode_options_block_style(strategy_mode == "resolve"),
             mode_options_block_style(strategy_mode == "simann"),
-            mode_options_block_style(strategy_mode not in {"random", "resolve", "simann"}),
+            mode_options_block_style(strategy_mode == "adam"),
+            mode_options_block_style(strategy_mode not in {"random", "resolve", "simann", "adam"}),
             resolve_total_text,
+            adam_summary,
+            controls_locked,
+            controls_locked,
+            controls_locked,
+            controls_locked,
             controls_locked,
             controls_locked,
             controls_locked,
@@ -2627,7 +2987,14 @@ def register_display_callbacks(app):
             controls_locked,
             controls_locked,
             add_disabled,
-            range_disabled,
+            add_disabled,
+            member_disabled,
+            [controls_locked] * len(group_rows),
+            [
+                controls_locked
+                for component_id in (member_ids or [])
+                if isinstance(component_id, dict) and component_id.get("row") in group_rows
+            ],
             range_disabled,
             range_disabled,
             range_disabled,

@@ -10,13 +10,14 @@ from typing import Any, Iterable, Sequence
 import plotly.graph_objects as go
 from plotly.colors import qualitative
 
+from utilities.timing_profiles import GROUP_WALL_TIMER
+
 
 METRICS = {
-    "timer_max_seconds": "Critical timer time (s)",
-    "timer_mean_seconds": "Mean process timer time (s)",
-    "group_wall_seconds": "Process-group wall time (s)",
-    "throughput_columns_per_second": "Overall batch items / s",
-    "throughput_column_steps_per_second": "Column-steps / s",
+    "throughput_columns_per_second": "Throughput (runs / second)",
+    "throughput_column_steps_per_second": "Throughput (iterations / second)",
+    "throughput_grid_box_iterations_per_second": "Throughput (grid box iterations / second)",
+    "timer_max_seconds": "Runtime (seconds)",
     "process_imbalance_ratio": "Process imbalance (max / mean)",
 }
 
@@ -159,7 +160,13 @@ def timer_options(rows: Iterable[dict[str, object]], preferred_timer: str = "") 
         names.insert(0, preferred)
     elif preferred:
         names.insert(0, preferred)
-    return [{"label": name, "value": name} for name in names]
+    return [
+        {
+            "label": "Process-group wall time" if name == GROUP_WALL_TIMER else name,
+            "value": name,
+        }
+        for name in names
+    ]
 
 
 def profile_figure(
@@ -177,7 +184,7 @@ def profile_figure(
     if not rows:
         return empty_profile_figure("Select or run a profile to see timing results.", theme_name)
     if metric not in METRICS:
-        metric = "timer_max_seconds"
+        metric = "throughput_columns_per_second"
     if x_axis not in X_AXES:
         x_axis = "total_columns"
 
@@ -247,10 +254,11 @@ def profile_figure(
                     line={"color": colors[profile_id], "dash": dashes[process_count]},
                     marker={"color": colors[profile_id]},
                     hovertemplate=(
+                        "%{fullData.name}<br>"
                         f"{X_AXES[x_axis].lower()}=%{{x}}"
                         "<br>batch size/process=%{customdata[0]}"
                         f"<br>{METRICS[metric]}=%{{y:.6g}}"
-                        "<br>repetitions=%{customdata[1]}<extra>%{fullData.name}</extra>"
+                        "<br>repetitions=%{customdata[1]}<extra></extra>"
                     ),
                 )
             )
@@ -258,7 +266,7 @@ def profile_figure(
     figure = _apply_layout(
         figure,
         theme_name=theme_name,
-        title=f"{selected_timer} · {METRICS[metric]}",
+        title=f"{'Process-group wall time' if selected_timer == GROUP_WALL_TIMER else selected_timer} · {METRICS[metric]}",
         x_title=X_AXES[x_axis],
         y_title=METRICS[metric],
         x_scale=x_scale,
@@ -282,7 +290,7 @@ def relative_figure(
     """Plot percent changes at exactly matched workloads against a baseline."""
     if not baseline_id:
         return empty_profile_figure("Choose a baseline profile for relative comparisons.", theme_name)
-    metric = metric if metric in METRICS else "timer_max_seconds"
+    metric = metric if metric in METRICS else "throughput_columns_per_second"
     x_axis = x_axis if x_axis in X_AXES else "total_columns"
     grouped: dict[tuple[str, str, int, int, int], list[float]] = defaultdict(list)
     for row in rows:
@@ -327,8 +335,9 @@ def relative_figure(
                     name=f"{label} · {process_count} proc",
                     line={"color": _series_color(profile_id)},
                     hovertemplate=(
+                        "%{fullData.name}<br>"
                         f"{X_AXES[x_axis].lower()}=%{{x}}<br>batch size/process=%{{customdata[0]}}"
-                        "<br>change=%{y:+.2f}%<extra>%{fullData.name}</extra>"
+                        "<br>change=%{y:+.2f}%<extra></extra>"
                     ),
                 )
             )
@@ -415,7 +424,15 @@ def decomposition_figure(
 ) -> go.Figure:
     """Stack exclusive costs from the critical process of each repetition."""
     if process_count is None:
-        return empty_profile_figure("Choose a process count for cost decomposition.", theme_name)
+        process_counts = [
+            count
+            for row in process_rows
+            if _profile_id(row) == profile_id
+            and (count := _integer(row.get("process_count"))) is not None
+        ]
+        process_count = min(process_counts) if process_counts else None
+    if process_count is None:
+        return empty_profile_figure("No process-level data is available for cost decomposition.", theme_name)
     relevant = [
         row
         for row in process_rows
@@ -499,9 +516,9 @@ def decomposition_figure(
                 groupnorm="percent" if percentage else None,
                 line={"width": 1.5, "color": qualitative.Plotly[index % len(qualitative.Plotly)]},
                 hovertemplate=(
-                    "overall batch size=%{x}<br>cost=%{y:.6g}"
+                    "%{fullData.name}<br>overall batch size=%{x}<br>cost=%{y:.6g}"
                     + ("%" if percentage else " s")
-                    + "<extra>%{fullData.name}</extra>"
+                    + "<extra></extra>"
                 ),
             )
         )

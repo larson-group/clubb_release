@@ -240,8 +240,6 @@ def override_value(override_string, clubb_in_text):
     Values may also be comma-separated column lists, e.g. C8=0.8,0.7,C11=1.0,1.1.
     """
     for key, val in parse_override_pairs(normalize_override_string(override_string)):
-        replacement = f"{key} = {val}"
-
         assignment_re = re.compile(rf"(?im)^(\s*){re.escape(key)}\s*=.*$")
 
         clubb_in_text, replacements = assignment_re.subn(
@@ -250,7 +248,9 @@ def override_value(override_string, clubb_in_text):
         )
 
         if replacements == 0:
-            clubb_in_text += f"\n{replacement}\n"
+            raise ValueError(
+                f"Override setting '{key}' is not present in the selected namelists"
+            )
     return clubb_in_text
 
 

@@ -265,7 +265,11 @@ def validate_passthrough(arguments: Sequence[str], parser: argparse.ArgumentPars
     if forwarded[:1] == ["--"]:
         forwarded.pop(0)
 
-    for option in ("-multicol", "--multicol", "-batch_size", "--batch_size", "-out_dir", "--out_dir"):
+    managed_options = (
+        "-multicol", "--multicol", "-batch_size", "--batch_size",
+        "-out_dir", "--out_dir",
+    )
+    for option in managed_options:
         if _option_occurrences(forwarded, (option,)):
             parser.error(f"{option} is managed by time_clubb.py and may not be forwarded")
     if _option_occurrences(forwarded, ("-primary_timer", "--primary-timer")):
@@ -291,7 +295,14 @@ def validate_passthrough(arguments: Sequence[str], parser: argparse.ArgumentPars
 
 def parse_arguments(argv: Sequence[str] | None = None) -> tuple[BenchmarkOptions, list[str]]:
     parser = build_argument_parser()
-    namespace, passthrough = parser.parse_known_args(argv)
+    arguments = list(argv) if argv is not None else sys.argv[1:]
+    # ``argparse`` treats ``-batch_size`` as a prefix of ``-batch_sizes`` even
+    # with long-option abbreviation disabled, so reject managed child options
+    # before parsing the benchmark's own options.
+    for option in ("-multicol", "--multicol", "-batch_size", "--batch_size", "-out_dir", "--out_dir"):
+        if _option_occurrences(arguments, (option,)):
+            parser.error(f"{option} is managed by time_clubb.py and may not be forwarded")
+    namespace, passthrough = parser.parse_known_args(arguments)
     forwarded = validate_passthrough(passthrough, parser)
     output = namespace.output.expanduser()
     if not output.is_absolute():
@@ -761,7 +772,13 @@ def _profile_build_metadata(forwarded: Sequence[str]) -> dict[str, object]:
     if executable is not None and not executable.is_absolute():
         executable = (REPO_ROOT / executable).resolve()
     install_dir = _option_value(forwarded, ("-install_dir", "--install_dir"))
+    implementation = (
+        "python" if _option_occurrences(forwarded, ("-python", "--python"))
+        else "jax" if _option_occurrences(forwarded, ("-jax", "--jax"))
+        else "fortran"
+    )
     return {
+        "implementation": implementation,
         "requested_executable": str(executable or ""),
         "executable_sha256": _file_sha256(executable) if executable is not None else "",
         "requested_install_dir": install_dir,
@@ -795,6 +812,8 @@ def _reported_executable(results: Sequence[ProcessResult]) -> str:
 def _resolved_build_metadata(reported_executable: str) -> dict[str, str]:
     if not reported_executable:
         return {}
+    if any(character.isspace() for character in reported_executable):
+        return {"reported_executable": reported_executable}
     candidate = Path(reported_executable).expanduser()
     if not candidate.is_absolute():
         candidate = REPO_ROOT / candidate

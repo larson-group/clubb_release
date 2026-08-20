@@ -4,10 +4,10 @@ from netCDF4 import Dataset
 from dash_app.plot_tab.plot_types import pdf_contour_plot
 
 
-def test_shared_raw_3d_registry_contains_arm_and_bomex() -> None:
-    assert set(pdf_contour_plot.RAW_3D_RUNS) >= {"arm", "bomex"}
-    assert pdf_contour_plot.RAW_3D_RUNS["arm"].name == "arm_3d"
-    assert pdf_contour_plot.RAW_3D_RUNS["bomex"].name == "bomex_3d"
+def test_raw_3d_runs_are_discovered_by_case_name() -> None:
+    assert (pdf_contour_plot.SHARED_3D_SAM_ROOT / "arm_3d").name == "arm_3d"
+    assert (pdf_contour_plot.SHARED_3D_SAM_ROOT / "bomex_3d").name == "bomex_3d"
+    assert (pdf_contour_plot.SHARED_3D_SAM_ROOT / "lba_3d").name == "lba_3d"
 
 
 def _write_pdf_stats(path, *, three_gaussian=False):

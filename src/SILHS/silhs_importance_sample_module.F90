@@ -60,7 +60,7 @@ module silhs_importance_sample_module
       two_cluster_cp_nocp_opt
 
     use error_code, only: &
-        clubb_at_least_debug_level_api  ! Procedure
+      clubb_at_least_debug_level_api  ! Procedure
 
     implicit none
 
@@ -552,7 +552,8 @@ module silhs_importance_sample_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function pick_sample_categories( num_samples, category_prescribed_probs, rand_vect ) &
+  function pick_sample_categories( num_samples, category_prescribed_probs, &
+                                   rand_vect ) &
 
   result( int_sample_category )
 
@@ -573,6 +574,9 @@ module silhs_importance_sample_module
       fstderr, &     ! Constant(s)
       one, &
       zero
+
+    use error_code, only: &
+      clubb_at_least_debug_level_api
 
     implicit none
 
@@ -602,7 +606,7 @@ module silhs_importance_sample_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-
+      
     !--------------------------------------------------------------------------
     ! In order to facilitate picking categories for the sample points, a new
     ! array, category_cumulative_probs, is created.
@@ -659,9 +663,16 @@ module silhs_importance_sample_module
 
       ! We should have picked a category by now.
       if ( int_sample_category(sample) == 0 ) then
-        write(fstderr,*) "Invalid rand_vect number in pick_sample_categories"
-        write(fstderr,*) "rand_vect(sample) = ", rand_vect(sample)
-        error stop "Fatal error"
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
+          write(fstderr,*) "Invalid rand_vect number in pick_sample_categories"
+          write(fstderr,*) "rand_vect(sample) = ", rand_vect(sample)
+          error stop "Fatal error"
+        else
+          ! Debug is < 0 so we want to fail silently, but we need to set this to be non-zero
+          ! to avoid a index out-of-bounds error that can't be made silent
+          int_sample_category(sample) = 1
+        end if
+
       end if
 
     end do ! sample=1, num_samples

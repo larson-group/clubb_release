@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from dash_app.shared import activity
@@ -41,7 +42,7 @@ def test_ui_request_queue_preserves_rapid_handoffs(tmp_path, monkeypatch):
     assert activity.claim_ui_request(0) is None
 
 
-def test_broker_job_snapshot_survives_activity_reset_hook(tmp_path, monkeypatch):
+def test_global_broker_snapshot_excludes_detailed_scm_history(tmp_path, monkeypatch):
     monkeypatch.setattr(activity, "ACTIVITY_PATH", Path(tmp_path) / "activity.json")
     monkeypatch.setattr(activity, "LOCK_PATH", Path(tmp_path) / "activity.lock")
     activity.reset_activity()
@@ -54,14 +55,15 @@ def test_broker_job_snapshot_survives_activity_reset_hook(tmp_path, monkeypatch)
         "profile",
         {"state": "running", "pid": 19, "log": "/tmp/profile.log", "log_tail": "timing\n"},
     )
-    activity.set_broker_run("arm", {"state": "running", "proc_data": {"pid": 18, "log": "/tmp/arm.log"}})
-    activity.update_broker_run("arm", log_tail="running arm\n")
-
     jobs = activity.broker_jobs()
     assert jobs["compile"]["state"] == "running"
     assert jobs["compile"]["log_tail"] == "building\n"
     assert jobs["profile"]["log_tail"] == "timing\n"
-    assert jobs["runs"]["arm"]["log_tail"] == "running arm\n"
+    assert "runs" not in jobs
+    assert "scm_batches" not in jobs
+    assert set(jobs["run_summary"]) == {
+        "state", "revision", "active_count", "queued", "running", "stopping"
+    }
 
 
 def test_active_job_count_is_generic_across_broker_job_groups():
@@ -103,4 +105,27 @@ def test_legacy_agent_state_is_dropped_on_read(tmp_path, monkeypatch):
 
     assert "agents" not in snapshot
     assert "messages" not in snapshot
-    assert snapshot["version"] == 7
+    assert snapshot["version"] == 10
+
+
+def test_legacy_run_handoff_is_dropped_without_stealing_tab_focus(tmp_path, monkeypatch):
+    monkeypatch.setattr(activity, "ACTIVITY_PATH", Path(tmp_path) / "activity.json")
+    monkeypatch.setattr(activity, "LOCK_PATH", Path(tmp_path) / "activity.lock")
+    run_request = {"id": 4, "type": "run", "operation": "start", "tab": "run"}
+    plot_request = {"id": 5, "type": "profile", "operation": "set_view", "tab": "plots"}
+    activity.ACTIVITY_PATH.write_text(
+        json.dumps(
+            {
+                "ui_request": run_request,
+                "ui_request_in_flight": run_request,
+                "ui_request_queue": [run_request, plot_request],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    snapshot = activity.read_activity()
+
+    assert snapshot["ui_request"] is None
+    assert snapshot["ui_request_in_flight"] is None
+    assert snapshot["ui_request_queue"] == [plot_request]

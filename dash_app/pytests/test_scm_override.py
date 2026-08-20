@@ -1,9 +1,11 @@
 """Focused checks for Tune-tab generic SCM overrides."""
 
+import pytest
+
 from dash_app.tune_tab.callbacks_runs import build_request_payload
 from dash_app.tune_tab.runtime import write_loss_params_file
 from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE
-from utilities.create_case_namelist import normalize_override_string
+from utilities.create_case_namelist import normalize_override_string, override_value
 
 
 def test_tune_request_keeps_a_generic_scm_override():
@@ -80,3 +82,8 @@ def test_override_value_accepts_the_optional_cli_prefix():
     """Pasting the complete run_scm fragment remains convenient and safe."""
     assert normalize_override_string(" -override iiPDF_type=1 ") == "iiPDF_type=1"
     assert normalize_override_string("iiPDF_type=1") == "iiPDF_type=1"
+
+
+def test_override_value_rejects_a_setting_outside_all_namelists():
+    with pytest.raises(ValueError, match="not present"):
+        override_value("missing_flag=.true.", "&configurable_clubb_flags_nl\n/\n")

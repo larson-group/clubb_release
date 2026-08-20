@@ -1,6 +1,7 @@
 from dash import ALL, Input, Output, State, dcc, html, no_update
 import itertools
 import math
+import numpy as np
 
 from .plot_types.shared import (
     closest_column,
@@ -121,20 +122,109 @@ def _column_param_values(params, col_idx, ncols):
     return values
 
 
-def _param_error_grid(mismatched_params):
-    """Render parameter rows whose values do not agree across compared outputs."""
-    return html.Div(
-        [
-            html.Div(
-                [
-                    html.Div(name, className="plots-constant-param-name"),
-                    html.Div(message, className="plots-constant-param-value"),
-                ],
-                className="plots-constant-param-row",
+def _summarize_source_values(values):
+    """Format one output's scalar or column-varying parameter values."""
+    if values is None:
+        return "Missing"
+    numeric = [float(value) for value in values]
+    if not numeric:
+        return "Missing"
+    if np.allclose(numeric, numeric[0], rtol=0.0, atol=0.0):
+        return f"{numeric[0]:g}"
+    return format_column_values(numeric)
+
+
+def _reconcile_compare_params(per_file, source_labels, ncols):
+    """Use compatible varying axes while retaining per-output constant differences."""
+    files = list(per_file or [])
+    labels = list(source_labels or [])
+    labels.extend(f"output {idx + 1}" for idx in range(len(labels), len(files)))
+    all_names = sorted(set().union(*(params.keys() for params in files))) if files else []
+    params = {}
+    differences = []
+    conflicts = []
+
+    for name in all_names:
+        arrays = [params_for_file.get(name) for params_for_file in files]
+        varying = [
+            np.asarray(values, dtype=float)
+            for values in arrays
+            if values is not None
+            and len(values) > 1
+            and not np.allclose(values, values[0], rtol=0.0, atol=0.0)
+        ]
+        conflict = False
+        if varying:
+            reference = varying[0]
+            conflict = len(reference) != ncols or any(
+                candidate.shape != reference.shape
+                or not np.allclose(candidate, reference, rtol=0.0, atol=0.0)
+                for candidate in varying[1:]
             )
-            for name, message in mismatched_params
-        ],
-        className="plots-constant-param-grid",
+            if not conflict:
+                params[name] = reference.tolist()
+        else:
+            constants = [float(values[0]) for values in arrays if values]
+            if len(constants) == len(arrays) and np.allclose(constants, constants[0], rtol=0.0, atol=0.0):
+                params[name] = [constants[0]] * ncols
+
+        comparable = [None if values is None else np.asarray(values, dtype=float) for values in arrays]
+        same = bool(comparable) and comparable[0] is not None and all(
+            candidate is not None
+            and candidate.shape == comparable[0].shape
+            and np.allclose(candidate, comparable[0], rtol=0.0, atol=0.0)
+            for candidate in comparable[1:]
+        )
+        if not same:
+            differences.append(
+                {
+                    "name": name,
+                    "values": [
+                        {"source": label, "value": _summarize_source_values(values)}
+                        for label, values in zip(labels, arrays)
+                    ],
+                    "conflict": conflict,
+                }
+            )
+        if conflict:
+            conflicts.append(name)
+    return params, differences, conflicts
+
+
+def _param_difference_table(differences, source_labels):
+    """Render compared parameter values with one explicit column per output."""
+    labels = list(source_labels or [])
+    return html.Div(
+        html.Table(
+            [
+                html.Thead(
+                    html.Tr(
+                        [html.Th("Parameter"), *[html.Th(label) for label in labels]]
+                    )
+                ),
+                html.Tbody(
+                    [
+                        html.Tr(
+                            [
+                                html.Th(
+                                    [
+                                        row["name"],
+                                        html.Span("axis conflict", className="plots-param-conflict-badge")
+                                        if row.get("conflict")
+                                        else None,
+                                    ]
+                                ),
+                                *[html.Td(item["value"]) for item in row.get("values", [])],
+                            ],
+                            className="plots-param-difference-row--conflict" if row.get("conflict") else "",
+                        )
+                        for row in differences
+                    ]
+                ),
+            ],
+            className="plots-param-difference-table",
+        ),
+        className="plots-param-difference-scroll",
     )
 
 
@@ -312,10 +402,15 @@ def register_param_callbacks(app):
         ncols = max(int(case_data.get("columns_len") or 1), 1)
         if case_data.get("compare_mode"):
             files = case_data.get("files") or []
-            params, has_clubb_params, has_param_names, mismatched_params, _per_file = load_compare_param_values(files)
+            _matched, has_clubb_params, has_param_names, _mismatched, per_file = load_compare_param_values(files)
+            params, param_differences, conflicting_params = _reconcile_compare_params(
+                per_file,
+                case_data.get("source_labels") or [],
+                ncols,
+            )
             flags, flag_mismatches, has_flags = load_compare_flag_values(files)
             varied = [name for name, values in params.items() if len(values) == ncols and len(set(values)) > 1]
-            allow_param_selection = _is_regular_hypergrid(params, varied, ncols)
+            allow_param_selection = not conflicting_params and _is_regular_hypergrid(params, varied, ncols)
             constant_params = [
                 (name, params[name][0])
                 for name in params.keys()
@@ -328,7 +423,8 @@ def register_param_callbacks(app):
                 "has_clubb_params": has_clubb_params,
                 "has_param_names": has_param_names,
                 "constant_params": constant_params,
-                "mismatched_params": mismatched_params,
+                "param_differences": param_differences,
+                "conflicting_params": conflicting_params,
                 "flags": flags,
                 "flag_mismatches": flag_mismatches,
                 "has_flags": has_flags,
@@ -351,7 +447,8 @@ def register_param_callbacks(app):
             "has_clubb_params": has_clubb_params,
             "has_param_names": has_param_names,
             "constant_params": constant_params,
-            "mismatched_params": [],
+            "param_differences": [],
+            "conflicting_params": [],
             "flags": flags,
             "flag_mismatches": [],
             "has_flags": has_flags,
@@ -394,7 +491,8 @@ def register_param_callbacks(app):
         has_clubb_params = bool(param_data.get("has_clubb_params"))
         has_param_names = bool(param_data.get("has_param_names"))
         constant_params = param_data.get("constant_params") or []
-        mismatched_params = param_data.get("mismatched_params") or []
+        param_differences = param_data.get("param_differences") or []
+        conflicting_params = param_data.get("conflicting_params") or []
         allow_param_selection = bool(param_data.get("allow_column_param_selection"))
         children = []
         if compare_mode:
@@ -425,9 +523,16 @@ def register_param_callbacks(app):
             children.append(_varying_param_slider(name, current_val, unique_vals))
         if column_mode == "all" and displayed_varying_count:
             children.insert(0, html.Div("Displayed varying parameters", style={"fontWeight": "600", "marginTop": "6px", "marginBottom": "8px"}))
-        if mismatched_params:
-            children.append(html.Div("Mismatched parameters", style={"fontWeight": "600", "marginTop": "12px", "marginBottom": "8px"}))
-            children.append(_param_error_grid(mismatched_params))
+        if conflicting_params:
+            children.append(
+                html.Div(
+                    "Mismatched multicol parameter axes: " + ", ".join(conflicting_params),
+                    className="plots-param-conflict-message",
+                )
+            )
+        if param_differences:
+            children.append(html.Div("Parameter differences", style={"fontWeight": "600", "marginTop": "12px", "marginBottom": "8px"}))
+            children.append(_param_difference_table(param_differences, case_data.get("source_labels") or []))
         if param_names:
             if column_mode != "all" and not allow_param_selection:
                 column_params = _column_param_values(params, col_idx, ncols)

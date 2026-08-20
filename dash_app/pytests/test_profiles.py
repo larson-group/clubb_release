@@ -42,17 +42,31 @@ def test_discover_output_directories_rejects_unreadable_stats_signature(tmp_path
     assert discover_output_directories(tmp_path) == []
 
 
-def test_discover_output_directories_skips_agent_artifacts_even_when_they_contain_stats(tmp_path):
+def test_discover_output_directories_skips_agent_and_mcp_artifacts(tmp_path):
     ordinary = tmp_path / "dash_default"
     artifact = tmp_path / "agent_artifacts" / "investigation" / "baseline"
+    mcp_run = tmp_path / "mcp_runs" / "agent-run"
     ordinary.mkdir()
     artifact.mkdir(parents=True)
+    mcp_run.mkdir(parents=True)
     _write_netcdf_signature(ordinary / "arm_stats.nc")
     _write_netcdf_signature(artifact / "arm_stats.nc")
+    _write_netcdf_signature(mcp_run / "arm_stats.nc")
 
     records = discover_output_directories(tmp_path)
 
     assert [record["relative_path"] for record in records] == ["output/dash_default"]
+
+
+def test_explicitly_selected_mcp_output_remains_available(tmp_path):
+    mcp_run = tmp_path / "mcp_runs" / "agent-run"
+    mcp_run.mkdir(parents=True)
+    _write_netcdf_signature(mcp_run / "arm_stats.nc")
+
+    records = discover_output_directories(tmp_path, selected_dirs=[str(mcp_run)])
+
+    assert [record["path"] for record in records] == [str(mcp_run.resolve())]
+    assert records[0]["available"] is True
 
 
 def test_selected_external_directory_is_included_with_direct_case_metadata(tmp_path):

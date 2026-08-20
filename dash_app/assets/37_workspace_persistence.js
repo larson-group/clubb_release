@@ -49,13 +49,9 @@
   }
 
   function clearRunTransientPersistence() {
-    // These Stores are normally kept in local storage by Dash.  Clear is an
-    // explicit request to discard their UI state, so remove the durable copy
-    // as well as letting the Run callback clear the live values.  This avoids
-    // a stale selected-case list being restored during the next page load.
-    ["run-selected-cases", "run-open-cases"].forEach(function (key) {
-      window.localStorage.removeItem(key);
-    });
+    // Clear the persisted case selection and any obsolete console-open state.
+    window.localStorage.removeItem("run-selected-cases");
+    window.localStorage.removeItem("run-open-cases");
     var consoleState = window.dashboardRunConsoleState;
     if (consoleState && typeof consoleState.clearOpenCases === "function") {
       consoleState.clearOpenCases();
@@ -163,9 +159,18 @@
         return "Cleared " + keys.length + " saved entries.";
       },
 
-      resetRunConfigControls: function (_clicks, buttonIds) {
+      resetRunConfigControls: function (_clicks, _workspaceMeta, buttonIds, selectedConfig, renderedConfig) {
         var context = window.dash_clientside.callback_context || {};
         var triggered = context.triggered_id;
+        if (!triggered || triggered === 'dashboard-workspace-meta') {
+          if (!selectedConfig || String(selectedConfig) === String(renderedConfig || '')) {
+            return noUpdate();
+          }
+          // The selected config is browser-persisted, while the initial
+          // component tree is rendered on the server. Rebuild that tree from
+          // the restored selection before it can be submitted to Run.
+          return { name: String(selectedConfig), restore: true, nonce: Date.now() };
+        }
         if (!triggered || triggered.type !== 'run-config-button' || !triggered.name) {
           return noUpdate();
         }

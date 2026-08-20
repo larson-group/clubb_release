@@ -12,4 +12,4 @@ from .layout import build_layout
 def build_tab(app):
     initial_state = discover_profile_state()
     register_profile_callbacks(app)
-    return dcc.Tab(label="Profile", value="profile", children=build_layout(initial_state))
+    return dcc.Tab(id="dashboard-tab-profile", label="Profile", value="profile", children=build_layout(initial_state))

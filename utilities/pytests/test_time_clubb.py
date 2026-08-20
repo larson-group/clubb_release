@@ -483,7 +483,7 @@ def test_warmups_are_aggregated_and_dash_ignores_them(tmp_path):
     assert {row["phase"] for row in timing_rows} == {"warmup", "measured"}
     assert sum(row["timer"] == "advance_clubb_to_end" for row in timing_rows) == 2
     summaries, processes = load_profiles(options.output, [run_dir.name])
-    assert len(summaries) == 1
+    assert len(summaries) == 2
     assert len(processes) == 1
 
 

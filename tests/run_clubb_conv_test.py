@@ -22,7 +22,7 @@ TESTS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = TESTS_DIR.parent
 RUN_SCRIPTS = REPO_ROOT / "run_scripts"
 RUN_SCM_PY = RUN_SCRIPTS / "run_scm.py"
-OUTPUT_DIR = REPO_ROOT / "output"
+OUTPUT_DIR = REPO_ROOT / "output" / "convergence_test"
 RESTART_DIR = REPO_ROOT / "restart"
 
 
@@ -43,6 +43,11 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
         "--var",
         default="rcm",
         help="Variable to test from <case>_stats.nc (default: rcm).",
+    )
+    parser.add_argument(
+        "-override",
+        default=None,
+        help="Comma-separated CLUBB namelist overrides forwarded to every run.",
     )
     args, run_scm_args = parser.parse_known_args()
     return args, run_scm_args
@@ -81,6 +86,7 @@ def run_scm(
     time_final: float,
     l_restart: bool,
     run_scm_args: list[str],
+    user_override: str | None,
 ) -> None:
     override_parts = [
         f"time_initial={time_initial}",
@@ -100,10 +106,15 @@ def run_scm(
     else:
         override_parts.append("l_restart=.false.")
 
+    if user_override:
+        override_parts.insert(0, user_override)
+
     cmd = [
         sys.executable,
         str(RUN_SCM_PY),
         *run_scm_args,
+        "-out_dir",
+        str(OUTPUT_DIR),
         "-dt_main",
         str(dt),
         "-dt_rad",
@@ -314,6 +325,7 @@ def main() -> int:
             time_final=5400.0,
             l_restart=False,
             run_scm_args=run_scm_args,
+            user_override=args.override,
         )
         move_case_outputs(case_name, RESTART_DIR)
         print("Done!")
@@ -330,6 +342,7 @@ def main() -> int:
                 time_final=9000.0,
                 l_restart=True,
                 run_scm_args=run_scm_args,
+                user_override=args.override,
             )
             curr_out = OUTPUT_DIR / f"timestep_{dt}"
             move_case_outputs(case_name, curr_out)

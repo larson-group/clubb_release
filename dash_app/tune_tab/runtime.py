@@ -44,93 +44,6 @@ class ProcessGroup:
         return int(failures[0]) if failures else 0
 
 
-class SequentialProcessGroup:
-    """Poll-compatible process group that runs parameter batches in order.
-
-    A multi-column SCM replay writes one stats file per case.  Independent
-    parameter batches must therefore not overlap: both would otherwise write
-    (for example) ``arm_stats.nc`` at the same time. The first batch uses the
-    stable result-run directory, and later batches use sibling batch folders.
-    """
-
-    def __init__(self, batch_specs):
-        self._batch_specs = list(batch_specs)
-        self._batch_index = -1
-        self._current = None
-        self._cancelled = False
-        self._launch_next_batch()
-
-    @property
-    def pid(self):
-        return self._current.pid if self._current is not None else None
-
-    @property
-    def processes(self):
-        return list(getattr(self._current, "processes", []) or [])
-
-    @property
-    def active_batch(self):
-        return self._batch_index + 1 if self._current is not None else len(self._batch_specs)
-
-    @property
-    def batch_count(self):
-        return len(self._batch_specs)
-
-    def snapshot(self):
-        return {
-            "active_batch": self.active_batch,
-            "batch_count": self.batch_count,
-            "pid": self.pid,
-        }
-
-    def _launch_next_batch(self):
-        self._batch_index += 1
-        if self._batch_index >= len(self._batch_specs):
-            self._current = None
-            return
-        spec = self._batch_specs[self._batch_index]
-        processes = []
-        for command in spec["commands"]:
-            with open(spec["log_path"], "a", encoding="utf-8") as log_handle:
-                log_handle.write(
-                    f"\n=== Batch {self._batch_index + 1}/{len(self._batch_specs)} command: "
-                    + " ".join(command)
-                    + " ===\n"
-                )
-                log_handle.flush()
-                processes.append(
-                    subprocess.Popen(
-                        command,
-                        cwd=REPO_ROOT,
-                        env=worker_env(),
-                        stdout=log_handle,
-                        stderr=subprocess.STDOUT,
-                        text=True,
-                    )
-                )
-        self._current = ProcessGroup(processes)
-
-    def poll(self):
-        if self._cancelled:
-            return 143
-        if self._current is None:
-            return 0
-        returncode = self._current.poll()
-        if returncode is None:
-            return None
-        if returncode:
-            return int(returncode)
-        self._launch_next_batch()
-        return None if self._current is not None else 0
-
-    def terminate(self):
-        """Stop the current batch and prevent any subsequent launch."""
-        self._cancelled = True
-        for process in self.processes:
-            if process.poll() is None:
-                process.terminate()
-
-
 def empty_status_payload():
     """Return a fresh empty tuning-status payload."""
     return dict(TUNE_STATUS_TEMPLATE)
@@ -296,19 +209,11 @@ def start_loss_run(
     run_mode="window",
     config="default",
     override="",
-    batch_size=8,
     workspace_id=None,
     revision_id=None,
     workspace_name=None,
 ):
-    """Launch an ad-hoc replay, splitting parameter columns into safe batches.
-
-    The tuning worker already evaluates at most ``batch_size`` columns per
-    loss-driver call.  Result-table replays use the same limit: this avoids a
-    known CLUBB stack overflow for large multi-column cases while retaining
-    every selected parameter row.  Batches run in order because concurrently
-    writing a case's stats file would corrupt its output.
-    """
+    """Launch one multi-column replay containing every selected parameter row."""
     cases = [str(case).strip() for case in (case_names or []) if str(case).strip()]
     selected_fields = [str(field).strip() for field in (fields or []) if str(field).strip()]
     run_mode = str(run_mode or "window").strip()
@@ -326,12 +231,6 @@ def start_loss_run(
 
     if not any(param_set for param_set in param_sets):
         raise RuntimeError("No parameters were available for this result row.")
-    try:
-        batch_size = int(batch_size)
-    except (TypeError, ValueError) as exc:
-        raise RuntimeError("Batch size must be a positive integer.") from exc
-    if batch_size < 1:
-        raise RuntimeError("Batch size must be a positive integer.")
 
     output_root = tune_result_output_dir(
         workspace_id=workspace_id,
@@ -347,28 +246,12 @@ def start_loss_run(
     work_dir.mkdir(parents=True, exist_ok=True)
     config = str(config or "default").strip() or "default"
     override = normalize_override_string(override)
-
-    param_batches = [param_sets[start : start + batch_size] for start in range(0, len(param_sets), batch_size)]
-    batch_records = []
-    for index, batch_params in enumerate(param_batches, start=1):
-        # The first batch owns the user-facing revision/run-type directory.
-        # Later batches need isolated stats files, so they occupy child folders.
-        output_dir = output_root if index == 1 else output_root / f"batch_{index:03d}"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        params_path = write_loss_params_file(
-            work_dir,
-            batch_params,
-            f"batch_{index:03d}_loss_params.in",
-            config=config,
-        )
-        batch_records.append(
-            {
-                "index": index,
-                "param_count": len(batch_params),
-                "params_path": str(params_path),
-                "output_dir": str(output_dir),
-            }
-        )
+    params_path = write_loss_params_file(
+        work_dir,
+        param_sets,
+        f"{run_id}_loss_params.in",
+        config=config,
+    )
 
     request_payload = {
         "config": config,
@@ -377,9 +260,8 @@ def start_loss_run(
         "fields": selected_fields,
         "run_mode": run_mode,
         "params": param_sets,
-        "batch_size": batch_size,
-        "batch_count": len(batch_records),
-        "batches": batch_records,
+        "column_count": len(param_sets),
+        "params_path": str(params_path),
         "output_dir": str(output_root),
         "workspace_id": str(workspace_id or ""),
         "revision_id": str(revision_id or ""),
@@ -391,47 +273,59 @@ def start_loss_run(
     log_path = work_dir / f"{run_id}_{log_name}"
     request_path.write_text(json.dumps(request_payload, indent=2, sort_keys=True), encoding="utf-8")
 
-    batch_specs = []
-    for record in batch_records:
-        if run_mode == "window":
-            commands = [
-                [
-                    sys.executable,
-                    str(Path(REPO_ROOT) / "run_scripts" / "run_scm_loss.py"),
-                    "-out_dir",
-                    record["output_dir"],
-                    "-config",
-                    config,
-                    "-fields",
-                    ",".join(selected_fields),
-                    "-cases",
-                    ",".join(cases),
-                    "-params",
-                    record["params_path"],
-                    *(["-override", override] if override else []),
-                    "-case_config_file",
-                    str(request_path),
-                ]
+    if run_mode == "window":
+        commands = [
+            [
+                sys.executable,
+                str(Path(REPO_ROOT) / "run_scripts" / "run_scm_loss.py"),
+                "-out_dir",
+                str(output_root),
+                "-config",
+                config,
+                "-fields",
+                ",".join(selected_fields),
+                "-cases",
+                ",".join(cases),
+                "-params",
+                str(params_path),
+                *(["-override", override] if override else []),
+                "-case_config_file",
+                str(request_path),
             ]
-        else:
-            commands = [
-                [
-                    sys.executable,
-                    str(Path(REPO_ROOT) / "run_scripts" / "run_scm.py"),
-                    "-out_dir",
-                    record["output_dir"],
-                    "-config",
-                    config,
-                    "-params",
-                    record["params_path"],
-                    *(["-override", override] if override else []),
-                    case_name,
-                ]
-                for case_name in cases
+        ]
+    else:
+        commands = [
+            [
+                sys.executable,
+                str(Path(REPO_ROOT) / "run_scripts" / "run_scm.py"),
+                "-out_dir",
+                str(output_root),
+                "-config",
+                config,
+                "-params",
+                str(params_path),
+                *(["-override", override] if override else []),
+                case_name,
             ]
-        batch_specs.append({"commands": commands, "log_path": log_path})
+            for case_name in cases
+        ]
 
-    proc = SequentialProcessGroup(batch_specs)
+    processes = []
+    for command in commands:
+        with open(log_path, "a", encoding="utf-8") as log_handle:
+            log_handle.write("\n=== Command: " + " ".join(command) + " ===\n")
+            log_handle.flush()
+            processes.append(
+                subprocess.Popen(
+                    command,
+                    cwd=REPO_ROOT,
+                    env=worker_env(),
+                    stdout=log_handle,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
+            )
+    proc = ProcessGroup(processes)
     with LOSS_RUN_LOCK:
         LOSS_RUN_PROCS[run_id] = proc
 
@@ -445,11 +339,9 @@ def start_loss_run(
         "log_path": str(log_path),
         "work_dir": str(work_dir),
         "output_dir": str(output_root),
-        "batch_size": batch_size,
-        "batch_count": len(batch_specs),
-        "active_batch": 1,
-        "batches": batch_records,
-        "cmd": batch_specs[0]["commands"][0] if len(batch_specs[0]["commands"]) == 1 else batch_specs[0]["commands"],
+        "column_count": len(param_sets),
+        "params_path": str(params_path),
+        "cmd": commands[0] if len(commands) == 1 else commands,
     }
 
 

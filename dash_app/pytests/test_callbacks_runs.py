@@ -1,10 +1,66 @@
+from dash import Dash
+
 from dash_app.run_tab.callbacks_runs import (
     build_multicol_spec,
-    discard_terminal_broker_runs,
+    complete_run_overrides,
     expand_linked_parameter_values,
-    launch_broker_batch,
     fresh_batch_request_id,
 )
+from dash_app.run_tab.tab import build_tab
+from dash_app.run_tab.runtime import build_case_command
+
+
+def test_complete_run_overrides_freezes_effective_values_not_only_deltas():
+    overrides = complete_run_overrides(
+        {
+            "normalized_flags": {
+                "l_predict_upwp_vpwp": True,
+                "l_diag_Lscale_from_tau": False,
+                "iiPDF_type": "1",
+            },
+            "normalized_parameters": {
+                "tunable": {"C8": "0.5"},
+                "silhs": {"l_lh_straight_mc": ".false."},
+            },
+            "overrides": {},
+        }
+    )
+
+    assert overrides == {
+        "flags": {
+            "l_predict_upwp_vpwp": ".true.",
+            "l_diag_Lscale_from_tau": ".false.",
+            "iiPDF_type": "1",
+        },
+        "tunable": {"C8": "0.5"},
+        "silhs": {"l_lh_straight_mc": ".false."},
+    }
+
+
+def test_cancel_command_does_not_share_the_polling_callback():
+    app = Dash(__name__, suppress_callback_exceptions=True)
+    app.layout = build_tab(app)
+
+    action_inputs = {
+        item["id"] for item in app.callback_map["run-action-result.data"]["inputs"]
+    }
+    assert {"run-button", "run-cancel", "run-clear"} <= action_inputs
+    assert "run-sync-interval" not in action_inputs
+    assert not any("run-snapshot.data" in key for key in app.callback_map)
+
+    assert not any("run-console-container.children" in key for key in app.callback_map)
+    assert not any("run-case-button" in key and ".style" in key for key in app.callback_map)
+    assert any("run-ui-render-signal.data" in key for key in app.callback_map)
+    render_callback = next(
+        entry
+        for key, entry in app.callback_map.items()
+        if "run-ui-render-signal.data" in key
+    )
+    assert {item["id"] for item in render_callback["inputs"]} == {
+        "run-selected-cases",
+        "run-action-result",
+        "run-resolved-output-dir",
+    }
 
 
 def test_multicol_spec_preserves_current_parameter_names():
@@ -83,61 +139,17 @@ def test_multicol_rejects_two_rows_for_one_linked_coordinate():
         raise AssertionError("duplicate linked hypergrid coordinate was accepted")
 
 
-def test_clear_discards_only_terminal_broker_run_records():
-    removed = []
-
-    discarded = discard_terminal_broker_runs(
-        {
-            "arm": {"case": "arm", "state": "finished"},
-            "bomex": {"case": "bomex", "state": "failed"},
-            "dycoms2_rf01": {"case": "dycoms2_rf01", "state": "running"},
-            "atex": {"case": "atex", "state": "stopping"},
-        },
-        lambda case, payload: removed.append((case, payload)),
+def test_run_command_uses_snapshotted_python_or_jax_build():
+    python_command = build_case_command(
+        "arm",
+        "standard_stats.in",
+        {"implementation": "python", "install_dir": "/tmp/build one"},
+    )
+    jax_command = build_case_command(
+        "bomex",
+        "standard_stats.in",
+        {"implementation": "jax", "install_dir": "/tmp/build-two"},
     )
 
-    assert discarded == ["arm", "bomex"]
-    assert removed == [("arm", None), ("bomex", None)]
-
-
-def test_native_multi_case_selection_submits_one_shared_batch(monkeypatch):
-    from dash_app.shared import broker_client
-
-    captured = {}
-
-    def fake_action(action, payload, **kwargs):
-        captured.update(action=action, payload=payload, kwargs=kwargs)
-        return {
-            "status": "started",
-            "batch_id": "batch_native_test",
-            "children": [
-                {
-                    "case": "arm",
-                    "state": "running",
-                    "runtime": {"proc_data": {"pid": 101, "log": "/tmp/arm.log"}},
-                },
-                {"case": "bomex", "state": "queued"},
-            ],
-        }
-
-    monkeypatch.setattr(broker_client, "perform_action", fake_action)
-    running = {}
-    logs = {}
-    queued, started, failures = launch_broker_batch(
-        running,
-        [
-            {"case": "arm", "stats": "standard_stats.in", "config": "default", "overrides": {}, "cli_options": {}},
-            {"case": "bomex", "stats": "standard_stats.in", "config": "default", "overrides": {}, "cli_options": {}},
-        ],
-        logs,
-        2,
-        "dash-batch-test-123",
-    )
-
-    assert queued == []
-    assert started is True
-    assert failures == []
-    assert running["arm"]["broker_managed"] is True
-    assert captured["action"] == "domain_submit_scm_batch"
-    assert captured["payload"]["request"]["cases"] == ["arm", "bomex"]
-    assert captured["payload"]["native_cli_options"] == {}
+    assert "-python -install_dir '/tmp/build one' arm" in python_command
+    assert "-jax -install_dir /tmp/build-two bomex" in jax_command

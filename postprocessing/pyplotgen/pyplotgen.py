@@ -21,7 +21,6 @@ from difflib import SequenceMatcher
 from multiprocessing import Pool, Array
 from multiprocessing import freeze_support
 
-from fpdf import FPDF
 
 from config import Case_definitions, Style_definitions
 from python_html_gallery import gallery
@@ -322,6 +321,8 @@ class PyPlotGen:
         :param case_descriptions: A dict of name -> description maps. E.g. {'bomex': "I am the bomex case. Fear me!"}
         :return: None
         """
+        from fpdf import FPDF
+
         pdf = FPDF()
         for foldername in sorted(os.listdir(self.output_folder)):
             if os.path.isdir(foldername):

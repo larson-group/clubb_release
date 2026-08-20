@@ -145,6 +145,9 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
     def estimated_sample_count(self) -> int | None:
         return self.chain_count * self.max_iters
 
+    def pending_batch_limit(self, batch_size: int) -> int | None:
+        return max(1, math.ceil(self.chain_count / max(1, int(batch_size))))
+
     def _new_chain(self, chain_id: int, xinit: list[float]) -> _SimAnnChain:
         return _SimAnnChain(
             chain_id=chain_id,

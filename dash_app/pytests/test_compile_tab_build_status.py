@@ -197,6 +197,24 @@ def test_toolchain_defaults_to_auto_and_preserves_an_explicit_override():
     assert callbacks.toolchain_selection_mode("/toolchains/gcc.cmake") == "manual"
 
 
+def test_installed_build_can_be_selected_while_another_build_is_compiling(monkeypatch):
+    monkeypatch.setattr(callbacks, "job_process_is_live", lambda _job: True)
+    build = {
+        "path": "/tmp/build-a",
+        "name": "build-a",
+        "install_prefix": "/tmp/install-a",
+        "install_exists": True,
+        "install_prefix_mismatch": False,
+        "is_selected": False,
+    }
+
+    row = callbacks.render_build_list({"builds": [build]}, job={"status": "running"})[0]
+    select_button, actions = row.children
+
+    assert select_button.disabled is False
+    assert all(button.disabled is True for button in actions.children)
+
+
 def test_ui_gptl_flag_uses_the_shared_compile_option_path():
     options = callbacks.collect_options("double", "none", "auto", ["gptl"], "")
 

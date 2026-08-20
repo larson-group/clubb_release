@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import shutil
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -13,6 +14,7 @@ from utilities.timing_profiles import (
     export_profiles,
     import_profiles,
     load_profiles,
+    read_profile_manifest,
 )
 
 
@@ -39,6 +41,33 @@ def profile_option(record: dict[str, Any]) -> dict[str, str]:
 
 def discover_profile_library(value: Any) -> list[dict[str, Any]]:
     return discover_profiles(resolve_library_path(value))
+
+
+def delete_profile_library_entry(output_value: Any, run_id: str) -> Path:
+    """Delete one recognized profile below the selected library directory."""
+    root = resolve_library_path(output_value)
+    record = next(
+        (
+            item
+            for item in discover_profiles(root)
+            if str(item.get("run_id") or "") == str(run_id or "")
+        ),
+        None,
+    )
+    if record is None:
+        raise ValueError(f"Profile '{run_id}' is not in the selected library")
+
+    candidate = Path(str(record.get("bundle_path") or ""))
+    if candidate.is_symlink():
+        raise ValueError(f"Refusing to delete symlinked profile directory: {candidate}")
+    target = candidate.resolve()
+    if target == root or root not in target.parents:
+        raise ValueError("Only profile directories inside the selected library can be deleted")
+    if read_profile_manifest(target) is None:
+        raise ValueError(f"Refusing to delete unrecognized profile directory: {target}")
+
+    shutil.rmtree(target)
+    return target
 
 
 def load_profile_library_data(
@@ -72,7 +101,7 @@ def export_profile_library(output_value: Any, run_ids: Sequence[str]) -> bytes:
 
 
 def enrich_summary_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Attach comparison-only metrics without changing the portable CSV schema."""
+    """Attach comparison-only throughput metrics without changing the CSV schema."""
     prepared = [dict(row) for row in rows]
     step_counts: dict[tuple[str, str, str, str], float] = {}
     for row in prepared:
@@ -100,6 +129,7 @@ def enrich_summary_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
         row["model_steps"] = steps if steps else ""
         try:
             total_columns = float(row.get("total_columns") or 0)
+            vertical_levels = float(row.get("vertical_levels") or 0)
             timer_seconds = float(row.get("timer_max_seconds") or 0)
             timer_mean = float(row.get("timer_mean_seconds") or 0)
         except (TypeError, ValueError):
@@ -109,36 +139,12 @@ def enrich_summary_rows(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
             if steps and timer_seconds > 0
             else ""
         )
+        row["throughput_grid_box_iterations_per_second"] = (
+            vertical_levels * total_columns * steps / timer_seconds
+            if vertical_levels > 0 and steps and timer_seconds > 0
+            else ""
+        )
         row["process_imbalance_ratio"] = (
             timer_seconds / timer_mean if timer_mean > 0 else ""
         )
     return prepared
-
-
-def comparison_warnings(
-    catalog: Iterable[dict[str, Any]],
-    selected_ids: Sequence[str],
-) -> list[str]:
-    """Identify provenance differences that can invalidate direct comparisons."""
-    selected = set(str(value) for value in selected_ids)
-    records = [row for row in catalog if str(row.get("run_id") or "") in selected]
-    if len(records) < 2:
-        return []
-    checks = (
-        ("case_name", "cases"),
-        ("git_revision", "source revisions"),
-        ("forwarded_args", "run arguments"),
-        ("vertical_levels", "vertical level counts"),
-        ("model_steps", "model-step counts"),
-        ("omp_num_threads", "OpenMP thread counts"),
-        ("backends", "timer backends"),
-        ("time_bases", "timer time bases"),
-        ("hostname", "hosts"),
-        ("executable_sha256", "executables"),
-    )
-    warnings = []
-    for field, label in checks:
-        values = {str(record.get(field) or "unknown") for record in records}
-        if len(values) > 1:
-            warnings.append(f"Selected profiles use different {label}.")
-    return warnings

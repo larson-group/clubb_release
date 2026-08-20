@@ -71,6 +71,39 @@ def test_plot_request_can_select_one_immutable_scm_run(tmp_path, monkeypatch):
     assert activity.read_activity()["plot_request"]["output_dir"] == output_directory
 
 
+def test_plot_request_can_select_multiple_output_directories(tmp_path, monkeypatch):
+    monkeypatch.setattr(activity, "ACTIVITY_PATH", Path(tmp_path) / "activity.json")
+    monkeypatch.setattr(activity, "LOCK_PATH", Path(tmp_path) / "activity.lock")
+    activity.reset_activity()
+    output_root = tmp_path / "output"
+    default = output_root / "default"
+    new = output_root / "new"
+    default.mkdir(parents=True)
+    new.mkdir()
+    monkeypatch.setattr(actions, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(actions, "_validate_case", lambda value: str(value))
+    captured = {}
+
+    def fake_selection(*_args, **kwargs):
+        captured.update(kwargs)
+        return _case_data(), {"time_start_seconds": 0.0, "average_minutes": 1.0}
+
+    monkeypatch.setattr(actions, "_profile_selection", fake_selection)
+
+    result = actions.plot_profiles(
+        "arm",
+        ["wp2"],
+        output_dirs=["default", "new"],
+    )
+
+    expected = [str(default), str(new)]
+    assert captured["output_dirs"] == expected
+    assert result["output_directories"] == expected
+    request = activity.read_activity()["plot_request"]
+    assert request["output_dirs"] == expected
+    assert "output_dir" not in request
+
+
 def test_plot_request_can_select_sam_overlay_for_immutable_run(tmp_path, monkeypatch):
     monkeypatch.setattr(activity, "ACTIVITY_PATH", Path(tmp_path) / "activity.json")
     monkeypatch.setattr(activity, "LOCK_PATH", Path(tmp_path) / "activity.lock")

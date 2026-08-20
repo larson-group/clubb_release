@@ -21,15 +21,12 @@ PERSISTENT_STORE_IDS = frozenset(
     {
         "theme-store",
         # Run configuration.
-        "run-tunable-configs",
         "run-selected-config",
         "run-multicol-rows-state",
         "run-multicol-next-id",
         "run-multicol-row-order",
         "run-selected-cases",
         "run-selected-stats-file",
-        "run-max-tasks-active",
-        "run-open-cases",
         # Plot workspace. plots-case-data is intentionally included because it
         # owns case selection; directory callbacks refresh its derived fields.
         "plots-output-dirs",

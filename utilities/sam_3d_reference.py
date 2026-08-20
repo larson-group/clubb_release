@@ -101,13 +101,56 @@ class ProfileMoments:
 
 @lru_cache(maxsize=32)
 def _snapshot_files(run_dir: Path) -> list[tuple[int, Path]]:
+    """Return physical elapsed seconds and files using NetCDF time metadata."""
     output_dir = Path(run_dir).expanduser().resolve() / "OUT_3D"
-    pairs: list[tuple[int, Path]] = []
+    timestep_files: list[tuple[int, Path]] = []
     for path in output_dir.glob("*_micro.nc"):
         match = _STEP_PATTERN.search(path.name)
         if match:
-            pairs.append((int(match.group(1)), path))
-    return sorted(pairs)
+            timestep_files.append((int(match.group(1)), path))
+    timestep_files.sort()
+    if len(timestep_files) < 2:
+        return timestep_files
+
+    first_step, first_path = timestep_files[0]
+    last_step, last_path = timestep_files[-1]
+    step_span = last_step - first_step
+    if step_span <= 0:
+        return timestep_files
+    try:
+        first_time = _snapshot_time_seconds(first_path)
+        last_time = _snapshot_time_seconds(last_path)
+        seconds_per_step = (last_time - first_time) / step_span
+    except (KeyError, OSError, ValueError):
+        return timestep_files
+    if not math.isfinite(seconds_per_step) or seconds_per_step <= 0.0:
+        return timestep_files
+    return [
+        (int(round(timestep * seconds_per_step)), path)
+        for timestep, path in timestep_files
+    ]
+
+
+def _snapshot_time_seconds(path: Path) -> float:
+    """Read one SAM snapshot time coordinate in physical seconds."""
+    with netCDF4.Dataset(path) as dataset:
+        time = dataset.variables["time"]
+        value = float(np.asarray(time[:], dtype=float).reshape(-1)[0])
+        units = str(getattr(time, "units", "") or "").strip().lower()
+    unit = units.split()[0] if units else ""
+    factors = {
+        "day": 86400.0,
+        "days": 86400.0,
+        "hour": 3600.0,
+        "hours": 3600.0,
+        "minute": 60.0,
+        "minutes": 60.0,
+        "second": 1.0,
+        "seconds": 1.0,
+    }
+    if unit not in factors:
+        raise ValueError(f"Unsupported SAM snapshot time units: {units or 'missing'}")
+    return value * factors[unit]
 
 
 def inventory_run(run_dir: Path = DEFAULT_SAM_RUN) -> RunInventory:

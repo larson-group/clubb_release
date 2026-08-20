@@ -1309,7 +1309,9 @@ module pdf_closure_module
         end if
     end do
     
-    if ( any(err_info%err_code == clubb_fatal_error) ) return
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) return
+    end if
 
 #endif /*TUNER*/
 

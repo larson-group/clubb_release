@@ -189,6 +189,12 @@ def summarize_for_status(best_results: list[dict]) -> list[dict]:
             entry["scaled_rmse_sum"] = float(result["simple_rms_sum"])
         if "case_loss" in result:
             entry["case_loss"] = dict(result["case_loss"])
+        for key in (
+            "improvement_vs_clubb_default_percent",
+            "improvement_vs_override_defaults_percent",
+        ):
+            if key in result:
+                entry[key] = result[key]
         summary.append(entry)
     return summary
 
@@ -240,6 +246,7 @@ def write_status(
         "loss_policy_constants": dict(metrics.get("loss_policy_constants", {})),
         "aggregation_options": dict(metrics.get("aggregation_options", {})),
         "control_stop_reason": metrics.get("control_stop_reason"),
+        "baselines": dict(metrics.get("baselines", {})),
     }
     atomic_write_json(status_path, payload)
 
@@ -257,6 +264,7 @@ def write_results(
     updated_at: str,
     finished_at: str | None = None,
     error_message: str = "",
+    baselines: dict[str, dict] | None = None,
 ) -> None:
     """Write the retained results file with full parameter vectors."""
     payload = {
@@ -283,6 +291,7 @@ def write_results(
         "finished_at": finished_at,
         "error_message": error_message,
         "request": request,
+        "baselines": dict(baselines or {}),
         "best_results": [],
         "best_results_by_case": {},
     }
@@ -333,6 +342,14 @@ def write_results(
                     }
                     for case_name, case_fields in result.get("field_metrics", {}).items()
                 },
+                **{
+                    key: result[key]
+                    for key in (
+                        "improvement_vs_clubb_default_percent",
+                        "improvement_vs_override_defaults_percent",
+                    )
+                    if key in result
+                },
             }
         )
     for case_name, case_results in (best_results_by_case or {}).items():
@@ -353,7 +370,7 @@ def _lightweight_case_result(case_name: str, result: dict, rank: int) -> dict:
         if isinstance(raw_scaled_rmse_case_sum, dict)
         else raw_scaled_rmse_case_sum
     )
-    return {
+    entry = {
         "rank": int(rank),
         "case_name": str(case_name),
         "sample_id": result.get("sample_id"),
@@ -372,3 +389,10 @@ def _lightweight_case_result(case_name: str, result: dict, rank: int) -> dict:
         "aggregation_weights": list(result.get("aggregation_weights", [])),
         "loss_policy_version": result.get("loss_policy_version"),
     }
+    for key in (
+        "improvement_vs_clubb_default_percent",
+        "improvement_vs_override_defaults_percent",
+    ):
+        if key in result:
+            entry[key] = result[key]
+    return entry

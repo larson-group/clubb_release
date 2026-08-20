@@ -36,7 +36,6 @@ from .layout import (
     compute_width_hints,
 )
 from .namelist import normalize_numeric_display
-from .state import RUN_FINALIZED, RUN_LOCK, RUN_STATUS
 
 
 def blank_multicol_row(row_id):
@@ -110,7 +109,7 @@ def multicol_rows_from_values(
     available = set(tunable_names or [])
     fallback_by_id = _fallback_rows_by_id(fallback_rows)
     row_ids = list(row_order or [])
-    if not row_ids and fallback_by_id:
+    if row_order is None and fallback_by_id:
         row_ids = [row.get("id") for row in (fallback_rows or []) if isinstance(row, dict)]
     rows = []
     for index, row_id in enumerate(row_ids):
@@ -134,21 +133,17 @@ def multicol_rows_from_values(
                 "npoints": fallback.get("npoints", "4") if index >= len(npoint_values or []) or npoint_values[index] is None else str(npoint_values[index]),
             }
         )
-    if rows:
-        return rows
-    return [blank_multicol_row(0)]
+    return rows
 
 
-def invalidate_cached_run_results(completed_cases, failed_cases):
-    """Clear cached run status and completed/failed stores after a settings edit."""
-    with RUN_LOCK:
-        if RUN_STATUS or RUN_FINALIZED:
-            RUN_STATUS.clear()
-            RUN_FINALIZED.clear()
-
-    completed_update = [] if completed_cases else no_update
-    failed_update = [] if failed_cases else no_update
-    return completed_update, failed_update
+def remove_multicol_row(row_id, row_order, rows):
+    """Remove one row by stable ID, including the final remaining row."""
+    order = list(row_order or [])
+    if row_id not in order:
+        return None
+    position = order.index(row_id)
+    order.remove(row_id)
+    return position, order, [row for row in (rows or []) if row.get("id") != row_id]
 
 
 def output_directory_warning(value):
@@ -178,6 +173,21 @@ def output_directory_warning(value):
             "run-output-dir-warning run-output-dir-warning--warning",
         )
     return "", "run-output-dir-warning run-output-dir-warning--hidden"
+
+
+def resolved_output_directory(value):
+    """Resolve a safe Run target for browser status matching without creating it."""
+    try:
+        path = resolve_output_dir(value).resolve()
+        if path.exists() and not path.is_dir():
+            return None
+        # Access failures make the target unsuitable for launching and status
+        # matching, even when its path spelling itself is valid.
+        if path.exists():
+            next(path.iterdir(), None)
+        return str(path)
+    except (OSError, TypeError, ValueError):
+        return None
 
 
 def settings_resolution_for_save(
@@ -212,11 +222,13 @@ def register_settings_callbacks(app):
     @app.callback(
         Output("run-output-dir-warning", "children"),
         Output("run-output-dir-warning", "className"),
+        Output("run-resolved-output-dir", "data"),
         Input("run-opt-out-dir", "value"),
     )
     def show_output_directory_warning(output_directory):
         """Make intentional output reuse visible before a Run launch."""
-        return output_directory_warning(output_directory)
+        warning, class_name = output_directory_warning(output_directory)
+        return warning, class_name, resolved_output_directory(output_directory)
 
     @app.callback(
         Output("run-config-save-modal", "className"),
@@ -515,12 +527,17 @@ def register_settings_callbacks(app):
             for component_id, value in zip(param_ids or [], param_values or [])
         }
         forced = dict((resolution or {}).get("forced_parameters") or {})
+        states = dict((resolution or {}).get("parameter_states") or {})
         for group in desired_groups:
             forced_value = next((forced[name] for name in group if name in forced), None)
             if forced_value is not None:
                 values_by_name[group[0]] = forced_value
         entries = [
-            {"name": str(meta["name"]), "value": values_by_name.get(str(meta["name"]), "")}
+            {
+                "name": str(meta["name"]),
+                "value": values_by_name.get(str(meta["name"]), ""),
+                "disabled": not is_independently_tunable(states.get(str(meta["name"]))),
+            }
             for meta in (param_meta or [])
             if isinstance(meta, dict) and meta.get("file") == "tunable" and meta.get("name")
         ]
@@ -532,6 +549,7 @@ def register_settings_callbacks(app):
 
     @app.callback(
         Output("run-selected-config", "data"),
+        Output("run-rendered-config", "data"),
         Output("run-settings-schema", "data"),
         Output("run-param-meta", "data"),
         Output("run-tunable-names", "data"),
@@ -542,8 +560,6 @@ def register_settings_callbacks(app):
         Output("run-multicol-next-id", "data", allow_duplicate=True),
         Output("run-multicol-row-order", "data", allow_duplicate=True),
         Output("run-multicol-rows-state", "data", allow_duplicate=True),
-        Output("run-completed-cases", "data", allow_duplicate=True),
-        Output("run-failed-cases", "data", allow_duplicate=True),
         Input("run-config-reset-signal", "data"),
         State("run-tunable-configs", "data"),
         State("run-selected-config", "data"),
@@ -554,8 +570,6 @@ def register_settings_callbacks(app):
         State({"type": "run-hr-min", "index": ALL}, "value"),
         State({"type": "run-hr-max", "index": ALL}, "value"),
         State({"type": "run-hr-npoints", "index": ALL}, "value"),
-        State("run-completed-cases", "data"),
-        State("run-failed-cases", "data"),
         prevent_initial_call=True,
     )
     def select_tunable_config(
@@ -569,33 +583,31 @@ def register_settings_callbacks(app):
         multicol_min_values,
         multicol_max_values,
         multicol_npoint_values,
-        completed_cases,
-        failed_cases,
     ):
         """Switch the run tab to another tunable config and rebuild config-dependent controls."""
         if not isinstance(reset_signal, dict):
-            return (no_update,) * 13
+            return (no_update,) * 12
 
         config_name = str(reset_signal.get("name", "")).strip()
         if not config_name or config_name not in tunable_config_names(configs):
-            return (no_update,) * 13
+            return (no_update,) * 12
         config_state = build_tunable_config_state(config_name, configs)
-        # A config button is an explicit reset to that config's complete
-        # checked-in state.  Do not preserve a previous workspace's parameter
-        # grid or live right-pane values under a newly selected config.
-        multicol_rows = [
-            default_multicol_row(
-                0,
-                config_state["tunable_names"],
-                config_state["tunable_default_ranges"],
-            )
-        ]
-        multicol_row_order = [row["id"] for row in multicol_rows]
-        multicol_next_id = 1
+        restoring = bool(reset_signal.get("restore"))
+        if restoring:
+            multicol_rows = list(saved_multicol_rows or [])
+            multicol_row_order = no_update
+            multicol_next_id = no_update
+        else:
+            # A config button is an explicit reset to that config's complete
+            # checked-in state.  Do not preserve a previous workspace's
+            # parameter grid under a newly selected config.
+            multicol_rows = []
+            multicol_row_order = []
+            multicol_next_id = 0
         right_pane_data = {"tunable_configs": configs or [], "multicol_rows": multicol_rows, **config_state}
-        completed_update, failed_update = invalidate_cached_run_results(completed_cases, failed_cases)
 
         return (
+            no_update if restoring else config_state["selected_config"],
             config_state["selected_config"],
             config_state["settings_schema"],
             config_state["param_meta"],
@@ -607,8 +619,6 @@ def register_settings_callbacks(app):
             multicol_next_id,
             multicol_row_order,
             multicol_rows,
-            completed_update,
-            failed_update,
         )
 
     app.clientside_callback(
@@ -618,8 +628,10 @@ def register_settings_callbacks(app):
         ),
         Output("run-config-reset-signal", "data"),
         Input({"type": "run-config-button", "name": ALL}, "n_clicks"),
+        Input("dashboard-workspace-meta", "data"),
         State({"type": "run-config-button", "name": ALL}, "id"),
-        prevent_initial_call=True,
+        State("run-selected-config", "data"),
+        State("run-rendered-config", "data"),
     )
 
     app.clientside_callback(
@@ -628,7 +640,9 @@ def register_settings_callbacks(app):
             function_name="syncAllParamRowClasses",
         ),
         Output({"type": "run-param-container", "file": ALL, "name": ALL}, "className"),
+        Output({"type": "run-param-container", "file": ALL, "name": ALL}, "title"),
         Input("run-settings-resolution", "data"),
+        Input({"type": "run-hr-param", "index": ALL}, "value"),
         State({"type": "run-param", "file": ALL, "name": ALL}, "id"),
     )
 
@@ -661,7 +675,7 @@ def register_settings_callbacks(app):
         State({"type": "run-hr-param", "index": ALL}, "value"),
         prevent_initial_call=True,
     )
-    def sync_multicol_rows(add_clicks, remove_clicks, next_id, row_order, rows_state, tunable_names, default_ranges, param_values):
+    def sync_multicol_rows(add_clicks, _remove_clicks, next_id, row_order, rows_state, tunable_names, default_ranges, param_values):
         """Add or remove multicol rows without mirroring row values through the server."""
         current_order = list(row_order or [])
         current_rows = list(rows_state or [])
@@ -677,17 +691,14 @@ def register_settings_callbacks(app):
             return patch, row_id + 1, current_order + [row_id], current_rows + [row]
 
         if isinstance(trigger_id, dict) and trigger_id.get("type") == "run-hr-remove":
-            remove_id = trigger_id.get("index")
-            if remove_id not in current_order:
+            trigger_value = callback_context.triggered[0].get("value") if callback_context.triggered else 0
+            removed = remove_multicol_row(trigger_id.get("index"), current_order, current_rows)
+            if not trigger_value or removed is None:
                 return no_update, no_update, no_update, no_update
-            remove_pos = current_order.index(remove_id)
-            if remove_pos >= len(remove_clicks or []) or not (remove_clicks or [])[remove_pos]:
-                return no_update, no_update, no_update, no_update
+            remove_pos, updated_order, updated_rows = removed
             patch = Patch()
             del patch[remove_pos]
-            current_order.remove(remove_id)
-            updated_rows = [row for row in current_rows if row.get("id") != remove_id]
-            return patch, no_update, current_order, updated_rows
+            return patch, no_update, updated_order, updated_rows
 
         return no_update, no_update, no_update, no_update
 
@@ -697,7 +708,7 @@ def register_settings_callbacks(app):
         Input({"type": "run-hr-min", "index": ALL}, "value"),
         Input({"type": "run-hr-max", "index": ALL}, "value"),
         Input({"type": "run-hr-npoints", "index": ALL}, "value"),
-        State("run-multicol-row-order", "data"),
+        Input("run-multicol-row-order", "data"),
         State("run-multicol-rows-state", "data"),
         prevent_initial_call=True,
     )
@@ -765,82 +776,14 @@ def register_settings_callbacks(app):
         """Enable batch size only when a multicol parameter is selected."""
         return not any(str(value or "").strip() for value in (multicol_param_values or []))
 
-    @app.callback(
-        Output("run-completed-cases", "data", allow_duplicate=True),
-        Output("run-failed-cases", "data", allow_duplicate=True),
-        Input({"type": "run-flag", "name": ALL}, "value"),
-        State("run-completed-cases", "data"),
-        State("run-failed-cases", "data"),
-        prevent_initial_call=True,
-    )
-    def invalidate_after_flag_edit(_flag_values, completed_cases, failed_cases):
-        """Invalidate results after a user changes a boolean model flag."""
-        trigger_id = callback_context.triggered_id
-        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "run-flag":
-            return no_update, no_update
-        return invalidate_cached_run_results(completed_cases, failed_cases)
-
-    @app.callback(
-        Output("run-completed-cases", "data", allow_duplicate=True),
-        Output("run-failed-cases", "data", allow_duplicate=True),
-        Input({"type": "run-param", "file": ALL, "name": ALL}, "value"),
-        Input("run-multicol-add", "n_clicks"),
-        Input({"type": "run-hr-remove", "index": ALL}, "n_clicks"),
-        Input({"type": "run-hr-param", "index": ALL}, "value"),
-        Input({"type": "run-hr-min", "index": ALL}, "value"),
-        Input({"type": "run-hr-max", "index": ALL}, "value"),
-        Input({"type": "run-hr-npoints", "index": ALL}, "value"),
-        Input("run-opt-max-iters", "value"),
-        Input("run-opt-debug", "value"),
-        Input("run-opt-dt-main", "value"),
-        Input("run-opt-dt-rad", "value"),
-        Input("run-opt-tout", "value"),
-        Input("run-opt-out-dir", "value"),
-        Input("run-batch-size", "value"),
-        State("run-completed-cases", "data"),
-        State("run-failed-cases", "data"),
-        prevent_initial_call=True,
-    )
-    def mark_nonboolean_settings_dirty(
-        _param_values,
-        _multicol_add_clicks,
-        _multicol_remove_clicks,
-        _multicol_params,
-        _multicol_mins,
-        _multicol_maxes,
-        _multicol_npoints,
-        _opt_max_iters,
-        _opt_debug,
-        _opt_dt_main,
-        _opt_dt_rad,
-        _opt_tout,
-        _opt_out_dir,
-        _batch_size,
-        completed_cases,
-        failed_cases,
-    ):
-        """Invalidate stale run results on any non-boolean settings change."""
-        if callback_context.triggered_id is None:
-            return no_update, no_update
-        return invalidate_cached_run_results(completed_cases, failed_cases)
-
-    @app.callback(
+    app.clientside_callback(
+        ClientsideFunction(
+            namespace="runTab",
+            function_name="syncTunableDisabled",
+        ),
         Output({"type": "run-param", "file": "tunable", "name": ALL}, "disabled"),
         Input({"type": "run-hr-param", "index": ALL}, "value"),
         Input("run-settings-resolution", "data"),
         State({"type": "run-param", "file": "tunable", "name": ALL}, "id"),
-        State({"type": "run-param", "file": "tunable", "name": ALL}, "disabled"),
         prevent_initial_call=True,
     )
-    def sync_tunable_disabled(multicol_param_values, resolution, tunable_ids, current_disabled):
-        """Disable hypergrid-owned, inactive, and derived tunable controls."""
-        claimed = {str(value).strip() for value in (multicol_param_values or []) if str(value).strip()}
-        states = dict((resolution or {}).get("parameter_states") or {})
-        output = []
-        for index, component_id in enumerate(tunable_ids or []):
-            name = (component_id or {}).get("name")
-            state = dict(states.get(name) or {})
-            disabled = name in claimed or not is_independently_tunable(state)
-            current = bool((current_disabled or [])[index]) if index < len(current_disabled or []) else False
-            output.append(no_update if disabled == current else disabled)
-        return output

@@ -25,6 +25,24 @@ def test_tune_form_values_are_not_browser_persisted():
     assert selection.storage_type == "local"
 
 
+def test_run_config_persists_only_the_user_selection():
+    """Derived config metadata and rendered-control state must be rebuilt."""
+    root = html.Div(
+        [
+            dcc.Store(id="run-selected-config", data="before"),
+            dcc.Store(id="run-tunable-configs", data=[]),
+            dcc.Store(id="run-rendered-config", data="default"),
+        ]
+    )
+
+    enable_workspace_persistence(root)
+    selected, configs, rendered = root.children
+
+    assert selected.storage_type == "local"
+    assert getattr(configs, "storage_type", "memory") == "memory"
+    assert getattr(rendered, "storage_type", "memory") == "memory"
+
+
 def test_mcp_endpoint_panel_exposes_manual_url_and_bearer_token():
     panel = mcp_endpoint_panel(
         {

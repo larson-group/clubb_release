@@ -4,12 +4,16 @@ from dash import Dash, dcc, html
 from dash.development.base_component import Component
 
 from dash_app.run_tab.layout import build_run_action_section
-from dash_app.shared.selected_build import (
-    BADGE_IDS,
-    register_selected_build_callback,
-    selected_build_badge,
+from dash_app.compile_tab.build_selector import (
+    BUILD_SELECTOR_TRIGGER_IDS,
+    build_implementation_capability,
+    build_selector_overlay,
+    build_selector_trigger,
+    register_build_selector_position_callback,
     selected_build_info,
+    selector_popover_style,
 )
+from dash_app.compile_tab import callbacks
 from dash_app.tune_tab.layout import build_top_controls
 
 
@@ -23,6 +27,19 @@ def component_ids(component) -> set[str]:
     for child in children if isinstance(children, (list, tuple)) else [children]:
         found.update(component_ids(child))
     return found
+
+
+def component_id_count(component, target: str) -> int:
+    if not isinstance(component, Component):
+        return 0
+    count = int(getattr(component, "id", None) == target)
+    children = getattr(component, "children", None)
+    if children is None:
+        return count
+    return count + sum(
+        component_id_count(child, target)
+        for child in (children if isinstance(children, (list, tuple)) else [children])
+    )
 
 
 def write_cache(path: Path) -> None:
@@ -81,7 +98,7 @@ def test_selected_build_reports_missing_and_broken_defaults(tmp_path):
     assert "selected install target is missing" in broken["title"]
 
 
-def test_execution_controls_include_read_only_selected_build_badges():
+def test_execution_controls_include_shared_build_selector_triggers():
     assert "run-selected-build-badge" in component_ids(build_run_action_section())
     assert "tune-selected-build-badge" in component_ids(
         build_top_controls(
@@ -96,22 +113,83 @@ def test_execution_controls_include_read_only_selected_build_badges():
             }
         )
     )
-    badge = selected_build_badge("profile-selected-build-badge")
+    badge = build_selector_trigger("profile-selected-build-badge")
     assert badge.id == "profile-selected-build-badge"
     assert badge.title
-    assert not hasattr(badge, "n_clicks")
+    assert badge.n_clicks == 0
+    assert badge.type == "button"
+    assert badge.children[0].children == "FORTRAN"
 
 
-def test_shared_refresh_callback_updates_all_execution_badges():
+def test_shared_overlay_is_single_and_position_callback_owns_its_anchor():
     app = Dash(__name__, suppress_callback_exceptions=True)
     app.layout = html.Div(
         [
-            dcc.Interval(id="selected-build-refresh"),
-            dcc.Store(id="compile-discovery", data={}),
-            *[selected_build_badge(component_id) for component_id in BADGE_IDS],
+            build_selector_overlay(),
+            *[build_selector_trigger(component_id) for component_id in BUILD_SELECTOR_TRIGGER_IDS],
         ]
     )
-    register_selected_build_callback(app)
+    register_build_selector_position_callback(app)
 
     callback_key = next(iter(app.callback_map))
-    assert all(f"{component_id}.children" in callback_key for component_id in BADGE_IDS)
+    assert "compile-build-selector-anchor.data" in callback_key
+    assert component_id_count(app.layout, "compile-build-selector-root") == 1
+
+
+def test_selector_position_stays_in_the_viewport_and_can_open_above():
+    below = selector_popover_style(
+        {"left": 900, "top": 50, "bottom": 90, "viewport_width": 1000, "viewport_height": 800}
+    )
+    above = selector_popover_style(
+        {"left": 20, "top": 700, "bottom": 740, "viewport_width": 1000, "viewport_height": 800}
+    )
+
+    assert below["left"] == "472.0px"
+    assert below["top"] == "96.0px"
+    assert above["bottom"] == "106.0px"
+
+
+def test_compact_selector_shows_only_build_names_and_rebuild_controls(monkeypatch):
+    monkeypatch.setattr(callbacks, "job_process_is_live", lambda _job: False)
+    build = {
+        "name": "gcc_PRECdouble_PYTHON",
+        "path": "/build/gcc_PRECdouble_PYTHON",
+        "install_prefix": "/install/gcc_PRECdouble_PYTHON",
+        "install_exists": True,
+        "install_prefix_mismatch": False,
+        "is_selected": True,
+    }
+    menu = callbacks.render_compact_build_selector(
+        {"builds": [build]},
+        {"statuses": {build["path"]: {"status": "current", "label": "current"}}},
+    )
+
+    implementation_panel, row = menu
+    assert [button.children for button in implementation_panel.children[1].children] == [
+        "Fortran", "Python", "JAX"
+    ]
+    select, rebuild = row.children
+    assert select.children == build["name"]
+    assert select.id["type"] == "compile-build-selector-select"
+    assert rebuild.id["type"] == "compile-build-selector-rebuild"
+    assert "compile-build-card-current" in row.className
+    assert "selected" not in str(select.children).lower()
+
+
+def test_build_capabilities_follow_installed_runtime_contents(tmp_path):
+    install = tmp_path / "install" / "test"
+    install.mkdir(parents=True)
+    assert build_implementation_capability(install, "fortran", tmp_path)[0] is False
+    (install / "clubb_standalone").touch()
+    assert build_implementation_capability(install, "fortran", tmp_path)[0] is True
+
+    runtime = install / "python"
+    (runtime / "clubb_python").mkdir(parents=True)
+    (runtime / "clubb_f2py.test.so").touch()
+    (runtime / "libclubb_f2py_backend.so").touch()
+    assert build_implementation_capability(install, "python", tmp_path)[0] is True
+    assert build_implementation_capability(install, "jax", tmp_path)[0] is False
+    jax_driver = tmp_path / "clubb_jax" / "clubb_standalone.py"
+    jax_driver.parent.mkdir()
+    jax_driver.touch()
+    assert build_implementation_capability(install, "jax", tmp_path)[0] is True

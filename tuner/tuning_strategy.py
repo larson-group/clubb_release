@@ -9,7 +9,7 @@ import random
 from typing import Iterable
 
 
-VALID_STRATEGY_NAMES = {"random", "resolve", "simann"}
+VALID_STRATEGY_NAMES = {"random", "resolve", "simann", "adam"}
 
 
 def _float_from_raw(value, label: str) -> float:
@@ -115,6 +115,42 @@ def normalize_strategy_config(request: dict) -> dict:
                 raise ValueError("simann f_tol must be >= 0")
             options[key] = value
 
+    if name == "adam":
+        unknown = set(raw_options) - {
+            "max_updates",
+            "learning_rate",
+            "perturbation",
+            "spsa_pairs",
+            "chains_per_batch",
+            "concurrent_batches",
+            "chain_count",
+        }
+        if unknown:
+            raise ValueError("Unknown adam strategy option(s): " + ", ".join(sorted(unknown)))
+        max_updates = _int_from_raw(raw_options.get("max_updates", 100), "adam max_updates")
+        spsa_pairs = _int_from_raw(raw_options.get("spsa_pairs", 2), "adam spsa_pairs")
+        if max_updates < 1:
+            raise ValueError("adam max_updates must be >= 1")
+        if spsa_pairs < 1:
+            raise ValueError("adam spsa_pairs must be >= 1")
+        learning_rate = _float_from_raw(raw_options.get("learning_rate", 0.01), "adam learning_rate")
+        perturbation = _float_from_raw(raw_options.get("perturbation", 0.05), "adam perturbation")
+        if not math.isfinite(learning_rate) or learning_rate <= 0.0:
+            raise ValueError("adam learning_rate must be finite and > 0")
+        if not math.isfinite(perturbation) or not 0.0 < perturbation <= 0.5:
+            raise ValueError("adam perturbation must be finite and in (0, 0.5]")
+        options.update(
+            {
+                "max_updates": max_updates,
+                "learning_rate": learning_rate,
+                "perturbation": perturbation,
+                "spsa_pairs": spsa_pairs,
+            }
+        )
+        for key in ("chains_per_batch", "concurrent_batches", "chain_count"):
+            if raw_options.get(key) is not None:
+                options[key] = _int_from_raw(raw_options[key], f"adam {key}")
+
     return {"name": name, "options": options}
 
 
@@ -199,6 +235,10 @@ class BaseTuningStrategy:
 
     def estimated_sample_count(self) -> int | None:
         """Return a finite sample count estimate when the strategy has one."""
+        return None
+
+    def pending_batch_limit(self, _batch_size: int) -> int | None:
+        """Return an adaptive in-flight batch limit, when one is required."""
         return None
 
 
@@ -347,6 +387,23 @@ def build_tuning_strategy(
             stp_adjst_shift=options["stp_adjst_shift"],
             stp_adjst_factor=options["stp_adjst_factor"],
             f_tol=options["f_tol"],
+            seed=seed,
+        )
+
+    if name == "adam":
+        from tuner.adam_spsa_strategy import AdamSPSAStrategy
+
+        return AdamSPSAStrategy(
+            param_names=param_names,
+            default_params_row=default_params_row,
+            parameter_ranges=parameter_ranges,
+            max_updates=options["max_updates"],
+            learning_rate=options["learning_rate"],
+            perturbation=options["perturbation"],
+            spsa_pairs=options["spsa_pairs"],
+            chains_per_batch=options["chains_per_batch"],
+            concurrent_batches=options["concurrent_batches"],
+            chain_count=options["chain_count"],
             seed=seed,
         )
 

@@ -389,10 +389,12 @@ module setup_clubb_pdf_params
                 precip_frac_tol(:),                                                       & ! Out
                 stats )                                                                   ! Inout
 
-      if ( any(err_info%err_code == clubb_fatal_error) ) then
-        write(fstderr, *) err_info%err_header_global
-        write(fstderr,*) " in setup_pdf_parameters_api after calling precip_fraction"
-        return
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr,*) " in setup_pdf_parameters_api after calling precip_fraction"
+          return
+        end if
       end if
 
     else
@@ -806,8 +808,10 @@ module setup_clubb_pdf_params
       end do
     end if
 
-    if ( any(err_info%err_code == clubb_fatal_error) ) then
-      write(fstderr,*) " in setup_pdf_parameters_api after calling assert_corr_symmetric"
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) " in setup_pdf_parameters_api after calling assert_corr_symmetric"
+      end if
     end if
 
     return

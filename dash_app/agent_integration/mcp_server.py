@@ -146,7 +146,10 @@ def create_server(
         return perform_action(action, payload, connection=broker_connection)
 
     def broker_domain(operation: str, payload: dict[str, Any]) -> dict[str, Any]:
-        return _broker_domain_result(operation, payload, connection=broker_connection)
+        request_payload = dict(payload)
+        if operation in {"submit_scm_run", "submit_scm_batch"}:
+            request_payload["submission_origin"] = "mcp"
+        return _broker_domain_result(operation, request_payload, connection=broker_connection)
 
     @server.tool(annotations=read_only)
     def connect_to_dashboard() -> dict[str, Any]:

@@ -2,24 +2,29 @@ import csv
 from pathlib import Path
 
 import pytest
-from dash import Dash
+from dash import Dash, html
 from dash.development.base_component import Component
 
 from dash_app.profile_tab.callbacks import (
-    detail_process_options,
     load_profile_plot_data,
+    profile_rename_available,
     profile_selection_preferences,
     profile_control_rows,
     reconcile_profile_selection,
 )
 from dash_app.profile_tab.figures import (
+    METRICS,
     decomposition_figure,
     profile_figure,
     relative_figure,
     timer_options,
     variability_figure,
 )
-from dash_app.profile_tab.library import comparison_warnings, enrich_summary_rows, profile_option
+from dash_app.profile_tab.library import (
+    delete_profile_library_entry,
+    enrich_summary_rows,
+    profile_option,
+)
 from dash_app.profile_tab.layout import active_profile_items, available_profile_buttons, build_layout
 from dash_app.profile_tab.runtime import (
     normalize_profile_settings,
@@ -32,7 +37,7 @@ from dash_app.profile_tab.runtime import (
 )
 from dash_app.profile_tab.tab import build_tab
 from dash_app.shared import actions
-from utilities.timing_profiles import BATCH_FIELDS, TIMING_FIELDS, write_profile_manifest
+from utilities.timing_profiles import BATCH_FIELDS, GROUP_WALL_TIMER, TIMING_FIELDS, write_profile_manifest
 
 
 def settings(tmp_path: Path, executable: str = "") -> dict[str, object]:
@@ -99,6 +104,52 @@ def test_profile_picker_promotes_next_profile_and_renders_removable_active_pills
     assert active.children[1].children == "×"
 
 
+def test_expanded_profile_picker_adds_guarded_delete_buttons():
+    records = [
+        _profile_record("newest", "GPU baseline", "arm", "2026-08-12T12:00:00Z"),
+        _profile_record("older", "CPU baseline", "bomex", "2026-08-11T12:00:00Z"),
+    ]
+
+    available = available_profile_buttons(
+        records,
+        ["newest"],
+        expanded=True,
+        delete_confirmation={"run_id": "older"},
+    )[0]
+    active = active_profile_items(
+        records,
+        ["newest"],
+        expanded=True,
+    )[0]
+
+    assert available.children[0].id == {"type": "profile-add-run", "run_id": "older"}
+    assert available.children[1].id == {"type": "profile-delete-run", "run_id": "older"}
+    assert available.children[1].children == "Confirm"
+    assert active.children[1].id == {"type": "profile-delete-run", "run_id": "newest"}
+    assert active.children[2].id == {"type": "profile-remove-run", "run_id": "newest"}
+
+
+def test_profile_library_deletion_is_limited_to_recognized_children(tmp_path):
+    library = tmp_path / "timing"
+    profile = library / "cpu_baseline"
+    profile.mkdir(parents=True)
+    write_profile_manifest(
+        profile,
+        {"run_id": "cpu_baseline", "label": "CPU baseline", "case_name": "arm"},
+    )
+
+    assert delete_profile_library_entry(library, "cpu_baseline") == profile
+    assert not profile.exists()
+
+    write_profile_manifest(
+        library,
+        {"run_id": "timing", "label": "Library root", "case_name": "arm"},
+    )
+    with pytest.raises(ValueError, match="inside the selected library"):
+        delete_profile_library_entry(library, "timing")
+    assert library.exists()
+
+
 def component_ids(component) -> set[str]:
     if not isinstance(component, Component):
         return set()
@@ -146,6 +197,19 @@ def test_profile_command_covers_timer_and_forwarded_run_settings(tmp_path):
     assert normalize_profile_settings(overwrite_settings)["run_id"] == "CPU_baseline"
 
 
+@pytest.mark.parametrize(("implementation", "flag"), (("python", "-python"), ("jax", "-jax")))
+def test_profile_command_selects_implementation_and_install(tmp_path, implementation, flag):
+    install = tmp_path / "install"
+    install.mkdir()
+    request = settings(tmp_path)
+    request.update({"implementation": implementation, "install_dir": str(install)})
+
+    command = profile_command(request)
+
+    assert flag in command
+    assert command[command.index("-install_dir") + 1] == str(install.resolve())
+
+
 def test_existing_profile_requires_overwrite_confirmation(tmp_path):
     request = settings(tmp_path)
     target = profile_save_target(request)
@@ -164,6 +228,15 @@ def test_existing_profile_requires_overwrite_confirmation(tmp_path):
     Path(profile_save_target(conflict_request)["path"]).mkdir()
     with pytest.raises(ValueError, match="unrecognized directory"):
         overwrite_confirmation(conflict_request)
+
+
+def test_profile_rename_requires_a_changed_nonempty_label():
+    pending = {"name": "CPU baseline"}
+
+    assert profile_rename_available("CPU baseline", pending) is False
+    assert profile_rename_available("  CPU baseline  ", pending) is False
+    assert profile_rename_available("", pending) is False
+    assert profile_rename_available("CPU baseline 2", pending) is True
 
 
 def test_profile_settings_reject_invalid_sweeps(tmp_path):
@@ -297,7 +370,7 @@ def test_live_plot_data_replaces_selected_disk_snapshot(monkeypatch):
     assert loaded["selected"] == ["baseline"]
 
 
-def test_live_browser_stores_keep_only_control_metadata():
+def test_live_browser_store_keeps_only_timer_control_metadata():
     summary_rows = [
         {"profile_id": "active", "timer_name": "advance_clubb_to_end", "timer_max_seconds": 1.0},
         {"profile_id": "active", "timer_name": "advance_clubb_to_end", "timer_max_seconds": 1.1},
@@ -318,14 +391,12 @@ def test_live_browser_stores_keep_only_control_metadata():
         },
     ]
 
-    timers, processes = profile_control_rows(summary_rows, process_rows)
+    timers = profile_control_rows(summary_rows)
 
     assert timers == [
         {"timer_name": "advance_clubb_to_end"},
         {"timer_name": "clean_up_clubb"},
     ]
-    assert processes == [{"profile_id": "active", "process_count": 12}]
-    assert "inclusive_seconds" not in processes[0]
 
 
 def test_profile_results_require_every_primary_measurement():
@@ -356,7 +427,6 @@ def test_profile_figure_averages_repetitions_by_process_count():
             "total_columns": "8",
             "timer_max_seconds": value,
             "throughput_columns_per_second": "10",
-            "group_wall_seconds": "2",
         }
         for value in ("1", "3")
     ]
@@ -393,6 +463,9 @@ def test_profile_comparison_figures_keep_runs_distinct_and_legends_below():
     assert relative.data[0].y[0] == pytest.approx(25.0)
     assert comparison.layout.legend.y < 0
     assert relative.layout.legend.y < 0
+    for trace in (*comparison.data, *relative.data):
+        assert trace.hovertemplate.startswith("%{fullData.name}<br>")
+        assert trace.hovertemplate.endswith("<extra></extra>")
 
 
 def test_profile_decomposition_uses_one_critical_process_and_exclusive_costs():
@@ -428,9 +501,10 @@ def test_profile_decomposition_uses_one_critical_process_and_exclusive_costs():
     assert sorted(spread.data[0].y) == pytest.approx([1.0, 1.2])
     assert figure.layout.legend.y < 0
     assert spread.layout.legend.y < 0
+    assert all(trace.hovertemplate.startswith("%{fullData.name}<br>") for trace in figure.data)
 
 
-def test_profile_derived_metrics_selection_and_comparison_warnings():
+def test_profile_derived_metrics_and_selection():
     rows = [
         {
             "run_id": "run",
@@ -455,27 +529,52 @@ def test_profile_derived_metrics_selection_and_comparison_warnings():
             "calls": "1",
             "timer_max_seconds": "4",
             "timer_mean_seconds": "3.2",
+            "vertical_levels": "100",
         },
     ]
     enriched = enrich_summary_rows(rows)
     primary = enriched[1]
     assert primary["throughput_column_steps_per_second"] == pytest.approx(10.0)
+    assert primary["throughput_grid_box_iterations_per_second"] == pytest.approx(1000.0)
     assert primary["process_imbalance_ratio"] == pytest.approx(1.25)
 
     catalog = [
         {"run_id": "old", "case_name": "arm", "git_revision": "a", "omp_num_threads": "1", "backends": "cpu_time", "time_bases": "cpu_time", "forwarded_args": "-max_iters 5"},
         {"run_id": "new", "case_name": "bomex", "git_revision": "b", "omp_num_threads": "1", "backends": "gptl", "time_bases": "wallclock", "forwarded_args": "-max_iters 10"},
     ]
-    warnings = comparison_warnings(catalog, ["old", "new"])
-    assert any("cases" in warning for warning in warnings)
-    assert any("run arguments" in warning for warning in warnings)
-
     selected, baseline, detail = reconcile_profile_selection(catalog, ["missing"], None, None, ["new"])
     assert selected == ["new"]
     assert baseline == detail == "new"
-    options, process = detail_process_options(rows, "run")
-    assert options == [{"label": "2", "value": 2}]
-    assert process == 2
+
+
+def test_profile_metric_labels_and_defaults_are_the_streamlined_throughput_set(monkeypatch):
+    monkeypatch.setattr(
+        "dash_app.profile_tab.layout.build_selector_trigger",
+        lambda component_id: html.Button(id=component_id),
+    )
+    layout = build_layout(
+        {
+            "cases": ["arm"],
+            "default_case": "arm",
+            "configs": [],
+            "default_config": "default",
+            "executables": [],
+        }
+    )
+
+    assert METRICS == {
+        "throughput_columns_per_second": "Throughput (runs / second)",
+        "throughput_column_steps_per_second": "Throughput (iterations / second)",
+        "throughput_grid_box_iterations_per_second": "Throughput (grid box iterations / second)",
+        "timer_max_seconds": "Runtime (seconds)",
+        "process_imbalance_ratio": "Process imbalance (max / mean)",
+    }
+    assert find_component(layout, "profile-result-metric").value == "throughput_columns_per_second"
+    assert find_component(layout, "profile-detail-process") is None
+    assert find_component(layout, "profile-process-results") is None
+    assert timer_options(
+        [{"timer_name": GROUP_WALL_TIMER}], GROUP_WALL_TIMER
+    ) == [{"label": "Process-group wall time", "value": GROUP_WALL_TIMER}]
 
 
 def test_replacement_profile_supersedes_selected_name_versions():
@@ -565,6 +664,8 @@ def test_profile_layout_contains_settings_panel_graph_and_lifecycle_controls():
         "profile-selected-runs",
         "profile-picker-toggle",
         "profile-picker-expanded",
+        "profile-delete-confirm",
+        "profile-delete-expiry",
         "profile-available-list",
         "profile-active-list",
         "profile-library-import",
@@ -584,7 +685,12 @@ def test_profile_layout_contains_settings_panel_graph_and_lifecycle_controls():
         "profile-name-status",
         "profile-selection-library",
         "profile-pending-run",
-        "profile-overwrite-confirm",
+        "profile-overwrite-modal",
+        "profile-overwrite-name",
+        "profile-overwrite-message",
+        "profile-overwrite-button",
+        "profile-rename-button",
+        "profile-overwrite-cancel-button",
         "profile-start",
         "profile-cancel",
     } <= ids
@@ -606,10 +712,15 @@ def test_profile_layout_separates_benchmark_output_and_view_controls_with_help()
     serialized = str(layout.to_plotly_json())
 
     assert "profile-benchmark-panel" in serialized
-    assert serialized.count("profile-benchmark-group") >= 3
+    assert serialized.count("profile-benchmark-group") >= 4
     assert "profile-benchmark-identity" in serialized
     assert "profile-benchmark-workload" in serialized
     assert "profile-benchmark-sampling" in serialized
+    assert "profile-benchmark-launch" in serialized
+    assert "Choose compiler &amp; run" in serialized or "Choose compiler & run" in serialized
+    assert serialized.index("profile-selected-build-badge") < serialized.index("profile-start")
+    assert serialized.index("profile-start") < serialized.index("profile-cancel")
+    assert serialized.index("profile-cancel") < serialized.index("profile-status")
     assert serialized.count("profile-sidebar-section") == 2
     assert "profile-output-section" in serialized
     assert "profile-view-section" in serialized
@@ -619,12 +730,22 @@ def test_profile_layout_separates_benchmark_output_and_view_controls_with_help()
     assert serialized.index("profile-output") < serialized.index("profile-selected-runs")
     assert serialized.index("profile-selected-runs") < serialized.index("profile-result-timer")
     assert "profile-results-state" in serialized
+    assert "Create a timing profile" not in serialized
+    assert "Outputs &amp; view" not in serialized and "Outputs & view" not in serialized
+    assert "Compare profiles" not in serialized
+    assert "profile-chart-subtitle" not in serialized
+    assert "profile-comparison-warnings" not in serialized
     assert serialized.count("profile-help-icon") >= 20
     assert "title" in serialized
 
     stylesheet = (Path(__file__).parents[1] / "assets" / "15_tab_profile_theme.css").read_text(encoding="utf-8")
     plot_grid = stylesheet.split(".profile-plot-grid {", 1)[1].split("}", 1)[0]
     assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in plot_grid
+    workspace = stylesheet.split(".profile-workspace {", 1)[1].split("}", 1)[0]
+    results_panel = stylesheet.split(".profile-results-panel {", 1)[1].split("}", 1)[0]
+    assert "overflow: visible;" in workspace
+    assert "overflow: visible;" in results_panel
+    assert ".profile-controls-panel {\n  padding: 13px;\n  overflow: visible;" in stylesheet
 
 
 def test_profile_tab_registers_callbacks(monkeypatch):
@@ -645,19 +766,17 @@ def test_profile_tab_registers_callbacks(monkeypatch):
     assert tab.label == "Profile"
     assert tab.value == "profile"
     assert any("profile-action.data" in key for key in app.callback_map)
-    assert any("profile-overwrite-confirm.displayed" in key for key in app.callback_map)
+    assert any("profile-overwrite-modal.className" in key for key in app.callback_map)
     assert "profile-command-preview.children" in app.callback_map
-    assert not any(
-        "profile-name.value" in key or "profile-name.className" in key
-        for key in app.callback_map
-    )
+    assert any("profile-name.value" in key for key in app.callback_map)
+    assert not any("profile-name.className" in key for key in app.callback_map)
     assert "profile-graph.figure" in next(
         key for key in app.callback_map if "profile-graph.figure" in key
     )
     data_callback = next(
         entry
         for key, entry in app.callback_map.items()
-        if "profile-results.data" in key and "profile-process-results.data" in key
+        if key == "profile-results.data"
     )
     input_ids = {item["id"] for item in data_callback["inputs"]}
     assert "profile-interval" in input_ids
@@ -668,11 +787,21 @@ def test_profile_tab_registers_callbacks(monkeypatch):
         if "profile-graph.figure" in key
     )
     graph_key, graph_callback = graph_callback
-    assert "profile-status.children" in graph_key
+    assert "profile-status.children" not in graph_key
     graph_input_ids = {item["id"] for item in graph_callback["inputs"]}
-    assert "profile-interval" in graph_input_ids
+    assert "profile-job" in graph_input_ids
+    assert "profile-selected-runs" in graph_input_ids
+    assert "profile-interval" not in graph_input_ids
     assert "profile-results" not in graph_input_ids
     assert "profile-process-results" not in graph_input_ids
+    lifecycle_callback = next(
+        entry
+        for key, entry in app.callback_map.items()
+        if "profile-job.data" in key and "profile-status.children" in key
+    )
+    lifecycle_input_ids = {item["id"] for item in lifecycle_callback["inputs"]}
+    assert "dashboard-broker-jobs" in lifecycle_input_ids
+    assert "profile-selected-runs" not in lifecycle_input_ids
 
 
 def test_profile_launch_is_owned_and_watched_by_broker(monkeypatch):

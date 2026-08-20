@@ -17,8 +17,7 @@ from dash_app.shared.bivariate_heatmap import (
 )
 from dash_app.shared.components import styled_dropdown
 from utilities.sam_3d_reference import (
-    DEFAULT_BOMEX_SAM_RUN,
-    DEFAULT_SAM_RUN,
+    SHARED_3D_SAM_ROOT,
     inventory_run,
     load_snapshot,
 )
@@ -164,10 +163,6 @@ COLOR_SIGNAL_OPTIONS = [
 ]
 ENCLOSED_PROBABILITY_LABEL = "Enclosed probability (50/80/99.5%)"
 CLUBB_ENCLOSED_WEIGHTED_LABEL = "CLUBB enclosed |{}| (50/80/99.5%)"
-RAW_3D_RUNS = {
-    "arm": Path(DEFAULT_SAM_RUN),
-    "bomex": Path(DEFAULT_BOMEX_SAM_RUN),
-}
 _DENSITY_CACHE_MAX_ENTRIES = 48
 _DENSITY_CACHE = OrderedDict()
 _RAW_HISTOGRAM_CACHE_MAX_ENTRIES = 48
@@ -628,8 +623,8 @@ def _normalize_color_signal(value):
 def _matching_raw_snapshot(case_data, global_context, enabled_sources, height):
     """Return a shared raw SAM plane when one is registered for the case."""
     case_name = str((case_data or {}).get("name") or "").lower()
-    run_dir = RAW_3D_RUNS.get(case_name)
-    if "sam" not in enabled_sources or run_dir is None or not run_dir.exists():
+    run_dir = SHARED_3D_SAM_ROOT / f"{case_name}_3d"
+    if "sam" not in enabled_sources or not run_dir.exists():
         return None
     try:
         inventory = _raw_run_inventory(str(run_dir))

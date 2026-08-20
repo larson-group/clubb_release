@@ -31,9 +31,17 @@
   font-size: .76rem;
 }
 
+.plots-output-pending-warning {
+  min-height: 1.1rem;
+  margin-top: 8px;
+  color: #f59e0b;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
 .plots-output-menu {
   position: relative;
-  z-index: 10;
+  z-index: 1001;
   width: 100%;
   height: 160px;
   overflow: visible;
@@ -74,7 +82,8 @@
 }
 
 .plots-output-menu--expanded {
-  z-index: 30;
+  z-index: 1002;
+  width: calc(100% + 86px);
 }
 
 .plots-output-menu-body {
@@ -87,8 +96,9 @@
 .plots-output-menu--expanded .plots-output-menu-body {
   position: absolute;
   top: 35px;
-  right: -1px;
+  right: auto;
   left: -1px;
+  width: 100%;
   height: auto;
   overflow: visible;
   border: 1px solid #475569;
@@ -107,7 +117,7 @@
 }
 
 .plots-output-menu--expanded .plots-available-output-list {
-  max-height: 260px;
+  max-height: 520px;
   overflow-y: auto;
 }
 
@@ -126,6 +136,18 @@
   text-align: left;
   transition: transform 100ms ease, background-color 100ms ease, box-shadow 100ms ease;
   white-space: nowrap;
+}
+
+.plots-output-menu-row {
+  display: flex;
+  min-width: 0;
+  align-items: stretch;
+  gap: 7px;
+}
+
+.plots-output-menu-row .plots-output-available-button {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .plots-output-available-button:hover {
@@ -156,20 +178,146 @@
 }
 
 .plots-output-picker-row {
+  position: relative;
   display: grid;
   width: auto;
   min-width: 0;
   flex: 1 1 auto;
-  grid-template-columns: minmax(300px, max-content) minmax(min-content, 1fr);
+  grid-template-columns: minmax(300px, max-content) minmax(min-content, 1fr) auto;
   gap: 12px;
   align-items: start;
 }
 
+.plots-pyplotgen-control {
+  display: flex;
+  width: 220px;
+  min-width: 220px;
+  align-self: center;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plots-pyplotgen-button {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 9px 14px;
+  border: 1px solid #3b82f6;
+  border-radius: 7px;
+  background: #1d4ed8;
+  color: #eff6ff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.plots-pyplotgen-button > span {
+  position: relative;
+  z-index: 1;
+}
+
+.plots-pyplotgen-button:disabled {
+  cursor: wait;
+  opacity: 1;
+}
+
+@keyframes plots-pyplotgen-stripes {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(67.88225px, 67.88225px, 0); }
+}
+
+.plots-pyplotgen-button--active::before {
+  content: "";
+  position: absolute;
+  inset: -96px;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    135deg,
+    #166534 0,
+    #166534 12px,
+    #7f1d1d 12px,
+    #7f1d1d 24px
+  );
+  animation: plots-pyplotgen-stripes 1400ms linear infinite;
+  will-change: transform;
+}
+
+.plots-pyplotgen-button--active > span {
+  color: #fff;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+.plots-pyplotgen-button--finished {
+  border-color: #22c55e;
+  background: #166534;
+}
+
+.plots-pyplotgen-button--error {
+  border-color: #ef4444;
+  background: #7f1d1d;
+}
+
+.plots-pyplotgen-status {
+  width: 100%;
+  color: #94a3b8;
+  font-size: .74rem;
+  text-align: right;
+}
+
+.plots-pyplotgen-progress {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  height: 20px;
+  overflow: hidden;
+  border: 1px solid #475569;
+  border-radius: 999px;
+  background: #0f172a;
+}
+
+.plots-pyplotgen-progress-fill {
+  height: 100%;
+  background: #16a34a;
+  transition: width 220ms ease;
+}
+
+.plots-pyplotgen-progress-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f8fafc;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-shadow: 0 1px 2px #020617;
+}
+
+.plots-pyplotgen-result-link {
+  display: block;
+  width: 100%;
+  color: #60a5fa;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.plots-pyplotgen-error {
+  color: #fca5a5;
+}
+
 .plots-output-benchmark-row {
+  position: relative;
+  z-index: 1000;
   display: flex;
   min-width: min-content;
   padding: 12px;
   align-items: stretch;
+  overflow: visible;
 }
 
 .plots-output-benchmark-divider {
@@ -188,11 +336,13 @@
 }
 
 .plots-directory-case-selector {
+  position: relative;
+  z-index: 1000;
   display: grid;
-  grid-template-columns: minmax(min-content, 2fr) 1px minmax(280px, 1fr);
+  grid-template-columns: minmax(min-content, 1.4fr) 1px minmax(280px, 1fr);
   gap: 16px;
   align-items: stretch;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .plots-output-menu--expanded .plots-output-menu-advanced {
@@ -296,7 +446,7 @@
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: #dc2626;
+  background: #475569;
   color: #f8fafc;
   cursor: pointer;
   font-size: 1rem;
@@ -304,7 +454,39 @@
 }
 
 .plots-output-dir-remove:hover {
+  background: #64748b;
+}
+
+.plots-output-dir-delete {
+  width: 76px;
+  min-width: 76px;
+  padding: 0 8px;
+  border: 1px solid #ef4444;
+  border-radius: 7px;
   background: #b91c1c;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: background-color 100ms ease, box-shadow 100ms ease;
+}
+
+.plots-output-dir-delete:hover {
+  background: #dc2626;
+}
+
+.plots-output-dir-delete--confirm {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, .35);
+  font-size: .72rem;
+}
+
+.plots-output-dir-delete:disabled {
+  border-color: #64748b;
+  background: #475569;
+  cursor: not-allowed;
+  opacity: .55;
 }
 
 #app-root.theme-light .plots-output-menu {
@@ -354,7 +536,7 @@
 }
 
 #app-root.theme-light .plots-output-dir-remove {
-  background: #dc2626;
+  background: #64748b;
 }
 
 #app-root.theme-dark .plots-mutable-output-warning {
@@ -364,6 +546,15 @@
 @media (max-width: 1050px) {
   .plots-output-picker-row {
     grid-template-columns: minmax(max-content, 1fr);
+  }
+
+  .plots-pyplotgen-control {
+    align-items: flex-start;
+  }
+
+  .plots-pyplotgen-status {
+    max-width: 100%;
+    text-align: left;
   }
 
   .plots-directory-case-selector {
@@ -613,6 +804,61 @@ body.plots-ui-dragging * {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 6px 50px;
   margin-top: 4px;
+}
+
+#app-root .plots-param-conflict-message {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  background: rgba(127, 29, 29, .28);
+  color: #fecaca;
+  font-weight: 650;
+}
+
+#app-root .plots-param-difference-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+#app-root .plots-param-difference-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .78rem;
+}
+
+#app-root .plots-param-difference-table th,
+#app-root .plots-param-difference-table td {
+  padding: 6px 8px;
+  border: 1px solid #475569;
+  text-align: left;
+  white-space: nowrap;
+}
+
+#app-root .plots-param-difference-table thead th {
+  background: #1e293b;
+}
+
+#app-root .plots-param-conflict-badge {
+  display: block;
+  margin-top: 2px;
+  color: #fca5a5;
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+#app-root .plots-param-difference-row--conflict {
+  background: rgba(127, 29, 29, .22);
+}
+
+#app-root.theme-light .plots-param-conflict-message {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+#app-root.theme-light .plots-param-difference-table thead th {
+  background: #e2e8f0;
 }
 
 #app-root .plots-readonly-disclosure {

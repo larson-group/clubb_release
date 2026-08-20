@@ -49,10 +49,10 @@ def build_tab(app):
     # Register settings synchronization before run lifecycle so dirty-state invalidation is in place.
     register_settings_callbacks(app)
 
-    # Register run launch, cancel, clear, and polling callbacks that mutate process state.
+    # Register launch/cancel/Clear commands; browser telemetry renders lifecycle state.
     register_run_callbacks(app)
 
     # Register console rendering last because it depends on the selection and run-state stores above.
-    register_console_callbacks(app, initial_state["cases"])
+    register_console_callbacks(app)
 
-    return dcc.Tab(label="Run", value="run", children=build_layout(initial_state))
+    return dcc.Tab(id="dashboard-tab-run", label="Run", value="run", children=build_layout(initial_state))

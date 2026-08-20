@@ -4,6 +4,7 @@ from .callbacks_case import register_case_callbacks
 from .callbacks_controls import register_control_callbacks
 from .callbacks_grid import register_grid_callbacks
 from .callbacks_params import register_param_callbacks
+from .callbacks_pyplotgen import register_pyplotgen_callbacks
 from .layout import build_layout
 from .plot_types.registry import register_plot_callbacks
 from .state import DEFAULT_OUTPUT_DIR, build_initial_plots_state
@@ -27,8 +28,11 @@ def build_tab(app):
     # Register plot-grid state, add/remove behavior, and dropdown-to-store synchronization.
     register_grid_callbacks(app)
 
+    # Export the active output selection through broker-owned PyPlotGen work.
+    register_pyplotgen_callbacks(app)
+
     # Finally register the plot-family figure callbacks that render individual cards.
     register_plot_callbacks(app)
 
-    return dcc.Tab(label="Plots", value="plots", children=build_layout(initial_state))
+    return dcc.Tab(id="dashboard-tab-plots", label="Plots", value="plots", children=build_layout(initial_state))
  

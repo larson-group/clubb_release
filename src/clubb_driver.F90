@@ -62,7 +62,8 @@ module clubb_driver
     err_info_type 
 
   use clubb_api_module, only: &
-      precipitation_fractions
+      precipitation_fractions, &
+      clubb_at_least_debug_level_api
 
   use pdf_parameter_module, only: &
       pdf_parameter, &
@@ -852,7 +853,9 @@ module clubb_driver
       ! time_final.  advance_clubb_to_end contains the timestep loop and is where
       ! the core model, diagnostics, physics packages, and stats output are called.
       call advance_clubb_to_end( l_stdout, err_info )
-      if ( any( err_info%err_code == clubb_fatal_error ) ) exit
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
+        if ( any( err_info%err_code == clubb_fatal_error ) ) exit
+      end if
 
     end do
 
@@ -4151,10 +4154,12 @@ module clubb_driver
                          Lscale, err_info )                                      ! Intent(inout)
         call timer_stop( "adapt_grid" )
 
-        if ( any(err_info%err_code == clubb_fatal_error) ) then
-          write(fstderr, *) err_info%err_header_global
-          write(fstderr, *) "Fatal error calling adapt_grid in run_clubb"
-          exit mainloop
+        if ( clubb_at_least_debug_level_api( 0 ) ) then
+          if ( any(err_info%err_code == clubb_fatal_error) ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr, *) "Fatal error calling adapt_grid in run_clubb"
+            exit mainloop
+          end if
         end if
 
         if ( .not. clubb_config_flags%l_add_dycore_grid .and. l_t_dependent ) then

@@ -5,9 +5,12 @@ import io
 import multiprocessing
 import os
 import select
+import shutil
 import stat
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -18,6 +21,16 @@ from dash_app.services.models import CompileRequest, LeaderboardRerunRequest, Pa
 from dash_app.services import profiles as profile_service
 from dash_app.shared.runtime import atomic_write_json, private_runtime_dir, restrict_existing
 from dash_app.shared.components import styled_dropdown
+
+
+@pytest.fixture(autouse=True)
+def isolate_broker_activity(tmp_path, monkeypatch):
+    """Keep service tests from publishing fake jobs to a live dashboard."""
+    from dash_app.shared import activity
+
+    monkeypatch.setattr(activity, "ACTIVITY_PATH", tmp_path / "activity.json")
+    monkeypatch.setattr(activity, "LOCK_PATH", tmp_path / "activity.lock")
+    activity.reset_activity()
 
 
 def _concurrent_job_submit(path, start, results):
@@ -103,10 +116,11 @@ def test_scm_batch_submission_uses_one_flat_output_and_is_idempotent(tmp_path, m
     artifacts = ArtifactStore(tmp_path / "agent_artifacts")
     calls = []
 
-    def fake_run(case, overrides, config, stats, *, cli_options, output_dir, job_id, run_id):
+    def fake_launch(case, stats, config, overrides, cli_options, *, job_id, run_id, batch_job_id):
         assert (tmp_path / "agent_artifacts" / job_id / "manifest.json").is_file()
+        output_dir = cli_options["out_dir"]
         Path(output_dir, f"{case}_stats.nc").write_bytes(b"CDF\x01batch-run")
-        calls.append((case, output_dir, job_id, run_id))
+        calls.append((case, output_dir, job_id, run_id, batch_job_id))
         return {
             "status": "started",
             "case": case,
@@ -118,26 +132,31 @@ def test_scm_batch_submission_uses_one_flat_output_and_is_idempotent(tmp_path, m
     monkeypatch.setattr(actions, "_public_scm_output_root", lambda: tmp_path / "output" / "mcp_runs")
     monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "_ARTIFACT_STORE", artifacts)
-    monkeypatch.setattr(actions, "run_scm", fake_run)
-    monkeypatch.setattr(actions, "is_case_active", lambda _case: False)
+    monkeypatch.setattr(actions, "_launch_scm_process", fake_launch)
+    monkeypatch.setattr(actions, "_background", lambda *_args: None)
     monkeypatch.setattr(actions, "broker_jobs", lambda: {"runs": {}})
-    monkeypatch.setattr(actions, "snapshot_active_cases", lambda: {})
+    monkeypatch.setattr(actions, "_ensure_scm_batch_watcher", lambda _job_id: None)
 
     request = ScmRunBatchRequest(request_id="batch-request-123", cases=["arm", "bomex"], max_workers=2)
     first = actions.submit_scm_batch(request)
+    assert calls == []
+    actions._start_queued_scm_batch_children(first["job_id"])
     retry = actions.submit_scm_batch(request)
 
-    assert first["status"] == "started"
+    assert first["status"] == "queued"
     assert retry["status"] == "existing"
     assert len(calls) == 2
-    assert len({path for _case, path, _job, _run in calls}) == 1
+    assert len({path for _case, path, _job, _run, _handoff in calls}) == 1
+    assert all(batch_job_id == first["job_id"] for *_rest, batch_job_id in calls)
     output_directory = Path(calls[0][1])
     assert output_directory == tmp_path / "output" / "mcp_runs" / first["batch_id"]
     assert not (output_directory / "arm").is_dir()
     assert {path.name for path in output_directory.glob("*_stats.nc")} == {"arm_stats.nc", "bomex_stats.nc"}
-    manifest = json.loads((output_directory / "batch_manifest.json").read_text())
+    assert not (output_directory / "batch_manifest.json").exists()
+    manifest = artifacts.get_manifest(first["job_id"])
     assert manifest["batch_id"] == first["batch_id"]
-    assert {child["case"] for child in manifest["children"]} == {"arm", "bomex"}
+    assert first["accepted_cases"] == ["arm", "bomex"]
+    assert first["skipped_cases"] == []
     with pytest.raises(ValidationError):
         TuneRequest(
             request_id="request-123",
@@ -154,7 +173,7 @@ def test_native_scm_batch_honors_selected_output_directory(tmp_path, monkeypatch
     selected_output = tmp_path / "output" / "dash_default"
     calls = []
 
-    def fake_launch(case, stats, config, overrides, cli_options, *, job_id, run_id):
+    def fake_launch(case, stats, config, overrides, cli_options, *, job_id, run_id, batch_job_id):
         calls.append((case, stats, config, overrides, cli_options, job_id, run_id))
         Path(cli_options["out_dir"]).mkdir(parents=True, exist_ok=True)
         Path(cli_options["out_dir"], f"{case}_stats.nc").write_bytes(b"CDF\x01native-run")
@@ -168,10 +187,10 @@ def test_native_scm_batch_honors_selected_output_directory(tmp_path, monkeypatch
     monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "_ARTIFACT_STORE", artifacts)
     monkeypatch.setattr(actions, "resolve_output_dir", lambda value: tmp_path / "output" / str(value))
-    monkeypatch.setattr(actions, "launch_dashboard_scm_request", fake_launch)
-    monkeypatch.setattr(actions, "is_case_active", lambda _case: False)
+    monkeypatch.setattr(actions, "_launch_scm_process", fake_launch)
+    monkeypatch.setattr(actions, "_background", lambda *_args: None)
     monkeypatch.setattr(actions, "broker_jobs", lambda: {"runs": {}})
-    monkeypatch.setattr(actions, "snapshot_active_cases", lambda: {})
+    monkeypatch.setattr(actions, "_ensure_scm_batch_watcher", lambda _job_id: None)
 
     request = ScmRunBatchRequest(request_id="native-output-request", cases=["arm"], max_workers=1)
     result = actions.submit_scm_batch(
@@ -179,12 +198,58 @@ def test_native_scm_batch_honors_selected_output_directory(tmp_path, monkeypatch
         native_overrides={},
         native_cli_options={"out_dir": "dash_default"},
     )
+    assert calls == []
+    actions._start_queued_scm_batch_children(result["job_id"])
 
-    assert result["status"] == "started"
+    assert result["status"] == "queued"
     assert calls[0][4]["out_dir"] == str(selected_output)
     assert Path(result["output_directory"]) == selected_output
     assert (selected_output / "arm_stats.nc").is_file()
-    assert (selected_output / "batch_manifest.json").is_file()
+    assert not (selected_output / "batch_manifest.json").exists()
+
+
+def test_fast_scm_completion_cannot_be_overwritten_as_running(tmp_path, monkeypatch):
+    from dash_app.shared import actions
+
+    class FinishedProcess:
+        def poll(self):
+            return 0
+
+    store = JobStore(tmp_path / "jobs.json")
+    monkeypatch.setattr(actions, "_JOB_STORE", store)
+    monkeypatch.setattr(
+        actions, "_ARTIFACT_STORE", ArtifactStore(tmp_path / "agent_artifacts")
+    )
+    monkeypatch.setattr(
+        actions, "_public_scm_output_root", lambda: tmp_path / "output"
+    )
+    monkeypatch.setattr(actions, "_ensure_scm_batch_watcher", lambda _job_id: None)
+    monkeypatch.setattr(
+        actions,
+        "_launch_scm_process",
+        lambda *_args, **_kwargs: {
+            "status": "started",
+            "proc_data": {
+                "pid": 123,
+                "log": str(tmp_path / "fast.log"),
+                "temp_files": [],
+            },
+        },
+    )
+    monkeypatch.setattr(actions, "get_proc", lambda _pid: FinishedProcess())
+    monkeypatch.setattr(actions, "_background", lambda target, *args: target(*args))
+
+    batch = actions.submit_scm_batch(
+        ScmRunBatchRequest(
+            request_id="fast-batch",
+            cases=["arm"],
+            max_workers=1,
+        )
+    )
+    actions._start_queued_scm_batch_children(batch["job_id"])
+
+    assert store.get(batch["children"][0]["job_id"])["state"] == "finished"
+    assert store.get(batch["job_id"])["state"] == "finished"
 
 
 def test_mcp_scm_batch_honors_requested_output_directory(tmp_path, monkeypatch):
@@ -209,7 +274,71 @@ def test_mcp_scm_batch_honors_requested_output_directory(tmp_path, monkeypatch):
 
     assert result["status"] == "queued"
     assert Path(result["output_directory"]) == selected_output
-    assert (selected_output / "batch_manifest.json").is_file()
+    assert not (selected_output / "batch_manifest.json").exists()
+
+
+def test_scm_batch_cancel_stops_active_children_and_cancels_the_whole_queue(tmp_path, monkeypatch):
+    from dash_app.shared import actions
+
+    store = JobStore(tmp_path / "jobs.json")
+    artifacts = ArtifactStore(tmp_path / "agent_artifacts")
+    stopped = []
+    monkeypatch.setattr(actions, "_JOB_STORE", store)
+    monkeypatch.setattr(actions, "_ARTIFACT_STORE", artifacts)
+    monkeypatch.setattr(actions, "_public_scm_output_root", lambda: tmp_path / "output")
+    monkeypatch.setattr(actions, "_ensure_scm_batch_watcher", lambda _job_id: None)
+    monkeypatch.setattr(
+        actions,
+        "_signal_scm_record",
+        lambda record: stopped.append(
+            str((record.get("request") or {}).get("case") or "")
+        )
+        or {"status": "stop_requested"},
+    )
+
+    batch = actions.submit_scm_batch(
+        ScmRunBatchRequest(request_id="cancel-whole-batch", cases=["arm", "bomex"], max_workers=1)
+    )
+    first, second = batch["children"]
+    store.update(
+        first["job_id"],
+        state="running",
+        runtime={"proc_data": {"pid": 123}},
+    )
+
+    cancelled = actions.cancel_scm_batch(batch["job_id"])
+
+    assert cancelled["state"] == "stopping"
+    assert cancelled["cancellation_requested"] is True
+    assert stopped == ["arm"]
+    assert store.get(first["job_id"])["state"] == "stopping"
+    assert store.get(second["job_id"])["state"] == "cancelled"
+
+
+def test_scm_batch_cancel_finalizes_a_stale_active_child(tmp_path, monkeypatch):
+    from dash_app.shared import actions
+
+    store = JobStore(tmp_path / "jobs.json")
+    monkeypatch.setattr(actions, "_JOB_STORE", store)
+    monkeypatch.setattr(
+        actions, "_ARTIFACT_STORE", ArtifactStore(tmp_path / "agent_artifacts")
+    )
+    monkeypatch.setattr(
+        actions, "_public_scm_output_root", lambda: tmp_path / "output"
+    )
+    monkeypatch.setattr(actions, "_ensure_scm_batch_watcher", lambda _job_id: None)
+    monkeypatch.setattr(actions, "broker_jobs", lambda: {"runs": {}})
+
+    batch = actions.submit_scm_batch(
+        ScmRunBatchRequest(request_id="cancel-stale-batch", cases=["arm"])
+    )
+    child_job_id = batch["children"][0]["job_id"]
+    store.update(child_job_id, state="running")
+
+    cancelled = actions.cancel_scm_batch(batch["job_id"])
+
+    assert cancelled["state"] == "cancelled"
+    assert store.get(child_job_id)["state"] == "cancelled"
 
 
 def test_typed_compile_request_exposes_validated_gptl_option():
@@ -249,18 +378,11 @@ def test_typed_scm_run_options_reuse_the_native_process_launcher(monkeypatch):
 
     captured = {}
 
-    def fake_launch(case, stats_file, config, overrides, cli_options, **kwargs):
-        captured.update(
-            case=case,
-            stats_file=stats_file,
-            config=config,
-            overrides=overrides,
-            cli_options=cli_options,
-            kwargs=kwargs,
-        )
+    def fake_submit(request, *, native_cli_options=None):
+        captured.update(request=request, cli_options=native_cli_options)
         return {"status": "started"}
 
-    monkeypatch.setattr(actions, "launch_dashboard_scm_request", fake_launch)
+    monkeypatch.setattr(actions, "submit_scm_run", fake_submit)
 
     result = actions.run_scm(
         "bomex",
@@ -273,6 +395,7 @@ def test_typed_scm_run_options_reuse_the_native_process_launcher(monkeypatch):
         "dt_main": "30.0",
         "tout": "60.0",
     }
+    assert captured["request"].run_options.max_iters == 2
 
 
 def test_mcp_scm_run_accepts_any_directory_below_output(monkeypatch, tmp_path):
@@ -282,19 +405,19 @@ def test_mcp_scm_run_accepts_any_directory_below_output(monkeypatch, tmp_path):
     fake_repo = tmp_path / "repo"
     selected_output = fake_repo / "output" / "mcp_named"
 
-    def fake_launch(case, stats_file, config, overrides, cli_options, **kwargs):
-        captured.update(cli_options=cli_options)
+    def fake_submit(request, *, native_cli_options=None):
+        captured.update(request=request, cli_options=native_cli_options)
         return {"status": "started"}
 
     monkeypatch.setattr(actions, "REPO_ROOT", fake_repo)
     monkeypatch.setattr(actions, "_validate_case", lambda value: str(value))
     monkeypatch.setattr(actions, "_validated_stats_file", lambda value: str(value))
-    monkeypatch.setattr(actions, "launch_dashboard_scm_request", fake_launch)
+    monkeypatch.setattr(actions, "submit_scm_run", fake_submit)
 
     result = actions.run_scm("arm", output_dir=selected_output)
 
     assert result["status"] == "started"
-    assert captured["cli_options"]["out_dir"] == str(selected_output)
+    assert captured["request"].out_dir == str(selected_output)
 
 
 def test_typed_run_and_tune_requests_share_settings_consequences():
@@ -422,6 +545,78 @@ def test_artifact_retention_prunes_only_completed_manifest_bundles(tmp_path, mon
     assert (tmp_path / "agent_artifacts" / "second" / "manifest.json").is_file()
 
 
+def test_concurrent_active_manifest_creation_serializes_retention_cleanup(
+    tmp_path, monkeypatch
+):
+    artifacts = ArtifactStore(tmp_path / "agent_artifacts")
+    monkeypatch.setenv("CLUBB_AGENT_ARTIFACT_RETENTION_COUNT", "10")
+    artifacts.create_manifest("old_first", {})
+    artifacts.create_manifest("old_second", {})
+    monkeypatch.setenv("CLUBB_AGENT_ARTIFACT_RETENTION_COUNT", "1")
+
+    delete_started = threading.Event()
+    allow_delete = threading.Event()
+    second_started = threading.Event()
+    errors = []
+    original_rmtree = shutil.rmtree
+
+    def blocked_rmtree(path):
+        if not delete_started.is_set():
+            delete_started.set()
+            assert allow_delete.wait(timeout=2)
+        original_rmtree(path)
+
+    def create(artifact_id, started=None):
+        if started is not None:
+            started.set()
+        try:
+            artifacts.create_manifest(artifact_id, {}, active=True)
+        except Exception as exc:  # captured for the parent test thread
+            errors.append(exc)
+
+    monkeypatch.setattr(shutil, "rmtree", blocked_rmtree)
+    first = threading.Thread(target=create, args=("active_first",))
+    second = threading.Thread(
+        target=create, args=("active_second", second_started)
+    )
+    first.start()
+    assert delete_started.wait(timeout=1)
+    second.start()
+    assert second_started.wait(timeout=1)
+    time.sleep(0.05)
+    allow_delete.set()
+    first.join(timeout=2)
+    second.join(timeout=2)
+
+    assert not first.is_alive()
+    assert not second.is_alive()
+    assert errors == []
+    for artifact_id in ("active_first", "active_second"):
+        bundle = tmp_path / "agent_artifacts" / artifact_id
+        assert (bundle / "manifest.json").is_file()
+        assert (bundle / ".active").is_file()
+
+
+def test_artifact_prune_treats_an_already_removed_bundle_as_success(
+    tmp_path, monkeypatch
+):
+    artifacts = ArtifactStore(tmp_path / "agent_artifacts")
+    monkeypatch.setenv("CLUBB_AGENT_ARTIFACT_RETENTION_COUNT", "10")
+    artifacts.create_manifest("old", {})
+    artifacts.create_manifest("latest", {})
+    monkeypatch.setenv("CLUBB_AGENT_ARTIFACT_RETENTION_COUNT", "1")
+    original_rmtree = shutil.rmtree
+
+    def remove_then_report_missing(path):
+        original_rmtree(path)
+        raise FileNotFoundError(path)
+
+    monkeypatch.setattr(shutil, "rmtree", remove_then_report_missing)
+
+    assert artifacts.prune() == ["old"]
+    assert not (tmp_path / "agent_artifacts" / "old").exists()
+
+
 def test_active_artifact_bundle_survives_retention_until_released(tmp_path, monkeypatch):
     monkeypatch.setenv("CLUBB_AGENT_ARTIFACT_RETENTION_COUNT", "1")
     artifacts = ArtifactStore(tmp_path / "agent_artifacts")
@@ -470,27 +665,19 @@ def test_typed_scm_submission_isolated_and_retries_without_relaunch(tmp_path, mo
     artifacts = ArtifactStore(tmp_path / "agent_artifacts")
     calls = []
 
-    def fake_run(case, overrides, config, stats, *, cli_options, output_dir, job_id, run_id):
+    def fake_launch(case, stats, config, overrides, cli_options, *, job_id, run_id, batch_job_id):
         assert (tmp_path / "agent_artifacts" / job_id / "manifest.json").is_file()
-        assert cli_options == {}
+        output_dir = cli_options["out_dir"]
         Path(output_dir, f"{case}_stats.nc").write_bytes(b"CDF\x01public-run")
-        calls.append((case, output_dir, job_id))
+        calls.append((case, output_dir, job_id, batch_job_id))
         return {"status": "started", "case": case, "log": str(tmp_path / "run.log"), "output_directory": output_dir}
 
     monkeypatch.setattr(actions, "_public_scm_output_root", lambda: tmp_path / "output" / "mcp_runs")
     monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "_ARTIFACT_STORE", artifacts)
-    monkeypatch.setattr(actions, "run_scm", fake_run)
-    monkeypatch.setattr(actions, "is_case_active", lambda _case: False)
+    monkeypatch.setattr(actions, "_launch_scm_process", fake_launch)
+    monkeypatch.setattr(actions, "_background", lambda *_args: None)
     monkeypatch.setattr(actions, "broker_jobs", lambda: {"runs": {}})
-    monkeypatch.setattr(actions, "snapshot_active_cases", lambda: {})
-    monkeypatch.setattr(
-        actions,
-        "exclusive_file_lock",
-        lambda _path: (_ for _ in ()).throw(
-            AssertionError("typed submission must let the shared launcher own the admission lock")
-        ),
-    )
     request = ScmRunRequest(request_id="request-typed-scm", case="arm")
 
     first = actions.submit_scm_run(request)
@@ -510,10 +697,11 @@ def test_typed_scm_submission_isolated_and_retries_without_relaunch(tmp_path, mo
     assert manifest["service"]["version"] == 3
     assert manifest["output_checksums"]["state"] == "pending"
     assert (tmp_path / "agent_artifacts" / first["job_id"] / "submission_result.json").is_file()
-    public_manifest = json.loads((batch_directory / "batch_manifest.json").read_text())
-    assert public_manifest["batch_id"] == first["batch_id"]
-    assert public_manifest["children"][0]["run_id"] == first["run_id"]
-    discovered = profile_service.discover_output_directories(tmp_path / "output")
+    assert not (batch_directory / "batch_manifest.json").exists()
+    assert "batch_manifest_path" not in first
+    discovered = profile_service.discover_output_directories(
+        tmp_path / "output", selected_dirs=[calls[0][1]]
+    )
     assert [item["path"] for item in discovered] == [calls[0][1]]
 
 
@@ -522,17 +710,18 @@ def test_same_case_submissions_get_distinct_durable_batch_roots(tmp_path, monkey
 
     calls = []
     monkeypatch.setattr(actions, "_public_scm_output_root", lambda: tmp_path / "output" / "mcp_runs")
-    monkeypatch.setattr(actions, "_JOB_STORE", JobStore(tmp_path / "jobs.json"))
+    store = JobStore(tmp_path / "jobs.json")
+    monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "_ARTIFACT_STORE", ArtifactStore(tmp_path / "agent_artifacts"))
-    monkeypatch.setattr(actions, "is_case_active", lambda _case: False)
     monkeypatch.setattr(actions, "broker_jobs", lambda: {"runs": {}})
-    monkeypatch.setattr(actions, "snapshot_active_cases", lambda: {})
     monkeypatch.setattr(
         actions,
-        "run_scm",
-        lambda _case, _overrides, _config, _stats, *, cli_options, output_dir, job_id, run_id: calls.append((job_id, output_dir)) or {"status": "started", "output_directory": output_dir},
+        "_launch_scm_process",
+        lambda _case, _stats, _config, _overrides, cli_options, *, job_id, run_id, batch_job_id: calls.append((job_id, cli_options["out_dir"])) or {"status": "started", "output_directory": cli_options["out_dir"]},
     )
+    monkeypatch.setattr(actions, "_background", lambda *_args: None)
     first = actions.submit_scm_run(ScmRunRequest(request_id="case-isolation-one", case="arm"))
+    store.update(first["job_id"], state="finished")
     second = actions.submit_scm_run(ScmRunRequest(request_id="case-isolation-two", case="arm"))
     assert first["run_id"] != second["run_id"]
     assert calls[0][1] != calls[1][1]
@@ -543,46 +732,39 @@ def test_same_case_submissions_get_distinct_durable_batch_roots(tmp_path, monkey
 def test_typed_scm_submission_respects_global_run_concurrency(monkeypatch, tmp_path):
     from dash_app.shared import actions
 
-    monkeypatch.setattr(actions, "_JOB_STORE", JobStore(tmp_path / "jobs.json"))
-    monkeypatch.setattr(actions, "is_case_active", lambda _case: False)
-    monkeypatch.setattr(actions, "snapshot_active_cases", lambda: {})
-    monkeypatch.setattr(actions, "broker_jobs", lambda: {"runs": {"bomex": {"state": "running"}}})
+    store = JobStore(tmp_path / "jobs.json")
+    active, _ = store.submit("scm", "active-bomex", {"case": "bomex"})
+    store.update(active["job_id"], state="running", runtime={"proc_data": {"pid": 1001}})
+    monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "MAX_RUN_PROCS", 1)
     result = actions.submit_scm_run(ScmRunRequest(request_id="request-cap-123", case="arm"))
     assert result["status"] == "queued"
 
 
-def test_scm_concurrency_counts_distinct_native_and_broker_processes(monkeypatch, tmp_path):
+def test_scm_concurrency_counts_only_broker_owned_processes(monkeypatch, tmp_path):
     from dash_app.shared import actions
 
-    monkeypatch.setattr(actions, "_JOB_STORE", JobStore(tmp_path / "jobs.json"))
-    monkeypatch.setattr(actions, "is_case_active", lambda _case: False)
-    monkeypatch.setattr(
-        actions,
-        "broker_jobs",
-        lambda: {"runs": {"arm": {"state": "running", "proc_data": {"pid": 1001}}}},
-    )
-    monkeypatch.setattr(actions, "snapshot_active_cases", lambda: {"bomex": {"pid": 1002}})
+    store = JobStore(tmp_path / "jobs.json")
+    for case, pid in (("arm", 1001), ("bomex", 1002)):
+        active, _ = store.submit("scm", f"active-{case}", {"case": case})
+        store.update(active["job_id"], state="running", runtime={"proc_data": {"pid": pid}})
+    monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "MAX_RUN_PROCS", 2)
     result = actions.submit_scm_run(ScmRunRequest(request_id="request-cap-union-123", case="rico"))
     assert result["status"] == "queued"
 
 
-def test_native_run_and_rebuild_use_the_durable_broker_lifecycle(monkeypatch):
-    """Native UI launches may retain rich controls, but not separate ownership."""
+def test_process_launch_and_rebuild_use_the_durable_broker_lifecycle(tmp_path, monkeypatch):
+    """Every native child is recorded by the broker that owns its process."""
     from dash_app.shared import actions
 
     events = []
     broker_compile = []
-    broker_runs = []
     watched = []
     monkeypatch.setattr(actions, "broker_jobs", lambda: {"compile": None, "runs": {}})
-    monkeypatch.setattr(actions, "snapshot_active_cases", lambda: {})
-    monkeypatch.setattr(actions, "is_case_active", lambda _case: False)
     monkeypatch.setattr(actions, "publish_event", lambda *args, **kwargs: events.append((args, kwargs)) or {"id": 1})
-    monkeypatch.setattr(actions, "publish_run_request", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(actions, "set_broker_job", lambda kind, payload: broker_compile.append((kind, payload)))
-    monkeypatch.setattr(actions, "set_broker_run", lambda case, payload: broker_runs.append((case, payload)))
+    monkeypatch.setattr(actions, "_JOB_STORE", JobStore(tmp_path / "jobs.json"))
     monkeypatch.setattr(actions, "_background", lambda target, *args: watched.append((target.__name__, args)))
     monkeypatch.setattr(
         actions,
@@ -593,23 +775,28 @@ def test_native_run_and_rebuild_use_the_durable_broker_lifecycle(monkeypatch):
     assert rebuild["status"] == "started"
     assert broker_compile[-1][0] == "compile"
     assert broker_compile[-1][1]["operation"] == "rebuild"
+    rebuild_action = events[-1][1]["action"]
+    assert rebuild_action["tab"] == "compile"
+    assert rebuild_action["preserve_tab"] is True
 
     monkeypatch.setattr(
         actions,
         "start_case_process",
         lambda *_args: {"pid": 92, "log": "/tmp/run.log", "start_time": 0.0, "temp_files": []},
     )
-    launched = actions.launch_dashboard_scm_request(
+    launched = actions._launch_scm_process(
         "arm",
         "standard_stats.in",
         "default",
         {"flags": {"l_test": ".true."}, "tunable": {}, "silhs": {}},
         {"max_iters": "2", "extra_args": ["-override", "iiPDF_type=1"]},
+        job_id="scm-child",
+        run_id="run-child",
+        batch_job_id="scm-batch",
     )
     assert launched["proc_data"]["pid"] == 92
-    assert broker_runs[-1][0] == "arm"
-    assert broker_runs[-1][1]["broker_managed"] is True
-    assert {name for name, _args in watched} == {"_watch_compile", "_watch_run"}
+    assert launched["case"] == "arm"
+    assert {name for name, _args in watched} == {"_watch_compile"}
 
 
 def test_mcp_exposes_closed_world_typed_tools_and_annotations():
@@ -671,8 +858,9 @@ def test_broker_domain_dispatch_revalidates_typed_requests(monkeypatch):
 
     captured = {}
 
-    def fake_submit(request):
+    def fake_submit(request, **kwargs):
         captured["request"] = request
+        captured["kwargs"] = kwargs
         return {"status": "started"}
 
     monkeypatch.setattr(actions, "submit_scm_run", fake_submit)
@@ -685,6 +873,7 @@ def test_broker_domain_dispatch_revalidates_typed_requests(monkeypatch):
     assert result["status"] == "started"
     assert isinstance(captured["request"], ScmRunRequest)
     assert captured["request"].case == "bomex"
+    assert captured["kwargs"] == {"origin": "unknown"}
     with pytest.raises(ValidationError):
         actions.dispatch(
             "domain_submit_scm_run",
@@ -721,7 +910,11 @@ def test_broker_domain_dispatch_revalidates_batch_requests(monkeypatch):
     assert result["status"] == "queued"
     assert isinstance(captured["request"], ScmRunBatchRequest)
     assert captured["request"].cases == ["arm", "bomex"]
-    assert captured["kwargs"] == {"native_overrides": None, "native_cli_options": None}
+    assert captured["kwargs"] == {
+        "native_overrides": None,
+        "native_cli_options": None,
+        "origin": "unknown",
+    }
     with pytest.raises(ValidationError):
         actions.dispatch(
             "domain_submit_scm_batch",
@@ -896,22 +1089,25 @@ def test_mcp_stdio_keeps_tool_prints_out_of_protocol_stdout(monkeypatch):
     assert "ordinary launcher diagnostic" in diagnostics.getvalue()
 
 
-def test_scm_recovery_restarts_monitoring_from_durable_broker_state(monkeypatch):
+def test_scm_recovery_restarts_monitoring_from_durable_broker_state(tmp_path, monkeypatch):
     from dash_app.shared import actions
 
     launched = []
-    monkeypatch.setattr(
-        actions,
-        "broker_jobs",
-        lambda: {"runs": {"arm": {"state": "running", "case": "arm", "job_id": "scm_abc", "proc_data": {"pid": 1234, "log": "/tmp/arm.log"}}}},
+    store = JobStore(tmp_path / "jobs.json")
+    record, _ = store.submit("scm", "recover-arm", {"case": "arm"})
+    store.update(
+        record["job_id"],
+        state="running",
+        runtime={"proc_data": {"pid": 1234, "log": "/tmp/arm.log"}},
     )
+    monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "_pid_is_alive", lambda pid: pid == 1234)
     monkeypatch.setattr(actions, "_background", lambda target, *args: launched.append((target, args)))
     monkeypatch.setattr(actions, "publish_event", lambda *args, **kwargs: None)
 
     recovered = actions.recover_active_runs_from_state()
 
-    assert recovered == [{"case": "arm", "pid": 1234, "job_id": "scm_abc"}]
+    assert recovered == [{"case": "arm", "pid": 1234, "job_id": record["job_id"]}]
     assert launched[0][0] is actions._watch_run
 
 
@@ -927,32 +1123,16 @@ def test_scm_recovery_seals_a_dead_record_instead_of_leaving_it_running(monkeypa
     artifacts = ArtifactStore(tmp_path / "agent_artifacts")
     artifacts.create_manifest(record["job_id"], {"job_id": record["job_id"]})
     artifacts.activate(record["job_id"])
-    updates = []
     monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "_ARTIFACT_STORE", artifacts)
-    monkeypatch.setattr(
-        actions,
-        "broker_jobs",
-        lambda: {
-            "runs": {
-                "arm": {
-                    "state": "running",
-                    "case": "arm",
-                    "job_id": record["job_id"],
-                    "proc_data": {"pid": 1234},
-                }
-            }
-        },
+    store.update(
+        record["job_id"],
+        state="running",
+        runtime={"proc_data": {"pid": 1234}},
     )
     monkeypatch.setattr(actions, "_pid_is_alive", lambda _pid: False)
-    monkeypatch.setattr(
-        actions,
-        "update_broker_run",
-        lambda case, **values: updates.append((case, values)),
-    )
 
     assert actions.recover_active_runs_from_state() == []
-    assert updates[0][1]["state"] == "error"
     assert store.get(record["job_id"])["error"]["code"] == "SCM_RECOVERY_EXIT_UNKNOWN"
     assert not (artifacts.bundle_dir(record["job_id"]) / ".active").exists()
 
@@ -967,11 +1147,9 @@ def test_scm_watcher_keeps_log_progress_out_of_global_activity(monkeypatch, tmp_
         def poll(self):
             return 0
 
-    monkeypatch.setattr(actions, "read_run_log_increment", lambda _path, _offset: ("iteration: 2 / 3\n", 16))
     monkeypatch.setattr(actions, "get_proc", lambda _pid: FinishedProcess())
     monkeypatch.setattr(actions, "record_case_finish", lambda *_args: None)
     monkeypatch.setattr(actions, "cleanup_temp_files", lambda *_args: None)
-    monkeypatch.setattr(actions, "update_broker_run", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(actions, "publish_event", lambda *_args, **_kwargs: events.append(_args))
 
     actions._watch_run("arm", {"pid": 123, "log": str(tmp_path / "arm.log"), "temp_files": []})
@@ -989,17 +1167,14 @@ def test_scm_watcher_records_an_explicit_stop_as_cancelled(monkeypatch, tmp_path
         def poll(self):
             return -15
 
-    broker_updates = []
     monkeypatch.setattr(actions, "_JOB_STORE", store)
     monkeypatch.setattr(actions, "_ARTIFACT_STORE", ArtifactStore(tmp_path / "artifacts"))
-    monkeypatch.setattr(actions, "broker_jobs", lambda: {"runs": {"arm": {"state": "stopping"}}})
-    monkeypatch.setattr(actions, "read_run_log_increment", lambda _path, _offset: ("", 0))
+    store.update(record["job_id"], state="stopping")
     monkeypatch.setattr(actions, "get_proc", lambda _pid: StoppedProcess())
     monkeypatch.setattr(actions, "record_case_finish", lambda *_args: None)
     monkeypatch.setattr(actions, "cleanup_temp_files", lambda *_args: None)
     monkeypatch.setattr(actions, "_write_run_result_summary", lambda *_args: None)
     monkeypatch.setattr(actions, "_read_log_tail", lambda *_args: "")
-    monkeypatch.setattr(actions, "update_broker_run", lambda case, **values: broker_updates.append((case, values)))
     monkeypatch.setattr(actions, "publish_event", lambda *_args, **_kwargs: None)
 
     actions._watch_run(
@@ -1008,7 +1183,6 @@ def test_scm_watcher_records_an_explicit_stop_as_cancelled(monkeypatch, tmp_path
         record["job_id"],
     )
 
-    assert broker_updates[-1][1]["state"] == "stopped"
     assert store.get(record["job_id"])["state"] == "cancelled"
 
 

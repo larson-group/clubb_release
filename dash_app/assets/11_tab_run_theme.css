@@ -517,8 +517,14 @@
   filter: none;
 }
 
-.run-param-row--changed-disabled {
+.run-param-row--multicol-disabled {
   outline: 2px solid #f59e0b;
+  opacity: 0.5;
+  filter: grayscale(0.25);
+}
+
+.run-param-row--inactive-disabled {
+  outline: none;
   opacity: 0.5;
   filter: grayscale(0.25);
 }
@@ -663,6 +669,79 @@ body.run-ui-dragging * {
 #app-root.theme-light .run-empty-message,
 #app-root.theme-light .run-muted-text {
   color: #475569 !important;
+}
+
+.run-empty-message {
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.run-console-panel {
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.run-console-summary,
+.run-summary-left,
+.run-progress-block {
+  display: flex;
+  align-items: center;
+}
+
+.run-console-summary {
+  cursor: pointer;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.run-summary-left {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.run-console-case-name {
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.run-console-runtime {
+  margin-left: 10px;
+  font-size: 14px;
+}
+
+.run-progress-block {
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.run-console-eta {
+  font-size: 14px;
+}
+
+.run-progress-track,
+.run-progress-fill {
+  height: 16px;
+  border-radius: 999px;
+}
+
+.run-progress-track {
+  width: 240px;
+  overflow: hidden;
+}
+
+.run-progress-fill {
+  width: 0;
+  background: #16a34a;
+  transition: width 0.3s ease;
+}
+
+.run-console {
+  padding: 12px;
+  border-radius: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 6px;
 }
 
 #app-root.theme-dark .run-progress-track {
@@ -912,11 +991,6 @@ body.run-ui-dragging * {
   border-radius: 6px;
   padding: 6px;
   cursor: pointer;
-}
-
-.run-copy-command-label {
-  flex: 0 0 auto;
-  font-size: 12px;
 }
 
 #app-root.theme-dark .run-command-text {

@@ -6,9 +6,10 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
-from dash import ALL, Input, Output, State, callback_context, dcc, html, no_update
+from dash import ALL, Input, Output, State, callback_context, dcc, no_update
 
 from dash_app.shared.broker_client import perform_action
+from dash_app.compile_tab.build_selector import selected_launch_target
 
 from .figures import (
     METRICS,
@@ -19,7 +20,7 @@ from .figures import (
     variability_figure,
 )
 from .library import (
-    comparison_warnings,
+    delete_profile_library_entry,
     discover_profile_library,
     enrich_summary_rows,
     export_profile_library,
@@ -54,11 +55,13 @@ SETTING_STATE_IDS = (
     "profile-executable",
     "profile-extra-args",
 )
+PROFILE_OVERWRITE_OPEN = "profile-overwrite-modal"
+PROFILE_OVERWRITE_CLOSED = "profile-overwrite-modal profile-overwrite-modal-hidden"
 
 
-def collect_profile_settings(values: list[Any]) -> dict[str, Any]:
+def collect_profile_settings(values: list[Any], implementation: Any = None) -> dict[str, Any]:
     mapped = dict(zip(SETTING_STATE_IDS, values))
-    return {
+    settings = {
         "case_name": mapped.get("profile-case"),
         "processes": mapped.get("profile-processes"),
         "columns": mapped.get("profile-columns"),
@@ -73,6 +76,16 @@ def collect_profile_settings(values: list[Any]) -> dict[str, Any]:
         "executable": mapped.get("profile-executable"),
         "extra_args": mapped.get("profile-extra-args"),
     }
+    if implementation is not None:
+        settings.update(selected_launch_target(implementation))
+    return settings
+
+
+def profile_rename_available(proposed_name: Any, pending: dict[str, Any] | None) -> bool:
+    """Enable Rename only for a nonempty label different from the collision."""
+    proposed = str(proposed_name or "").strip()
+    original = str((pending or {}).get("name") or "").strip()
+    return bool(proposed and proposed != original)
 
 
 def _setting_states() -> list[State]:
@@ -218,27 +231,6 @@ def profile_selection_preferences(
     return preferred, active_run_id or None
 
 
-def detail_process_options(
-    rows: list[dict[str, Any]],
-    detail_id: str | None,
-    current: Any = None,
-) -> tuple[list[dict[str, int]], int | None]:
-    values = sorted(
-        {
-            int(str(row.get("process_count")))
-            for row in rows
-            if str(row.get("profile_id") or row.get("run_id") or "") == str(detail_id or "")
-            and str(row.get("process_count") or "").isdigit()
-        }
-    )
-    options = [{"label": str(value), "value": value} for value in values]
-    try:
-        selected = int(current)
-    except (TypeError, ValueError):
-        selected = None
-    return options, selected if selected in values else (values[0] if values else None)
-
-
 def load_profile_plot_data(
     output_value: Any,
     selected: list[str] | None,
@@ -276,9 +268,8 @@ def load_profile_plot_data(
 
 def profile_control_rows(
     summary_rows: list[dict[str, Any]],
-    process_rows: list[dict[str, Any]],
-) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
-    """Return only the small row subsets needed by timer/process controls."""
+) -> list[dict[str, str]]:
+    """Return only the timer names needed by the browser control."""
     timers = sorted(
         {
             str(row.get("timer_name") or "")
@@ -286,24 +277,7 @@ def profile_control_rows(
             if str(row.get("timer_name") or "")
         }
     )
-    processes = sorted(
-        {
-            (
-                str(row.get("profile_id") or row.get("run_id") or ""),
-                int(row.get("process_count")),
-            )
-            for row in process_rows
-            if str(row.get("profile_id") or row.get("run_id") or "")
-            and str(row.get("process_count") or "").isdigit()
-        }
-    )
-    return (
-        [{"timer_name": timer} for timer in timers],
-        [
-            {"profile_id": profile_id, "process_count": process_count}
-            for profile_id, process_count in processes
-        ],
-    )
+    return [{"timer_name": timer} for timer in timers]
 
 
 def build_profile_graph_outputs(
@@ -313,25 +287,18 @@ def build_profile_graph_outputs(
     metric: Any,
     baseline_id: Any,
     detail_id: Any,
-    process_count: Any,
     top_n: Any,
     percentage_values: Any,
     x_axis: Any,
     x_scale: Any,
     theme_name: Any,
-    catalog: list[dict[str, Any]] | None,
-    selected: list[str] | None,
-) -> tuple[Any, Any, Any, Any, str, list[Any]]:
+) -> tuple[Any, Any, Any, Any, str]:
     """Build every Profile figure and its shared summary from one row snapshot."""
-    metric = metric if metric in METRICS else "timer_max_seconds"
+    metric = metric if metric in METRICS else "throughput_columns_per_second"
     try:
         top_n = max(1, min(20, int(top_n)))
     except (TypeError, ValueError):
         top_n = 8
-    try:
-        process_count = int(process_count) if process_count is not None else None
-    except (TypeError, ValueError):
-        process_count = None
     figures = (
         profile_figure(rows, timer_name, metric, theme_name, x_axis=x_axis, x_scale=x_scale),
         relative_figure(rows, timer_name, metric, baseline_id, theme_name, x_axis=x_axis, x_scale=x_scale),
@@ -339,12 +306,12 @@ def build_profile_graph_outputs(
             process_rows,
             detail_id,
             timer_name,
-            process_count,
+            None,
             top_n,
             "percentage" in (percentage_values or []),
             theme_name,
         ),
-        variability_figure(process_rows, detail_id, timer_name, process_count, theme_name),
+        variability_figure(process_rows, detail_id, timer_name, None, theme_name),
     )
     matching = [row for row in rows if str(row.get("timer_name") or "") == str(timer_name or "")]
     successful = sum(str(row.get("status") or "") == "success" for row in matching)
@@ -360,9 +327,7 @@ def build_profile_graph_outputs(
         if not rows
         else f"{selected_count} profile{'s' if selected_count != 1 else ''} · {successful} successful measurement{'s' if successful != 1 else ''} · {METRICS[metric]}"
     )
-    warnings = comparison_warnings(list(catalog or []), list(selected or []))
-    warning_view = [html.Span(warning, className="profile-comparison-warning") for warning in warnings]
-    return *figures, summary, warning_view
+    return *figures, summary
 
 
 def register_profile_callbacks(app) -> None:
@@ -384,12 +349,23 @@ def register_profile_callbacks(app) -> None:
         Input("profile-catalog", "data"),
         Input("profile-selected-runs", "value"),
         Input("profile-picker-expanded", "data"),
+        Input("profile-delete-confirm", "data"),
     )
-    def render_profile_picker(catalog, selected, expanded):
+    def render_profile_picker(catalog, selected, expanded, delete_confirmation):
         menu_class = "profile-picker-menu profile-picker-menu-expanded" if expanded else "profile-picker-menu"
         return (
-            available_profile_buttons(catalog or [], selected or [], expanded=bool(expanded)),
-            active_profile_items(catalog or [], selected or []),
+            available_profile_buttons(
+                catalog or [],
+                selected or [],
+                expanded=bool(expanded),
+                delete_confirmation=delete_confirmation,
+            ),
+            active_profile_items(
+                catalog or [],
+                selected or [],
+                expanded=bool(expanded),
+                delete_confirmation=delete_confirmation,
+            ),
             menu_class,
         )
 
@@ -445,64 +421,138 @@ def register_profile_callbacks(app) -> None:
     @app.callback(
         Output("profile-action", "data"),
         Output("profile-pending-run", "data"),
-        Output("profile-overwrite-confirm", "displayed"),
-        Output("profile-overwrite-confirm", "message"),
+        Output("profile-overwrite-modal", "className"),
+        Output("profile-overwrite-name", "value"),
+        Output("profile-overwrite-message", "children"),
+        Output("profile-name", "value"),
         Input("profile-start", "n_clicks"),
         Input("profile-cancel", "n_clicks"),
-        Input("profile-overwrite-confirm", "submit_n_clicks"),
-        Input("profile-overwrite-confirm", "cancel_n_clicks"),
+        Input("profile-overwrite-button", "n_clicks"),
+        Input("profile-rename-button", "n_clicks"),
+        Input("profile-overwrite-cancel-button", "n_clicks"),
         *_setting_states(),
+        State("compile-run-implementation", "data"),
         State("profile-pending-run", "data"),
+        State("profile-overwrite-name", "value"),
         prevent_initial_call=True,
     )
-    def run_profile_action(start_clicks, cancel_clicks, _confirm_clicks, _decline_clicks, *values):
+    def run_profile_action(
+        start_clicks,
+        cancel_clicks,
+        _overwrite_clicks,
+        _rename_clicks,
+        _overwrite_cancel_clicks,
+        *values,
+    ):
         trigger = callback_context.triggered_id
-        triggered_property = (
-            callback_context.triggered[0].get("prop_id", "").rsplit(".", 1)[-1]
-            if callback_context.triggered
-            else ""
-        )
-        setting_values = values[:-1]
-        pending = dict(values[-1] or {})
+        setting_values = values[:-3]
+        implementation = values[-3]
+        pending = dict(values[-2] or {})
+        proposed_name = str(values[-1] or "").strip()
         if trigger == "profile-start" and start_clicks:
             try:
-                settings = collect_profile_settings(list(setting_values))
+                settings = collect_profile_settings(list(setting_values), implementation)
                 profile_command_display(settings)
                 confirmation = overwrite_confirmation(settings)
                 if confirmation:
-                    return no_update, settings, True, confirmation
+                    settings["name"] = profile_save_target(settings)["label"]
+                    return (
+                        no_update,
+                        settings,
+                        PROFILE_OVERWRITE_OPEN,
+                        settings["name"],
+                        "Overwrite the saved profile, or enter a different label and rename it.",
+                        no_update,
+                    )
                 response = perform_action("launch_profile_request", {"settings": settings}, internal=True)
                 return (
                     {"kind": "started", "at": time.time(), "job": dict(response.get("job") or {})},
                     {},
-                    False,
+                    PROFILE_OVERWRITE_CLOSED,
+                    "",
+                    "",
                     no_update,
                 )
             except (OSError, RuntimeError, ValueError) as exc:
-                return {"kind": "error", "at": time.time(), "message": str(exc)}, {}, False, no_update
-        if trigger == "profile-overwrite-confirm" and triggered_property == "submit_n_clicks":
+                return (
+                    {"kind": "error", "at": time.time(), "message": str(exc)},
+                    {}, PROFILE_OVERWRITE_CLOSED, "", "", no_update,
+                )
+        if trigger == "profile-overwrite-button":
             if not pending:
-                return no_update, {}, False, no_update
+                return (no_update,) * 6
             try:
                 settings = {**pending, "overwrite": True}
                 response = perform_action("launch_profile_request", {"settings": settings}, internal=True)
                 return (
                     {"kind": "started", "at": time.time(), "job": dict(response.get("job") or {})},
                     {},
-                    False,
+                    PROFILE_OVERWRITE_CLOSED,
+                    "",
+                    "",
                     no_update,
                 )
             except (OSError, RuntimeError, ValueError) as exc:
-                return {"kind": "error", "at": time.time(), "message": str(exc)}, {}, False, no_update
-        if trigger == "profile-overwrite-confirm" and triggered_property == "cancel_n_clicks":
-            return no_update, {}, False, no_update
+                return (
+                    {"kind": "error", "at": time.time(), "message": str(exc)},
+                    {}, PROFILE_OVERWRITE_CLOSED, "", "", no_update,
+                )
+        if trigger == "profile-rename-button":
+            if not pending or not profile_rename_available(proposed_name, pending):
+                return (no_update,) * 6
+            try:
+                settings = {**pending, "name": proposed_name, "overwrite": False}
+                profile_command_display(settings)
+                if overwrite_confirmation(settings):
+                    settings["name"] = profile_save_target(settings)["label"]
+                    return (
+                        no_update,
+                        settings,
+                        PROFILE_OVERWRITE_OPEN,
+                        settings["name"],
+                        "That label also exists. Choose another label or overwrite this profile.",
+                        no_update,
+                    )
+                response = perform_action("launch_profile_request", {"settings": settings}, internal=True)
+                return (
+                    {"kind": "started", "at": time.time(), "job": dict(response.get("job") or {})},
+                    {}, PROFILE_OVERWRITE_CLOSED, "", "", proposed_name,
+                )
+            except (OSError, RuntimeError, ValueError) as exc:
+                return (
+                    {"kind": "error", "at": time.time(), "message": str(exc)},
+                    pending, PROFILE_OVERWRITE_OPEN, proposed_name, str(exc), no_update,
+                )
+        if trigger == "profile-overwrite-cancel-button":
+            return no_update, {}, PROFILE_OVERWRITE_CLOSED, "", "", no_update
         if trigger == "profile-cancel" and cancel_clicks:
             try:
                 perform_action("stop_profile", {}, internal=True)
-                return {"kind": "stopping", "at": time.time()}, no_update, False, no_update
+                return (
+                    {"kind": "stopping", "at": time.time()},
+                    no_update, PROFILE_OVERWRITE_CLOSED, "", "", no_update,
+                )
             except (OSError, RuntimeError, ValueError) as exc:
-                return {"kind": "error", "at": time.time(), "message": str(exc)}, no_update, False, no_update
-        return no_update, no_update, no_update, no_update
+                return (
+                    {"kind": "error", "at": time.time(), "message": str(exc)},
+                    no_update, PROFILE_OVERWRITE_CLOSED, "", "", no_update,
+                )
+        return (no_update,) * 6
+
+    @app.callback(
+        Output("profile-rename-button", "disabled"),
+        Output("profile-rename-button", "title"),
+        Input("profile-overwrite-name", "value"),
+        State("profile-pending-run", "data"),
+    )
+    def update_profile_rename_action(proposed_name, pending):
+        available = profile_rename_available(proposed_name, pending)
+        return (
+            not available,
+            "Rename and start the benchmark."
+            if available
+            else "Enter a different benchmark label to rename and run.",
+        )
 
     @app.callback(
         Output("profile-name-status", "children"),
@@ -536,10 +586,13 @@ def register_profile_callbacks(app) -> None:
     @app.callback(
         Output("profile-command-preview", "children"),
         *[Input(component_id, "value") for component_id in SETTING_STATE_IDS],
+        Input("compile-run-implementation", "data"),
     )
-    def update_command_preview(*setting_values):
+    def update_command_preview(*values):
         try:
-            return profile_command_display(collect_profile_settings(list(setting_values)))
+            return profile_command_display(
+                collect_profile_settings(list(values[:-1]), values[-1])
+            )
         except ValueError as exc:
             return f"Configuration incomplete: {exc}"
 
@@ -551,49 +604,19 @@ def register_profile_callbacks(app) -> None:
         Output("profile-log", "children"),
         Output("profile-start", "disabled"),
         Output("profile-cancel", "disabled"),
-        Output("profile-graph", "figure"),
-        Output("profile-relative-graph", "figure"),
-        Output("profile-decomposition-graph", "figure"),
-        Output("profile-variability-graph", "figure"),
-        Output("profile-result-summary", "children"),
-        Output("profile-comparison-warnings", "children"),
         Input("profile-interval", "n_intervals"),
         Input("profile-action", "data"),
         Input("dashboard-broker-jobs", "data"),
+        Input("dashboard-tabs", "value"),
         State("profile-job", "data"),
-        State("profile-selected-runs", "value"),
-        State("profile-output", "value"),
-        State("profile-result-timer", "value"),
-        State("profile-result-metric", "value"),
-        State("profile-baseline-run", "value"),
-        State("profile-detail-run", "value"),
-        State("profile-detail-process", "value"),
-        State("profile-top-timers", "value"),
-        State("profile-cost-percentage", "value"),
-        State("profile-x-axis", "value"),
-        State("profile-x-scale", "value"),
-        State("theme-store", "data"),
-        State("profile-catalog", "data"),
     )
-    def refresh_profile(
-        _ticks,
-        action,
-        broker_snapshot,
-        current_job,
-        selected,
-        output_value,
-        timer_name,
-        metric,
-        baseline_id,
-        detail_id,
-        process_count,
-        top_n,
-        percentage_values,
-        x_axis,
-        x_scale,
-        theme_name,
-        catalog,
-    ):
+    def refresh_profile(_ticks, action, broker_snapshot, selected_tab, current_job):
+        if (
+            selected_tab != "profile"
+            and callback_context.triggered_id
+            in {"profile-interval", "dashboard-broker-jobs"}
+        ):
+            return (no_update,) * 7
         action = dict(action or {})
         broker_job = dict((broker_snapshot or {}).get("profile") or {})
         launch_job = dict(action.get("job") or {})
@@ -626,26 +649,6 @@ def register_profile_callbacks(app) -> None:
             "row_count": len(rows),
             "tick": int(_ticks or 0),
         }
-        try:
-            plot_rows, process_rows = load_profile_plot_data(output_value, selected, job)
-        except OSError:
-            plot_rows, process_rows = [], []
-        graph_outputs = build_profile_graph_outputs(
-            plot_rows,
-            process_rows,
-            timer_name,
-            metric,
-            baseline_id,
-            detail_id,
-            process_count,
-            top_n,
-            percentage_values,
-            x_axis,
-            x_scale,
-            theme_name,
-            catalog,
-            selected,
-        )
         return (
             job,
             progress,
@@ -654,30 +657,130 @@ def register_profile_callbacks(app) -> None:
             log_text or "Waiting for timing output…",
             start_disabled,
             cancel_disabled,
-            *graph_outputs,
+        )
+
+    @app.callback(
+        Output("profile-graph", "figure"),
+        Output("profile-relative-graph", "figure"),
+        Output("profile-decomposition-graph", "figure"),
+        Output("profile-variability-graph", "figure"),
+        Output("profile-result-summary", "children"),
+        Input("profile-job", "data"),
+        Input("profile-active-results", "data"),
+        Input("profile-selected-runs", "value"),
+        Input("profile-output", "value"),
+        Input("profile-result-timer", "value"),
+        Input("profile-result-metric", "value"),
+        Input("profile-baseline-run", "value"),
+        Input("profile-detail-run", "value"),
+        Input("profile-top-timers", "value"),
+        Input("profile-cost-percentage", "value"),
+        Input("profile-x-axis", "value"),
+        Input("profile-x-scale", "value"),
+        Input("theme-store", "data"),
+    )
+    def refresh_profile_figures(
+        job,
+        _active_results,
+        selected,
+        output_value,
+        timer_name,
+        metric,
+        baseline_id,
+        detail_id,
+        top_n,
+        percentage_values,
+        x_axis,
+        x_scale,
+        theme_name,
+    ):
+        try:
+            plot_rows, process_rows = load_profile_plot_data(output_value, selected, job)
+        except OSError:
+            plot_rows, process_rows = [], []
+        return build_profile_graph_outputs(
+            plot_rows,
+            process_rows,
+            timer_name,
+            metric,
+            baseline_id,
+            detail_id,
+            top_n,
+            percentage_values,
+            x_axis,
+            x_scale,
+            theme_name,
         )
 
     @app.callback(
         Output("profile-library-action", "data"),
+        Output("profile-delete-confirm", "data"),
+        Output("profile-delete-expiry", "disabled"),
         Input("profile-library-refresh", "n_clicks"),
         Input("profile-library-import", "contents"),
+        Input({"type": "profile-delete-run", "run_id": ALL}, "n_clicks_timestamp"),
+        Input("profile-delete-expiry", "n_intervals"),
         State("profile-library-import", "filename"),
         State("profile-output", "value"),
+        State("profile-delete-confirm", "data"),
         prevent_initial_call=True,
     )
-    def profile_library_action(_refresh_clicks, upload_contents, upload_name, output_value):
+    def profile_library_action(
+        _refresh_clicks,
+        upload_contents,
+        _delete_clicks,
+        _delete_ticks,
+        upload_name,
+        output_value,
+        confirmation,
+    ):
+        trigger = callback_context.triggered_id
+        now = time.time()
+        if trigger == "profile-delete-expiry":
+            if confirmation and now >= float(confirmation.get("expires_at") or 0.0):
+                return no_update, None, True
+            return no_update, no_update, no_update
+        if isinstance(trigger, dict) and trigger.get("type") == "profile-delete-run":
+            triggered_value = (
+                callback_context.triggered[0].get("value")
+                if callback_context.triggered
+                else None
+            )
+            if not isinstance(triggered_value, (int, float)) or triggered_value <= 0:
+                return no_update, no_update, no_update
+            run_id = str(trigger.get("run_id") or "")
+            armed = (
+                confirmation
+                and confirmation.get("run_id") == run_id
+                and now < float(confirmation.get("expires_at") or 0.0)
+            )
+            if not armed:
+                return no_update, {"run_id": run_id, "expires_at": now + 3.0}, False
+            try:
+                target = delete_profile_library_entry(output_value, run_id)
+            except (OSError, ValueError) as exc:
+                return {"kind": "error", "at": now, "message": str(exc)}, None, True
+            return {
+                "kind": "deleted",
+                "at": now,
+                "message": f"Deleted {target.name}.",
+            }, None, True
         if callback_context.triggered_id == "profile-library-import":
             try:
                 imported = import_profile_upload(output_value, upload_name, upload_contents)
             except (OSError, ValueError) as exc:
-                return {"kind": "error", "at": time.time(), "message": f"Import failed: {exc}"}
+                return {"kind": "error", "at": time.time(), "message": f"Import failed: {exc}"}, None, True
             return {
                 "kind": "imported",
                 "at": time.time(),
                 "run_ids": imported,
                 "message": f"Imported {len(imported)} profile{'s' if len(imported) != 1 else ''}.",
-            }
-        return {"kind": "refreshed", "at": time.time(), "message": "Profile library refreshed."}
+            }, None, True
+        return {
+            "kind": "refreshed",
+            "at": time.time(),
+            "message": "Profile library refreshed.",
+        }, None, True
 
     @app.callback(
         Output("profile-library-download", "data"),
@@ -773,7 +876,6 @@ def register_profile_callbacks(app) -> None:
 
     @app.callback(
         Output("profile-results", "data"),
-        Output("profile-process-results", "data"),
         Input("profile-selected-runs", "value"),
         Input("profile-output", "value"),
         Input("profile-interval", "n_intervals"),
@@ -781,10 +883,22 @@ def register_profile_callbacks(app) -> None:
     )
     def load_selected_profile_data(selected, output_value, _ticks, active_job):
         try:
-            summary_rows, process_rows = load_profile_plot_data(output_value, selected, active_job)
+            summary_rows, _process_rows = load_profile_plot_data(output_value, selected, active_job)
         except OSError:
-            return [], []
-        return profile_control_rows(summary_rows, process_rows)
+            return []
+        return profile_control_rows(summary_rows)
+
+    @app.callback(
+        Output("profile-interval", "disabled"),
+        Input("dashboard-tabs", "value"),
+        Input("dashboard-broker-jobs", "data"),
+    )
+    def toggle_profile_polling(selected_tab, broker_snapshot):
+        """Poll Profile progress only while its active workspace is visible."""
+        state = str(((broker_snapshot or {}).get("profile") or {}).get("state") or "")
+        return selected_tab != "profile" or state not in {
+            "queued", "submitting", "starting", "running", "stopping"
+        }
 
     @app.callback(
         Output("profile-result-timer", "options"),
@@ -801,13 +915,3 @@ def register_profile_callbacks(app) -> None:
         if default_timer in values:
             return options, default_timer
         return options, (values[0] if values else None)
-
-    @app.callback(
-        Output("profile-detail-process", "options"),
-        Output("profile-detail-process", "value"),
-        Input("profile-process-results", "data"),
-        Input("profile-detail-run", "value"),
-        State("profile-detail-process", "value"),
-    )
-    def update_detail_processes(rows, detail_id, current):
-        return detail_process_options(list(rows or []), detail_id, current)

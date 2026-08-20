@@ -116,8 +116,11 @@ def apply_updates_to_lines(lines, updates):
         lines[idx] = updated + "\n"
         if not remaining:
             break
-    for name, new_value in remaining.items():
-        lines.append(f"{name} = {new_value}\n")
+    if remaining:
+        names = ", ".join(sorted(remaining))
+        raise ValueError(
+            f"Namelist setting(s) not present in the selected config: {names}"
+        )
     return lines
 
 

@@ -68,6 +68,7 @@ module adg1_adg2_3d_luhar_pdf
         err_info_type ! Type
 
     use error_code, only: &
+        clubb_at_least_debug_level_api, &
         clubb_fatal_error
 
     implicit none
@@ -169,8 +170,10 @@ module adg1_adg2_3d_luhar_pdf
                          w_1, w_2, w_1_n, w_2_n,                  & ! Out
                          varnce_w_1, varnce_w_2, mixt_frac )        ! Out
 
-    if ( any(err_info%err_code == clubb_fatal_error) ) then
-      return
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        return
+      end if
     end if
 
     ! Calculate the PDF component means and variances of rt.

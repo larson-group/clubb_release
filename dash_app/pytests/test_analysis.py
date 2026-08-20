@@ -116,6 +116,17 @@ def test_empty_dataset_is_reported_before_record_indexing(tmp_path):
         inspect_dataset(path)
 
 
+def test_dataset_discovery_can_skip_loading_the_time_axis(tmp_path):
+    path = _empty_stats_file(tmp_path / "records_stats.nc")
+    with nc.Dataset(path, "a") as dataset:
+        dataset["time"][:] = [0.0, 60.0, 120.0]
+
+    metadata = inspect_dataset(path, read_times=False)
+
+    assert metadata["record_count"] == 3
+    assert metadata["times"].size == 0
+
+
 def test_empty_dataset_callbacks_do_not_raise_dash_errors(tmp_path):
     path = _empty_stats_file(tmp_path / "empty_stats.nc")
     app = Dash(__name__, suppress_callback_exceptions=True)

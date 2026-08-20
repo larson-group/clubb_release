@@ -7,6 +7,7 @@ import shutil
 import subprocess
 
 from dash_app.run_tab.namelist import apply_updates_to_lines, read_namelist_entries
+from utilities.create_case_namelist import normalize_override_string, parse_override_pairs
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +42,51 @@ def _git_hash():
         ).strip()
     except (OSError, subprocess.SubprocessError):
         return "unavailable"
+
+
+def build_tuned_config_overrides(
+    source_config,
+    scm_override,
+    tuned_params,
+    *,
+    config_root=None,
+):
+    """Group a Tune run's SCM override and selected parameters by config file."""
+    root = Path(config_root or CONFIG_ROOT)
+    source_name = normalize_config_name(source_config)
+    source = root / source_name
+    locations = {}
+    for group, filename in CONFIG_FILES.items():
+        for entry in read_namelist_entries(source / filename):
+            locations.setdefault(entry["name"].casefold(), []).append((group, entry["name"]))
+
+    assignments = dict(parse_override_pairs(normalize_override_string(scm_override)))
+    assignments.update(dict(tuned_params or {}))
+    grouped = {group: {} for group in CONFIG_FILES}
+    unknown = []
+    ambiguous = []
+    for raw_name, value in assignments.items():
+        name = str(raw_name).strip()
+        matches = locations.get(name.casefold(), [])
+        if not matches:
+            unknown.append(name)
+            continue
+        if len(matches) != 1:
+            ambiguous.append(name)
+            continue
+        group, canonical_name = matches[0]
+        grouped[group][canonical_name] = str(value).strip()
+    if unknown:
+        raise ValueError(
+            "SCM override(s) are not stored in a tunable config: "
+            + ", ".join(sorted(unknown))
+        )
+    if ambiguous:
+        raise ValueError(
+            "Config setting(s) occur in more than one namelist: "
+            + ", ".join(sorted(ambiguous))
+        )
+    return grouped
 
 
 def save_tunable_config(

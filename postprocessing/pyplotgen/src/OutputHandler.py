@@ -88,7 +88,7 @@ def writeFinalErrorLog(errorlog,finalerrorlog):
     # write new output file, organized alphabetically according
     # to test case (ARM, etc.) and then time stamp
     written_lines=0
-    while procs[written_lines]==procs[0]:
+    while written_lines < len(procs) and procs[written_lines]==procs[0]:
         f2.write(Lines[written_lines])
         written_lines+=1
     for i in range(0,len(proc_nums)):

@@ -19,7 +19,8 @@ Cases can be plain names, fixed windows, or split windows:
     case:t_start:t_end:t_out
 
 Parameters use PARAM:MIN:MAX, or PARAM=PARAM:MIN:MAX to link equal physical
-parameters. Strategies use MODE:SETTING, for example random:16 or resolve:0.9. Interactive runs ask whether to rerun the best result
+parameters. Strategies include random, resolve, SimAnn, and Adam with SPSA
+gradients. Interactive runs ask whether to rerun the best result
 after tuning; Jenkins and other non-interactive callers should set -run_top to
 never, complete, window, or both.
 
@@ -157,7 +158,7 @@ def parse_param_spec(spec: str) -> dict:
 
 
 def parse_strategy_spec(spec: str) -> dict:
-    """Parse random:MAX_SAMPLES, resolve:SPACING, or simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]]."""
+    """Parse one compact tuning-strategy specification."""
     parts = [part.strip() for part in str(spec).split(":")]
     name = parts[0].lower() if parts and parts[0] else ""
     if name == "random":
@@ -197,8 +198,35 @@ def parse_strategy_spec(spec: str) -> dict:
             options["max_final_temp"] = max_final_temp
         return {"name": "simann", "options": options}
 
+    if name == "adam":
+        if len(parts) != 5:
+            raise argparse.ArgumentTypeError(
+                "adam strategy requires adam:MAX_UPDATES:LEARNING_RATE:PERTURBATION:SPSA_PAIRS"
+            )
+        max_updates = _int_from_text(parts[1], "adam max updates")
+        learning_rate = _float_from_text(parts[2], "adam learning rate")
+        perturbation = _float_from_text(parts[3], "adam perturbation")
+        spsa_pairs = _int_from_text(parts[4], "adam SPSA pairs")
+        if max_updates < 1 or spsa_pairs < 1:
+            raise argparse.ArgumentTypeError("adam max updates and SPSA pairs must be >= 1")
+        if learning_rate <= 0.0 or not 0.0 < perturbation <= 0.5:
+            raise argparse.ArgumentTypeError(
+                "adam learning rate must be > 0 and perturbation must be in (0, 0.5]"
+            )
+        return {
+            "name": "adam",
+            "options": {
+                "max_updates": max_updates,
+                "learning_rate": learning_rate,
+                "perturbation": perturbation,
+                "spsa_pairs": spsa_pairs,
+            },
+        }
+
     raise argparse.ArgumentTypeError(
-        "strategy must be random:MAX_SAMPLES, resolve:SPACING, or simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]]"
+        "strategy must be random:MAX_SAMPLES, resolve:SPACING, "
+        "simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]], or "
+        "adam:MAX_UPDATES:LEARNING_RATE:PERTURBATION:SPSA_PAIRS"
     )
 
 
@@ -285,6 +313,13 @@ def format_strategy(strategy: dict) -> str:
             f"initial_temp={options.get('initial_temp', 1.0)}, "
             f"max_final_temp={options.get('max_final_temp', 1.0e-12)}"
         )
+    if name == "adam":
+        return (
+            f"adam (SPSA), updates={options.get('max_updates', 100)}, "
+            f"learning_rate={options.get('learning_rate', 0.01)}, "
+            f"perturbation={options.get('perturbation', 0.05)}, "
+            f"pairs={options.get('spsa_pairs', 2)}, chains={options.get('chain_count', 'derived')}"
+        )
     return str(name)
 
 
@@ -304,6 +339,24 @@ def estimate_total_samples(request: dict) -> str:
         return str(total)
     if strategy.get("name") == "simann":
         return str(int(options.get("max_iters", 2000)) * int(options.get("chain_count", 1)))
+    if strategy.get("name") == "adam":
+        pairs = int(options.get("spsa_pairs", 2))
+        chain_count = options.get("chain_count")
+        if chain_count is None:
+            batch_size = int(request.get("batch_size", 1))
+            cases = list(request.get("cases") or [request.get("case_name")])
+            cases = [case for case in cases if case]
+            columns_per_chain = 2 * pairs
+            if not cases or batch_size % columns_per_chain:
+                return "invalid layout"
+            chain_count = (
+                batch_size // columns_per_chain
+                * math.ceil(int(request.get("max_workers", 1)) / len(cases))
+            )
+        return str(
+            int(chain_count)
+            * (2 + 2 * pairs * int(options.get("max_updates", 100)))
+        )
     return "unknown"
 
 
@@ -317,6 +370,15 @@ def render_status_line(status: dict) -> str:
     idle = int(status.get("idle_workers", 0) or 0)
     initialized = int(status.get("initialized_workers", 0) or 0)
     queued = int(status.get("queued_case_jobs", 0) or 0)
+    baseline_parts = []
+    for name, label in (("clubb_default", "default"), ("override_defaults", "override")):
+        baseline = (status.get("baselines") or {}).get(name) or {}
+        value = baseline.get("total_loss")
+        if value is not None:
+            baseline_parts.append(f"{label} {float(value):.6g}")
+        elif baseline.get("available") is False:
+            baseline_parts.append(f"{label} unavailable")
+    baseline_text = "" if not baseline_parts else " | baselines: " + ", ".join(baseline_parts)
     best = status.get("best_total_loss")
     if best is None:
         best_text = "best: --"
@@ -326,11 +388,20 @@ def render_status_line(status: dict) -> str:
         if top_results:
             params = top_results[0].get("params", {})
         best_text = f"best: {float(best):.6g}"
+        if top_results:
+            for key, label in (
+                ("improvement_vs_clubb_default_percent", "default"),
+                ("improvement_vs_override_defaults_percent", "override"),
+            ):
+                value = top_results[0].get(key)
+                if value is not None:
+                    best_text += f", vs {label} {float(value):+.2f}%"
         if params:
             best_text += f" ({format_params(params)})"
     return (
         f"state: {state} | samples: {sample_text} | elapsed: {elapsed} | "
-        f"workers active/idle/init: {active}/{idle}/{initialized} | queued cases: {queued} | {best_text}"
+        f"workers active/idle/init: {active}/{idle}/{initialized} | queued cases: {queued}"
+        f"{baseline_text} | {best_text}"
     )
 
 
@@ -387,7 +458,11 @@ def print_request_summary(
     print_table_rows(
         [
             ("strategy", format_strategy(request["strategy"])),
-            ("estimated_samples", estimate_total_samples(request)),
+            ("estimated_candidates", estimate_total_samples(request)),
+            (
+                "baseline_evaluations",
+                str(len(request["cases"]) * (2 if str(request.get("override") or "").strip() else 1)),
+            ),
             ("batch_size", str(request["batch_size"])),
             ("max_workers", str(request["max_workers"])),
             ("config", str(request.get("config") or "default")),
@@ -624,6 +699,12 @@ def choose_top_run_mode(args: argparse.Namespace, results_path: Path) -> str | N
         f"{format_params(top.get('selected_params', {}), limit=8)}",
         flush=True,
     )
+    for key, label in (
+        ("improvement_vs_clubb_default_percent", "Improvement vs CLUBB default"),
+        ("improvement_vs_override_defaults_percent", "Improvement vs override defaults"),
+    ):
+        if top.get(key) is not None:
+            print(f"{label}: {float(top[key]):+.2f}%", flush=True)
 
     if not sys.stdin.isatty():
         print("Skipping top-result run because stdin is not interactive.", flush=True)
@@ -652,6 +733,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "-fields cloud_frac rcm -params C8:0.2:0.8 C11:0.1:1.0 -strategy resolve:0.1\n"
             "  python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac "
             "-params C8:0.2:0.8 -strategy simann:2000:1.0:1e-12\n"
+            "  python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac "
+            "-params C8:0.2:0.8 -strategy adam:100:0.01:0.05:2\n"
         ),
     )
     parser.add_argument(
@@ -674,7 +757,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="random:8",
         help=(
             "Strategy spec: random:MAX_SAMPLES, resolve:SPACING, "
-            "or simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]]. Default: random:8."
+            "simann[:MAX_ITERS[:INITIAL_TEMP[:FINAL_TEMP]]], or "
+            "adam:MAX_UPDATES:LEARNING_RATE:PERTURBATION:SPSA_PAIRS. Default: random:8."
         ),
     )
     parser.add_argument("-batch_size", type=int, default=8, help="Parameter batch size. Default: 8.")

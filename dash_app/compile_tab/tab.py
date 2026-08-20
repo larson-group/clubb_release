@@ -13,4 +13,4 @@ def build_tab(app):
     """Build the Compile tab and register callbacks."""
     initial_state = discover_compile_state()
     register_compile_callbacks(app)
-    return dcc.Tab(label="Compile", value="compile", children=build_layout(initial_state))
+    return dcc.Tab(id="dashboard-tab-compile", label="Compile", value="compile", children=build_layout(initial_state))

@@ -2,7 +2,10 @@ from pathlib import Path
 
 from dash import html
 
-from dash_app.plot_tab.callbacks_params import _append_read_only_sections
+from dash_app.plot_tab.callbacks_params import (
+    _append_read_only_sections,
+    _reconcile_compare_params,
+)
 from dash_app.plot_tab.plot_types.shared import (
     load_compare_flag_values,
     load_flag_values,
@@ -98,3 +101,51 @@ def test_read_only_sections_are_collapsed_and_follow_varying_controls():
     assert all(item.open is False for item in disclosures)
     assert disclosures[0].children[0].children == "Constant parameters (2)"
     assert disclosures[1].children[0].children == "Configurable flags (2)"
+
+
+def test_single_column_difference_does_not_hide_ensemble_axis():
+    params, differences, conflicts = _reconcile_compare_params(
+        [{"C1": [1.0]}, {"C1": [1.0, 2.0, 3.0]}],
+        ["default", "ensemble"],
+        3,
+    )
+
+    assert params == {"C1": [1.0, 2.0, 3.0]}
+    assert conflicts == []
+    assert differences == [
+        {
+            "name": "C1",
+            "values": [
+                {"source": "default", "value": "1"},
+                {"source": "ensemble", "value": "1-3 [1, 2, 3]"},
+            ],
+            "conflict": False,
+        }
+    ]
+
+
+def test_constant_multicol_difference_is_informational():
+    params, differences, conflicts = _reconcile_compare_params(
+        [{"C1": [2.0, 2.0, 2.0, 2.0]}, {"C1": [3.0]}],
+        ["first", "second"],
+        4,
+    )
+
+    assert params == {}
+    assert conflicts == []
+    assert differences[0]["conflict"] is False
+
+
+def test_disagreeing_varying_multicol_axes_disable_parameter_selection():
+    params, differences, conflicts = _reconcile_compare_params(
+        [
+            {"C1": [2.0, 3.0, 4.0, 5.0]},
+            {"C1": [2.0, 4.0, 6.0, 8.0]},
+        ],
+        ["first", "second"],
+        4,
+    )
+
+    assert params == {}
+    assert conflicts == ["C1"]
+    assert differences[0]["conflict"] is True

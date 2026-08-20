@@ -1,94 +1,58 @@
 (function () {
-  var state = new WeakMap();
-  var stickById = new Map();
-  var rafPending = false;
-  var NEAR_BOTTOM_PX = 32;
-  var AUTO_SCROLL_SELECTOR = ".run-console-active, #compile-console";
+  "use strict";
 
-  function isNearBottom(el) {
-    return el.scrollHeight - el.scrollTop - el.clientHeight <= NEAR_BOTTOM_PX;
+  const CONSOLE_ID = "compile-console";
+  const NEAR_BOTTOM_PX = 32;
+  let consoleNode = null;
+  let observer = null;
+  let stick = true;
+  let framePending = false;
+
+  function isNearBottom(node) {
+    return node.scrollHeight - node.scrollTop - node.clientHeight <= NEAR_BOTTOM_PX;
   }
 
-  function ensureState(el) {
-    var entry = state.get(el);
-    if (entry) {
-      return entry;
-    }
-    var id = el.id || null;
-    var stick = true;
-    if (id && stickById.has(id)) {
-      stick = stickById.get(id);
-    }
-    entry = { stick: stick, id: id };
-    state.set(el, entry);
-    el.addEventListener(
-      "scroll",
-      function (evt) {
-        var target = evt && evt.target ? evt.target : el;
-        entry.stick = isNearBottom(target);
-        if (entry.id) {
-          stickById.set(entry.id, entry.stick);
-        }
-      },
-      { passive: true }
-    );
-    return entry;
-  }
-
-  function maybeScroll(el) {
-    if (!el) {
-      return;
-    }
-    var entry = ensureState(el);
-    if (entry.stick || isNearBottom(el)) {
-      el.scrollTop = el.scrollHeight;
-      entry.stick = true;
-      if (entry.id) {
-        stickById.set(entry.id, true);
-      }
+  function scrollIfNeeded() {
+    framePending = false;
+    if (consoleNode && (stick || isNearBottom(consoleNode))) {
+      consoleNode.scrollTop = consoleNode.scrollHeight;
+      stick = true;
     }
   }
 
-  function tick() {
-    rafPending = false;
-    var nodes = document.querySelectorAll(AUTO_SCROLL_SELECTOR);
-    for (var i = 0; i < nodes.length; i += 1) {
-      var el = nodes[i];
-      if (!el) {
-        continue;
-      }
-      maybeScroll(el);
-    }
+  function scheduleScroll() {
+    if (framePending) return;
+    framePending = true;
+    window.requestAnimationFrame(scrollIfNeeded);
   }
 
-  function scheduleTick() {
-    if (rafPending) {
-      return;
-    }
-    rafPending = true;
-    window.requestAnimationFrame(tick);
-  }
-
-  function observe() {
-    var container = document.body;
-    if (!container) {
-      setTimeout(observe, 500);
-      return;
-    }
-    var observer = new MutationObserver(function () {
-      scheduleTick();
-    });
-    observer.observe(container, {
+  function attach() {
+    const nextNode = document.getElementById(CONSOLE_ID);
+    if (nextNode === consoleNode) return;
+    if (observer) observer.disconnect();
+    consoleNode = nextNode;
+    if (!consoleNode) return;
+    stick = true;
+    consoleNode.addEventListener("scroll", function () {
+      stick = isNearBottom(consoleNode);
+    }, { passive: true });
+    observer = new MutationObserver(scheduleScroll);
+    observer.observe(consoleNode, {
       childList: true,
       subtree: true,
       characterData: true,
     });
-    scheduleTick();
+    scheduleScroll();
+  }
+
+  function init() {
+    attach();
+    window.setInterval(attach, 1000);
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", observe);
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
-    observe();
+    init();
   }
 })();

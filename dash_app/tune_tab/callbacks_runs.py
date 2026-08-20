@@ -7,6 +7,7 @@ import time
 
 from dash import ALL, Input, Output, State, ctx, html, no_update
 
+from .callbacks_settings import parameter_targets_by_row
 from .discovery import (
     available_fields_for_cases,
     load_tunable_default_ranges,
@@ -27,7 +28,6 @@ from .runtime import (
 )
 from dash_app.shared.tunable_configs import canonical_tunable_parameter_name
 from utilities.create_case_namelist import normalize_override_string
-from utilities.clubb_settings_validation import is_independently_tunable
 
 from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
@@ -40,7 +40,6 @@ from tuner.taylor_metrics import (
     normalize_aggregation_weights,
 )
 from tuner.presets import apply_preset, get_preset, list_presets
-from tuner.request import evaluate_tune_settings
 
 
 STARTUP_STATUS_GRACE_SECONDS = 15.0
@@ -195,6 +194,10 @@ def build_validation_message(
     aggregation_scope=DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
     aggregation_weights=DEFAULT_AGGREGATION_WEIGHTS,
     range_targets=None,
+    adam_max_updates=100,
+    adam_learning_rate_percent=1.0,
+    adam_perturbation_percent=5.0,
+    adam_spsa_pairs=2,
 ):
     """Validate the requested tuning configuration and return an error string if needed."""
     selected_config = str(selected_config or "").strip()
@@ -273,7 +276,7 @@ def build_validation_message(
         return "Max workers must be an integer."
     if int(max_workers_value) < 1:
         return "Max workers must be >= 1."
-    if strategy_mode not in {"random", "resolve", "simann"}:
+    if strategy_mode not in {"random", "resolve", "simann", "adam"}:
         return "Select a tuning mode."
     loss_mode = loss_mode or DEFAULT_LOSS_MODE
     aggregation_mode = aggregation_mode or DEFAULT_AGGREGATION_MODE
@@ -330,6 +333,32 @@ def build_validation_message(
                 return f"SimAnn {label} must be numeric."
             if value <= 0.0:
                 return f"SimAnn {label} must be > 0."
+    if strategy_mode == "adam":
+        for label, raw_value in (
+            ("updates per chain", adam_max_updates),
+            ("SPSA pairs", adam_spsa_pairs),
+        ):
+            try:
+                value = float(raw_value)
+            except (TypeError, ValueError):
+                return f"Adam {label} must be an integer."
+            if int(value) != value or int(value) < 1:
+                return f"Adam {label} must be an integer >= 1."
+        for label, raw_value in (
+            ("learning step", adam_learning_rate_percent),
+            ("perturbation", adam_perturbation_percent),
+        ):
+            try:
+                value = float(raw_value)
+            except (TypeError, ValueError):
+                return f"Adam {label} must be numeric."
+            if value <= 0.0:
+                return f"Adam {label} must be > 0%."
+        if float(adam_perturbation_percent) > 50.0:
+            return "Adam perturbation must be <= 50%."
+        columns_per_chain = 2 * int(float(adam_spsa_pairs))
+        if batch_size % columns_per_chain != 0:
+            return f"Adam batch size must be divisible by 2 × SPSA pairs ({columns_per_chain})."
 
     ranges = []
     seen_names = set()
@@ -398,6 +427,10 @@ def build_request_payload(
     aggregation_scope=DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
     aggregation_weights=DEFAULT_AGGREGATION_WEIGHTS,
     range_targets=None,
+    adam_max_updates=100,
+    adam_learning_rate_percent=1.0,
+    adam_perturbation_percent=5.0,
+    adam_spsa_pairs=2,
 ):
     """Build the worker request payload from the live UI values."""
     batch_size = int(float(batch_size))
@@ -433,6 +466,11 @@ def build_request_payload(
         strategy_options["initial_temp"] = float(simann_initial_temp)
         strategy_options["max_final_temp"] = float(simann_final_temp)
         strategy_options["chain_count"] = max(1, max_workers * batch_size)
+    if strategy_mode == "adam":
+        strategy_options["max_updates"] = int(float(adam_max_updates))
+        strategy_options["learning_rate"] = float(adam_learning_rate_percent) / 100.0
+        strategy_options["perturbation"] = float(adam_perturbation_percent) / 100.0
+        strategy_options["spsa_pairs"] = int(float(adam_spsa_pairs))
 
     case_configs = _case_configs_from_rows(
         case_names,
@@ -474,11 +512,7 @@ def agent_request_to_tune_controls(request, case_data):
     """
     request = dict(request or {})
     selected_config = str(request.get("config") or "default").strip() or "default"
-    resolution = evaluate_tune_settings(selected_config, normalize_override_string(request.get("override")))
-    tunable_names = [
-        name for name in load_tunable_names(selected_config)
-        if is_independently_tunable(resolution.get("parameter_states", {}).get(name))
-    ]
+    tunable_names = load_tunable_names(selected_config)
     default_ranges = load_tunable_default_ranges(selected_config)
     raw_case_configs = list(request.get("case_configs") or [])
     case_rows = []
@@ -543,6 +577,10 @@ def agent_request_to_tune_controls(request, case_data):
         "simann_max_iters": options.get("max_iters", 200),
         "simann_initial_temp": options.get("initial_temp", 1.0),
         "simann_final_temp": options.get("max_final_temp", 1.0e-12),
+        "adam_max_updates": options.get("max_updates", 100),
+        "adam_learning_rate_percent": 100.0 * float(options.get("learning_rate", 0.01)),
+        "adam_perturbation_percent": 100.0 * float(options.get("perturbation", 0.05)),
+        "adam_spsa_pairs": options.get("spsa_pairs", 2),
         "batch_size": request.get("batch_size", 1),
         "max_workers": request.get("max_workers", 1),
         "loss_mode": request.get("loss_mode") or DEFAULT_LOSS_MODE,
@@ -587,6 +625,10 @@ def initial_tune_control_outputs():
         initial["simann_max_iters"],
         initial["simann_initial_temp"],
         initial["simann_final_temp"],
+        initial["adam_max_updates"],
+        initial["adam_learning_rate_percent"],
+        initial["adam_perturbation_percent"],
+        initial["adam_spsa_pairs"],
         initial["batch_size"],
         initial["max_workers"],
         initial["scm_override"],
@@ -621,6 +663,10 @@ def register_run_callbacks(app):
         Output("tune-simann-max-iters", "value", allow_duplicate=True),
         Output("tune-simann-initial-temp", "value", allow_duplicate=True),
         Output("tune-simann-final-temp", "value", allow_duplicate=True),
+        Output("tune-adam-max-updates", "value", allow_duplicate=True),
+        Output("tune-adam-learning-rate-percent", "value", allow_duplicate=True),
+        Output("tune-adam-perturbation-percent", "value", allow_duplicate=True),
+        Output("tune-adam-spsa-pairs", "value", allow_duplicate=True),
         Output("tune-batch-size", "value", allow_duplicate=True),
         Output("tune-max-workers", "value", allow_duplicate=True),
         Output("tune-scm-override", "value", allow_duplicate=True),
@@ -657,7 +703,7 @@ def register_run_callbacks(app):
                 try:
                     controls = agent_request_to_tune_controls(apply_preset({"preset": preset_name}), case_data or {})
                 except (OSError, TypeError, ValueError) as exc:
-                    return (no_update,) * 34 + (f"Could not apply Tune preset: {exc}",)
+                    return (no_update,) * 38 + (f"Could not apply Tune preset: {exc}",)
                 case_options = [{"label": name, "value": name} for name in sorted((case_data or {}).keys())]
                 case_children = [build_case_config_row(row, case_options) for row in controls["case_rows"]]
                 range_children = [build_param_range_row(row, controls["tunable_names"]) for row in controls["parameter_rows"]]
@@ -669,6 +715,8 @@ def register_run_callbacks(app):
                     controls["aggregation_mode"], controls["aggregation_scope"], *controls["aggregation_weights"],
                     controls["random_max_samples"], controls["resolve_spacing"],
                     controls["simann_max_iters"], controls["simann_initial_temp"], controls["simann_final_temp"],
+                    controls["adam_max_updates"], controls["adam_learning_rate_percent"],
+                    controls["adam_perturbation_percent"], controls["adam_spsa_pairs"],
                     # Presets define the scientific experiment, not local
                     # scheduling.  Preserve the user's batch/worker choices.
                     no_update, no_update, controls["override"], {}, empty_status_payload(),
@@ -689,7 +737,7 @@ def register_run_callbacks(app):
                 "Configure this new workspace, then Start to create its original revision.",
             )
         if not workspace_id or not revision_id:
-            return (no_update,) * 35
+            return (no_update,) * 39
         try:
             from dash_app.shared.broker_client import perform_action
 
@@ -699,11 +747,11 @@ def register_run_callbacks(app):
                 internal=True,
             )
         except Exception as exc:
-            return (no_update,) * 34 + (f"Could not load saved Tune revision: {exc}",)
+            return (no_update,) * 38 + (f"Could not load saved Tune revision: {exc}",)
         request = dict(loaded.get("request") or {})
         job = dict(loaded.get("job") or {})
         if not job or not request:
-            return (no_update,) * 34 + ("Saved Tune revision has no readable request.",)
+            return (no_update,) * 38 + ("Saved Tune revision has no readable request.",)
         job.update({"workspace_id": workspace_id, "revision_id": revision_id})
         execution_state = str((loaded.get("execution") or {}).get("state") or "draft")
         message_prefix = (
@@ -715,7 +763,7 @@ def register_run_callbacks(app):
         try:
             controls = agent_request_to_tune_controls(request, case_data or {})
         except (OSError, TypeError, ValueError) as exc:
-            return (no_update,) * 34 + (f"Could not display agent tuning request: {exc}",)
+            return (no_update,) * 38 + (f"Could not display agent tuning request: {exc}",)
         case_names = [row["case_name"] for row in controls["case_rows"]]
         case_options = [
             {"label": name, "value": name}
@@ -767,6 +815,10 @@ def register_run_callbacks(app):
             controls["simann_max_iters"],
             controls["simann_initial_temp"],
             controls["simann_final_temp"],
+            controls["adam_max_updates"],
+            controls["adam_learning_rate_percent"],
+            controls["adam_perturbation_percent"],
+            controls["adam_spsa_pairs"],
             controls["batch_size"],
             controls["max_workers"],
             controls["override"],
@@ -798,10 +850,11 @@ def register_run_callbacks(app):
         State({"type": "tune-case-altitude-min", "index": ALL}, "value"),
         State({"type": "tune-case-altitude-max", "index": ALL}, "value"),
         State("tune-field-selector", "value"),
-        State({"type": "tune-range-param", "index": ALL}, "value"),
+        State({"type": "tune-range-member", "row": ALL, "member": ALL}, "id"),
+        State({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
+        State("tune-range-row-order", "data"),
         State({"type": "tune-range-min", "index": ALL}, "value"),
         State({"type": "tune-range-max", "index": ALL}, "value"),
-        State({"type": "tune-range-targets", "index": ALL}, "data"),
         State("tune-batch-size", "value"),
         State("tune-max-workers", "value"),
         State("tune-strategy-mode", "data"),
@@ -817,6 +870,10 @@ def register_run_callbacks(app):
         State("tune-simann-max-iters", "value"),
         State("tune-simann-initial-temp", "value"),
         State("tune-simann-final-temp", "value"),
+        State("tune-adam-max-updates", "value"),
+        State("tune-adam-learning-rate-percent", "value"),
+        State("tune-adam-perturbation-percent", "value"),
+        State("tune-adam-spsa-pairs", "value"),
         State("tune-case-data", "data"),
         State("tune-selected-config", "data"),
         State("tune-tunable-configs", "data"),
@@ -825,6 +882,7 @@ def register_run_callbacks(app):
         State("tune-active-job", "data"),
         State("tune-workspace-selection", "data"),
         State("tune-status", "data"),
+        State("compile-run-implementation", "data"),
         prevent_initial_call=True,
     )
     def start_tuning(
@@ -836,10 +894,11 @@ def register_run_callbacks(app):
         altitude_min_values,
         altitude_max_values,
         selected_fields,
-        param_values,
+        member_ids,
+        member_values,
+        range_row_order,
         min_values,
         max_values,
-        range_targets,
         batch_size,
         max_workers,
         strategy_mode,
@@ -855,6 +914,10 @@ def register_run_callbacks(app):
         simann_max_iters,
         simann_initial_temp,
         simann_final_temp,
+        adam_max_updates,
+        adam_learning_rate_percent,
+        adam_perturbation_percent,
+        adam_spsa_pairs,
         case_data,
         selected_config,
         tunable_configs,
@@ -863,6 +926,7 @@ def register_run_callbacks(app):
         active_job,
         workspace_selection,
         displayed_status,
+        _run_implementation,
     ):
         """Validate the tuning inputs, then launch the background worker."""
         active_status = read_tuning_status((active_job or {}).get("status_path")) if active_job else dict(displayed_status or {})
@@ -893,6 +957,8 @@ def register_run_callbacks(app):
             except Exception as exc:
                 return no_update, no_update, no_update, no_update, no_update, no_update, no_update, str(exc), no_update
 
+        range_targets = parameter_targets_by_row(member_ids, member_values, range_row_order)
+        param_values = [targets[0] if targets else "" for targets in range_targets]
         validation_message = build_validation_message(
             case_names,
             time_start_values,
@@ -921,6 +987,10 @@ def register_run_callbacks(app):
             aggregation_scope=aggregation_scope,
             aggregation_weights=[aggregation_weight_1, aggregation_weight_2, aggregation_weight_3, aggregation_weight_4],
             range_targets=range_targets,
+            adam_max_updates=adam_max_updates,
+            adam_learning_rate_percent=adam_learning_rate_percent,
+            adam_perturbation_percent=adam_perturbation_percent,
+            adam_spsa_pairs=adam_spsa_pairs,
         )
         if validation_message:
             return no_update, no_update, no_update, no_update, no_update, no_update, no_update, validation_message, no_update
@@ -951,6 +1021,10 @@ def register_run_callbacks(app):
             aggregation_scope=aggregation_scope,
             aggregation_weights=[aggregation_weight_1, aggregation_weight_2, aggregation_weight_3, aggregation_weight_4],
             range_targets=range_targets,
+            adam_max_updates=adam_max_updates,
+            adam_learning_rate_percent=adam_learning_rate_percent,
+            adam_perturbation_percent=adam_perturbation_percent,
+            adam_spsa_pairs=adam_spsa_pairs,
         )
         try:
             # The worker must be born in the durable broker, even when a user
@@ -1145,7 +1219,6 @@ def register_run_callbacks(app):
         State({"type": "tune-case-altitude-max", "index": ALL}, "value"),
         State("tune-field-selector", "value"),
         State("tune-selected-config", "data"),
-        State("tune-batch-size", "value"),
         State("tune-scm-override", "value"),
         State("tune-loss-runs", "data"),
         State("tune-workspace-selection", "data"),
@@ -1163,7 +1236,6 @@ def register_run_callbacks(app):
         altitude_max_values,
         selected_fields,
         selected_config,
-        batch_size,
         scm_override,
         loss_runs,
         workspace_selection,
@@ -1226,7 +1298,6 @@ def register_run_callbacks(app):
                 case_configs=run_case_configs,
                 run_mode=action,
                 config=selected_config,
-                batch_size=batch_size,
                 override=scm_override,
                 workspace_id=(workspace_selection or {}).get("workspace_id"),
                 revision_id=(workspace_selection or {}).get("revision_id"),
@@ -1238,9 +1309,8 @@ def register_run_callbacks(app):
         run_data["click_timestamp"] = click_timestamp
         loss_runs[rank_key] = run_data
         return loss_runs, False, (
-            f"{message_prefix} for {len(param_sets)} result rows "
-            f"in {run_data['batch_count']} batch(es) of up to {run_data['batch_size']} "
-            f"columns (pid {run_data['pid']}). Log: {run_data['log_path']}"
+            f"{message_prefix} for {len(param_sets)} result columns "
+            f"(pid {run_data['pid']}). Log: {run_data['log_path']}"
         )
 
     @app.callback(

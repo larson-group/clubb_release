@@ -104,7 +104,7 @@ PLOT_HELP = {
                 "heading": "Raw LES background",
                 "bullets": (
                     "The former Gaussian LES moment proxy has been removed because it could look like sampled LES structure that the available profile moments do not contain.",
-                    "When SAM is enabled for ARM or BOMEX, the app finds the nearest time and height in the shared JULY_2017_3D_RECREATIONS raw run. It bins the actual horizontal plane with the shared signed-transport convention and repeats that same background behind every CLUBB output panel.",
+                    "When SAM is enabled and a matching <case>_3d directory exists, the app finds the nearest time and height in the shared JULY_2017_3D_RECREATIONS raw run. It bins the actual horizontal plane with the shared signed-transport convention and repeats that same background behind every CLUBB output panel.",
                     "With a raw plane present, CLUBB's analytic heatmap is disabled so the sampled LES structure remains visible; purple CLUBB lines and component shapes still come from CLUBB. Both purple and gold contours follow probability in Probability only mode, or absolute local contribution for the selected weighted signal. Gold raw-SAM lines use a lightly smoothed rank field, but their 50%, 80%, and 99.5% cutoffs are calibrated to the original weights. If no matching raw run exists, the background falls back to CLUBB's analytic probability and signed transport.",
                 ),
             },

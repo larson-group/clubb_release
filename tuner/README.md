@@ -37,7 +37,9 @@ The normal Dash tuning path is:
    logs stdout/stderr to `worker.log`.
 4. `tuner.tune_clubb` validates the request with `tuner.request.load_request`.
 5. `tuner.tuning_scheduler.run_scheduler` starts one worker process per case for
-   initialization, then dispatches parameter batches to available workers.
+   initialization. Each initial worker evaluates the CLUBB-default baseline and,
+   when an override exists, the config-plus-override default baseline before
+   opening its reusable candidate session.
 6. Each worker uses `utilities/create_case_namelist.py` to build the
    case-specific loss namelist and normalized LES benchmark file in its worker
    directory.
@@ -58,8 +60,8 @@ A tuning job communicates through files in one job directory:
   sample counts, elapsed time, worker counts, and a short top-results summary
   ranked by smart loss.
 - `results.json`: retained result data, including selected parameters, full
-  parameter rows, smart losses, `scaled_rmse_sum`, and field diagnostics for the
-  best ranked samples.
+  parameter rows, smart losses, `scaled_rmse_sum`, field diagnostics, baseline
+  diagnostics, and per-result improvement percentages.
 - `worker.log`: subprocess log for the top-level tuning process.
 - `workers/<case>_<id>/`: per-worker files, including generated aggregate
   namelists, duplicated multicol parameter files, and normalized benchmark
@@ -97,7 +99,7 @@ leased unless their `control.json` explicitly enables keepalive.
 - `case_weights` and `field_weights`: optional non-negative loss weights.
 - `case_overrides`: legacy optional per-case overrides for
   `altitude_comparison_range`, `time_average_range`, and `num_time_windows`.
-- `seed`: optional random seed for random sampling.
+- `seed`: optional random seed for random, SimAnn, and Adam initialization.
 
 Case defaults are read from `tuner/case_defaults.json`. LES benchmark files are
 owned by that file only and are not request-overridable. Fields are selected
@@ -119,6 +121,8 @@ Use `PARAM:MIN:MAX` for an ordinary range and
 `PARAM=PARAM:MIN:MAX` for an equality-constrained linked range, for example
 `-params C6rt=C6thl:0:4`.  The sampler treats it as one coordinate while the
 saved result and generated top-result namelist retain both physical names.
+Dash exposes the same request shape as either an ordinary row or a visibly
+bracketed locked group with one shared range.
 
 ## Benchmark Normalization
 
@@ -141,11 +145,11 @@ Fortran loss driver.
 - Builds a strategy object from `tuner.tuning_strategy`.
 - Maintains pending samples, packed multicol batches, queued case jobs, active
   worker assignments, completed samples, and ranked best results.
-- Handles graceful stop requests by clearing queued work, waiting for active
-  evaluations to finish, stopping workers, and writing final status/results.
+- Handles graceful stop requests by stopping workers and checkpointing strategy,
+  random, pending-sample, and incomplete-batch state for continuation.
 
 The ranking loss is selected by the request's versioned Python loss policy.  The
-default policy uses `loss_mode = centered_rmse_bias` and
+default policy uses `loss_mode = shape_first` and
 `aggregation_mode = quantile_weighted`.  Each active time-window loss is sorted
 best-to-worst, divided into four equally populated bins, and the bin means are
 combined with normalized best-to-worst weights `0.1, 0.4, 0.4, 0.1`.
@@ -162,6 +166,12 @@ contribution, and sanitization flag. `loss` and `smart_loss` are aliases for the
 selected Python loss mode. `scaled_rmse_sum` is kept for comparison and
 debugging, but it only ranks tuner samples when `loss_mode = scaled_rmse`.
 
+Baselines use temporary one-column sessions and pass through this same
+aggregation path. `improvement_percent = 100 * (baseline_loss - candidate_loss)
+/ baseline_loss`; positive values are improvements, while nonpositive or
+nonfinite baselines leave the score unavailable. Baselines do not count as
+candidate samples.
+
 `tuner.tuning_worker.worker_main` owns one initialized loss session for one case.
 It receives `evaluate_batch` messages containing a full parameter matrix, calls
 `clubb_api.clubb_get_loss_for_params`, and sends explicit loss-metric arrays
@@ -173,8 +183,8 @@ Strategies live in `tuner.tuning_strategy` and share a small interface:
 
 - `fill(pending_samples, capacity)` proposes samples until the pending queue is
   full or the strategy is exhausted.
-- `tell(completed_samples)` receives completed samples. Current strategies are
-  non-adaptive, so this is a no-op.
+- `tell(completed_samples)` receives completed samples and advances adaptive
+  strategies.
 - `is_exhausted()` reports whether no more samples are available.
 - `estimated_sample_count()` returns a finite count when known.
 
@@ -183,6 +193,12 @@ Current strategies:
 - `random`: uniform random samples inside each selected parameter range, with
   optional `max_samples`.
 - `resolve`: deterministic full-grid sampling using a requested spacing.
+- `simann`: independent enhanced simulated-annealing chains.
+- `adam`: projected Adam in normalized coordinate space using averaged SPSA
+  gradient pairs. Dash presents learning and perturbation radii as percentages
+  of each configured range. CLI syntax is
+  `adam:MAX_UPDATES:LEARNING_RATE:PERTURBATION:SPSA_PAIRS`, using normalized
+  fractions. Request normalization derives chain and concurrent-batch counts.
 
 ## Module Layout
 
@@ -196,6 +212,8 @@ Current strategies:
 - `tuning_worker.py`: child worker loop for one case-specific reusable loss
   session.
 - `tuning_strategy.py`: parameter proposal algorithms.
+- `adam_spsa_strategy.py`: multi-chain Adam with SPSA gradients and seeded
+  Latin-hypercube starts.
 - `clubb_loss_driver.py`: Python CLI wrapper for the reusable Fortran loss driver.
 - `clubb_loss_driver_test.py`: extra reusable-loss consistency checks.
 - `paths.py`: shared repository paths used by tuner modules.

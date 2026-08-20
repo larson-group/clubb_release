@@ -100,6 +100,10 @@ def build_initial_tune_state():
         "simann_max_iters": 200,
         "simann_initial_temp": 1.0,
         "simann_final_temp": 1.0e-12,
+        "adam_max_updates": 100,
+        "adam_learning_rate_percent": 1.0,
+        "adam_perturbation_percent": 5.0,
+        "adam_spsa_pairs": 2,
         "initial_case_rows": initial_case_rows,
         "initial_param_rows": initial_param_rows,
         "field_options": field_options,
@@ -118,4 +122,4 @@ def build_tab(app):
     register_display_callbacks(app)
     register_workspace_callbacks(app)
 
-    return dcc.Tab(label="Tune", value="tune", children=build_layout(initial_state))
+    return dcc.Tab(id="dashboard-tab-tune", label="Tune", value="tune", children=build_layout(initial_state))

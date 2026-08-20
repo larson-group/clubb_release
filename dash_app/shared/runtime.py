@@ -5,11 +5,82 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import stat
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
+
+
+def process_is_alive(pid: Any) -> bool:
+    """Return whether a PID exists and is not a zombie."""
+    import psutil
+
+    try:
+        process = psutil.Process(int(pid))
+        return process.status() != psutil.STATUS_ZOMBIE
+    except (psutil.Error, TypeError, ValueError, OSError):
+        return False
+
+
+def read_file_chunk(
+    path: Path | str, cursor: int, max_bytes: int
+) -> tuple[bytes, int, bool]:
+    """Read one bounded byte range, resetting a cursor beyond a replaced file."""
+    offset = max(0, int(cursor))
+    try:
+        file_path = Path(path)
+        size = file_path.stat().st_size
+        if offset > size:
+            offset = 0
+        with file_path.open("rb") as handle:
+            handle.seek(offset)
+            chunk = handle.read(max(1, int(max_bytes)))
+    except (OSError, TypeError, ValueError):
+        return b"", offset, True
+    next_cursor = offset + len(chunk)
+    return chunk, next_cursor, next_cursor >= size
+
+
+def read_file_tail(path: Path | str, max_lines: int) -> tuple[bytes, int, bool]:
+    """Read the newest complete log lines and position the cursor at EOF."""
+    try:
+        file_path = Path(path)
+        size = file_path.stat().st_size
+        position = size
+        chunks = []
+        newline_count = 0
+        with file_path.open("rb") as handle:
+            while position > 0 and newline_count <= max_lines:
+                length = min(65536, position)
+                position -= length
+                handle.seek(position)
+                chunk = handle.read(length)
+                chunks.append(chunk)
+                newline_count += chunk.count(b"\n")
+    except (OSError, TypeError, ValueError):
+        return b"", 0, True
+    lines = b"".join(reversed(chunks)).splitlines(keepends=True)
+    return b"".join(lines[-max_lines:]), size, True
+
+
+_RUN_PROGRESS_RE = re.compile(rb"iteration:\s*(\d+)\s*/\s*(\d+)", re.IGNORECASE)
+
+
+def read_latest_run_progress(path: Path | str, max_bytes: int = 8192) -> tuple[int, int] | None:
+    """Read only a log's tail and return its latest CLUBB iteration pair."""
+    try:
+        file_path = Path(path)
+        size = file_path.stat().st_size
+        with file_path.open("rb") as handle:
+            handle.seek(max(0, size - max(1, int(max_bytes))))
+            matches = list(_RUN_PROGRESS_RE.finditer(handle.read()))
+    except (OSError, TypeError, ValueError):
+        return None
+    if not matches:
+        return None
+    return int(matches[-1].group(1)), int(matches[-1].group(2))
 
 
 def _runtime_base_candidates(uid: str) -> list[Path]:

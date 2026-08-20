@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from dash import ALL, Input, Output, Patch, State, callback_context, no_update
+import json
+from pathlib import Path
+
+from dash import ALL, Input, Output, Patch, State, callback_context, html, no_update
 
 from .discovery import (
+    available_tunable_configs,
     available_fields_for_cases,
     load_tunable_default_ranges,
     load_tunable_names,
@@ -17,8 +21,15 @@ from .layout import (
     build_param_range_row,
 )
 from .runtime import empty_status_payload
+from .state import REPO_ROOT
+from dash_app.run_tab.layout import build_run_config_buttons
 from dash_app.shared.tunable_configs import canonical_tunable_parameter_name
 from utilities.clubb_settings_validation import is_independently_tunable
+from utilities.save_tunable_config import (
+    build_tuned_config_overrides,
+    normalize_config_name,
+    save_tunable_config,
+)
 
 from tuner.taylor_metrics import LOSS_MODE_NAMES, TIME_WINDOW_AGGREGATION_SCOPES
 from tuner.request import evaluate_tune_settings
@@ -27,6 +38,65 @@ from tuner.request import evaluate_tune_settings
 def blank_param_range_row(row_id):
     """Return one empty tuning-range row record."""
     return {"id": row_id, "param": "", "targets": [], "min": "", "max": ""}
+
+
+def tuned_result_params(result):
+    """Return the selected tuning coordinates from a status or results row."""
+    return dict((result or {}).get("params") or (result or {}).get("selected_params") or {})
+
+
+def tuned_result_options(results):
+    """Build compact selector labels for at most the retained top 16 results."""
+    options = []
+    for index, result in enumerate(list(results or [])[:16]):
+        rank = result.get("rank", index + 1)
+        try:
+            loss = f"{float(result.get('total_loss')):.6g}"
+        except (TypeError, ValueError):
+            loss = "--"
+        params = tuned_result_params(result)
+        preview_values = []
+        for name, value in list(params.items())[:4]:
+            try:
+                rendered = f"{float(value):.6g}"
+            except (TypeError, ValueError):
+                rendered = str(value)
+            preview_values.append(f"{name}={rendered}")
+        preview = ", ".join(preview_values)
+        if len(params) > 4:
+            preview += ", …"
+        label = f"Rank {rank} · loss {loss}"
+        if preview:
+            label += f" · {preview}"
+        options.append({"label": label, "value": str(index)})
+    return options
+
+
+def tune_request_for_save(status, *, output_roots=None):
+    """Load the immutable request belonging to the displayed Tune result."""
+    job_dir = Path(str((status or {}).get("job_dir") or "")).resolve()
+    roots = [
+        Path(root).resolve()
+        for root in (
+            output_roots
+            or [Path(REPO_ROOT) / "output" / "tuner", Path(REPO_ROOT) / "output_tuner"]
+        )
+    ]
+    if not any(job_dir.is_relative_to(root) for root in roots):
+        raise ValueError("The displayed Tune result has no valid saved job directory.")
+    request_path = job_dir / "request.json"
+    try:
+        request = json.loads(request_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError("The completed Tune request could not be read.") from exc
+    if not isinstance(request, dict) or not request.get("config"):
+        raise ValueError("The completed Tune request does not identify its source config.")
+    return request
+
+
+def blank_locked_param_range_row(row_id):
+    """Return one empty two-member equality-constrained range."""
+    return {"id": row_id, "targets": ["", ""], "min": "", "max": "", "locked": True}
 
 
 def blank_case_config_row(row_id):
@@ -133,8 +203,9 @@ def removal_click_is_real(click_values, row_order, row_id):
         return False
 
 
-def parameter_options_by_row(param_values, tunable_names):
-    """Return dropdown options that exclude parameters selected in other rows."""
+def parameter_options_by_row(param_values, tunable_names, parameter_states=None):
+    """Return unique options for every visible ordinary or grouped member."""
+    parameter_states = dict(parameter_states or {})
     canonical_values = [
         canonical_tunable_parameter_name(value, tunable_names)
         for value in (param_values or [])
@@ -152,33 +223,107 @@ def parameter_options_by_row(param_values, tunable_names):
     for current_name in canonical_values:
         row_options = []
         for name in tunable_names or []:
-            if selected_counts.get(name, 0) == 0 or name == current_name:
-                row_options.append({"label": name, "value": name})
+            state = parameter_states.get(name)
+            option = {"label": name, "value": name}
+            if state and not is_independently_tunable(state):
+                option["disabled"] = True
+                option["title"] = str(
+                    state.get("reason") or "Unavailable with the current CLUBB settings."
+                )
+            elif selected_counts.get(name, 0) and name != current_name:
+                option["disabled"] = True
+                option["title"] = "Already selected by another parameter row or locked group."
+            row_options.append(option)
         options_by_row.append(row_options)
     return options_by_row
 
 
-def sanitize_param_values_for_config(param_values, min_values, max_values, tunable_names, default_ranges):
+def parameter_targets_by_row(member_ids, member_values, row_order):
+    """Return visible member values grouped in range-row order."""
+    grouped = {row_id: [] for row_id in (row_order or [])}
+    for component_id, value in zip(member_ids or [], member_values or []):
+        if not isinstance(component_id, dict):
+            continue
+        row_id = component_id.get("row")
+        if row_id not in grouped:
+            continue
+        grouped[row_id].append((int(component_id.get("member", 0)), str(value or "").strip()))
+    return [
+        [value for _member, value in sorted(grouped.get(row_id, []))]
+        for row_id in (row_order or [])
+    ]
+
+
+def parameter_rows_from_controls(member_ids, member_values, row_order, min_values, max_values):
+    """Capture the visible parameter editor without a mirrored target Store."""
+    targets_by_row = parameter_targets_by_row(member_ids, member_values, row_order)
+    rows = []
+    for position, row_id in enumerate(row_order or []):
+        targets = targets_by_row[position] if position < len(targets_by_row) else [""]
+        rows.append(
+            {
+                "id": row_id,
+                "targets": targets or [""],
+                "min": (min_values or [""])[position] if position < len(min_values or []) else "",
+                "max": (max_values or [""])[position] if position < len(max_values or []) else "",
+                "locked": len(targets) > 1,
+            }
+        )
+    return rows
+
+
+def parameter_group_specs(member_ids, member_values, row_order):
+    """Return nonblank logical coordinate labels and physical targets."""
+    specs = []
+    for targets in parameter_targets_by_row(member_ids, member_values, row_order):
+        clean = [target for target in targets if target]
+        if clean:
+            specs.append({"label": " = ".join(clean), "targets": clean})
+    return specs
+
+
+def sanitize_param_values_for_config(
+    param_values,
+    min_values,
+    max_values,
+    tunable_names,
+    default_ranges,
+    member_ids=None,
+    row_order=None,
+):
     """Clear parameter rows that are not available in the selected config."""
     valid_names = set(tunable_names or [])
     updated_params = list(param_values or [])
     updated_min = list(min_values or [])
     updated_max = list(max_values or [])
-    while len(updated_min) < len(updated_params):
+    row_count = len(row_order or []) if member_ids is not None else len(updated_params)
+    while len(updated_min) < row_count:
         updated_min.append("")
-    while len(updated_max) < len(updated_params):
+    while len(updated_max) < row_count:
         updated_max.append("")
 
-    for idx, raw_name in enumerate(updated_params):
+    for idx, raw_name in enumerate(param_values or []):
         name = canonical_tunable_parameter_name(raw_name, valid_names)
         if not name:
             continue
         if name not in valid_names:
             updated_params[idx] = None
-            updated_min[idx] = ""
-            updated_max[idx] = ""
             continue
         updated_params[idx] = name
+
+    if member_ids is None:
+        primary_names = updated_params
+    else:
+        primary_names = [
+            targets[0] if targets else ""
+            for targets in parameter_targets_by_row(member_ids, updated_params, row_order)
+        ]
+    for idx, name in enumerate(primary_names):
+        if not name:
+            if idx < len(updated_min):
+                updated_min[idx] = ""
+                updated_max[idx] = ""
+            continue
         derived = (default_ranges or {}).get(name, {})
         if not str(updated_min[idx] or "").strip() and derived.get("min"):
             updated_min[idx] = derived["min"]
@@ -190,6 +335,158 @@ def sanitize_param_values_for_config(param_values, min_values, max_values, tunab
 
 def register_settings_callbacks(app):
     """Register callbacks that manage case defaults and range-row state."""
+
+    @app.callback(
+        Output("tune-config-save-modal", "className"),
+        Output("tune-config-save-result", "options"),
+        Output("tune-config-save-result", "value"),
+        Output("tune-config-save-name", "value"),
+        Output("tune-config-save-feedback", "children"),
+        Output("tune-config-save-overwrite", "data"),
+        Output("tune-config-save-submit", "children"),
+        Output("tune-config-save-submit", "className"),
+        Output("tune-config-save-status", "children"),
+        Output("tune-tunable-configs", "data", allow_duplicate=True),
+        Output("run-tunable-configs", "data", allow_duplicate=True),
+        Output("run-config-buttons", "children", allow_duplicate=True),
+        Input("tune-config-save-open", "n_clicks"),
+        Input("tune-config-save-cancel", "n_clicks"),
+        Input("tune-config-save-submit", "n_clicks"),
+        State("tune-config-save-result", "value"),
+        State("tune-config-save-name", "value"),
+        State("tune-config-save-overwrite", "data"),
+        State("tune-top-results", "data"),
+        State("tune-best-results", "data"),
+        State("tune-status", "data"),
+        State("run-selected-config", "data"),
+        prevent_initial_call=True,
+    )
+    def save_tuned_config(
+        open_clicks,
+        _cancel_clicks,
+        _submit_clicks,
+        selected_result,
+        name,
+        overwrite_name,
+        top_results,
+        best_results,
+        status,
+        run_selected_config,
+    ):
+        """Save one retained Tune result on top of its exact run configuration."""
+        hidden = "shared-notecard-overlay tune-config-save-modal--hidden"
+        visible = "shared-notecard-overlay"
+        default_submit_class = "tune-config-save-submit"
+        results = list(top_results or best_results or [])[:16]
+        trigger_id = callback_context.triggered_id
+        if trigger_id == "tune-config-save-open" and open_clicks:
+            options = tuned_result_options(results)
+            return (
+                visible,
+                options,
+                options[0]["value"] if options else None,
+                "",
+                "",
+                None,
+                "Save config",
+                default_submit_class,
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
+        if trigger_id == "tune-config-save-cancel":
+            return (
+                hidden, no_update, None, "", "", None, "Save config",
+                default_submit_class, no_update, no_update, no_update, no_update,
+            )
+        if trigger_id != "tune-config-save-submit":
+            return (no_update,) * 12
+
+        try:
+            save_name = normalize_config_name(name)
+            result_index = int(selected_result)
+            if result_index < 0 or result_index >= len(results):
+                raise ValueError("Choose one of the retained tuning results.")
+        except (TypeError, ValueError) as exc:
+            feedback = html.Div(
+                str(exc),
+                className="tune-config-save-feedback tune-config-save-feedback--error",
+            )
+            return (
+                visible, no_update, no_update, no_update, feedback, None,
+                "Save config", default_submit_class, no_update, no_update, no_update, no_update,
+            )
+
+        configs = available_tunable_configs()
+        exists = save_name in tunable_config_names(configs)
+        if exists and overwrite_name != save_name:
+            feedback = html.Div(
+                f"A config named {save_name} already exists. Confirm to replace it.",
+                className="tune-config-save-feedback tune-config-save-feedback--warning",
+            )
+            return (
+                visible,
+                no_update,
+                no_update,
+                no_update,
+                feedback,
+                save_name,
+                "Overwrite config",
+                "tune-config-save-submit tune-config-save-submit--danger",
+                no_update,
+                no_update,
+                no_update,
+                no_update,
+            )
+
+        chosen = results[result_index]
+        try:
+            request = tune_request_for_save(status)
+            source_config = request["config"]
+            grouped_overrides = build_tuned_config_overrides(
+                source_config,
+                request.get("override", ""),
+                tuned_result_params(chosen),
+            )
+            rank = chosen.get("rank", result_index + 1)
+            saved = save_tunable_config(
+                source_config,
+                grouped_overrides,
+                save_name,
+                f"Saved from Tune result rank {rank} in {Path(status['job_dir']).name}.",
+                force=exists,
+            )
+            from tuner.request import settings_schema_for_tune_config
+
+            settings_schema_for_tune_config.cache_clear()
+        except (KeyError, OSError, TypeError, ValueError) as exc:
+            feedback = html.Div(
+                f"Could not save config: {exc}",
+                className="tune-config-save-feedback tune-config-save-feedback--error",
+            )
+            return (
+                visible, no_update, no_update, no_update, feedback, None,
+                "Save config", default_submit_class, no_update, no_update, no_update, no_update,
+            )
+
+        configs = available_tunable_configs()
+        action = "Overwrote" if saved["overwritten"] else "Saved"
+        message = f"{action} {saved['name']} from Tune rank {rank}."
+        return (
+            hidden,
+            no_update,
+            None,
+            "",
+            "",
+            None,
+            "Save config",
+            default_submit_class,
+            message,
+            configs,
+            configs,
+            build_run_config_buttons(configs, run_selected_config).children,
+        )
 
     @app.callback(
         Output("tune-config-buttons", "children"),
@@ -205,10 +502,11 @@ def register_settings_callbacks(app):
         Input("tune-mode-random", "n_clicks"),
         Input("tune-mode-resolve", "n_clicks"),
         Input("tune-mode-simann", "n_clicks"),
+        Input("tune-mode-adam", "n_clicks"),
         State("tune-active-job", "data"),
         prevent_initial_call=True,
     )
-    def select_strategy_mode(_random_clicks, _resolve_clicks, _simann_clicks, active_job):
+    def select_strategy_mode(_random_clicks, _resolve_clicks, _simann_clicks, _adam_clicks, active_job):
         """Persist the selected tuning strategy mode."""
         if active_job:
             return no_update
@@ -219,6 +517,8 @@ def register_settings_callbacks(app):
             return "resolve"
         if trigger_id == "tune-mode-simann":
             return "simann"
+        if trigger_id == "tune-mode-adam":
+            return "adam"
         return no_update
 
     @app.callback(
@@ -284,13 +584,15 @@ def register_settings_callbacks(app):
         Output("tune-selected-config", "data"),
         Output("tune-tunable-names", "data"),
         Output("tune-tunable-default-ranges", "data"),
-        Output({"type": "tune-range-param", "index": ALL}, "value", allow_duplicate=True),
+        Output({"type": "tune-range-member", "row": ALL, "member": ALL}, "value", allow_duplicate=True),
         Output({"type": "tune-range-min", "index": ALL}, "value", allow_duplicate=True),
         Output({"type": "tune-range-max", "index": ALL}, "value", allow_duplicate=True),
         Input({"type": "tune-config-button", "name": ALL}, "n_clicks"),
         State("tune-tunable-configs", "data"),
         State("tune-selected-config", "data"),
-        State({"type": "tune-range-param", "index": ALL}, "value"),
+        State({"type": "tune-range-member", "row": ALL, "member": ALL}, "id"),
+        State({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
+        State("tune-range-row-order", "data"),
         State({"type": "tune-range-min", "index": ALL}, "value"),
         State({"type": "tune-range-max", "index": ALL}, "value"),
         State("tune-active-job", "data"),
@@ -300,7 +602,9 @@ def register_settings_callbacks(app):
         _clicks,
         configs,
         current_config,
+        member_ids,
         param_values,
+        row_order,
         min_values,
         max_values,
         active_job,
@@ -345,6 +649,8 @@ def register_settings_callbacks(app):
             max_values,
             tunable_names,
             default_ranges,
+            member_ids,
+            row_order,
         )
         return config_name, tunable_names, default_ranges, updated_params, updated_min, updated_max
 
@@ -498,15 +804,36 @@ def register_settings_callbacks(app):
         Output("tune-range-next-id", "data"),
         Output("tune-range-row-order", "data"),
         Input("tune-range-add", "n_clicks"),
+        Input("tune-range-add-locked", "n_clicks"),
         Input({"type": "tune-range-remove", "index": ALL}, "n_clicks"),
+        Input({"type": "tune-range-member-add", "index": ALL}, "n_clicks"),
+        Input({"type": "tune-range-member-remove", "row": ALL, "member": ALL}, "n_clicks"),
         State("tune-range-next-id", "data"),
         State("tune-range-row-order", "data"),
+        State({"type": "tune-range-member", "row": ALL, "member": ALL}, "id"),
+        State({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
+        State({"type": "tune-range-min", "index": ALL}, "value"),
+        State({"type": "tune-range-max", "index": ALL}, "value"),
         State("tune-tunable-names", "data"),
         State("tune-active-job", "data"),
         prevent_initial_call=True,
     )
-    def sync_range_rows(_add_clicks, _remove_clicks, next_id, row_order, tunable_names, active_job):
-        """Add or remove tuning-range rows without mirroring row values through the server."""
+    def sync_range_rows(
+        _add_clicks,
+        _add_locked_clicks,
+        _remove_clicks,
+        _member_add_clicks,
+        _member_remove_clicks,
+        next_id,
+        row_order,
+        member_ids,
+        member_values,
+        min_values,
+        max_values,
+        tunable_names,
+        active_job,
+    ):
+        """Edit visible ordinary rows and equality-constrained groups."""
         if active_job:
             return no_update, no_update, no_update
 
@@ -519,6 +846,12 @@ def register_settings_callbacks(app):
             patch.append(build_param_range_row(blank_param_range_row(row_id), tunable_names or []))
             return patch, row_id + 1, current_order + [row_id]
 
+        if trigger_id == "tune-range-add-locked":
+            row_id = int(next_id or 0)
+            patch = Patch()
+            patch.append(build_param_range_row(blank_locked_param_range_row(row_id), tunable_names or []))
+            return patch, row_id + 1, current_order + [row_id]
+
         if isinstance(trigger_id, dict) and trigger_id.get("type") == "tune-range-remove":
             remove_id = trigger_id.get("index")
             if remove_id not in current_order or not removal_click_is_real(_remove_clicks, current_order, remove_id):
@@ -528,7 +861,43 @@ def register_settings_callbacks(app):
             current_order.remove(remove_id)
             return patch, no_update, current_order
 
-        return no_update, no_update, no_update
+        if not isinstance(trigger_id, dict):
+            return no_update, no_update, no_update
+        trigger_value = callback_context.triggered[0].get("value") if callback_context.triggered else 0
+        if not trigger_value:
+            return no_update, no_update, no_update
+
+        rows = parameter_rows_from_controls(
+            member_ids,
+            member_values,
+            current_order,
+            min_values,
+            max_values,
+        )
+        row_id = trigger_id.get("index", trigger_id.get("row"))
+        row = next((item for item in rows if item["id"] == row_id), None)
+        if row is None:
+            return no_update, no_update, no_update
+
+        if trigger_id.get("type") == "tune-range-member-add":
+            row["targets"].append("")
+            row["locked"] = True
+        elif trigger_id.get("type") == "tune-range-member-remove":
+            member = int(trigger_id.get("member", -1))
+            if member < 0 or member >= len(row["targets"]):
+                return no_update, no_update, no_update
+            del row["targets"][member]
+            if len(row["targets"]) <= 1:
+                row["targets"] = row["targets"] or [""]
+                row["locked"] = False
+        else:
+            return no_update, no_update, no_update
+
+        return (
+            [build_param_range_row(item, tunable_names or []) for item in rows],
+            no_update,
+            no_update,
+        )
 
     @app.callback(
         Output("tune-settings-resolution", "data"),
@@ -553,66 +922,22 @@ def register_settings_callbacks(app):
         )
 
     @app.callback(
-        Output({"type": "tune-range-param", "index": ALL}, "options"),
-        Input({"type": "tune-range-param", "index": ALL}, "value"),
+        Output({"type": "tune-range-member", "row": ALL, "member": ALL}, "options"),
+        Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
         Input("tune-range-row-order", "data"),
         Input("tune-tunable-names", "data"),
         Input("tune-settings-resolution", "data"),
     )
     def sync_parameter_options(param_values, _row_order, tunable_names, resolution):
-        """Hide parameters already selected in other tuning rows."""
+        """Show the catalog while disabling parameters inactive in this mode."""
         states = dict((resolution or {}).get("parameter_states") or {})
-        active_names = [
-            name for name in (tunable_names or [])
-            if is_independently_tunable(states.get(name))
-        ]
-        return parameter_options_by_row(param_values or [], active_names)
-
-    @app.callback(
-        Output({"type": "tune-range-targets", "index": ALL}, "data"),
-        Output({"type": "tune-range-link-label", "index": ALL}, "children"),
-        Output({"type": "tune-range-link-label", "index": ALL}, "style"),
-        Input({"type": "tune-range-param", "index": ALL}, "value"),
-        State({"type": "tune-range-targets", "index": ALL}, "data"),
-        State("tune-range-row-order", "data"),
-        prevent_initial_call=True,
-    )
-    def unlink_manual_parameter_change(param_values, target_values, row_order):
-        """Keep linked preset targets until the row's selector is changed.
-
-        A range remains a single logical coordinate when its displayed first
-        target is untouched.  Selecting a different parameter is an explicit
-        manual edit, so that row becomes an ordinary one-target range.
-        """
-        trigger_id = callback_context.triggered_id
-        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-range-param":
-            return no_update, no_update, no_update
-        row_id = trigger_id.get("index")
-        order = list(row_order or [])
-        if row_id not in order:
-            return no_update, no_update, no_update
-        row_pos = order.index(row_id)
-        values = list(param_values or [])
-        existing = [list(item or []) for item in (target_values or [])]
-        if row_pos >= len(values):
-            return no_update, no_update, no_update
-        while len(existing) < len(values):
-            existing.append([])
-        param = str(values[row_pos] or "").strip()
-        current = [str(item).strip() for item in existing[row_pos] if str(item).strip()]
-        if not current or current[0] != param:
-            existing[row_pos] = [param] if param else []
-        labels = [" = ".join(targets) if len(targets) > 1 else "" for targets in existing]
-        styles = [
-            {"fontSize": "12px", "opacity": 0.8, "whiteSpace": "nowrap", "display": "inline-block" if label else "none"}
-            for label in labels
-        ]
-        return existing, labels, styles
+        return parameter_options_by_row(param_values or [], tunable_names, states)
 
     @app.callback(
         Output({"type": "tune-range-min", "index": ALL}, "value", allow_duplicate=True),
         Output({"type": "tune-range-max", "index": ALL}, "value", allow_duplicate=True),
-        Input({"type": "tune-range-param", "index": ALL}, "value"),
+        Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
+        State({"type": "tune-range-member", "row": ALL, "member": ALL}, "id"),
         State({"type": "tune-range-min", "index": ALL}, "value"),
         State({"type": "tune-range-max", "index": ALL}, "value"),
         State("tune-range-row-order", "data"),
@@ -620,25 +945,24 @@ def register_settings_callbacks(app):
         State("tune-active-job", "data"),
         prevent_initial_call=True,
     )
-    def autofill_tune_range(_param_values, min_values, max_values, row_order, default_ranges, active_job):
+    def autofill_tune_range(_param_values, member_ids, min_values, max_values, row_order, default_ranges, active_job):
         """Fill min/max from the selected parameter's default value."""
         if active_job:
             return wildcard_no_update(min_values), wildcard_no_update(max_values)
 
         trigger_id = callback_context.triggered_id
-        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-range-param":
+        if not isinstance(trigger_id, dict) or trigger_id.get("type") != "tune-range-member":
             return wildcard_no_update(min_values), wildcard_no_update(max_values)
 
-        row_id = trigger_id.get("index")
+        row_id = trigger_id.get("row")
         current_order = list(row_order or [])
         if row_id not in current_order:
             return wildcard_no_update(min_values), wildcard_no_update(max_values)
         row_pos = current_order.index(row_id)
 
-        param_values = list(_param_values or [])
-        if row_pos >= len(param_values):
-            return wildcard_no_update(min_values), wildcard_no_update(max_values)
-        param_name = param_values[row_pos]
+        target_rows = parameter_targets_by_row(member_ids, _param_values, current_order)
+        targets = target_rows[row_pos] if row_pos < len(target_rows) else []
+        param_name = targets[0] if targets else None
         derived_range = (default_ranges or {}).get(param_name)
         if not derived_range:
             return wildcard_no_update(min_values), wildcard_no_update(max_values)
@@ -655,9 +979,9 @@ def register_settings_callbacks(app):
 
         updated_min = list(min_values or [])
         updated_max = list(max_values or [])
-        while len(updated_min) < len(param_values):
+        while len(updated_min) < len(current_order):
             updated_min.append("")
-        while len(updated_max) < len(param_values):
+        while len(updated_max) < len(current_order):
             updated_max.append("")
 
         updated_min[row_pos] = derived_range.get("min", "")
@@ -715,8 +1039,11 @@ def register_settings_callbacks(app):
         Input({"type": "tune-case-altitude-max", "index": ALL}, "value"),
         Input("tune-field-selector", "value"),
         Input("tune-range-add", "n_clicks"),
+        Input("tune-range-add-locked", "n_clicks"),
         Input({"type": "tune-range-remove", "index": ALL}, "n_clicks"),
-        Input({"type": "tune-range-param", "index": ALL}, "value"),
+        Input({"type": "tune-range-member-add", "index": ALL}, "n_clicks"),
+        Input({"type": "tune-range-member-remove", "row": ALL, "member": ALL}, "n_clicks"),
+        Input({"type": "tune-range-member", "row": ALL, "member": ALL}, "value"),
         Input({"type": "tune-range-min", "index": ALL}, "value"),
         Input({"type": "tune-range-max", "index": ALL}, "value"),
         Input("tune-batch-size", "value"),
@@ -731,6 +1058,10 @@ def register_settings_callbacks(app):
         Input("tune-selected-config", "data"),
         Input("tune-random-max-samples", "value"),
         Input("tune-resolve-spacing", "value"),
+        Input("tune-adam-max-updates", "value"),
+        Input("tune-adam-learning-rate-percent", "value"),
+        Input("tune-adam-perturbation-percent", "value"),
+        Input("tune-adam-spsa-pairs", "value"),
         State("tune-active-job", "data"),
         State("tune-workspace-selection", "data"),
         prevent_initial_call=True,
@@ -746,7 +1077,10 @@ def register_settings_callbacks(app):
         _case_altitude_max,
         _selected_fields,
         _add_clicks,
+        _add_locked_clicks,
         _remove_clicks,
+        _member_add_clicks,
+        _member_remove_clicks,
         _param_values,
         _min_values,
         _max_values,
@@ -762,6 +1096,10 @@ def register_settings_callbacks(app):
         _selected_config,
         _random_max_samples,
         _resolve_spacing,
+        _adam_max_updates,
+        _adam_learning_rate_percent,
+        _adam_perturbation_percent,
+        _adam_spsa_pairs,
         active_job,
         workspace_selection,
     ):

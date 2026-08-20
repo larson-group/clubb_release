@@ -673,7 +673,7 @@ contains
       err_info                                                     ! CLUBB/runtime error state for the caller.
 
     type(stats_type) :: &
-      stats_snapshot                                               ! Snapshot of the completed final stats window.
+      stats_snapshot                                               ! Snapshot of the completed stats window.
 
     integer :: &
       total_param_sets, &                                          ! Total number of requested parameter sets.
@@ -681,6 +681,8 @@ contains
       num_batches, &                                               ! Number of reruns needed to cover all parameter sets.
       batch_idx, &                                                 ! Current batch loop index.
       window_idx, &                                                ! Current time-window index.
+      field_idx, &                                                 ! Current requested-field index.
+      column_idx, &                                                ! Active runtime-batch column index.
       itime_start, &                                               ! First timestep for this advance chunk.
       itime_end, &                                                 ! Last timestep for this advance chunk.
       batch_start, &                                               ! First full-matrix column covered by the active batch.
@@ -755,6 +757,23 @@ contains
                                    bias_norm(window_idx,:,batch_start:batch_end) )
 
         itime_start = itime_end + 1
+      end do
+
+      ! Runtime errors remain column-local at debug level -1.  Reject only the
+      ! affected candidates after every healthy neighbor has finished once.
+      do column_idx = 1, runtime_batch_size
+        if ( err_info%err_code(column_idx) == clubb_fatal_error ) then
+          do window_idx = 1, active_request%num_time_windows
+            do field_idx = 1, active_request%num_variables
+              call set_invalid_field_metric_outputs( &
+                scaled_rmse(window_idx,field_idx,batch_start+column_idx-1), &
+                correlation(window_idx,field_idx,batch_start+column_idx-1), &
+                std_ratio(window_idx,field_idx,batch_start+column_idx-1), &
+                centered_rmse_norm(window_idx,field_idx,batch_start+column_idx-1), &
+                bias_norm(window_idx,field_idx,batch_start+column_idx-1) )
+            end do
+          end do
+        end if
       end do
     end do
 

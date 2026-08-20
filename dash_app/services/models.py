@@ -108,12 +108,16 @@ class TuneRequest(StrictModel):
     parameter_ranges: list[ParameterRange] = Field(min_length=1, max_length=24)
     fields: list[str] = Field(default_factory=list, max_length=128)
     config: str = Field(default="default", pattern=r"^[A-Za-z0-9_.-]+$")
-    strategy: Literal["random", "resolve", "simann"] = "random"
+    strategy: Literal["random", "resolve", "simann", "adam"] = "random"
     max_samples: int = Field(default=12, ge=1, le=1000)
     resolve_spacing: float = Field(default=0.1, gt=0.0)
     simann_max_iters: int = Field(default=200, ge=1, le=5000)
     simann_initial_temp: float = Field(default=1.0, gt=0.0)
     simann_final_temp: float = Field(default=1.0e-12, gt=0.0)
+    adam_max_updates: int = Field(default=100, ge=1, le=5000)
+    adam_learning_rate: float = Field(default=0.01, gt=0.0)
+    adam_perturbation: float = Field(default=0.05, gt=0.0, le=0.5)
+    adam_spsa_pairs: int = Field(default=2, ge=1)
     batch_size: int = Field(default=1, ge=1, le=64)
     max_workers: int = Field(default=1, ge=1)
     loss_mode: str | None = None

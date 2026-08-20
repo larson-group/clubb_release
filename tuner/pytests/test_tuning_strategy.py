@@ -692,7 +692,7 @@ def test_scheduler_reassigns_one_idle_worker_when_all_case_drains_are_under_five
             "cases": ["short", "long"],
             "selected_fields": ["cloud_frac"],
             "batch_size": 1,
-            "max_workers": 2,
+            "max_workers": 3,
             "strategy": {"name": "random", "options": {"max_samples": 4}},
             "parameter_ranges": [{"name": "C8", "min": 0.1, "max": 0.2}],
         },
@@ -709,7 +709,8 @@ def test_scheduler_reassigns_one_idle_worker_when_all_case_drains_are_under_five
             state="idle",
             conn=SimpleNamespace(send=lambda value: sent.append(value)),
         ),
-        SimpleNamespace(worker_id=1, case_name="long", state="busy"),
+        SimpleNamespace(worker_id=1, case_name="short", state="busy"),
+        SimpleNamespace(worker_id=2, case_name="long", state="busy"),
     ]
     scheduler.case_evaluation_seconds.update({"short": 0.2, "long": 1.0})
     scheduler.batches = {4: {"batch_id": 4}}
@@ -743,7 +744,7 @@ def test_scheduler_never_rebalances_a_case_away_from_its_only_warm_worker(tmp_pa
         SimpleNamespace(worker_id=0, case_name="short", state="idle"),
         SimpleNamespace(worker_id=1, case_name="long", state="busy"),
     ]
-    scheduler.case_evaluation_seconds.update({"short": 1.0, "long": 10.0})
+    scheduler.case_evaluation_seconds.update({"short": 0.2, "long": 1.0})
     scheduler.batches = {4: {"batch_id": 4}}
     scheduler.case_jobs = deque([{"batch_id": 4, "case_name": "long"}] * 4)
     scheduler.next_rebalance_monotonic = 0.0
@@ -860,7 +861,7 @@ def test_scheduler_honors_interior_compiled_fortran_hard_bounds(tmp_path):
         scheduler._assert_compiled_parameter_compatibility()
 
 
-def test_scheduler_defaults_simann_chain_count_from_parallel_capacity(tmp_path):
+def test_scheduler_derives_simann_chain_count_and_strategy_admission_limit(tmp_path):
     scheduler = TuningScheduler(
         request={
             "cases": ["atex"],
@@ -879,8 +880,14 @@ def test_scheduler_defaults_simann_chain_count_from_parallel_capacity(tmp_path):
     assert scheduler.batch_size == 8
     assert scheduler.request["batch_size"] == 8
     assert scheduler.request["strategy"]["options"]["chain_count"] == 32
-    assert scheduler.max_pending_batches == 4
-    assert scheduler.max_pending_samples == 32
+    strategy = EnhancedSimulatedAnnealingStrategy(
+        param_names=["C8"],
+        default_params_row=[10.5],
+        parameter_ranges=scheduler.request["parameter_ranges"],
+        max_iters=4,
+        chain_count=32,
+    )
+    assert strategy.pending_batch_limit(scheduler.batch_size) == 4
 
 
 def test_scheduler_bounds_each_case_queue_to_twice_the_worker_count(tmp_path):

@@ -12,6 +12,17 @@ from dash import ALL, Input, Output, State, callback_context, html, no_update
 
 from dash_app.shared.notecard import notecard
 
+from .build_selector import (
+    BUILD_SELECTOR_TRIGGER_IDS,
+    RUN_IMPLEMENTATIONS,
+    build_implementation_capability,
+    build_selector_trigger_children,
+    normalize_run_implementation,
+    register_build_selector_position_callback,
+    selected_build_info,
+    selector_popover_style,
+)
+
 from .discovery import (
     available_modules_after_stack,
     command_in_env,
@@ -381,6 +392,180 @@ def visible_failed_rebuild_paths(failures=None, statuses=None):
     return visible_paths
 
 
+def build_visual_state(statuses=None, failures=None, job=None):
+    """Compute the rebuild/status view shared by full and compact build lists."""
+    job_running = job_process_is_live(job)
+    rebuild_progress = read_rebuild_progress(job) if job_running else {}
+    failure_records = dict(failures or {})
+    if (job or {}).get("kind") == "rebuild" and (job or {}).get("status") == "failed":
+        failed_path = job.get("failed_build_path") or rebuild_failed_path_from_log(job.get("log"))
+        if failed_path:
+            failure_records[failed_path] = {
+                "returncode": job.get("returncode"),
+                "failed_at": job.get("start_time") or time.time(),
+            }
+    return {
+        "job_running": job_running,
+        "active_path": rebuild_progress.get("current_path"),
+        "queued_paths": set(rebuild_progress.get("queued_paths") or []),
+        "rebuilding_paths": set((job or {}).get("build_paths") or []) if job_running else set(),
+        "completed_paths": completed_rebuild_paths_for_ui(job, statuses),
+        "failed_paths": visible_failed_rebuild_paths(failure_records, statuses),
+    }
+
+
+def displayed_build_status(build, statuses, visual_state):
+    """Return freshness metadata, including a just-completed rebuild."""
+    status_info = build_status_for(statuses, build.get("path"))
+    if build.get("path") in visual_state["completed_paths"]:
+        return {
+            **status_info,
+            "status": "current",
+            "label": "current",
+            "detail": "Rebuild finished; freshness check pending.",
+        }
+    return status_info
+
+
+def selected_build_from_discovery(discovery):
+    """Find the selected build, including a selection changed outside Dash."""
+    builds = (discovery or {}).get("builds", [])
+    target = selected_build_info().get("target")
+    if target:
+        try:
+            selected_target = str(Path(target).resolve())
+        except OSError:
+            selected_target = str(target)
+        for build in builds:
+            try:
+                install_target = str(Path(build.get("install_prefix") or "").resolve())
+            except OSError:
+                install_target = str(build.get("install_prefix") or "")
+            if install_target == selected_target:
+                return build
+        return None
+    return next((build for build in builds if build.get("is_selected")), None)
+
+
+def render_compact_build_selector(
+    discovery,
+    statuses=None,
+    failures=None,
+    job=None,
+    visual_state=None,
+    implementation="fortran",
+    trigger_id="",
+):
+    """Render the shared name-and-rebuild selector without Compile-tab metadata."""
+    implementation = normalize_run_implementation(implementation)
+    builds = (discovery or {}).get("builds", [])
+    visual = visual_state or build_visual_state(statuses, failures, job)
+    selected_build = selected_build_from_discovery(discovery)
+    selected_path = (selected_build or {}).get("path")
+    items = [
+        html.Div(
+            [
+                html.Div("Implementation", className="compile-build-selector-heading"),
+                html.Div(
+                    [
+                        html.Button(
+                            name.title() if name != "jax" else "JAX",
+                            id={"type": "compile-run-implementation-choice", "index": name},
+                            type="button",
+                            n_clicks=0,
+                            className=(
+                                "compile-run-implementation-choice "
+                                "compile-run-implementation-choice-selected"
+                                if name == implementation
+                                else "compile-run-implementation-choice"
+                            ),
+                        )
+                        for name in RUN_IMPLEMENTATIONS
+                    ],
+                    className="compile-run-implementation-choices",
+                ),
+                html.Div(
+                    "Tune currently uses its F2PY worker backend; this choice is saved for future Tune support."
+                    if trigger_id == "tune-selected-build-badge"
+                    else "Choose the implementation, then its supporting CLUBB build.",
+                    className="compile-run-implementation-note",
+                ),
+            ],
+            className="compile-run-implementation-panel",
+        )
+    ]
+    if not builds:
+        items.append(html.Div("No builds found.", className="compile-build-selector-empty"))
+        return items
+    for build in builds:
+        path = build.get("path")
+        is_selected = path == selected_path
+        compatible, incompatibility = build_implementation_capability(
+            build.get("install_prefix") or "", implementation
+        )
+        status_info = displayed_build_status(build, statuses, visual)
+        status = status_info.get("status", "checking")
+        is_active = path == visual["active_path"]
+        is_queued = path in visual["queued_paths"] or (
+            path in visual["rebuilding_paths"] and not is_active
+        )
+        select_disabled = bool(
+            is_selected
+            or not build.get("install_exists")
+            or build.get("install_prefix_mismatch")
+            or not compatible
+        )
+        if build.get("install_prefix_mismatch"):
+            select_title = "Install prefix points at another build"
+        elif not build.get("install_exists"):
+            select_title = "Install directory not found"
+        elif not compatible:
+            select_title = incompatibility
+        elif is_selected:
+            select_title = "Selected build"
+        else:
+            select_title = f"Select {build.get('name')}"
+        row_class = " ".join(
+            part
+            for part in (
+                "compile-build-selector-row",
+                build_card_status_class(build, status, visual["failed_paths"]),
+                "compile-build-card-rebuild-active" if is_active else "",
+                "compile-build-card-rebuild-queued" if is_queued else "",
+                "compile-build-selector-row-selected" if is_selected else "",
+                "compile-build-selector-row-incompatible" if not compatible else "",
+            )
+            if part
+        )
+        items.append(
+            html.Div(
+                [
+                    html.Button(
+                        build.get("name") or path,
+                        id={"type": "compile-build-selector-select", "index": path},
+                        type="button",
+                        n_clicks=0,
+                        disabled=select_disabled,
+                        className="compile-build-selector-select",
+                        title=select_title,
+                    ),
+                    html.Button(
+                        "↻",
+                        id={"type": "compile-build-selector-rebuild", "index": path},
+                        type="button",
+                        n_clicks=0,
+                        disabled=visual["job_running"],
+                        className="compile-build-row-button compile-build-rebuild-button compile-build-selector-rebuild",
+                        title=f"Rebuild {build.get('name')}",
+                    ),
+                ],
+                className=row_class,
+                title=incompatibility or status_info.get("detail", ""),
+            )
+        )
+    return items
+
+
 def render_delete_confirmation(build):
     """Render the guarded delete confirmation row for one build."""
     return html.Div(
@@ -461,27 +646,11 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
     builds = (discovery or {}).get("builds", [])
     if not builds:
         return html.Div("No CMake build directories found.", className="compile-muted")
-    job_running = job_process_is_live(job)
-    rebuild_progress = read_rebuild_progress(job) if job_running else {}
-    active_rebuild_path = rebuild_progress.get("current_path")
-    queued_rebuild_paths = set(rebuild_progress.get("queued_paths") or [])
-    rebuilding_paths = set((job or {}).get("build_paths") or []) if job_running else set()
-    completed_rebuild_paths = completed_rebuild_paths_for_ui(job, statuses)
-    failure_records = dict(failures or {})
-    if (job or {}).get("kind") == "rebuild" and (job or {}).get("status") == "failed":
-        if job.get("failed_build_path"):
-            failure_records[job["failed_build_path"]] = {
-                "returncode": job.get("returncode"),
-                "failed_at": job.get("start_time") or time.time(),
-            }
-        else:
-            failed_path = rebuild_failed_path_from_log(job.get("log"))
-            if failed_path:
-                failure_records[failed_path] = {
-                    "returncode": job.get("returncode"),
-                    "failed_at": job.get("start_time") or time.time(),
-                }
-    failed_rebuild_paths = visible_failed_rebuild_paths(failure_records, statuses)
+    visual = build_visual_state(statuses, failures, job)
+    job_running = visual["job_running"]
+    active_rebuild_path = visual["active_path"]
+    queued_rebuild_paths = visual["queued_paths"]
+    rebuilding_paths = visual["rebuilding_paths"]
     items = []
     if delete_target == DELETE_ALL_BUILDS_TARGET:
         items.append(render_delete_all_confirmation(builds))
@@ -489,14 +658,7 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
         if delete_target == build.get("path"):
             items.append(render_delete_confirmation(build))
             continue
-        status_info = build_status_for(statuses, build.get("path"))
-        if build.get("path") in completed_rebuild_paths:
-            status_info = {
-                **status_info,
-                "status": "current",
-                "label": "current",
-                "detail": "Rebuild finished; freshness check pending.",
-            }
+        status_info = displayed_build_status(build, statuses, visual)
         status = status_info.get("status", "checking")
         badges = []
         if build.get("is_latest"):
@@ -529,7 +691,7 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
             [
                 "compile-build-card",
                 "compile-build-card-button",
-                build_card_status_class(build, status, failed_rebuild_paths),
+                build_card_status_class(build, status, visual["failed_paths"]),
                 "compile-build-card-rebuild-active" if build.get("path") == active_rebuild_path else "",
                 "compile-build-card-rebuild-queued" if build.get("path") in queued_rebuild_paths else "",
                 "compile-build-card-selected" if build.get("is_selected") else "",
@@ -565,7 +727,7 @@ def render_build_list(discovery, statuses=None, failures=None, delete_target=Non
                 id={"type": "compile-build-select", "index": build["path"]},
                 type="button",
                 n_clicks=0,
-                disabled=bool(job_running or build.get("is_selected") or not build.get("install_exists") or build.get("install_prefix_mismatch")),
+                disabled=bool(build.get("is_selected") or not build.get("install_exists") or build.get("install_prefix_mismatch")),
                 className=card_class,
                 title=select_title,
             ),
@@ -848,6 +1010,96 @@ def delete_all_existing_builds(builds):
 
 
 def register_compile_callbacks(app):
+    register_build_selector_position_callback(app)
+
+    selector_outputs = [
+        output
+        for component_id in BUILD_SELECTOR_TRIGGER_IDS
+        for output in (
+            Output(component_id, "children"),
+            Output(component_id, "className"),
+            Output(component_id, "title"),
+        )
+    ]
+
+    @app.callback(
+        Output("compile-run-implementation", "data"),
+        Input({"type": "compile-run-implementation-choice", "index": ALL}, "n_clicks"),
+        State("compile-run-implementation", "data"),
+        prevent_initial_call=True,
+    )
+    def select_run_implementation(_clicks, current):
+        triggered = clicked_trigger_id()
+        if not isinstance(triggered, dict):
+            return no_update
+        return normalize_run_implementation(triggered.get("index") or current)
+
+    @app.callback(
+        Output("compile-build-selector-menu", "children"),
+        Output("compile-build-selector-popover", "className"),
+        Output("compile-build-selector-menu", "style"),
+        *selector_outputs,
+        Input("compile-build-selector-anchor", "data"),
+        Input("compile-discovery", "data"),
+        Input("compile-build-statuses", "data"),
+        Input("compile-build-failures", "data"),
+        Input("compile-job", "data"),
+        Input("compile-run-implementation", "data"),
+    )
+    def update_build_selector(anchor, discovery, statuses, failures, job, implementation):
+        """Keep every trigger and the one shared selector on Compile's build state."""
+        implementation = normalize_run_implementation(implementation)
+        visual = build_visual_state(statuses, failures, job)
+        menu = render_compact_build_selector(
+            discovery,
+            statuses,
+            failures,
+            job,
+            visual,
+            implementation,
+            (anchor or {}).get("trigger_id", ""),
+        )
+        selected_info = selected_build_info()
+        selected_build = selected_build_from_discovery(discovery)
+        if selected_build:
+            status_info = displayed_build_status(selected_build, statuses, visual)
+            status = status_info.get("status", "checking")
+            status_class = build_card_status_class(selected_build, status, visual["failed_paths"])
+            selected_path = selected_build.get("path")
+            if selected_path == visual["active_path"]:
+                status_class += " compile-build-card-rebuild-active"
+            elif selected_path in visual["queued_paths"] or selected_path in visual["rebuilding_paths"]:
+                status_class += " compile-build-card-rebuild-queued"
+            status_label = status_info.get("label") or status.replace("_", " ")
+        else:
+            status_class = (
+                "compile-build-card-failed"
+                if selected_info["status"] in {"missing", "broken"}
+                else "compile-build-card-checking"
+            )
+            status_label = selected_info["status"]
+        trigger_values = []
+        for component_id in BUILD_SELECTOR_TRIGGER_IDS:
+            trigger_values.extend(
+                (
+                    build_selector_trigger_children(selected_info["name"], implementation),
+                    " ".join(
+                        (
+                            "selected-build-badge",
+                            status_class,
+                            "selected-build-badge-open"
+                            if anchor and anchor.get("trigger_id") == component_id
+                            else "",
+                        )
+                    ).strip(),
+                    f"{implementation.title()} using {selected_info['name']} — {status_label}. Click to configure.",
+                )
+            )
+        popover_class = "compile-build-selector-popover"
+        if not anchor:
+            popover_class += " compile-build-selector-popover-closed"
+        return menu, popover_class, selector_popover_style(anchor), *trigger_values
+
     @app.callback(
         Output("compile-job", "data", allow_duplicate=True),
         Output("compile-log", "data", allow_duplicate=True),
@@ -922,6 +1174,7 @@ def register_compile_callbacks(app):
         Output("compile-extra-args", "value"),
         Output("compile-lmod-compiler", "value", allow_duplicate=True),
         Input({"type": "compile-build-select", "index": ALL}, "n_clicks"),
+        Input({"type": "compile-build-selector-select", "index": ALL}, "n_clicks"),
         State("compile-discovery", "data"),
         State("compile-build-statuses", "data"),
         State("compile-build-failures", "data"),
@@ -929,7 +1182,7 @@ def register_compile_callbacks(app):
         State("compile-job", "data"),
         prevent_initial_call=True,
     )
-    def select_existing_build(_n_clicks, discovery, statuses, failures, delete_target, job):
+    def select_existing_build(_n_clicks, _selector_clicks, discovery, statuses, failures, delete_target, job):
         triggered = clicked_trigger_id()
         if not triggered:
             return (no_update,) * 10
@@ -1054,10 +1307,11 @@ def register_compile_callbacks(app):
         Output("compile-source-check", "data", allow_duplicate=True),
         Input("compile-rebuild-all", "n_clicks"),
         Input({"type": "compile-build-rebuild", "index": ALL}, "n_clicks"),
+        Input({"type": "compile-build-selector-rebuild", "index": ALL}, "n_clicks"),
         State("compile-discovery", "data"),
         prevent_initial_call=True,
     )
-    def start_rebuild(_all_clicks, _rebuild_clicks, discovery):
+    def start_rebuild(_all_clicks, _rebuild_clicks, _selector_rebuild_clicks, discovery):
         triggered = clicked_trigger_id()
         if not triggered:
             return (no_update,) * 7

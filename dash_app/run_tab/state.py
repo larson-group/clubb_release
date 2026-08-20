@@ -1,7 +1,6 @@
 """Shared constants and mutable runtime state for the run tab."""
 
 import os
-import re
 import resource
 import threading
 
@@ -12,16 +11,7 @@ DEFAULT_STATS_NAME = "standard_stats.in"
 NO_STATS_NAME = "none"
 RUN_SCM_ALL = os.path.join(REPO_ROOT, "run_scripts", "run_scm_all.py")
 RUN_PROCS = {}
-RUN_ACTIVE_CASES = {}
-RUN_STATUS = {}
-RUN_FINALIZED = set()
 RUN_LOCK = threading.Lock()
-RUN_STREAM_LOCK = threading.Lock()
-ITERATION_RE = re.compile(
-    r"iteration:\s*(\d+)\s*/\s*(\d+)\s*--\s*time\s*=\s*([-+0-9.eE]+)\s*/\s*([-+0-9.eE]+)",
-    re.IGNORECASE,
-)
-MAX_UI_LOG_LINES = 2000
 RUN_STACK_KB = int(os.environ.get("CLUBB_RUN_STACK_KB", "8192000"))
 ENABLE_CUDA_MPS = os.environ.get("CLUBB_ENABLE_CUDA_MPS", "1").strip().lower() not in {"0", "false", "no"}
 _uid = os.getuid() if hasattr(os, "getuid") else "user"

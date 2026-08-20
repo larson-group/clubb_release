@@ -9,6 +9,7 @@ from dash_app.shared.tunable_configs import (
 from utilities.clubb_settings_validation import (
     build_settings_schema,
     evaluate_settings,
+    is_independently_tunable,
 )
 
 from .layout import build_flag_controls, build_param_sections, compute_width_hints
@@ -78,6 +79,15 @@ def build_tunable_config_state(config_name=None, configs=None):
         for group in settings_resolution["linked_parameter_groups"]
         if all(name in {entry["name"] for entry in tunable_entries} for name in group)
     ]
+    tunable_control_entries = [
+        {
+            **entry,
+            "disabled": not is_independently_tunable(
+                settings_resolution["parameter_states"].get(entry["name"])
+            ),
+        }
+        for entry in tunable_entries
+    ]
 
     return {
         "selected_config": selected_config,
@@ -109,7 +119,7 @@ def build_tunable_config_state(config_name=None, configs=None):
         "param_sections": build_param_sections(
             flag_params,
             flag_controls,
-            tunable_entries,
+            tunable_control_entries,
             active_linked_groups,
             silhs_entries,
             label_width_px,

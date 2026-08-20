@@ -2,10 +2,11 @@
 
 from types import SimpleNamespace
 
-from dash import Dash, Patch
+from dash import Dash, Patch, no_update
 
 from dash_app.plot_tab.callbacks_case import (
     _catalog_tracking_paths,
+    _delete_output_directory,
     _is_positive_click,
     _is_same_case,
     _normalize_output_dirs,
@@ -47,6 +48,41 @@ def test_adding_or_removing_one_output_preserves_every_other_selection():
     assert _update_output_dirs(current, "remove", "/tmp/one") == ["/tmp/two"]
 
 
+def test_output_changes_commit_only_after_picker_closes():
+    app = Dash(__name__)
+    register_case_callbacks(app)
+    entry = next(
+        value
+        for key, value in app.callback_map.items()
+        if "plots-loaded-output-dirs.data" in key
+    )
+    commit = entry["callback"].__wrapped__
+
+    loaded, warning = commit(True, ["/tmp/one", "/tmp/two"], ["/tmp/one"])
+    assert loaded is no_update
+    assert warning == "Close dropdown to load changes"
+
+    loaded, warning = commit(False, ["/tmp/one", "/tmp/two"], ["/tmp/one"])
+    assert loaded == ["/tmp/one", "/tmp/two"]
+    assert warning == ""
+
+
+def test_case_loading_consumes_committed_not_draft_outputs():
+    app = Dash(__name__)
+    register_case_callbacks(app)
+    consumers = [
+        entry
+        for entry in app.callback_map.values()
+        if "plots-loaded-output-dirs" in {item["id"] for item in entry["inputs"]}
+    ]
+
+    assert len(consumers) == 3
+    assert all(
+        "plots-output-dirs" not in {item["id"] for item in entry["inputs"]}
+        for entry in consumers
+    )
+
+
 def test_output_catalog_refresh_is_tab_scoped_and_ten_second_driven():
     app = Dash(__name__)
     register_case_callbacks(app)
@@ -67,8 +103,10 @@ def test_catalog_is_only_state_for_the_callback_that_mutates_active_outputs():
     register_case_callbacks(app)
     selection = next(
         entry
-        for key, entry in app.callback_map.items()
-        if "plots-output-dirs.data" in key
+        for entry in app.callback_map.values()
+        if '{"path":["ALL"],"type":"plots-add-output-dir"}' in {
+            item["id"] for item in entry["inputs"]
+        }
     )
 
     assert "plots-output-catalog" not in {item["id"] for item in selection["inputs"]}
@@ -77,6 +115,29 @@ def test_catalog_is_only_state_for_the_callback_that_mutates_active_outputs():
     }
     click_properties = {item["property"] for item in selection["inputs"]}
     assert click_properties == {"n_clicks_timestamp"}
+
+
+def test_output_delete_is_limited_to_subdirectories_under_output(monkeypatch, tmp_path):
+    from dash_app.plot_tab import callbacks_case
+
+    output_root = tmp_path / "output"
+    target = output_root / "run"
+    target.mkdir(parents=True)
+    (target / "arm_stats.nc").write_bytes(b"CDF")
+    monkeypatch.setattr(callbacks_case, "OUTPUT_ROOT", output_root)
+
+    _delete_output_directory(target)
+
+    assert not target.exists()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    try:
+        _delete_output_directory(outside)
+    except ValueError as exc:
+        assert "inside output/" in str(exc)
+    else:
+        raise AssertionError("outside directory was accepted for deletion")
+    assert outside.exists()
 
 
 def test_catalog_refresh_only_drives_output_selection_ui():

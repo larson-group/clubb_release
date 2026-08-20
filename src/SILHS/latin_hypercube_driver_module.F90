@@ -344,8 +344,8 @@ module latin_hypercube_driver_module
            silhs_config_flags%l_lh_var_frac,                             & ! Intent(in)
            silhs_config_flags%l_lh_normalize_weights,                    & ! Intent(in)
            l_calc_weights_all_levs_itime,                                & ! Intent(in)
-           X_u_all_levs, lh_sample_point_weights )                         ! Intent(out)     
-           
+           X_u_all_levs, lh_sample_point_weights )                         ! Intent(out)
+
     !$acc parallel loop gang vector collapse(3) default(present)
     do k = 1, nzt
       do sample = 1, num_samples 
@@ -427,11 +427,13 @@ module latin_hypercube_driver_module
                                              lh_sample_point_weights, stats, err_info )
       end if
 
-      if ( any(err_info%err_code == clubb_fatal_error) ) then
-        write(fstderr, *) err_info%err_header_global
-        write(fstderr, *) "Fatal error writing SILHS 2D samples with stats", &
-                          " in CLUBB SILHS procedure generate_silhs_sample"
-        return
+      if ( clubb_at_least_debug_level_api( 0 ) ) then
+        if ( any(err_info%err_code == clubb_fatal_error) ) then
+          write(fstderr, *) err_info%err_header_global
+          write(fstderr, *) "Fatal error writing SILHS 2D samples with stats", &
+                            " in CLUBB SILHS procedure generate_silhs_sample"
+          return
+        end if
       end if
     end if
 

@@ -16,7 +16,7 @@ def test_active_job_labels_cover_every_broker_job_family():
     jobs = {
         "compile": {"state": "running"},
         "profile": {"state": "running"},
-        "runs": {"arm": {"state": "running"}, "bomex": {"state": "finished"}},
+        "run_summary": {"active_count": 1},
         "tune": {"state": "stopping"},
         "loss_runs": {"loss_1": {"state": "queued"}},
     }
@@ -25,7 +25,7 @@ def test_active_job_labels_cover_every_broker_job_family():
         "compile",
         "Profile",
         "Tune",
-        "SCM:arm",
+        "SCM:1 active",
         "Tune-result:loss_1",
     ]
 

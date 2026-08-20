@@ -3,9 +3,11 @@
 import math
 
 from dash_app.tune_tab.callbacks_display import (
+    _parameter_box_context,
     _collect_taylor_points,
     _parameter_group_specs,
     _window_display_metrics,
+    build_parameter_box_figure,
 )
 
 
@@ -80,3 +82,53 @@ def test_parameter_box_selector_is_limited_to_aggregate_or_all_cases():
 
     assert [item[0] for item in aggregate] == ["aggregate"]
     assert [item[0] for item in all_groups] == ["aggregate", "case:arm", "case:bomex"]
+
+
+def test_parameter_box_range_normalizes_each_parameter_and_marks_config_defaults():
+    request = {
+        "config": "experiment",
+        "parameter_ranges": [
+            {"name": "C1", "targets": ["C1"], "min": 1.0, "max": 3.0},
+            {"name": "C8", "targets": ["C8"], "min": 0.0, "max": 10.0},
+        ],
+        "settings_resolution": {
+            "tunable_default_ranges": {
+                "C1": {"default": 2.0},
+                "C8": {"default": 2.5},
+            }
+        },
+    }
+    results = [
+        {"rank": 1, "total_loss": 1.0, "params": {"C1": 1.5, "C8": 5.0}},
+        {"rank": 2, "total_loss": 2.0, "params": {"C1": 2.5, "C8": 10.0}},
+    ]
+
+    figure = build_parameter_box_figure(
+        results,
+        selected_groups="aggregate",
+        scale_mode="normalized",
+        parameter_context=_parameter_box_context(request),
+    )
+
+    boxes = {trace.x[0]: list(trace.y) for trace in figure.data if trace.type == "box"}
+    assert boxes == {"C1": [0.25, 0.75], "C8": [0.5, 1.0]}
+    defaults = next(trace for trace in figure.data if trace.name == "Config default")
+    assert list(defaults.x) == ["C1", "C8"]
+    assert list(defaults.y) == [0.5, 0.25]
+    assert defaults.marker.symbol == "diamond"
+    assert figure.layout.yaxis.tickformat == ".0%"
+
+
+def test_parameter_box_unscaled_mode_preserves_raw_values_without_default_markers():
+    results = [{"rank": 1, "total_loss": 1.0, "params": {"C1": 2.5}}]
+    figure = build_parameter_box_figure(
+        results,
+        selected_groups="aggregate",
+        scale_mode="unscaled",
+        parameter_context={"ranges": {"C1": (1.0, 3.0)}, "defaults": {"C1": 2.0}},
+    )
+
+    box = next(trace for trace in figure.data if trace.type == "box")
+    assert list(box.y) == [2.5]
+    assert all(trace.name != "Config default" for trace in figure.data)
+    assert figure.layout.yaxis.title.text == "parameter value"

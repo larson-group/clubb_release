@@ -3,7 +3,7 @@
 from dash import dcc, html
 
 from dash_app.persistence import WORKSPACE_TOKEN
-from dash_app.shared.selected_build import selected_build_badge
+from dash_app.compile_tab.build_selector import build_selector_trigger
 
 from .state import MAX_RUN_PROCS
 
@@ -85,13 +85,6 @@ def run_config_button_style(selected=False, disabled=False):
     return style
 
 
-def case_dom_id(case_name):
-    """Return a DOM-safe identifier suffix for a case name."""
-    import re
-
-    return re.sub(r"[^A-Za-z0-9_-]", "_", case_name)
-
-
 def compute_width_hints(all_config_names):
     """Compute label and pane widths from the longest config parameter name."""
     max_name_len = max((len(name) for name in all_config_names), default=16)
@@ -119,7 +112,14 @@ def build_select_actions(case_groups):
 def build_case_buttons(cases):
     """Render all case buttons with the default unselected style."""
     return [
-        html.Button(case_name, id={"type": "run-case-button", "name": case_name}, n_clicks=0, className="run-case-button", style=case_button_style("#2563eb", False))
+        html.Button(
+            case_name,
+            id={"type": "run-case-button", "name": case_name},
+            n_clicks=0,
+            className="run-case-button",
+            style=case_button_style("#2563eb", False),
+            **{"data-case-name": case_name},
+        )
         for case_name in cases
     ]
 
@@ -387,7 +387,7 @@ def build_multicol_row(row, tunable_names):
 
 def build_multicol_section(tunable_names, rows=None):
     """Render the multicol hypergrid controls shown above the parameter editors."""
-    row_data = list(rows or [{"id": 0, "param": "", "min": "", "max": "", "npoints": "4"}])
+    row_data = list(rows or [])
     return [
         html.H4("Multicol", className="run-settings-heading"),
         html.Div(
@@ -450,9 +450,9 @@ def build_run_action_section():
             ),
             html.Div(
                 [
-                    selected_build_badge("run-selected-build-badge"),
+                    build_selector_trigger("run-selected-build-badge"),
                     html.Button("Run selected", id="run-button", n_clicks=0, className="run-button-run-selected", style=run_action_button_style("#111827")),
-                    html.Button("Cancel runs", id="run-cancel", n_clicks=0, style=run_action_button_style("#b91c1c")),
+                    html.Button("Cancel runs", id="run-cancel", n_clicks=0, disabled=False, style=run_action_button_style("#b91c1c")),
                     html.Button("Clear", id="run-clear", n_clicks=0, style=run_action_button_style("#374151")),
                 ],
                 className="run-primary-actions",
@@ -469,20 +469,20 @@ def build_run_action_section():
     )
 
 
-def build_console_shell():
-    """Render the empty console container shell."""
+def build_console_shell(_cases):
+    """Render the browser-owned container for broker-discovered runs."""
     return html.Div(
+        [
+            html.Div("No runs yet.", id="run-console-empty", className="run-empty-message"),
+        ],
         id="run-console-container",
         className="run-console-container",
         style={
             "display": "flex",
             "flexDirection": "column",
             "gap": "10px",
-            "maxHeight": "calc(100vh - 360px)",
             "minHeight": "220px",
-            "overflowY": "auto",
             "overflowAnchor": "none",
-            "paddingRight": "4px",
         },
     )
 
@@ -545,6 +545,7 @@ def build_param_input(entry, label_width_px, value_width_px, display_value):
                 id={"type": "run-param", "file": entry["file"], "name": entry["name"]},
                 type="text",
                 value=display_value,
+                disabled=bool(entry.get("disabled", False)),
                 debounce=True,
                 persistence=WORKSPACE_TOKEN,
                 persistence_type="local",
@@ -591,6 +592,7 @@ def build_linked_tunable_input(entries, members, value_width_px, normalize_numer
                 id={"type": "run-param", "file": "tunable", "name": entry["name"]},
                 type="text",
                 value=normalize_numeric_display(entry["value"]),
+                disabled=bool(entry.get("disabled", False)),
                 debounce=True,
                 persistence=WORKSPACE_TOKEN,
                 persistence_type="local",
@@ -797,6 +799,11 @@ def build_right_pane(initial_data):
 
 def build_layout(initial_data):
     """Assemble the full static run-tab layout from precomputed initial metadata."""
+    multicol_rows = initial_data.get("multicol_rows")
+    if multicol_rows is None:
+        multicol_rows = []
+    initial_data = {**initial_data, "multicol_rows": multicol_rows}
+    row_ids = [row["id"] for row in multicol_rows]
     return html.Div(
         [
             dcc.Store(id="run-settings-schema", data=initial_data.get("settings_schema") or {}),
@@ -806,6 +813,9 @@ def build_layout(initial_data):
             dcc.Store(id="run-linked-parameter-groups", data=initial_data.get("linked_parameter_groups") or []),
             dcc.Store(id="run-tunable-configs", data=initial_data["tunable_configs"]),
             dcc.Store(id="run-selected-config", data=initial_data["selected_config"]),
+            # Unlike the selected config, this describes the controls that are
+            # actually on screen and must never be restored from the browser.
+            dcc.Store(id="run-rendered-config", data=initial_data["selected_config"]),
             dcc.Store(id="run-settings-resolution", data=initial_data.get("settings_resolution") or {}),
             # A config button deliberately discards the saved per-field Run
             # values before the server rebuilds the matching controls.
@@ -832,25 +842,16 @@ def build_layout(initial_data):
             dcc.Store(id="run-clear-persistence-signal"),
             dcc.Store(
                 id="run-multicol-rows-state",
-                data=initial_data.get("multicol_rows") or [{"id": 0, "param": "", "min": "", "max": "", "npoints": "4"}],
+                data=multicol_rows,
             ),
-            dcc.Store(id="run-multicol-next-id", data=1),
-            dcc.Store(id="run-multicol-row-order", data=[0]),
+            dcc.Store(id="run-multicol-next-id", data=max(row_ids, default=-1) + 1),
+            dcc.Store(id="run-multicol-row-order", data=row_ids),
             dcc.Store(id="run-selected-cases", data=[]),
             dcc.Store(id="run-selected-stats-file", data=initial_data["default_stats_name"]),
-            dcc.Store(id="run-completed-cases", data=[]),
-            dcc.Store(id="run-failed-cases", data=[]),
-            dcc.Store(id="run-running-cases", data={}),
-            dcc.Store(id="run-queued-cases", data=[]),
-            dcc.Store(id="run-max-tasks-active", data=MAX_RUN_PROCS),
-            dcc.Store(id="run-case-logs", data={}),
-            dcc.Store(id="run-case-commands", data={}),
-            dcc.Store(id="run-case-runtimes", data={}),
-            dcc.Store(id="run-log-offsets", data={}),
-            dcc.Store(id="run-case-order", data=[]),
-            dcc.Store(id="run-open-cases", data=[]),
-            dcc.Interval(id="run-interval", interval=500, disabled=True),
-            html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell()], className="run-left-pane"),
+            dcc.Store(id="run-resolved-output-dir"),
+            dcc.Store(id="run-action-result"),
+            dcc.Store(id="run-ui-render-signal"),
+            html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell(initial_data["cases"])], className="run-left-pane"),
             html.Div(id="run-pane-divider", className="run-pane-divider"),
             # The settings pane intentionally grows with its controls.  It is
             # part of the document flow, so the browser's main scrollbar—not

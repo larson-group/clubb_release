@@ -5,7 +5,7 @@ from __future__ import annotations
 from dash import dcc, html
 
 from dash_app.shared import styled_dropdown
-from dash_app.shared.selected_build import selected_build_badge
+from dash_app.compile_tab.build_selector import build_selector_trigger
 from tuner.taylor_metrics import (
     DEFAULT_AGGREGATION_WEIGHTS,
     DEFAULT_LOSS_MODE,
@@ -148,6 +148,12 @@ def build_top_controls(initial_data):
                                 n_clicks=0,
                                 style=mode_button_style(selected=selected_mode == "simann"),
                             ),
+                            html.Button(
+                                "Adam (SPSA)",
+                                id="tune-mode-adam",
+                                n_clicks=0,
+                                style=mode_button_style(selected=selected_mode == "adam"),
+                            ),
                         ],
                         style={"display": "flex", "gap": "8px", "flexWrap": "wrap"},
                     ),
@@ -225,6 +231,37 @@ def build_top_controls(initial_data):
                         ],
                         id="tune-simann-options",
                         style={**mode_options_block_style(selected_mode == "simann"), "marginTop": "10px"},
+                    ),
+                    html.Div(
+                        [
+                            html.Label("Updates per chain", htmlFor="tune-adam-max-updates"),
+                            dcc.Input(
+                                id="tune-adam-max-updates", type="number", min=1, step=1,
+                                value=initial_data.get("adam_max_updates", 100), debounce=True,
+                                style={"width": "90px", "marginLeft": "8px", "marginRight": "12px"},
+                            ),
+                            html.Label("Learning step (%)", htmlFor="tune-adam-learning-rate-percent"),
+                            dcc.Input(
+                                id="tune-adam-learning-rate-percent", type="number", min=0, step="any",
+                                value=initial_data.get("adam_learning_rate_percent", 1.0), debounce=True,
+                                style={"width": "82px", "marginLeft": "8px", "marginRight": "12px"},
+                            ),
+                            html.Label("Perturbation (%)", htmlFor="tune-adam-perturbation-percent"),
+                            dcc.Input(
+                                id="tune-adam-perturbation-percent", type="number", min=0, max=50, step="any",
+                                value=initial_data.get("adam_perturbation_percent", 5.0), debounce=True,
+                                style={"width": "82px", "marginLeft": "8px", "marginRight": "12px"},
+                            ),
+                            html.Label("SPSA pairs", htmlFor="tune-adam-spsa-pairs"),
+                            dcc.Input(
+                                id="tune-adam-spsa-pairs", type="number", min=1, step=1,
+                                value=initial_data.get("adam_spsa_pairs", 2), debounce=True,
+                                style={"width": "72px", "marginLeft": "8px"},
+                            ),
+                            html.Div(id="tune-adam-layout-summary", style={"marginTop": "8px", "opacity": "0.85"}),
+                        ],
+                        id="tune-adam-options",
+                        style={**mode_options_block_style(selected_mode == "adam"), "marginTop": "10px"},
                     ),
                 ],
                 style={"padding": "12px"},
@@ -375,7 +412,7 @@ def build_top_controls(initial_data):
                     ),
                     html.Div(
                         [
-                            selected_build_badge("tune-selected-build-badge"),
+                            build_selector_trigger("tune-selected-build-badge"),
                             html.Button(
                                 "Start",
                                 id="tune-start-button",
@@ -423,6 +460,18 @@ def build_top_controls(initial_data):
                         style=action_button_style("#2563eb", disabled=True),
                         disabled=True,
                     ),
+                    html.Button(
+                        "Save tuned config",
+                        id="tune-config-save-open",
+                        n_clicks=0,
+                        title="Save one of the top tuning results as a named CLUBB configuration.",
+                        style=action_button_style("#0f766e", disabled=True),
+                        disabled=True,
+                    ),
+                    html.Div(
+                        id="tune-config-save-status",
+                        className="tune-info-message tune-config-save-status",
+                    ),
                 ],
                 style={"padding": "12px", "display": "flex", "flexDirection": "column", "alignItems": "flex-start"},
             ),
@@ -447,31 +496,80 @@ def build_top_controls(initial_data):
 def build_param_range_row(row, tunable_names):
     """Render one parameter-range row."""
     row_id = row.get("id")
-    targets = [str(target).strip() for target in row.get("targets", [row.get("param", "")]) if str(target).strip()]
+    raw_targets = row.get("targets")
+    if raw_targets is None:
+        raw_targets = [row.get("param", "")]
+    targets = [str(target or "").strip() for target in raw_targets]
+    if row.get("locked") and len(targets) < 2:
+        targets.extend([""] * (2 - len(targets)))
     if not targets:
-        targets = [str(row.get("param", "")).strip()]
-    linked_label = " = ".join(targets) if len(targets) > 1 else ""
+        targets = [""]
     options = [{"label": name, "value": name} for name in tunable_names]
-    return html.Div(
-        [
-            dcc.Store(id={"type": "tune-range-targets", "index": row_id}, data=targets),
+
+    members = []
+    for member_index, target in enumerate(targets):
+        member = [
             dcc.Dropdown(
-                id={"type": "tune-range-param", "index": row_id},
+                id={"type": "tune-range-member", "row": row_id, "member": member_index},
                 options=options,
-                value=row.get("param", "") or None,
+                value=target or None,
                 placeholder="parameter",
                 clearable=True,
                 searchable=True,
                 className="clubb-dropdown",
-                style={"minWidth": "170px", "flex": "2 1 170px"},
-            ),
-            html.Span(
-                linked_label,
-                id={"type": "tune-range-link-label", "index": row_id},
-                className="tune-range-link-label",
-                title="This one sampled value is applied to each linked physical CLUBB parameter.",
-                style={"fontSize": "12px", "opacity": 0.8, "whiteSpace": "nowrap", "display": "inline-block" if linked_label else "none"},
-            ),
+                style={"minWidth": "170px", "flex": "1 1 170px"},
+            )
+        ]
+        if len(targets) > 1:
+            member.append(
+                html.Button(
+                    "Remove",
+                    id={"type": "tune-range-member-remove", "row": row_id, "member": member_index},
+                    n_clicks=0,
+                    style=action_button_style("#6b7280"),
+                )
+            )
+        members.append(
+            html.Div(
+                member,
+                style={"display": "flex", "gap": "8px", "alignItems": "center"},
+            )
+        )
+
+    member_block = html.Div(members, style={"display": "flex", "flexDirection": "column", "gap": "7px"})
+    if len(targets) > 1:
+        member_block = html.Div(
+            [
+                html.Div(
+                    style={
+                        "width": "12px",
+                        "alignSelf": "stretch",
+                        "borderLeft": "3px solid #38bdf8",
+                        "borderTop": "3px solid #38bdf8",
+                        "borderBottom": "3px solid #38bdf8",
+                        "borderRadius": "5px 0 0 5px",
+                    },
+                    title="These parameters share one sampled value.",
+                ),
+                html.Div(
+                    [
+                        member_block,
+                        html.Button(
+                            "+ Add to group",
+                            id={"type": "tune-range-member-add", "index": row_id},
+                            n_clicks=0,
+                            style={**action_button_style("#0369a1"), "alignSelf": "flex-start"},
+                        ),
+                    ],
+                    style={"display": "flex", "flexDirection": "column", "gap": "7px"},
+                ),
+            ],
+            style={"display": "flex", "gap": "8px", "alignItems": "stretch"},
+        )
+
+    return html.Div(
+        [
+            member_block,
             dcc.Input(
                 id={"type": "tune-range-min", "index": row_id},
                 type="text",
@@ -494,7 +592,16 @@ def build_param_range_row(row, tunable_names):
             ),
         ],
         className="tune-range-row",
-        style={"display": "flex", "flexWrap": "wrap", "gap": "8px", "alignItems": "center", "marginBottom": "8px"},
+        style={
+            "display": "flex",
+            "flexWrap": "wrap",
+            "gap": "8px",
+            "alignItems": "center",
+            "marginBottom": "10px",
+            "padding": "8px",
+            "border": "1px solid #334155" if len(targets) > 1 else "none",
+            "borderRadius": "6px",
+        },
     )
 
 
@@ -674,12 +781,89 @@ def landscape_control(label, control):
     )
 
 
+def build_tuned_config_save_dialog():
+    """Render the Tune result selector and named-config save form."""
+    return html.Div(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div("Save tuned configuration", className="shared-notecard-title"),
+                        html.Div(
+                            "Clone the run's base config, apply its SCM override, then apply one retained result.",
+                            className="tune-config-save-subtitle",
+                        ),
+                    ],
+                    className="shared-notecard-header tune-config-save-header",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Label("Tuning result", htmlFor="tune-config-save-result"),
+                                dcc.Dropdown(
+                                    id="tune-config-save-result",
+                                    options=[],
+                                    value=None,
+                                    clearable=False,
+                                    searchable=True,
+                                    className="clubb-dropdown",
+                                ),
+                            ],
+                            className="tune-config-save-field",
+                        ),
+                        html.Div(
+                            [
+                                html.Label("Config name", htmlFor="tune-config-save-name"),
+                                dcc.Input(
+                                    id="tune-config-save-name",
+                                    type="text",
+                                    value="",
+                                    placeholder="example: tuned_arm_2026",
+                                    className="tune-config-save-input",
+                                ),
+                            ],
+                            className="tune-config-save-field",
+                        ),
+                        html.Div(id="tune-config-save-feedback"),
+                    ],
+                    className="shared-notecard-body tune-config-save-form",
+                ),
+                html.Div(
+                    [
+                        html.Button(
+                            "Cancel",
+                            id="tune-config-save-cancel",
+                            n_clicks=0,
+                            className="tune-config-save-cancel",
+                        ),
+                        html.Button(
+                            "Save config",
+                            id="tune-config-save-submit",
+                            n_clicks=0,
+                            className="tune-config-save-submit",
+                        ),
+                    ],
+                    className="tune-config-save-footer",
+                ),
+            ],
+            className="shared-notecard-panel shared-notecard-size-small tune-config-save-panel",
+            role="dialog",
+            **{"aria-modal": "true"},
+        ),
+        id="tune-config-save-modal",
+        className="shared-notecard-overlay tune-config-save-modal--hidden",
+    )
+
+
 def build_layout(initial_data):
     """Assemble the full static tuning-tab layout."""
     initial_param_rows = list(initial_data["initial_param_rows"])
     initial_case_rows = list(initial_data["initial_case_rows"])
     return html.Div(
         [
+            dcc.Store(id="tune-config-save-overwrite", data=None),
+            build_tuned_config_save_dialog(),
             html.Div(
                 build_top_controls(initial_data),
                 id="tune-top-controls",
@@ -801,15 +985,30 @@ def build_layout(initial_data):
                                     ),
                                     html.Div(
                                         [
-                                            dcc.RadioItems(
-                                                id="tune-parameter-box-groups",
-                                                className="tune-segmented-control tune-parameter-box-groups",
-                                                options=[
-                                                    {"label": "Aggregate", "value": "aggregate"},
-                                                    {"label": "All", "value": "all"},
+                                            html.Div(
+                                                [
+                                                    dcc.RadioItems(
+                                                        id="tune-parameter-box-groups",
+                                                        className="tune-segmented-control tune-parameter-box-groups",
+                                                        options=[
+                                                            {"label": "Aggregate", "value": "aggregate"},
+                                                            {"label": "All", "value": "all"},
+                                                        ],
+                                                        value="aggregate",
+                                                        inline=True,
+                                                    ),
+                                                    dcc.RadioItems(
+                                                        id="tune-parameter-box-scale",
+                                                        className="tune-segmented-control tune-parameter-box-scale",
+                                                        options=[
+                                                            {"label": "Range normalized", "value": "normalized"},
+                                                            {"label": "Unscaled", "value": "unscaled"},
+                                                        ],
+                                                        value="normalized",
+                                                        inline=True,
+                                                    ),
                                                 ],
-                                                value="aggregate",
-                                                inline=True,
+                                                className="tune-parameter-box-controls",
                                             ),
                                             dcc.Graph(
                                                 id="tune-parameter-box-plot",
@@ -1018,7 +1217,15 @@ def build_layout(initial_data):
                                                     id="tune-range-rows",
                                                 ),
                                                 html.Div(
-                                                    html.Button("Add parameter", id="tune-range-add", n_clicks=0, style=action_button_style("#111827")),
+                                                    [
+                                                        html.Button("Add parameter", id="tune-range-add", n_clicks=0, style=action_button_style("#111827")),
+                                                        html.Button(
+                                                            "Add locked parameters",
+                                                            id="tune-range-add-locked",
+                                                            n_clicks=0,
+                                                            style=action_button_style("#0369a1"),
+                                                        ),
+                                                    ],
                                                     style={"display": "flex", "gap": "8px", "marginBottom": "8px"},
                                                 ),
                                                 html.H4("Config", className="tune-settings-heading"),

@@ -61,6 +61,7 @@ def test_generic_invoke_routes_plot_state_to_existing_tab_handler(monkeypatch):
         "variables": ["wp2"],
         "run_id": None,
         "output_dir": "dash_default",
+        "output_dirs": None,
         "time_start_seconds": None,
         "average_minutes": None,
         "window_preset": "loss",

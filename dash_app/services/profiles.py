@@ -23,7 +23,7 @@ from dash_app.plot_tab.plot_types.shared import (
 _MAX_AVERAGE_LENGTH_MINUTES = 240.0
 _MAX_OUTPUT_DIRECTORY_SCAN = 1000
 _MAX_DISCOVERED_OUTPUT_DIRECTORIES = 150
-_EXCLUDED_DISCOVERY_ROOTS = frozenset({"agent_artifacts"})
+_EXCLUDED_DISCOVERY_ROOTS = frozenset({"agent_artifacts", "mcp_runs"})
 
 
 def _average_length_bounds(case_data: dict[str, Any]) -> tuple[float, float, float]:

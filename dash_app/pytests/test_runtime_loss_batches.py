@@ -1,12 +1,11 @@
-"""Regression checks for bounded multi-column Tune result replays."""
+"""Regression checks for unified multi-column Tune result replays."""
 
 from pathlib import Path
 
 from dash_app.tune_tab import runtime
 
 
-def test_loss_replay_uses_sequential_safe_parameter_batches(tmp_path, monkeypatch):
-    """A 16-row replay is two eight-column calls, never one unsafe 16-column call."""
+def test_loss_replay_uses_one_multicol_run_for_every_parameter_row(tmp_path, monkeypatch):
 
     started = []
 
@@ -32,25 +31,20 @@ def test_loss_replay_uses_sequential_safe_parameter_batches(tmp_path, monkeypatc
         ["wp3"],
         [{"C1": 1.0}] * 16,
         run_mode="window",
-        batch_size=8,
         workspace_id="arm-bomex-test",
         revision_id="rev2",
         workspace_name="Arm BOMEX test",
     )
 
-    assert run["batch_count"] == 2
-    assert [batch["param_count"] for batch in run["batches"]] == [8, 8]
+    assert run["column_count"] == 16
     result_dir = Path(tmp_path) / "output" / "tuner" / "Arm_BOMEX_test_rev2_loss_window"
     assert Path(run["output_dir"]) == result_dir
-    assert Path(run["batches"][0]["output_dir"]) == result_dir
-    assert Path(run["batches"][1]["output_dir"]) == result_dir / "batch_002"
     assert len(started) == 1
+    params_text = Path(run["params_path"]).read_text(encoding="utf-8")
+    assert "ngrdcol = 16" in params_text
+    assert "batch_size = 16" in params_text
+    assert "batch_002" not in params_text
 
     updated, any_running = runtime.poll_loss_runs({"window": run})
-    assert any_running is True
-    assert updated["window"]["active_batch"] == 2
-    assert len(started) == 2
-
-    updated, any_running = runtime.poll_loss_runs(updated)
     assert any_running is False
     assert updated["window"]["state"] == "success"

@@ -1,4 +1,7 @@
 import os
+from pathlib import Path
+import shutil
+import time
 
 from dash import ALL, Input, Output, State, callback_context, html, no_update
 
@@ -19,6 +22,7 @@ from dash_app.services.profiles import (
     scan_case_outputs as scan_output_cases,
 )
 from dash_app.services.plots import apply_plot_request, resolve_benchmark_sources, toggle_benchmark_source
+from utilities.output_paths import OUTPUT_ROOT
 from .plot_types.shared import (
     clear_all_caches,
     duration_slider_marks,
@@ -77,6 +81,15 @@ def _update_output_dirs(output_dirs, action, path):
     if action == "remove":
         return [candidate for candidate in selected if candidate != normalized]
     return selected
+
+
+def _delete_output_directory(path):
+    """Permanently remove one resolved subdirectory beneath output/."""
+    target = Path(path).expanduser().resolve()
+    output_root = Path(OUTPUT_ROOT).resolve()
+    if target == output_root or output_root not in target.parents:
+        raise ValueError("Only subdirectories inside output/ can be deleted here")
+    shutil.rmtree(target)
 
 
 def _catalog_tracking_paths(records, selected_dirs):
@@ -162,24 +175,95 @@ def register_case_callbacks(app):
         return not bool(expanded)
 
     @app.callback(
+        Output("plots-loaded-output-dirs", "data"),
+        Output("plots-output-pending-warning", "children"),
+        Input("plots-output-menu-expanded", "data"),
+        Input("plots-output-dirs", "data"),
+        State("plots-loaded-output-dirs", "data"),
+    )
+    def commit_output_dirs(expanded, selected_dirs, loaded_dirs):
+        """Defer expensive case loading until the output picker closes."""
+        selected = _normalize_output_dirs(selected_dirs)
+        loaded = _normalize_output_dirs(loaded_dirs)
+        changed = selected != loaded
+        if expanded:
+            return no_update, "Close dropdown to load changes" if changed else ""
+        return (selected if changed else no_update), ""
+
+    @app.callback(
         Output("plots-available-output-list", "children"),
         Output("plots-active-output-list", "children"),
         Output("plots-output-menu", "className"),
         Input("plots-output-catalog", "data"),
         Input("plots-output-dirs", "data"),
         Input("plots-output-menu-expanded", "data"),
+        Input("plots-output-delete-confirm", "data"),
     )
-    def render_output_controls(records, selected_dirs, expanded):
+    def render_output_controls(records, selected_dirs, expanded, delete_confirmation):
         selected = _normalize_output_dirs(selected_dirs)
         known_paths = {str(record.get("path")) for record in (records or [])}
         if any(path not in known_paths for path in selected):
             records = discover_output_directories(selected_dirs=selected)
         menu_class = "plots-output-menu plots-output-menu--expanded" if expanded else "plots-output-menu"
         return (
-            available_output_buttons(records, selected, expanded=bool(expanded)),
-            active_output_items(records, selected),
+            available_output_buttons(
+                records,
+                selected,
+                expanded=bool(expanded),
+                delete_confirmation=delete_confirmation,
+            ),
+            active_output_items(
+                records,
+                selected,
+                expanded=bool(expanded),
+                delete_confirmation=delete_confirmation,
+            ),
             menu_class,
         )
+
+    @app.callback(
+        Output("plots-output-dirs", "data", allow_duplicate=True),
+        Output("plots-output-catalog", "data", allow_duplicate=True),
+        Output("plots-extra-dir-message", "children", allow_duplicate=True),
+        Output("plots-output-delete-confirm", "data"),
+        Output("plots-output-delete-expiry", "disabled"),
+        Input({"type": "plots-delete-output-dir", "path": ALL}, "n_clicks_timestamp"),
+        Input("plots-output-delete-expiry", "n_intervals"),
+        State("plots-output-dirs", "data"),
+        State("plots-output-catalog", "data"),
+        State("plots-output-delete-confirm", "data"),
+        prevent_initial_call=True,
+    )
+    def delete_output_directory(_clicks, _ticks, selected_dirs, catalog, confirmation):
+        """Require two clicks within three seconds before deleting an output."""
+        trigger = callback_context.triggered_id
+        now = time.time()
+        if trigger == "plots-output-delete-expiry":
+            if confirmation and now >= float(confirmation.get("expires_at") or 0.0):
+                return no_update, no_update, no_update, None, True
+            return no_update, no_update, no_update, no_update, no_update
+        if not isinstance(trigger, dict) or trigger.get("type") != "plots-delete-output-dir":
+            return no_update, no_update, no_update, no_update, no_update
+        if not _triggered_click_is_positive():
+            return no_update, no_update, no_update, no_update, no_update
+
+        target = str(Path(str(trigger.get("path") or "")).expanduser().resolve())
+        armed = (
+            confirmation
+            and confirmation.get("path") == target
+            and now < float(confirmation.get("expires_at") or 0.0)
+        )
+        if not armed:
+            return no_update, no_update, "", {"path": target, "expires_at": now + 3.0}, False
+        try:
+            _delete_output_directory(target)
+        except (OSError, ValueError) as exc:
+            return no_update, no_update, str(exc), None, True
+
+        selected = _update_output_dirs(selected_dirs, "remove", target)
+        tracked = [path for path in _catalog_tracking_paths(catalog, selected) if path != target]
+        updated_catalog = discover_output_directories(selected_dirs=tracked)
+        return selected, updated_catalog, f"Deleted {target}", None, True
 
     @app.callback(
         Output("plots-output-dirs", "data"),
@@ -232,7 +316,7 @@ def register_case_callbacks(app):
 
     @app.callback(
         Output("plots-case-button-container", "children"),
-        Input("plots-output-dirs", "data"),
+        Input("plots-loaded-output-dirs", "data"),
         Input("plots-case-data", "data"),
     )
     def render_case_buttons(output_dirs, case_data):
@@ -269,7 +353,7 @@ def register_case_callbacks(app):
         Output("plots-global-height-range", "step"),
         Output("plots-time-override", "data", allow_duplicate=True),
         Input({"type": "plots-case-button", "name": ALL}, "n_clicks"),
-        Input("plots-output-dirs", "data"),
+        Input("plots-loaded-output-dirs", "data"),
         Input("dashboard-request", "data"),
         State("plots-plot-order", "data"),
         State("plots-plot-state", "data"),
@@ -307,7 +391,7 @@ def register_case_callbacks(app):
     ):
         """Select a case and refresh global controls without resetting same-case reloads."""
         trigger = callback_context.triggered_id
-        if trigger == "plots-output-dirs":
+        if trigger == "plots-loaded-output-dirs":
             cases = scan_output_cases(output_dirs)
             available_names = ordered_case_names(cases.keys())
             if not available_names:
@@ -317,9 +401,13 @@ def register_case_callbacks(app):
         elif trigger == "dashboard-request":
             if (agent_request or {}).get("tab") != "plots" or (agent_request or {}).get("operation") not in {"set_view", "add_budget"}:
                 return (no_update,) * 23
-            requested_output_dir = str((agent_request or {}).get("output_dir") or "").strip()
-            if requested_output_dir:
-                output_dirs = [requested_output_dir]
+            requested_output_dirs = (agent_request or {}).get("output_dirs")
+            if requested_output_dirs:
+                output_dirs = _normalize_output_dirs(requested_output_dirs)
+            else:
+                requested_output_dir = str((agent_request or {}).get("output_dir") or "").strip()
+                if requested_output_dir:
+                    output_dirs = [requested_output_dir]
             cases = scan_output_cases(output_dirs)
             requested_case = str((agent_request or {}).get("case") or "")
             if requested_case not in cases:
@@ -496,7 +584,7 @@ def register_case_callbacks(app):
         Output("plots-add-subcolumn", "disabled"),
         Output("plots-add-pdf-contour", "disabled"),
         Input("plots-case-data", "data"),
-        Input("plots-output-dirs", "data"),
+        Input("plots-loaded-output-dirs", "data"),
     )
     def set_add_button_enabled_state(case_data, _output_dirs):
         """Enable add buttons only for plot families supported by the current case."""

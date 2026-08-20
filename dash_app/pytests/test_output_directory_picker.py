@@ -50,7 +50,27 @@ def test_expanded_menu_shows_all_and_only_unselected_outputs():
 
     buttons = available_output_buttons(records, ["/tmp/middle"], expanded=True)
 
-    assert [button.id["path"] for button in buttons] == ["/tmp/newest", "/tmp/oldest"]
+    assert [row.children[0].id["path"] for row in buttons] == ["/tmp/newest", "/tmp/oldest"]
+
+
+def test_expanded_menu_arms_permanent_delete_with_explicit_confirmation(monkeypatch, tmp_path):
+    from dash_app.plot_tab import layout
+
+    monkeypatch.setattr(layout, "OUTPUT_ROOT", tmp_path)
+    output = tmp_path / "run"
+    record = _record(str(output), "output/run", ["arm"])
+
+    row = available_output_buttons(
+        [record],
+        [],
+        expanded=True,
+        delete_confirmation={"path": str(output.resolve())},
+    )[0]
+
+    delete_button = row.children[1]
+    assert delete_button.children == "Confirm"
+    assert delete_button.id == {"type": "plots-delete-output-dir", "path": str(output.resolve())}
+    assert "plots-output-dir-delete--confirm" in delete_button.className
 
 
 def test_active_tray_shows_counts_tooltips_and_remove_controls():

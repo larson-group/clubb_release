@@ -25,7 +25,6 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from flask import Flask, jsonify
-import psutil
 from werkzeug.serving import make_server
 
 from .activity import REPO_ROOT, broker_jobs, count_active_jobs, publish_event, set_broker_metadata, update_broker_job
@@ -39,19 +38,12 @@ from .gateway import API_PREFIX, BROKER_LOCK_PATH, BROKER_LOG_PATH, CONNECTION_P
 from .broker_protocol import BROKER_PROTOCOL_VERSION
 from .provenance import runtime_source_fingerprint
 from .manager_lease import LEASE_TIMEOUT_SECONDS, MANAGER_REQUIRED_ENV, manager_lease_is_live
+from .runtime import process_is_alive as _pid_is_alive
 
 
 BROKER_START_TIMEOUT_SECONDS = 8.0
 BROKER_WORK_STOP_TIMEOUT_SECONDS = 12.0
 _STARTED_BROKER_PROCESSES: list[subprocess.Popen[Any]] = []
-
-
-def _pid_is_alive(pid: Any) -> bool:
-    try:
-        process = psutil.Process(int(pid))
-        return process.status() != psutil.STATUS_ZOMBIE
-    except (psutil.Error, TypeError, ValueError, OSError):
-        return False
 
 
 def connection_is_live(connection: dict[str, Any], *, timeout: float = 0.5) -> bool:
@@ -444,6 +436,9 @@ def serve() -> None:
     )
     install_gateway_routes(app, connection)
     set_broker_metadata(pid=os.getpid(), url=connection["url"], started_at=broker_started_at, state="running")
+    from . import actions
+
+    actions.clear_terminal_scm_session()
     _recover_compile_monitoring()
     _recover_profile_monitoring()
     _recover_tune_keepalive()

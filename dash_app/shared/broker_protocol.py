@@ -14,6 +14,17 @@
 # Version 19 fixes artifact retention ordering after active bundles are released.
 # Version 20 adds manager-owned graceful shutdown for every broker job family.
 # Version 21 adds the broker-owned Profile timing job used by the Profile tab.
+# Version 22 adds atomic SCM-batch cancellation and browser-visible queued children.
+# Version 23 makes SCM state compact, session-scoped, and directly log-streamed.
+# Version 24 adds broker-owned cancellation of every Run-tab SCM job.
+# Version 25 adds broker-owned PyPlotGen exports from the Plot tab.
+# Version 26 launches PyPlotGen unbuffered for live progress reporting.
+# Version 27 adds immediate broker-owned PyPlotGen cancellation.
+# Version 28 propagates unbuffered stdout into PyPlotGen pool workers.
+# Version 29 scopes SCM admission to canonical case/output pairs and returns
+# accepted/skipped batch cases without public output-directory manifests.
+# Version 30 serializes artifact retention and keeps SCM batch queues alive
+# after an individual child setup failure.
 # Runtime source fingerprints are metadata/lifecycle policy, not an API
 # contract, so they do not require a protocol bump.
-BROKER_PROTOCOL_VERSION = 21
+BROKER_PROTOCOL_VERSION = 30

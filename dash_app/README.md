@@ -255,8 +255,10 @@ bounded `read_job_log`, and `cancel_job`. Mutating requests require a stable
 request with the same ID is rejected. Typed MCP SCM runs write their scientific
 output to the controlled, plot-discoverable
 `output/mcp_runs/<batch-id>/` location by default. Each case writes directly beneath
-that directory as `<case>_stats.nc`; the parent `batch_manifest.json` records
-the durable group and child job/run statuses. `submit_scm_run` remains the
+that directory as `<case>_stats.nc`; the broker JobStore records the durable
+group and child job/run statuses. Uniquely scoped MCP artifact manifests remain
+available through the artifact API, but no manifest is written into the public
+scientific-output directory. `submit_scm_run` remains the
 backward-compatible one-case wrapper over the same batch service. The MCP
 client may optionally supply `out_dir`; it is resolved below the repository's
 `output/` directory, for example `dash_default` becomes

@@ -6,7 +6,6 @@ import atexit
 import importlib.util
 import logging
 import os
-from pathlib import Path
 import pkgutil
 import socket
 import sys
@@ -15,6 +14,7 @@ import uuid
 import webbrowser
 
 from dash import ClientsideFunction, Dash, dcc, html, Input, Output, State
+from flask import request
 
 DASH_APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.abspath(os.path.join(DASH_APP_ROOT, ".."))
@@ -25,20 +25,22 @@ from dash_app.agent_integration import client
 from dash_app.agent_integration.handoff import dashboard_handoff, register_dashboard_handoff_callbacks
 from dash_app.agent_integration.dashboard_lifecycle import DashboardRegistration
 from dash_app.compile_tab.tab import build_tab as build_compile_tab
+from dash_app.compile_tab.build_selector import build_selector_overlay
 from dash_app.misc_tab.tab import build_tab as build_misc_tab
 from dash_app.persistence import enable_workspace_persistence, utility_drawer
 from dash_app.plot_tab.tab import build_tab as build_plots_tab
+from dash_app.plot_tab.static import register_pyplotgen_routes
 from dash_app.profile_tab.tab import build_tab as build_profile_tab
 from dash_app.reports_tab.static import register_static_report_routes
 from dash_app.reports_tab.tab import build_tab as build_reports_tab
 from dash_app.run_tab.tab import build_tab as build_run_tab
+from dash_app.run_tab.telemetry import run_telemetry
 from dash_app.shared.background import create_background_manager
 from dash_app.shared.broker import ensure_broker
 from dash_app.shared.gateway import BROKER_LOG_PATH, read_connection, update_connection_logs
 from dash_app.shared.runtime import private_path
 from dash_app.shared.runtime_logging import dashboard_log_path
 from dash_app.shared.provenance import runtime_source_fingerprint
-from dash_app.shared.selected_build import register_selected_build_callback
 from dash_app.tune_tab.tab import build_tab as build_tune_tab
 from dash_app.tutorial_tab.tab import build_tab as build_tutorial_tab
 
@@ -74,6 +76,19 @@ def _register_dashboard_generation_route(app: Dash) -> None:
     @app.server.get("/_clubb-dashboard-generation")
     def _dashboard_generation():
         return {"generation": DASH_GENERATION}, {"Cache-Control": "no-store"}
+
+
+def _register_run_telemetry_route(app: Dash) -> None:
+    """Serve one bounded authoritative Run lifecycle/progress/log observation."""
+
+    @app.server.post("/_clubb-run-telemetry")
+    def _run_telemetry():
+        request_data = request.get_json(silent=True) or {}
+        raw_cursors = request_data.get("log_cursors") or {}
+        cursors = dict(raw_cursors) if isinstance(raw_cursors, dict) else {}
+        return run_telemetry(request_data.get("known_revision"), cursors), {
+            "Cache-Control": "no-store"
+        }
 
 
 def _port_is_available(host: str, port: int) -> bool:
@@ -235,7 +250,9 @@ def main():
         background_callback_manager=create_background_manager(REPO_ROOT),
     )
     _register_dashboard_generation_route(app)
+    _register_run_telemetry_route(app)
     register_static_report_routes(app)
+    register_pyplotgen_routes(app)
 
     tabs = [
         build_tutorial_tab(app),
@@ -280,9 +297,9 @@ def main():
     app.layout = html.Div(
         [
             dcc.Store(id="theme-store", data="dark"),
-            dcc.Interval(id="selected-build-refresh", interval=3000, n_intervals=0),
             dashboard_handoff(_app_title()),
             dcc.Tabs(tabs, id="dashboard-tabs", value="tutorial"),
+            build_selector_overlay(),
             utility_drawer(endpoint_details),
         ],
         id="app-root",
@@ -327,7 +344,6 @@ def main():
         return "theme-dark", "Theme: Dark"
 
     register_dashboard_handoff_callbacks(app)
-    register_selected_build_callback(app)
 
     app.clientside_callback(
         ClientsideFunction(

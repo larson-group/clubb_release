@@ -12,7 +12,7 @@ from dash_app.run_tab.namelist import read_namelist_entries
 from dash_app.run_tab.callbacks_settings import register_settings_callbacks, settings_resolution_for_save
 from dash_app.run_tab.config_state import build_tunable_config_state
 from dash_app.run_tab.layout import build_config_save_dialog, build_run_config_buttons
-from utilities.save_tunable_config import save_tunable_config
+from utilities.save_tunable_config import build_tuned_config_overrides, save_tunable_config
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -54,6 +54,35 @@ def test_save_clones_config_applies_overrides_and_writes_readme(config_root):
     assert "ARM experiment" in readme
     assert "CLUBB commit:" in readme
     assert "`tunable_parameters.in:C4`" in readme
+
+
+def test_tuned_config_overrides_apply_candidate_after_scm_override(config_root):
+    overrides = build_tuned_config_overrides(
+        "default",
+        "l_use_cloud_cover=.true.,C4=2.5",
+        {"C4": 3.25},
+        config_root=config_root,
+    )
+    save_tunable_config(
+        "default",
+        overrides,
+        "tuned",
+        config_root=config_root,
+    )
+
+    saved = config_root / "tuned"
+    assert _value(saved / "configurable_model_flags.in", "l_use_cloud_cover") == ".true."
+    assert _value(saved / "tunable_parameters.in", "C4") == "3.25"
+
+
+def test_tuned_config_rejects_overrides_not_stored_in_named_configs(config_root):
+    with pytest.raises(ValueError, match="not stored in a tunable config"):
+        build_tuned_config_overrides(
+            "default",
+            "dt_main=10",
+            {"C4": 3.25},
+            config_root=config_root,
+        )
 
 
 def test_overwrite_requires_force(config_root):

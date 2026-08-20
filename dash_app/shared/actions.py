@@ -23,17 +23,14 @@ from .activity import (
     publish_budget_request,
     publish_plot_remove_request,
     publish_plot_request,
-    publish_run_request,
     publish_tab_request,
     publish_tune_request,
     broker_jobs,
     read_activity,
     set_broker_job,
     set_broker_loss_run,
-    set_broker_run,
     update_broker_job,
     update_broker_loss_run,
-    update_broker_run,
 )
 from .tab_registry import (
     describe_tabs,
@@ -51,10 +48,21 @@ from dash_app.compile_tab.runtime import (
     start_rebuild_job,
 )
 from dash_app.run_tab.namelist import cleanup_temp_files
-from dash_app.run_tab.runtime import get_proc, is_case_active, read_log_increment as read_run_log_increment, record_case_finish, snapshot_active_cases, start_case_process
+from dash_app.run_tab.runtime import (
+    get_proc,
+    record_case_finish,
+    start_case_process,
+)
+from dash_app.run_tab.telemetry import run_telemetry as collect_run_telemetry
+from dash_app.run_tab.telemetry import scm_run_view as _scm_run_view
 from dash_app.run_tab.state import MAX_RUN_PROCS
 from dash_app.run_tab.state import DEFAULT_STATS_NAME
 from dash_app.plot_tab.plot_types.profile_plot import PLOT as profile_plot
+from dash_app.plot_tab.pyplotgen_runtime import (
+    release_pyplotgen,
+    start_pyplotgen,
+    stop_pyplotgen,
+)
 from dash_app.profile_tab.runtime import (
     profile_process_status,
     profile_results_complete,
@@ -139,7 +147,13 @@ from dash_app.services import (
 )
 from dash_app.services import profiles as profile_service
 from dash_app.shared.provenance import sha256_file, source_provenance
-from dash_app.shared.runtime import atomic_write_json, exclusive_file_lock, private_path
+from dash_app.shared.runtime import (
+    atomic_write_json,
+    exclusive_file_lock,
+    private_path,
+    process_is_alive as _pid_is_alive,
+    read_file_chunk,
+)
 from . import dashboard_registry
 
 
@@ -156,6 +170,7 @@ _BATCH_ID_RE = re.compile(r"^batch_[A-Za-z0-9_-]+$")
 _TUNE_MAX_PARAMETERS = 24
 _TUNE_MAX_RANDOM_SAMPLES = 1000
 _TUNE_MAX_SIMANN_ITERS = 5000
+_TUNE_MAX_ADAM_UPDATES = 5000
 _TUNE_MAX_RESOLVE_SAMPLES = 1000
 _TUNE_MAX_BATCH_SIZE = 64
 _PROFILE_WINDOW_PRESETS = {"loss", "pyplotgen"}
@@ -163,6 +178,7 @@ _PROFILE_EXPORT_DIR = REPO_ROOT / "output" / "agent_exports"
 _JOB_STORE = JobStore()
 _ARTIFACT_STORE = ArtifactStore()
 _BATCH_QUEUE_LOCK = threading.Lock()
+_BATCH_RESULT_LOCK = threading.Lock()
 _BATCH_WATCHERS_LOCK = threading.Lock()
 _BATCH_WATCHERS: set[str] = set()
 _BROKER_SHUTTING_DOWN = threading.Event()
@@ -192,18 +208,6 @@ _BROWSER_HANDOFF_OPERATIONS = {
 def _tail(text: str, limit: int = 1800) -> str:
     text = str(text or "").strip()
     return text[-limit:] if len(text) > limit else text
-
-
-def _pid_is_alive(pid: Any) -> bool:
-    """Check a recovered child without relying on an in-memory ``Popen``."""
-    try:
-        numeric_pid = int(pid)
-        if numeric_pid < 1:
-            return False
-        os.kill(numeric_pid, 0)
-    except (OSError, TypeError, ValueError):
-        return False
-    return True
 
 
 def _read_log_tail(log_path: str | None, limit: int = 16000) -> str:
@@ -275,28 +279,36 @@ def _resolve_mcp_output_dir(value: str) -> Path:
     return resolved
 
 
-def _public_scm_output_dir(case: str, run_id: str) -> Path:
-    """Return the default durable output location for a typed MCP SCM run.
-
-    A run ID is already minted by the durable job store, so it gives each
-    request a stable, discoverable default directory. Public requests may
-    override this with a validated path below the repository output root.
-    """
-    safe_case = str(case or "").strip()
-    if not _CASE_RE.fullmatch(safe_case):
-        raise ValueError("typed SCM run is missing a valid case name")
-    safe_run_id = str(run_id or "").strip()
-    if not re.fullmatch(r"run_[A-Za-z0-9_-]+", safe_run_id):
-        raise ValueError("typed SCM run is missing a valid run identifier")
-    return _public_scm_output_root() / safe_case / safe_run_id
-
-
 def _public_scm_batch_output_dir(batch_id: str) -> Path:
     """Return the default single flat, broker-owned directory for one batch."""
     safe_batch = str(batch_id or "").strip()
     if not _BATCH_ID_RE.fullmatch(safe_batch):
         raise ValueError("SCM batch is missing a valid batch identifier")
-    return _public_scm_output_root() / safe_batch
+    return (_public_scm_output_root() / safe_batch).resolve()
+
+
+def _canonical_output_directory(value: Any) -> str:
+    """Return one stable filesystem identity without creating the directory."""
+    text = str(value or "").strip()
+    return str(Path(text).expanduser().resolve()) if text else ""
+
+
+def _scm_record_output_directory(record: dict[str, Any]) -> str:
+    """Read the canonical target from current and pre-migration SCM records."""
+    runtime = dict(record.get("runtime") or {})
+    proc_data = dict(runtime.get("proc_data") or {})
+    display = dict(record.get("display") or {})
+    cli_options = dict(display.get("cli_options") or {})
+    for value in (
+        record.get("output_directory"),
+        runtime.get("output_directory"),
+        proc_data.get("output_directory"),
+        cli_options.get("out_dir"),
+    ):
+        canonical = _canonical_output_directory(value)
+        if canonical:
+            return canonical
+    return ""
 
 
 def _batch_child_summary(record: dict[str, Any]) -> dict[str, Any]:
@@ -312,6 +324,9 @@ def _batch_child_summary(record: dict[str, Any]) -> dict[str, Any]:
             "output_directory",
             "runtime",
             "finished_at_unix_seconds",
+            "updated_at_unix_seconds",
+            "result_summary_job_id",
+            "result_summary_path",
         )
         if record.get(key) is not None
     }
@@ -321,26 +336,39 @@ def _batch_child_summary(record: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def _write_scm_batch_manifest(batch: dict[str, Any]) -> str:
-    """Atomically publish the compact parent/child batch manifest."""
-    output_directory = Path(str(batch.get("output_directory") or ""))
-    output_directory.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "schema_version": 1,
-        "batch_id": batch.get("batch_id"),
-        "job_id": batch.get("job_id"),
-        "request_id": batch.get("request_id"),
-        "state": batch.get("state"),
-        "request": batch.get("request") or {},
-        "output_directory": str(output_directory),
-        "children": batch.get("children") or [],
-        "created_at_unix_seconds": batch.get("created_at_unix_seconds"),
-        "updated_at_unix_seconds": batch.get("updated_at_unix_seconds"),
-        "finished_at_unix_seconds": batch.get("finished_at_unix_seconds"),
+def _batch_child_job_ids(batch: dict[str, Any]) -> list[str]:
+    """Read canonical child references, with compatibility for pre-v10 batches."""
+    child_ids = list(batch.get("child_job_ids") or [])
+    if child_ids:
+        return [str(job_id) for job_id in child_ids if job_id]
+    return [
+        str(child.get("job_id") or "")
+        for child in batch.get("children") or []
+        if child.get("job_id")
+    ]
+
+
+def _batch_children(batch: dict[str, Any], transaction=None) -> list[dict[str, Any]]:
+    getter = transaction.get if transaction is not None else _JOB_STORE.get
+    return [
+        record
+        for job_id in _batch_child_job_ids(batch)
+        if (record := getter(job_id)) is not None
+    ]
+
+
+def _materialize_scm_batch(batch: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Attach current child summaries at public response boundaries."""
+    if batch is None:
+        return None
+    public_batch = dict(batch)
+    public_batch.pop("public_manifest_path", None)
+    return {
+        **public_batch,
+        "children": [
+            _batch_child_summary(child) for child in _batch_children(batch)
+        ],
     }
-    path = output_directory / "batch_manifest.json"
-    atomic_write_json(path, payload)
-    return str(path)
 
 
 def _batch_record(job_id: str) -> dict[str, Any] | None:
@@ -353,6 +381,8 @@ def _batch_terminal(state: str) -> bool:
 
 
 def _batch_state(children: list[dict[str, Any]]) -> str:
+    if not children:
+        return "finished"
     states = {str(child.get("state") or "queued") for child in children}
     if states & {"starting", "running", "stopping"}:
         return "running"
@@ -363,64 +393,44 @@ def _batch_state(children: list[dict[str, Any]]) -> str:
     return "partial_failure"
 
 
-def _refresh_scm_batch(batch_job_id: str, child_job_id: str | None = None) -> dict[str, Any] | None:
-    """Mirror one child transition into the durable parent and public manifest."""
-    batch = _batch_record(batch_job_id)
-    if batch is None:
+def _refresh_scm_batch(batch_job_id: str, _child_job_id: str | None = None) -> dict[str, Any] | None:
+    """Derive the parent lifecycle from its canonical child records."""
+    def refresh(transaction):
+        batch = transaction.get(batch_job_id)
+        if batch is None or batch.get("kind") != "scm_batch":
+            return None
+        children = _batch_children(batch, transaction)
+        cancellation_requested = bool(batch.get("cancellation_requested"))
+        children_active = any(
+            str(child.get("state") or "") in {"starting", "running", "stopping"}
+            for child in children
+        )
+        state = (
+            "stopping" if children_active else "cancelled"
+        ) if cancellation_requested else _batch_state(children)
+        terminal = _batch_terminal(state)
+        result_path = str(_ARTIFACT_STORE.bundle_dir(batch_job_id) / "execution_result.json")
+        return transaction.update(
+            batch_job_id,
+            state=state,
+            result_summary_path=result_path if terminal else batch.get("result_summary_path"),
+            finished_at_unix_seconds=time.time() if terminal else None,
+        )
+
+    updated = _materialize_scm_batch(_JOB_STORE.transaction(refresh))
+    if updated is None:
         return None
-    children = []
-    for item in batch.get("children") or []:
-        child = dict(item or {})
-        job_id = str(child.get("job_id") or "")
-        current = _JOB_STORE.get(job_id)
-        if current and (child_job_id is None or job_id == child_job_id or current.get("state") != child.get("state")):
-            child = _batch_child_summary(current)
-        children.append(child)
-    state = _batch_state(children)
-    updates: dict[str, Any] = {"children": children, "state": state}
+    state = str(updated.get("state") or "")
     if _batch_terminal(state):
-        updates["finished_at_unix_seconds"] = time.time()
-    updated = _JOB_STORE.update(batch_job_id, **updates) or batch | updates
-    updated["children"] = children
-    updated["state"] = state
-    manifest_path = _write_scm_batch_manifest(updated)
-    if manifest_path != updated.get("public_manifest_path"):
-        updated = _JOB_STORE.update(batch_job_id, public_manifest_path=manifest_path) or updated | {"public_manifest_path": manifest_path}
-    if _batch_terminal(state):
+        returncode = 0 if state == "finished" else 1
+        with _BATCH_RESULT_LOCK:
+            result_summary_path = Path(str(updated.get("result_summary_path") or ""))
+            if not result_summary_path.is_file():
+                _write_run_result_summary(
+                    batch_job_id, updated.get("output_directory"), returncode
+                )
         _ARTIFACT_STORE.release(batch_job_id)
     return updated
-
-
-def _write_public_run_manifest(output_directory: Path, payload: dict[str, Any]) -> Path:
-    """Write compact durable provenance beside a typed MCP run's NetCDF data."""
-    output_directory.mkdir(parents=True, exist_ok=True)
-    manifest_path = output_directory / "run_manifest.json"
-    atomic_write_json(manifest_path, payload)
-    return manifest_path
-
-
-def _seal_public_run_manifest(output_directory: str | None, returncode: int) -> str | None:
-    """Record terminal status without making private artifact retention public."""
-    if not output_directory:
-        return None
-    manifest_path = Path(output_directory) / "run_manifest.json"
-    try:
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if not isinstance(payload, dict):
-            return None
-        execution = dict(payload.get("execution") or {})
-        execution.update(
-            {
-                "state": "finished" if returncode == 0 else "error",
-                "returncode": int(returncode),
-                "finished_at_unix_seconds": time.time(),
-            }
-        )
-        payload["execution"] = execution
-        _write_public_run_manifest(Path(output_directory), payload)
-        return str(manifest_path)
-    except (OSError, ValueError, TypeError, json.JSONDecodeError):
-        return None
 
 
 def _validate_case(case: str) -> str:
@@ -520,18 +530,8 @@ def _watch_profile(job: dict[str, Any]) -> None:
 
 
 def _watch_run(case: str, proc_data: dict[str, Any], job_id: str | None = None) -> None:
-    offset = 0
     pid = proc_data.get("pid")
     while True:
-        chunk, offset = read_run_log_increment(proc_data.get("log"), offset)
-        if chunk:
-            # The Run tab owns live SCM log presentation. Repeating those
-            # chunks in the global activity drawer turns ordinary iteration
-            # progress into noisy snapshots, while the durable log offset
-            # below is still needed for console reconnect/recovery.
-            update_broker_run(case, log_tail=_read_log_tail(proc_data.get("log")), log_offset=offset)
-            if job_id:
-                _JOB_STORE.update(job_id, progress={"log_offset": offset})
         proc = get_proc(pid)
         # A detached broker can restart while SCM continues.  In that case
         # there is no local Popen, but PID liveness is enough to retain the
@@ -540,21 +540,37 @@ def _watch_run(case: str, proc_data: dict[str, Any], job_id: str | None = None) 
         # limitation explicitly rather than inventing a successful result.
         returncode = proc.poll() if proc is not None else (None if _pid_is_alive(pid) else 1)
         if returncode is not None:
-            requested_stop = str(
-                ((broker_jobs().get("runs") or {}).get(case) or {}).get("state") or ""
-            ) == "stopping"
+            requested_stop = returncode in {-signal.SIGTERM, -signal.SIGKILL}
+            if job_id:
+                requested_stop = requested_stop or str(
+                    (_JOB_STORE.get(job_id) or {}).get("state") or ""
+                ) in {"stopping", "cancelled"}
             record_case_finish(case, pid, returncode)
             cleanup_temp_files(proc_data.get("temp_files") or [])
             recovered_exit = proc is None
-            broker_state = "finished" if returncode == 0 else ("stopped" if requested_stop else "error")
             job_state = "finished" if returncode == 0 else ("cancelled" if requested_stop else "error")
-            update_broker_run(
-                case,
-                state=broker_state,
-                returncode=returncode,
-                finished_at=time.time(),
-                log_offset=offset,
-            )
+            batch_job_id = ""
+            if job_id:
+                child_record = _JOB_STORE.get(job_id) or {}
+                batch_job_id = str(child_record.get("batch_job_id") or "")
+                _JOB_STORE.update(
+                    job_id,
+                    state=job_state,
+                    returncode=returncode,
+                    finished_at_unix_seconds=time.time(),
+                    recovery_note=(
+                        "exit code unavailable after broker recovery"
+                        if recovered_exit
+                        else None
+                    ),
+                )
+                if batch_job_id:
+                    batch_state = _refresh_scm_batch(batch_job_id, job_id)
+                    if batch_state and any(
+                        str(item.get("state") or "") == "queued"
+                        for item in batch_state.get("children") or []
+                    ):
+                        _ensure_scm_batch_watcher(batch_job_id)
             publish_event(
                 "run",
                 f"{case} finished" if returncode == 0 else (f"{case} stopped" if requested_stop else f"{case} failed"),
@@ -562,28 +578,17 @@ def _watch_run(case: str, proc_data: dict[str, Any], job_id: str | None = None) 
                 status="success" if returncode == 0 else ("info" if requested_stop else "error"),
             )
             if job_id:
-                child_record = _JOB_STORE.get(job_id) or {}
-                batch_job_id = str(child_record.get("batch_job_id") or "")
-                result_summary = _write_run_result_summary(job_id, proc_data.get("output_directory"), returncode)
-                public_manifest = _seal_public_run_manifest(proc_data.get("output_directory"), returncode)
-                _JOB_STORE.update(
-                    job_id,
-                    state=job_state,
-                    returncode=returncode,
-                    finished_at_unix_seconds=time.time(),
-                    log_tail=_read_log_tail(proc_data.get("log")),
-                    recovery_note="exit code unavailable after broker recovery" if recovered_exit else None,
-                    result_summary_path=result_summary,
-                    public_manifest_path=public_manifest,
-                )
+                if not batch_job_id:
+                    result_summary = _write_run_result_summary(
+                        job_id, proc_data.get("output_directory"), returncode
+                    )
+                    _JOB_STORE.update(
+                        job_id,
+                        result_summary_path=result_summary,
+                    )
                 _ARTIFACT_STORE.release(job_id)
-                if batch_job_id:
-                    batch_state = _refresh_scm_batch(batch_job_id, job_id)
-                    if batch_state and any(str(item.get("state") or "") == "queued" for item in batch_state.get("children") or []):
-                        _ensure_scm_batch_watcher(batch_job_id)
-                        _start_queued_scm_batch_children(batch_job_id)
             return
-        time.sleep(0.75)
+        time.sleep(0.2)
 
 
 def _background(target, *args) -> None:
@@ -605,11 +610,31 @@ def _profile_case_data(case_name: str, *, required: bool, output_dirs: list[str]
     return profile_service.load_case_data(REPO_ROOT, case_name, required=required, output_dirs=output_dirs)
 
 
-def _plot_output_selection(case_name: str, run_id: str | None, output_dir: str | None) -> tuple[str, list[str] | None]:
+def _plot_output_selection(
+    case_name: str,
+    run_id: str | None,
+    output_dir: str | None,
+    output_dirs: list[str] | None = None,
+) -> tuple[str, list[str] | None]:
     """Resolve the immutable run or explicit output selection for Plot actions."""
     selected_run_id = str(run_id or "").strip()
     requested_output = str(output_dir or "").strip()
     selected_output = _resolve_mcp_output_dir(requested_output) if requested_output else None
+
+    selected_outputs = None
+    if output_dirs is not None:
+        if selected_run_id or requested_output:
+            raise ValueError("output_dirs cannot be combined with run_id or output_dir")
+        if not 1 <= len(output_dirs) <= 8:
+            raise ValueError("output_dirs must contain between 1 and 8 directories")
+        selected_outputs = []
+        for value in output_dirs:
+            requested = str(value or "").strip()
+            if not requested:
+                raise ValueError("output_dirs cannot contain an empty directory")
+            resolved = str(_resolve_mcp_output_dir(requested))
+            if resolved not in selected_outputs:
+                selected_outputs.append(resolved)
 
     if selected_run_id:
         run = _JOB_STORE.get_run(selected_run_id)
@@ -629,6 +654,8 @@ def _plot_output_selection(case_name: str, run_id: str | None, output_dir: str |
             raise ValueError("run_id and output_dir select different output directories")
         selected_output = resolved_run_output
 
+    if selected_outputs is not None:
+        return selected_run_id, selected_outputs
     return selected_run_id, [str(selected_output)] if selected_output is not None else None
 
 
@@ -958,13 +985,17 @@ def _normalize_tune_strategy(
     simann_max_iters: int,
     simann_initial_temp: float,
     simann_final_temp: float,
+    adam_max_updates: int,
+    adam_learning_rate: float,
+    adam_perturbation: float,
+    adam_spsa_pairs: int,
     batch_size: int,
     max_workers: int,
     max_samples_limit: int | None = _TUNE_MAX_RANDOM_SAMPLES,
 ) -> dict[str, Any]:
     name = str(strategy or "random").strip().lower()
     if name not in VALID_STRATEGY_NAMES:
-        raise ValueError("strategy must be random, resolve, or simann")
+        raise ValueError("strategy must be random, resolve, simann, or adam")
     if name == "random":
         return {"name": name, "options": {"max_samples": _positive_int(max_samples, "max_samples", maximum=max_samples_limit)}}
     if name == "resolve":
@@ -981,17 +1012,43 @@ def _normalize_tune_strategy(
                 )
         return {"name": name, "options": {"spacing": spacing}}
 
-    initial_temp = _finite_float(simann_initial_temp, "simann_initial_temp")
-    final_temp = _finite_float(simann_final_temp, "simann_final_temp")
-    if initial_temp <= 0.0 or final_temp <= 0.0:
-        raise ValueError("SimAnn temperatures must be > 0")
+    if name == "simann":
+        initial_temp = _finite_float(simann_initial_temp, "simann_initial_temp")
+        final_temp = _finite_float(simann_final_temp, "simann_final_temp")
+        if initial_temp <= 0.0 or final_temp <= 0.0:
+            raise ValueError("SimAnn temperatures must be > 0")
+        return {
+            "name": name,
+            "options": {
+                "max_iters": _positive_int(simann_max_iters, "simann_max_iters", maximum=_TUNE_MAX_SIMANN_ITERS),
+                "initial_temp": initial_temp,
+                "max_final_temp": final_temp,
+                "chain_count": max(1, max_workers * batch_size),
+            },
+        }
+
+    learning_rate = _finite_float(adam_learning_rate, "adam_learning_rate")
+    perturbation = _finite_float(adam_perturbation, "adam_perturbation")
+    spsa_pairs = _positive_int(adam_spsa_pairs, "adam_spsa_pairs")
+    columns_per_chain = 2 * spsa_pairs
+    if learning_rate <= 0.0:
+        raise ValueError("adam_learning_rate must be > 0")
+    if not 0.0 < perturbation <= 0.5:
+        raise ValueError("adam_perturbation must be in (0, 0.5]")
+    if batch_size % columns_per_chain != 0:
+        raise ValueError(
+            "Adam requires batch_size to be divisible by 2 * spsa_pairs "
+            f"({batch_size} is not divisible by {columns_per_chain})"
+        )
     return {
         "name": name,
         "options": {
-            "max_iters": _positive_int(simann_max_iters, "simann_max_iters", maximum=_TUNE_MAX_SIMANN_ITERS),
-            "initial_temp": initial_temp,
-            "max_final_temp": final_temp,
-            "chain_count": max(1, max_workers * batch_size),
+            "max_updates": _positive_int(
+                adam_max_updates, "adam_max_updates", maximum=_TUNE_MAX_ADAM_UPDATES
+            ),
+            "learning_rate": learning_rate,
+            "perturbation": perturbation,
+            "spsa_pairs": spsa_pairs,
         },
     }
 
@@ -1029,27 +1086,107 @@ def _validated_stats_file(stats_file: str) -> str:
     return value
 
 
-def _active_scm_processes() -> set[tuple[str, str]]:
-    """Return the union of broker and legacy in-memory SCM children by PID."""
+def _active_scm_processes(*, exclude_job_id: str | None = None) -> set[tuple[str, str]]:
+    """Return active broker-owned SCM children, deduplicated by PID."""
     active: set[tuple[str, str]] = set()
-    for case_name, item in (broker_jobs().get("runs") or {}).items():
-        item = dict(item or {})
-        if str(item.get("state") or "") not in {"running", "stopping"}:
+    for item in _JOB_STORE.list_kind("scm"):
+        if str(item.get("job_id") or "") == str(exclude_job_id or ""):
             continue
-        pid = (item.get("proc_data") or {}).get("pid")
-        active.add(("pid", str(pid)) if pid else ("broker", str(case_name)))
-    for case_name, item in snapshot_active_cases().items():
-        pid = (item or {}).get("pid")
-        active.add(("pid", str(pid)) if pid else ("native", str(case_name)))
+        if str(item.get("state") or "") not in {"starting", "running", "stopping"}:
+            continue
+        runtime = dict(item.get("runtime") or {})
+        pid = (runtime.get("proc_data") or {}).get("pid")
+        case_name = str((item.get("request") or {}).get("case") or "")
+        active.add(("pid", str(pid)) if pid else ("job", str(item.get("job_id") or case_name)))
     return active
 
 
-def _assert_scm_admission(case_name: str) -> None:
-    """Apply the single cross-client case and global-concurrency rule."""
-    broker_record = dict((broker_jobs().get("runs") or {}).get(case_name) or {})
-    if str(broker_record.get("state") or "") in {"running", "stopping"} or is_case_active(case_name):
-        raise ValueError(f"{case_name} is already running; wait for it to finish before starting another run")
-    if len(_active_scm_processes()) >= MAX_RUN_PROCS:
+_SCM_RESERVED_STATES = {"queued", "submitting", "starting", "running", "stopping"}
+
+
+def _matching_scm_records(
+    case_name: str,
+    output_directory: str | Path | None = None,
+    *,
+    states: set[str] | None = None,
+    exclude_job_id: str | None = None,
+    records: Any = None,
+) -> list[dict[str, Any]]:
+    """Return case/output matches, conservatively including old unknown paths."""
+    target = _canonical_output_directory(output_directory)
+    matches = []
+    for raw_record in records if records is not None else _JOB_STORE.list_kind("scm"):
+        if not isinstance(raw_record, dict) or raw_record.get("kind") != "scm":
+            continue
+        record = dict(raw_record)
+        if str(record.get("job_id") or "") == str(exclude_job_id or ""):
+            continue
+        if states is not None and str(record.get("state") or "") not in states:
+            continue
+        if str((record.get("request") or {}).get("case") or "") != str(case_name):
+            continue
+        record_target = _scm_record_output_directory(record)
+        # Pre-migration active records without a known target remain global
+        # blockers rather than risking two writers for one case.
+        if target and record_target and record_target != target:
+            continue
+        matches.append(record)
+    return matches
+
+
+def _scm_output_conflict(
+    case_name: str,
+    output_directory: str | Path,
+    *,
+    exclude_job_id: str | None = None,
+    records: Any = None,
+) -> dict[str, Any] | None:
+    """Return the existing reservation for a case/output pair, if any."""
+    matches = _matching_scm_records(
+        case_name,
+        output_directory,
+        states=_SCM_RESERVED_STATES,
+        exclude_job_id=exclude_job_id,
+        records=records,
+    )
+    return max(
+        matches,
+        key=lambda record: float(
+            record.get("updated_at_unix_seconds")
+            or record.get("created_at_unix_seconds")
+            or 0
+        ),
+        default=None,
+    )
+
+
+def scm_run_summary() -> dict[str, Any]:
+    """Return compact authoritative counts for global dashboard labels."""
+    return _JOB_STORE.scm_summary()
+
+
+def run_telemetry(
+    known_revision: Any = None,
+    log_cursors: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return collect_run_telemetry(
+        known_revision, log_cursors, store=_JOB_STORE
+    )
+
+
+def _assert_scm_admission(
+    case_name: str,
+    output_directory: str | Path,
+    *,
+    exclude_job_id: str | None = None,
+) -> None:
+    """Apply output-scoped identity and global process admission rules."""
+    target = _canonical_output_directory(output_directory)
+    if _scm_output_conflict(
+        case_name, target, exclude_job_id=exclude_job_id
+    ) is not None:
+        raise ValueError(f"{case_name} is already active in {target}")
+    if len(_active_scm_processes(exclude_job_id=exclude_job_id)) >= MAX_RUN_PROCS:
         raise ValueError(f"maximum active SCM runs is {MAX_RUN_PROCS}")
 
 
@@ -1118,7 +1255,10 @@ def _canonical_scm_request(request: ScmRunRequest) -> tuple[ScmRunRequest, dict[
 def _normalize_dashboard_cli_options(cli_options: dict[str, Any] | None) -> dict[str, Any]:
     """Keep native Run controls explicit while preserving their current inputs."""
     raw = dict(cli_options or {})
-    allowed = {"multicol", "batch_size", "max_iters", "debug", "dt_main", "dt_rad", "tout", "out_dir", "extra_args"}
+    allowed = {
+        "multicol", "batch_size", "max_iters", "debug", "dt_main", "dt_rad",
+        "tout", "out_dir", "extra_args", "implementation", "install_dir",
+    }
     unknown = sorted(set(raw) - allowed)
     if unknown:
         raise ValueError("unsupported run option(s): " + ", ".join(unknown))
@@ -1130,6 +1270,17 @@ def _normalize_dashboard_cli_options(cli_options: dict[str, Any] | None) -> dict
         if not value or len(value) > 512:
             raise ValueError(f"invalid {key} run option")
         normalized[key] = value
+    implementation = str(normalized.get("implementation") or "fortran").lower()
+    if implementation not in {"fortran", "python", "jax"}:
+        raise ValueError("implementation must be fortran, python, or jax")
+    if "implementation" in normalized:
+        normalized["implementation"] = implementation
+    if normalized.get("install_dir"):
+        install_dir = Path(normalized["install_dir"]).expanduser().resolve()
+        install_root = (REPO_ROOT / "install").resolve()
+        if not install_dir.is_relative_to(install_root) or not install_dir.is_dir():
+            raise ValueError("install_dir must name an installed CLUBB build")
+        normalized["install_dir"] = str(install_dir)
     extra = raw.get("extra_args") or []
     if isinstance(extra, str):
         extra = shlex.split(extra)
@@ -1138,6 +1289,9 @@ def _normalize_dashboard_cli_options(cli_options: dict[str, Any] | None) -> dict
     tokens = [str(item).strip() for item in extra if str(item).strip()]
     if len(tokens) > 64 or any(len(item) > 512 or "\x00" in item for item in tokens):
         raise ValueError("invalid extra run arguments")
+    managed = {"-python", "--python", "-jax", "--jax", "-exe", "--exe", "-install_dir", "--install_dir"}
+    if any(token in managed or any(token.startswith(option + "=") for option in managed) for token in tokens):
+        raise ValueError("implementation and install directory are managed by the build selector")
     if tokens:
         normalized["extra_args"] = tokens
     return normalized
@@ -1150,10 +1304,9 @@ def _persist_submission(kind: str, request_id: str, payload: dict[str, Any]):
         raise ValueError(f"REQUEST_ID_CONFLICT: {exc}") from exc
 
 
-def _run_manifest_inputs(case: str, stats_file: str, config: str) -> dict[str, Any]:
-    """Capture compact checksums for every checked-in input used by an SCM run."""
+def _run_common_manifest_inputs(stats_file: str, config: str) -> dict[str, Any]:
+    """Checksum batch-wide SCM inputs once."""
     paths = {
-        "case_setup": REPO_ROOT / "input" / "case_setups" / f"{case}_model.in",
         "stats": None if stats_file == NO_STATS_NAME else REPO_ROOT / "input" / "stats" / stats_file,
         "clubb_params": tunable_config_file(config, "tunable_parameters.in"),
         "model_flags": tunable_config_file(config, "configurable_model_flags.in"),
@@ -1166,21 +1319,44 @@ def _run_manifest_inputs(case: str, stats_file: str, config: str) -> dict[str, A
     }
 
 
-def _scm_build_identity() -> dict[str, Any]:
+def _run_manifest_inputs(
+    case: str,
+    stats_file: str,
+    config: str,
+    *,
+    common_inputs: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Capture one case input plus batch-wide SCM inputs."""
+    inputs = dict(common_inputs or _run_common_manifest_inputs(stats_file, config))
+    case_path = REPO_ROOT / "input" / "case_setups" / f"{case}_model.in"
+    if case_path.is_file():
+        inputs["case_setup"] = {
+            "path": str(case_path),
+            "sha256": sha256_file(case_path),
+        }
+    return inputs
+
+
+def _scm_build_identity(cli_options: dict[str, Any] | None = None) -> dict[str, Any]:
     """Capture the exact compiled executable selected by ``run_scm.py``.
 
     The regular SCM runner resolves ``install/selected`` before
     ``install/latest``.  Storing its resolved path and digest makes a later
     rebuild distinguishable without relying on mutable UI selection or a log.
     """
+    options = dict(cli_options or {})
+    implementation = str(options.get("implementation") or "fortran").lower()
     selected = REPO_ROOT / "install" / "selected"
     latest = REPO_ROOT / "install" / "latest"
-    install = selected if os.path.lexists(selected) else latest
+    install = Path(options["install_dir"]) if options.get("install_dir") else (
+        selected if os.path.lexists(selected) else latest
+    )
     resolved_install = install.resolve(strict=False)
     executable = resolved_install / "clubb_standalone"
     return {
         "install_selector": str(install),
         "install_directory": str(resolved_install),
+        "implementation": implementation,
         "executable": {
             "path": str(executable),
             "sha256": sha256_file(executable),
@@ -1224,8 +1400,8 @@ def submit_compile(request: CompileRequest) -> dict[str, Any]:
                     },
                 },
             },
+            active=True,
         )
-        _ARTIFACT_STORE.activate(record["job_id"])
         _JOB_STORE.update(record["job_id"], state="starting", manifest_path=str(manifest))
         result = compile_clubb(
             debug=request.debug,
@@ -1249,20 +1425,30 @@ def _start_scm_submission(
     stats_file: str,
     settings_resolution: dict[str, Any],
     *,
-    output_dir: Path | None = None,
-    batch_job_id: str | None = None,
+    output_dir: Path,
+    batch_job_id: str,
     native_overrides: dict[str, Any] | None = None,
     native_cli_options: dict[str, Any] | None = None,
+    common_inputs: dict[str, Any] | None = None,
+    build_identity: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Start one SCM child after the cross-client admission lock is held."""
+    """Prepare one SCM child, then atomically launch it if still active."""
     try:
-        _assert_scm_admission(request.case)
+        _assert_scm_admission(
+            request.case,
+            output_dir,
+            exclude_job_id=str(record.get("job_id") or ""),
+        )
     except ValueError as exc:
-        code = "CASE_ALREADY_RUNNING" if "already running" in str(exc) else "SCM_CONCURRENCY_LIMIT"
+        code = (
+            "CASE_OUTPUT_ACTIVE"
+            if "already active" in str(exc)
+            else "SCM_CONCURRENCY_LIMIT"
+        )
         _JOB_STORE.update(record["job_id"], state="rejected", error={"code": code, "message": str(exc)})
         raise
-    output_dir = output_dir or _public_scm_output_dir(request.case, record["run_id"])
     try:
+        output_dir.mkdir(parents=True, exist_ok=True)
         manifest = _ARTIFACT_STORE.create_manifest(
             record["job_id"],
             {
@@ -1276,73 +1462,84 @@ def _start_scm_submission(
                 "settings_resolution": settings_resolution,
                 "output_directory": str(output_dir),
                 "vertical_coordinate": {"name": "zt", "units": "m"},
-                "inputs": _run_manifest_inputs(request.case, stats_file, request.config),
+                "inputs": _run_manifest_inputs(
+                    request.case,
+                    stats_file,
+                    request.config,
+                    common_inputs=common_inputs,
+                ),
                 "execution": {
                     "state": "planned",
                     "runner": "run_scripts/run_scm.py",
-                    "build_identity": _scm_build_identity(),
+                    "build_identity": build_identity or _scm_build_identity(),
                 },
-                "output_checksums": {"state": "pending", "result_resource": f"clubb-artifact://{record['job_id']}/execution_result.json"},
+                "output_checksums": {
+                    "state": "pending",
+                    "result_resource": f"clubb-artifact://{batch_job_id}/execution_result.json",
+                },
             },
+            active=True,
         )
-        _ARTIFACT_STORE.activate(record["job_id"])
-        public_manifest = None
-        if batch_job_id is None:
-            public_manifest = _write_public_run_manifest(
-                output_dir,
-                {
-                    "schema_version": 1,
-                    "run_id": record["run_id"],
-                    "job_id": record["job_id"],
-                    "case": request.case,
-                    "stats_file": stats_file,
-                    "configuration": request.config,
-                    "overrides": request.overrides,
-                    "run_options": request.run_options.model_dump(exclude_none=True),
-                    "output_directory": str(output_dir),
-                    "private_artifact_manifest": f"clubb-artifact://{record['job_id']}/manifest.json",
-                    "execution": {"state": "planned", "runner": "run_scripts/run_scm.py"},
-                },
-            )
         _JOB_STORE.update(
             record["job_id"],
-            state="starting",
             output_directory=str(output_dir),
             manifest_path=str(manifest),
-            public_manifest_path=str(public_manifest) if public_manifest else None,
             batch_job_id=batch_job_id,
         )
-        if native_overrides is not None or native_cli_options is not None:
-            cli_options = _normalize_dashboard_cli_options(native_cli_options or {})
-            cli_options["out_dir"] = str(output_dir)
-            result = launch_dashboard_scm_request(
+        cli_options = dict(
+            native_cli_options
+            if native_cli_options is not None
+            else request.run_options.model_dump(exclude_none=True)
+        )
+        if native_overrides is None:
+            override_text = _typed_override_text(request.overrides)
+            if override_text:
+                cli_options["extra_args"] = [
+                    *(cli_options.get("extra_args") or []),
+                    "-override",
+                    override_text,
+                ]
+            launch_overrides = {"flags": {}, "tunable": {}, "silhs": {}}
+        else:
+            launch_overrides = native_overrides
+        cli_options["out_dir"] = str(output_dir)
+        # Setup above may be relatively slow.  Serialize only the final state
+        # check and process spawn so cancellation remains prompt and cannot
+        # race a child from ``starting`` into an untracked running process.
+        with _BATCH_QUEUE_LOCK:
+            current = _JOB_STORE.get(record["job_id"]) or {}
+            if str(current.get("state") or "") not in {"submitting", "starting"}:
+                raise ValueError("SCM launch was cancelled")
+            result = _launch_scm_process(
                 request.case,
                 stats_file,
                 request.config,
-                native_overrides or {},
+                launch_overrides,
                 cli_options,
                 job_id=record["job_id"],
                 run_id=record["run_id"],
+                batch_job_id=batch_job_id,
             )
-        else:
-            result = run_scm(
-                request.case,
-                _typed_override_text(request.overrides),
-                request.config,
-                stats_file,
-                cli_options=request.run_options.model_dump(exclude_none=True),
-                output_dir=str(output_dir),
-                job_id=record["job_id"],
-                run_id=record["run_id"],
-            )
+            updated = _JOB_STORE.update(
+                record["job_id"], state="running", runtime=result
+            ) or current
         _ARTIFACT_STORE.write_summary(record["job_id"], "submission_result.json", {"state": "started", "runtime": result})
-        updated = _JOB_STORE.update(
-            record["job_id"], state="running", runtime=result
-        ) or record
+        proc_data = dict(result.get("proc_data") or {})
+        if proc_data:
+            # Persist running before the watcher can observe a very short run
+            # finishing.  Otherwise its terminal update can be overwritten by
+            # this routine after the watcher has already exited.
+            _background(_watch_run, request.case, proc_data, record["job_id"])
         return {"status": "started", **updated}
     except Exception as exc:
         _ARTIFACT_STORE.release(record["job_id"])
-        _JOB_STORE.update(record["job_id"], state="error", error={"code": "SCM_SUBMISSION_FAILED", "message": str(exc)})
+        current = _JOB_STORE.get(record["job_id"]) or {}
+        if str(current.get("state") or "") not in {"cancelled", "stopping"}:
+            _JOB_STORE.update(
+                record["job_id"],
+                state="error",
+                error={"code": "SCM_SUBMISSION_FAILED", "message": str(exc)},
+            )
         raise
 
 
@@ -1384,61 +1581,91 @@ def _batch_child_request(request: ScmRunBatchRequest, parent: dict[str, Any], ca
     )
 
 
-def _start_queued_scm_batch_children_locked(batch_job_id: str) -> dict[str, Any] | None:
-    """Start as many queued children as admission and the batch limit allow."""
-    batch = _batch_record(batch_job_id)
-    if batch is None or _batch_terminal(str(batch.get("state") or "")):
-        return batch
-    request = ScmRunBatchRequest.model_validate(batch.get("request") or {})
-    active = sum(
-        1
-        for child in (batch.get("children") or [])
-        if str(child.get("state") or "") in {"starting", "running", "stopping"}
-    )
-    max_workers = request.max_workers or MAX_RUN_PROCS
-    for child_summary in list(batch.get("children") or []):
-        if active >= max_workers:
-            break
-        if str(child_summary.get("state") or "") != "queued":
-            continue
-        child_job_id = str(child_summary.get("job_id") or "")
-        child_record = _JOB_STORE.get(child_job_id)
-        if child_record is None:
-            continue
-        case = str(child_record.get("request", {}).get("case") or child_summary.get("case") or "")
-        try:
-            _assert_scm_admission(case)
-        except ValueError as exc:
-            if "maximum active SCM runs" in str(exc):
+def _start_one_queued_scm_batch_child(
+    batch_job_id: str,
+) -> tuple[dict[str, Any] | None, bool]:
+    """Claim and start at most one child without blocking cancellation setup."""
+    child_record = None
+    rejected_error = None
+    with _BATCH_QUEUE_LOCK:
+        batch = _batch_record(batch_job_id)
+        if batch is None or batch.get("cancellation_requested") or _batch_terminal(str(batch.get("state") or "")):
+            return _materialize_scm_batch(batch), False
+        request = ScmRunBatchRequest.model_validate(batch.get("request") or {})
+        children = _batch_children(batch)
+        active = sum(
+            str(child.get("state") or "") in {"starting", "running", "stopping"}
+            for child in children
+        )
+        if active >= (request.max_workers or MAX_RUN_PROCS):
+            return _materialize_scm_batch(batch), False
+        for candidate in children:
+            if str(candidate.get("state") or "") != "queued":
+                continue
+            child_job_id = str(candidate.get("job_id") or "")
+            case = str((candidate.get("request") or {}).get("case") or "")
+            try:
+                _assert_scm_admission(
+                    case,
+                    str(candidate.get("output_directory") or ""),
+                    exclude_job_id=child_job_id,
+                )
+            except ValueError as exc:
+                if "maximum active SCM runs" in str(exc):
+                    return _materialize_scm_batch(batch), False
+                _JOB_STORE.update(
+                    child_job_id,
+                    state="error",
+                    error={"code": "SCM_BATCH_CHILD_REJECTED", "message": str(exc)},
+                )
+                rejected_error = exc
                 break
-            _JOB_STORE.update(child_job_id, state="error", error={"code": "SCM_BATCH_CHILD_REJECTED", "message": str(exc)})
-            continue
-        child_request = ScmRunRequest.model_validate(child_record.get("request") or {})
-        _JOB_STORE.update(child_job_id, state="starting")
-        try:
-            _start_scm_submission(
-                child_request,
-                child_record,
-                child_request.stats_file,
-                _canonical_scm_request(child_request)[1],
-                output_dir=Path(str(batch["output_directory"])),
-                batch_job_id=batch_job_id,
-                native_overrides=batch.get("native_overrides"),
-                native_cli_options=batch.get("native_cli_options"),
-            )
-            active += 1
-        except ValueError as exc:
-            _JOB_STORE.update(child_job_id, state="error", error={"code": "SCM_BATCH_CHILD_FAILED", "message": str(exc)[:500]})
-        batch = _batch_record(batch_job_id) or batch
-    return _refresh_scm_batch(batch_job_id)
+            child_record = _JOB_STORE.update(child_job_id, state="starting") or candidate
+            break
+
+    if rejected_error is not None:
+        return _refresh_scm_batch(batch_job_id), True
+    if child_record is None:
+        return _refresh_scm_batch(batch_job_id), False
+
+    child_job_id = str(child_record.get("job_id") or "")
+    child_request = ScmRunRequest.model_validate(child_record.get("request") or {})
+    try:
+        _start_scm_submission(
+            child_request,
+            child_record,
+            child_request.stats_file,
+            dict(batch.get("settings_resolution") or {}),
+            output_dir=Path(str(batch["output_directory"])),
+            batch_job_id=batch_job_id,
+            native_overrides=batch.get("native_overrides"),
+            native_cli_options=batch.get("native_cli_options"),
+            common_inputs=batch.get("common_inputs"),
+            build_identity=batch.get("build_identity"),
+        )
+    except Exception as exc:
+        current = _JOB_STORE.get(child_job_id) or {}
+        if str(current.get("state") or "") not in {"cancelled", "stopping"}:
+            updates: dict[str, Any] = {"state": "error"}
+            if not current.get("error"):
+                updates["error"] = {
+                    "code": "SCM_BATCH_CHILD_FAILED",
+                    "message": str(exc)[:500],
+                }
+            _JOB_STORE.update(child_job_id, **updates)
+    return _refresh_scm_batch(batch_job_id), True
 
 
 def _start_queued_scm_batch_children(batch_job_id: str) -> dict[str, Any] | None:
-    """Serialize queue advancement so completion/recovery cannot double-start a child."""
+    """Fill available slots while yielding between launches for instant cancel."""
     if _BROKER_SHUTTING_DOWN.is_set():
-        return _batch_record(batch_job_id)
-    with _BATCH_QUEUE_LOCK:
-        return _start_queued_scm_batch_children_locked(batch_job_id)
+        return _materialize_scm_batch(_batch_record(batch_job_id))
+    latest = _materialize_scm_batch(_batch_record(batch_job_id))
+    while True:
+        latest, attempted = _start_one_queued_scm_batch_child(batch_job_id)
+        if not attempted:
+            return latest
+        time.sleep(0)
 
 
 def _ensure_scm_batch_watcher(batch_job_id: str) -> None:
@@ -1454,13 +1681,13 @@ def _watch_scm_batch_queue(batch_job_id: str) -> None:
     try:
         while True:
             batch = _batch_record(batch_job_id)
-            if batch is None or _batch_terminal(str(batch.get("state") or "")):
+            if batch is None or batch.get("cancellation_requested") or _batch_terminal(str(batch.get("state") or "")):
                 return
             updated = _start_queued_scm_batch_children(batch_job_id) or batch
             queued = any(str(child.get("state") or "") == "queued" for child in updated.get("children") or [])
             if not queued:
                 return
-            time.sleep(0.75)
+            time.sleep(0.2)
     finally:
         with _BATCH_WATCHERS_LOCK:
             _BATCH_WATCHERS.discard(batch_job_id)
@@ -1471,82 +1698,156 @@ def submit_scm_batch(
     *,
     native_overrides: dict[str, Any] | None = None,
     native_cli_options: dict[str, Any] | None = None,
+    origin: str = "unknown",
+    visibility: str = "user",
 ) -> dict[str, Any]:
-    """Submit one durable multi-case SCM group into one flat public folder."""
+    """Submit one durable multi-case SCM group into one shared output directory."""
     request, settings_resolution = _canonical_scm_batch_request(request)
     normalized_native_overrides = None
     normalized_native_cli_options = None
     native_output_directory: Path | None = None
     if native_overrides is not None or native_cli_options is not None:
-        normalized_native_overrides = _normalize_dashboard_overrides(native_overrides or {})
+        if native_overrides is not None:
+            normalized_native_overrides = _normalize_dashboard_overrides(native_overrides)
         normalized_native_cli_options = _normalize_dashboard_cli_options(native_cli_options or {})
         # Native Dash owns the Run-tab output field, so preserve its selected
         # location after applying the repository's normal path rules. Public
         # MCP requests do not enter this branch and remain broker-controlled.
-        requested_output = normalized_native_cli_options.get("out_dir")
-        if requested_output:
-            native_output_directory = resolve_output_dir(requested_output)
-            normalized_native_cli_options["out_dir"] = str(native_output_directory)
+        requested_output = normalized_native_cli_options.get("out_dir") or "output"
+        native_output_directory = resolve_output_dir(requested_output).resolve()
+        normalized_native_cli_options["out_dir"] = str(native_output_directory)
     payload = request.model_dump(mode="json") | {"stats_file": request.stats_file}
-    parent, created = _persist_submission("scm_batch", request.request_id, payload)
-    if not created:
-        refreshed = _refresh_scm_batch(parent["job_id"])
-        return {"status": "existing", **(refreshed or parent)}
+    submission_origin = str(origin or "unknown")[:32]
+    submission_visibility = "internal" if visibility == "internal" else "user"
+    common_inputs = _run_common_manifest_inputs(request.stats_file, request.config)
+    build_identity = _scm_build_identity(normalized_native_cli_options)
 
-    batch_id = str(parent["batch_id"])
-    output_directory = (
-        native_output_directory
-        or (_resolve_mcp_output_dir(request.out_dir) if request.out_dir else None)
-        or _public_scm_batch_output_dir(batch_id)
-    )
-    private_manifest = _ARTIFACT_STORE.create_manifest(
-        parent["job_id"],
+    def create_batch(transaction):
+        parent, created = transaction.submit("scm_batch", request.request_id, payload)
+        if not created:
+            return parent, False
+        batch_id = str(parent["batch_id"])
+        output_directory = (
+            native_output_directory
+            or (_resolve_mcp_output_dir(request.out_dir) if request.out_dir else None)
+            or _public_scm_batch_output_dir(batch_id)
+        )
+        output_directory = Path(output_directory).resolve()
+        child_job_ids: list[str] = []
+        accepted_cases: list[str] = []
+        skipped_cases: list[dict[str, Any]] = []
+        parent_result_summary = str(
+            _ARTIFACT_STORE.bundle_dir(parent["job_id"]) / "execution_result.json"
+        )
+        for case in request.cases:
+            conflict = _scm_output_conflict(
+                case,
+                output_directory,
+                records=transaction.state.values(),
+            )
+            if conflict is not None:
+                skipped_cases.append(
+                    {
+                        "case": case,
+                        "code": "CASE_OUTPUT_ACTIVE",
+                        "output_directory": str(output_directory),
+                        "conflicting_job_id": str(conflict.get("job_id") or ""),
+                        "conflicting_run_id": str(conflict.get("run_id") or ""),
+                    }
+                )
+                continue
+            child_request = _batch_child_request(request, parent, case)
+            child_payload = child_request.model_dump(mode="json") | {
+                "stats_file": request.stats_file
+            }
+            child, child_created = transaction.submit(
+                "scm", child_request.request_id, child_payload
+            )
+            if not child_created:
+                existing_batch = str(child.get("batch_job_id") or "")
+                if existing_batch and existing_batch != parent["job_id"]:
+                    raise ValueError("SCM batch child request is already owned by another batch")
+            child = transaction.update(
+                child["job_id"],
+                state="queued",
+                batch_id=batch_id,
+                batch_job_id=parent["job_id"],
+                output_directory=str(output_directory),
+                result_summary_job_id=parent["job_id"],
+                result_summary_path=parent_result_summary,
+                origin=submission_origin,
+                visibility=submission_visibility,
+                display={
+                    "case": case,
+                    "stats_file": request.stats_file,
+                    "config": request.config,
+                    "cli_options": normalized_native_cli_options
+                    or request.run_options.model_dump(exclude_none=True),
+                },
+            ) or child
+            child_job_ids.append(str(child["job_id"]))
+            accepted_cases.append(case)
+        manifest_path = _ARTIFACT_STORE.bundle_dir(parent["job_id"]) / "manifest.json"
+        state = "queued" if child_job_ids else "finished"
+        parent = transaction.update(
+            parent["job_id"],
+            state=state,
+            batch_id=batch_id,
+            output_directory=str(output_directory),
+            manifest_path=str(manifest_path),
+            child_job_ids=child_job_ids,
+            accepted_cases=accepted_cases,
+            skipped_cases=skipped_cases,
+            outcome="queued" if child_job_ids else "no_op",
+            settings_resolution=settings_resolution,
+            common_inputs=common_inputs,
+            build_identity=build_identity,
+            native_overrides=normalized_native_overrides,
+            native_cli_options=normalized_native_cli_options,
+            origin=submission_origin,
+            visibility=submission_visibility,
+            finished_at_unix_seconds=None if child_job_ids else time.time(),
+        ) or parent
+        return parent, True
+
+    try:
+        updated, created = _JOB_STORE.transaction(create_batch)
+    except SubmissionConflict as exc:
+        raise ValueError(f"REQUEST_ID_CONFLICT: {exc}") from exc
+    if not created:
+        existing = _materialize_scm_batch(updated) or updated
+        return {"status": "existing", **existing}
+
+    updated = _materialize_scm_batch(updated) or updated
+
+    _ARTIFACT_STORE.create_manifest(
+        updated["job_id"],
         {
-            "job": parent,
-            "batch_id": batch_id,
+            "job": updated,
+            "batch_id": updated["batch_id"],
             "requested_batch": payload,
-            "output_directory": str(output_directory),
+            "output_directory": updated["output_directory"],
             "settings_resolution": settings_resolution,
             "execution": {"state": "planned", "runner": "run_scripts/run_scm.py"},
         },
+        active=bool(updated.get("children")),
     )
-    _ARTIFACT_STORE.activate(parent["job_id"])
-    children: list[dict[str, Any]] = []
-    for case in request.cases:
-        child_request = _batch_child_request(request, parent, case)
-        child_payload = child_request.model_dump(mode="json") | {"stats_file": request.stats_file}
-        child, child_created = _persist_submission("scm", child_request.request_id, child_payload)
-        if not child_created:
-            existing_batch = str(child.get("batch_job_id") or "")
-            if existing_batch and existing_batch != parent["job_id"]:
-                raise ValueError("SCM batch child request is already owned by another batch")
-        child = _JOB_STORE.update(
-            child["job_id"],
-            state="queued",
-            batch_id=batch_id,
-            batch_job_id=parent["job_id"],
-            output_directory=str(output_directory),
-        ) or child
-        children.append(_batch_child_summary(child))
-
-    updated = _JOB_STORE.update(
-        parent["job_id"],
-        state="queued",
-        batch_id=batch_id,
-        output_directory=str(output_directory),
-        manifest_path=str(private_manifest),
-        public_manifest_path=str(output_directory / "batch_manifest.json"),
-        children=children,
-        native_overrides=normalized_native_overrides,
-        native_cli_options=normalized_native_cli_options,
-    ) or parent
-    _write_scm_batch_manifest(updated)
-    started = _start_queued_scm_batch_children(parent["job_id"])
-    _ensure_scm_batch_watcher(parent["job_id"])
-    return {"status": "started" if started and started.get("state") == "running" else "queued", **(started or updated)}
+    # Return as soon as the complete durable queue exists.  The detached
+    # watcher owns admission and launch, keeping the browser request fast even
+    # when many SCM processes need setup work.
+    if updated.get("children"):
+        _ensure_scm_batch_watcher(updated["job_id"])
+        return {"status": "queued", **updated}
+    return {"status": "no_op", **updated}
 
 
-def submit_scm_run(request: ScmRunRequest) -> dict[str, Any]:
+def submit_scm_run(
+    request: ScmRunRequest,
+    *,
+    native_cli_options: dict[str, Any] | None = None,
+    origin: str = "unknown",
+    visibility: str = "user",
+) -> dict[str, Any]:
     """Backward-compatible one-case wrapper over the shared batch service."""
     legacy = _JOB_STORE.get_submission("scm", request.request_id)
     if legacy is not None and not legacy.get("batch_job_id"):
@@ -1560,16 +1861,31 @@ def submit_scm_run(request: ScmRunRequest) -> dict[str, Any]:
         run_options=request.run_options,
         out_dir=request.out_dir,
     )
-    batch = submit_scm_batch(batch_request)
+    batch = submit_scm_batch(
+        batch_request,
+        native_cli_options=native_cli_options,
+        origin=origin,
+        visibility=visibility,
+    )
+    submission_status = str(batch.get("status") or "")
+    # The public one-case API historically returns the launched child.  Keep
+    # that contract while native multi-case Run submissions stay asynchronous.
+    if submission_status != "existing" and str(batch.get("state") or "") == "queued":
+        batch = _start_queued_scm_batch_children(str(batch.get("job_id") or "")) or batch
     child = next((item for item in batch.get("children") or [] if item.get("case") == request.case), None)
     if child is None:
         return batch
     return {
-        "status": batch.get("status") or batch.get("state"),
+        "status": (
+            "existing"
+            if submission_status == "existing"
+            else "started"
+            if child.get("state") in {"starting", "running"}
+            else submission_status or batch.get("state")
+        ),
         **child,
         "batch_id": batch.get("batch_id"),
         "batch_job_id": batch.get("job_id"),
-        "batch_manifest_path": batch.get("public_manifest_path"),
     }
 
 
@@ -1591,8 +1907,8 @@ def submit_tune(request: TuneRequest) -> dict[str, Any]:
                 "requested_tune": request.model_dump(mode="json"),
                 "execution": {"state": "planned", "runner": "tuner", "build_identity": _scm_build_identity()},
             },
+            active=True,
         )
-        _ARTIFACT_STORE.activate(record["job_id"])
         _JOB_STORE.update(record["job_id"], state="starting", manifest_path=str(manifest))
         result = launch_tuning(
             [item if isinstance(item, str) else item.model_dump(exclude_none=True) for item in request.cases],
@@ -1605,6 +1921,10 @@ def submit_tune(request: TuneRequest) -> dict[str, Any]:
             simann_max_iters=request.simann_max_iters,
             simann_initial_temp=request.simann_initial_temp,
             simann_final_temp=request.simann_final_temp,
+            adam_max_updates=request.adam_max_updates,
+            adam_learning_rate=request.adam_learning_rate,
+            adam_perturbation=request.adam_perturbation,
+            adam_spsa_pairs=request.adam_spsa_pairs,
             batch_size=request.batch_size,
             max_workers=request.max_workers,
             loss_mode=request.loss_mode or DEFAULT_LOSS_MODE,
@@ -1636,8 +1956,8 @@ def submit_leaderboard_rerun(request: LeaderboardRerunRequest) -> dict[str, Any]
                 "requested_leaderboard_rerun": request.model_dump(mode="json"),
                 "execution": {"state": "planned", "runner": "tuner loss runner", "build_identity": _scm_build_identity()},
             },
+            active=True,
         )
-        _ARTIFACT_STORE.activate(record["job_id"])
         _JOB_STORE.update(record["job_id"], state="starting", manifest_path=str(manifest))
         result = run_tuning_loss(request.mode, request.max_results, job_id=record["job_id"])
         _ARTIFACT_STORE.write_summary(record["job_id"], "submission_result.json", {"state": "started", "runtime": result})
@@ -1658,21 +1978,15 @@ def recover_active_runs_from_state() -> list[dict[str, Any]]:
     POSIX does not preserve another process's exit code for later retrieval.
     """
     recovered: list[dict[str, Any]] = []
-    for case, raw_record in (broker_jobs().get("runs") or {}).items():
-        record = dict(raw_record or {})
+    for record in _JOB_STORE.list_kind("scm"):
         if str(record.get("state") or "") not in {"running", "stopping"}:
             continue
-        proc_data = dict(record.get("proc_data") or {})
+        runtime = dict(record.get("runtime") or {})
+        proc_data = dict(runtime.get("proc_data") or {})
         job_id = str(record.get("job_id") or "")
+        case = str((record.get("request") or {}).get("case") or "")
         if not proc_data or not _pid_is_alive(proc_data.get("pid")):
             message = "SCM process ended while its durable monitor was unavailable; exit status could not be recovered"
-            update_broker_run(
-                str(record.get("case") or case),
-                state="error",
-                returncode=None,
-                recovery_error=message,
-                finished_at=time.time(),
-            )
             if job_id:
                 _JOB_STORE.update(
                     job_id,
@@ -1682,11 +1996,63 @@ def recover_active_runs_from_state() -> list[dict[str, Any]]:
                 )
                 _ARTIFACT_STORE.release(job_id)
             continue
-        _background(_watch_run, str(record.get("case") or case), proc_data, job_id or None)
-        recovered.append({"case": str(record.get("case") or case), "pid": proc_data.get("pid"), "job_id": job_id or None})
+        _background(_watch_run, case, proc_data, job_id or None)
+        recovered.append({"case": case, "pid": proc_data.get("pid"), "job_id": job_id or None})
     if recovered:
         publish_event("run", "Recovered SCM job monitoring", ", ".join(item["case"] for item in recovered), status="info")
     return recovered
+
+
+def clear_terminal_scm_session() -> dict[str, Any]:
+    """Clear terminal SCM control records and their temporary wrapper logs."""
+    def prune(transaction):
+        active_batches = {
+            str(record.get("job_id") or "")
+            for record in transaction.state.values()
+            if isinstance(record, dict)
+            and record.get("kind") == "scm_batch"
+            and str(record.get("state") or "") in {"queued", "submitting", "starting", "running", "stopping"}
+        }
+        protected_children = {
+            child_job_id
+            for record in transaction.state.values()
+            if isinstance(record, dict) and str(record.get("job_id") or "") in active_batches
+            for child_job_id in _batch_child_job_ids(record)
+        }
+        terminal_records = [
+            dict(record)
+            for record in transaction.state.values()
+            if isinstance(record, dict)
+            and record.get("kind") in {"scm", "scm_batch"}
+            and str(record.get("visibility") or "user") == "user"
+            and str(record.get("state") or "") not in {"queued", "submitting", "starting", "running", "stopping"}
+            and str(record.get("job_id") or "") not in protected_children
+        ]
+        terminal_ids = {
+            str(record.get("job_id") or "") for record in terminal_records
+        }
+        transaction.delete(terminal_ids)
+        return terminal_records
+
+    removed_records = _JOB_STORE.transaction(prune)
+    removed_logs = []
+    for record in removed_records:
+        runtime = dict(record.get("runtime") or {})
+        log_path = str((runtime.get("proc_data") or {}).get("log") or "")
+        if not log_path:
+            continue
+        try:
+            Path(log_path).unlink()
+            removed_logs.append(log_path)
+        except FileNotFoundError:
+            pass
+    return {
+        "status": "cleared",
+        "removed_jobs": sorted(
+            str(record.get("job_id") or "") for record in removed_records
+        ),
+        "removed_logs": removed_logs,
+    }
 
 
 def recover_queued_scm_batches() -> list[dict[str, Any]]:
@@ -1695,7 +2061,10 @@ def recover_queued_scm_batches() -> list[dict[str, Any]]:
     for batch in _JOB_STORE.list_kind("scm_batch"):
         if str(batch.get("state") or "") not in {"queued", "running"}:
             continue
-        if not any(str(child.get("state") or "") == "queued" for child in batch.get("children") or []):
+        if not any(
+            str(child.get("state") or "") == "queued"
+            for child in _batch_children(batch)
+        ):
             continue
         updated = _start_queued_scm_batch_children(str(batch.get("job_id") or ""))
         if updated:
@@ -1858,17 +2227,98 @@ def get_server_info() -> dict[str, Any]:
     }
 
 
+def _signal_scm_record(record: dict[str, Any]) -> dict[str, Any]:
+    """Signal the exact process recorded by one SCM child."""
+    runtime = dict(record.get("runtime") or {})
+    proc_data = dict(runtime.get("proc_data") or {})
+    case_name = str((record.get("request") or {}).get("case") or "")
+    try:
+        pid = int(proc_data.get("pid"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{case_name or 'SCM'} process is not available to stop") from exc
+    try:
+        os.killpg(pid, signal.SIGTERM)
+    except OSError:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except OSError as exc:
+            raise ValueError(
+                f"{case_name or 'SCM'} process is no longer available to stop"
+            ) from exc
+
+    def force_stop() -> None:
+        time.sleep(1.0)
+        if not _pid_is_alive(pid):
+            return
+        try:
+            os.killpg(pid, signal.SIGKILL)
+        except OSError:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except OSError:
+                pass
+
+    _background(force_stop)
+    publish_event(
+        "run",
+        f"Stop requested for {case_name}",
+        str(proc_data.get("log") or ""),
+        status="info",
+    )
+    return {
+        "status": "stop_requested",
+        "case": case_name,
+        "job_id": str(record.get("job_id") or ""),
+        "pid": pid,
+    }
+
+
+def _cancel_scm_job(job_id: str) -> dict[str, Any]:
+    """Cancel one exact SCM child without relying on case-name uniqueness."""
+    with _BATCH_QUEUE_LOCK:
+        record = _JOB_STORE.get(str(job_id))
+        if record is None or record.get("kind") != "scm":
+            raise ValueError("SCM job was not found")
+        state = str(record.get("state") or "")
+        if state not in _SCM_RESERVED_STATES:
+            return {"status": "already_terminal", **record}
+        runtime = dict(record.get("runtime") or {})
+        proc_data = dict(runtime.get("proc_data") or {})
+        if proc_data.get("pid"):
+            updated = _JOB_STORE.update(str(job_id), state="stopping") or record
+            target = updated
+        else:
+            updated = _JOB_STORE.update(
+                str(job_id),
+                state="cancelled",
+                returncode=1,
+                finished_at_unix_seconds=time.time(),
+            ) or record
+            target = None
+
+    batch_job_id = str(updated.get("batch_job_id") or "")
+    if target is not None:
+        operation = _signal_scm_record(target)
+        return {"status": "stop_requested", "operation": operation, **updated}
+    _ARTIFACT_STORE.release(str(job_id))
+    if batch_job_id:
+        _refresh_scm_batch(batch_job_id, str(job_id))
+    return {"status": "cancelled", **updated}
+
+
 def cancel_job(job_id: str) -> dict[str, Any]:
     """Request cancellation through the same safe lifecycle used by Dash."""
     record = get_job(job_id)
     state = str(record.get("state") or "")
-    if state not in {"submitting", "running", "stopping"}:
+    if state not in _SCM_RESERVED_STATES:
         return {"status": "already_terminal", **record}
     kind = str(record.get("kind") or "")
     if kind == "compile":
         result = stop_compile()
     elif kind == "scm":
-        result = stop_run(str((record.get("request") or {}).get("case") or ""))
+        return _cancel_scm_job(job_id)
+    elif kind == "scm_batch":
+        return cancel_scm_batch(job_id)
     elif kind == "tune":
         result = stop_tuning()
     elif kind == "leaderboard":
@@ -1884,19 +2334,217 @@ def cancel_job(job_id: str) -> dict[str, Any]:
     return {"status": "stop_requested", "operation": result, **updated}
 
 
+def cancel_scm_batch(batch_job_id: str) -> dict[str, Any]:
+    """Cancel queued and active children of one SCM batch in one broker request."""
+    with _BATCH_QUEUE_LOCK:
+        def cancel(transaction):
+            batch = transaction.get(batch_job_id)
+            if batch is None or batch.get("kind") != "scm_batch":
+                raise ValueError("SCM batch job was not found")
+            if _batch_terminal(str(batch.get("state") or "")):
+                return batch, [], True
+            process_targets: list[dict[str, Any]] = []
+            for child_record in _batch_children(batch, transaction):
+                child_id = str(child_record.get("job_id") or "")
+                child_state = str(child_record.get("state") or "")
+                proc_data = dict(
+                    (child_record.get("runtime") or {}).get("proc_data") or {}
+                )
+                if child_state not in _SCM_RESERVED_STATES:
+                    continue
+                if proc_data.get("pid"):
+                    updated_child = transaction.update(
+                        child_id, state="stopping"
+                    ) or child_record
+                    process_targets.append(updated_child)
+                else:
+                    transaction.update(
+                        child_id,
+                        state="cancelled",
+                        returncode=1,
+                        finished_at_unix_seconds=time.time(),
+                    )
+            batch = transaction.update(
+                batch_job_id,
+                state="stopping" if process_targets else "cancelled",
+                cancellation_requested=True,
+                finished_at_unix_seconds=(
+                    None if process_targets else time.time()
+                ),
+            ) or batch
+            return batch, process_targets, False
+
+        batch, process_targets, already_terminal = _JOB_STORE.transaction(cancel)
+        batch = _materialize_scm_batch(batch) or batch
+        if already_terminal:
+            return {"status": "already_terminal", **batch}
+
+    errors = []
+    stopped_cases = []
+    for target in process_targets:
+        case_name = str((target.get("request") or {}).get("case") or "")
+        try:
+            _signal_scm_record(target)
+            stopped_cases.append(case_name)
+        except ValueError as exc:
+            errors.append(f"{case_name}: {exc}")
+    for child in batch.get("children") or []:
+        if str(child.get("state") or "") == "cancelled":
+            _ARTIFACT_STORE.release(str(child.get("job_id") or ""))
+    if not process_targets:
+        _write_run_result_summary(batch_job_id, batch.get("output_directory"), 1)
+        _ARTIFACT_STORE.release(batch_job_id)
+    return {
+        "status": "stop_requested" if process_targets else "cancelled",
+        "stopped_cases": stopped_cases,
+        "errors": errors,
+        **batch,
+    }
+
+
+def cancel_all_scm_runs() -> dict[str, Any]:
+    """Cancel every queued or running Run-tab SCM job in one broker action."""
+    with _BATCH_QUEUE_LOCK:
+        # Read process identities only after launch has left its short critical
+        # section.  Every running child is then either signalled here or was
+        # cancelled before it could spawn.
+        targets = []
+        for record in _JOB_STORE.list_kind("scm"):
+            runtime = dict(record.get("runtime") or {})
+            proc_data = dict(runtime.get("proc_data") or {})
+            if (
+                str(record.get("state") or "") not in {"running", "stopping"}
+                or not proc_data.get("pid")
+            ):
+                continue
+            targets.append(
+                {
+                    "case": str((record.get("request") or {}).get("case") or ""),
+                    "job_id": str(record.get("job_id") or ""),
+                    "pid": int(proc_data["pid"]),
+                }
+            )
+        target_job_ids = {
+            target["job_id"] for target in targets if target["job_id"]
+        }
+        target_cases = {target["case"] for target in targets}
+        now = time.time()
+
+        def cancel(transaction):
+            cancelled_children: list[str] = []
+            affected_cases: set[str] = set(target_cases)
+            for record in list(transaction.state.values()):
+                if not isinstance(record, dict) or record.get("kind") != "scm":
+                    continue
+                if str(record.get("state") or "") not in {
+                    "queued",
+                    "submitting",
+                    "starting",
+                    "running",
+                    "stopping",
+                }:
+                    continue
+                case = str((record.get("request") or {}).get("case") or "")
+                affected_cases.add(case)
+                has_process = str(record.get("job_id") or "") in target_job_ids
+                updates = {"state": "stopping" if has_process else "cancelled"}
+                if not has_process:
+                    updates.update(returncode=1, finished_at_unix_seconds=now)
+                    cancelled_children.append(str(record.get("job_id") or ""))
+                transaction.update(str(record.get("job_id") or ""), **updates)
+
+            batches: dict[str, dict[str, Any]] = {}
+            for record in list(transaction.state.values()):
+                if (
+                    not isinstance(record, dict)
+                    or record.get("kind") != "scm_batch"
+                    or _batch_terminal(str(record.get("state") or ""))
+                ):
+                    continue
+                children = _batch_children(record, transaction)
+                has_process = any(
+                    str(child.get("state") or "") == "stopping"
+                    for child in children
+                )
+                updated = transaction.update(
+                    str(record.get("job_id") or ""),
+                    state="stopping" if has_process else "cancelled",
+                    cancellation_requested=True,
+                    finished_at_unix_seconds=None if has_process else now,
+                )
+                if updated:
+                    batches[str(updated["job_id"])] = updated
+            return batches, affected_cases, cancelled_children
+
+        batches, affected_cases, cancelled_children = _JOB_STORE.transaction(cancel)
+
+    errors = []
+    signalled_pids = []
+    for target in targets:
+        pid = target["pid"]
+        try:
+            os.killpg(pid, signal.SIGTERM)
+        except OSError:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except OSError as exc:
+                errors.append(f"{target['case']}: {exc}")
+                continue
+        signalled_pids.append(pid)
+
+    def force_stop() -> None:
+        time.sleep(1.0)
+        for pid in signalled_pids:
+            if not _pid_is_alive(pid):
+                continue
+            try:
+                os.killpg(pid, signal.SIGKILL)
+            except OSError:
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                except OSError:
+                    pass
+
+    if signalled_pids:
+        _background(force_stop)
+
+    def finish_cancellation() -> None:
+        for batch in batches.values():
+            if str(batch.get("state") or "") == "cancelled":
+                _write_run_result_summary(
+                    batch["job_id"], batch.get("output_directory"), 1
+                )
+                _ARTIFACT_STORE.release(batch["job_id"])
+        for job_id in cancelled_children:
+            if job_id:
+                _ARTIFACT_STORE.release(job_id)
+
+    if batches or cancelled_children:
+        _background(finish_cancellation)
+    return {
+        "status": (
+            "stop_requested" if targets else "cancelled" if affected_cases else "idle"
+        ),
+        "stopped_cases": sorted(target_cases),
+        "errors": errors,
+        "summary": scm_run_summary(),
+    }
+
+
 def read_job_log(job_id: str, cursor: int = 0, max_bytes: int = 8192) -> dict[str, Any]:
     record = get_job(job_id)
     runtime = dict(record.get("runtime") or {})
     run = dict(runtime.get("run") or {})
     path = Path(str(runtime.get("log") or runtime.get("log_path") or run.get("log") or run.get("log_path") or ""))
-    if not path.is_file():
-        return {"job_id": job_id, "cursor": max(0, int(cursor)), "next_cursor": max(0, int(cursor)), "text": ""}
     offset = max(0, int(cursor))
     limit = min(max(1, int(max_bytes)), 16384)
-    with path.open("rb") as handle:
-        handle.seek(offset)
-        raw = handle.read(limit)
-    return {"job_id": job_id, "cursor": offset, "next_cursor": offset + len(raw), "text": raw.decode("utf-8", errors="replace")}
+    raw, next_cursor, _eof = read_file_chunk(path, offset, limit)
+    return {
+        "job_id": job_id,
+        "cursor": offset,
+        "next_cursor": next_cursor,
+        "text": raw.decode("utf-8", errors="replace"),
+    }
 
 
 def create_profile_artifact(request: ProfileArtifactRequest) -> dict[str, Any]:
@@ -2021,6 +2669,72 @@ def launch_profile_request(settings: dict[str, Any]) -> dict[str, Any]:
     return {"status": "started", "job": record}
 
 
+def _watch_pyplotgen(job: dict[str, Any], process) -> None:
+    returncode = process.wait()
+    success = returncode == 0 and Path(str(job.get("html_path") or "")).is_file()
+    current = dict(broker_jobs().get("pyplotgen") or {})
+    requested_stop = str(current.get("state") or "") == "stopping"
+    state = "finished" if success else ("stopped" if requested_stop else "error")
+    error = None
+    if not success and not requested_stop:
+        error = f"PyPlotGen exited with status {returncode}; see {job.get('log_path')}"
+    update_broker_job(
+        "pyplotgen",
+        state=state,
+        returncode=returncode,
+        error=error,
+        finished_at=time.time(),
+    )
+    release_pyplotgen(process)
+    publish_event(
+        "plot",
+        "PyPlotGen gallery finished" if success else "PyPlotGen gallery failed",
+        str(job.get("html_path") if success else job.get("log_path") or ""),
+        status="success" if success else ("info" if requested_stop else "error"),
+    )
+
+
+def launch_pyplotgen_request(output_dirs: list[str]) -> dict[str, Any]:
+    """Start one fixed-destination Plot-tab PyPlotGen export."""
+    existing = dict(broker_jobs().get("pyplotgen") or {})
+    if str(existing.get("state") or "") in {"queued", "submitting", "running", "stopping"}:
+        raise ValueError("a PyPlotGen export is already active")
+    job, process = start_pyplotgen(list(output_dirs or []))
+    set_broker_job("pyplotgen", job)
+    publish_event(
+        "plot",
+        "PyPlotGen gallery started",
+        str(job.get("command_display") or ""),
+        status="running",
+    )
+    _background(_watch_pyplotgen, dict(job), process)
+    return {"status": "started", "job": job}
+
+
+def stop_pyplotgen_request() -> dict[str, Any]:
+    """Immediately stop the active PyPlotGen process group."""
+    record = dict(broker_jobs().get("pyplotgen") or {})
+    state = str(record.get("state") or "")
+    if state == "stopping":
+        return {"status": "stop_requested", "job": record}
+    if state not in {"queued", "submitting", "running"}:
+        raise ValueError("no PyPlotGen export is active")
+    pid = int(record.get("pid"))
+    updated = update_broker_job("pyplotgen", state="stopping") or {**record, "state": "stopping"}
+    stop_pyplotgen(pid)
+
+    def force_stop() -> None:
+        time.sleep(1.0)
+        try:
+            os.killpg(pid, signal.SIGKILL)
+        except OSError:
+            pass
+
+    _background(force_stop)
+    publish_event("plot", "Stopping PyPlotGen gallery", str(record.get("output_dir") or ""), status="info")
+    return {"status": "stop_requested", "job": updated}
+
+
 def launch_rebuild_request(
     builds: list[dict[str, Any]],
     discovery: dict[str, Any],
@@ -2059,7 +2773,13 @@ def launch_rebuild_request(
         "Rebuild command started",
         str(job.get("command") or ""),
         status="running",
-        action={"type": "compile", "tab": "compile", "operation": "start", "job": dict(job)},
+        action={
+            "type": "compile",
+            "tab": "compile",
+            "operation": "start",
+            "job": dict(job),
+            "preserve_tab": True,
+        },
     )
     _background(_watch_compile, job, job_id)
     return {"status": "started", "pid": job.get("pid"), "command": job.get("command"), "job": dict(job)}
@@ -2086,40 +2806,35 @@ def run_scm(
     *,
     cli_options: dict[str, Any] | None = None,
     output_dir: str | None = None,
-    job_id: str | None = None,
-    run_id: str | None = None,
 ) -> dict[str, Any]:
-    """Run one checked-in SCM case with limited, structured overrides."""
+    """Route the compatibility SCM surface through the typed submission path."""
     case_name = _validate_case(case)
     stats_name = _validated_stats_file(stats_file)
     config_name = _valid_tune_config(config)
-    override_args = _override_args(overrides)
     normalized_options = _normalize_dashboard_cli_options(cli_options)
-    extra_args = list(normalized_options.get("extra_args") or [])
-    extra_args.extend(override_args)
-    if extra_args:
-        normalized_options["extra_args"] = extra_args
-    if output_dir:
-        isolated = Path(output_dir).resolve()
-        artifact_root = _ARTIFACT_STORE.root.resolve()
-        public_root = (REPO_ROOT / "output").resolve()
-        if artifact_root not in isolated.parents and public_root not in isolated.parents:
-            raise ValueError("MCP output directory must be in the repository output directory")
-        isolated.mkdir(parents=True, exist_ok=True)
-        normalized_options["out_dir"] = str(isolated)
-    return launch_dashboard_scm_request(
-        case_name,
-        stats_name,
-        config_name,
-        {"flags": {}, "tunable": {}, "silhs": {}},
-        normalized_options,
-        job_id=job_id,
-        run_id=run_id,
-        check_admission=True,
+    override_args = _override_args(overrides)
+    assignments = override_args[1].split(",") if override_args else []
+    typed_overrides = {
+        name: value for name, value in (item.split("=", 1) for item in assignments)
+    }
+    typed_options = {
+        name: normalized_options[name]
+        for name in ("max_iters", "dt_main", "dt_rad", "tout")
+        if name in normalized_options
+    }
+    request = ScmRunRequest(
+        request_id=f"compat-scm-{time.time_ns()}",
+        case=case_name,
+        stats_file=stats_name,
+        config=config_name,
+        overrides=typed_overrides,
+        run_options=typed_options,
+        out_dir=str(output_dir or normalized_options.get("out_dir") or "") or None,
     )
+    return submit_scm_run(request, native_cli_options=normalized_options)
 
 
-def launch_dashboard_scm_request(
+def _launch_scm_process(
     case: str,
     stats_file: str,
     config: str,
@@ -2128,46 +2843,25 @@ def launch_dashboard_scm_request(
     *,
     job_id: str | None = None,
     run_id: str | None = None,
-    check_admission: bool = True,
+    batch_job_id: str | None = None,
 ) -> dict[str, Any]:
-    """Launch one Run-tab request through the durable broker lifecycle.
-
-    The entry point is internal to Dash, retaining its richer control surface
-    while making process ownership, cancellation, recovery, and admission the
-    same as for typed MCP SCM jobs.
-    """
-    case_name = _validate_case(case)
-    stats_name = _validated_stats_file(stats_file)
-    config_name = _valid_tune_config(config)
-    normalized_overrides = _normalize_dashboard_overrides(overrides)
-    normalized_options = _normalize_dashboard_cli_options(cli_options)
+    """Launch the process owned by one already-persisted typed SCM child."""
+    case_name = str(case)
+    stats_name = str(stats_file)
+    config_name = str(config)
+    normalized_overrides = dict(overrides or {})
+    normalized_options = dict(cli_options or {})
     with exclusive_file_lock(private_path(REPO_ROOT, "scm-submission.lock")):
-        if check_admission:
-            _assert_scm_admission(case_name)
+        _assert_scm_admission(
+            case_name,
+            normalized_options.get("out_dir") or "",
+            exclude_job_id=job_id,
+        )
         detail = " ".join(normalized_options.get("extra_args") or []) or "dashboard configuration"
         publish_event("run", f"Starting {case_name}", detail, status="running")
         proc_data = start_case_process(case_name, stats_name, normalized_overrides, normalized_options, config_name)
         if normalized_options.get("out_dir"):
             proc_data["output_directory"] = str(normalized_options["out_dir"])
-        set_broker_run(
-            case_name,
-            {
-                "state": "running",
-                "case": case_name,
-                "proc_data": dict(proc_data),
-                "stats_file": stats_name,
-                "config": config_name,
-                "cli_options": dict(normalized_options),
-                "log_tail": "",
-                "log_offset": 0,
-                "returncode": None,
-                "broker_managed": True,
-                "job_id": job_id,
-                "run_id": run_id,
-            },
-        )
-        publish_run_request(case_name, proc_data, stats_file=stats_name, config=config_name, cli_options=normalized_options)
-        _background(_watch_run, case_name, proc_data, job_id)
     return {
         "status": "started",
         "case": case_name,
@@ -2326,6 +3020,10 @@ def launch_tuning(
     simann_max_iters: int = 200,
     simann_initial_temp: float = 1.0,
     simann_final_temp: float = 1.0e-12,
+    adam_max_updates: int = 100,
+    adam_learning_rate: float = 0.01,
+    adam_perturbation: float = 0.05,
+    adam_spsa_pairs: int = 2,
     batch_size: int = 1,
     max_workers: int = 1,
     loss_mode: str = DEFAULT_LOSS_MODE,
@@ -2431,6 +3129,10 @@ def launch_tuning(
             simann_max_iters=simann_max_iters,
             simann_initial_temp=simann_initial_temp,
             simann_final_temp=simann_final_temp,
+            adam_max_updates=adam_max_updates,
+            adam_learning_rate=adam_learning_rate,
+            adam_perturbation=adam_perturbation,
+            adam_spsa_pairs=adam_spsa_pairs,
             batch_size=requested_batch_size,
             max_workers=requested_workers,
             max_samples_limit=_max_samples_limit,
@@ -2494,6 +3196,10 @@ def launch_tuning_request(request: dict[str, Any]) -> dict[str, Any]:
         simann_max_iters=options.get("max_iters", 200),
         simann_initial_temp=options.get("initial_temp", 1.0),
         simann_final_temp=options.get("max_final_temp", 1.0e-12),
+        adam_max_updates=options.get("max_updates", 100),
+        adam_learning_rate=options.get("learning_rate", 0.01),
+        adam_perturbation=options.get("perturbation", 0.05),
+        adam_spsa_pairs=options.get("spsa_pairs", 2),
         batch_size=payload.get("batch_size", 1),
         max_workers=payload.get("max_workers", 1),
         loss_mode=payload.get("loss_mode", DEFAULT_LOSS_MODE),
@@ -2649,24 +3355,31 @@ def stop_profile() -> dict[str, Any]:
     return {"status": "stop_requested", "pid": job.get("pid")}
 
 
-def stop_run(case: str) -> dict[str, Any]:
-    """Ask the broker-owned SCM case process to stop without requiring Dash state."""
+def stop_run(case: str, output_dir: str | None = None) -> dict[str, Any]:
+    """Stop one unambiguous broker-owned SCM case process."""
     case_name = _validate_case(case)
-    record = dict((broker_jobs().get("runs") or {}).get(case_name) or {})
-    proc_data = dict(record.get("proc_data") or {})
-    if str(record.get("state") or "") not in {"running", "stopping"} or not proc_data:
+    target = (
+        _canonical_output_directory(resolve_output_dir(output_dir))
+        if output_dir is not None
+        else None
+    )
+    candidates = [
+        record
+        for record in _matching_scm_records(
+            case_name,
+            target,
+            states={"running", "stopping"},
+        )
+        if ((record.get("runtime") or {}).get("proc_data") or {}).get("pid")
+    ]
+    if not candidates:
         raise ValueError(f"no broker-owned {case_name} run is running")
-    proc = get_proc(proc_data.get("pid"))
-    try:
-        if proc is not None and proc.poll() is None:
-            proc.terminate()
-        elif proc is None:
-            os.kill(int(proc_data["pid"]), signal.SIGTERM)
-    except (KeyError, OSError, TypeError, ValueError) as exc:
-        raise ValueError(f"{case_name} process is no longer available to stop") from exc
-    update_broker_run(case_name, state="stopping")
-    publish_event("run", f"Stop requested for {case_name}", str(proc_data.get("log") or ""), status="info")
-    return {"status": "stop_requested", "case": case_name, "pid": proc_data.get("pid")}
+    if len(candidates) > 1:
+        raise ValueError(
+            f"multiple {case_name} runs are active; stop one by job_id or output_dir"
+        )
+    result = _cancel_scm_job(str(candidates[0].get("job_id") or ""))
+    return dict(result.get("operation") or result)
 
 
 def stop_all_broker_work(*, reason: str = "dashboard manager is stopping") -> dict[str, Any]:
@@ -2695,18 +3408,24 @@ def stop_all_broker_work(*, reason: str = "dashboard manager is stopping") -> di
         except ValueError as exc:
             errors.append(f"Profile: {exc}")
 
-    for case, raw_record in (snapshot.get("runs") or {}).items():
-        record = dict(raw_record or {})
-        if str(record.get("state") or "") not in {"running", "stopping"}:
-            continue
+    pyplotgen_record = dict(snapshot.get("pyplotgen") or {})
+    if str(pyplotgen_record.get("state") or "") in {"running", "stopping"}:
         try:
-            stop_run(str(case))
-            requested.append(f"SCM:{case}")
-            job_id = str(record.get("job_id") or "")
-            if job_id:
-                _JOB_STORE.update(job_id, state="stopping")
+            stop_pyplotgen(pyplotgen_record.get("pid"))
+            update_broker_job("pyplotgen", state="stopping")
+            requested.append("PyPlotGen")
+        except (OSError, TypeError, ValueError) as exc:
+            errors.append(f"PyPlotGen: {exc}")
+
+    if _JOB_STORE.list_kind("scm") or _JOB_STORE.list_kind("scm_batch"):
+        try:
+            scm_result = cancel_all_scm_runs()
+            requested.extend(
+                f"SCM:{case}" for case in scm_result.get("stopped_cases") or []
+            )
+            errors.extend(f"SCM:{message}" for message in scm_result.get("errors") or [])
         except ValueError as exc:
-            errors.append(f"SCM:{case}: {exc}")
+            errors.append(f"SCM: {exc}")
 
     tune_record = dict(snapshot.get("tune") or {})
     if str(tune_record.get("state") or "") in {"running", "stopping"}:
@@ -2735,36 +3454,6 @@ def stop_all_broker_work(*, reason: str = "dashboard manager is stopping") -> di
                 _JOB_STORE.update(job_id, state="stopping")
         except (OSError, RuntimeError, TypeError, ValueError) as exc:
             errors.append(f"Tune-result:{run_id}: {exc}")
-
-    # A batch may have children that have not started yet and therefore do not
-    # appear in broker_jobs(). Mark them terminal so a later broker cannot
-    # recover and launch them after the manager has deliberately stopped.
-    for batch in _JOB_STORE.list_kind("scm_batch"):
-        if str(batch.get("state") or "") not in {"queued", "running"}:
-            continue
-        children: list[dict[str, Any]] = []
-        for raw_child in batch.get("children") or []:
-            child = dict(raw_child or {})
-            if str(child.get("state") or "") == "queued":
-                child["state"] = "cancelled"
-                child_id = str(child.get("job_id") or "")
-                if child_id:
-                    _JOB_STORE.update(child_id, state="cancelled")
-                    _ARTIFACT_STORE.release(child_id)
-            children.append(child)
-        updated = _JOB_STORE.update(
-            str(batch.get("job_id") or ""),
-            state="cancelled",
-            children=children,
-            finished_at_unix_seconds=time.time(),
-            cancellation_reason=str(reason)[:500],
-        )
-        if updated:
-            try:
-                _write_scm_batch_manifest(updated)
-            except OSError as exc:
-                errors.append(f"SCM batch manifest: {exc}")
-        requested.append(f"SCM-batch:{batch.get('batch_id') or batch.get('job_id')}")
 
     publish_event(
         "broker",
@@ -2866,7 +3555,6 @@ def run_tuning_loss(mode: str = "window", max_results: int = 16, *, job_id: str 
         case_configs=case_configs if selected_mode == "window" else None,
         run_mode=selected_mode,
         config=str(request.get("config") or "default"),
-        batch_size=request.get("batch_size", 8),
         override=str(request.get("override") or ""),
         workspace_id=job.get("workspace_id"),
         revision_id=job.get("revision_id"),
@@ -2886,8 +3574,7 @@ def run_tuning_loss(mode: str = "window", max_results: int = 16, *, job_id: str 
         "activity_id": event["id"],
         "mode": selected_mode,
         "result_count": len(param_sets),
-        "batch_count": run_data.get("batch_count"),
-        "batch_size": run_data.get("batch_size"),
+        "column_count": run_data.get("column_count"),
         "run": run_data,
     }
 
@@ -2899,6 +3586,7 @@ def plot_profiles(
     *,
     run_id: str | None = None,
     output_dir: str | None = None,
+    output_dirs: list[str] | None = None,
     time_start_seconds: float | None = None,
     average_minutes: float | None = None,
     window_preset: str | None = None,
@@ -2906,7 +3594,12 @@ def plot_profiles(
 ) -> dict[str, Any]:
     """Open profile variables with optional validated benchmark overlays."""
     case_name = _validate_case(case)
-    selected_run_id, output_dirs = _plot_output_selection(case_name, run_id, output_dir)
+    selected_run_id, selected_output_dirs = _plot_output_selection(
+        case_name,
+        run_id,
+        output_dir,
+        output_dirs,
+    )
     case_data, selection = _profile_selection(
         case_name,
         time_seconds=time_seconds,
@@ -2914,7 +3607,7 @@ def plot_profiles(
         average_minutes=average_minutes,
         window_preset=window_preset,
         require_case_data=False,
-        output_dirs=output_dirs,
+        output_dirs=selected_output_dirs,
     )
     request = {
         "operation": "set_view",
@@ -2934,7 +3627,12 @@ def plot_profiles(
     event = publish_plot_request(
         case_name,
         names,
-        output_dir=output_dirs[0] if output_dirs else "output",
+        output_dir=selected_output_dirs[0] if selected_output_dirs else "output",
+        output_dirs=(
+            selected_output_dirs
+            if selected_output_dirs is not None and len(selected_output_dirs) > 1
+            else None
+        ),
         **selection,
     )
     return {
@@ -2943,7 +3641,8 @@ def plot_profiles(
         "case": case_name,
         "variables": names,
         "run_id": selected_run_id or None,
-        "output_directory": output_dirs[0] if output_dirs else "output",
+        "output_directory": selected_output_dirs[0] if selected_output_dirs else "output",
+        "output_directories": selected_output_dirs or ["output"],
         **selection,
     }
 
@@ -3149,11 +3848,17 @@ def inspect_compile() -> dict[str, Any]:
 
 def inspect_runs(case: str | None = None) -> dict[str, Any]:
     """Return broker-owned SCM records, optionally narrowed to one case."""
-    runs = broker_jobs().get("runs") or {}
+    runs = {
+        str(record.get("run_id") or record.get("job_id") or ""): _scm_run_view(record)
+        for record in _JOB_STORE.list_kind("scm")
+        if str(record.get("visibility") or "user") == "user"
+    }
     if case is None or not str(case).strip():
         return {"runs": runs}
     case_name = _validate_case(str(case))
-    return {"case": case_name, "run": runs.get(case_name)}
+    matching = [record for record in runs.values() if record.get("case") == case_name]
+    latest = max(matching, key=lambda record: record.get("updated_at") or 0, default=None)
+    return {"case": case_name, "run": latest}
 
 
 def inspect_dashboard(tab: str | None = None) -> dict[str, Any]:
@@ -3355,9 +4060,18 @@ def _register_dashboard_operations() -> None:
     register_operation(
         "run",
         "stop",
-        "Stop one broker-owned SCM case.",
-        {"type": "object", "required": ["case"], "properties": {"case": {"type": "string"}}},
-        lambda arguments: stop_run(arguments.get("case", "")),
+        "Stop one broker-owned SCM case, narrowed by output directory if needed.",
+        {
+            "type": "object",
+            "required": ["case"],
+            "properties": {
+                "case": {"type": "string"},
+                "output_dir": {"type": "string"},
+            },
+        },
+        lambda arguments: stop_run(
+            arguments.get("case", ""), arguments.get("output_dir")
+        ),
     )
     register_operation(
         "run",
@@ -3384,6 +4098,13 @@ def _register_dashboard_operations() -> None:
                     "type": "string",
                     "description": "Optional output directory below repository output/; use when run_id is unavailable.",
                 },
+                "output_dirs": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "description": "Ordered output directories for native Plot-tab comparison mode.",
+                },
                 "time_start_seconds": {"type": "number"},
                 "average_minutes": {"type": "number"},
                 "window_preset": {"enum": ["loss", "pyplotgen"]},
@@ -3399,6 +4120,7 @@ def _register_dashboard_operations() -> None:
             arguments.get("variables") or [],
             run_id=arguments.get("run_id"),
             output_dir=arguments.get("output_dir"),
+            output_dirs=arguments.get("output_dirs") if "output_dirs" in arguments else None,
             time_start_seconds=arguments.get("time_start_seconds"),
             average_minutes=arguments.get("average_minutes"),
             window_preset=arguments.get("window_preset"),
@@ -3507,6 +4229,10 @@ def _register_dashboard_operations() -> None:
                 "simann_max_iters": {"type": "integer", "default": 200},
                 "simann_initial_temp": {"type": "number", "default": 1.0},
                 "simann_final_temp": {"type": "number", "default": 1.0e-12},
+                "adam_max_updates": {"type": "integer", "default": 100},
+                "adam_learning_rate": {"type": "number", "default": 0.01},
+                "adam_perturbation": {"type": "number", "default": 0.05},
+                "adam_spsa_pairs": {"type": "integer", "default": 2},
                 "batch_size": {"type": "integer", "default": 1},
                 "max_workers": {"type": "integer", "default": 1},
                 "loss_mode": {"type": "string"},
@@ -3527,6 +4253,10 @@ def _register_dashboard_operations() -> None:
             simann_max_iters=arguments.get("simann_max_iters", 200),
             simann_initial_temp=arguments.get("simann_initial_temp", 1.0),
             simann_final_temp=arguments.get("simann_final_temp", 1.0e-12),
+            adam_max_updates=arguments.get("adam_max_updates", 100),
+            adam_learning_rate=arguments.get("adam_learning_rate", 0.01),
+            adam_perturbation=arguments.get("adam_perturbation", 0.05),
+            adam_spsa_pairs=arguments.get("adam_spsa_pairs", 2),
             batch_size=arguments.get("batch_size", 1),
             max_workers=arguments.get("max_workers", 1),
             loss_mode=arguments.get("loss_mode", DEFAULT_LOSS_MODE),
@@ -3659,12 +4389,16 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "domain_submit_compile":
         return submit_compile(CompileRequest.model_validate(payload.get("request") or {}))
     if action == "domain_submit_scm_run":
-        return submit_scm_run(ScmRunRequest.model_validate(payload.get("request") or {}))
+        return submit_scm_run(
+            ScmRunRequest.model_validate(payload.get("request") or {}),
+            origin=str(payload.get("submission_origin") or "unknown"),
+        )
     if action == "domain_submit_scm_batch":
         return submit_scm_batch(
             ScmRunBatchRequest.model_validate(payload.get("request") or {}),
             native_overrides=payload.get("native_overrides") if "native_overrides" in payload else None,
             native_cli_options=payload.get("native_cli_options") if "native_cli_options" in payload else None,
+            origin=str(payload.get("submission_origin") or "unknown"),
         )
     if action == "domain_submit_tune":
         return submit_tune(TuneRequest.model_validate(payload.get("request") or {}))
@@ -3678,6 +4412,10 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         )
     if action == "domain_cancel_job":
         return cancel_job(str(payload.get("job_id") or ""))
+    if action == "domain_cancel_all_scm":
+        return cancel_all_scm_runs()
+    if action == "clear_terminal_scm_session":
+        return clear_terminal_scm_session()
     if action == "domain_create_tune_revision":
         return create_tuning_revision(
             str(payload.get("workspace_id") or ""),
@@ -3729,6 +4467,10 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return launch_compile_request(dict(payload.get("options") or {}), env_id=payload.get("env_id", "current"))
     if action == "launch_profile_request":
         return launch_profile_request(dict(payload.get("settings") or {}))
+    if action == "launch_pyplotgen_request":
+        return launch_pyplotgen_request(list(payload.get("output_dirs") or []))
+    if action == "stop_pyplotgen_request":
+        return stop_pyplotgen_request()
     if action == "stop_profile":
         return stop_profile()
     if action == "launch_rebuild_request":
@@ -3736,14 +4478,6 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             list(payload.get("builds") or []),
             dict(payload.get("discovery") or {}),
             str(payload.get("label") or "selected builds"),
-        )
-    if action == "launch_dashboard_scm_request":
-        return launch_dashboard_scm_request(
-            payload.get("case", ""),
-            payload.get("stats_file", DEFAULT_STATS_NAME),
-            payload.get("config", "default"),
-            dict(payload.get("overrides") or {}),
-            dict(payload.get("cli_options") or {}),
         )
     if action == "run_scm":
         return run_scm(
@@ -3786,6 +4520,10 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             simann_max_iters=payload.get("simann_max_iters", 200),
             simann_initial_temp=payload.get("simann_initial_temp", 1.0),
             simann_final_temp=payload.get("simann_final_temp", 1.0e-12),
+            adam_max_updates=payload.get("adam_max_updates", 100),
+            adam_learning_rate=payload.get("adam_learning_rate", 0.01),
+            adam_perturbation=payload.get("adam_perturbation", 0.05),
+            adam_spsa_pairs=payload.get("adam_spsa_pairs", 2),
             batch_size=payload.get("batch_size", 1),
             max_workers=payload.get("max_workers", 1),
             loss_mode=payload.get("loss_mode", DEFAULT_LOSS_MODE),
@@ -3825,7 +4563,7 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "stop_compile":
         return stop_compile()
     if action == "stop_run":
-        return stop_run(payload.get("case", ""))
+        return stop_run(payload.get("case", ""), payload.get("output_dir"))
     if action == "inspect_tuning":
         return inspect_tuning()
     if action == "run_tuning_loss":

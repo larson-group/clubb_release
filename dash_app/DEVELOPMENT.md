@@ -53,10 +53,12 @@ Agent-owned execution is local-only. Public MCP requests use strict Pydantic
 models, typed overrides, checked-in stats choices, explicit physical time
 windows, and request-id idempotency. A typed MCP SCM batch writes scientific
 output by default to `output/mcp_runs/<batch-id>/<case>_stats.nc`; the broker
-owns that batch directory and parent `batch_manifest.json`. MCP `out_dir` may
-select another path, but it must resolve below the repository `output/`
-directory. Native Run multi-select uses the same service but honors the
-Run-tab's repository-resolved output directory.
+owns that batch directory, while the JobStore is the canonical batch/child
+record. MCP `out_dir` may select another path, but it must resolve below the
+repository `output/` directory. Native Run multi-select uses the same service
+but honors the Run-tab's repository-resolved output directory. Admission is
+atomic and scoped by canonical `(case, output directory)`, so one case may run
+in different directories concurrently but may not overlap in the same one.
 `output/agent_artifacts/` holds private manifests and temporary evidence only:
 protect a live bundle from cleanup, but do not use it as a durable result,
 report asset, or raw-experiment archive.

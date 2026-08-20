@@ -10,6 +10,66 @@
   align-items: stretch;
 }
 
+.tune-config-save-modal--hidden { display: none; }
+.tune-config-save-panel { width: min(620px, 92vw); }
+.tune-config-save-header { display: block; }
+.tune-config-save-subtitle {
+  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.tune-config-save-form { display: grid; gap: 18px; }
+.tune-config-save-field { display: grid; gap: 7px; }
+.tune-config-save-field > label { font-size: 13px; font-weight: 700; }
+#app-root .tune-config-save-input {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+}
+.tune-config-save-feedback {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 9px 11px;
+  font-size: 13px;
+}
+.tune-config-save-feedback--error {
+  border-color: #ef4444;
+  background: rgba(220, 38, 38, 0.12);
+  color: #fecaca;
+}
+.tune-config-save-feedback--warning {
+  border-color: #f59e0b;
+  background: rgba(217, 119, 6, 0.14);
+  color: #fde68a;
+}
+#app-root.theme-light .tune-config-save-feedback--error { color: #991b1b; }
+#app-root.theme-light .tune-config-save-feedback--warning { color: #92400e; }
+.tune-config-save-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  border-top: 1px solid;
+  padding: 13px 16px;
+}
+#app-root.theme-dark .tune-config-save-footer { border-color: #334155; background: #111827; }
+#app-root.theme-light .tune-config-save-footer { border-color: #cbd5e1; background: #f8fafc; }
+.tune-config-save-cancel,
+.tune-config-save-submit {
+  border: 1px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.tune-config-save-cancel { border-color: #64748b; background: transparent; color: inherit; }
+.tune-config-save-submit { border-color: #2ea043; background: #238636; color: #fff; }
+.tune-config-save-submit--danger { border-color: #ef4444; background: #b91c1c; }
+.tune-config-save-status { max-width: 190px; margin: 5px 4px 0; font-size: 12px; }
+
 #app-root.theme-dark .tune-header-controls {
   background: #111827;
   border: 1px solid #334155;
@@ -513,6 +573,14 @@ body.tune-ui-dragging * {
 .tune-diagnostics-taylor,
 .tune-diagnostics-params {
   min-width: 0;
+}
+
+.tune-parameter-box-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 5px;
+  flex-wrap: wrap;
 }
 
 .tune-diagnostics-control-row {

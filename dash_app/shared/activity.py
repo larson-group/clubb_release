@@ -29,7 +29,7 @@ ACTIVE_JOB_STATES = frozenset({"queued", "submitting", "running", "stopping"})
 
 def _initial_state() -> dict[str, Any]:
     return {
-        "version": 7,
+        "version": 10,
         "next_id": 1,
         "events": [],
         "plot_request": None,
@@ -42,7 +42,7 @@ def _initial_state() -> dict[str, Any]:
         "jobs": {
             "compile": None,
             "profile": None,
-            "runs": {},
+            "pyplotgen": None,
             "tune": None,
             "loss_runs": {},
         },
@@ -63,12 +63,32 @@ def _read_state() -> dict[str, Any]:
     defaults = _initial_state()
     for obsolete in ("next_message_id", "agents", "messages"):
         payload.pop(obsolete, None)
+
+    def obsolete_run_handoff(value):
+        return (
+            isinstance(value, dict)
+            and value.get("type") == "run"
+            and value.get("operation") == "start"
+        )
+
+    payload["ui_request_queue"] = [
+        dict(item)
+        for item in payload.get("ui_request_queue") or []
+        if isinstance(item, dict) and not obsolete_run_handoff(item)
+    ]
+    for key in ("ui_request", "ui_request_in_flight"):
+        if obsolete_run_handoff(payload.get(key)):
+            payload[key] = None
     payload["version"] = defaults["version"]
     for key, value in defaults.items():
         payload.setdefault(key, value)
     jobs = dict(payload.get("jobs") or {})
     for key, value in defaults["jobs"].items():
         jobs.setdefault(key, value)
+    # SCM lifecycle is canonical in services/jobs.py.  Drop stale pre-v10
+    # mirrors so the global handoff stays small regardless of run history.
+    jobs.pop("runs", None)
+    jobs.pop("scm_batches", None)
     payload["jobs"] = jobs
     return payload
 
@@ -81,10 +101,13 @@ def read_activity() -> dict[str, Any]:
 def broker_jobs() -> dict[str, Any]:
     """Return the broker-owned job snapshot used to rehydrate a Dash view."""
     jobs = read_activity().get("jobs") or {}
+    from dash_app.services.jobs import JobStore
+
     return {
         "compile": dict(jobs.get("compile") or {}) or None,
         "profile": dict(jobs.get("profile") or {}) or None,
-        "runs": {str(name): dict(value or {}) for name, value in (jobs.get("runs") or {}).items()},
+        "pyplotgen": dict(jobs.get("pyplotgen") or {}) or None,
+        "run_summary": JobStore().scm_summary(),
         "tune": dict(jobs.get("tune") or {}) or None,
         "loss_runs": {str(name): dict(value or {}) for name, value in (jobs.get("loss_runs") or {}).items()},
     }
@@ -93,6 +116,11 @@ def broker_jobs() -> dict[str, Any]:
 def count_active_jobs(jobs: Any) -> int:
     """Count active broker job records without depending on job categories."""
     if isinstance(jobs, dict):
+        if "active_count" in jobs and "revision" in jobs:
+            try:
+                return max(0, int(jobs.get("active_count") or 0))
+            except (TypeError, ValueError):
+                return 0
         if str(jobs.get("state") or "") in ACTIVE_JOB_STATES:
             return 1
         return sum(count_active_jobs(value) for value in jobs.values())
@@ -157,6 +185,7 @@ def publish_plot_request(
     variables: list[str],
     *,
     output_dir: str = "output",
+    output_dirs: list[str] | None = None,
     time_seconds: float | None = None,
     time_start_seconds: float | None = None,
     average_minutes: float | None = None,
@@ -169,8 +198,11 @@ def publish_plot_request(
         "operation": "set_view",
         "case": str(case),
         "variables": [str(value) for value in variables if str(value).strip()],
-        "output_dir": str(output_dir),
     }
+    if output_dirs is not None:
+        action["output_dirs"] = [str(value) for value in output_dirs]
+    else:
+        action["output_dir"] = str(output_dir)
     # ``time_seconds`` was the original one-control API. Retain it for older
     # adapters, but use the explicit start-time field in all new requests.
     resolved_start = time_start_seconds if time_start_seconds is not None else time_seconds
@@ -361,33 +393,6 @@ def publish_tab_request(tab: str, message: str, detail: str = "", **payload: Any
     )
 
 
-def publish_run_request(
-    case: str,
-    proc_data: dict[str, Any],
-    *,
-    stats_file: str,
-    config: str,
-    cli_options: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Ask the Run tab to adopt an already-started normal SCM process."""
-    return publish_event(
-        "run",
-        f"Showing {case} in Run",
-        str(proc_data.get("log") or ""),
-        status="running",
-        action={
-            "type": "run",
-            "tab": "run",
-            "operation": "start",
-            "case": case,
-            "proc_data": dict(proc_data),
-            "stats_file": stats_file,
-            "config": config,
-            "cli_options": dict(cli_options or {}),
-        },
-    )
-
-
 def publish_tune_request(
     request: dict[str, Any],
     job: dict[str, Any],
@@ -419,49 +424,24 @@ def set_broker_metadata(**metadata: Any) -> dict[str, Any]:
 
 def set_broker_job(kind: str, payload: dict[str, Any] | None) -> dict[str, Any] | None:
     """Store one JSON-safe broker job record for a browser that reconnects later."""
-    if kind not in {"compile", "profile", "tune"}:
-        raise ValueError("broker job kind must be compile, profile, or tune")
+    if kind not in {"compile", "profile", "pyplotgen", "tune"}:
+        raise ValueError("broker job kind must be compile, profile, pyplotgen, or tune")
     with _locked_state() as state:
         jobs = dict(state.get("jobs") or {})
         record = None if payload is None else dict(payload)
         if record is not None:
             record["updated_at"] = time.time()
         jobs[kind] = record
-        jobs.setdefault("runs", {})
         jobs.setdefault("loss_runs", {})
         jobs.setdefault("profile", None)
-        state["jobs"] = jobs
-        return None if record is None else dict(record)
-
-
-def set_broker_run(case: str, payload: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Store one broker-owned SCM process record keyed by its checked-in case."""
-    name = str(case or "").strip()
-    if not name:
-        raise ValueError("broker run requires a case name")
-    with _locked_state() as state:
-        jobs = dict(state.get("jobs") or {})
-        runs = {str(key): dict(value or {}) for key, value in (jobs.get("runs") or {}).items()}
-        if payload is None:
-            runs.pop(name, None)
-            record = None
-        else:
-            record = dict(payload)
-            record["updated_at"] = time.time()
-            runs[name] = record
-        jobs["runs"] = runs
-        jobs.setdefault("compile", None)
-        jobs.setdefault("profile", None)
-        jobs.setdefault("tune", None)
-        jobs.setdefault("loss_runs", {})
         state["jobs"] = jobs
         return None if record is None else dict(record)
 
 
 def update_broker_job(kind: str, **updates: Any) -> dict[str, Any] | None:
     """Merge status/log updates into an existing singular broker job."""
-    if kind not in {"compile", "profile", "tune"}:
-        raise ValueError("broker job kind must be compile, profile, or tune")
+    if kind not in {"compile", "profile", "pyplotgen", "tune"}:
+        raise ValueError("broker job kind must be compile, profile, pyplotgen, or tune")
     with _locked_state() as state:
         jobs = dict(state.get("jobs") or {})
         current = jobs.get(kind)
@@ -471,30 +451,8 @@ def update_broker_job(kind: str, **updates: Any) -> dict[str, Any] | None:
         current.update(updates)
         current["updated_at"] = time.time()
         jobs[kind] = current
-        jobs.setdefault("runs", {})
         jobs.setdefault("loss_runs", {})
         jobs.setdefault("profile", None)
-        state["jobs"] = jobs
-        return dict(current)
-
-
-def update_broker_run(case: str, **updates: Any) -> dict[str, Any] | None:
-    """Merge status/log updates into one existing broker-owned SCM run."""
-    name = str(case or "").strip()
-    with _locked_state() as state:
-        jobs = dict(state.get("jobs") or {})
-        runs = {str(key): dict(value or {}) for key, value in (jobs.get("runs") or {}).items()}
-        current = runs.get(name)
-        if current is None:
-            return None
-        current.update(updates)
-        current["updated_at"] = time.time()
-        runs[name] = current
-        jobs["runs"] = runs
-        jobs.setdefault("compile", None)
-        jobs.setdefault("profile", None)
-        jobs.setdefault("tune", None)
-        jobs.setdefault("loss_runs", {})
         state["jobs"] = jobs
         return dict(current)
 
@@ -517,7 +475,6 @@ def set_broker_loss_run(run_id: str, payload: dict[str, Any] | None) -> dict[str
         jobs["loss_runs"] = runs
         jobs.setdefault("compile", None)
         jobs.setdefault("profile", None)
-        jobs.setdefault("runs", {})
         jobs.setdefault("tune", None)
         state["jobs"] = jobs
         return None if record is None else dict(record)
@@ -538,7 +495,6 @@ def update_broker_loss_run(run_id: str, **updates: Any) -> dict[str, Any] | None
         jobs["loss_runs"] = runs
         jobs.setdefault("compile", None)
         jobs.setdefault("profile", None)
-        jobs.setdefault("runs", {})
         jobs.setdefault("tune", None)
         state["jobs"] = jobs
         return dict(current)

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dash import dcc, html
 
 from dash_app.shared.components import styled_dropdown
-from dash_app.shared.selected_build import selected_build_badge
+from dash_app.compile_tab.build_selector import build_selector_trigger
 
 from .figures import METRICS, X_AXES, empty_profile_figure
 from .library import profile_option
@@ -107,7 +107,35 @@ def _profile_record_title(record: dict[str, object]) -> str:
     return " · ".join(parts)
 
 
-def available_profile_buttons(records, selected_ids=None, expanded: bool = False):
+def _profile_delete_button(record, confirmation=None):
+    """Render the same guarded delete action used by the Plot output chooser."""
+    run_id = str(record.get("run_id") or "")
+    confirming = bool(run_id) and (confirmation or {}).get("run_id") == run_id
+    return html.Button(
+        "Confirm" if confirming else "×",
+        id={"type": "profile-delete-run", "run_id": run_id},
+        n_clicks=0,
+        n_clicks_timestamp=-1,
+        disabled=not run_id,
+        title=(
+            "Click again within 3 seconds to permanently delete this profile"
+            if confirming
+            else "Permanently delete this stored profile"
+        ),
+        className=(
+            "plots-output-dir-delete plots-output-dir-delete--confirm"
+            if confirming
+            else "plots-output-dir-delete"
+        ),
+    )
+
+
+def available_profile_buttons(
+    records,
+    selected_ids=None,
+    expanded: bool = False,
+    delete_confirmation=None,
+):
     """Render the three newest or all currently unselected profiles."""
     selected = {str(run_id) for run_id in (selected_ids or [])}
     available = [
@@ -118,8 +146,9 @@ def available_profile_buttons(records, selected_ids=None, expanded: bool = False
     if not available:
         return [html.Div("All profiles selected", className="profile-available-empty")]
     visible = available if expanded else available[:3]
-    return [
-        html.Button(
+    buttons = []
+    for record in visible:
+        add_button = html.Button(
             profile_option(record)["label"],
             id={"type": "profile-add-run", "run_id": str(record["run_id"])},
             n_clicks=0,
@@ -127,11 +156,18 @@ def available_profile_buttons(records, selected_ids=None, expanded: bool = False
             title=f"Add {_profile_record_title(record)}",
             className="profile-available-button",
         )
-        for record in visible
-    ]
+        buttons.append(
+            html.Div(
+                [add_button, _profile_delete_button(record, delete_confirmation)],
+                className="profile-available-row",
+            )
+            if expanded
+            else add_button
+        )
+    return buttons
 
 
-def active_profile_items(records, selected_ids):
+def active_profile_items(records, selected_ids, expanded: bool = False, delete_confirmation=None):
     """Render selected profiles as compact, removable comparison pills."""
     by_id = {str(record.get("run_id") or ""): record for record in (records or [])}
     items = []
@@ -145,6 +181,11 @@ def active_profile_items(records, selected_ids):
             html.Div(
                 [
                     html.Span(label, className="profile-active-label"),
+                    *(
+                        [_profile_delete_button(record, delete_confirmation)]
+                        if expanded
+                        else []
+                    ),
                     html.Button(
                         "×",
                         id={"type": "profile-remove-run", "run_id": run_id},
@@ -162,7 +203,7 @@ def active_profile_items(records, selected_ids):
     return items or [html.Div("No profiles selected", className="profile-active-empty")]
 
 
-def _chart_card(component_id: str, title: str, subtitle: str, message: str, controls=None):
+def _chart_card(component_id: str, title: str, message: str, controls=None):
     body = [
         dcc.Graph(
             id=component_id,
@@ -175,13 +216,7 @@ def _chart_card(component_id: str, title: str, subtitle: str, message: str, cont
         body.append(html.Aside(controls, className="profile-chart-controls"))
     return html.Section(
         [
-            html.Div(
-                [
-                    html.Div(title, className="profile-chart-title"),
-                    html.Div(subtitle, className="profile-chart-subtitle"),
-                ],
-                className="profile-chart-heading",
-            ),
+            html.Div(title, className="profile-chart-heading profile-chart-title"),
             html.Div(body, className="profile-chart-body"),
         ],
         id=f"{component_id}-card",
@@ -277,43 +312,6 @@ def _benchmark_controls(initial_state: dict[str, object]):
     ]
     return html.Section(
         [
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div("BENCHMARK STUDIO", className="profile-panel-kicker"),
-                            html.H2("Create a timing profile", className="profile-benchmark-title"),
-                            html.P(
-                                "Define the experiment once, then capture a portable profile for comparison.",
-                                className="profile-panel-copy",
-                            ),
-                        ],
-                        className="profile-benchmark-intro",
-                    ),
-                    html.Div(
-                        [
-                            selected_build_badge("profile-selected-build-badge"),
-                            html.Button(
-                                "Run benchmark",
-                                id="profile-start",
-                                n_clicks=0,
-                                className="profile-button profile-button-start",
-                                title="Launch the configured timing sweep through the durable dashboard broker.",
-                            ),
-                            html.Button(
-                                "Cancel",
-                                id="profile-cancel",
-                                n_clicks=0,
-                                disabled=True,
-                                className="profile-button profile-button-cancel",
-                                title="Gracefully interrupt the active timing sweep and preserve all completed CSV rows and artifacts.",
-                            ),
-                        ],
-                        className="profile-benchmark-actions",
-                    ),
-                ],
-                className="profile-benchmark-heading",
-            ),
             html.Div(
                 [
                     _benchmark_group(
@@ -439,6 +437,52 @@ def _benchmark_controls(initial_state: dict[str, object]):
                         ],
                         class_name="profile-benchmark-sampling",
                     ),
+                    _benchmark_group(
+                        "04",
+                        "Choose compiler & run",
+                        "Select the CLUBB build, then launch or stop the timing sweep.",
+                        [
+                            build_selector_trigger("profile-selected-build-badge"),
+                            html.Div(
+                                [
+                                    html.Button(
+                                        "Run benchmark",
+                                        id="profile-start",
+                                        n_clicks=0,
+                                        className="profile-button profile-button-start",
+                                        title="Launch the configured timing sweep through the durable dashboard broker.",
+                                    ),
+                                    html.Button(
+                                        "Cancel",
+                                        id="profile-cancel",
+                                        n_clicks=0,
+                                        disabled=True,
+                                        className="profile-button profile-button-cancel",
+                                        title="Gracefully interrupt the active timing sweep and preserve all completed CSV rows and artifacts.",
+                                    ),
+                                ],
+                                className="profile-benchmark-actions",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Span("Results", className="profile-results-label"),
+                                            html.Div(
+                                                "Idle",
+                                                id="profile-status",
+                                                className="profile-status profile-status-idle",
+                                            ),
+                                        ],
+                                        className="profile-results-state",
+                                    ),
+                                    html.Div(id="profile-result-summary", className="profile-result-summary"),
+                                ],
+                                className="profile-status-row",
+                            ),
+                        ],
+                        class_name="profile-benchmark-launch",
+                    ),
                 ],
                 className="profile-benchmark-grid",
             ),
@@ -480,11 +524,6 @@ def _benchmark_controls(initial_state: dict[str, object]):
 
 def _comparison_controls():
     return [
-        _section_header(
-            "PLOT VIEW",
-            "Compare profiles",
-            "Set the shared timer, metric, workload axis, and detail selection.",
-        ),
         _field(
             "Timer",
             styled_dropdown(
@@ -502,7 +541,7 @@ def _comparison_controls():
             styled_dropdown(
                 id="profile-result-metric",
                 options=[{"label": label, "value": value} for value, label in METRICS.items()],
-                value="timer_max_seconds",
+                value="throughput_columns_per_second",
                 clearable=False,
                 searchable=False,
                 className="profile-dropdown",
@@ -538,34 +577,17 @@ def _comparison_controls():
             ],
             className="profile-two-column",
         ),
-        html.Div(
-            [
-                _field(
-                    "Detail profile",
-                    styled_dropdown(
-                        id="profile-detail-run",
-                        options=[],
-                        value=None,
-                        clearable=False,
-                        searchable=True,
-                        className="profile-dropdown",
-                    ),
-                    tooltip="Choose the single stored profile used by the cost-decomposition and process-variability plots.",
-                ),
-                _field(
-                    "Detail process count",
-                    styled_dropdown(
-                        id="profile-detail-process",
-                        options=[],
-                        value=None,
-                        clearable=False,
-                        searchable=False,
-                        className="profile-dropdown",
-                    ),
-                    tooltip="Restrict the detail plots to measurements launched with this number of concurrent CLUBB processes.",
-                ),
-            ],
-            className="profile-two-column",
+        _field(
+            "Detail profile",
+            styled_dropdown(
+                id="profile-detail-run",
+                options=[],
+                value=None,
+                clearable=False,
+                searchable=True,
+                className="profile-dropdown",
+            ),
+            tooltip="Choose the single stored profile used by the cost-decomposition and process-variability plots.",
         ),
     ]
 
@@ -581,21 +603,8 @@ def build_controls():
     )
     return html.Div(
         [
-            html.Div(
-                [
-                    html.Div("PROFILE LIBRARY", className="profile-panel-kicker"),
-                    html.H2("Outputs & view", className="profile-panel-title"),
-                    html.P("Choose durable results, then shape the comparison.", className="profile-panel-copy"),
-                ],
-                className="profile-panel-heading",
-            ),
             html.Section(
                 [
-                    _section_header(
-                        "OUTPUT SELECTION",
-                        "Choose profiles",
-                        "Load a library and select one or more saved results.",
-                    ),
                     html.Div(
                         [
                             _field(
@@ -757,44 +766,26 @@ def _results_panel():
         [
             html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Span("Results", className="profile-results-label"),
-                            html.Div("Idle", id="profile-status", className="profile-status profile-status-idle"),
-                        ],
-                        className="profile-results-state",
-                    ),
-                    html.Div(id="profile-result-summary", className="profile-result-summary"),
-                ],
-                className="profile-status-row",
-            ),
-            html.Div(id="profile-comparison-warnings", className="profile-comparison-warnings"),
-            html.Div(
-                [
                     _chart_card(
                         "profile-graph",
                         "Performance",
-                        "Compare absolute time, throughput, and process balance across stored runs.",
                         "Select or run a profile to see timing results.",
                     ),
                     _chart_card(
                         "profile-relative-graph",
                         "Baseline comparison",
-                        "See exactly matched workload changes relative to one selected profile.",
                         "Select a baseline and comparison profile.",
                         relative_controls,
                     ),
                     _chart_card(
                         "profile-decomposition-graph",
                         "Cost decomposition",
-                        "Stack exclusive timer costs from the actual critical process of each repetition.",
                         "Select a detail profile.",
                         decomposition_controls,
                     ),
                     _chart_card(
                         "profile-variability-graph",
                         "Process variability",
-                        "Inspect raw timing spread across processes and measured repetitions.",
                         "Select a detail profile.",
                     ),
                 ],
@@ -815,6 +806,71 @@ def _results_panel():
     )
 
 
+def _overwrite_modal():
+    return html.Div(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div("!", className="profile-overwrite-icon", **{"aria-hidden": "true"}),
+                        html.Div(
+                            [
+                                html.Div("Benchmark label already exists", className="profile-overwrite-title"),
+                                html.Div(
+                                    id="profile-overwrite-message",
+                                    className="profile-overwrite-message",
+                                ),
+                            ]
+                        ),
+                    ],
+                    className="profile-overwrite-heading",
+                ),
+                html.Label("Benchmark label", htmlFor="profile-overwrite-name", className="profile-overwrite-label"),
+                dcc.Input(
+                    id="profile-overwrite-name",
+                    type="text",
+                    value="",
+                    debounce=False,
+                    className="profile-input profile-overwrite-input",
+                ),
+                html.Div(
+                    [
+                        html.Button(
+                            "Overwrite",
+                            id="profile-overwrite-button",
+                            type="button",
+                            n_clicks=0,
+                            className="profile-overwrite-button profile-overwrite-button-danger",
+                        ),
+                        html.Button(
+                            "Rename",
+                            id="profile-rename-button",
+                            type="button",
+                            n_clicks=0,
+                            disabled=True,
+                            className="profile-overwrite-button profile-overwrite-button-primary",
+                            title="Enter a different benchmark label to rename and run.",
+                        ),
+                        html.Button(
+                            "Cancel",
+                            id="profile-overwrite-cancel-button",
+                            type="button",
+                            n_clicks=0,
+                            className="profile-overwrite-button profile-overwrite-button-cancel",
+                        ),
+                    ],
+                    className="profile-overwrite-actions",
+                ),
+            ],
+            className="profile-overwrite-panel",
+            role="dialog",
+            **{"aria-modal": "true", "aria-labelledby": "profile-overwrite-message"},
+        ),
+        id="profile-overwrite-modal",
+        className="profile-overwrite-modal profile-overwrite-modal-hidden",
+    )
+
+
 def build_layout(initial_state: dict[str, object]):
     return html.Div(
         [
@@ -823,13 +879,19 @@ def build_layout(initial_state: dict[str, object]):
             dcc.Store(id="profile-active-results", data={}),
             dcc.Store(id="profile-catalog", data=[]),
             dcc.Store(id="profile-results", data=[]),
-            dcc.Store(id="profile-process-results", data=[]),
             dcc.Store(id="profile-library-action", data={}),
             dcc.Store(id="profile-selection-library", data=""),
             dcc.Store(id="profile-picker-expanded", data=False),
+            dcc.Store(id="profile-delete-confirm", data=None),
             dcc.Store(id="profile-pending-run", data={}),
-            dcc.ConfirmDialog(id="profile-overwrite-confirm", displayed=False),
-            dcc.Interval(id="profile-interval", interval=1000, n_intervals=0),
+            _overwrite_modal(),
+            dcc.Interval(id="profile-interval", interval=1000, n_intervals=0, disabled=True),
+            dcc.Interval(
+                id="profile-delete-expiry",
+                interval=250,
+                n_intervals=0,
+                disabled=True,
+            ),
             _benchmark_controls(initial_state),
             html.Div(
                 [_results_panel(), build_controls()],

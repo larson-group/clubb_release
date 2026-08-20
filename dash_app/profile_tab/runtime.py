@@ -122,16 +122,30 @@ def normalize_profile_settings(settings: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("timeout must be a positive number")
 
     executable = _clean(settings.get("executable"))
+    implementation = _clean(settings.get("implementation")).lower() or "fortran"
+    if implementation not in {"fortran", "python", "jax"}:
+        raise ValueError("implementation must be Fortran, Python, or JAX")
+    if executable and implementation != "fortran":
+        raise ValueError("an explicit executable can only be used with Fortran")
     executable_path = Path(executable).expanduser() if executable else None
     if executable_path is not None and not executable_path.is_absolute():
         executable_path = REPO_ROOT / executable_path
     if executable_path is not None and not executable_path.is_file():
         raise ValueError(f"executable not found: {executable}")
+    install_dir = _clean(settings.get("install_dir"))
+    install_path = Path(install_dir).expanduser() if install_dir else None
+    if install_path is not None and not install_path.is_absolute():
+        install_path = REPO_ROOT / install_path
+    if install_path is not None and not install_path.is_dir():
+        raise ValueError(f"install directory not found: {install_dir}")
     try:
         extra_args = shlex.split(_clean(settings.get("extra_args")))
     except ValueError as exc:
         raise ValueError(f"additional run_scm.py arguments are invalid: {exc}") from exc
-    managed = ("-multicol", "--multicol", "-batch_size", "--batch_size", "-out_dir", "--out_dir")
+    managed = (
+        "-multicol", "--multicol", "-batch_size", "--batch_size", "-out_dir", "--out_dir",
+        "-python", "--python", "-jax", "--jax", "-exe", "--exe", "-install_dir", "--install_dir",
+    )
     for token in extra_args:
         if token in managed or any(token.startswith(option + "=") for option in managed):
             raise ValueError(f"{token.split('=', 1)[0]} is managed by the Profile benchmark")
@@ -151,6 +165,8 @@ def normalize_profile_settings(settings: dict[str, Any]) -> dict[str, Any]:
         "config": _clean(settings.get("config")) or "default",
         "override": _clean(settings.get("override")),
         "executable": str(executable_path.resolve()) if executable_path is not None else "",
+        "implementation": implementation,
+        "install_dir": str(install_path.resolve()) if install_path is not None else "",
         "extra_args": extra_args,
     }
 
@@ -188,6 +204,13 @@ def profile_command(settings: dict[str, Any]) -> list[str]:
         command.extend(("-override", normalized["override"]))
     if normalized["executable"]:
         command.extend(("-exe", normalized["executable"]))
+    else:
+        if normalized["implementation"] == "python":
+            command.append("-python")
+        elif normalized["implementation"] == "jax":
+            command.append("-jax")
+    if normalized["install_dir"] and not normalized["executable"]:
+        command.extend(("-install_dir", normalized["install_dir"]))
     command.extend(normalized["extra_args"])
     return command
 

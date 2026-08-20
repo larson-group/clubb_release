@@ -219,6 +219,68 @@ def test_native_tune_request_is_relaunched_by_the_broker_without_agent_cap(monke
     assert captured["_max_samples_limit"] is None
 
 
+def test_native_adam_request_keeps_only_its_own_strategy_options(monkeypatch):
+    captured = {}
+
+    def fake_launch(cases, ranges, fields, **kwargs):
+        captured.update(kwargs)
+        return {"status": "started", "job": {"pid": 42}}
+
+    monkeypatch.setattr(actions, "launch_tuning", fake_launch)
+    actions.launch_tuning_request(
+        {
+            "case_configs": [{"case_name": "arm"}],
+            "parameter_ranges": [{"name": "C4", "min": 1.0, "max": 1.2}],
+            "selected_fields": ["wp3"],
+            "strategy": {
+                "name": "adam",
+                "options": {
+                    "max_updates": 17,
+                    "learning_rate": 0.025,
+                    "perturbation": 0.08,
+                    "spsa_pairs": 3,
+                },
+            },
+            "batch_size": 12,
+            "max_workers": 4,
+        }
+    )
+
+    assert captured["strategy"] == "adam"
+    assert captured["adam_max_updates"] == 17
+    assert captured["adam_learning_rate"] == 0.025
+    assert captured["adam_perturbation"] == 0.08
+    assert captured["adam_spsa_pairs"] == 3
+
+
+def test_shared_tune_strategy_normalizer_builds_adam_options():
+    strategy = actions._normalize_tune_strategy(
+        "adam",
+        [{"name": "C4", "min": 1.0, "max": 1.2}],
+        max_samples=12,
+        resolve_spacing=0.1,
+        simann_max_iters=200,
+        simann_initial_temp=1.0,
+        simann_final_temp=1.0e-12,
+        adam_max_updates=17,
+        adam_learning_rate=0.025,
+        adam_perturbation=0.08,
+        adam_spsa_pairs=3,
+        batch_size=12,
+        max_workers=4,
+    )
+
+    assert strategy == {
+        "name": "adam",
+        "options": {
+            "max_updates": 17,
+            "learning_rate": 0.025,
+            "perturbation": 0.08,
+            "spsa_pairs": 3,
+        },
+    }
+
+
 def test_broker_accepts_a_preset_sized_linked_range_family(monkeypatch):
     """The native Tune button can launch all 13 coordinates in ``wpxp``.
 

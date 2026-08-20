@@ -16,7 +16,7 @@ from werkzeug.exceptions import HTTPException
 from . import actions
 from .broker_protocol import BROKER_PROTOCOL_VERSION
 from .provenance import RUNTIME_FINGERPRINT_SCOPE
-from .activity import REPO_ROOT, read_activity
+from .activity import REPO_ROOT, broker_jobs, read_activity
 from . import dashboard_registry
 from dash_app.shared.runtime import atomic_write_json, private_path, readable_private_paths, restrict_existing
 from dash_app.shared.manager_lease import MANAGER_REQUIRED_ENV
@@ -229,7 +229,7 @@ def install_gateway_routes(server: Flask, connection: dict[str, Any]) -> None:
         snapshot = read_activity()
         return jsonify(
             {
-                "jobs": snapshot.get("jobs") or {},
+                "jobs": broker_jobs(),
                 "broker": snapshot.get("broker") or {},
                 "dashboard": dashboard_registry.dashboard_status(),
                 "latest_event_id": snapshot.get("next_id", 1) - 1,

@@ -187,6 +187,27 @@ def load_request(request_path: Path) -> dict:
         if options.get("chain_count") is None:
             options["chain_count"] = max(1, request["max_workers"] * request["batch_size"])
         request["total_samples"] = options.get("max_iters") * options.get("chain_count")
+    elif request["strategy"]["name"] == "adam":
+        options = request["strategy"]["options"]
+        columns_per_chain = 2 * int(options["spsa_pairs"])
+        if request["batch_size"] % columns_per_chain != 0:
+            raise RuntimeError(
+                "Adam requires batch_size to be divisible by 2 * spsa_pairs "
+                f"({request['batch_size']} is not divisible by {columns_per_chain})"
+            )
+        chains_per_batch = request["batch_size"] // columns_per_chain
+        concurrent_batches = math.ceil(request["max_workers"] / len(cases))
+        chain_count = chains_per_batch * concurrent_batches
+        options.update(
+            {
+                "chains_per_batch": chains_per_batch,
+                "concurrent_batches": concurrent_batches,
+                "chain_count": chain_count,
+            }
+        )
+        request["total_samples"] = chain_count * (
+            2 + columns_per_chain * int(options["max_updates"])
+        )
     else:
         request["total_samples"] = request["strategy"]["options"].get("max_samples")
 

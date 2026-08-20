@@ -59,9 +59,9 @@ def _active_job_labels(jobs: dict[str, Any] | None = None) -> list[str]:
     tune_job = snapshot.get("tune") or {}
     if str(tune_job.get("state") or "") in ACTIVE_JOB_STATES:
         labels.append("Tune")
-    for case, record in (snapshot.get("runs") or {}).items():
-        if str((record or {}).get("state") or "") in ACTIVE_JOB_STATES:
-            labels.append(f"SCM:{case}")
+    run_count = int((snapshot.get("run_summary") or {}).get("active_count") or 0)
+    if run_count:
+        labels.append(f"SCM:{run_count} active")
     for run_id, record in (snapshot.get("loss_runs") or {}).items():
         if str((record or {}).get("state") or "") in ACTIVE_JOB_STATES:
             labels.append(f"Tune-result:{run_id}")
