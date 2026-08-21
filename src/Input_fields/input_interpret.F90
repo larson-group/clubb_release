@@ -14,7 +14,7 @@ module input_interpret
   !-----------------------------------------------------------------------------
   subroutine read_z_profile( nvar, nsize, retVars, p_sfc, zm_init, &
                              saturation_formula, &
-                             z, p_in_Pa, alt_type )
+                             z, p_in_Pa, altitude_type )
 
     ! Description:
     ! Searches for the variable specified by either 'z[m]' or 'Press[Pa]' in the
@@ -86,7 +86,7 @@ module input_interpret
       p_in_Pa ! Pressure sounding profile [Pa]
 
     character(len=*), intent(out) :: &
-      alt_type ! Indicates where altitudes were gained from
+      altitude_type ! Indicates where altitudes were gained from
 
     intrinsic :: max
 
@@ -101,7 +101,7 @@ module input_interpret
 
     integer :: nlevels, k
 
-    character(len=40) :: theta_type
+    character(len=40) :: temperature_type
 
 
     if( count( (/ any(retVars%name == z_name),  &
@@ -110,10 +110,10 @@ module input_interpret
       if( any(retVars%name == z_name) ) then
 
         ! The input sounding is given in terms of altitude.
-        alt_type = z_name
+        altitude_type = z_name
 
         ! Obtain the value of altitude at each sounding level.
-        z = read_x_profile( nvar, nsize, alt_type, retVars )
+        z = read_x_profile( nvar, nsize, altitude_type, retVars )
 
         ! Set the pressure at the sounding levels to the "fill value".
         p_in_Pa = -999.9_core_rknd
@@ -122,16 +122,16 @@ module input_interpret
       elseif( any(retVars%name == pressure_name) ) then
 
         ! The input sounding is given in terms of pressure.
-        alt_type = pressure_name
+        altitude_type = pressure_name
 
         ! Obtain the value of total pressure at each pressure sounding level.
-        p_in_Pa = read_x_profile( nvar, nsize, alt_type, retVars )
+        p_in_Pa = read_x_profile( nvar, nsize, altitude_type, retVars )
 
         nlevels = size(retVars(1)%values)
 
-        ! Obtain the value of theta_type (theta, theta_l, or temperature) at
+        ! Obtain the value of temperature_type (theta, theta_l, or temperature) at
         ! each pressure sounding level.
-        call read_theta_profile(nvar, nsize, retVars, theta_type, theta(1,:) )
+        call read_theta_profile(nvar, nsize, retVars, temperature_type, theta(1,:) )
 
         ! Obtain the value of total water mixing ratio at each pressure sounding
         ! level. 
@@ -143,7 +143,7 @@ module input_interpret
         enddo
 
 
-        select case ( trim( theta_type ) )
+        select case ( trim( temperature_type ) )
 
         case ( temperature_name )
 
@@ -211,7 +211,7 @@ module input_interpret
 
         case default
 
-           write(fstderr,*) "Invalid theta_type: ", theta_type
+           write(fstderr,*) "Invalid temperature_type: ", temperature_type
            error stop
 
 
@@ -277,7 +277,7 @@ module input_interpret
 
   end subroutine read_z_profile
   !-----------------------------------------------------------------------------
-  subroutine read_theta_profile( nvar, nsize, retVars, theta_type, theta )
+  subroutine read_theta_profile( nvar, nsize, retVars, temperature_type, theta )
     !
     !  Description: Searches for the variable specified by either 'thetal[K]' or 'theta[K]' in the
     !  collection of retVars. If the function finds the variable then it returns
@@ -305,7 +305,7 @@ module input_interpret
     type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being
     !                                                                searched through
 
-    character(len=*), intent(out) :: theta_type ! Indicates type read in
+    character(len=*), intent(out) :: temperature_type ! Indicates type read in
 
     ! Output Variable(s)
     real( kind = core_rknd ), dimension(nsize), intent(out) :: theta
@@ -314,15 +314,15 @@ module input_interpret
                   any(retVars%name == thetal_name), &
                   any(retVars%name == temperature_name) /) )<= 1) then
       if( any(retVars%name == theta_name))then
-        theta_type = theta_name
+        temperature_type = theta_name
       elseif( any(retVars%name == thetal_name))then
-        theta_type = thetal_name
+        temperature_type = thetal_name
       elseif( any(retVars%name == temperature_name))then
-        theta_type = temperature_name
+        temperature_type = temperature_name
       else
         error stop "Could not read theta compatable variable"
       endif
-      theta = read_x_profile( nvar, nsize, theta_type, retVars )
+      theta = read_x_profile( nvar, nsize, temperature_type, retVars )
 
     end if
   end subroutine read_theta_profile

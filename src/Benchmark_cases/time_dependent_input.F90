@@ -100,7 +100,8 @@ module time_dependent_input
   contains
 
   !================================================================================================
-  subroutine initialize_t_dependent_input( iunit, runtype, nz, grid, p_in_Pa, &
+  subroutine initialize_t_dependent_input( iunit, runtype, l_readiopdata, rho, nz, &
+                                           grid, p_in_Pa, &
                                            l_add_dycore_grid, &
                                            grid_adapt_in_time_method )
     !
@@ -129,7 +130,10 @@ module time_dependent_input
     real( kind = core_rknd ), dimension(nz), intent(in) :: p_in_Pa ! Pressure[Pa]
 
     logical, intent(in) :: &
-      l_add_dycore_grid     ! Flag to set remapping from dycore on or off
+      l_add_dycore_grid, &     ! Flag to set remapping from dycore on or off
+      l_readiopdata            ! Flag whether or not we are using a netcdf file for input
+
+    real(kind=core_rknd), dimension(:,:), intent(in) :: rho
 
     integer, intent(in) :: &
       grid_adapt_in_time_method   ! flag that says whether the grid should be adapted over
@@ -140,13 +144,14 @@ module time_dependent_input
 
     if ( .not. l_ignore_forcings ) then
       call initialize_t_dependent_forcings &
-                   ( iunit, input_path//trim(runtype)//forcings_path, nz, grid, p_in_Pa, &
-                     l_add_dycore_grid, grid_adapt_in_time_method )
+                   ( iunit, input_path//trim(runtype)//forcings_path, nz, & ! Intent(in)
+                     grid, p_in_Pa,                                       & ! Intent(in)
+                     l_add_dycore_grid, grid_adapt_in_time_method )         ! Intent(in)
     end if
 
     if ( .not. l_sfc_already_initialized ) then
       call initialize_t_dependent_sfc &
-                     ( iunit, input_path//trim(runtype)//sfc_path )
+                    ( iunit, l_readiopdata, rho, input_path//trim(runtype)//sfc_path ) ! Intent(in)
     end if
 
   end subroutine initialize_t_dependent_input
@@ -175,7 +180,7 @@ module time_dependent_input
   end subroutine finalize_t_dependent_input
 
   !================================================================================================
-  subroutine initialize_t_dependent_sfc( iunit, input_file )
+  subroutine initialize_t_dependent_sfc( iunit, l_readiopdata, rho, input_file )
     !
     !  Description: This subroutine reads in a file that details time dependent
     !  input values that vary in one dimension.
@@ -186,6 +191,12 @@ module time_dependent_input
       fill_blanks_one_dim_vars, read_x_profile, &
       get_target_index, deallocate_one_dim_vars, &
       count_columns
+
+    use readiopdata_module, only: readiopdata_sfc
+
+    use sfc_flux, only: &
+      convert_sens_ht_to_km_s, &
+      convert_latent_ht_to_m_s
 
     use input_names, only: &
       time_name,     &
@@ -207,7 +218,12 @@ module time_dependent_input
 
     character(len=*), intent(in) :: input_file ! Path to surface.in file
 
+    logical, intent(in) :: l_readiopdata
+    real(kind=core_rknd), dimension(:,:), intent(in) :: rho
+
     ! Local Variable(s)
+
+    integer :: i
 
     type(one_dim_read_var), allocatable, dimension(:) :: &
       retVars ! retVars stores the name of a variable (e.g. pressure),
@@ -220,96 +236,106 @@ module time_dependent_input
 
 
     ! ----------------- Begin Code --------------------
+    if ( l_readiopdata ) then
+      call readiopdata_sfc( T_sfc_given, shsfc=sens_ht_given, & ! Intent(out)
+                            lhsfc=latent_ht_given,            & ! Intent(out)
+                            timesfc=time_sfc_given )            ! Intent(out)
+      allocate( wpthlp_sfc_given(size(time_sfc_given)), wpqtp_sfc_given(size(time_sfc_given)) )
+      do i=1,size(time_sfc_given)
+        wpthlp_sfc_given(i) = convert_sens_ht_to_km_s( sens_ht_given(i), rho(i,1) )   ! Intent(in)
+        wpqtp_sfc_given(i) = convert_latent_ht_to_m_s( latent_ht_given(i), rho(i,1) ) ! Intent(in)
+      end do
+    else
+      nforcings = count_columns( iunit, input_file )
 
-    nforcings = count_columns( iunit, input_file )
+      allocate( retVars(1:nforcings) )
 
-    allocate( retVars(1:nforcings) )
+      ! Read the surface.in file and store the necessary input information in retVars
+      call read_one_dim_file( iunit, nforcings, input_file, retVars )
 
-    ! Read the surface.in file and store the necessary input information in retVars
-    call read_one_dim_file( iunit, nforcings, input_file, retVars )
+      ! Fill blank values stored as -999.9 using linear interpolation
+      call fill_blanks_one_dim_vars( nforcings, retVars )
 
-    ! Fill blank values stored as -999.9 using linear interpolation
-    call fill_blanks_one_dim_vars( nforcings, retVars )
+      ! dim_size is the number of values input for a particular variable
+      dim_size = size( retVars(1)%values )
 
-    ! dim_size is the number of values input for a particular variable
-    dim_size = size( retVars(1)%values )
-
-    ! Store the data read from the file in each [variable]_sfc_given
+      ! Store the data read from the file in each [variable]_sfc_given
     
-    if( get_target_index(nforcings, time_name, retVars) > 0 ) then
-      allocate( time_sfc_given(1:dim_size) )
-      time_sfc_given = read_x_profile( nforcings, dim_size, time_name, retVars, &
-                                     input_file )
-    end if
-
-    if( get_target_index(nforcings, latent_ht_name, retVars) > 0 ) then
-      allocate( latent_ht_given(1:dim_size) )
-      latent_ht_given = read_x_profile( nforcings, dim_size, latent_ht_name, retVars, &
-                               input_file )
-    end if
-    
-    if( get_target_index(nforcings, sens_ht_name, retVars) > 0 ) then
-      allocate( sens_ht_given(1:dim_size) )
-      sens_ht_given = read_x_profile( nforcings, dim_size, sens_ht_name, retVars, &
-                               input_file )
-    end if
-    
-    if( get_target_index(nforcings, thetal_name, retVars) > 0 ) then
-      allocate( thlm_sfc_given(1:dim_size) )
-      thlm_sfc_given = read_x_profile( nforcings, dim_size, thetal_name, retVars, &
-                                     input_file )
-    end if
-    
-    if( get_target_index(nforcings, rt_name, retVars) > 0 ) then
-      allocate( rtm_sfc_given(1:dim_size) )
-      rtm_sfc_given = read_x_profile( nforcings, dim_size, rt_name, retVars, &
-                                    input_file )
-    end if
-    
-    ! As of July 2010, this is only in cobra
-    if( get_target_index(nforcings, CO2_umol_name, retVars) > 0 ) then
-      allocate( CO2_sfc_given(1:dim_size) )
-      CO2_sfc_given = read_x_profile( nforcings, dim_size, CO2_umol_name, retVars, &
+      if( get_target_index(nforcings, time_name, retVars) > 0 ) then
+        allocate( time_sfc_given(1:dim_size) )
+        time_sfc_given = read_x_profile( nforcings, dim_size, time_name, retVars, &
                                       input_file )
+      end if
+
+      if( get_target_index(nforcings, latent_ht_name, retVars) > 0 ) then
+        allocate( latent_ht_given(1:dim_size) )
+        latent_ht_given = read_x_profile( nforcings, dim_size, latent_ht_name, retVars, &
+                                input_file )
+      end if
+    
+      if( get_target_index(nforcings, sens_ht_name, retVars) > 0 ) then
+        allocate( sens_ht_given(1:dim_size) )
+        sens_ht_given = read_x_profile( nforcings, dim_size, sens_ht_name, retVars, &
+                                input_file )
+      end if
+    
+      if( get_target_index(nforcings, thetal_name, retVars) > 0 ) then
+        allocate( thlm_sfc_given(1:dim_size) )
+        thlm_sfc_given = read_x_profile( nforcings, dim_size, thetal_name, retVars, &
+                                      input_file )
+      end if
+      
+      if( get_target_index(nforcings, rt_name, retVars) > 0 ) then
+        allocate( rtm_sfc_given(1:dim_size) )
+        rtm_sfc_given = read_x_profile( nforcings, dim_size, rt_name, retVars, &
+                                      input_file )
+      end if
+      
+      ! As of July 2010, this is only in cobra
+      if( get_target_index(nforcings, CO2_umol_name, retVars) > 0 ) then
+        allocate( CO2_sfc_given(1:dim_size) )
+        CO2_sfc_given = read_x_profile( nforcings, dim_size, CO2_umol_name, retVars, &
+                                        input_file )
+      end if
+      
+      ! As of July 2010, this is only in gabls3_night
+      if( get_target_index(nforcings, upwp_sfc_name, retVars) > 0 ) then
+        allocate( upwp_sfc_given(1:dim_size) )
+        upwp_sfc_given = read_x_profile( nforcings, dim_size, upwp_sfc_name, retVars, &
+                                        input_file )
+      end if
+      
+      ! As of July 2010, this is only in gabls3_night
+      if( get_target_index(nforcings, vpwp_sfc_name, retVars) > 0 ) then
+        allocate( vpwp_sfc_given(1:dim_size) )
+        vpwp_sfc_given = read_x_profile( nforcings, dim_size, vpwp_sfc_name, retVars, &
+                                        input_file )
+      end if
+
+      ! As of July 2010, this is only in astex_a209
+      if( get_target_index(nforcings, T_sfc_name, retVars) > 0 ) then
+        allocate( T_sfc_given(1:dim_size) )
+        T_sfc_given = read_x_profile( nforcings, dim_size, T_sfc_name, retVars, &
+                                        input_file )
+      end if 
+
+
+      if( get_target_index(nforcings, wpthlp_sfc_name, retVars) > 0 ) then
+        allocate( wpthlp_sfc_given(1:dim_size) )
+        wpthlp_sfc_given = read_x_profile( nforcings, dim_size, wpthlp_sfc_name, &
+                                        retVars, input_file )
+      end if 
+
+      if( get_target_index(nforcings, wpqtp_sfc_name, retVars) > 0 ) then
+        allocate( wpqtp_sfc_given(1:dim_size) )
+        wpqtp_sfc_given = read_x_profile( nforcings, dim_size, wpqtp_sfc_name, &
+                                        retVars, input_file )
+      end if
+  
+      ! Deallocate memory
+      call deallocate_one_dim_vars( nforcings, retVars )
     end if
     
-    ! As of July 2010, this is only in gabls3_night
-    if( get_target_index(nforcings, upwp_sfc_name, retVars) > 0 ) then
-      allocate( upwp_sfc_given(1:dim_size) )
-      upwp_sfc_given = read_x_profile( nforcings, dim_size, upwp_sfc_name, retVars, &
-                                      input_file )
-    end if
-    
-    ! As of July 2010, this is only in gabls3_night
-    if( get_target_index(nforcings, vpwp_sfc_name, retVars) > 0 ) then
-      allocate( vpwp_sfc_given(1:dim_size) )
-      vpwp_sfc_given = read_x_profile( nforcings, dim_size, vpwp_sfc_name, retVars, &
-                                      input_file )
-    end if
-
-    ! As of July 2010, this is only in astex_a209
-    if( get_target_index(nforcings, T_sfc_name, retVars) > 0 ) then
-      allocate( T_sfc_given(1:dim_size) )
-      T_sfc_given = read_x_profile( nforcings, dim_size, T_sfc_name, retVars, &
-                                      input_file )
-    end if 
-
-
-    if( get_target_index(nforcings, wpthlp_sfc_name, retVars) > 0 ) then
-      allocate( wpthlp_sfc_given(1:dim_size) )
-      wpthlp_sfc_given = read_x_profile( nforcings, dim_size, wpthlp_sfc_name, &
-                                      retVars, input_file )
-    end if 
-
-    if( get_target_index(nforcings, wpqtp_sfc_name, retVars) > 0 ) then
-      allocate( wpqtp_sfc_given(1:dim_size) )
-      wpqtp_sfc_given = read_x_profile( nforcings, dim_size, wpqtp_sfc_name, &
-                                      retVars, input_file )
-    end if
- 
-    ! Deallocate memory
-    call deallocate_one_dim_vars( nforcings, retVars )
-
     l_sfc_already_initialized = .true.
 
     return 

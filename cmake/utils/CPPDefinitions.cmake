@@ -16,6 +16,8 @@ if(${USE_GPTL})
     add_compile_definitions(GPTL)
 endif()
 
+add_compile_definitions(UWM_MISC)
+
 
 # Flags used to define GPU usage. These may neccesary for CPU builds too, as sometimes
 # flags are required to explicitly disable GPU usage (e.g. -noacc for nvhpc)

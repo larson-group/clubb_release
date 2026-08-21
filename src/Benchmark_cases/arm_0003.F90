@@ -49,7 +49,7 @@ module arm_0003
     use sfc_flux, only: compute_ht_mostr_flux, &
                             convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedures
 
-    use time_dependent_input, only: time_sfc_given ! Variable(s)
+    use time_dependent_input, only: latent_ht_given, sens_ht_given, time_sfc_given ! Variable(s)
     
     implicit none
 
@@ -85,8 +85,9 @@ module arm_0003
     !----------------------------------------------------------------------
 
     ! Compute heat and moisture fluxes from ARM data in (W/m2)
-    call compute_ht_mostr_flux( time, size( time_sfc_given ), &
-                                heat_flx, moisture_flx )
+    call compute_ht_mostr_flux( time, size( time_sfc_given ),                   & ! Intent(in)
+                                latent_ht_given, sens_ht_given, time_sfc_given, & ! Intent(in)
+                                heat_flx, moisture_flx )                          ! Intent(out)
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol         

@@ -42,6 +42,8 @@ module arm
 
   use sfc_flux, only: compute_ht_mostr_flux, &
                           convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedures
+  
+  use time_dependent_input, only: latent_ht_given, sens_ht_given, time_sfc_given ! Variable(s)
 
 
   implicit none
@@ -85,8 +87,9 @@ module arm
   !-----------------BEGIN CODE-------------------------
 
   ! Compute heat and moisture fluxes from ARM data in (W/m2)
-  call compute_ht_mostr_flux( time, ntimes, &
-                              heat_flx, moisture_flx )
+  call compute_ht_mostr_flux( time, ntimes,                                   & ! Intent(in) 
+                              latent_ht_given, sens_ht_given, time_sfc_given, & ! Intent(in)
+                              heat_flx, moisture_flx )                          ! Intent(out)
 
   rho_sfc = 1.1_core_rknd
 

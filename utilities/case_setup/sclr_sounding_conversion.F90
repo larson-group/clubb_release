@@ -24,7 +24,7 @@ program sclr_sounding_convert
   character(len=200) :: casename
 
   ! Dummy variable
-  character(len=200) :: theta_type
+  character(len=200) :: temperature_type
 
   integer :: i, j
   integer :: sclr_dim = 2
@@ -50,7 +50,7 @@ program sclr_sounding_convert
     nlevels = size(retVars(1)%values)
 
     sclr(:,1) = read_x_profile(7,'rt[kg\kg]', retVars)
-    call read_theta_profile(7, retVars, theta_type, sclr(:,2))
+    call read_theta_profile(7, retVars, temperature_type, sclr(:,2))
 
     ! Write out namelist in new format
     open(unit = iunit, file = trim(casename)//'_sclr_sounding.in', status = 'new')
@@ -186,7 +186,7 @@ program sclr_sounding_convert
 
   end function read_x_profile
 !-------------------------------------------------------------------------------------------------
-  subroutine read_theta_profile(nvar, retVars, theta_type, theta)
+  subroutine read_theta_profile(nvar, retVars, temperature_type, theta)
     !
     !  Description: Searches for the variable specified by either 'thetal[K]' or 'theta[K]' in the
     !  collection of retVars. If the function finds the variable then it returns
@@ -206,20 +206,20 @@ program sclr_sounding_convert
     type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being
     !                                                                searched through
 
-    character(len=*), intent(out) :: theta_type
+    character(len=*), intent(out) :: temperature_type
 
     ! Output Variable(s)
     real, dimension(nmaxsnd), intent(out) :: theta
 
     if( count( (/ any(retVars%name == theta_name), any(retVars%name == thetal_name) /)) <= 1) then
       if( any(retVars%name == theta_name))then
-        theta_type = theta_name
+        temperature_type = theta_name
       elseif( any(retVars%name == thetal_name))then
-        theta_type = thetal_name
+        temperature_type = thetal_name
       else
         stop "Could not read theta compatable variable"
       endif
-      theta = read_x_profile(nvar, theta_type, retVars)
+      theta = read_x_profile(nvar, temperature_type, retVars)
 
     end if
   end subroutine read_theta_profile

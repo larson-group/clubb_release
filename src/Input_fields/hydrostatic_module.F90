@@ -261,7 +261,7 @@ module hydrostatic_module
       ! Calculate the difference between the altitude of the surface (or model
       ! lower boundary) and the altitude of the lowest level of the sounding.
       ref_z_sfc  &
-      = calc_ref_z_sfc_linear_thvm( thvm(1), thvm(2), z(1), z(2), &
+      = calc_ref_z_sfc_linear_thvm( thvm(1), thvm(2), ref_z_snd(1), ref_z_snd(2), &
                                  exner(1), exner_sfc )
 
     else  ! exner(nlevels) < exner_sfc < exner(1)

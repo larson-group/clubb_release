@@ -164,6 +164,9 @@ module clubb_driver
     microphys_scheme,      &
     lh_num_samples
 
+  use readiopdata_module, only: &
+    readiopdata_dims
+
   implicit none
 
   public :: &
@@ -197,6 +200,7 @@ module clubb_driver
   logical, public :: &
     l_restart,                  & ! Flag for restarting from netCDF file
     l_input_fields,             & ! Whether to set model variables from a file
+    l_readiopdata,              & ! Whether to read in IOP data from a .nc file
     l_modify_ic_with_cubic_int, & ! Interpolate sounding with Steffen's
                                   ! monotone cubic method for smoother ICs.
                                   ! This can improve numerical convergence.
@@ -704,7 +708,7 @@ module clubb_driver
   real( kind = core_rknd ), dimension(:,:,:,:), allocatable :: &
     X_nl_all_levs    ! Lognormally distributed hydrometeors
 
-  !$omp threadprivate( l_restart, l_input_fields, l_modify_ic_with_cubic_int, &
+  !$omp threadprivate( l_restart, l_input_fields, l_readiopdata, l_modify_ic_with_cubic_int, &
   !$omp  l_modify_bc_for_cnvg_test, l_stats, l_silhs_out, l_rad_itime, l_first_write_to_file, &
   !$omp  l_allow_small_stats_tout, &
   !$omp  l_restart_input, l_last_timestep, ifinal, stats_nsamp, stats_nout, ngrdcol, iunit, &
@@ -1197,7 +1201,7 @@ module clubb_driver
       uv_sponge_damp_settings, wp2_sponge_damp_settings, &
       wp3_sponge_damp_settings, up2_vp2_sponge_damp_settings, &
       l_soil_veg, l_uv_nudge, l_restart, restart_path_case, &
-      time_restart, l_input_fields, debug_level, &
+      time_restart, l_input_fields, l_readiopdata, debug_level, &
       sclr_tol_nl, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
@@ -1321,6 +1325,7 @@ module clubb_driver
 
     l_restart      = .false.
     l_input_fields  = .false.
+    l_readiopdata = .false. ! Leave as always false, bomex_5day_4scam changes this automatically
     restart_path_case = "none"
     time_restart  = 0._time_precision
     debug_level   = 2
@@ -2543,12 +2548,14 @@ module clubb_driver
     !       arrays that are then copied to the 2D versions. This reduces the time 
     !       spent in this routine and allows us to avoid large CPU to GPU data 
     !       transfers since we need only copy these 1D _init variables in.
+    if ( l_readiopdata ) call readiopdata_dims( lat_vals, lon_vals ) ! Intent(out)
+
     call initialize_clubb( &
           gr, 1, iunit, trim( forcings_file_path ), p_sfc(1), zm_init(1), & ! Intent(in)
           sclr_dim, edsclr_dim, sclr_idx,                                 & ! Intent(in)
           clubb_config_flags,                                             & ! Intent(in)
           l_modify_ic_with_cubic_int,                                     & ! Intent(in)
-          l_ascending_grid, fcor_y,                                       & ! Intent(in)
+          l_ascending_grid, fcor_y, l_readiopdata,                        & ! Intent(in)
           thlm_init, rtm_init, um_init, vm_init, ug_init, vg_init,        & ! Intent(out)
           wp2_init, up2_init, vp2_init, upwp_init, rcm_init,              & ! Intent(out)
           wm_zt_init, wm_zm_init, em_init, exner_init,                    & ! Intent(out)
@@ -3545,32 +3552,33 @@ module clubb_driver
       call calculate_thvm( gr%nzt, ngrdcol, &
                            thlm, rtm, rcm, exner, thv_ds_zt, &
                            thvm )
-      
+
       ! Set large-scale tendencies and subsidence profiles
       call timer_start( "prescribe_forcings" )
-      call prescribe_forcings( gr, gr%nzm, gr%nzt, ngrdcol, &
-                                sclr_dim, edsclr_dim, sclr_idx, & ! In
-                                runtype, sfctype, &
-                                time_current, time_initial, dt_main, &
-                                um, vm, thlm, & ! In
-                                p_in_Pa, exner, rho, rho_zm, thvm, & ! In
-                                veg_T_in_K, & ! In
-                                l_modify_bc_for_cnvg_test, & ! In
-                                clubb_config_flags%saturation_formula, & ! In
-                                stats,         & ! In
-                                clubb_config_flags%l_add_dycore_grid, & ! In
-                                clubb_config_flags%grid_remap_method, & ! In
-                                gr%nzm, rho_ds_zm, &
-                                gr%zm, &
-                                gr_dycore, & ! In
-                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
-                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
-                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
-                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! Inout
-                                wpsclrp, sclrm_forcing, edsclrm_forcing, & ! Inout
-                                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & ! Inout
-                                T_sfc, p_sfc, sens_ht, latent_ht, & ! Inout
-                                wpsclrp_sfc, wpedsclrp_sfc, err_info ) ! Inout
+      call prescribe_forcings( gr, gr%nzm, gr%nzt, ngrdcol,                   & ! Intent(in)
+                                sclr_dim, edsclr_dim, sclr_idx,               & ! Intent(In)
+                                runtype, sfctype,                             & ! Intent(In)
+                                time_current, time_initial, dt_main,          & ! Intent(In)
+                                l_readiopdata,                                & ! Intent(in)
+                                um, vm, thlm,                                 & ! Intent(In)
+                                p_in_Pa, exner, rho, rho_zm, thvm,            & ! Intent(In)
+                                veg_T_in_K,                                   & ! Intent(In)
+                                l_modify_bc_for_cnvg_test,                    & ! Intent(In)
+                                clubb_config_flags%saturation_formula,        & ! Intent(In)
+                                stats,                                        & ! Intent(In)
+                                clubb_config_flags%l_add_dycore_grid,         & ! Intent(In)
+                                clubb_config_flags%grid_remap_method,         & ! Intent(In)
+                                gr%nzm, rho_ds_zm,                            & ! Intent(In)
+                                gr%zm,                                        & ! Intent(In)
+                                gr_dycore,                                    & ! Intent(In)
+                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref,    & ! Intent(Inout)
+                                thlm_forcing, rtm_forcing, um_forcing,        & ! Intent(Inout)
+                                vm_forcing, wprtp_forcing, wpthlp_forcing,    & ! Intent(Inout)
+                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! Intent(Inout)
+                                wpsclrp, sclrm_forcing, edsclrm_forcing,      & ! Intent(Inout)
+                                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,    & ! Intent(Inout)
+                                T_sfc, p_sfc, sens_ht, latent_ht,             & ! Intent(Inout)
+                                wpsclrp_sfc, wpedsclrp_sfc, err_info )          ! Intent(Inout)
       call timer_stop( "prescribe_forcings" )
 
       if ( clubb_at_least_debug_level_api( 0 ) ) then
@@ -4169,9 +4177,9 @@ module clubb_driver
           ! TODO does this only work with 1D input?
           call timer_start( "initialize_t_dependent_input" )
           call initialize_t_dependent_input &
-                        ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa, &
-                          clubb_config_flags%l_add_dycore_grid, &
-                          clubb_config_flags%grid_adapt_in_time_method )
+                        ( iunit, runtype, l_readiopdata, rho, gr%nzt, gr%zt(1,:), p_in_Pa, & ! Intent(in)
+                          clubb_config_flags%l_add_dycore_grid,                            & ! Intent(in)
+                          clubb_config_flags%grid_adapt_in_time_method )                     ! Intent(in)
           call timer_stop( "initialize_t_dependent_input" )
         end if
 
@@ -4699,7 +4707,7 @@ module clubb_driver
                 sclr_dim, edsclr_dim, sclr_idx, &
                 clubb_config_flags, &
                 l_modify_ic_with_cubic_int, &
-                l_ascending_grid, fcor_y, &
+                l_ascending_grid, fcor_y, l_readiopdata, &
                 thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, upwp, rcm, &
                 wm_zt, wm_zm, em, exner, &
                 thvm, p_in_Pa, &
@@ -4806,7 +4814,6 @@ module clubb_driver
       forcings_file_path ! Path to the .dat files containing the forcings
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      p_sfc,   & ! Pressure at the surface        [Pa]
       zm_init, & ! Initial moment. level altitude [m]
       fcor_y     ! Nontraditional Coriolis parameter [s^-1]
                  ! Meridional planetary vorticity. Proportional to cos(latitude)
@@ -4828,10 +4835,16 @@ module clubb_driver
     ! This is done on a case-by-case basis, since using the monotone cubic method
     ! requires a special sounding.in file with many additional sounding levels.
     logical, intent(in) :: &
-      l_modify_ic_with_cubic_int
+      l_modify_ic_with_cubic_int, &
+      l_readiopdata ! Flag for reading IOP data from a .nc file
+
 
     logical, intent(in) :: &
       l_ascending_grid
+
+    ! Input/Output
+    real( kind = core_rknd ), intent(inout) :: &
+    p_sfc     ! Pressure at the surface        [Pa]
 
     ! Output
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
@@ -4909,8 +4922,8 @@ module clubb_driver
       em_max              ! Maximum value of initial subgrid TKE   [m^2/s^2]
 
     character(len=50) :: &
-      theta_type, & ! Type of temperature sounding
-      alt_type,   & ! Type of altitude sounding
+      temperature_type, & ! Type of temperature sounding
+      altitude_type,   & ! Type of altitude sounding
       subs_type     ! Type of large-scale subsidence sounding
 
     integer :: i, k ! Loop index
@@ -4926,17 +4939,18 @@ module clubb_driver
     ! Only use first value of p_sfc and zm_init because sounding files are not configured
     ! to use multiple columns yet
     call read_sounding( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &        ! Intent(in) 
-                        gr, iunit, runtype, p_sfc(1), zm_init(1), &    ! Intent(in) 
-                        clubb_config_flags%saturation_formula, & ! Intent(in) 
-                        l_modify_ic_with_cubic_int, &            ! Intent(in)
-                        thlm, theta_type, rtm, um, vm, ug, vg, & ! Intent(out)
-                        alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
-                        rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
+                        gr, iunit, runtype, zm_init(1), &                 ! Intent(in) 
+                        clubb_config_flags%saturation_formula, &          ! Intent(in) 
+                        l_readiopdata, l_modify_ic_with_cubic_int, &      ! Intent(in)
+                        p_sfc, &                                          ! Intent(inout)
+                        thlm, temperature_type, rtm, um, vm, ug, vg, &    ! Intent(out)
+                        altitude_type, p_in_Pa, subs_type, wm_zt, &       ! Intent(out)
+                        rtm_sfc, thlm_sfc, sclrm, edsclrm )               ! Intent(out)
 
     ! Covert sounding input to CLUBB compatible input
     call initialize_clubb_variables( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
-                                    gr, alt_type, theta_type,                 & ! Intent(in)
-                                    p_sfc, rtm_sfc, rtm,                      & ! Intent(in)
+                                    gr, altitude_type, temperature_type,      & ! Intent(in)
+                                    [p_sfc], rtm_sfc, rtm, l_readiopdata,     & ! Intent(in)
                                     clubb_config_flags%saturation_formula,    & ! Intent(in)
                                     thlm, p_in_Pa, p_in_Pa_zm,                & ! Intent(inout)
                                     exner, rho, rho_zm,                       & ! Intent(out)
@@ -5079,18 +5093,20 @@ module clubb_driver
         ! attention on how the forcings are read in from object t_dependent_forcing_data
         ! in time_dependent_input
         call initialize_t_dependent_input &
-                    ( iunit, runtype, gr_dycore%nzt, gr_dycore%zt(1,:), p_in_Pa_dycore(1,:), &
-                    clubb_config_flags%l_add_dycore_grid, &
-                    clubb_config_flags%grid_adapt_in_time_method )
+                    ( iunit, runtype, l_readiopdata, rho_zm, gr_dycore%nzt, & ! Intent(in)
+                    gr_dycore%zt(1,:), p_in_Pa_dycore(1,:),                 & ! Intent(in)
+                    clubb_config_flags%l_add_dycore_grid,                   & ! Intent(in)
+                    clubb_config_flags%grid_adapt_in_time_method )            ! Intent(in)
 
         deallocate( p_in_Pa_dycore )
       else
         ! no simulating forcings input from host model on dycore grid
         ! l_add_dycore_grid=.false.
         call initialize_t_dependent_input &
-                      ( iunit, runtype, gr%nzt, gr%zt(1,:), p_in_Pa(1,:), &
-                      clubb_config_flags%l_add_dycore_grid, &
-                      clubb_config_flags%grid_adapt_in_time_method )
+                      ( iunit, runtype, l_readiopdata, rho, gr%nzt, & ! Intent(in)
+                      gr%zt(1,:), p_in_Pa(1,:),                     & ! Intent(in) 
+                      clubb_config_flags%l_add_dycore_grid,         & ! Intent(in)
+                      clubb_config_flags%grid_adapt_in_time_method )  ! Intent(in)
       end if
 
     else
@@ -5115,7 +5131,7 @@ module clubb_driver
       end if
 
     end if
-    
+
     ! Initialize TKE and other fields as needed
 
     select case ( trim( runtype ) )
@@ -5555,8 +5571,8 @@ module clubb_driver
 
   !-----------------------------------------------------------------------------
   subroutine initialize_clubb_variables( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
-                                          gr, alt_type, theta_type, &
-                                          p_sfc, rtm_sfc, rtm, & !thlm_sfc, &
+                                          gr, altitude_type, temperature_type, &
+                                          p_sfc, rtm_sfc, rtm, l_readiopdata, & !thlm_sfc, &
                                           saturation_formula, &
                                           thlm, p_in_Pa, p_in_Pa_zm, &
                                           exner, rho, rho_zm, &
@@ -5605,11 +5621,11 @@ module clubb_driver
         l_use_boussinesq
 
     use input_names, only: &
-        z_name, & !----------------------------------- Variable(s)
-        pressure_name, &
-        temperature_name, &
+        temperature_name, & !----------------------------------- Variable(s)
         theta_name, &
-        thetal_name
+        thetal_name, &
+        pressure_name, &
+        z_name
 
     use hydrostatic_module, only: &
         hydrostatic !--------------------------------- Procedure(s)
@@ -5638,8 +5654,8 @@ module clubb_driver
     type (grid), intent(in) :: gr
 
     character(len=*), intent(in) :: &
-      alt_type,   & ! Type of altitude sounding (altitude or pressure)
-      theta_type    ! Type of temperature sounding (temp., theta, or theta_l)
+      altitude_type,   & ! Type of altitude sounding (altitude or pressure)
+      temperature_type    ! Type of temperature sounding (temp., theta, or theta_l)
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc,     & ! Surface pressure                              [Pa]
@@ -5651,6 +5667,8 @@ module clubb_driver
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
+
+    logical, intent(in) :: l_readiopdata
 
     !--------------------- InOut Variables ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
@@ -5731,9 +5749,9 @@ module clubb_driver
 
     end do
 
-    if ( theta_type == temperature_name ) then
+    if ( temperature_type == temperature_name ) then
 
-      if ( trim( alt_type ) == z_name ) then
+      if ( trim( altitude_type ) == z_name ) then
 
         write(fstderr,*) 'Interpetation of sounding files with z as the ', &
                           'independent variable and absolute temperature ', &
@@ -5743,7 +5761,7 @@ module clubb_driver
                           'temperature variable.'
         error stop "Fatal error."
 
-      elseif ( trim( alt_type ) == pressure_name ) then
+      elseif ( trim( altitude_type ) == pressure_name ) then
 
         ! The variable "thlm" actually contains temperature (in Kelvin) at
         ! this point.
@@ -5765,6 +5783,7 @@ module clubb_driver
       endif
 
     endif
+
 
     ! At this point, thlm may actually contain either theta or theta-l.
 
@@ -5811,7 +5830,7 @@ module clubb_driver
                       exner, exner_zm,          & ! Intent(out)
                       rho, rho_zm               ) ! Intent(out)
 
-    select case( trim( theta_type ) )
+    select case( trim( temperature_type ) )
 
     case ( theta_name, temperature_name )
 
@@ -5908,7 +5927,7 @@ module clubb_driver
 
     case default
 
-        write(fstderr,*) "Invalid theta_type: ", theta_type
+        write(fstderr,*) "Invalid temperature_type: ", temperature_type
         error stop
 
 

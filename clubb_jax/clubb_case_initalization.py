@@ -418,7 +418,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     # ── 3. Read sounding ────────────────────────────────────────────────
     snd_path = _resolve_case_input_path(namelist_dir, runtype, "_sounding.in")
     snd = read_sounding(str(snd_path))
-    theta_type = snd['theta_type']
+    temperature_type = snd['temperature_type']
     subs_type = snd['subs_type']
 
     # ── 4. Set up grid ──────────────────────────────────────────────────
@@ -526,7 +526,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     p_in_Pa, p_in_Pa_zm, exner, exner_zm, rho, rho_zm = result
 
     # Convert temperature type
-    if theta_type in ('thm[K]', 'T[K]'):
+    if temperature_type in ('thm[K]', 'T[K]'):
         # theta sounding — need to compute rcm and convert to thlm
         thm = thlm.copy()
         # rcm = max(rtm - rsat(p, T), 0)
@@ -537,7 +537,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         )
         rcm = np.maximum(rtm - rsat, 0.0)
         thlm = thm - Lv / (Cp * exner) * rcm
-    elif theta_type == 'thlm[K]':
+    elif temperature_type == 'thlm[K]':
         # Already liquid potential temperature
         rcm = np.zeros_like(thlm)
         for k in range(nzt):
@@ -547,7 +547,7 @@ def init_clubb_case(namelist_path: str) -> dict:
                     saturation_formula)
         thm = thlm + Lv / (Cp * exner) * rcm
     else:
-        raise ValueError(f"Unknown theta_type: {theta_type}")
+        raise ValueError(f"Unknown temperature_type: {temperature_type}")
 
     # Recompute thvm and hydrostatic with corrected thlm
     # NOTE: Fortran passes thm (not thlm) as the 5th arg to calculate_thvm

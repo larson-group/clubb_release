@@ -19,7 +19,7 @@ module bomex
 
 !----------------------------------------------------------------------
   subroutine bomex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
-                          gr, rtm, & 
+                          gr, rtm, l_readiopdata, & 
                           thlm_forcing, rtm_forcing, & 
                           sclrm_forcing, edsclrm_forcing )
 !       Description:
@@ -42,6 +42,9 @@ module bomex
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
+    ! use readiopdata_module, only: &
+    !     readiopdata_frc ! Procedure(s)
+
     implicit none
 
     !--------------------- Input Variables ---------------------
@@ -58,6 +61,8 @@ module bomex
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: &
       rtm    ! Total water mixing ratio (thermodynamic levels)        [kg/kg]
+
+    logical, intent(in) :: l_readiopdata
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: & 
@@ -77,6 +82,11 @@ module bomex
     integer :: i, k
 
     !--------------------- Begin Code ---------------------
+
+    ! if( l_readiopdata ) then
+    !   call readiopdata_frc( rtm, gr,                   & ! Intent(in)
+    !                         thlm_forcing, rtm_forcing )  ! Intent(out)
+    ! end if 
 
     !$acc enter data create( qtm_forcing )
 
@@ -130,8 +140,8 @@ module bomex
         end do
       end do
     end if
-
     !$acc exit data delete( qtm_forcing )
+
 
     return
 

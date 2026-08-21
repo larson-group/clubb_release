@@ -108,6 +108,7 @@ module sfc_flux
   
 !===============================================================================
   subroutine compute_ht_mostr_flux( time_in, ntimes, &
+                                    latent_ht_given, sens_ht_given, time_sfc_given, &
                                     heat_flx, moisture_flx )
 
 !
@@ -118,8 +119,6 @@ module sfc_flux
 !-------------------------------------------------------------------------------
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
     
-    use time_dependent_input, only: latent_ht_given, sens_ht_given, time_sfc_given ! Variable(s)
-    
     use interpolation, only: linear_interp_factor ! Procedure(s)
     
     implicit none
@@ -127,6 +126,11 @@ module sfc_flux
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
       time_in    ! Current time simulation time [s]
+
+    real(kind=core_rknd), dimension(:), intent(in) :: &
+      latent_ht_given, &
+      sens_ht_given, &
+      time_sfc_given
 
     integer, intent(in) :: &
       ntimes

@@ -26,8 +26,8 @@ def read_sounding(path: str) -> dict:
 
     Returns:
         dict with keys:
-            'alt_type': str ('z[m]' or 'Press[Pa]')
-            'theta_type': str ('thm[K]', 'thlm[K]', or 'T[K]')
+            'altitude_type': str ('z[m]' or 'Press[Pa]')
+            'temperature_type': str ('thm[K]', 'thlm[K]', or 'T[K]')
             'subs_type': str ('w[m/s]' or 'omega[Pa/s]')
             'z': np.ndarray of altitudes/pressures
             'theta': np.ndarray of temperature values
@@ -70,12 +70,12 @@ def read_sounding(path: str) -> dict:
     alt_idx = _find_idx(("z[m]", "press[pa]"))
     if alt_idx is None:
         raise ValueError(f"Could not find altitude column in sounding header: {col_names}")
-    alt_type = col_names[alt_idx]
+    altitude_type = col_names[alt_idx]
 
     theta_idx = _find_idx(("thm[k]", "thlm[k]", "t[k]"))
     if theta_idx is None:
         raise ValueError(f"Could not find temperature column in sounding header: {col_names}")
-    theta_type = col_names[theta_idx]
+    temperature_type = col_names[theta_idx]
 
     rt_idx = _find_idx(("rt[kg/kg]",))
     u_idx = _find_idx(("u[m/s]",))
@@ -88,8 +88,8 @@ def read_sounding(path: str) -> dict:
     subs_type = col_names[subs_idx] if subs_idx is not None else "w[m/s]"
 
     result = {
-        'alt_type': alt_type,
-        'theta_type': theta_type,
+        'altitude_type': altitude_type,
+        'temperature_type': temperature_type,
         'subs_type': subs_type,
         'columns': col_names,
         'data': data,
@@ -226,8 +226,8 @@ def interpolate_sounding(snd: dict, grid_z: np.ndarray, use_cubic: bool = False)
     Returns:
         dict with same keys as snd but interpolated to grid_z.
     """
-    result = {'z': grid_z, 'alt_type': snd['alt_type'],
-              'theta_type': snd['theta_type'], 'subs_type': snd['subs_type']}
+    result = {'z': grid_z, 'altitude_type': snd['altitude_type'],
+              'temperature_type': snd['temperature_type'], 'subs_type': snd['subs_type']}
 
     z_snd = snd['z']
 

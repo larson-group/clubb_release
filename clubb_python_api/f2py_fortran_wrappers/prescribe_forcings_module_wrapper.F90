@@ -70,6 +70,7 @@ subroutine f2py_prescribe_forcings( &
   integer :: total_idx_rho_lin_spline
   type(grid) :: gr_dycore
   real(core_rknd), dimension(ngrdcol, 1) :: rho_lin_spline_vals, rho_lin_spline_levels
+  logical :: l_readiopdata = .false.
 
   total_idx_rho_lin_spline = 1
   rho_lin_spline_vals = 0.0_core_rknd
@@ -84,8 +85,9 @@ subroutine f2py_prescribe_forcings( &
 
   if ( l_t_dependent .and. (.not. l_tdep_initialized) ) then
     call initialize_t_dependent_input( &
-        iunit, trim(runtype), nzt, zt_in(1,:), p_in_pa(1,:), &
-        l_add_dycore_grid, grid_adapt_in_time_method )
+        iunit, trim(runtype), l_readiopdata, rho, nzt, & ! Intent(in)
+        zt_in(1,:), p_in_pa(1,:),                      & ! Intent(in)
+        l_add_dycore_grid, grid_adapt_in_time_method )   ! Intent(in)
     l_tdep_initialized = .true.
   end if
 
@@ -100,6 +102,7 @@ subroutine f2py_prescribe_forcings( &
       sclr_dim, edsclr_dim, stored_sclr_idx, &
       runtype, sfctype, &
       time_current, time_initial, dt, &
+      l_readiopdata, &
       um, vm, thlm, &
       p_in_pa, exner, rho, rho_zm, thvm, &
       veg_t_in_k, &

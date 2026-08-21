@@ -3,8 +3,8 @@ module sounding
 
   implicit none
 
-  public ::  & 
-    read_sounding, & 
+  public ::  &
+    read_sounding, &
     read_profile ! Not currently used in CLUBB
 
   private :: read_sounding_file, read_sclr_sounding_file, &
@@ -22,11 +22,12 @@ module sounding
   contains
   !------------------------------------------------------------------------
   subroutine read_sounding( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
-                            gr, iunit, runtype, p_sfc, zm_init, & 
+                            gr, iunit, runtype, zm_init, &
                             saturation_formula, &
-                            l_modify_ic_with_cubic_int, &
-                            thlm, theta_type, rtm, um, vm, ugm, vgm, &
-                            alt_type, press, subs_type, wm, &
+                            l_readiopdata, l_modify_ic_with_cubic_int, &
+                            p_sfc, &
+                            thlm, temperature_type, rtm, um, vm, ugm, vgm, &
+                            altitude_type, press, subs_type, wm, &
                             rtm_sfc, thlm_sfc, sclrm, edsclrm )
 
     ! Description:
@@ -35,12 +36,14 @@ module sounding
     !   None
     !------------------------------------------------------------------------
 
-    use constants_clubb, only:  & 
+    use constants_clubb, only:  &
       fstderr, & ! Constant
       fstdout, &
-      g_per_kg
+      g_per_kg, &
+      kappa, &
+      p0
 
-    use interpolation, only:  & 
+    use interpolation, only:  &
       lin_interpolate_two_points, & ! Procedure(s)
       mono_cubic_interp, &
       binary_search
@@ -54,7 +57,8 @@ module sounding
     use input_names, only: &
       z_name, & ! Variables
       theta_name, &
-      wm_name
+      wm_name, &
+      omega_name
 
     use input_reader, only: &
       one_dim_read_var ! Type
@@ -71,6 +75,8 @@ module sounding
     use grid_class, only: &
         grid
 
+    use readiopdata_module, only: readiopdata_snd
+
     implicit none
 
     ! Constant parameter
@@ -79,7 +85,7 @@ module sounding
     !--------------------- Input Variables ---------------------
     integer, intent(in) :: &
       ngrdcol, &
-      sclr_dim, & 
+      sclr_dim, &
       edsclr_dim
 
     type (sclr_idx_type), intent(in) :: &
@@ -90,27 +96,30 @@ module sounding
 
     integer, intent(in) :: iunit ! File unit to use for namelist
 
-    character(len=*), intent(in) ::  & 
+    character(len=*), intent(in) ::  &
       runtype ! Used to determine if this in a DYCOMS II RF02 simulation
 
     real( kind = core_rknd ), intent(in) :: &
-      p_sfc, & ! Pressure at the surface [Pa]
       zm_init ! Height at zm(1)         [m]
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    ! Flag for interpolating the sounding profile with Steffen's monotone cubic 
-    ! method to obtain smoother initial condition profile, which is found to be 
-    ! beneficial to achive a better numerical solution convergence. If this flag 
+    ! Flag for interpolating the sounding profile with Steffen's monotone cubic
+    ! method to obtain smoother initial condition profile, which is found to be
+    ! beneficial to achive a better numerical solution convergence. If this flag
     ! is turned off, the initial conditions will be generated with linear interpolation.
     ! This is done on a case-by-case basis, since using the monotone cubic method
     ! requires a special sounding.in file with many additional sounding levels.
     logical, intent(in) :: &
-      l_modify_ic_with_cubic_int
+      l_modify_ic_with_cubic_int, &
+      l_readiopdata
+
+    real( kind = core_rknd ), intent(inout) :: &
+      p_sfc ! Pressure at the surface [Pa]
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  &
       thlm,  & ! Liquid water potential temperature    [K]
       rtm,   & ! Total water mixing ratio              [kg/kg]
       um,    & ! u wind component                      [m/s]
@@ -125,14 +134,14 @@ module sounding
       thlm_sfc    ! Initial surface thlm               [K]
 
     character(len=*), intent(out) :: &
-      theta_type, &     ! Type of temperature sounding
-      alt_type, &       ! Type of independent coordinate
+      temperature_type, &     ! Type of temperature sounding
+      altitude_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol, gr%nzt, sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol, gr%nzt, sclr_dim) ::  &
       sclrm   ! Passive scalar output      [units vary]
 
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol, gr%nzt, edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol, gr%nzt, edsclr_dim) ::  &
       edsclrm ! Eddy Passive scalar output [units vary]
 
     !--------------------- Local Variables ---------------------
@@ -145,18 +154,18 @@ module sounding
       l_sclr_sounding_exists, &
       l_edsclr_sounding_exists
 
-    real( kind = core_rknd ), dimension(nmaxsnd) :: & 
+    real( kind = core_rknd ), dimension(nmaxsnd) :: &
       z,       & ! Altitude                               [m]
       theta,   & ! Liquid potential temperature sounding  [K]
       rt,      & ! Total water mixing ratio sounding      [kg/kg]
-      u,       & ! u wind sounding                        [m/s] 
+      u,       & ! u wind sounding                        [m/s]
       v,       & ! v wind sounding                        [m/s]
       ug,      & ! u geostrophic wind sounding            [m/s]
       vg,      & ! v geostrophic wind sounding            [m/s]
       p_in_Pa, & ! Pressure                               [Pa]
       subs       ! Vertical velocity sounding             [m/s or Pa/s]
 
-    real( kind = core_rknd ), dimension(:,:), allocatable ::  & 
+    real( kind = core_rknd ), dimension(:,:), allocatable ::  &
       sclr_snd, edsclr_snd ! Passive scalar input sounding    [units vary]
 
     type(one_dim_read_var), dimension(n_snd_var) :: &
@@ -173,8 +182,8 @@ module sounding
 
     !--------------------- Begin Code ---------------------
 
-    theta_type = theta_name ! Default value
-    alt_type = z_name ! Default value
+    temperature_type = theta_name ! Default value
+    altitude_type = z_name ! Default value
     subs_type = wm_name ! Defuault Value
 
     ! Determine which files exist ahead of time to allow for a graceful exit if
@@ -199,13 +208,18 @@ module sounding
     end if
     !----------------------------------------------------------------------------------------------
 
-    if( l_sounding_exists ) then
+    if ( l_readiopdata ) then
+      call readiopdata_snd( zm_init, saturation_formula,       & ! Intent(in)
+                            nlevels, u, v, theta, rt, p_in_Pa, & ! Intent(out)
+                            p_sfc, z, ug, vg, subs, subs_type )  ! Intent(out)
+    elseif( l_sounding_exists ) then
       ! Read in SAM-Like <runtype>_sounding.in file
-      call read_sounding_file( iunit, runtype, nlevels, nmaxsnd, p_sfc, &
-                               saturation_formula, &
-                               zm_init, z, theta, theta_type, rt, u, v, &
-                               ug, vg, alt_type, p_in_Pa, subs_type, subs, &
-                               sounding_retVars )
+      call read_sounding_file( iunit, runtype, nmaxsnd, p_sfc,             & ! Intent(in)
+                               saturation_formula, zm_init,                & ! Intent(in)
+                               nlevels, z, theta, rt, u, v,                & ! Intent(out)
+                               ug, vg, p_in_Pa, subs,                      & ! Intent(out)
+                               temperature_type, altitude_type, subs_type, & ! Intent(out)
+                               sounding_retVars )                            ! Intent(out)
     else
       write(fstderr,*) 'Cannot open ' // trim( runtype ) // '_sounding.in file'
       error stop 'Fatal error in read_sounding'
@@ -345,9 +359,9 @@ module sounding
           end if  ! k_above > nlevels
 
           ! situation w/ cubic int. (achieve better numerical solution convergence)
-          if (l_modify_ic_with_cubic_int) then 
+          if (l_modify_ic_with_cubic_int) then
             !use Steffen's monotone cubic interpolation method to obtain
-            !smoothing initial condition profile for convergence test 
+            !smoothing initial condition profile for convergence test
             !note: vertical levels in sounding file need to be not too coarse
             if ( k_above == 1 ) then
               km1 = k_above
@@ -365,7 +379,7 @@ module sounding
               kp2 = k_above+1
               k00 = k_above-1
               !if z(k_above) reaches at the top level in sounding profile,
-              !then use the nearest levels for interpolation 
+              !then use the nearest levels for interpolation
               if ( z(k_above) >= z(nlevels) ) then
                 km1 = nlevels-2
                 kp1 = nlevels
@@ -374,7 +388,7 @@ module sounding
               end if
             end if
 
-            um(i,k)    = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), & 
+            um(i,k)    = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
                                             z(kp2), u(km1), u(k00), u(kp1), u(kp2) )
             vm(i,k)    = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
                                             z(kp2), v(km1), v(k00), v(kp1), v(kp2) )
@@ -392,26 +406,26 @@ module sounding
             wm(i,k)    = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
                                             z(kp2), subs(km1), subs(k00), subs(kp1), subs(kp2) )
 
-            if ( trim( runtype ) /= "dycoms2_rf02" ) then 
-              !initial condition for tracers 
+            if ( trim( runtype ) /= "dycoms2_rf02" ) then
+              !initial condition for tracers
               if ( sclr_dim > 0 ) then
                 do sclr = 1, sclr_dim
-                  sclrm(i,k,sclr) = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, & 
-                                                       z(km1), z(k00), z(kp1), z(kp2), & 
+                  sclrm(i,k,sclr) = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, &
+                                                       z(km1), z(k00), z(kp1), z(kp2), &
                                                        sclr_snd(km1,sclr), sclr_snd(k00,sclr), &
                                                        sclr_snd(kp1,sclr), sclr_snd(kp2,sclr) )
                 end do
               end if
               if ( edsclr_dim > 0 ) then
                 do edsclr = 1, edsclr_dim
-                  edsclrm(i,k,edsclr) = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, & 
-                                                           z(km1), z(k00), z(kp1), z(kp2), & 
+                  edsclrm(i,k,edsclr) = mono_cubic_interp( gr%zt(i,k), km1, k00, kp1, kp2, &
+                                                           z(km1), z(k00), z(kp1), z(kp2), &
                                                            edsclr_snd(km1,edsclr), edsclr_snd(k00,edsclr), &
                                                            edsclr_snd(kp1,edsclr), edsclr_snd(kp2,edsclr) )
                 end do
               end if
-            else 
-              ! DYCOMS2_RF02 case (use the same treatment as in regular situation w/ linear int.) 
+            else
+              ! DYCOMS2_RF02 case (use the same treatment as in regular situation w/ linear int.)
               ugm(i,k)  = um(i,k)
               vgm(i,k)  = vm(i,k)
               ! Passive Scalars
@@ -424,9 +438,9 @@ module sounding
                 sclrm(i,k, sclr_idx%iisclr_rt)    = rtm(i,k)
                 edsclrm(i,k, sclr_idx%iisclr_rt)  = rtm(i,k)
               end if
-            end if  
+            end if
 
-          else ! default model setup 
+          else ! default model setup
 
             ! Regular situation w/ linear int.
             IF ( trim( runtype ) /= "dycoms2_rf02" ) THEN
@@ -443,19 +457,19 @@ module sounding
 
               if ( sclr_dim > 0 ) then
                 do sclr = 1, sclr_dim
-                  sclrm(i,k,sclr) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1),  & 
+                  sclrm(i,k,sclr) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1),  &
                                         sclr_snd(k_above,sclr), sclr_snd(k_above-1,sclr) )
                 end do
               end if
               if ( edsclr_dim > 0 ) then
                 do edsclr = 1, edsclr_dim
-                  edsclrm(i,k,edsclr) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1),  & 
+                  edsclrm(i,k,edsclr) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1),  &
                                           edsclr_snd(k_above,edsclr), edsclr_snd(k_above-1,edsclr) )
                 end do
               end if
 
             ELSE  ! DYCOMS II RF02 case
-    
+
               IF ( gr%zt(i,k) < 795.0_core_rknd ) THEN
                 ! (Wyant, et al. 2007, eq 1--4)
                 um(i,k)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i,k))/ &
@@ -489,7 +503,7 @@ module sounding
                 vgm(i,k)  = vm(i,k)
                 thlm(i,k) = 295.0_core_rknd + ( (gr%zt(i,k) - 795.0_core_rknd)** &
                             (1.0_core_rknd/3.0_core_rknd) ) ! Known magic number
-                rtm(i,k)  = (  5.0_core_rknd - 3.0_core_rknd  & 
+                rtm(i,k)  = (  5.0_core_rknd - 3.0_core_rknd  &
                 * ( 1.0_core_rknd - EXP( (795.0_core_rknd - gr%zt(i,k))/ &
                 500.0_core_rknd ) )  )/g_per_kg ! Known magic number
                 ! Passive Scalars
@@ -506,7 +520,7 @@ module sounding
                                                       p_in_Pa(k_above), p_in_Pa(k_above-1) )
                 wm(i,k) = lin_interpolate_two_points( gr%zt(i,k), z(k_above), z(k_above-1), subs(k_above), subs(k_above-1) )
               END IF
-        
+
             END IF ! runtype
 
           end if ! l_modify_ic_with_cubic_int
@@ -586,10 +600,11 @@ module sounding
   end subroutine read_sounding
 
   !-----------------------------------------------------------------------------
-  subroutine read_sounding_file( iunit, runtype, nlevels, nmaxsnd, p_sfc, &
-                                 saturation_formula, &
-                                 zm_init, z, theta, theta_type, rt, u, v, &
-                                 ug, vg, alt_type, p_in_Pa, subs_type, subs, &
+  subroutine read_sounding_file( iunit, runtype, nmaxsnd, p_sfc, &
+                                 saturation_formula, zm_init, &
+                                 nlevels, z, theta, rt, u, v, &
+                                 ug, vg, p_in_Pa, subs, &
+                                 temperature_type, altitude_type, subs_type, &
                                  retVars )
     !
     !  Description: This subroutine reads in a <runtype>_sounding.in file and
@@ -639,11 +654,11 @@ module sounding
     ! Output Variable(s)
     integer, intent(out) :: nlevels ! Number of levels from the sounding.in file
 
-    real( kind = core_rknd ), intent(out), dimension(nmaxsnd) :: & 
+    real( kind = core_rknd ), intent(out), dimension(nmaxsnd) :: &
       z,      & ! Altitude                               [m]
       theta,  & ! Liquid potential temperature sounding  [K]
       rt,     & ! Total water mixing ratio sounding      [kg/kg]
-      u,      & ! u wind sounding                        [m/s] 
+      u,      & ! u wind sounding                        [m/s]
       v,      & ! v wind sounding                        [m/s]
       ug,     & ! u geostrophic wind sounding            [m/s]
       vg,     & ! v geostrophic wind sounding            [m/s]
@@ -654,8 +669,8 @@ module sounding
       retVars ! Structure containing sounding profile
 
     character(len=*), intent(out) :: &
-      theta_type, &     ! Type of temperature sounding
-      alt_type, &       ! Type of independent coordinate
+      temperature_type, &     ! Type of temperature sounding
+      altitude_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
     ! ---- Begin Code ----
@@ -667,9 +682,9 @@ module sounding
 
     call read_z_profile( n_snd_var, nmaxsnd, retVars, p_sfc, zm_init, &
                          saturation_formula, &
-                         z, p_in_Pa, alt_type )
+                         z, p_in_Pa, altitude_type )
 
-    call read_theta_profile( n_snd_var, nmaxsnd, retVars, theta_type, theta )
+    call read_theta_profile( n_snd_var, nmaxsnd, retVars, temperature_type, theta )
 
     rt = read_x_profile( n_snd_var, nmaxsnd, rt_name, retVars )
 
@@ -736,7 +751,7 @@ module sounding
       nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
 
     !--------------------- InOut Variables ---------------------
-    real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: &
       sclr_snd        ! Scalar sounding [?]
 
     !--------------------- Output Variables --------------------
@@ -814,13 +829,13 @@ module sounding
       nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: &
     edsclr_snd ! Eddy Scalars [?]
 
     !--------------------- Local Variables ---------------------
     type(one_dim_read_var), dimension(edsclr_dim) :: retVars
 
-    integer :: edsclr 
+    integer :: edsclr
 
     !--------------------- Begin Code ---------------------
 
@@ -860,7 +875,7 @@ module sounding
     !       Subroutine to initialize one generic model variable from file
     !------------------------------------------------------------------------
 
-    use interpolation, only:  & 
+    use interpolation, only:  &
         lin_interpolate_two_points ! Procedure
 
     use constants_clubb, only:  &
@@ -936,7 +951,7 @@ module sounding
       do while ( z(k) < gr%zt(1,i) )
         k = k + 1
         if ( k > nlevels ) then
-          write(fstderr,*) 'STOP Not enough sounding data to ',  & 
+          write(fstderr,*) 'STOP Not enough sounding data to ',  &
                            'initialize grid:'
           write(fstderr,'(a,f7.1,/a,f7.1)') ' Highest sounding level',  &
                z(nlevels),  &
@@ -1030,13 +1045,13 @@ module sounding
 
     integer :: i, ivar
 
-    character(len=20) :: alt_type, theta_type
+    character(len=20) :: altitude_type, temperature_type
 
     ! -- Begin Code --
 
     ! Determine the size of the extended atmosphere buffer
     extended_atmos_dim = size( sounding_profiles(1)%values )
-   
+
     ! Allocate variables
     allocate( extended_alt(extended_atmos_dim) )
     allocate( extended_T_in_K(extended_atmos_dim) )
@@ -1050,9 +1065,9 @@ module sounding
 
     call read_z_profile( n_snd_var, extended_atmos_dim, sounding_profiles, p_sfc, zm_init, &
                          saturation_formula, &
-                         extended_alt , extended_p_in_Pa, alt_type )
+                         extended_alt , extended_p_in_Pa, altitude_type )
 
-    if ( alt_type == z_name ) then
+    if ( altitude_type == z_name ) then
       write(fstderr,*) "Fatal error in convert_snd2extended_atm."
       error stop "Feature not implemented"
     end if
@@ -1062,9 +1077,9 @@ module sounding
     ! Convert to temperature from thlm or theta
 
     call read_theta_profile( n_snd_var, extended_atmos_dim, sounding_profiles, &
-      theta_type, extended_T_in_K )
+      temperature_type, extended_T_in_K )
 
-    if( theta_type /= temperature_name ) then
+    if( temperature_type /= temperature_name ) then
       extended_exner(1) = ( p_sfc/p0 ) ** kappa
       do i = 2, extended_atmos_dim
         extended_exner(i) = (extended_p_in_Pa(i)/p0) ** kappa
@@ -1133,7 +1148,7 @@ module sounding
       extended_sp_hmdty, &    ! Specific Humidity ( Water Vapor / Density )
       extended_p_in_mb, &     ! Pressure in millibars
       extended_o3l            ! Ozone ( O_3 / Density )
-      
+
     implicit none
 
     ! Constant Parameters

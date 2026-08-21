@@ -10,6 +10,8 @@ set(INPUT_FIELDS_SOURCES
         input_interpret.F90
         extrapolation.F90
         corr_varnce_input_reader.F90
+        ../readiopdata_module.F90
+        ../readiopdata_core/readiopdata_core_module.F90
 )
 
 add_library(input_fields_lib ${INPUT_FIELDS_SOURCES})

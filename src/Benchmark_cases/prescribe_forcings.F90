@@ -21,6 +21,7 @@ module prescribe_forcings_module
                                  sclr_dim, edsclr_dim, sclr_idx, &
                                  runtype, sfctype, &
                                  time_current, time_initial, dt, &
+                                 l_readiopdata, &
                                  um, vm, thlm, &
                                  p_in_Pa, exner, rho, rho_zm, thvm, &
                                  veg_T_in_K, &
@@ -192,7 +193,8 @@ module prescribe_forcings_module
     ! Flag to activate modifications on boundary condition for convergence test
     ! (surface fluxes computed at fixed 25 m height).
     logical, intent(in) :: &
-      l_modify_bc_for_cnvg_test
+      l_modify_bc_for_cnvg_test, &
+      l_readiopdata ! Flag for reading IOP data from a .nc file
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
@@ -416,12 +418,12 @@ module prescribe_forcings_module
                               thlm_forcing, rtm_forcing, &               ! Intent(out)
                               sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
-      case ( "bomex" ) ! BOMEX Cu case
+      case ( "bomex", "bomex_5day_4scam" ) ! BOMEX Cu case
 
         call bomex_tndcy( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &     ! Intent(in)
-                          gr, rtm, &                            ! Intent(in)
-                          thlm_forcing, rtm_forcing, &          ! Intent(out)
-                          sclrm_forcing, edsclrm_forcing )      ! Intent(out)
+                          gr, rtm, l_readiopdata, &                      ! Intent(in)
+                          thlm_forcing, rtm_forcing, &                   ! Intent(out)
+                          sclrm_forcing, edsclrm_forcing )               ! Intent(out)
 
       case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
 
@@ -742,7 +744,7 @@ module prescribe_forcings_module
                                thlm_bot, rtm_bot, exner_bot, rho_bot, & ! Intent(in)
                                wpthlp_sfc, wprtp_sfc, ustar, T_sfc )    ! Intent(out)
 
-      case ( "bomex" )
+      case ( "bomex", "bomex_5day_4scam" )
 
         l_compute_momentum_flux = .true.
         l_set_sclr_sfc_rtm_thlm = .true.
