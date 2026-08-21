@@ -241,8 +241,6 @@ subroutine readiopdata_sfc( tsfc, ubar, shsfc, lhsfc, timesfc )
 end subroutine readiopdata_sfc
 
 subroutine readiopdata_frc( rtm, gr, thlm_forcing, rtm_forcing )
-    use spec_hum_to_mixing_ratio, only: &
-        force_spec_hum_to_mixing_ratio ! Procedure(s)
 
     use grid_class, only: &
         grid     ! Type
