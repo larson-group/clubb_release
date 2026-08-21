@@ -317,9 +317,11 @@ def main():
         ))
 
     namelist_group.add_argument(
-        "-override",
-        help="Comma-separated key=value pairs, e.g. -override FLAG1=true,C2=2.0,...",
-    )
+        "-override", metavar="[NAMELIST.]KEY=VALUE",
+        help=("Override specific settings, multiple accepted via comma separated entries."
+              "`key=value` will be used to replace the matching setting, can fail if no match."
+              "`namelist.key=value` will replace or add the setting if not found."
+        ))
 
     parser.add_argument("case_name", help="Name of the case to run")
     args = parser.parse_args()

@@ -238,8 +238,24 @@ def override_value(override_string, clubb_in_text):
     """
     Apply overrides from -override KEY1=val1,KEY2=val2,... to the aggregate text.
     Values may also be comma-separated column lists, e.g. C8=0.8,0.7,C11=1.0,1.1.
+
+    Bare keys replace an existing assignment. Use NAMELIST.KEY=value to replace
+    or add a key within a specific namelist.
     """
     for key, val in parse_override_pairs(normalize_override_string(override_string)):
+        if "." in key:
+            namelist, setting = key.split(".", 1)
+            if not namelist or not setting or "." in setting:
+                raise ValueError(
+                    f"Invalid override key '{key}'. Use [namelist.]key=value"
+                )
+            if not re.search(rf"(?im)^\s*&\s*{re.escape(namelist)}\b", clubb_in_text):
+                raise ValueError(
+                    f"override failed - namelist group '{namelist}' is not present"
+                )
+            clubb_in_text = set_namelist_value(clubb_in_text, namelist, setting, val)
+            continue
+
         assignment_re = re.compile(rf"(?im)^(\s*){re.escape(key)}\s*=.*$")
 
         clubb_in_text, replacements = assignment_re.subn(
@@ -249,7 +265,9 @@ def override_value(override_string, clubb_in_text):
 
         if replacements == 0:
             raise ValueError(
-                f"Override setting '{key}' is not present in the selected namelists"
+                f"override failed - key '{key}' could not be matched for find-and-replace. "
+                "To add a key to a namelist, specify the namelist group: "
+                "[namelist.]key=value"
             )
     return clubb_in_text
 
@@ -803,7 +821,8 @@ def main():
         help="Stats output window end time (s). Default from model file or driver.")
     parser.add_argument(
         "-override",
-        help="Comma-separated key=value pairs, e.g. -override FLAG1=true,C2=2.0,...",
+        help=("Comma-separated key=value pairs. Bare keys replace existing values; "
+              "use namelist.key=value to add a key, e.g. C2=2.0,model_setting.dt_main=1.0."),
     )
     parser.add_argument("case_name", help="Name of the case to aggregate")
     args = parser.parse_args()

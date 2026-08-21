@@ -93,11 +93,11 @@ def copy_case_outputs(case_name: str, destination: Path) -> None:
 
 def run_case(case_name: str, stats_file: Path, n_samples: int, verbose: bool) -> None:
     override_parts = [
-        'lh_microphys_type="non-interactive"',
-        f"lh_num_samples={n_samples}",
-        "lh_sequence_length=1",
-        "l_silhs_KK_convergence_adj_mean=.true.",
-        "l_local_kk=.false.",
+        'microphysics_setting.lh_microphys_type="non-interactive"',
+        f"microphysics_setting.lh_num_samples={n_samples}",
+        "microphysics_setting.lh_sequence_length=1",
+        "microphysics_setting.l_silhs_KK_convergence_adj_mean=.true.",
+        "microphysics_setting.l_local_kk=.false.",
     ]
     cmd = [
         sys.executable,
