@@ -11,6 +11,7 @@ module readiopdata_core_module
 ! $Id$
 !
 !------------------------------------------------------------------------
+
   use netcdf, only: &
         NF90_OPEN, &
         NF90_NOWRITE, &
