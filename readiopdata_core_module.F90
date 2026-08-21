@@ -42,8 +42,8 @@ contains
 ! ntime, nlev, nlat, nlon       : Length of dimension
 ! tsec, dplevs, lat_in, lon_in  : Dimension data
 ! bdate                         : Start date as 6-digit int
-subroutine readiopdata_core_dims( masterproc, iopfilepath, scamiop_from_global_cam, ntime, nlev, &
-                                nlat, nlon, tsec, bdate, dplevs, lat_in, lon_in )
+subroutine readiopdata_core_dims( masterproc, iopfilepath, scamiop_from_global_cam, &
+                                 ntime, nlev, nlat, nlon, tsec, bdate, dplevs, lat_in, lon_in )
     implicit none
 
     logical, intent(in) :: masterproc, scamiop_from_global_cam
@@ -214,7 +214,11 @@ end subroutine readiopdata_core_dims
 subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_cam, &
                                ntime, nlev, dplevs, rgas, cp, fac_cond, fac_sub, &
                                zsnd, usnd, vsnd, tsnd, qsnd, psnd, ugls, vgls, wgls, &
-                               get_add_surface_data, have_omega, wgls_holds_omega )
+                               get_add_surface_data, have_omega, wgls_holds_omega &
+#ifdef UWM_MISC
+                               , have_w, wgls_holds_w, subs_type &
+#endif
+                               )
 !-----------------------------------------------------------------------
 !     
 !     Open and read netCDF file containing initial IOP  conditions
@@ -257,15 +261,21 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
 !     ===================================================================
 !
 !-----------------------------------------------------------------------
+
    implicit none
 
    ! Outputs
    real, allocatable, intent(out) :: usnd(:,:), vsnd(:,:), tsnd(:,:), qsnd(:,:), &
         psnd(:,:), zsnd(:,:), ugls(:,:), vgls(:,:), wgls(:,:)
 
+#ifdef UWM_MISC
+   character(len=*), intent(out) :: subs_type
+
    ! Optional outputs
-   logical, optional, intent(out) :: get_add_surface_data, have_omega, &
-        wgls_holds_omega
+   logical, optional, intent(out) :: have_w, wgls_holds_w
+#endif
+
+   logical, optional, intent(out) :: get_add_surface_data, have_omega, wgls_holds_omega
 
    ! Inputs
    integer, intent(in) :: ntime, nlev
@@ -282,9 +292,18 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
    real :: coef
    real, allocatable :: tmp_srf(:), Ts_in(:), T_in(:,:), q_in(:,:), u_in(:,:), v_in(:,:), &
         ug_in(:,:), vg_in(:,:), omega_in(:,:), cldliq_in(:,:), cldice_in(:,:), Tg_in(:), Ps_in(:)
+#ifdef UWM_MISC
+   real, allocatable :: w_in(:,:)
+#endif
    real :: levs(nlev+1)
 
    logical :: use_NF90_real, have_tsair, have_tg, have_geostrophic_wind
+
+#ifdef UWM_MISC
+   ! This is manually defined since sam_clubb doesn't have input_names file while clubb does
+   character(len=6)  :: wm_name = 'w[m/s]'
+   character(len=11) :: omega_name = 'omega[Pa/s]'
+#endif
 
    ! Assign module-level variable
    masterproc_ = masterproc
@@ -347,7 +366,7 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
    call get_netcdf_var1d_real( ncid, 'Ps', Ps_in, use_NF90_REAL, status, .true.)
 
 !         
-!====================================================================
+!====================================================================
 !     check whether surface pressure exceeds largest pressure
 !       in pressure sounding (dplevs)
 !     
@@ -370,14 +389,18 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
    Ps_in(:) = Ps_in(:)/100. ! convert to millibar
 
 !         
-!====================================================================
+!====================================================================
 !     allocate variables with pressure and time dependence (q,T,etc.)
 !     
    Allocate(T_in(ntime,nlev_in), q_in(ntime,nlev_in), &
         u_in(ntime,nlev_in), v_in(ntime,nlev_in), &
         ug_in(ntime,nlev_in), vg_in(ntime,nlev_in), &
         omega_in(ntime,nlev_in), cldliq_in(ntime,nlev_in), &
-        cldice_in(ntime,nlev_in), STAT=status)
+        cldice_in(ntime,nlev_in), &
+#ifdef UWM_MISC
+        w_in(ntime,nlev_in), &
+#endif
+        STAT=status)
 
    if(status/=0) then
       write(6,*) 'Could not allocate surface variables in readiopdata'
@@ -385,7 +408,7 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
    end if
 
 !
-!====================================================================
+!====================================================================
 !     read variables with pressure and time dependence (q,T,etc.)
 !     
    ! Temperature
@@ -431,15 +454,32 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
    end if
 
    !==================================
-   ! omega: vertical pressure velocity
+   ! omega or w: vertical pressure velocity
+   
    omega_in(:,:) = missing_value
    call get_netcdf_var2d_real( ncid,'omega',ntime,nlev,omega_in, &
-        use_NF90_REAL,status,.false.)
+         use_NF90_REAL,status,.false.)
    have_omega = .true.
    if( STATUS /= NF90_NOERR ) have_omega = .false.
 
 #ifdef UWM_MISC
-   if( scamiop_from_global_cam .and. have_omega ) then
+   if( .not. have_omega ) then
+      ! If omega fails, try to get w (vertical velocity) instead
+      w_in(:,:) = missing_value
+      call get_netcdf_var2d_real( ncid,'w',ntime,nlev,w_in, &
+         use_NF90_REAL,status,.false.)
+      have_w = .true.
+      if( STATUS /= NF90_NOERR ) have_w = .false.
+   end if
+   
+   if( have_omega ) then
+      subs_type = omega_name
+   else if( have_w ) then
+      subs_type = wm_name
+   end if
+
+
+   if( scamiop_from_global_cam .and. ( have_omega .or. have_w ) ) then
    ! In sam_clubb:ticket:87, we noticed that SAM is imposing subsidence since
    ! the CAM IOP files have omega. Since there is no horizontal (only)
    ! divergence term for temperature and moisture in the IOP file and SAM is
@@ -450,7 +490,9 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
    ! will set omega to zero and use the IOP supplied horiz + vert tendencies of
    ! temperature and moisture. weberjk(UWM)
      omega_in(:,:) = 0.
+     w_in(:,:) = 0.
      have_omega = .false.
+     have_w = .false.
    endif
 #endif /* UWM_MISC */
 
@@ -487,7 +529,19 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
 
       ! surface pressure tendency --> surface omega
       call get_netcdf_var1d_real(ncid,'Ptend',tmp_srf,use_NF90_REAL,status,.false.)
-      if( STATUS == NF90_NOERR ) omega_in(:,nlev+1) = tmp_srf(:)
+      if( STATUS == NF90_NOERR ) then
+#ifdef UWM_MISC
+         if( have_w ) then
+            w_in(:,nlev+1) = tmp_srf(:)
+         end if
+
+         if( have_omega ) then
+            omega_in(:,nlev+1) = tmp_srf(:) 
+         end if
+#else
+         omega_in(:,nlev+1) = tmp_srf(:) 
+#endif
+      end if
 
       ! winds
       call get_netcdf_var1d_real(ncid,'usrf',tmp_srf,use_NF90_REAL,status,.false.)
@@ -587,8 +641,19 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
          if(v_in(i,nlev+1)==missing_value) &
               v_in(i,nlev+1) = (1-coef)*v_in(i,nlev-1) + coef*v_in(i,nlev)
 
+#ifdef UWM_MISC
+         if(have_omega) then
+            if(omega_in(i,nlev+1)==missing_value) omega_in(i,nlev+1) = &
+                 (1-coef)*omega_in(i,nlev-1) + coef*omega_in(i,nlev)
+         end if
+         if(have_w) then
+            if(w_in(i,nlev+1)==missing_value) w_in(i,nlev+1) = &
+                 (1-coef)*w_in(i,nlev-1) + coef*w_in(i,nlev)
+         end if
+#else
          if(omega_in(i,nlev+1)==missing_value) omega_in(i,nlev+1) = &
               (1-coef)*omega_in(i,nlev-1) + coef*omega_in(i,nlev)
+#endif
          if(ug_in(i,nlev+1)==missing_value) &
               ug_in(i,nlev+1) = (1-coef)*ug_in(i,nlev-1) + coef*ug_in(i,nlev)
          if(vg_in(i,nlev+1)==missing_value) &
@@ -621,6 +686,20 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
          wgls(1:nzlsf,i) = omega_in(i,nzlsf:1:-1)
       end do
       wgls_holds_omega = .true.
+#ifdef UWM_MISC
+   else if(have_w) then
+      ! use w for large-scale vertical advection if it exists
+      do i = 1,nlsf
+         wgls(1:nzlsf,i) = w_in(i,nzlsf:1:-1)
+      end do
+      wgls_holds_w = .true.
+   else
+      ! no large-scale vertical advection is present in the dataset
+      wgls_holds_omega = .false.
+      wgls_holds_w = .false.
+      write(6,*) 'No large-scale vertical advection is present in the dataset'
+      call task_abort()
+#endif
    end if
 
    if(have_geostrophic_wind) then
@@ -641,7 +720,12 @@ subroutine readiopdata_core_snd( masterproc, iopfilepath, scamiop_from_global_ca
       call task_abort()
    end if
 
-   deallocate(T_in, q_in, u_in, v_in, ug_in, vg_in, omega_in, cldliq_in, cldice_in, STAT=STATUS)
+   deallocate(T_in, q_in, u_in, v_in, ug_in, vg_in, omega_in, cldliq_in, cldice_in, &
+#ifdef UWM_MISC
+               w_in, &
+#endif
+               STAT=STATUS)
+
    if(status/=0) then
       write(6,*) 'Could not de-allocate sounding/forcing arrays in readiopdata'
       call task_abort()
@@ -801,7 +885,8 @@ subroutine readiopdata_core_sfc( masterproc, iopfilepath, scamiop_from_global_ca
 end subroutine readiopdata_core_sfc
 
 subroutine readiopdata_core_frc( masterproc, iopfilepath, get_add_surface_data, have_omega, &
-                               dplevs, nlev, ntime, dtls, dqls )
+                               dplevs, nlev, ntime, &
+                               dtls, dqls )
     implicit none
 
     ! Inputs
@@ -848,7 +933,7 @@ subroutine readiopdata_core_frc( masterproc, iopfilepath, get_add_surface_data, 
     allocate(tmp_srf(ntime))
 
 !         
-!====================================================================
+!====================================================================
 !     allocate variables with pressure and time dependence (q,T,etc.)
 !     
     Allocate(divT_in(ntime,nlev_in), divq_in(ntime,nlev_in), &
@@ -861,7 +946,7 @@ subroutine readiopdata_core_frc( masterproc, iopfilepath, get_add_surface_data, 
        call task_abort()
     end if
 !
-!====================================================================
+!====================================================================
 !     read variables with pressure and time dependence (q,T,etc.)
 !     
     ! Horizontal Advective Temperature Forcing
