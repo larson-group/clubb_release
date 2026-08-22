@@ -1,0 +1,111 @@
+commit 0c90d7040b1f163985b1f884eaf431e1c356cdf0
+Merge: 1e0e2db32 e49f15da4
+Author: root <larsongroupgithub@gmail.com>
+Date:   Fri Aug 21 23:31:48 2026 -0500
+
+    Autoupdated clubb's readiopdata_core with sam_clubb's readiopdata_core
+
+commit 1e0e2db32c6deda3a17097f6bd47ca31bed9c749
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Fri Aug 21 14:17:31 2026 -0500
+
+    Remove blank line to trigger nightly tests and gitUpdateScripts
+
+commit e49f15da4a620fb2c6af3b83858ca3a692847f54
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Fri Aug 21 14:16:36 2026 -0500
+
+    Add blank line to trigger gitUpdateScripts
+
+commit 48e554abc9cb1a32ab64508ce3dabc0e7430e4c7
+Merge: ec70668f1 7e7eac032
+Author: root <larsongroupgithub@gmail.com>
+Date:   Fri Aug 21 13:51:20 2026 -0500
+
+    Add SRC/READIOPDATA_CORE
+    
+    git-subtree-dir: src/readiopdata_core
+    git-subtree-mainline: ec70668f175a08f982ca25797a9c7367f10e03d6
+    git-subtree-split: 7e7eac0320dbba47bc1ce08f1158fd9b55be22ed
+
+commit ec70668f175a08f982ca25797a9c7367f10e03d6
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Fri Aug 21 13:09:38 2026 -0500
+
+    Removed readiopdata_core to prepare for git subtrees
+
+commit 1b17c7eb82913aa29b80cb94f5280c9a81fb162f
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Aug 21 13:06:55 2026 -0500
+
+    Removing unused dependency that can cause compilation to fail - seems compiler/build system dependent
+
+commit 1f4ec8993842ad7859cefecdfab5e067b07c53fa
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Aug 21 12:36:35 2026 -0500
+
+    Previous commit improved the robustness of -override option and teased out a couple bugs in tests, causing them to fail. This adds the ability to specify which namelist an override goes in if there's no associated key to replace, the failing tests can be fixed by making use of this. One test is fixed here, and the other needed a change in a BFB config hosted on the jenkins server.
+
+commit 4aa411aa309abec014934f1589d435a83a9a4bec
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Fri Aug 21 12:30:59 2026 -0500
+
+    Bring readiopdata changes into master (#1343)
+    
+    * Brought changes from readiopdata2 onto modern master branch
+    
+     - Currently code successfully compiles but fails to run
+    
+    * Fixed errors, allowing for both cases to be run and plotted!
+    
+     - fixed variable names in .in files
+    
+    * Fixes, add ifdef UWM_MISC statements, and changed alt_type/theta_type
+    
+    * Added l_readiopdata into ALL bomex model.in files
+    
+    * Code improvements
+    
+     - Fixed source code compilation check warnings
+    
+     - Checked and updated parameter order
+    
+     - All code I changed now has intent in/out labeled on calls
+    
+     - Found more instances of alt_type and theta_type to be renamed in clubb_jax and clubb_python
+    
+     - readiopdata_core_module.F90 moved into a folder to prepare for git subtrees
+    
+    * Change to be identical to sam_clubb readiopdata_core_module and a fix in arm_0003
+    
+    * Fix order of operations to fix cgils cases
+
+commit 7e7eac0320dbba47bc1ce08f1158fd9b55be22ed
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Fri Aug 21 12:08:17 2026 -0500
+
+    Updates to readiopdata_core and corresponding calls (#178)
+    
+     - readiopdata can now take in w or omega
+    
+    * Necessary fixes and changes to work as well as be identical to clubb readiopdata_core_module
+
+commit 1db1e01971bca05b2e95037f97c94aae0a827a50
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Aug 20 16:20:25 2026 -0500
+
+    Improve Dash workflows and broker services (#1342)
+    
+    * Improve Dash workflows and broker services
+    
+    Streamline run telemetry and output-scoped admission, add build selection and pyplotgen export support, improve profile and tuning workflows, and make Tune failures column-local and recoverable.
+    
+    * A little cleanup
+    
+    * Simplification in SILHS to keep errors silent in debug=-1 mode, and removing accidental change in advance_clubb_core.F90
+    
+    * Little dash fix and comment improvement
+    
+    * Replacing scipy usage in the adam initial point choosing with numpy
+    
+    * Removing l_rtm_nudge from flag set file used by run_bindiff_w_flags tests. This is technically a model_setting, so it shouldn't be here, and is already enabled by cgils_s12, so will remain tested in at least one case.
