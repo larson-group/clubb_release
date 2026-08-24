@@ -7,6 +7,7 @@
 subroutine f2py_prescribe_forcings( &
     nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, sclr_dim_transport, edsclr_dim_transport, &
     runtype, sfctype, time_current, time_initial, dt, &
+    l_readiopdata, &
     um, vm, thlm, p_in_pa, exner, rho, rho_zm, thvm, zt_in, &
     l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc, &
     l_modify_bc_for_cnvg_test, &
@@ -42,6 +43,7 @@ subroutine f2py_prescribe_forcings( &
   real(core_rknd), intent(in) :: dt
   logical, intent(in) :: l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc
   logical, intent(in) :: l_modify_bc_for_cnvg_test
+  logical, intent(in) :: l_readiopdata
   integer, intent(in) :: saturation_formula
   logical, intent(in) :: l_add_dycore_grid
   integer, intent(in) :: grid_remap_method, grid_adapt_in_time_method
@@ -70,7 +72,6 @@ subroutine f2py_prescribe_forcings( &
   integer :: total_idx_rho_lin_spline
   type(grid) :: gr_dycore
   real(core_rknd), dimension(ngrdcol, 1) :: rho_lin_spline_vals, rho_lin_spline_levels
-  logical :: l_readiopdata = .false.
 
   total_idx_rho_lin_spline = 1
   rho_lin_spline_vals = 0.0_core_rknd

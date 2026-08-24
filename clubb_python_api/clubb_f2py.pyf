@@ -868,6 +868,7 @@ python module clubb_f2py
     subroutine f2py_prescribe_forcings( &
         nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, sclr_dim_transport, edsclr_dim_transport, &
         runtype, sfctype, time_current, time_initial, dt, &
+        l_readiopdata, &
         um, vm, thlm, p_in_pa, exner, rho, rho_zm, thvm, zt_in, &
         l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc, &
         l_modify_bc_for_cnvg_test, &
@@ -886,6 +887,7 @@ python module clubb_f2py
       integer, intent(in) :: sfctype
       double precision, intent(in) :: time_current, time_initial, dt
       logical, intent(in) :: l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc
+      logical, intent(in) :: l_readiopdata
       logical, intent(in) :: l_modify_bc_for_cnvg_test
       integer, intent(in) :: saturation_formula
       logical, intent(in) :: l_add_dycore_grid

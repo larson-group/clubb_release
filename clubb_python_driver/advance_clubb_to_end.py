@@ -554,7 +554,7 @@ def _prescribe_forcings(state: dict, itime: int, l_sample: bool = False):
     result = clubb_f2py.f2py_prescribe_forcings(
         int(state['sclr_dim']), int(state['edsclr_dim']), str(state['runtype']), int(state['sfctype']),
         float(state['time_initial'] + (itime - 1) * state['dt_main']),
-        float(state['time_initial']), float(state['dt_main']),
+        float(state['time_initial']), float(state['dt_main']), False,   # Using False for l_readiopdata
         f_arr(state['um']), f_arr(state['vm']), f_arr(state['thlm']), f_arr(state['p_in_Pa']),
         f_arr(state['exner']), f_arr(state['rho']), f_arr(state['rho_zm']), f_arr(state['thvm']),
         f_arr(state['gr'].zt),

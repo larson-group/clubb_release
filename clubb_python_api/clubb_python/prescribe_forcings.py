@@ -19,6 +19,7 @@ def prescribe_forcings(
     gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, edsclr_dim: int,
     sclr_idx: SclrIdx, runtype: str, sfctype: int,
     time_current: float, time_initial: float, dt: float,
+    l_readiopdata: bool,
     um, vm, thlm, p_in_Pa, exner, rho, rho_zm, thvm, veg_t_in_k,
     l_modify_bc_for_cnvg_test: bool,
     saturation_formula: int, l_add_dycore_grid: bool, grid_remap_method: int,
@@ -47,6 +48,7 @@ def prescribe_forcings(
     result = clubb_f2py.f2py_prescribe_forcings(
         int(sclr_dim), int(edsclr_dim), str(runtype), int(sfctype),
         float(time_current), float(time_initial), float(dt),
+        bool(l_readiopdata), 
         f_arr(um), f_arr(vm), f_arr(thlm), f_arr(p_in_Pa), f_arr(exner), f_arr(rho), f_arr(rho_zm), f_arr(thvm), f_arr(zt_in),
         l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc,
         l_modify_bc_for_cnvg_test,
