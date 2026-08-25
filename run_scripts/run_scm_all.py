@@ -41,7 +41,7 @@ PRIORITY_CASES = [
 
 MIN_CASES = [
     "arm", "atex", "bomex", "dycoms2_rf01", "dycoms2_rf02_ds", 
-    "rico", "wangara", "arm_97", "gabls3_night", "lba", "twp_ice"
+    "rico", "wangara", "arm_97", "gabls3_night", "lba", "twp_ice", "bomex_5day_4scam"
 ]
 
 SHORT_CASES = [
