@@ -242,8 +242,8 @@ module time_dependent_input
                             timesfc=time_sfc_given )            ! Intent(out)
       allocate( wpthlp_sfc_given(size(time_sfc_given)), wpqtp_sfc_given(size(time_sfc_given)) )
       do i=1,size(time_sfc_given)
-        wpthlp_sfc_given(i) = convert_sens_ht_to_km_s( sens_ht_given(i), rho(i,1) )   ! Intent(in)
-        wpqtp_sfc_given(i) = convert_latent_ht_to_m_s( latent_ht_given(i), rho(i,1) ) ! Intent(in)
+        wpthlp_sfc_given(i) = convert_sens_ht_to_km_s( sens_ht_given(i), rho(1,1) )   ! Intent(in)
+        wpqtp_sfc_given(i) = convert_latent_ht_to_m_s( latent_ht_given(i), rho(1,1) ) ! Intent(in)
       end do
     else
       nforcings = count_columns( iunit, input_file )
