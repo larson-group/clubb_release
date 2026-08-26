@@ -17,7 +17,7 @@ CLUBB_ROOT  = os.path.join(RUN_SCRIPTS, "..")
 run_scm_script = os.path.join(RUN_SCRIPTS, "run_scm.py") 
 
 ALL_CASES = [
-    "arm", "arm_3year", "arm_97", "astex_a209", "atex", "bomex", "cgils_s6", "cgils_s6_p2k", 
+    "arm", "arm_3year", "arm_97", "astex_a209", "atex", "bomex", "bomex_5day_4scam", "cgils_s6", "cgils_s6_p2k", 
     "cgils_s11", "cgils_s11_p2k", "cgils_s12", "cgils_s12_p2k", "clex9_nov02", "clex9_oct14", 
     "cloud_feedback_s6", "cloud_feedback_s6_p2k", "cloud_feedback_s11", "cloud_feedback_s11_p2k", 
     "cloud_feedback_s12", "cloud_feedback_s12_p2k", "cobra", "dycoms2_rf01", "dycoms2_rf01_fixed_sst", 
