@@ -17,6 +17,7 @@ pipeline {
 
               python3 tests/run_bindiff_w_flags.py \
                 --overwrite-existing \
+                --compile-arg=-debug \
                 -b master,${TEST_BRANCH} \
                 -d "${WORKSPACE}/bindiff_against_master" \
                 -f input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
