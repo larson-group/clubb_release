@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import multiprocessing as mp
+import os
 import shlex
 import shutil
 import subprocess
@@ -15,20 +17,61 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 
-# The JAX driver is currently cloned from the Python driver and does not yet
-# support the full standalone feature set, so we keep the same curated case list.
+def _reexec_with_repo_jax_python() -> None:
+    """Initialize and use the repository-local JAX environment."""
+    repo_root = Path(__file__).resolve().parents[1]
+    launcher = repo_root / "clubb_jax" / "run_jax_wrapper.sh"
+    if not launcher.is_file():
+        return
+
+    initialized_env_var = "_CLUBB_JAX_HARNESS_ENV_INITIALIZED"
+    if os.environ.get(initialized_env_var) != "1":
+        init_env = subprocess.run([str(launcher), "--init_env"], check=False)
+        if init_env.returncode != 0:
+            raise SystemExit(init_env.returncode)
+
+    accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").lower()
+    default_venv = ".venv-jax-cuda13" if accelerator == "cuda13" else ".venv-jax"
+    venv_dir = Path(os.environ.get("CLUBB_JAX_VENV", repo_root / default_venv))
+    if not venv_dir.is_absolute():
+        venv_dir = repo_root / venv_dir
+    venv_python = venv_dir / "bin" / "python"
+    if not venv_python.is_file():
+        return
+
+    if Path(sys.executable).absolute() == venv_python.absolute():
+        return
+
+    exec_env = os.environ.copy()
+    exec_env[initialized_env_var] = "1"
+    os.execve(
+        str(venv_python),
+        [str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]],
+        exec_env,
+    )
+
+
+_reexec_with_repo_jax_python()
+
+
+# The python driver is much simpler and doesn't support all
+# features used by some cases (e.g. microphysics, BUGS, sponge layer, SILHS), so we
+# run a curated set of cases that avoid those features.
+# Values are per-case max_iters (number of timesteps to run).
+# None means run the full case (don't pass -max_iters to run_scm.py).
 DEFAULT_CASES = {
-    "arm":                    360,
-    "atex":                   360,
+    "arm":                    360,      # stable, diffs expected after ~600 60s-timesteps
+    "atex":                   360,      # stable, diffs expected after ~400 60s-timesteps
     "bomex":                  None,
-    "cobra":                  360,
+    "cobra":                  360,      # very stable, limited for speed
     "dycoms2_rf01":           None,
-    "dycoms2_rf01_fixed_sst": None,
+    "dycoms2_rf01_fixed_sst": 300,      # stablish, switching to l_diag_Lscale_from_tau=.false.
+                                        # starting causing diffs after ~360 timesteps
     "dycoms2_rf02_nd":        None,
     "fire":                   None,
-    "gabls2":                 360,
-    "gabls3_night":           360,
-    "jun25_altocu":           180,
+    "gabls2":                 360,      # very stable, limited for speed
+    "gabls3_night":           360,      # very stable, limited for speed
+    "jun25_altocu":           180,      # stablish, diffs expected after ~200 60s-timesteps
     "neutral":                None,
     "wangara":                None,
 }
@@ -91,6 +134,59 @@ def _run_and_log(cmd: list[str], cwd: Path, log_path: Path) -> int:
     return proc.returncode
 
 
+def _check_jax_runtime() -> str | None:
+    """Validate the interpreter before launching every case with it."""
+    accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").lower()
+    probe = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import jax, jaxlib, netCDF4, sys, tabulate; "
+                "backend = jax.default_backend(); "
+                "expected = 'gpu' if sys.argv[1] == 'cuda13' else 'cpu'; "
+                "assert backend == expected, "
+                "f'requested {sys.argv[1]} but JAX initialized {backend}: {jax.devices()}'; "
+                "print(f'jax={jax.__version__} jaxlib={jaxlib.__version__} "
+                "backend={backend} devices={jax.devices()}')"
+            ),
+            accelerator,
+        ],
+        text=True,
+        capture_output=True,
+    )
+    if probe.returncode == 0:
+        return probe.stdout.strip()
+
+    detail = (probe.stderr or probe.stdout).strip()
+    print(f"ERROR: JAX runtime check failed with {sys.executable}:\n{detail}")
+    print(
+        "Create or repair the selected repository JAX environment, or invoke this script with a Python "
+        "environment containing compatible jax and jaxlib packages."
+    )
+    return None
+
+
+def _acquire_run_lock(repo_root: Path):
+    """Prevent concurrent harnesses from sharing and deleting result paths."""
+    lock_path = repo_root / "output" / "tests" / ".run_jax_vs_fortran_cases.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_file = lock_path.open("w", encoding="utf-8")
+    try:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        lock_file.close()
+        print(
+            "ERROR: another run_jax_vs_fortran_cases.py process is already "
+            f"using {repo_root / RESULTS_DIRNAME}."
+        )
+        return None
+
+    lock_file.write(f"pid={os.getpid()}\n")
+    lock_file.flush()
+    return lock_file
+
+
 def _tail(path: Path, n: int = 25) -> str:
     if not path.exists():
         return ""
@@ -101,7 +197,8 @@ def _tail(path: Path, n: int = 25) -> str:
 def _run_case(
     case: str,
     repo_root: Path,
-    stats_file: Path,
+    stats: str,
+    debug: str | None,
     max_iters: int | None,
     bindiff_threshold: float,
     jax_out: Path,
@@ -115,9 +212,11 @@ def _run_case(
 
     common_args = [
         str(run_scm),
-        "-stats", str(stats_file),
+        "-stats", stats,
         "-multicol", HR_SPEC,
     ]
+    if debug is not None:
+        common_args += ["-debug", debug]
     if max_iters is not None:
         common_args += ["-max_iters", str(max_iters)]
 
@@ -197,7 +296,8 @@ def _worker(task: tuple) -> CaseResult:
     (
         case,
         repo_root,
-        stats_file,
+        stats,
+        debug,
         max_iters,
         bindiff_threshold,
         jax_output_root,
@@ -208,7 +308,8 @@ def _worker(task: tuple) -> CaseResult:
     return _run_case(
         case=case,
         repo_root=Path(repo_root),
-        stats_file=Path(stats_file),
+        stats=stats,
+        debug=debug,
         max_iters=max_iters,
         bindiff_threshold=bindiff_threshold,
         jax_out=Path(jax_output_root),
@@ -225,7 +326,18 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument("-j", "--jobs", type=int, default=8, help="Number of parallel case workers.")
-    parser.add_argument("--stats", default="input/stats/all_stats.in", help="Stats file passed to run_scm.py.")
+    parser.add_argument(
+        "-stats",
+        "--stats",
+        default="input/stats/standard_stats.in",
+        help="Stats setting forwarded to run_scm.py (use 'none' to disable stats output).",
+    )
+    parser.add_argument(
+        "-debug",
+        "--debug",
+        default=None,
+        help="Debug level forwarded to run_scm.py (0-3).",
+    )
     parser.add_argument(
         "--max-iters",
         type=int,
@@ -261,6 +373,18 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").lower()
+    if accelerator == "cuda13" and args.jobs != 1:
+        print(
+            "WARNING: GPU comparison currently runs one case process at a time to avoid "
+            "multiple JAX workers contending for the same device; forcing -j 1."
+        )
+        args.jobs = 1
+
+    jax_runtime = _check_jax_runtime()
+    if jax_runtime is None:
+        return 2
+    print(f"Python runtime: {sys.executable} ({jax_runtime})")
 
     cases = list(args.cases) if args.cases else list(DEFAULT_CASES.keys())
     case_iters = {
@@ -269,15 +393,12 @@ def main() -> int:
     }
 
     repo_root = Path(__file__).resolve().parents[1]
+    run_lock = _acquire_run_lock(repo_root)
+    if run_lock is None:
+        return 2
     results_root = (repo_root / RESULTS_DIRNAME).resolve()
     jax_output_root = results_root / JAX_OUTPUT_DIRNAME
     f90_output_root = results_root / FORTRAN_OUTPUT_DIRNAME
-    stats_file = (repo_root / args.stats).resolve()
-
-    if not stats_file.exists():
-        print(f"ERROR: stats file not found: {stats_file}")
-        return 2
-
     run_scm = repo_root / "run_scripts" / "run_scm.py"
     run_bindiff = repo_root / "run_scripts" / "run_bindiff_all.py"
     if not run_scm.exists() or not run_bindiff.exists():
@@ -293,7 +414,8 @@ def main() -> int:
         (
             case,
             str(repo_root),
-            str(stats_file),
+            args.stats,
+            args.debug,
             case_iters[case],
             args.bindiff_threshold,
             str(jax_output_root),
@@ -307,7 +429,9 @@ def main() -> int:
     print(f"Results root: {results_root}")
     print(f"JAX output: {jax_output_root}")
     print(f"Fortran output: {f90_output_root}")
-    print(f"Stats file: {stats_file}")
+    print(f"Stats: {args.stats}")
+    print(f"Debug: {args.debug if args.debug is not None else '(case default)'}")
+    print(f"JAX accelerator: {accelerator}")
 
     start = time.time()
     results: list[CaseResult] = []

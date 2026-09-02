@@ -64,6 +64,31 @@ Before using, confirm whether the user wants:
 - exact structural matching, or an idiomatic target-language rewrite
 - validation only, focused tests, or full comparison suites
 
+For `src/CLUBB_core` to `clubb_jax/src` work, use the JAX-specific shortcut
+below as the primary plan and use this Fortran-port prompt only as supplemental
+guidance for preserving source-file faithfulness.
+
+### JAXize CLUBB Core File
+
+Likely use when the user asks for things like:
+
+- JAX-ize a CLUBB_core file
+- port another CLUBB_core routine into `clubb_jax/src`
+- replace a `clubb_api` call in the JAX timestep path
+- wire a JAX port into `advance_clubb_core.py`
+- continue the same process used for `advance_xm_wpxp`
+
+Prompt:
+
+- `clubb_jax/CLUBB_CORE_JAX_FILE_GOAL_TEMPLATE.md`
+
+Before using, confirm whether the user wants:
+
+- a new file-level goal or only discussion
+- to start from the current repo file, the Fortran file, external CLUBB-JAX,
+  or a combination
+- focused validation or the full JAX-vs-Fortran suite
+
 ### Format Fortran Routines
 
 Likely use when the user asks for things like:

@@ -36,8 +36,6 @@ from clubb_python_driver.clubb_constants import (
     ufmin,
 )
 
-CLUBB_FATAL_ERROR = 99
-
 def advance_clubb_core(
     gr, nzm, nzt, ngrdcol,
     l_implemented, dt, fcor, fcor_y, sfc_elevation,
@@ -141,7 +139,7 @@ def advance_clubb_core(
         )
 
         err_code = err_info.err_code
-        if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+        if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
             return
 
     if l_sample:
@@ -253,7 +251,7 @@ def advance_clubb_core(
          wpsclrprtp, wpsclrpthlp) = pdf_result
 
         err_code = err_info.err_code
-        if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+        if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
             return
 
     # This feels like an awkward place to have this, but this keeps things BFB
@@ -361,7 +359,7 @@ def advance_clubb_core(
      tau_max_zm, tau_max_zt, tau_zm,
      Lscale, Lscale_zm, Lscale_up, Lscale_down) = lscale_result
     err_code = err_info.err_code
-    if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+    if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
         return
 
     if clubb_config_flags.l_stability_correct_tau_zm:
@@ -430,7 +428,7 @@ def advance_clubb_core(
      thlp2, rtp2, rtpthlp,
      sclrp2, sclrprtp, sclrpthlp, err_info) = sfc_result
     err_code = err_info.err_code
-    if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+    if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
         return
 
     ########################################################################
@@ -538,7 +536,7 @@ def advance_clubb_core(
                 rcm,
             )
             err_code = err_info.err_code
-            if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+            if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
                 return
 
         elif advance_iter == order_xp2_xpyp:
@@ -610,7 +608,7 @@ def advance_clubb_core(
                 upwp_pert, vpwp_pert,
             )
             err_code = err_info.err_code
-            if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+            if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
                 return
 
         elif advance_iter == order_wp2_wp3:
@@ -673,7 +671,7 @@ def advance_clubb_core(
                 upwp_pert, vpwp_pert,
             )
             err_code = err_info.err_code
-            if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+            if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
                 return
 
         elif advance_iter == order_windm:
@@ -711,7 +709,7 @@ def advance_clubb_core(
             upwp_cl_num = int(upwp_cl_num)
             vpwp_cl_num = int(vpwp_cl_num)
             err_code = err_info.err_code
-            if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+            if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
                 return
 
     #----------------------------------------------------------------
@@ -815,7 +813,7 @@ def advance_clubb_core(
          wpsclrprtp, wpsclrpthlp) = pdf_result
 
         err_code = err_info.err_code
-        if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+        if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
             return
 
 
@@ -888,7 +886,7 @@ def advance_clubb_core(
         )
 
         err_code = err_info.err_code
-        if err_code is not None and np.any(np.asarray(err_code) == CLUBB_FATAL_ERROR):
+        if err_code is not None and np.any(np.asarray(err_code) == clubb_api.CLUBB_FATAL_ERROR):
             return
 
     # ================================================================== #

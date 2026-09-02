@@ -654,7 +654,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     )
     # Reset error codes set by check_clubb_settings warnings
     # (they are non-fatal but would cause advance_clubb_core to bail out)
-    clubb_api.reset_err_code()
+    err_info = clubb_api.reset_err_code(err_info)
 
     # ── 9. Initialize TKE / variances (case-specific, Fortran-like) ────
     em, wp2, up2, vp2, upwp, um = _initialize_turbulence_state(
@@ -806,7 +806,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     pdf_params_zm = init_pdf_params_py(nzm, ngrdcol)
 
     # ── 15. Clear any accumulated error codes from init ──────────────
-    clubb_api.reset_err_code()
+    err_info = clubb_api.reset_err_code(err_info)
 
     # ── Build state dict ────────────────────────────────────────────────
     state = dict(

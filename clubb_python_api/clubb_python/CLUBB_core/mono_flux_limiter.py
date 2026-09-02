@@ -7,6 +7,7 @@ import clubb_f2py
 
 from clubb_python.derived_types.grid_class import Grid
 from clubb_python.derived_types.grid_class_converter import set_fortran_grid
+from clubb_python.derived_types.err_info_converter import get_fortran_err_info, set_fortran_err_info
 
 
 def calc_turb_adv_range(
@@ -33,6 +34,7 @@ def monotonic_turbulent_flux_limit(
 ):
     """Apply the monotonic turbulent flux limiter to xm and wpxp."""
     set_fortran_grid(gr)
+    set_fortran_err_info(err_info)
     xm_out, wpxp_out = clubb_f2py.f2py_monotonic_turbulent_flux_limit(
         int(solve_type),
         float(dt),
@@ -58,4 +60,4 @@ def monotonic_turbulent_flux_limit(
         nzt=int(nzt),
         ngrdcol=int(ngrdcol),
     )
-    return xm_out, wpxp_out
+    return get_fortran_err_info(), xm_out, wpxp_out

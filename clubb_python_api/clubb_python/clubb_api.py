@@ -102,6 +102,9 @@ from clubb_python.CLUBB_core.pdf_parameter_module import (
     zero_pdf_implicit_coefs_terms,
 )
 from clubb_python.CLUBB_core.error_code import (
+    CLUBB_FATAL_ERROR,
+    CLUBB_GENERALIZED_GRD_TEST_ERR,
+    CLUBB_NO_ERROR,
     set_debug_level,
     clubb_at_least_debug_level,
     reset_err_code,
@@ -216,6 +219,7 @@ from clubb_python.CLUBB_core.stats_netcdf import (
     init_stats,
     finalize_stats,
     get_stats_config,
+    stats_l_sample,
     get_stats_var_meta,
     get_stats_var_data,
     set_stats_var_data,

@@ -1,0 +1,293 @@
+"""JAX port of ``src/CLUBB_core/constants_clubb.F90``.
+
+Description:
+  Contains frequently occuring model constants
+
+References:
+  None
+
+Porting deviations:
+- JAX mirrors the normal standalone Fortran branch. The ``CLUBB_CAM``
+  preprocessor branch obtains host-model constants and is not part of the
+  standalone JAX runtime.
+- Fortran ``core_rknd`` follows ``CLUBB_JAX_PRECISION`` when evaluating
+  precision-dependent epsilon thresholds. ``dp`` constants remain Python
+  double-precision values.
+"""
+
+import numpy as np
+
+from clubb_jax.src.CLUBB_core.clubb_precision import USE_X64
+
+
+# -----------------------------------------------------------------------------
+# Numerical/Arbitrary Constants
+# -----------------------------------------------------------------------------
+
+# Fortran file unit I/O constants
+fstderr = 0
+fstdin = 5
+fstdout = 6
+
+# Maximum variable name length in CLUBB GrADS or netCDF output
+var_length = 30
+
+# Number of neighboring points to draw from in the hole filling algorithm
+num_hf_draw_points = 2
+
+# The parameter parab_cyl_max_input is the largest magnitude that the input to
+# the parabolic cylinder function is allowed to have.  When the value of the
+# input to the parabolic cylinder function is too large in magnitude
+# (depending on the order of the parabolic cylinder function), overflow
+# occurs, and the output of the parabolic cylinder function is +/-Inf.  The
+# parameter parab_cyl_max_input places a limit on the absolute value of the
+# input to the parabolic cylinder function.  When the value of the potential
+# input exceeds this parameter (usually due to a very large ratio of ith PDF
+# component mean of x to ith PDF component standard deviation of x), the
+# variable x is considered to be constant and a different version of the
+# equation called.
+#
+# The largest allowable magnitude of the input to the parabolic cylinder
+# function (before overflow occurs) is dependent on the order of parabolic
+# cylinder function.  However, after a lot of testing, it was determined that
+# an absolute value of 49 works well for an order of 12 or less.
+parab_cyl_max_input = 49.0  # Largest allowable input to parab. cyl. fnct.
+
+# "Over-implicit" weighted time step.
+#
+# The weight of the implicit portion of a term is controlled by the factor
+# gamma_over_implicit_ts (abbreviated "gamma" in the expression below).  A
+# factor is added to the right-hand side of the equation in order to balance a
+# weight that is not equal to 1, such that:
+#
+#      -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+#
+# where X is the variable that is being solved for in a predictive equation
+# (such as w'^3, w'th_l', r_t'^2, etc), y(t) is the linearized portion of the
+# term that gets treated implicitly, and RHS is the portion of the term that
+# is always treated explicitly.  A weight of greater than 1 can be applied to
+# make the term more numerically stable.
+#
+#    gamma_over_implicit_ts          Effect on term
+#
+#            0.0               Term becomes completely explicit
+#
+#            1.0               Standard implicit portion of the term;
+#                              as it was without the weighting factor.
+#
+#            1.5               Strongly weighted implicit portion of the term;
+#                              increased numerical stability.
+#
+#            2.0               More strongly weighted implicit portion of the
+#                              term; increased numerical stability.
+#
+# Note:  The "over-implicit" weighted time step is only applied to terms that
+#        tend to significantly decrease the amount of numerical stability for
+#        variable X.
+#        The "over-implicit" weighted time step is applied to the turbulent
+#        advection term for the following variables:
+#           w'^3 (also applied to the turbulent production term), found in
+#           module advance_wp2_wp3_module;
+#           w'r_t', w'th_l', and w'sclr', found in
+#           module advance_xm_wpxp_module; and
+#           r_t'^2, th_l'^2, r_t'th_l', u'^2, v'^2, sclr'^2, sclr'r_t',
+#           and sclr'th_l', found in module advance_xp2_xpyp_module.
+gamma_over_implicit_ts = 1.50
+
+# -----------------------------------------------------------------------------
+# Mathematical Constants
+# -----------------------------------------------------------------------------
+pi_dp = 3.14159265358979323846
+
+pi = 3.141592654                    # The ratio of radii to their circumference
+invrs_pi = 0.31830988618            # 1 / pi
+radians_per_deg = pi / 180.0
+
+radians_per_deg_dp = pi_dp / 180.0
+
+sqrt_2pi_dp = 2.5066282746310005024  # sqrt(2*pi)
+sqrt_2_dp = 1.4142135623730950488     # sqrt(2)
+
+sqrt_2pi = 2.5066282746310005024  # sqrt(2*pi)
+sqrt_2 = 1.4142135623730950488     # sqrt(2)
+
+two_dp = 2.0        # 2
+one_dp = 1.0        # 1
+one_half_dp = 0.5   # 1/2
+one_fourth_dp = 0.25  # 1/4
+zero_dp = 0.0       # 0
+
+one_hundred = 100.0       # 100
+fifty = 50.0              # 50
+thirty_six = 36.0         # 36
+twenty = 20.0             # 20
+eighteen = 18.0           # 18
+twelve = 12.0             # 12
+ten = 10.0                # 10
+nine = 9.0                # 9
+eight = 8.0               # 8
+seven = 7.0               # 7
+six = 6.0                 # 6
+five = 5.0                # 5
+four = 4.0                # 4
+three = 3.0               # 3
+two = 2.0                 # 2
+three_halves = 3.0 / 2.0  # 3/2
+four_thirds = 4.0 / 3.0   # 4/3
+one = 1.0                 # 1
+three_fourths = 0.75      # 3/4
+two_thirds = 2.0 / 3.0    # 2/3
+one_half = 0.5            # 1/2
+one_third = 1.0 / 3.0     # 1/3
+one_fourth = 0.25         # 1/4
+three_sixteenth = 0.1875  # 3/16
+one_eighth = 0.125        # 1/8
+zero = 0.0                # 0
+
+# -----------------------------------------------------------------------------
+# Physical constants
+# -----------------------------------------------------------------------------
+
+Cp = 1004.67  # Dry air specific heat at constant p [J/kg/K]
+Lv = 2.5e6    # Latent heat of vaporization         [J/kg]
+Ls = 2.834e6  # Latent heat of sublimation          [J/kg]
+Lf = 3.33e5   # Latent heat of fusion               [J/kg]
+Rd = 287.04   # Dry air gas constant                [J/kg/K]
+Rv = 461.5    # Water vapor gas constant            [J/kg/K]
+
+stefan_boltzmann = 5.6704e-8  # Stefan-Boltzmann constant [W/(m^2 K^4)]
+
+T_freeze_K = 273.15  # Freezing point of water [K]
+
+# Useful combinations of Rd and Rv
+ep = Rd / Rv           # ep  = 0.622  [-]
+ep1 = (1.0 - ep) / ep  # ep1 = 0.61   [-]
+ep2 = 1.0 / ep         # ep2 = 1.61   [-]
+
+kappa = Rd / Cp  # [-]
+
+# Changed g to grav to make it easier to find in the code 5/25/05
+omega_planet = 7.292e-5  # Planetary rotation rate [s^-1]
+grav = 9.81              # Gravitational acceleration [m/s^2]
+p0 = 1.0e5               # Reference pressure [Pa]
+
+# Von Karman's constant
+# Constant of the logarithmic wind profile in the surface layer
+vonk = 0.4       # Accepted value is 0.40 (+/-) 0.01 [-]
+rho_lw = 1000.0  # Density of liquid water [kg/m^3]
+
+rho_ice = 917.0  # Density of ice [kg/m^3]
+
+_core_float = np.float64 if USE_X64 else np.float32
+_core_epsilon = np.finfo(_core_float).eps
+
+# Tolerances below which we consider moments to be zero
+w_tol = 2.0e-2                         # [m/s]
+thl_tol = 1.0e-2                       # [K]
+rt_tol = max(1.0e-8, _core_epsilon)    # [kg/kg]
+chi_tol = max(1.0e-8, _core_epsilon)   # [kg/kg]
+eta_tol = chi_tol                      # [kg/kg]
+
+# Tolerances for use by the monatonic flux limiter.
+# rt_tol_mfl is larger than rt_tol. rt_tol is extremely small
+# (1e-8) to prevent spurious cloud formation aloft in LBA.
+# rt_tol_mfl is larger (1e-4) to prevent the mfl from
+# depositing moisture at the top of the domain.
+thl_tol_mfl = 0.2    # [K]
+rt_tol_mfl = 1.0e-4  # [kg/kg]
+
+# The tolerance for w'^2 is the square of the tolerance for w.
+w_tol_sqd = w_tol ** 2  # [m^2/s^2]
+
+# Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
+# against numerical errors.  The tolerance values for Nc, rr, and Nr insure
+# against underflow errors in computing the PDF for l_kk_rain.  Basically,
+# they insure that those values squared won't be less then 10^-38, which is
+# the lowest number that can be numerically represented.  However, the
+# tolerance value for rc doubles as the lowest mixing ratio there can be to
+# still officially have a cloud at that level.  This is figured to be about
+# 1.0_core_rknd x 10^-7 kg/kg.  Brian; February 10, 2007.
+rc_tol = 1.0e-6   # Tolerance value for r_c  [kg/kg]
+Nc_tol = 1.0e2    # Tolerance value for N_c  [#/kg]
+Ncn_tol = 1.0e2   # Tolerance value for N_cn [#/kg]
+
+mvr_cloud_max = 1.6e-5  # Max. avg. mean vol. rad. cloud [m]
+
+Nc_in_cloud_min = 2.0e4
+
+# Precipitating hydrometeor tolerances for mixing ratios.
+rr_tol = 1.0e-10  # Tolerance value for r_r [kg/kg]
+ri_tol = 1.0e-10  # Tolerance value for r_i [kg/kg]
+rs_tol = 1.0e-10  # Tolerance value for r_s [kg/kg]
+rg_tol = 1.0e-10  # Tolerance value for r_g [kg/kg]
+
+# Maximum allowable values for the average mean volume radius of the various
+# hydrometeor species.
+mvr_rain_max = 5.0e-3     # Max. avg. mean vol. rad. rain [m]
+mvr_ice_max = 1.3e-4      # Max. avg. mean vol. rad. ice [m]
+mvr_snow_max = 1.0e-2     # Max. avg. mean vol. rad. snow [m]
+mvr_graupel_max = 2.0e-2  # Max. avg. mean vol. rad. graupel [m]
+
+# Precipitating hydrometeor tolerances for concentrations.
+# Tolerance value for N_r [#/kg]
+Nr_tol = (one / (four_thirds * pi * rho_lw * mvr_rain_max ** 3)) * rr_tol
+
+# Tolerance value for N_i [#/kg]
+Ni_tol = (one / (four_thirds * pi * rho_ice * mvr_ice_max ** 3)) * ri_tol
+
+# Tolerance value for N_s [#/kg]
+Ns_tol = (one / (four_thirds * pi * rho_ice * mvr_snow_max ** 3)) * rs_tol
+
+# Tolerance value for N_s [#/kg]
+Ng_tol = (one / (four_thirds * pi * rho_ice * mvr_graupel_max ** 3)) * rg_tol
+
+# Minimum value for em (turbulence kinetic energy)
+# With anisotropic TKE, em = (1/2) * ( up2 + vp2 + wp2 ).  Since
+# up2, vp2, and wp2 all have the same minimum threshold value of
+# w_tol_sqd, em cannot be less than (3/2) * w_tol_sqd.
+em_min = 1.5 * w_tol_sqd  # [m^2/s^2]
+
+# Small value to prevent a divide by zero. max() and epsilon() are used here to
+# raise the threshold when using single precision.
+eps = max(1.0e-10, _core_epsilon)
+
+max_num_stdevs = 5.0  # Range of standard deviations for statistical significance
+
+zero_threshold = 0.0  # Defining a threshold on a physical quantity to be 0.
+
+# The maximum absolute value (or magnitude) that a correlation is allowed to
+# have.  Statistically, a correlation is not allowed to be less than -1 or
+# greater than 1, so the maximum magnitude would be 1.
+max_mag_correlation = 0.99       # Most correlations use this
+max_mag_correlation_flux = 0.99  # Special for wprtp and wpthlp
+
+# "base" smoothing magnitude before scaling for the respective data structure.
+# See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+# for a plot on how output behaves with varying min_max_smth_mag
+min_max_smth_mag = 1.0e-9
+
+cloud_frac_min = 0.005  # Threshold for cloud fractions
+
+wp2_max = 1000.0  # Max value for variance clipping
+
+# -----------------------------------------------------------------------------
+# Useful conversion factors.
+# -----------------------------------------------------------------------------
+sec_per_day = 86400.0  # Seconds in a day.
+sec_per_hr = 3600.0    # Seconds in an hour.
+sec_per_min = 60.0     # Seconds in a minute.
+min_per_hr = 60.0      # Minutes in an hour.
+
+g_per_kg = 1000.0  # Grams in a kilogram.
+
+pascal_per_mb = 100.0  # Pascals per Millibar
+
+cm3_per_m3 = 1.0e6   # Cubic centimeters per cubic meter
+micron_per_m = 1.0e6  # Micrometers per meter
+cm_per_m = 100.0      # Centimeters per meter
+mm_per_m = 1000.0     # Millimeters per meter
+
+# -----------------------------------------------------------------------------
+# Unused variable
+# -----------------------------------------------------------------------------
+unused_var = -999.0  # The standard value for unused variables

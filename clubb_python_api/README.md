@@ -30,6 +30,11 @@ Fortran-derived-types. Arrays and scalars are straightforward to pass in and out
 Fortran-derived-types are not. A large part of the wrapper logic exists to make
 those types behave naturally from Python.
 
+A tentative design for accepting caller-owned JAX derived-type mirrors during
+manual F2PY debugging is documented in
+[JAX_INTEROPERABILITY_PROPOSAL.md](./JAX_INTEROPERABILITY_PROPOSAL.md). It is a
+discussion proposal and has not been implemented.
+
 ## Getting Started
 
 Build the Python API from the repo root:

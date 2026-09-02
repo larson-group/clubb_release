@@ -21,6 +21,8 @@ from clubb_python.derived_types.pdf_params import (
     pack_implicit_coefs_3d,
 )
 from clubb_python.clubb_api import (
+    CLUBB_FATAL_ERROR,
+    CLUBB_NO_ERROR,
     get_default_config_flags, init_config_flags,
     init_err_info, get_err_code,
     setup_grid,
@@ -83,6 +85,35 @@ class TestErrInfo:
         err = get_err_code(ngrdcol)
         assert err.shape == (ngrdcol,)
         assert np.all(err == 0), f"Expected all zeros, got {err}"
+
+    def test_fatal_helpers_return_updated_err_info(self):
+        """ErrInfo fatal helpers should return copies rather than mutate."""
+        err_info = ErrInfo(ngrdcol=3)
+        assert not err_info.is_fatal()
+
+        masked = err_info.set_fatal(mask=np.array([False, True, False]))
+        assert err_info.err_code is None
+        assert masked.is_fatal()
+        np.testing.assert_array_equal(
+            masked.err_code,
+            np.array([CLUBB_NO_ERROR, CLUBB_FATAL_ERROR, CLUBB_NO_ERROR], dtype=np.int32),
+        )
+
+        all_fatal = masked.set_fatal()
+        np.testing.assert_array_equal(
+            all_fatal.err_code,
+            np.full(3, CLUBB_FATAL_ERROR, dtype=np.int32),
+        )
+
+        reset = all_fatal.reset_code()
+        assert not reset.is_fatal()
+        np.testing.assert_array_equal(
+            reset.err_code,
+            np.full(3, CLUBB_NO_ERROR, dtype=np.int32),
+        )
+
+        with pytest.raises(ValueError):
+            err_info.set_fatal(mask=np.array([True, False]))
 
 
 class TestSetupGrid:

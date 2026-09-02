@@ -24,6 +24,19 @@ subroutine f2py_reset_err_code() &
 
 end subroutine f2py_reset_err_code
 
+subroutine f2py_set_err_code(ngrdcol, err_code)
+
+  use derived_type_storage, only: stored_err_info
+
+  implicit none
+
+  integer, intent(in) :: ngrdcol
+  integer, dimension(ngrdcol), intent(in) :: err_code
+
+  stored_err_info%err_code = err_code
+
+end subroutine f2py_set_err_code
+
 subroutine f2py_initialize_error_headers()
 
   use error_code, only: initialize_error_headers

@@ -463,7 +463,7 @@ contains
       time_units
 
     integer :: &
-      ndefs, grid_err, ierr
+      ndefs, grid_err, ierr, i, write_idx
 
     real(kind=time_precision) :: &
       effective_stats_tstart, & ! Actual stats window start time [s]
@@ -621,6 +621,18 @@ contains
     ! e.g defining "sclrm" in the registry expands to "sclr1m", "sclr2m", ...
     call stats_expand_registry( sclr_dim, edsclr_dim, &
                                 defs, ndefs, hydromet_list )
+
+    ! If radiation grids are unavailable, prune unsupported radiation entries
+    ! from the variable definition list.
+    if ( .not. stats%l_output_rad_files ) then
+      write_idx = 0
+      do i = 1, ndefs
+        if ( defs(i)%grid_id == GRID_RAD_ZT .or. defs(i)%grid_id == GRID_RAD_ZM ) cycle
+        write_idx = write_idx + 1
+        if ( write_idx /= i ) defs(write_idx) = defs(i)
+      end do
+      ndefs = write_idx
+    end if
 
     ! Use midnight on the case start date as the NetCDF time origin so the
     ! stored time values remain absolute model-clock seconds.

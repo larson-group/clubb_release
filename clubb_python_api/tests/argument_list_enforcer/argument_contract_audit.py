@@ -236,11 +236,13 @@ MISSING_SOURCE_MAPPING_EXCEPTIONS = {
     "f2py_get_stats_var_meta",
     "f2py_get_stats_var_data",
     "f2py_set_simplified_radiation_params",
+    "f2py_reset_err_code",
 }
 
 ARG_DIFF_EXCEPTIONS = {
     "return_default_params",
     "stats",
+    "use_rcond",
 }
 
 FALSE_OPTIONAL_ARG_EXCEPTIONS = {

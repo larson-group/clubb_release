@@ -65,17 +65,17 @@ Do the work in this order:
 
 5. Update the Python and JAX drivers.
    - Update `clubb_python_driver/advance_clubb_core.py`.
-   - Mirror equivalent changes in `clubb_jax/advance_clubb_core.py`.
-   - Use both driver paths in `advance_clubb_to_end.py` as validation tools:
+   - Mirror equivalent changes in `clubb_jax/src/CLUBB_core/advance_clubb_core.py`.
+   - Use the Python and JAX driver paths as validation tools:
 
      ```text
      clubb_python_driver/advance_clubb_to_end.py
-     clubb_jax/advance_clubb_to_end.py
+     clubb_jax/src/advance_clubb_to_end.py
      ```
 
-   - `_advance_clubb_core_api` exercises the Python API binding to the Fortran `advance_clubb_core` path. This is useful for checking API functionality and wrapper compatibility.
-   - `_advance_clubb_core_python` exercises the Python port of the core logic and checks much more of the Python-side implementation. This path is usually more important for validating that the Python/JAX drivers are up to date with the Fortran refactor.
-   - When debugging, swap between `_advance_clubb_core_api` and `_advance_clubb_core_python` intentionally so both paths are known-good. Keep track of which path each comparison is testing.
+   - The JAX driver should have one `advance_clubb_core(state)` path that calls
+     `clubb_jax/src/CLUBB_core/advance_clubb_core.py`; do not keep a swappable
+     `clubb_api.advance_clubb_core` fallback in the JAX timestep driver.
 
 6. Run small SCM smoke comparisons before running the full suites.
    - Start with `bomex` or `atex` and a small iteration count:

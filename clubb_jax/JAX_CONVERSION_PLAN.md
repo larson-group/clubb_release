@@ -2,81 +2,97 @@
 
 ## Overview
 
-This document describes the recommended workflow for converting
-[`src/CLUBB_core/`](../src/CLUBB_core/) from Fortran to JAX using the current
-[`clubb_jax/`](./) driver together with
-[`clubb_python_api/`](../clubb_python_api/) as a transitional Fortran-python interface.
+This document records the architecture and maintenance workflow for the completed
+JAX conversion of the supported [`src/CLUBB_core/`](./src/CLUBB_core/) path.
+The active driver is computationally independent of `clubb_python_api`; the
+Fortran standalone is an external regression oracle, not a runtime dependency.
 
-The current `clubb_jax/` path is a working staging environment, not yet a true
-JAX implementation. Its purpose is to make a top-down, incremental port
-practical while preserving a runnable SCM path throughout the conversion.
+Numerical equivalence with the current Fortran path remains the primary
+engineering requirement. Structural mirror quality, JIT compatibility, and
+explicit fail-loud boundaries for unsupported model features are also acceptance
+criteria.
 
-The primary engineering goal during this work should be numerical equivalence to
-the current Fortran path. JAX-native cleanup, JIT strategy, autodiff support,
-and accelerator-oriented optimization should be deferred until correctness is
-stable.
+## Current Architecture
 
-## Current Transitional Architecture
-
-The present setup exists to support incremental replacement rather than to serve
-as the final design:
+The supported standalone path is fully JAX-backed:
 
 - [`clubb_jax/`](./) provides a runnable SCM path through
   `./run_scripts/run_scm.py -jax ...`.
-- [`clubb_python_api/`](../clubb_python_api/) exposes the public cross-module
-  routine surface of `src/CLUBB_core`, which allows us to replace missing JAX
-  pieces with their Fortran equivalents while neighboring logic is ported.
 - [`run_jax_vs_fortran_cases.py`](../tests/run_jax_vs_fortran_cases.py)
-  is a test harness that compares the pure Fortran standalone with an
-  incremental JAX-Fortran hybrid code.
-- This combination allows the clubb_jax driver to remain operational while
-  individual Fortran files are replaced one by one
-  by JAX equivalents.
-
-The intended end state is a JAX path with no
-`clubb_python_api` usage inside the timestep loop, and ideally no clubb_python_api
-dependency at all.
+  compares the independent Fortran and JAX standalone outputs.
+- `src/advance_clubb_to_end.py` owns the Python lifecycle around the jitted
+  `advance_clubb_core` entry point.
+- Shared model objects and statistics state are JAX-owned pytrees. NetCDF and
+  other host I/O remain outside compiled physics.
+- Unsupported physics and lifecycle combinations are rejected during
+  initialization instead of falling back to Fortran.
 
 ## Scope of the Port
 
-The ultimate conversion target is the entirety of
-[`src/CLUBB_core/`](../src/CLUBB_core/), ported faithfully to JAX, together
-with any additional driver code required to run the timestep loop through
-[`clubb_jax/advance_clubb_to_end.py`](./advance_clubb_to_end.py).
+The conversion target is the supported standalone execution surface of
+[`src/CLUBB_core/`](./src/CLUBB_core/), ported faithfully to JAX, together with
+the driver code required by
+[`clubb_jax/src/advance_clubb_to_end.py`](./src/advance_clubb_to_end.py).
 
 This scope definition is important:
 
-- The timestep-loop path defines the critical path for incremental progress,
-  because it is the portion that must become JAX-backed first in order to
-  produce a computationally independent runnable driver.
-- Full `CLUBB_core` conversion remains the intended end state, even for files
-  not exercised immediately by the active timestep path.
+- The timestep-loop path defines the required converted surface and the primary
+  regression scope.
+- Inactive or unsupported Fortran branches must be documented and rejected;
+  they must not be silently delegated to F2PY.
 - Additional driver code may be converted where needed to support the JAX
   timestep loop or to simplify the final architecture, but driver-file parity
   with `clubb_python_driver/` is not the goal.
-- Success should be defined by faithful `CLUBB_core` conversion and removal of
-  transitional API use from the computational timestep path, not by
-  mechanically converting every copied file under `clubb_jax/`.
+- Success is defined by faithful `CLUBB_core` behavior on the supported path,
+  not by mechanically converting unrelated source trees.
 
-In other words, full `CLUBB_core` conversion is the goal, while the
-`advance_clubb_to_end.py` timestep path determines the recommended order of
-operations.
+The core conversion phase is complete. Current work should focus on regression
+testing, structural audits against changed Fortran, correctness fixes, and
+measured performance improvements.
 
-## Recommended Incremental Workflow
+## Radiation Path
 
-The port should proceed top-down and incrementally rather than as a full
-rewrite.
+The supported non-BUGS radiation path is now computationally independent of
+the old mutable Python driver:
+
+- `Radiation/radiation_module.py` owns the active functional radiation call,
+  its source-order routines, and the per-sample radiation stats cadence.
+- `simple_rad_module.py`, `rad_lwsw_module.py`, `cos_solar_zen_module.py`, and
+  `soil_vegetation.py` are directly JIT-compatible JAX ports. LBA table I/O
+  remains a host initialization boundary.
+- `RadiationParameters` is the sole documented adaptation for Fortran's
+  `parameters_radiation` module globals. It is an immutable JAX pytree with
+  lookup tables as leaves and configuration as static metadata.
+- BUGSrad and SILHS radiation remain explicit initialization-time unsupported
+  boundaries. Their modules are not runtime fallbacks.
+
+The outer timestep loop calls radiation every timestep, passing `l_rad_itime`
+to preserve the source distinction between recomputing fluxes and updating
+sampled diagnostics.
+
+## Recommended Maintenance Workflow
+
+Fortran changes should be synchronized incrementally rather than by rewriting
+or replacing the JAX tree wholesale.
+
+Use these documents in this order:
+
+- `LLM_prompts/SHORTCUTS.md` is only the discovery index.
+- This file records the whole-core architecture and acceptance criteria.
+- `LLM_prompts/port_underlying_fortran_to_other_languages.md` is the executable
+  structural checklist for changed files.
+- File-specific plans, such as `advance_xm_wpxp_pytree_migration_plan.md`,
+  are historical checkpoints and examples, not the default starting point for a
+  new file.
 
 Recommended working rules:
 
-- Port from routines already exercised by
-  [`advance_clubb_to_end.py`](./advance_clubb_to_end.py).
-- Replace one file, routine family, or tightly coupled batch at a time.
+- Start with the canonical changed Fortran routine and audit its JAX mirror
+  block-by-block.
+- Update one file, routine family, or tightly coupled batch at a time.
 - Keep the JAX driver runnable after each incremental step.
-- Where JAX code is not ready yet, continue using `clubb_python_api`
-  internally to fill that gap.
-- Prefer explicit keyword arguments when calling API wrappers during the
-  transition so interface mismatches are easier to audit.
+- Never add a `clubb_python_api` or raw F2PY fallback. Reject an unsupported
+  branch explicitly until it is ported.
 - Preserve behavior first. Avoid opportunistic redesigns that make correctness
   regressions harder to localize.
 
@@ -84,31 +100,19 @@ The exact file-by-file order should be deferred to the implementation team.
 However, work selection should follow these principles:
 
 - Prioritize routines on the active timestep path.
-- Prioritize replacements that remove API calls from inside the timestep loop.
+- Prioritize changes that affect the active timestep loop or curated cases.
 - Group tightly coupled modules only when splitting them would create excessive
   interface churn.
 - Avoid early restructuring for JAX style, performance, or aesthetics unless it
   clearly reduces transitional complexity.
 
-[`clubb_jax/advance_clubb_core.py`](./advance_clubb_core.py) should be treated
-as experimental reference material rather than the target architecture. It may
-still be useful when interpreting the intent of existing Python code, but it
-should not be treated as the authority for final JAX design decisions.
-
 ## Type and Interface Considerations
 
-The transition risk around Fortran-derived-types and Python-object mirrors
-should be treated explicitly.
+Fortran derived types are represented by JAX-owned immutable objects. Their
+field names and behavior should stay close to the source types, while array
+leaves and static metadata must remain explicit for pytree/JIT behavior.
 
-The current API converters expect specific Python-side storage layouts for the
-mirrored Fortran types. JAX-side replacements for those Python objects are
-desirable, but while the API remains in use they must preserve
-converter-compatible storage.
-
-This is a compatibility constraint during the transition, not a design
-preference.
-
-The main bridge-relevant types are:
+The main mirrored model-state types are:
 
 - `grid`
 - `sclr_idx_type`
@@ -119,46 +123,45 @@ The main bridge-relevant types are:
 - `err_info_type`
 - `stats_type`
 
-Additional guidance:
+Object rules:
 
-- The API is well tested and generally reliable, so it is a good transitional
-  backend.
-- If results diverge, an API issue is still possible even if it is less likely
-  than a JAX-port bug.
-- During debugging, newly ported JAX code should be suspected first, but the
-  API should not be assumed perfect.
-- If JAX-native versions of the current Python-object mirrors are introduced
-  before the API is removed, they should continue to respect the storage model
-  expected by the existing converters.
+- Put repeated domain operations on the shared object interface rather than
+  duplicating tiny helpers inside each ported file. For example, `ErrInfo`
+  should expose functional methods such as `is_fatal()`, `set_fatal(mask=...)`,
+  and `reset_code()`.
+- These methods must return updated objects rather than mutating in place. This
+  keeps the port surface close to the Fortran intent while preserving explicit
+  state threading for JAX.
+- JAX-owned state containers should be JAX-compatible pytrees, preferably
+  frozen dataclass-like objects with clear update methods such as
+  `state = state.replace(...)` or domain-specific equivalents.
+- Host conversion belongs only at explicit I/O boundaries. Ported
+  computational routines must not contain converter plumbing.
 
 ## Stats Strategy
 
-[`stats_netcdf.F90`](../src/CLUBB_core/stats_netcdf.F90) and `stats_type` should be
-treated as a special case.
+The earlier deferred-stats phase is complete. The active JAX driver no longer
+uses the F2PY stats API.
 
-Relevant characteristics:
+- `src/CLUBB_core/stats_netcdf.py::StatsWriter` owns registry expansion, cadence and time
+  windows, optional batching/remapping/SILHS output, and the
+  NetCDF schema mirrored from
+  [`stats_netcdf.F90`](../src/CLUBB_core/stats_netcdf.F90).
+- `src/CLUBB_core/jax_stats.py::JaxStats` is an immutable pytree whose public
+  `update`, `begin_budget`, `update_budget`, `finalize_budget`,
+  `var_on_stats_list`, and `l_sample` surface preserves existing core call
+  sites. Diagnostic payloads use `stop_gradient`.
+- Accumulators are grouped into fixed-shape banks by source grid. Compiled code
+  updates those banks directly; there is no event log or per-timestep replay.
+- The host receives all banks in one `jax.device_get` only at an output
+  boundary, then averages and writes the record through `StatsWriter`.
+- The root `run_scm.py -jax` path launches only the repository JAX virtualenv
+  and does not select or add a compiled Fortran Python runtime.
 
-- `stats_type` is the only major stored type without a Python equivalent today.
-- It is high complexity and high data volume.
-- Moving it back and forth between Python and Fortran during runtime is costly.
-- It is low priority relative to the computational timestep path because it
-  primarily handles output rather than core model evolution.
-
-Recommended default:
-
-- Defer stats conversion until the computational port is stable and validated.
-
-The implementation team should still be aware of the alternatives:
-
-- Port stats alongside the core. This remains possible, but it would likely
-  slow the overall effort and force difficult `stats_type` work much earlier
-  than is otherwise necessary.
-- Leave stats permanently Fortran-backed as an accepted backend dependency for
-  output only.
-
-The default recommendation is to avoid letting stats become the blocker for the
-core conversion effort. If a later decision is made to port stats fully, that
-work should follow confirmation that the computational path is already correct.
+The active standalone driver still rejects SILHS, adaptive-grid, radiation-grid,
+and multi-batch configurations at its existing feature gates. The backend
+implements those stats interfaces for future callers, but enabling the related
+model subsystems remains separate driver work.
 
 ## Verification and Acceptance Criteria
 
@@ -181,30 +184,33 @@ should be treated as actionable unless proved otherwise.
 
 Recommended acceptance criteria:
 
-- **Incremental success:** the JAX driver remains runnable and the comparison
+- **Change-level success:** the JAX driver remains runnable and the comparison
   harness does not introduce unexplained new mismatches after each step.
-- **Core-path success:** code exercised from `advance_clubb_to_end.py` no longer
-  depends on `clubb_python_api` for computation.
-- **Final success:** no API usage remains in the JAX timestep path, and any
-  remaining Fortran dependency is either eliminated or explicitly justified,
-  such as a deliberate choice to keep stats/output Fortran-backed.
+- **Core-path success:** code exercised from `src/advance_clubb_to_end.py` has no
+  `clubb_python_api` dependency and unsupported branches fail clearly.
+- **Release success:** no API usage remains in the JAX timestep path, and the
+  curated JAX-versus-Fortran cases pass without a compiled Python/Fortran bridge.
+- **Structural success:** every changed radiation module must pass a final
+  block-by-block review against
+  `LLM_prompts/port_underlying_fortran_to_other_languages.md`. Numerical
+  agreement does not excuse changed routine inventory, ordering, signatures,
+  comments, call order, calculation order, or undocumented JAX adaptations.
 
 ## Risks and Interpretation Guidance
 
 The main technical risks are:
 
-- subtle interface mismatches between JAX code and the existing API boundary
-- incorrect assumptions about mirrored-type storage layout
+- subtle interface mismatches between JAX objects and their Fortran semantics
+- incorrect assumptions about pytree static/dynamic fields or array layout
 - regressions that appear numerical but are actually logic bugs introduced
   during a single incremental port
-- premature optimization or JAX-oriented redesign before the behavior is
-  stable
+- compilation regressions caused by changing static metadata or JIT boundaries
 
 The main process risks are:
 
 - expanding scope from “code reachable from the timestep loop” to “everything
   in the cloned driver”
-- allowing stats/output complexity to dominate the early schedule
+- broadening a focused source synchronization into unrelated driver work
 - treating small output divergence as acceptable too early, before concrete bug
   investigation has been exhausted
 
@@ -214,4 +220,5 @@ The recommended working posture is conservative:
 - change one meaningful piece at a time
 - validate after each step
 - assume mismatches are bugs until shown otherwise
-- defer JAX-specific optimization goals until correctness is secure
+- measure JAX-specific optimizations and retain only those that preserve the
+  comparison baseline

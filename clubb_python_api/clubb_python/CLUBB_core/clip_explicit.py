@@ -20,9 +20,10 @@ def clip_covar(
     xp2, yp2, xpyp,
 ):
     """Clip covariance x'y' to satisfy Cauchy-Schwarz."""
-    return clubb_f2py.f2py_clip_covar(
+    xpyp, xpyp_chnge = clubb_f2py.f2py_clip_covar(
         solve_type, f_arr(xp2), f_arr(yp2), f_arr(xpyp),
         nzm=int(nzm), ngrdcol=int(ngrdcol))
+    return xpyp, xpyp_chnge
 
 
 def clip_variance(

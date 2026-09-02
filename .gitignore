@@ -26,3 +26,4 @@ run_scripts/tmp_dup_params.in
 /worklog.md
 
 input/parameter_and_flag_configs/**/*_tmp.in
+.clubb-jax-tools

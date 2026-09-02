@@ -98,7 +98,7 @@ def test_monotonic_turbulent_flux_limit_preserves_zero_flux_state(tmp_path):
         low = np.tile(np.arange(nzt, dtype=np.int32), (ngrdcol, 1))
         high = np.tile(np.arange(nzt, dtype=np.int32), (ngrdcol, 1))
 
-        xm_out, wpxp_out = clubb_api.monotonic_turbulent_flux_limit(
+        err_info, xm_out, wpxp_out = clubb_api.monotonic_turbulent_flux_limit(
             gr=gr,
             nzm=nzm,
             nzt=nzt,

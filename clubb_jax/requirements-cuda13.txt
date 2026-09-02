@@ -1,0 +1,6 @@
+# NVIDIA GPU runtime and validation dependencies for the CLUBB JAX driver.
+jax[cuda13]==0.10.0; python_version == "3.11"
+jax[cuda13]==0.11.0; python_version >= "3.12"
+netCDF4~=1.7
+tabulate~=0.10
+pytest>=8,<10

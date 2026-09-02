@@ -1,109 +1,223 @@
 # CLUBB JAX Driver
 
-This directory is the staging area for a JAX-based CLUBB SCM driver.
+CLUBB JAX is a JAX port of the Fortran CLUBB single-column model (SCM). Its
+Python modules follow the Fortran source layout and translate the supported
+model initialization, timestep loop, CLUBB core, radiation, and statistics
+code into JAX operations.
 
-At the moment, `clubb_jax/` is mostly a package-local clone of
-[clubb_python_driver/](../clubb_python_driver/). Its current purpose is not to
-provide a distinct JAX implementation yet, but to create a separate place where
-the driver can be rewritten incrementally without destabilizing the existing
-Python-driver path.
+The supported standalone path is JAX-owned and runs without a compiled Fortran
+library. The Fortran standalone is needed only when comparing JAX results
+against the original implementation.
 
-The intended long-term direction is different from
-[clubb_python_driver/](../clubb_python_driver/):
+The main entry point is [`src/clubb_standalone.py`](./src/clubb_standalone.py),
+and translated source lives under [`src/`](./src/):
 
-- replace the timestep-loop internals with JAX code
-- move the main timestep path away from `clubb_python_api/`
-- possibly remove the Python API dependency entirely if the JAX path becomes
-  self-sufficient
+- `src/CLUBB_core/` contains the supported CLUBB core and JAX statistics code.
+- `src/Input_fields/` contains namelist, sounding, surface, and grid readers.
+- `src/Radiation/` contains the supported radiation code.
+- `src/Microphys/` and `src/Radiation/BUGSrad/` contain work in progress that is
+  not connected to the supported standalone path.
 
-Because that transition has not happened yet, the current `clubb_jax/` code
-should be understood as a scaffold rather than a finished driver.
+The detailed support boundary and conversion workflow are documented in
+[`JAX_CONVERSION_PLAN.md`](./JAX_CONVERSION_PLAN.md).
 
-The recommended conversion workflow for the eventual Fortran-to-JAX port is
-documented in [JAX_CONVERSION_PLAN.md](./JAX_CONVERSION_PLAN.md).
+## Running
 
-## Current Status
+CLUBB JAX uses the normal SCM runner and case names. A JAX-only run does not
+require a Fortran build or any manual dependency setup; the command prepares
+what it needs automatically and writes results under `output/`.
 
-Right now, the package is still functionally close to
-[clubb_python_driver/](../clubb_python_driver/):
+### Basic Run
 
-- the package structure is the same
-- the SCM entry point is present at [clubb_standalone.py](./clubb_standalone.py)
-- much of the execution path still depends on the compiled Python API in
-  [clubb_python_api/](../clubb_python_api/)
-
-If you need the detailed explanation of the existing driver structure, feature
-coverage, and current implementation style, start with
-[clubb_python_driver/README.md](../clubb_python_driver/README.md). That
-documentation remains the best reference for how the cloned code currently
-behaves.
-
-## Build
-
-From the repo root:
-
-```bash
-./compile.py [-debug] -python
-```
-
-The `-python` flag is still required today because the current `clubb_jax/`
-path continues to rely on the compiled `clubb_f2py` extension provided by
-[clubb_python_api/](../clubb_python_api/).
-
-## Run
-
-The normal SCM entry point is the existing runner script, now with `-jax`:
+Run a case from the repository root by adding `-jax`:
 
 ```bash
 ./run_scripts/run_scm.py -jax arm
 ```
 
-This keeps the standard namelist aggregation and SCM workflow, but launches:
+### Run Options
+
+The statistics registry controls which model fields are collected and written.
+Statistics are particularly expensive in JAX, so selecting only the output a
+run needs can substantially reduce its runtime. The default is
+`input/stats/standard_stats.in`, which provides broad output coverage.
 
 ```bash
-python -m clubb_jax.clubb_standalone
+# Faster: retain a small set of important multi-column fields.
+./run_scripts/run_scm.py -jax -stats input/stats/multi_col_stats.in arm
+
+# Fastest: run without collecting or writing statistics.
+./run_scripts/run_scm.py -jax -stats none arm
+
+# Most comprehensive: collect every registered statistic.
+./run_scripts/run_scm.py -jax -stats input/stats/all_stats.in arm
 ```
 
-instead of the Fortran standalone or the Python-driver standalone.
+`multi_col_stats.in` retains 15 central state and turbulence fields and is
+substantially faster than the default. `none` has the lowest overhead but
+produces no statistics output, so it is useful for timing rather than validating
+model results. `all_stats.in` gives maximal output coverage at the highest cost.
 
-You can also run the module directly if you already have an aggregate case
-namelist:
+Debug checks also affect performance. Many cases default to `debug_level = 2`;
+passing `-debug 0` typically saves about 10% of runtime and is appropriate when
+the additional checks are not needed. `-max_iters` can limit a run to a smaller
+number of timesteps as well, but reducing iterations makes testing fundamentally more permissive, so changing it should be considered only for rapid smoke tests:
 
 ```bash
-python -m clubb_jax.clubb_standalone output/arm.in
+./run_scripts/run_scm.py -jax \
+  -stats input/stats/multi_col_stats.in -debug 0 -max_iters 120 arm
 ```
 
-## Test and Compare
+### GPU Running
 
-The main comparison harness for this directory is:
+To use an NVIDIA GPU with the CUDA 13 JAX packages, select the accelerator when
+initializing the environment and running:
 
 ```bash
-./tests/run_jax_vs_fortran_cases.py
+CLUBB_JAX_ACCELERATOR=cuda13 ./clubb_jax/run_jax_wrapper.sh --init_env
+
+CLUBB_JAX_ACCELERATOR=cuda13 CUDA_VISIBLE_DEVICES=0 \
+  ./run_scripts/run_scm.py -jax -stats none -debug 0 arm
 ```
 
-That script runs a curated set of SCM cases through both:
+The launcher verifies that JAX initialized the CUDA backend and fails rather
+than silently falling back to CPU. `CUDA_VISIBLE_DEVICES` selects the GPU.
 
-- the `clubb_jax` standalone path
-- the normal Fortran standalone path
-
-and compares the outputs with `run_bindiff_all.py`. Results are written under
-`output/tests/jax_driver_test_results/`.
-
-You can also run individual SCM cases through the regular SCM entry point:
+By default, JAX reserves 75% of the GPU's memory when the first JAX operation
+runs. This reduces allocation overhead and memory fragmentation when JAX owns
+the device, but it can leave too little memory for a desktop display or other
+processes using a shared GPU and can cause an out-of-memory error at startup.
+Disable preallocation when that reservation causes contention:
 
 ```bash
-./run_scripts/run_scm.py -jax bomex
+CLUBB_JAX_ACCELERATOR=cuda13 CUDA_VISIBLE_DEVICES=0 \
+XLA_PYTHON_CLIENT_PREALLOCATE=false \
+  ./run_scripts/run_scm.py -jax arm
 ```
 
-## Near-Term Plan
+With preallocation disabled, JAX allocates memory as the run needs it. This
+usually lowers its initial footprint, but it is more vulnerable to memory
+fragmentation; keep the default when the run owns the GPU and needs most of its
+memory.
 
-The practical plan for this directory is:
+## Testing
 
-1. keep the top-level SCM workflow usable through `-jax`
-2. replace cloned driver internals with JAX implementations incrementally
-3. reduce reliance on `clubb_python_api/`, especially inside the timestep loop
-4. eventually make `clubb_jax/` a genuinely separate execution path rather than
-   a renamed clone of the Python driver
+The main regression test runs the same SCM cases through JAX and the original
+Fortran standalone, then compares their NetCDF statistics with bindiff. This
+requires a compiled Fortran standalone even though ordinary JAX runs do not.
 
-Until that work is done, this directory should be treated as an active
-development branch for a future JAX driver, not as a separate mature backend.
+### Basic Comparison
+
+Compile Fortran, then compare one case:
+
+```bash
+./compile.py
+./tests/run_jax_vs_fortran_cases.py --cases arm
+```
+
+The harness writes its logs, separate JAX and Fortran outputs, and final bindiff
+report under `output/tests/jax_driver_test_results/`.
+
+### Comparison Options
+
+The harness defaults to `standard_stats.in`. Its `-stats`, `-debug`, and
+`--max-iters` options are forwarded to both internal `run_scm.py` calls, so the
+JAX and Fortran runs use the same model settings. As with a normal run, reducing
+the statistics registry or debug level can make comparisons faster. Do not use
+`-stats none` for numerical validation because it leaves no statistics output
+to compare.
+
+Harness-specific options select cases and control parallelism or bindiff. For
+example, this runs two shortened cases in parallel with faster model settings:
+
+```bash
+./tests/run_jax_vs_fortran_cases.py \
+  --cases arm bomex -j 2 \
+  -stats input/stats/multi_col_stats.in -debug 0 --max-iters 120
+```
+
+`--bindiff-threshold` changes the numerical difference threshold,
+`--bindiff-verbose` controls the final report detail, and `--keep-existing`
+preserves earlier output directories. GPU comparisons force one case worker at
+a time so multiple processes do not contend for the same device.
+
+### Focused Python Tests
+
+After a JAX run has prepared the managed environment, focused tests can be run
+directly with pytest. For example:
+
+```bash
+.venv-jax/bin/python -m pytest clubb_jax/tests/test_jit_compile.py
+```
+
+## Requirements And Environments
+
+No Fortran build is required for a JAX-only run. Runtime and test dependencies
+are declared in [`requirements.txt`](./requirements.txt) for CPU and
+[`requirements-cuda13.txt`](./requirements-cuda13.txt) for NVIDIA CUDA 13.
+Python 3.12 or newer uses JAX/JAXLIB 0.11.0; Python 3.11 is supported with
+JAX/JAXLIB 0.10.0.
+
+### Automatic Setup With uv
+
+The launcher handles the default environment automatically:
+
+```bash
+./clubb_jax/run_jax_wrapper.sh --init_env
+```
+
+It performs the following steps:
+
+1. Reuses a supported Python already installed on the machine when possible.
+2. Reuses `uv` from `PATH`, or downloads the pinned `uv` version into
+   `.clubb-jax-tools/`.
+3. Downloads Python 3.12 through `uv` only when no supported Python is present.
+4. Creates `.venv-jax` for CPU or `.venv-jax-cuda13` for CUDA 13.
+5. Installs and validates the matching requirements file.
+
+Managed Python installations, the `uv` cache, and the virtualenv stay inside
+the repository. The launcher does not modify the system Python or shell setup.
+It hashes the requirements file and reuses a valid environment on later runs.
+
+The managed locations and interpreter can be overridden:
+
+```bash
+PYTHON=python3.12 \
+CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
+CLUBB_JAX_TOOLS_DIR=/path/to/clubb-jax-tools \
+  ./clubb_jax/run_jax_wrapper.sh --init_env
+```
+
+### Create A Virtualenv With uv
+
+To create the environment yourself with `uv`:
+
+```bash
+uv venv --python 3.12 /path/to/clubb-jax-venv
+uv pip install \
+  --python /path/to/clubb-jax-venv/bin/python \
+  -r clubb_jax/requirements.txt
+
+CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
+  ./run_scripts/run_scm.py -jax arm
+```
+
+Use `requirements-cuda13.txt` and set `CLUBB_JAX_ACCELERATOR=cuda13` for a GPU
+environment.
+
+### Use A Standard Virtualenv
+
+A virtualenv created without `uv` can also be used:
+
+```bash
+python3.12 -m venv /path/to/clubb-jax-venv
+/path/to/clubb-jax-venv/bin/python -m pip install \
+  -r clubb_jax/requirements.txt
+
+CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
+  ./run_scripts/run_scm.py -jax arm
+```
+
+The launcher never clears a custom `CLUBB_JAX_VENV`. It validates the selected
+Python and installed packages, then uses `uv` to repair missing or incompatible
+requirements if necessary.

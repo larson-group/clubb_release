@@ -146,19 +146,14 @@ def choose_run_command(args):
             pythonpath_entries.append(existing_pythonpath)
         run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
     elif args.jax:
-        jax_driver = os.path.join(CLUBB_ROOT, "clubb_jax", "clubb_standalone.py")
+        jax_driver = os.path.join(CLUBB_ROOT, "clubb_jax", "src", "clubb_standalone.py")
         if not os.path.isfile(jax_driver):
             sys.exit(f"JAX standalone driver not found: {jax_driver}")
-        install_dir, install_source = choose_install_dir(args)
-        executable = f"{sys.executable} -m clubb_jax.clubb_standalone"
-        run_cmd = [sys.executable, "-m", "clubb_jax.clubb_standalone"]
-        run_env = os.environ.copy()
-        existing_pythonpath = run_env.get("PYTHONPATH", "")
-        f2py_runtime_dir = python_runtime_dir_from_install(install_dir)
-        pythonpath_entries = [f2py_runtime_dir, CLUBB_ROOT]
-        if existing_pythonpath:
-            pythonpath_entries.append(existing_pythonpath)
-        run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
+        jax_launcher = os.path.join(CLUBB_ROOT, "clubb_jax", "run_jax_wrapper.sh")
+        if not os.path.isfile(jax_launcher):
+            sys.exit(f"JAX launcher not found: {jax_launcher}")
+        executable = jax_launcher
+        run_cmd = [jax_launcher]
     else:
         install_dir, install_source = choose_install_dir(args)
         show_install_dir = True
@@ -277,7 +272,7 @@ def main():
         help="Run the Python standalone driver (python -m clubb_python_driver.clubb_standalone)")
 
     run_group.add_argument("-jax", action="store_true",
-        help="Run the JAX standalone driver (python -m clubb_jax.clubb_standalone)")
+        help="Run the JAX standalone driver (python -m clubb_jax.src.clubb_standalone)")
 
     run_group.add_argument(
         "-gdb",

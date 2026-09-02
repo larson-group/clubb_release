@@ -1191,6 +1191,11 @@ python module clubb_f2py
     subroutine f2py_reset_err_code()
     end subroutine
 
+    subroutine f2py_set_err_code(ngrdcol, err_code)
+      integer, intent(in) :: ngrdcol
+      integer, dimension(ngrdcol), intent(in) :: err_code
+    end subroutine
+
     subroutine f2py_initialize_error_headers()
     end subroutine
 

@@ -38,7 +38,7 @@ DEFAULT_CASES = {
     "wangara":                None,
 }
 
-RESULTS_DIRNAME = Path("output") / "tests" / "python_driver_test_results"
+RESULTS_DIRNAME = Path("output") / "python_driver_test_results"
 PYTHON_OUTPUT_DIRNAME = "python_output"
 FORTRAN_OUTPUT_DIRNAME = "fortran_output"
 SUMMARY_FILENAME = "case_compare_summary.json"

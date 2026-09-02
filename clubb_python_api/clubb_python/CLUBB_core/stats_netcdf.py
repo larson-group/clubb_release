@@ -202,6 +202,11 @@ def get_stats_config():
     return tuple(config)
 
 
+def stats_l_sample():
+    """Return the current stats sampling flag."""
+    return bool(get_stats_config()[7])
+
+
 def get_stats_var_meta(ivar: int):
     """Get metadata for a stats variable using Python indexing."""
     return clubb_f2py.f2py_get_stats_var_meta(int(ivar) + 1)

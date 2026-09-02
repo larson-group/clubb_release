@@ -26,19 +26,35 @@ def _as_latlon(arr: Optional[np.ndarray], ngrdcol: int, name: str) -> np.ndarray
 
 def init_err_info(err: ErrInfo):
     """Initialize Fortran err_info storage and push metadata values."""
-    global _cached_err_info
     clubb_f2py.f2py_init_err_info(int(err.ngrdcol))
     set_fortran_err_info(err)
-    _cached_err_info = err
 
 
 def set_fortran_err_info(err: ErrInfo):
-    """Push ErrInfo metadata (chunk/rank/lat/lon) into Fortran module storage."""
+    """Push ErrInfo metadata and err_code into Fortran module storage."""
     global _cached_err_info
-    lat = _as_latlon(err.lat, int(err.ngrdcol), "lat")
-    lon = _as_latlon(err.lon, int(err.ngrdcol), "lon")
+    ncol = int(err.ngrdcol)
+    lat = _as_latlon(err.lat, ncol, "lat")
+    lon = _as_latlon(err.lon, ncol, "lon")
     clubb_f2py.f2py_set_err_info_values(int(err.chunk_idx), int(err.mpi_rank), lat, lon)
-    _cached_err_info = err._replace(lat=lat, lon=lon)
+    if err.err_code is not None:
+        err_code = np.asfortranarray(err.err_code, dtype=np.int32).reshape(-1)
+        if err_code.size != ncol:
+            raise ValueError(
+                f"err_code length mismatch: expected {ncol}, got {err_code.size}"
+            )
+        clubb_f2py.f2py_set_err_code(err_code, ngrdcol=ncol)
+    else:
+        err_code = None
+    _cached_err_info = err._replace(lat=lat, lon=lon, err_code=err_code)
+
+
+def reset_cached_err_code() -> None:
+    """Mirror a Fortran err_code reset in the cached Python ErrInfo."""
+    global _cached_err_info
+    if _cached_err_info is None:
+        return
+    _cached_err_info = _cached_err_info.reset_code()
 
 
 def get_fortran_err_info() -> ErrInfo:

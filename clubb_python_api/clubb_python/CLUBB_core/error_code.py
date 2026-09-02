@@ -2,6 +2,10 @@
 
 import clubb_f2py
 
+CLUBB_NO_ERROR = 0
+CLUBB_GENERALIZED_GRD_TEST_ERR = 50
+CLUBB_FATAL_ERROR = 99
+
 _debug_level = 0
 
 
@@ -17,9 +21,15 @@ def clubb_at_least_debug_level(level: int):
     return _debug_level >= int(level)
 
 
-def reset_err_code():
+def reset_err_code(err_info=None):
     """Reset error codes to no-error without re-allocating."""
     clubb_f2py.f2py_reset_err_code()
+    from clubb_python.derived_types.err_info_converter import reset_cached_err_code
+
+    reset_cached_err_code()
+    if err_info is None:
+        return None
+    return err_info.reset_code()
 
 
 def initialize_error_headers():

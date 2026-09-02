@@ -19,6 +19,7 @@ from clubb_python.clubb_api import (
     get_param_names,
     get_stats_var_meta, get_stats_var_data, set_stats_var_data,
     stats_begin_timestep, stats_end_timestep,
+    stats_l_sample,
     stats_update_scalar, stats_update_1d, stats_update_2d,
     var_on_stats_list,
 )
@@ -99,6 +100,12 @@ class TestStatsConfig:
         # stats_nout = stats_tout / dt_main = 120/60 = 2
         assert cfg[4] == 2  # stats_nout
 
+    def test_stats_l_sample(self, stats_env):
+        """stats_l_sample should expose the current stats sampling flag."""
+        assert not stats_l_sample()
+        stats_begin_timestep(0)
+        assert stats_l_sample()
+
     def test_finalize_disables(self, stats_env):
         """After finalize, stats should be disabled."""
         finalize_stats(err_info=stats_env)
@@ -115,6 +122,48 @@ class TestStatsConfig:
             zt=zt, zm=zm, sclr_dim=0, edsclr_dim=0, err_info=stats_env,
             clubb_params=clubb_params, param_names=PARAM_NAMES,
         )
+
+    def test_registry_prunes_radiation_grids_when_unavailable(self, tmp_path):
+        """Radiation-grid entries must not be registered without radiation grids."""
+        registry = tmp_path / "stats_with_radiation.in"
+        registry.write_text(
+            "&clubb_stats_nl\n"
+            '  entry(1) = "thlm | zt | K | Liquid water potential temperature"\n'
+            '  entry(2) = "T_in_K_rad | rad_zt | K | Radiation-grid temperature"\n'
+            '  entry(3) = "Frad_SW_rad | rad_zm | W/m^2 | Radiation-grid flux"\n'
+            "/\n"
+        )
+
+        init_err_info(NCOL)
+        err_info = ErrInfo(ngrdcol=NCOL)
+        zt = np.linspace(50.0, 250.0, NZT)
+        zm = np.linspace(0.0, 250.0, NZM)
+        clubb_params = init_clubb_params(NCOL, iunit=10, filename="")
+        err_info = init_stats(
+            registry_path=str(registry),
+            output_path="",
+            ncol_batch=NCOL,
+            stats_tsamp=TSAMP,
+            stats_tout=TOUT,
+            dt_main=DT,
+            day_in=1,
+            month_in=1,
+            year_in=2000,
+            time_initial=0.0,
+            zt=zt,
+            zm=zm,
+            sclr_dim=0,
+            edsclr_dim=0,
+            clubb_params=clubb_params,
+            param_names=PARAM_NAMES,
+            err_info=err_info,
+        )
+        try:
+            assert np.all(err_info.err_code == 0)
+            assert get_stats_config()[2] == 1
+            assert _decode(get_stats_var_meta(0)[0]) == "thlm"
+        finally:
+            finalize_stats(err_info=err_info)
 
 
 class TestVarMeta:

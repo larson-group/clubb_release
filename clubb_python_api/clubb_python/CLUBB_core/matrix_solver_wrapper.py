@@ -16,7 +16,7 @@ def _fa64(arr):
 
 def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int,
                nsub: int, ndim: int, nrhs: int, l_implemented: bool, lhs, rhs, err_info: ErrInfo,
-               old_soln=None):
+               old_soln=None, use_rcond: bool = False):
     """Solve a banded system with multiple right-hand sides."""
     lhs_f = _fa64(lhs)
     rhs_f = _fa64(rhs)
@@ -34,7 +34,7 @@ def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int
         lhs=lhs_f,
         rhs=rhs_f,
         old_soln=old_soln_f,
-        use_rcond=False,
+        use_rcond=bool(use_rcond),
         ngrdcol=int(ngrdcol),
         ndim=int(ndim),
         nrhs=int(nrhs),
@@ -43,7 +43,7 @@ def band_solve(solve_name: str, penta_solve_method: int, ngrdcol: int, nsup: int
 
 
 def tridiag_solve(solve_name: str, tridiag_solve_method: int, ngrdcol: int,
-                  ndim: int, lhs, rhs, err_info: ErrInfo):
+                  ndim: int, lhs, rhs, err_info: ErrInfo, use_rcond: bool = False):
     """Solve a tridiagonal system for either single or multiple RHS inputs."""
     lhs_f = _fa64(lhs)
     set_fortran_err_info(err_info)
@@ -55,7 +55,7 @@ def tridiag_solve(solve_name: str, tridiag_solve_method: int, ngrdcol: int,
             tridiag_solve_method=int(tridiag_solve_method),
             lhs=lhs_f,
             rhs=_fa64(rhs_arr),
-            use_rcond=False,
+            use_rcond=bool(use_rcond),
             ngrdcol=int(ngrdcol),
             ndim=int(ndim),
         )
@@ -67,7 +67,7 @@ def tridiag_solve(solve_name: str, tridiag_solve_method: int, ngrdcol: int,
             tridiag_solve_method=int(tridiag_solve_method),
             lhs=lhs_f,
             rhs=_fa64(rhs_arr),
-            use_rcond=False,
+            use_rcond=bool(use_rcond),
             ngrdcol=int(ngrdcol),
             ndim=int(ndim),
             nrhs=int(rhs_arr.shape[2]),
