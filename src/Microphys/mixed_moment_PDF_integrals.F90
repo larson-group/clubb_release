@@ -19,18 +19,18 @@ module mixed_moment_PDF_integrals
   contains
 
   !=============================================================================
-  subroutine hydrometeor_mixed_moments( gr, nzt, pdf_dim, hydromet_dim, &
+  subroutine hydrometeor_mixed_moments( gr, ngrdcol, nzt, pdf_dim, hydromet_dim, &
                                         hydromet, hm_metadata, &
                                         mu_x_1_n, mu_x_2_n, &
                                         sigma_x_1_n, sigma_x_2_n, &
                                         corr_array_1_n, corr_array_2_n, &
                                         pdf_params, hydromet_pdf_params, &
-                                        precip_fracs, &
-                                        rtphmp_zt, thlphmp_zt, wp2hmp, &
-                                        stats, icol )
+                                        precip_fracs, stats, &
+                                        rtphmp_zt, thlphmp_zt, wp2hmp )
 
     ! Description:
-    ! Calculates <rt'hm'>, <thl'hm'>, and <w'^2 hm'>, for all hydrometeors, hm.
+    ! Calculates <rt'hm'>, <thl'hm'>, and <w'^2 hm'> for every model column
+    ! and hydrometeor. The column index is innermost in each calculation loop.
     ! These terms are used in the liquid/ice water loading term as part of the
     ! buoyancy term in some of the CLUBB predictive equations.
     ! References:
@@ -77,23 +77,24 @@ module mixed_moment_PDF_integrals
     type (grid), intent(in) :: gr
 
     integer, intent(in) :: &
+      ngrdcol,     & ! Number of model grid columns
       nzt,         & ! Number of model thermodynamic vertical grid levels
       pdf_dim,     & ! Number of variables in the correlation array
       hydromet_dim
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor, hm (overall) (t-levels)    [units vary]
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(nzt,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(nzt,pdf_dim,pdf_dim), &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim,pdf_dim), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -101,26 +102,23 @@ module mixed_moment_PDF_integrals
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
 
-    type(hydromet_pdf_parameter), dimension(nzt), intent(in) :: &
+    type(hydromet_pdf_parameter), dimension(ngrdcol,nzt), intent(in) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters           [units vary]
       
     type(precipitation_fractions), intent(in) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    !------------------------ InOut Variables ------------------------
+    !------------------------ Input/Output Variables ------------------------
     type(stats_type), intent(inout) :: &
       stats
-    
-    integer, intent(in) :: &
-      icol
 
     !------------------------ Output Variables ------------------------
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(out) :: &
       wp2hmp,     & ! Higher-order mixed moment:  < w'^2 hm' > [(m/s)^2<hm un.>]
       rtphmp_zt,  & ! Covariance of rt and hm (on t-levs.)     [(kg/kg)<hm un.>]
       thlphmp_zt    ! Covariance of thl and hm (on t-levs.)    [K<hm units>]
 
-    ! Local Variables
+    !------------------------ Local Variables ------------------------
     ! Unpacked parameters.
     real( kind = core_rknd ) :: &
       mu_w_1,       & ! Mean of w (1st PDF component)                      [m/s]
@@ -183,16 +181,22 @@ module mixed_moment_PDF_integrals
       rtm,           & ! Mean of rt (overall)                            [kg/kg]
       thlm             ! Mean of thl (overall)                               [K]
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim,hydromet_dim) :: &
       hmxphmyp_zt    ! Covariance (overall) of two hydrometeors  [hmx*hmy units]
+
+    real( kind = core_rknd ), dimension(hydromet_dim) :: &
+      hydromet_tols    ! Hydrometeor tolerance by species                 [units vary]
 
     integer :: &
       hm_idx,  & ! Index of a hydrometeor in the hydrometeor set of indices
       hmy_idx, & ! Index of second hydrometeor in the hydrometeor set of indices
-      pdf_idx, & ! Index of a hydrometeor in the PDF set of indices
       a_exp,   & ! Exponent on w' in < w'^a hm'^b >
       b_exp,   & ! Exponent on hm' in < w'^a hm'^b >
+      i,       & ! Index of a model grid column
       k          ! Index of a vertical level
+
+    integer, dimension(hydromet_dim) :: &
+      pdf_idx_by_hm    ! PDF index by hydrometeor species
     
     character(len=64) :: &
       hm_type, &
@@ -201,194 +205,172 @@ module mixed_moment_PDF_integrals
       var_name
 
 
-    ! Loop over all thermodynamic levels between the model lower and upper
-    ! boundaries (thermodynamic levels 1 to gr%nzt).
-    do k = 1, nzt, 1
+    !--------------------------- Begin Code ---------------------------
 
-       ! Unpack the means of w, rt, and thl in each PDF component.
-       mu_w_1   = mu_x_1_n(k,hm_metadata%iiPDF_w)
-       mu_w_2   = mu_x_2_n(k,hm_metadata%iiPDF_w)
-       mu_rt_1  = pdf_params%rt_1(1,k)
-       mu_rt_2  = pdf_params%rt_2(1,k)
-       mu_thl_1 = pdf_params%thl_1(1,k)
-       mu_thl_2 = pdf_params%thl_2(1,k)
+    do hm_idx = 1, hydromet_dim
+      ! Find the index of hydrometeor in the PDF indices.
+      pdf_idx_by_hm(hm_idx) = hydromet2pdf_idx( hm_idx, hm_metadata )
+      ! Unpack the tolerance value for the hydrometeor, hm.
+      hydromet_tols(hm_idx) = hm_metadata%hydromet_tol(hm_idx)
+    enddo
 
-       ! Unpack the standard deviations of w, rt, and thl in each PDF component.
-       sigma_w_1   = sigma_x_1_n(k,hm_metadata%iiPDF_w)
-       sigma_w_2   = sigma_x_2_n(k,hm_metadata%iiPDF_w)
-       sigma_rt_1  = sqrt( pdf_params%varnce_rt_1(1,k) )
-       sigma_rt_2  = sqrt( pdf_params%varnce_rt_2(1,k) )
-       sigma_thl_1 = sqrt( pdf_params%varnce_thl_1(1,k) )
-       sigma_thl_2 = sqrt( pdf_params%varnce_thl_2(1,k) )
+    ! Calculate <rt'hm'>, <thl'hm'>, and <w'^2 hm'> for each hydrometeor
+    ! species.
+    ! Full fields are stored as (column,level,species), so keeping i innermost
+    ! makes each hot-loop traversal contiguous and vectorization-friendly.
+    do hm_idx = 1, hydromet_dim
+      hm_tol = hydromet_tols(hm_idx)
+      do k = 1, nzt
+        ! The scalar wrapper historically used the first-column PDF and
+        ! precipitation parameters for every column.  Preserve that access
+        ! pattern here so this loop refactor is bit-for-bit neutral.
+        mu_rt_1 = pdf_params%rt_1(1,k)
+        mu_rt_2 = pdf_params%rt_2(1,k)
+        mu_thl_1 = pdf_params%thl_1(1,k)
+        mu_thl_2 = pdf_params%thl_2(1,k)
+        ! Unpack the standard deviations of rt and thl in each PDF component.
+        sigma_rt_1 = sqrt( pdf_params%varnce_rt_1(1,k) )
+        sigma_rt_2 = sqrt( pdf_params%varnce_rt_2(1,k) )
+        sigma_thl_1 = sqrt( pdf_params%varnce_thl_1(1,k) )
+        sigma_thl_2 = sqrt( pdf_params%varnce_thl_2(1,k) )
+        ! Unpack the mixture fraction.
+        mixt_frac = pdf_params%mixt_frac(1,k)
+        ! Unpack the precipitation fraction in each PDF component.
+        precip_frac_1 = precip_fracs%precip_frac_1(1,k)
+        precip_frac_2 = precip_fracs%precip_frac_2(1,k)
+        ! Unpack the coefficients of rt and thl in the chi/eta PDF transformation
+        ! equations for each PDF component.
+        crt_1 = pdf_params%crt_1(1,k)
+        crt_2 = pdf_params%crt_2(1,k)
+        cthl_1 = pdf_params%cthl_1(1,k)
+        cthl_2 = pdf_params%cthl_2(1,k)
+        do i = 1, ngrdcol
+          ! Unpack the means and standard deviations of w in each PDF component.
+          mu_w_1 = mu_x_1_n(i,k,hm_metadata%iiPDF_w)
+          mu_w_2 = mu_x_2_n(i,k,hm_metadata%iiPDF_w)
+          sigma_w_1 = sigma_x_1_n(i,k,hm_metadata%iiPDF_w)
+          sigma_w_2 = sigma_x_2_n(i,k,hm_metadata%iiPDF_w)
+          ! Unpack the standard deviations of chi and eta in each PDF component.
+          sigma_chi_1 = sigma_x_1_n(i,k,hm_metadata%iiPDF_chi)
+          sigma_chi_2 = sigma_x_2_n(i,k,hm_metadata%iiPDF_chi)
+          sigma_eta_1 = sigma_x_1_n(i,k,hm_metadata%iiPDF_eta)
+          sigma_eta_2 = sigma_x_2_n(i,k,hm_metadata%iiPDF_eta)
 
-       ! Unpack the standard deviations of chi and eta in each PDF component.
-       sigma_chi_1 = sigma_x_1_n(k,hm_metadata%iiPDF_chi)
-       sigma_chi_2 = sigma_x_2_n(k,hm_metadata%iiPDF_chi)
-       sigma_eta_1 = sigma_x_1_n(k,hm_metadata%iiPDF_eta)
-       sigma_eta_2 = sigma_x_2_n(k,hm_metadata%iiPDF_eta)
-
-       ! Unpack the mixture fraction.
-       mixt_frac = pdf_params%mixt_frac(1,k)
-
-       ! Unpack the precipitation fraction in each PDF component.
-       precip_frac_1 = precip_fracs%precip_frac_1(1,k)
-       precip_frac_2 = precip_fracs%precip_frac_2(1,k)
-
-       ! Unpack the coefficients of rt and thl in the chi/eta PDF transformation
-       ! equations for each PDF component.
-       crt_1  = pdf_params%crt_1(1,k)
-       crt_2  = pdf_params%crt_2(1,k)
-       cthl_1 = pdf_params%cthl_1(1,k)
-       cthl_2 = pdf_params%cthl_2(1,k)
-
-       ! Re-calculate rtm, thlm, and wm from PDF parameters.
-       ! This needs to be done because rtm and thlm have been advanced since
-       ! the PDF parameters have been calculated.  It is necessary to use values
-       ! of the mean fields (rtm, thlm, and wm) that are consistent with the
-       ! PDF parameters.  This does not need to be done for hydromet because
-       ! hydrometeors have not been advanced since the hydrometeor PDF
-       ! parameters were set up.
-       wm   = compute_mean_binormal( mu_w_1, mu_w_2, mixt_frac )
-       rtm  = compute_mean_binormal( mu_rt_1, mu_rt_2, mixt_frac )
-       thlm = compute_mean_binormal( mu_thl_1, mu_thl_2, mixt_frac )
-
-
-       ! Calculate <rt'hm'>, <thl'hm'>, and <w'^2 hm'> for each hydrometeor
-       ! species.
-       do hm_idx = 1, hydromet_dim, 1
+          ! Re-calculate rtm, thlm, and wm from PDF parameters.
+          ! This needs to be done because rtm and thlm have been advanced since
+          ! the PDF parameters have been calculated.  It is necessary to use values
+          ! of the mean fields (rtm, thlm, and wm) that are consistent with the
+          ! PDF parameters.  This does not need to be done for hydromet because
+          ! hydrometeors have not been advanced since the hydrometeor PDF
+          ! parameters were set up.
+          wm = compute_mean_binormal( mu_w_1, mu_w_2, mixt_frac )
+          rtm = compute_mean_binormal( mu_rt_1, mu_rt_2, mixt_frac )
+          thlm = compute_mean_binormal( mu_thl_1, mu_thl_2, mixt_frac )
 
           ! Unpack the mean (in-precip) of hm in each PDF component.
-          mu_hm_1 = hydromet_pdf_params(k)%mu_hm_1(hm_idx)
-          mu_hm_2 = hydromet_pdf_params(k)%mu_hm_2(hm_idx)
-
+          mu_hm_1 = hydromet_pdf_params(i,k)%mu_hm_1(hm_idx)
+          mu_hm_2 = hydromet_pdf_params(i,k)%mu_hm_2(hm_idx)
           ! Unpack the standard deviation (in-precip) of hm in each PDF
           ! component.
-          sigma_hm_1 = hydromet_pdf_params(k)%sigma_hm_1(hm_idx)
-          sigma_hm_2 = hydromet_pdf_params(k)%sigma_hm_2(hm_idx)
-
+          sigma_hm_1 = hydromet_pdf_params(i,k)%sigma_hm_1(hm_idx)
+          sigma_hm_2 = hydromet_pdf_params(i,k)%sigma_hm_2(hm_idx)
           ! Calculate the correlation (in-precip) of rt/thl and hm for each PDF
           ! component.  Since CLUBB uses a PDF transformation from rt and
           ! theta-l coordinates to chi and eta coordinates for each PDF
           ! component, the correlation arrays are written in terms of chi and
           ! eta correlations.  This makes a calculation necessary for these
           ! correlations.
-          corr_chi_hm_1 = hydromet_pdf_params(k)%corr_chi_hm_1(hm_idx)
-          corr_chi_hm_2 = hydromet_pdf_params(k)%corr_chi_hm_2(hm_idx)
-          corr_eta_hm_1 = hydromet_pdf_params(k)%corr_eta_hm_1(hm_idx)
-          corr_eta_hm_2 = hydromet_pdf_params(k)%corr_eta_hm_2(hm_idx)
-
-          corr_rt_hm_1 &
-          = calc_corr_rt_x( crt_1, sigma_rt_1, sigma_chi_1, &
-                            sigma_eta_1, corr_chi_hm_1, corr_eta_hm_1 )
-
-          corr_rt_hm_2 &
-          = calc_corr_rt_x( crt_2, sigma_rt_2, sigma_chi_2, &
-                            sigma_eta_2, corr_chi_hm_2, corr_eta_hm_2 )
-
-          corr_thl_hm_1 &
-          = calc_corr_thl_x( cthl_1, sigma_thl_1, sigma_chi_1, &
-                             sigma_eta_1, corr_chi_hm_1, corr_eta_hm_1 )
-
-          corr_thl_hm_2 &
-          = calc_corr_thl_x( cthl_2, sigma_thl_2, sigma_chi_2, &
-                             sigma_eta_2, corr_chi_hm_2, corr_eta_hm_2 )
-
-          ! Unpack the tolerance value for the hydrometeor, hm.
-          hm_tol = hm_metadata%hydromet_tol(hm_idx)
+          corr_chi_hm_1 = hydromet_pdf_params(i,k)%corr_chi_hm_1(hm_idx)
+          corr_chi_hm_2 = hydromet_pdf_params(i,k)%corr_chi_hm_2(hm_idx)
+          corr_eta_hm_1 = hydromet_pdf_params(i,k)%corr_eta_hm_1(hm_idx)
+          corr_eta_hm_2 = hydromet_pdf_params(i,k)%corr_eta_hm_2(hm_idx)
+          corr_rt_hm_1 = calc_corr_rt_x( crt_1, sigma_rt_1, sigma_chi_1, &
+                                          sigma_eta_1, corr_chi_hm_1, corr_eta_hm_1 )
+          corr_rt_hm_2 = calc_corr_rt_x( crt_2, sigma_rt_2, sigma_chi_2, &
+                                          sigma_eta_2, corr_chi_hm_2, corr_eta_hm_2 )
+          corr_thl_hm_1 = calc_corr_thl_x( cthl_1, sigma_thl_1, sigma_chi_1, &
+                                            sigma_eta_1, corr_chi_hm_1, corr_eta_hm_1 )
+          corr_thl_hm_2 = calc_corr_thl_x( cthl_2, sigma_thl_2, sigma_chi_2, &
+                                            sigma_eta_2, corr_chi_hm_2, corr_eta_hm_2 )
 
           ! Calculate <rt'hm'>.
-          rtphmp_zt(k,hm_idx) &
-          = xphmp_integral_covar( mu_rt_1, mu_rt_2, mu_hm_1, mu_hm_2, &
-                                  sigma_rt_1, sigma_rt_2, sigma_hm_1, &
-                                  sigma_hm_2, corr_rt_hm_1, corr_rt_hm_2, &
-                                  mixt_frac, precip_frac_1, &
-                                  precip_frac_2, rtm, rt_tol, hm_tol )
-
+          rtphmp_zt(i,k,hm_idx) = xphmp_integral_covar( &
+              mu_rt_1, mu_rt_2, mu_hm_1, mu_hm_2, sigma_rt_1, sigma_rt_2, &
+              sigma_hm_1, sigma_hm_2, corr_rt_hm_1, corr_rt_hm_2, mixt_frac, &
+              precip_frac_1, precip_frac_2, rtm, rt_tol, hm_tol )
           ! Calculate <thl'hm'>.
-          thlphmp_zt(k,hm_idx) &
-          = xphmp_integral_covar( mu_thl_1, mu_thl_2, mu_hm_1, mu_hm_2, &
-                                  sigma_thl_1, sigma_thl_2, sigma_hm_1, &
-                                  sigma_hm_2, corr_thl_hm_1, corr_thl_hm_2, &
-                                  mixt_frac, precip_frac_1, &
-                                  precip_frac_2, thlm, thl_tol, hm_tol )
-
-          ! Find the index of hydrometeor in the PDF indices.
-          pdf_idx = hydromet2pdf_idx(hm_idx,hm_metadata)
+          thlphmp_zt(i,k,hm_idx) = xphmp_integral_covar( &
+              mu_thl_1, mu_thl_2, mu_hm_1, mu_hm_2, sigma_thl_1, sigma_thl_2, &
+              sigma_hm_1, sigma_hm_2, corr_thl_hm_1, corr_thl_hm_2, mixt_frac, &
+              precip_frac_1, precip_frac_2, thlm, thl_tol, hm_tol )
 
           ! Unpack the mean (in-precip) of ln hm in each PDF component.
-          mu_hm_1_n = mu_x_1_n(k,pdf_idx)
-          mu_hm_2_n = mu_x_2_n(k,pdf_idx)
-
+          mu_hm_1_n = mu_x_1_n(i,k,pdf_idx_by_hm(hm_idx))
+          mu_hm_2_n = mu_x_2_n(i,k,pdf_idx_by_hm(hm_idx))
           ! Unpack the standard deviation (in-precip) of ln hm in each PDF
           ! component.
-          sigma_hm_1_n = sigma_x_1_n(k,pdf_idx)
-          sigma_hm_2_n = sigma_x_2_n(k,pdf_idx)
-
+          sigma_hm_1_n = sigma_x_1_n(i,k,pdf_idx_by_hm(hm_idx))
+          sigma_hm_2_n = sigma_x_2_n(i,k,pdf_idx_by_hm(hm_idx))
           ! Unpack the correlation (in-precip) of w and ln hm in each PDF
           ! component.
-          corr_w_hm_1_n = corr_array_1_n(k,pdf_idx,hm_metadata%iiPDF_w)
-          corr_w_hm_2_n = corr_array_2_n(k,pdf_idx,hm_metadata%iiPDF_w)
-
+          corr_w_hm_1_n = corr_array_1_n(i,k,pdf_idx_by_hm(hm_idx),hm_metadata%iiPDF_w)
+          corr_w_hm_2_n = corr_array_2_n(i,k,pdf_idx_by_hm(hm_idx),hm_metadata%iiPDF_w)
           ! Unpack the mean (overall) value of the hydrometeor.
-          hm_mean = hydromet(k,hm_idx)
-
+          hm_mean = hydromet(i,k,hm_idx)
           ! The general form of the mixed moment equation is <w'^a hm'^b>.
           ! For <w'^2 hm'>, a = 2 and b = 1.
           a_exp = 2
           b_exp = 1
-
           ! Calculate <w'^2 hm'>.
-          wp2hmp(k,hm_idx) &
-          = xp_a_hmpb_integrals_all_MM( mu_w_1, mu_w_2, mu_hm_1, mu_hm_2, &
-                                        mu_hm_1_n, mu_hm_2_n, sigma_w_1, &
-                                        sigma_w_2, sigma_hm_1, sigma_hm_2, &
-                                        sigma_hm_1_n, sigma_hm_2_n, &
-                                        corr_w_hm_1_n, corr_w_hm_2_n, &
-                                        mixt_frac, precip_frac_1, &
-                                        precip_frac_2, wm, hm_mean, &
-                                        w_tol, hm_tol, a_exp, b_exp )
+          wp2hmp(i,k,hm_idx) = xp_a_hmpb_integrals_all_MM( &
+              mu_w_1, mu_w_2, mu_hm_1, mu_hm_2, mu_hm_1_n, mu_hm_2_n, &
+              sigma_w_1, sigma_w_2, sigma_hm_1, sigma_hm_2, sigma_hm_1_n, &
+              sigma_hm_2_n, corr_w_hm_1_n, corr_w_hm_2_n, mixt_frac, &
+              precip_frac_1, precip_frac_2, wm, hm_mean, w_tol, hm_tol, a_exp, b_exp )
+        enddo
+      enddo
+    enddo
 
-          ! Calculate the covariance (overall) of two hydrometeors, <hmx'hmy'>,
-          ! for each unique set of two different hydrometeors.
-          do hmy_idx = hm_idx+1, hydromet_dim, 1
-
-             ! Unpack the mean (in-precip) of the second hydrometeor, hmy, in
-             ! each PDF component.
-             mu_hmy_1 = hydromet_pdf_params(k)%mu_hm_1(hmy_idx)
-             mu_hmy_2 = hydromet_pdf_params(k)%mu_hm_2(hmy_idx)
-
-             ! Unpack the standard deviation (in-precip) of hmy in each PDF
-             ! component.
-             sigma_hmy_1 = hydromet_pdf_params(k)%sigma_hm_1(hmy_idx)
-             sigma_hmy_2 = hydromet_pdf_params(k)%sigma_hm_2(hmy_idx)
-
-             ! Unpack the correlation (in-precip) of hm and hmy in each PDF
-             ! component.
-             corr_hm_hmy_1 &
-             = hydromet_pdf_params(k)%corr_hmx_hmy_1(hm_idx,hmy_idx)
-             corr_hm_hmy_2 &
-             = hydromet_pdf_params(k)%corr_hmx_hmy_2(hm_idx,hmy_idx)
-
-             ! Unpack the mean (overall) value of hmy.
-             hmy_mean = hydromet(k,hmy_idx)
-
-             ! Unpack the tolerance value for the second hydrometeor, hmy.
-             hmy_tol = hm_metadata%hydromet_tol(hmy_idx)
-
-             ! Calculate the covariance <hmx'hmy'>.
-             hmxphmyp_zt(k,hmy_idx,hm_idx) &
-             = hmxphmyp_integral_covar( mu_hm_1, mu_hm_2, mu_hmy_1, mu_hmy_2, &
-                                        sigma_hm_1, sigma_hm_2, sigma_hmy_1, &
-                                        sigma_hmy_2, corr_hm_hmy_1, &
-                                        corr_hm_hmy_2, mixt_frac, &
-                                        precip_frac_1, precip_frac_2, hm_mean, &
-                                        hmy_mean, hm_tol, hmy_tol )
-
-          enddo ! hmy_idx = hm_idx+1, hydromet_dim, 1
-
-       enddo ! hm_idx = 1, hydromet_dim, 1
-
-    enddo ! k = 1, nzt, 1
+    do hm_idx = 1, hydromet_dim
+      hm_tol = hydromet_tols(hm_idx)
+      ! Calculate the covariance (overall) of two hydrometeors, <hmx'hmy'>,
+      ! for each unique set of two different hydrometeors.
+      do hmy_idx = hm_idx+1, hydromet_dim
+        ! Unpack the tolerance value for the second hydrometeor, hmy.
+        hmy_tol = hydromet_tols(hmy_idx)
+        do k = 1, nzt
+          mixt_frac = pdf_params%mixt_frac(1,k)
+          precip_frac_1 = precip_fracs%precip_frac_1(1,k)
+          precip_frac_2 = precip_fracs%precip_frac_2(1,k)
+          do i = 1, ngrdcol
+            mu_hm_1 = hydromet_pdf_params(i,k)%mu_hm_1(hm_idx)
+            mu_hm_2 = hydromet_pdf_params(i,k)%mu_hm_2(hm_idx)
+            ! Unpack the mean (in-precip) of the second hydrometeor, hmy, in
+            ! each PDF component.
+            mu_hmy_1 = hydromet_pdf_params(i,k)%mu_hm_1(hmy_idx)
+            mu_hmy_2 = hydromet_pdf_params(i,k)%mu_hm_2(hmy_idx)
+            sigma_hm_1 = hydromet_pdf_params(i,k)%sigma_hm_1(hm_idx)
+            sigma_hm_2 = hydromet_pdf_params(i,k)%sigma_hm_2(hm_idx)
+            ! Unpack the standard deviation (in-precip) of hmy in each PDF
+            ! component.
+            sigma_hmy_1 = hydromet_pdf_params(i,k)%sigma_hm_1(hmy_idx)
+            sigma_hmy_2 = hydromet_pdf_params(i,k)%sigma_hm_2(hmy_idx)
+            ! Unpack the correlation (in-precip) of hm and hmy in each PDF
+            ! component.
+            corr_hm_hmy_1 = hydromet_pdf_params(i,k)%corr_hmx_hmy_1(hm_idx,hmy_idx)
+            corr_hm_hmy_2 = hydromet_pdf_params(i,k)%corr_hmx_hmy_2(hm_idx,hmy_idx)
+            hm_mean = hydromet(i,k,hm_idx)
+            ! Unpack the mean (overall) value of hmy.
+            hmy_mean = hydromet(i,k,hmy_idx)
+            ! Calculate the covariance <hmx'hmy'>.
+            hmxphmyp_zt(i,k,hmy_idx,hm_idx) = hmxphmyp_integral_covar( &
+                mu_hm_1, mu_hm_2, mu_hmy_1, mu_hmy_2, sigma_hm_1, sigma_hm_2, &
+                sigma_hmy_1, sigma_hmy_2, corr_hm_hmy_1, corr_hm_hmy_2, &
+                mixt_frac, precip_frac_1, precip_frac_2, hm_mean, hmy_mean, hm_tol, hmy_tol )
+          enddo
+        enddo
+      enddo
+    enddo
 
     ! Statistics
     if ( stats%l_sample ) then
@@ -396,13 +378,15 @@ module mixed_moment_PDF_integrals
         hm_type = hm_metadata%hydromet_list(hm_idx)
 
         var_name = "wp2"//trim( hm_type(1:2) )//"p"
-        call stats_update( var_name, wp2hmp(:,hm_idx), stats, icol )
+        call stats_update( var_name, wp2hmp(:,:,hm_idx), stats )
 
         var_name = "rtp"//trim( hm_type(1:2) )//"p"
-        call stats_update( var_name, zt2zm_api( gr, rtphmp_zt(:,hm_idx) ), stats, icol )
+        call stats_update( var_name, zt2zm_api( gr%nzm, nzt, ngrdcol, gr, &
+                         rtphmp_zt(:,:,hm_idx) ), stats )
 
         var_name = "thlp"//trim( hm_type(1:2) )//"p"
-        call stats_update( var_name, zt2zm_api( gr, thlphmp_zt(:,hm_idx) ), stats, icol )
+        call stats_update( var_name, zt2zm_api( gr%nzm, nzt, ngrdcol, gr, &
+                         thlphmp_zt(:,:,hm_idx) ), stats )
       end do
 
       do hm_idx = 1, hydromet_dim, 1
@@ -410,7 +394,8 @@ module mixed_moment_PDF_integrals
         do hmy_idx = hm_idx+1, hydromet_dim, 1
           hmy_type = hm_metadata%hydromet_list(hmy_idx)
           var_name = trim( hmx_type(1:2) )//"p"//trim( hmy_type(1:2) )//"p"
-          call stats_update( var_name, zt2zm_api( gr, hmxphmyp_zt(:,hmy_idx,hm_idx) ), stats, icol )
+          call stats_update( var_name, zt2zm_api( gr%nzm, nzt, ngrdcol, gr, &
+                           hmxphmyp_zt(:,:,hmy_idx,hm_idx) ), stats )
         end do
       end do
     end if

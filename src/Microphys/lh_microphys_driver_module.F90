@@ -13,7 +13,7 @@ contains
 
   !=============================================================================
   subroutine lh_microphys_driver( &
-               gr, dt, nzt, nzm, num_samples, &
+               gr, ngrdcol, dt, nzt, nzm, num_samples, &
                pdf_dim, hydromet_dim, hm_metadata, &
                X_nl_all_levs, lh_sample_point_weights, &
                pdf_params, precip_fracs, p_in_Pa, exner, rho, &
@@ -25,7 +25,7 @@ contains
                l_lh_importance_sampling, &
                l_lh_instant_var_covar_src, &
                saturation_formula, &
-               stats, icol,         &
+               stats,               &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -51,7 +51,7 @@ contains
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions ! Type
 
-    use silhs_api_module, only: &
+    use est_kessler_microphys_module, only: &
       est_kessler_microphys_api
 
     use clubb_precision, only: &
@@ -61,7 +61,7 @@ contains
        clubb_at_least_debug_level_api  ! Procedure
 
     use estimate_scm_microphys_module, only: &
-      est_single_column_tndcy
+      est_silhs_tndcy
 
     use stats_netcdf, only: &
       stats_type
@@ -82,6 +82,7 @@ contains
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
+      ngrdcol,      & ! Number of model columns
       num_samples,  & ! Number of calls to microphysics per timestep (normally=2)
       nzt,          & ! Number of thermodynamic vertical model levels
       nzm,          & ! Number of momentum vertical model levels
@@ -92,13 +93,13 @@ contains
       hm_metadata
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in), dimension(num_samples,nzt,pdf_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, intent(in), dimension(num_samples,nzt) :: &
+    integer, intent(in), dimension(ngrdcol,num_samples,nzt) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(in), dimension(num_samples,nzt) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt) :: &
       lh_sample_point_weights ! Weight given the individual sample points
 
     type(pdf_parameter), intent(in) :: & 
@@ -107,10 +108,10 @@ contains
     type(precipitation_fractions), intent(in) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       cloud_frac,  & ! Cloud fraction               [-]
       delta_zt,    & ! Change in meters with height [m]
       rcm,         & ! Liquid water mixing ratio    [kg/kg]
@@ -118,7 +119,7 @@ contains
       exner,       & ! Exner function               [-]
       rho            ! Density on thermo. grid      [kg/m^3]
       
-    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped,  & ! rc generated from silhs sample points
@@ -136,25 +137,25 @@ contains
       stats
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(out) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       lh_Ncm_mc,     & ! LH estimate of time tndcy. of cloud droplet conc.     [num/kg/s]
       lh_rcm_mc,     & ! LH estimate of time tndcy. of liq. water mixing ratio [kg/kg/s]
       lh_rvm_mc,     & ! LH estimate of time tndcy. of vapor water mix. ratio  [kg/kg/s]
       lh_thlm_mc       ! LH estimate of time tndcy. of liquid potential temp.  [K/s]
 
-    real( kind = core_rknd ), dimension(nzm), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       lh_rtp2_mc,    & ! LH microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
       lh_thlp2_mc,   & ! LH microphysics tendency for <thl'^2>                 [K^2/s]
       lh_wprtp_mc,   & ! LH microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
       lh_wpthlp_mc,  & ! LH microphysics tendency for <w'thl'>                 [m*K/s^2]
       lh_rtpthlp_mc    ! LH microphysics tendency for <rt'thl'>                [K*(kg/kg)/s]
 
-    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
       AKm,        & ! Exact Kessler ac                    [kg/kg/s]
       AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
@@ -163,21 +164,18 @@ contains
       AKm_rcm,    & ! Kessler ac based on rcm             [kg/kg/s]
       AKm_rcc       ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
 
-    integer, intent(in) :: &
-      icol
-
     ! ---- Begin Code ----
 
     ! Perform LH and analytic microphysical calculations
     ! As a test of SILHS, compute an estimate of Kessler microphysics
     if ( clubb_at_least_debug_level_api( 2 ) ) then
-       call est_kessler_microphys_api &
-            ( nzt, num_samples, pdf_dim, &                       ! Intent(in)
-              X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
-              X_mixt_comp_all_levs, lh_sample_point_weights, &   ! Intent(in)
-              l_lh_importance_sampling, &                        ! Intent(in)
-              lh_AKm, AKm, AKstd, AKstd_cld, &                   ! Intent(out)
-              AKm_rcm, AKm_rcc, lh_rcm_avg )                     ! Intent(out)
+      call est_kessler_microphys_api( &
+             nzt, num_samples, pdf_dim, ngrdcol, & ! In
+             X_nl_all_levs, pdf_params, rcm, cloud_frac, & ! In
+             X_mixt_comp_all_levs, lh_sample_point_weights, & ! In
+             l_lh_importance_sampling, & ! In
+             lh_AKm, AKm, AKstd, AKstd_cld, & ! Out
+             AKm_rcm, AKm_rcc, lh_rcm_avg ) ! Out
     else
       lh_AKm     = 0._core_rknd
       AKm        = 0._core_rknd
@@ -189,8 +187,8 @@ contains
     end if
 
     ! Call the latin hypercube microphysics driver for microphys_sub
-    call est_single_column_tndcy( &
-           gr, dt, nzt, nzm, num_samples, &                            ! Intent(in)
+    call est_silhs_tndcy( &
+           gr, ngrdcol, dt, nzt, nzm, num_samples, &                   ! Intent(in)
            pdf_dim, hydromet_dim, hm_metadata, &                       ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, &                      ! Intent(in)
            lh_sample_point_weights, pdf_params, precip_fracs, &        ! Intent(in)
@@ -201,7 +199,7 @@ contains
            lh_Nc_clipped, &                                            ! Intent(in)
            l_lh_instant_var_covar_src, &                               ! Intent(in)
            saturation_formula, &                                       ! Intent(in)
-           stats, icol,         &                                      ! Intent(inout)
+           stats,               &                                      ! Intent(inout)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &               ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                         ! Intent(out)
            lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                     ! Intent(out)

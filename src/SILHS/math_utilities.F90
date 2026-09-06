@@ -15,11 +15,11 @@ module math_utilities
   contains
 
 !-----------------------------------------------------------------------
-  pure function compute_sample_mean( n_levels, n_samples, weight, x_sample ) &
-    result( mean )
+  pure function compute_sample_mean( n_levels, n_samples, ngrdcol, &
+                                     weight, x_sample ) result( mean )
 ! Description:
-!   Find the mean of a set of sample points
-
+!   Find the mean of a set of sample points in every model column.
+!
 ! References:
 !   None
 !-----------------------------------------------------------------------
@@ -29,49 +29,47 @@ module math_utilities
 
     implicit none
 
-    ! External
-    intrinsic :: real, sum
-
-    ! Input Varibles
+    ! Input Variables
     integer, intent(in) :: &
-      n_levels, &
-      n_samples
+      n_levels, &  ! Number of sample levels
+      n_samples, & ! Number of sample points
+      ngrdcol      ! Number of model columns
 
-    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
-      weight   ! Weights for individual points of the vector
-
-    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,n_samples,n_levels), intent(in) :: &
+      weight, & ! Weights for individual points of the vector
       x_sample ! Collection of sample points    [units vary]
 
     ! Return type
-    real( kind = core_rknd ), dimension(n_levels) :: mean
+    real( kind = core_rknd ), dimension(ngrdcol,n_levels) :: mean ! Mean sample points [units vary]
 
-    integer :: k
+    ! Local Variables
+    integer :: i, k, sample ! Column, level, and sample loop iterators
 
     ! ---- Begin Code ----
 
-    ! Get rid of an annoying compiler warning.
-    k = 1
-    k = k
+    mean = 0._core_rknd
 
-    forall( k = 1:n_levels )
-      mean(k) = sum( weight(1:n_samples,k) * x_sample(1:n_samples,k) ) &
-              / real( n_samples, kind=core_rknd )
-    end forall
+    ! Preserve the sample accumulation order for each column while making the
+    ! column index the contiguous, innermost loop.
+    do sample = 1, n_samples
+      do k = 1, n_levels
+        do i = 1, ngrdcol
+          mean(i,k) = mean(i,k) + weight(i,sample,k) * x_sample(i,sample,k)
+        enddo
+      enddo
+    enddo
 
-
-    return
+    mean = mean / real( n_samples, kind=core_rknd )
 
   end function compute_sample_mean
 
 
 !-----------------------------------------------------------------------
-  pure function compute_sample_variance( n_levels, n_samples, x_sample, weight, x_mean ) &
-    result( variance )
-
+  pure function compute_sample_variance( n_levels, n_samples, ngrdcol, &
+                                         x_sample, weight, x_mean ) result( variance )
 ! Description:
-!   Compute the variance of a set of sample points
-
+!   Compute the variance of a set of sample points in every model column.
+!
 ! References:
 !   None
 !-----------------------------------------------------------------------
@@ -84,45 +82,49 @@ module math_utilities
     ! Input Variables
     integer, intent(in) :: &
       n_levels, & ! Number of sample levels in the mean / variance
-      n_samples   ! Number of sample points compute the variance of
+      n_samples, & ! Number of sample points to compute the variance of
+      ngrdcol      ! Number of model columns
 
-    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
-      x_sample ! Collection of sample points    [units vary]
+    real( kind = core_rknd ), dimension(ngrdcol,n_samples,n_levels), intent(in) :: &
+      x_sample, &          ! Collection of sample points    [units vary]
+      weight    ! Coefficient to weight the nth sample point by [-]
 
-    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
-      weight ! Coefficient to weight the nth sample point by [-]
-
-    real( kind = core_rknd ),dimension(n_levels), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,n_levels), intent(in) :: &
       x_mean ! Mean sample points [units vary]
 
-    ! Output Variable
-    real( kind = core_rknd ),dimension(n_levels) :: &
-      variance ! Variance of x [(units vary)^2]
+    ! Return type
+    real( kind = core_rknd ), dimension(ngrdcol,n_levels) :: variance ! Variance of x [(units vary)^2]
 
-    ! Local Variable(s)
-    integer :: sample ! Loop iterator
+    ! Local Variables
+    integer :: i, k, sample ! Column, level, and sample loop iterators
 
     ! ---- Begin Code ----
 
-    variance(1:n_levels) = 0.0_core_rknd
+    variance = 0._core_rknd
 
-    do sample=1, n_samples
-      variance(1:n_levels) = variance(1:n_levels) &
-        + weight(sample,1:n_levels) * ( x_sample(sample,1:n_levels) - x_mean(1:n_levels) )**2
-    end do
+    do sample = 1, n_samples
+      do k = 1, n_levels
+        do i = 1, ngrdcol
+          variance(i,k) = variance(i,k) + weight(i,sample,k) &
+            * ( x_sample(i,sample,k) - x_mean(i,k) )**2
+        enddo
+      enddo
+    enddo
 
-    variance(1:n_levels) = variance(1:n_levels) / real( n_samples, kind=core_rknd )
+    variance = variance / real( n_samples, kind=core_rknd )
 
-    return
   end function compute_sample_variance
 
 !-----------------------------------------------------------------------
-  pure function compute_sample_covariance( n_levels, n_samples, weight, &
-                   x_sample, x_mean, y_sample, y_mean ) &
-    result( covariance )
-
+  pure function compute_sample_covariance( n_levels, n_samples, ngrdcol, &
+                                           weight, x_sample, x_mean, &
+                                           y_sample, y_mean ) result( covariance )
 ! Description:
 !   Compute the covariance of a set of sample points of 2 variables
+!   in every model column.
+!
+! References:
+!   None
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -133,39 +135,40 @@ module math_utilities
     ! Input Variables
     integer, intent(in) :: &
       n_levels, & ! Number of sample levels in the mean / variance
-      n_samples   ! Number of sample points compute the variance of
+      n_samples, & ! Number of sample points to compute the covariance of
+      ngrdcol      ! Number of model columns
 
-    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,n_samples,n_levels), intent(in) :: &
+      weight, &   ! Coefficient to weight the nth sample point by [-]
       x_sample, & ! Collection of sample points    [units vary]
-      y_sample
+      y_sample    ! Collection of sample points    [units vary]
 
-    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
-      weight ! Coefficient to weight the nth sample point by [-]
-
-    real( kind = core_rknd ),dimension(n_levels), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,n_levels), intent(in) :: &
       x_mean, & ! Mean sample points [units vary]
-      y_mean
+      y_mean    ! Mean sample points [units vary]
 
     ! Output Variable
-    real( kind = core_rknd ),dimension(n_levels) :: &
-      covariance ! Coariance of x and y [(units vary)^2]
+    real( kind = core_rknd ), dimension(ngrdcol,n_levels) :: covariance ! Covariance of x and y [(units vary)^2]
 
-    ! Local Variable(s)
-    integer :: sample ! Loop iterator
+    ! Local Variables
+    integer :: i, k, sample ! Column, level, and sample loop iterators
 
     ! ---- Begin Code ----
 
-    covariance(1:n_levels) = 0.0_core_rknd
+    covariance = 0._core_rknd
 
-    do sample=1, n_samples
-      covariance(1:n_levels) = covariance(1:n_levels) &
-        + weight(sample,1:n_levels) * ( x_sample(sample,1:n_levels) - x_mean(1:n_levels) ) &
-           * ( y_sample(sample,1:n_levels) - y_mean(1:n_levels) )
-    end do
+    do sample = 1, n_samples
+      do k = 1, n_levels
+        do i = 1, ngrdcol
+          covariance(i,k) = covariance(i,k) + weight(i,sample,k) &
+            * ( x_sample(i,sample,k) - x_mean(i,k) ) &
+            * ( y_sample(i,sample,k) - y_mean(i,k) )
+        enddo
+      enddo
+    enddo
 
-    covariance(1:n_levels) = covariance(1:n_levels) / real( n_samples, kind=core_rknd )
+    covariance = covariance / real( n_samples, kind=core_rknd )
 
-    return
   end function compute_sample_covariance
 
   !-----------------------------------------------------------------------

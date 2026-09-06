@@ -87,6 +87,11 @@
 !       stats_end_timestep_api() averages each output point by the number of
 !       samples actually contributed before writing.
 !
+!     - Passing sub_timestep_average=.true. to stats_update() combines repeated
+!       calls for a variable into one pointwise mean before counting the current
+!       model timestep as a single stats sample. Do not mix regular and
+!       sub-timestep updates for the same variable within one timestep.
+!
 !     - stats_tsamp and stats_tout must align to dt_main.  If stats_tend is
 !       supplied, it must also align to dt_main.  If stats_tend falls between
 !       regular output boundaries, the trailing partial output window is omitted.
@@ -265,6 +270,15 @@ module stats_netcdf
                                               ! sample dimension( ncol_batch, nz )
     integer, allocatable, dimension(:,:) :: &
       nsamples                                ! Number of samples, tracked pointwise
+
+    real(kind=stat_rknd), allocatable, dimension(:,:) :: &
+      sub_timestep_sum                        ! Sum of samples within the current timestep
+    integer, allocatable, dimension(:,:) :: &
+      sub_timestep_nsamples                   ! Number of within-timestep samples, pointwise
+
+    logical :: &
+      l_sub_timestep_active = .false., &
+      l_regular_timestep_active = .false.
 
   end type stats_var
 
@@ -736,6 +750,10 @@ contains
       do i = 1, size( stats%vars )
         if ( allocated( stats%vars(i)%buffer ) ) deallocate( stats%vars(i)%buffer )
         if ( allocated( stats%vars(i)%nsamples ) ) deallocate( stats%vars(i)%nsamples )
+        if ( allocated( stats%vars(i)%sub_timestep_sum ) ) &
+          deallocate( stats%vars(i)%sub_timestep_sum )
+        if ( allocated( stats%vars(i)%sub_timestep_nsamples ) ) &
+          deallocate( stats%vars(i)%sub_timestep_nsamples )
       end do
       deallocate( stats%vars )
     end if
@@ -831,6 +849,12 @@ contains
       do i = 1, size( stats%vars )
         if ( allocated( stats%vars(i)%buffer ) ) stats%vars(i)%buffer = 0.0_stat_rknd
         if ( allocated( stats%vars(i)%nsamples ) ) stats%vars(i)%nsamples = 0
+        if ( allocated( stats%vars(i)%sub_timestep_sum ) ) &
+          stats%vars(i)%sub_timestep_sum = 0.0_stat_rknd
+        if ( allocated( stats%vars(i)%sub_timestep_nsamples ) ) &
+          stats%vars(i)%sub_timestep_nsamples = 0
+        stats%vars(i)%l_sub_timestep_active = .false.
+        stats%vars(i)%l_regular_timestep_active = .false.
         stats%vars(i)%l_budget = .false.
         stats%vars(i)%l_in_budget = .false.
       end do
@@ -948,6 +972,10 @@ contains
       do i = 1, size( stats%vars )
         if ( allocated( stats%vars(i)%buffer ) ) deallocate( stats%vars(i)%buffer )
         if ( allocated( stats%vars(i)%nsamples ) ) deallocate( stats%vars(i)%nsamples )
+        if ( allocated( stats%vars(i)%sub_timestep_sum ) ) &
+          deallocate( stats%vars(i)%sub_timestep_sum )
+        if ( allocated( stats%vars(i)%sub_timestep_nsamples ) ) &
+          deallocate( stats%vars(i)%sub_timestep_nsamples )
       end do
       deallocate( stats%vars )
     end if
@@ -1383,6 +1411,11 @@ contains
     stats%l_sample = mod( step_offset, stats%stats_nsamp ) == 0
     stats%l_last_sample = mod( step_offset, stats%stats_nout ) == 0
 
+    do i = 1, stats%nvars
+      stats%vars(i)%l_sub_timestep_active = .false.
+      stats%vars(i)%l_regular_timestep_active = .false.
+    enddo
+
     ! Replay cached expected lookup order from the beginning each timestep.
     stats%lookup%head = 1
     stats%lookup%reject_head = 1
@@ -1415,6 +1448,9 @@ contains
 
     ierr = 0
     if ( .not. stats%enabled ) return
+
+    call stats_flush_sub_timestep_averages( stats )
+
     if ( .not. stats%l_last_sample ) return
 
     ! Lightweight consistency check: no variable should remain mid-budget
@@ -1438,6 +1474,52 @@ contains
 
   end subroutine stats_end_timestep_api
 
+  subroutine stats_prepare_sub_timestep_average( var )
+
+    implicit none
+
+    type(stats_var), intent(inout) :: var
+
+    if ( .not. allocated( var%sub_timestep_sum ) ) then
+      allocate( var%sub_timestep_sum(size(var%buffer,1),size(var%buffer,2)), &
+                var%sub_timestep_nsamples(size(var%buffer,1),size(var%buffer,2)) )
+      var%sub_timestep_sum = 0.0_stat_rknd
+      var%sub_timestep_nsamples = 0
+    endif
+
+  end subroutine stats_prepare_sub_timestep_average
+
+  subroutine stats_flush_sub_timestep_averages( stats )
+
+    implicit none
+
+    type(stats_type), intent(inout) :: stats
+
+    integer :: i
+
+    do i = 1, stats%nvars
+      if ( .not. stats%vars(i)%l_sub_timestep_active ) cycle
+
+      where ( stats%vars(i)%sub_timestep_nsamples > 0 )
+        stats%vars(i)%buffer = stats%vars(i)%buffer &
+          + stats%vars(i)%sub_timestep_sum &
+          / real( stats%vars(i)%sub_timestep_nsamples, kind=stat_rknd )
+        stats%vars(i)%nsamples = stats%vars(i)%nsamples + 1
+      endwhere
+
+      stats%vars(i)%sub_timestep_sum = 0.0_stat_rknd
+      stats%vars(i)%sub_timestep_nsamples = 0
+      stats%vars(i)%l_sub_timestep_active = .false.
+
+      if ( any( stats%vars(i)%nsamples > stats%samples_per_write ) ) then
+        write( fstderr,* ) "stats oversampling warning for ", trim( stats%vars(i)%name ), &
+                         ": max_count=", maxval( stats%vars(i)%nsamples ), &
+                         " expected <=", stats%samples_per_write
+      endif
+    enddo
+
+  end subroutine stats_flush_sub_timestep_averages
+
   !----------------------------------------------------------------------------
   !                         Sampling/Writing helpers
   !----------------------------------------------------------------------------
@@ -1446,7 +1528,7 @@ contains
   !                         Sampling/Writing subroutines
   !----------------------------------------------------------------------------
 
-  subroutine stats_update_scalar( name, values, stats, icol, level )
+  subroutine stats_update_scalar( name, values, stats, icol, level, sub_timestep_average )
 
     ! Description:
     !   Add sampled scalar values to the accumulation buffer for a named
@@ -1470,8 +1552,12 @@ contains
       icol, &           ! Column index for single-point update [-]
       level             ! Vertical index for profile single-point update [-]
 
+    logical, intent(in), optional :: &
+      sub_timestep_average ! Average this value with other calls in this timestep [-]
+
     ! ------------------------- Locals ------------------------
     integer :: id
+    logical :: l_sub_timestep_average
 
     ! ------------------------ Begin Code ------------------------
 
@@ -1487,6 +1573,38 @@ contains
     end if
 
     !$acc update host( values ) if_present
+
+    l_sub_timestep_average = .false.
+    if ( present( sub_timestep_average ) ) l_sub_timestep_average = sub_timestep_average
+
+    if ( l_sub_timestep_average ) then
+      if ( stats%vars(id)%l_regular_timestep_active ) then
+        write( fstderr,* ) "stats error: mixed regular and sub-timestep updates for ", &
+                         trim( stats%vars(id)%name )
+        return
+      endif
+      call stats_prepare_sub_timestep_average( stats%vars(id) )
+      stats%vars(id)%l_sub_timestep_active = .true.
+      if ( present( level ) ) then
+        stats%vars(id)%sub_timestep_sum(icol,level) = &
+          stats%vars(id)%sub_timestep_sum(icol,level) + values
+        stats%vars(id)%sub_timestep_nsamples(icol,level) = &
+          stats%vars(id)%sub_timestep_nsamples(icol,level) + 1
+      else if ( present( icol ) ) then
+        stats%vars(id)%sub_timestep_sum(icol,1) = &
+          stats%vars(id)%sub_timestep_sum(icol,1) + values
+        stats%vars(id)%sub_timestep_nsamples(icol,1) = &
+          stats%vars(id)%sub_timestep_nsamples(icol,1) + 1
+      endif
+      return
+    endif
+
+    if ( stats%vars(id)%l_sub_timestep_active ) then
+      write( fstderr,* ) "stats error: mixed sub-timestep and regular updates for ", &
+                       trim( stats%vars(id)%name )
+      return
+    endif
+    stats%vars(id)%l_regular_timestep_active = .true.
 
     if ( present( level ) ) then
       ! Updating a specific level and column in 2D field
@@ -1506,7 +1624,7 @@ contains
 
   end subroutine stats_update_scalar
 
-  subroutine stats_update_1d( name, values, stats, icol )
+  subroutine stats_update_1d( name, values, stats, icol, sub_timestep_average )
 
     ! Description:
     !   Add sampled 1D values to the accumulation buffer for a named variable.
@@ -1529,8 +1647,12 @@ contains
     integer, intent(in), optional :: &
       icol                ! Column index when values represents one-column profile [-]
 
+    logical, intent(in), optional :: &
+      sub_timestep_average ! Average this value with other calls in this timestep [-]
+
     ! ------------------------- Locals ------------------------
     integer :: id
+    logical :: l_sub_timestep_average
 
     ! ------------------------ Begin Code ------------------------
 
@@ -1546,6 +1668,38 @@ contains
     end if
 
     !$acc update host( values ) if_present
+
+    l_sub_timestep_average = .false.
+    if ( present( sub_timestep_average ) ) l_sub_timestep_average = sub_timestep_average
+
+    if ( l_sub_timestep_average ) then
+      if ( stats%vars(id)%l_regular_timestep_active ) then
+        write( fstderr,* ) "stats error: mixed regular and sub-timestep updates for ", &
+                         trim( stats%vars(id)%name )
+        return
+      endif
+      call stats_prepare_sub_timestep_average( stats%vars(id) )
+      stats%vars(id)%l_sub_timestep_active = .true.
+      if ( present( icol ) ) then
+        stats%vars(id)%sub_timestep_sum(icol,:) = &
+          stats%vars(id)%sub_timestep_sum(icol,:) + values(:)
+        stats%vars(id)%sub_timestep_nsamples(icol,:) = &
+          stats%vars(id)%sub_timestep_nsamples(icol,:) + 1
+      else
+        stats%vars(id)%sub_timestep_sum(:,1) = &
+          stats%vars(id)%sub_timestep_sum(:,1) + values(:)
+        stats%vars(id)%sub_timestep_nsamples(:,1) = &
+          stats%vars(id)%sub_timestep_nsamples(:,1) + 1
+      endif
+      return
+    endif
+
+    if ( stats%vars(id)%l_sub_timestep_active ) then
+      write( fstderr,* ) "stats error: mixed sub-timestep and regular updates for ", &
+                       trim( stats%vars(id)%name )
+      return
+    endif
+    stats%vars(id)%l_regular_timestep_active = .true.
 
     if ( present( icol ) ) then
       ! Updating a specific column in a profile field
@@ -1565,7 +1719,7 @@ contains
 
   end subroutine stats_update_1d
 
-  subroutine stats_update_2d( name, values, stats )
+  subroutine stats_update_2d( name, values, stats, sub_timestep_average )
 
     ! Description:
     !   Add sampled full-field 2D values to the accumulation buffer for a named
@@ -1583,8 +1737,12 @@ contains
     type(stats_type), intent(inout) :: &
       stats           ! Stats runtime context and accumulation buffers [-]
 
+    logical, intent(in), optional :: &
+      sub_timestep_average ! Average this value with other calls in this timestep [-]
+
     ! ------------------------- Locals ------------------------
     integer :: id
+    logical :: l_sub_timestep_average
 
     ! ------------------------ Begin Code ------------------------
 
@@ -1610,6 +1768,30 @@ contains
     end if
     
     !$acc update host( values ) if_present
+
+    l_sub_timestep_average = .false.
+    if ( present( sub_timestep_average ) ) l_sub_timestep_average = sub_timestep_average
+
+    if ( l_sub_timestep_average ) then
+      if ( stats%vars(id)%l_regular_timestep_active ) then
+        write( fstderr,* ) "stats error: mixed regular and sub-timestep updates for ", &
+                         trim( stats%vars(id)%name )
+        return
+      endif
+      call stats_prepare_sub_timestep_average( stats%vars(id) )
+      stats%vars(id)%l_sub_timestep_active = .true.
+      stats%vars(id)%sub_timestep_sum(:,:) = stats%vars(id)%sub_timestep_sum(:,:) + values(:,:)
+      stats%vars(id)%sub_timestep_nsamples(:,:) = &
+        stats%vars(id)%sub_timestep_nsamples(:,:) + 1
+      return
+    endif
+
+    if ( stats%vars(id)%l_sub_timestep_active ) then
+      write( fstderr,* ) "stats error: mixed sub-timestep and regular updates for ", &
+                       trim( stats%vars(id)%name )
+      return
+    endif
+    stats%vars(id)%l_regular_timestep_active = .true.
 
     ! Updating all columns and levels in a profile field
     stats%vars(id)%buffer(:,:) = stats%vars(id)%buffer(:,:) + values(:,:)

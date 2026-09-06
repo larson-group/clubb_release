@@ -1,7 +1,6 @@
 add_subdirectory(KK_microphys)          # provides:  KK_microphys_lib
 add_subdirectory(COAMPS_microphys)      # provides:  coamps_lib
 add_subdirectory(SCM_Activation)        # provides:  scm_activation_lib
-add_subdirectory(Microphys_utils)       # provides:  microphys_utils_lib
 add_subdirectory(Morrison_microphys)       # provides:  morrison_microphys_lib
 
 set(MICROPHYS_SOURCES advance_microphys_module.F90
@@ -33,7 +32,6 @@ target_link_libraries(microphys_lib PRIVATE clubb_core_lib
                                             coamps_lib
                                             silhs_lib
                                             scm_activation_lib
-                                            microphys_utils_lib
                                             morrison_microphys_lib
                                           )
 

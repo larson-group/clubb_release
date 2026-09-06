@@ -818,7 +818,7 @@ module radiation_module
 
     type(stats_type) :: stats_dummy
     real( kind = core_rknd ) :: inv_nsample
-    integer :: isample, i ! Looping variates
+    integer :: isample ! Sample index
 
   !-----------------------------------------------------------------------
 
@@ -826,15 +826,10 @@ module radiation_module
 
     inv_nsample = 1.0_core_rknd / real( lh_num_samples, kind = core_rknd )
 
-    do i = 1, ngrdcol
-      call copy_X_nl_into_hydromet_all_pts( &
-             nzt, pdf_dim, lh_num_samples, &                ! Intent(in)
-             X_nl_all_levs(i,:,:,:), &                      ! Intent(in)
-             hydromet_dim, hm_metadata, &                   ! Intent(in)
-             hydromet(i,:,:), &                            ! Intent(in)
-             hydromet_all_pts(i,:,:,:), &                   ! Intent(out)
-             Ncn_all_points(i,:,:) )                        ! Intent(out)
-    end do
+    call copy_X_nl_into_hydromet_all_pts( &
+           nzt, pdf_dim, lh_num_samples, ngrdcol, X_nl_all_levs, & ! In
+           hydromet_dim, hm_metadata, hydromet, &                 ! In
+           hydromet_all_pts, Ncn_all_points )                    ! Out
 
     ! We don't want radiation_driver updating stats, since
     ! we will be averaging over many samples before updating stats.  

@@ -21,8 +21,7 @@ REPO_ROOT = TESTS_DIR.parent
 RUN_SCRIPTS = REPO_ROOT / "run_scripts"
 RUN_SCM_PY = RUN_SCRIPTS / "run_scm.py"
 OUTPUT_DIR = REPO_ROOT / "output"
-# all_stats.in includes LH microphysics fields needed by this test, including
-# variables referenced by silhs_noninteractive_stats.
+# all_stats.in includes the LH microphysics fields needed by this test.
 DEFAULT_STATS_FILE = REPO_ROOT / "input" / "stats" / "all_stats.in"
 
 

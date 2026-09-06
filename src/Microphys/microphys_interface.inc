@@ -5,16 +5,18 @@
 ! hypercube sampling for.  New microphysics drivers will need to have the same
 ! number and type of arguments as this does.
 interface
-  subroutine microphys_sub( gr, dt, nnzp, &
+  subroutine microphys_sub( gr, ngrdcol, dt, nnzp, &
                             hydromet_dim, hm_metadata, &
                             l_latin_hypercube, &
                             thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, w_std_dev, &
                             dzq, rcm, Nc, chi, rvm, hydromet, &
                             saturation_formula, &
+                            sample_weight, stats, &
                             hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
-                            microphys_stats_zt, microphys_stats_sfc )
+                            rrm_auto_diag, rrm_accr_diag, rrm_evap_diag, &
+                            Nrm_auto_diag, Nrm_evap_diag )
 
     use clubb_precision, only: core_rknd
 
@@ -23,8 +25,7 @@ interface
     use corr_varnce_module, only: &
         hm_metadata_type
 
-    use microphys_stats_vars_module, only: &
-      microphys_stats_vars_type   ! Type
+    use stats_netcdf, only: stats_type
 
     ! Input Variables
 
@@ -33,6 +34,7 @@ interface
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: &
+      ngrdcol, &    ! Number of model columns        [-]
       nnzp, &       ! Points in the Vertical        [-]
       hydromet_dim
 
@@ -42,7 +44,7 @@ interface
     logical, intent(in) :: &
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
-    real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nnzp), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
       wm,         & ! Mean vertical velocity             [m/s]
       p_in_Pa,    & ! Pressure                           [Pa]
@@ -50,37 +52,46 @@ interface
       rho,        & ! Density on thermodynamic levels    [kg/m^3]
       cloud_frac    ! Cloud fraction                     [-]
 
-    real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nnzp), intent(in) :: &
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in height       [m]
 
-    real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nnzp), intent(in) :: &
       rcm,           & ! Cloud water mixing ratio            [kg/kg]
       Nc,            & ! Cloud droplet number conc. in cloud [#/kg]
       chi,           & ! The variable 's' from Mellor        [kg/kg]
       rvm              ! Vapor water mixing ratio            [kg/kg]
 
-    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
+    real( kind = core_rknd ), dimension(ngrdcol,nnzp), intent(in) :: &
+      sample_weight          ! SILHS sample weight; unity for an ordinary call
+
+    type(stats_type), intent(inout) :: &
+      stats
+
     ! Output Variables
 
-    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nnzp,hydromet_dim), intent(out) :: &
       hydromet_mc, & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 
-    real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nnzp), intent(out) :: &
       Ncm_mc, & ! Time tendency of cloud droplet concentration  [num/kg/s]
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
-    type(microphys_stats_vars_type), intent(out) :: &
-      microphys_stats_zt, &   ! Output variables for statistical sampling
-      microphys_stats_sfc
+    real( kind = core_rknd ), dimension(ngrdcol,nnzp), intent(out) :: &
+      rrm_auto_diag, & ! Rain autoconversion tendency [kg/kg/s]
+      rrm_accr_diag, & ! Rain accretion tendency [kg/kg/s]
+      rrm_evap_diag, & ! Rain evaporation tendency [kg/kg/s]
+      Nrm_auto_diag, & ! Rain-number autoconversion tendency [num/kg/s]
+      Nrm_evap_diag    ! Rain-number evaporation tendency [num/kg/s]
 
   end subroutine microphys_sub
 end interface

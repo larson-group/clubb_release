@@ -11,14 +11,15 @@ module ice_dfsn_module
 
   contains
 !-------------------------------------------------------------------------------
-  subroutine ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, & 
+  subroutine ice_dfsn( gr, ngrdcol, dt, thlm, rcm, exner, p_in_Pa, rho, &
                        saturation_formula, &
-                       stats, icol,         &
+                       stats, &
                        rcm_icedfsn, thlm_icedfsn )
 ! Description:
 !   This subroutine is based on a COAMPS subroutine (nov11_icedfs)
 !   written by Adam Smith and Vince Larson to calculate the
 !   depletion of cloud water by the diffusional growth of ice.
+!   The calculation is applied to all model columns.
 !
 !---------------Brian's comment--------------------------------------!
 ! This code does not use actual microphysics.  Diffusional growth of !
@@ -91,12 +92,15 @@ module ice_dfsn_module
 
     !---------------------- Input variables ----------------------
     type(grid), intent(in) :: &
-      gr
+      gr                       ! Model grid [-]
+
+    integer, intent(in) :: &
+      ngrdcol                  ! Number of model columns [-]
 
     real( kind = core_rknd ), intent(in)::  & 
       dt      ! Model timestep                                     [s]
 
-    real(kind = core_rknd), dimension(gr%nzt), intent(in)::  & 
+    real(kind = core_rknd), dimension(ngrdcol,gr%nzt), intent(in) :: &
       thlm,    & ! Liquid potential temperature         [K]
       rcm,     & ! Cloud water mixing ratio             [kg kg^{-1}]
       exner,   & ! Exner function                       [-]
@@ -106,20 +110,17 @@ module ice_dfsn_module
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
 
-    ! ---------------------- InOut variables ----------------------
+    !------------------------ Input/Output Variables ------------------------
     type(stats_type), intent(inout) :: &
-      stats
+      stats     ! Statistics runtime context [-]
 
-    integer, intent(in) :: &
-      icol
-
-    !---------------------- Output variables ----------------------
-    real(kind = core_rknd), dimension(gr%nzt), intent(out)::  & 
+    !--------------------------- Output Variables ---------------------------
+    real(kind = core_rknd), dimension(ngrdcol,gr%nzt), intent(out) :: &
       rcm_icedfsn, & ! Time tendency of rcm due to ice diffusional growth  [kg kg^{-1} s^{-1}]
       thlm_icedfsn   ! Time tendency of thlm due to ice diffusional growth [K/s]
 
-    ! Local variables
-    real(kind = core_rknd), dimension(gr%nzt)::  & 
+    !--------------------------- Local Variables ---------------------------
+    real(kind = core_rknd), dimension(ngrdcol,gr%nzt) :: &
       T_in_K,           & ! Absolute temperature                        [K]
       mass_ice_cryst,   & ! Mass of a single ice crystal                [kg]
       r_s,              & ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
@@ -141,12 +142,16 @@ module ice_dfsn_module
       q_expn,     & ! Exponential of density in fallspeed-diameter formula       []   
       n_expn        ! Exponential of diameter in fallspeed-diameter formula      []
 
-    integer :: k
+    integer :: &
+      i, & ! Column loop index [-]
+      k    ! Vertical-level loop index [-]
 
     !---------------------- Begin Code ----------------------
 
     ! Determine absolute temperature
-    T_in_K = thlm2T_in_K_api( gr%nzt, thlm, exner, rcm )
+    !$acc data copyin( thlm, exner, rcm ) copyout( T_in_K )
+    T_in_K = thlm2T_in_K_api( gr%nzt, ngrdcol, thlm, exner, rcm )
+    !$acc end data
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !                                                                     !
@@ -200,28 +205,31 @@ module ice_dfsn_module
     !                                                                     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do k = 1, gr%nzt, 1
-      mass_ice_cryst(k) = 1.0e-11_core_rknd
-    end do
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        mass_ice_cryst(i,k) = 1.0e-11_core_rknd
+      enddo
+    enddo
 
     do k = gr%nzt, 1, -1
+      do i = 1, ngrdcol
 
       ! Check whether we're in cloud and below freezing.
       ! Note:  A value of 1.0E-5 kg/kg is used as a threshold value
       ! for rcm because the CLUBB model shows a small amount of liquid
       ! water all the way to the model top, which messes with the
       ! ice diffusion calculations.
-      IF ( rcm(k) >= 1.0E-5_core_rknd .AND. T_in_K(k) < T_freeze_K ) THEN
+      if ( rcm(i,k) >= 1.0E-5_core_rknd .and. T_in_K(i,k) < T_freeze_K ) then
 
         ! Find saturation mixing ratio over vapor [kg kg^{-1}]
-        r_s(k) = sat_mixrat_liq_api( p_in_Pa(k), T_in_K(k), saturation_formula )
+        r_s(i,k) = sat_mixrat_liq_api( p_in_Pa(i,k), T_in_K(i,k), saturation_formula )
 
         ! Saturation vapor pressure over liquid in Pa
-        e_s(k) = ( r_s(k)*p_in_Pa(k) ) / ( ep + r_s(k) )
+        e_s(i,k) = ( r_s(i,k) * p_in_Pa(i,k) ) / ( ep + r_s(i,k) )
 
         ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
-        e_i(k) = e_s(k) / EXP( ( Lf/(Rv*T_freeze_K) ) & 
-                            * ( T_freeze_K/T_in_K(k) - 1.0_core_rknd ) )
+        e_i(i,k) = e_s(i,k) / exp( ( Lf / ( Rv * T_freeze_K ) ) &
+                            * ( T_freeze_K / T_in_K(i,k) - 1.0_core_rknd ) )
 
         ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
         !---------------Brian's comment--------------------------------------!
@@ -230,10 +238,10 @@ module ice_dfsn_module
         ! the atmosphere is then saturated with respect to liquid water.     !
         ! Therefore, S = 1.0, allowing Si = esat/ei.                           !
         !--------------------------------------------------------------------!
-        S_i(k) = e_s(k)/e_i(k)
+        S_i(i,k) = e_s(i,k) / e_i(i,k)
 
         ! Denominator of diffusional growth equation, 9.4 of Rogers and Yau
-        Denom(k) = Diff_denom( T_in_K(k), p_in_Pa(k), e_i(k) )
+        Denom(i,k) = Diff_denom( T_in_K(i,k), p_in_Pa(i,k), e_i(i,k) )
 
         ! Change in mass of a single ice crystal, m,
         ! as it falls a distance gr%invrs_dzt(1,:) in meters
@@ -250,59 +258,65 @@ module ice_dfsn_module
         ! for an individual crystal.  Multiplying that by the ice crystal    !
         ! concentration yields the overall change in mixing ratio over time. !
         !--------------------------------------------------------------------!
-        rcm_icedfsn(k) = - (N_i/rho(k)) & 
-           * ( 4._core_rknd * (S_i(k) - 1._core_rknd) / Denom(k) ) & 
-           * (mass_ice_cryst(k)/a_coef)**(1._core_rknd/b_expn)
+        rcm_icedfsn(i,k) = - ( N_i / rho(i,k) ) &
+           * ( 4._core_rknd * ( S_i(i,k) - 1._core_rknd ) / Denom(i,k) ) &
+           * ( mass_ice_cryst(i,k) / a_coef )**( 1._core_rknd / b_expn )
 
         ! Ensure that liquid is not over-depleted
-        IF ( rcm(k) + rcm_icedfsn(k)*dt < 0.0_core_rknd ) THEN
-          rcm_icedfsn(k) = -rcm(k)/dt
-        end if
+        if ( rcm(i,k) + rcm_icedfsn(i,k) * dt < 0.0_core_rknd ) then
+          rcm_icedfsn(i,k) = -rcm(i,k) / dt
+        endif
 
         !---------------Brian's comment-----------------------------------!
         ! dm = (dm/dt)*(dt/dz)*dz                                         !
         ! dm = (dm/dt)*(1/u_T)*dz                                         !
         !-----------------------------------------------------------------!
-        dmass_ice_cryst(k) = ( 4._core_rknd * (S_i(k) - 1._core_rknd) / Denom(k) ) & 
-           * (1.0_core_rknd/k_u_coef) * ( rho(k)**q_expn ) & 
-           * ( (mass_ice_cryst(k)/a_coef)**((1.0_core_rknd-n_expn)/b_expn) ) & 
-           * (1.0_core_rknd/gr%invrs_dzm(1,k-1))
+        dmass_ice_cryst(i,k) = &
+          ( 4._core_rknd * ( S_i(i,k) - 1._core_rknd ) / Denom(i,k) ) &
+          * ( 1.0_core_rknd / k_u_coef ) * ( rho(i,k)**q_expn ) &
+          * ( ( mass_ice_cryst(i,k) / a_coef ) &
+              **( ( 1.0_core_rknd - n_expn ) / b_expn ) ) &
+          * ( 1.0_core_rknd / gr%invrs_dzm(i,k-1) )
         
-        if (k > 1) then
-          mass_ice_cryst(k-1) = mass_ice_cryst(k)  & 
-                                       + dmass_ice_cryst(k)
-        end if
+        if ( k > 1 ) then
+          mass_ice_cryst(i,k-1) = mass_ice_cryst(i,k) + dmass_ice_cryst(i,k)
+        endif
 
         ! Diameter of ice crystal in meters.
-        diam(k) = (mass_ice_cryst(k)/a_coef)**(1._core_rknd/b_expn)
+        diam(i,k) = ( mass_ice_cryst(i,k) / a_coef )**( 1._core_rknd / b_expn )
 
         ! Fallspeed of ice crystal in cm/s.
-        u_T_cm(k) = cm_per_m * k_u_coef * & 
-                    ((mass_ice_cryst(k)/a_coef)**(n_expn/b_expn))  & 
-                          * (rho(k)**(-q_expn))
+        u_T_cm(i,k) = cm_per_m * k_u_coef &
+                      * ( ( mass_ice_cryst(i,k) / a_coef )**( n_expn / b_expn ) ) &
+                      * ( rho(i,k)**(-q_expn) )
 
       else   ! There's no liquid and/or ice present; assume no ice growth
         
-        if (k > 1) then
-          mass_ice_cryst(k-1) = mass_ice_cryst(k)
-        end if
-        rcm_icedfsn(k) = 0.0_core_rknd
-        diam(k)        = 0.0_core_rknd  ! Set zero to remind that we don't grow ice
-        u_T_cm(k)      = 0.0_core_rknd  ! Set zero to remind that we don't grow ice
+        if ( k > 1 ) then
+          mass_ice_cryst(i,k-1) = mass_ice_cryst(i,k)
+        endif
+        rcm_icedfsn(i,k) = 0.0_core_rknd
+        diam(i,k)        = 0.0_core_rknd  ! Set zero to remind that we don't grow ice
+        u_T_cm(i,k)      = 0.0_core_rknd  ! Set zero to remind that we don't grow ice
 
-      end if
+      endif
 
-    end do ! k = gr%nzt, 1, -1
+      enddo
+    enddo ! k = gr%nzt, 1, -1
 
     if ( stats%l_sample ) then
-      call stats_update( "rcm_icedfs", rcm_icedfsn, stats, icol )
-      call stats_update( "diam", diam, stats, icol )
-      call stats_update( "mass_ice_cryst", mass_ice_cryst, stats, icol )
-      call stats_update( "u_T_cm", u_T_cm, stats, icol )
+      call stats_update( "rcm_icedfs", rcm_icedfsn, stats )
+      call stats_update( "diam", diam, stats )
+      call stats_update( "mass_ice_cryst", mass_ice_cryst, stats )
+      call stats_update( "u_T_cm", u_T_cm, stats )
     end if
 
     ! Determine time tendency of liquid potential temperature
-    thlm_icedfsn(1:gr%nzt) = - ( Lv/(Cp*exner(1:gr%nzt)) ) * rcm_icedfsn(1:gr%nzt)
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        thlm_icedfsn(i,k) = - ( Lv / ( Cp * exner(i,k) ) ) * rcm_icedfsn(i,k)
+      enddo
+    enddo
 
     return
   end subroutine ice_dfsn

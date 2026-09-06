@@ -30,10 +30,10 @@ module KK_upscaled_turbulent_sed
                                 sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                                 sigma_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                                 KK_mvr_coef, mixt_frac, precip_frac_1, &
-                                precip_frac_2, level, &
-                                stats, icol,         &
+                                precip_frac_2, &
                                 Vrrprrp_impc, Vrrprrp_expc, &
-                                VNrpNrp_impc, VNrpNrp_expc )
+                                VNrpNrp_impc, VNrpNrp_expc, &
+                                rr_KK_mvr_covar, Nr_KK_mvr_covar )
 
     ! Description:
     ! The covariance of sedimentation velocity (of rain water mixing ratio) and
@@ -70,10 +70,6 @@ module KK_upscaled_turbulent_sed
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use stats_netcdf, only: &
-        stats_type, &
-        stats_update
-
     implicit none
 
     ! Input Variables
@@ -108,21 +104,14 @@ module KK_upscaled_turbulent_sed
       precip_frac_1,   & ! Precipitation fraction (1st PDF component)        [-]
       precip_frac_2      ! Precipitation fraction (2nd PDF component)        [-]
 
-    integer, intent(in) :: &
-      level   ! Vertical level index 
-
-    type(stats_type), intent(inout) :: &
-      stats
-
-    integer, intent(in) :: &
-      icol
-
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       Vrrprrp_impc, & ! Implicit comp. of <V_rr'r_r'>: <r_r> eq. [(m/s)]
       Vrrprrp_expc, & ! Explicit comp. of <V_rr'r_r'>: <r_r> eq. [(m/s)(kg/kg)]
       VNrpNrp_impc, & ! Implicit comp. of <V_Nr'N_r'>: <N_r> eq. [(m/s)]
-      VNrpNrp_expc    ! Explicit comp. of <V_Nr'N_r'>: <N_r> eq. [(m/s)(num/kg)]
+      VNrpNrp_expc,  & ! Explicit comp. of <V_Nr'N_r'>: <N_r> eq. [(m/s)(num/kg)]
+      rr_KK_mvr_covar, & ! Covariance of r_r and KK mean vol rad  [(kg/kg)m]
+      Nr_KK_mvr_covar    ! Covariance of N_r and KK mean vol rad  [(num/kg)m]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -130,10 +119,6 @@ module KK_upscaled_turbulent_sed
       rr_KK_mvr_covar_termB, & ! Term in < r_r'R_vr' > equation       [(kg/kg)m]
       Nr_KK_mvr_covar_coefA, & ! Coefficient of <N_r> in < N_r'R_vr' > eq.   [m]
       Nr_KK_mvr_covar_termB    ! Term in < N_r'R_vr' > equation      [(num/kg)m]
-
-    real( kind = core_rknd ) :: &
-      rr_KK_mvr_covar, & ! Covariance of r_r and KK mean vol rad     [(kg/kg)m]
-      Nr_KK_mvr_covar    ! Covariance of N_r and KK mean vol rad     [(num/kg)m]
 
     logical, parameter :: &
       l_semi_imp_turbulent_sed = .true. ! Flag to use semi-implicit tur. sed.
@@ -234,15 +219,8 @@ module KK_upscaled_turbulent_sed
     VNrpNrp_expc = - 0.007_core_rknd * micron_per_m * Nr_KK_mvr_covar_termB
 
 
-    ! Statistics
-    if ( stats%l_sample ) then
-      ! Covariance of r_r and KK rain drop mean volume radius.
-      rr_KK_mvr_covar = rr_KK_mvr_covar_coefA * rrm + rr_KK_mvr_covar_termB
-      call stats_update( "rr_KK_mvr_covar_zt", rr_KK_mvr_covar, stats, icol, level )
-      ! Covariance of N_r and KK rain drop mean volume radius.
-      Nr_KK_mvr_covar = Nr_KK_mvr_covar_coefA * Nrm + Nr_KK_mvr_covar_termB
-      call stats_update( "Nr_KK_mvr_covar_zt", Nr_KK_mvr_covar, stats, icol, level )
-    end if
+    rr_KK_mvr_covar = rr_KK_mvr_covar_coefA * rrm + rr_KK_mvr_covar_termB
+    Nr_KK_mvr_covar = Nr_KK_mvr_covar_coefA * Nrm + Nr_KK_mvr_covar_termB
 
 
     return

@@ -6,7 +6,8 @@ module stats_clubb_utilities
   implicit none
 
   private ! Set Default Scope
-  public :: stats_accumulate, stats_accumulate_hydromet_api, stats_accumulate_lh_tend
+  public :: stats_accumulate, stats_accumulate_hydromet_api, &
+            stats_accumulate_lh_tend
 
 contains
 
@@ -516,27 +517,25 @@ contains
   end subroutine stats_accumulate
 
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_hydromet_api( gr, hydromet_dim, hm_metadata, & ! intent(in)
-                                            hydromet, rho_ds_zt,           & ! intent(in)
-                                            stats, icol )                    ! intent(inout/in)
-! Description:
-!   Compute stats related the hydrometeors
-
-! References:
-!   None
 !------------------------------------------------------------------------------
+  subroutine stats_accumulate_hydromet_api( gr, ngrdcol, hydromet_dim, &
+                                                  hm_metadata, hydromet, &
+                                                  rho_ds_zt, stats )
+
+    ! Description:
+    !   Compute hydrometeor statistics for all model columns.
 
     use grid_class, only: &
-        grid ! Type
-        
+        grid
+
     use corr_varnce_module, only: &
         hm_metadata_type
 
     use advance_helper_module, only: &
-        vertical_integral ! Procedure(s)
+        vertical_integral
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        core_rknd
 
     use stats_netcdf, only: &
         stats_type, &
@@ -545,109 +544,100 @@ contains
 
     implicit none
 
-    type (grid), intent(in) :: &
+    ! Input Variables
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
-      hydromet_dim
+      ngrdcol, &    ! Number of model columns
+      hydromet_dim  ! Number of hydrometeor species
 
-    type (hm_metadata_type), intent(in) :: &
+    type(hm_metadata_type), intent(in) :: &
       hm_metadata
 
+    real(kind=core_rknd), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
+      hydromet             ! All hydrometeors except for rcm        [units vary]
+
+    real(kind=core_rknd), dimension(ngrdcol,gr%nzt), intent(in) :: &
+      rho_ds_zt            ! Dry, static density (thermo. levs.)      [kg/m^3]
+
+    ! Input/Output Variables
     type(stats_type), intent(inout) :: &
       stats
 
-    integer, intent(in) :: &
-      icol
-
-    ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
-      hydromet ! All hydrometeors except for rcm        [units vary]
-
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
-      rho_ds_zt ! Dry, static density (thermo. levs.)      [kg/m^3]
-
     ! Local Variables
-    real(kind=core_rknd) :: xtmp
-    
+    real(kind=core_rknd), dimension(ngrdcol) :: &
+      xtmp
+
+    integer :: &
+      i
+
     ! ---- Begin Code ----
-    if ( stats%l_sample ) then
+    if ( .not. stats%l_sample ) return
 
-      if ( hm_metadata%iirr > 0 ) then
-        call stats_update( "rrm", hydromet(:,hm_metadata%iirr), stats, icol )
-      end if
+    if ( hm_metadata%iirr > 0 ) then
+      call stats_update( "rrm", hydromet(:,:,hm_metadata%iirr), stats )
+    endif
+    if ( hm_metadata%iirs > 0 ) then
+      call stats_update( "rsm", hydromet(:,:,hm_metadata%iirs), stats )
+    endif
+    if ( hm_metadata%iiri > 0 ) then
+      call stats_update( "rim", hydromet(:,:,hm_metadata%iiri), stats )
+    endif
+    if ( hm_metadata%iirg > 0 ) then
+      call stats_update( "rgm", hydromet(:,:,hm_metadata%iirg), stats )
+    endif
+    if ( hm_metadata%iiNi > 0 ) then
+      call stats_update( "Nim", hydromet(:,:,hm_metadata%iiNi), stats )
+    endif
+    if ( hm_metadata%iiNr > 0 ) then
+      call stats_update( "Nrm", hydromet(:,:,hm_metadata%iiNr), stats )
+    endif
+    if ( hm_metadata%iiNs > 0 ) then
+      call stats_update( "Nsm", hydromet(:,:,hm_metadata%iiNs), stats )
+    endif
+    if ( hm_metadata%iiNg > 0 ) then
+      call stats_update( "Ngm", hydromet(:,:,hm_metadata%iiNg), stats )
+    endif
 
-      if ( hm_metadata%iirs > 0 ) then
-        call stats_update( "rsm", hydromet(:,hm_metadata%iirs), stats, icol )
-      end if 
+    ! Snow Water Path
+    if ( var_on_stats_list( stats, "swp" ) .and. hm_metadata%iirs > 0 ) then
+      do i = 1, ngrdcol
+        xtmp(i) = vertical_integral( gr%nzt, rho_ds_zt(i,:), &
+                                     hydromet(i,:,hm_metadata%iirs), gr%dzt(i,:) )
+      enddo
+      call stats_update( "swp", xtmp, stats )
+    endif
 
-      if ( hm_metadata%iiri > 0 ) then 
-        call stats_update( "rim", hydromet(:,hm_metadata%iiri), stats, icol )
-      end if
+    ! Ice Water Path
+    if ( var_on_stats_list( stats, "iwp" ) .and. hm_metadata%iiri > 0 ) then
+      do i = 1, ngrdcol
+        xtmp(i) = vertical_integral( gr%nzt, rho_ds_zt(i,:), &
+                                     hydromet(i,:,hm_metadata%iiri), gr%dzt(i,:) )
+      enddo
+      call stats_update( "iwp", xtmp, stats )
+    endif
 
-      if ( hm_metadata%iirg > 0 ) then
-        call stats_update( "rgm", hydromet(:,hm_metadata%iirg), stats, icol )
-      end if
+    ! Rain Water Path
+    if ( var_on_stats_list( stats, "rwp" ) .and. hm_metadata%iirr > 0 ) then
+      do i = 1, ngrdcol
+        xtmp(i) = vertical_integral( gr%nzt, rho_ds_zt(i,:), &
+                                     hydromet(i,:,hm_metadata%iirr), gr%dzt(i,:) )
+      enddo
+      call stats_update( "rwp", xtmp, stats )
+    endif
 
-      if ( hm_metadata%iiNi > 0 ) then
-        call stats_update( "Nim", hydromet(:,hm_metadata%iiNi), stats, icol )
-      end if
-
-      if ( hm_metadata%iiNr > 0 ) then
-        call stats_update( "Nrm", hydromet(:,hm_metadata%iiNr), stats, icol )
-      end if
-
-      if ( hm_metadata%iiNs > 0 ) then
-        call stats_update( "Nsm", hydromet(:,hm_metadata%iiNs), stats, icol )
-      end if
-
-      if ( hm_metadata%iiNg > 0 ) then
-        call stats_update( "Ngm", hydromet(:,hm_metadata%iiNg), stats, icol )
-      end if
-
-      ! Snow Water Path
-      if ( var_on_stats_list( stats, "swp" ) .and. hm_metadata%iirs > 0 ) then
-        xtmp &
-        = vertical_integral &
-               ( gr%nzt, rho_ds_zt, &
-                 hydromet(:,hm_metadata%iirs), gr%dzt(1,:) )
-
-        call stats_update( "swp", xtmp, stats, icol )
-      end if
-
-      ! Ice Water Path
-      if ( var_on_stats_list( stats, "iwp" ) .and. hm_metadata%iiri > 0 ) then
-        xtmp &
-        = vertical_integral &
-               ( gr%nzt, rho_ds_zt, &
-                 hydromet(:,hm_metadata%iiri), gr%dzt(1,:) )
-
-        call stats_update( "iwp", xtmp, stats, icol )
-      end if
-
-      ! Rain Water Path
-      if ( var_on_stats_list( stats, "rwp" ) .and. hm_metadata%iirr > 0 ) then
-        xtmp &
-        = vertical_integral &
-               ( gr%nzt, rho_ds_zt, &
-                 hydromet(:,hm_metadata%iirr), gr%dzt(1,:) )
-
-        call stats_update( "rwp", xtmp, stats, icol )
-      end if
-    end if
-
-    return
   end subroutine stats_accumulate_hydromet_api
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh_tend( gr, hydromet_dim, hm_metadata, &
+  subroutine stats_accumulate_lh_tend( gr, ngrdcol, hydromet_dim, hm_metadata, &
                                        lh_hydromet_mc, lh_Ncm_mc, &
                                        lh_thlm_mc, lh_rvm_mc, lh_rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc, &
-                                       stats, icol )
+                                       stats )
 
 ! Description:
-!   Compute stats for the tendency of latin hypercube sample points.
+!   Compute full-field stats for the tendency of latin hypercube sample points.
 
 ! References:
 !   None
@@ -673,21 +663,22 @@ contains
       gr
 
     integer, intent(in) :: &
-      hydromet_dim
+      ngrdcol, &      ! Number of model columns [-]
+      hydromet_dim    ! Number of hydrometeor species [-]
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
       lh_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       lh_Ncm_mc,  & ! Tendency of cloud droplet concentration  [num/kg/s]
       lh_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
       lh_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
       lh_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
       AKm,        & ! Exact Kessler ac                    [kg/kg/s]
       AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
@@ -699,51 +690,48 @@ contains
     type(stats_type), intent(inout) :: &
       stats
 
-    integer, intent(in) :: &
-      icol
-
     !----------------------- Local Variables -----------------------
 
     !----------------------- Begin Code -----------------------
 
     if ( stats%l_sample ) then
-      call stats_update( "lh_thlm_mc", lh_thlm_mc(:), stats, icol )
-      call stats_update( "lh_rcm_mc", lh_rcm_mc(:), stats, icol )
-      call stats_update( "lh_rvm_mc", lh_rvm_mc(:), stats, icol )
-      call stats_update( "lh_Ncm_mc", lh_Ncm_mc(:), stats, icol )
+      call stats_update( "lh_thlm_mc", lh_thlm_mc, stats )
+      call stats_update( "lh_rcm_mc", lh_rcm_mc, stats )
+      call stats_update( "lh_rvm_mc", lh_rvm_mc, stats )
+      call stats_update( "lh_Ncm_mc", lh_Ncm_mc, stats )
 
       if ( hm_metadata%iirr > 0 ) then
-        call stats_update( "lh_rrm_mc", lh_hydromet_mc(:,hm_metadata%iirr), stats, icol )
+        call stats_update( "lh_rrm_mc", lh_hydromet_mc(:,:,hm_metadata%iirr), stats )
       end if
       if ( hm_metadata%iirs > 0 ) then
-        call stats_update( "lh_rsm_mc", lh_hydromet_mc(:,hm_metadata%iirs), stats, icol )
+        call stats_update( "lh_rsm_mc", lh_hydromet_mc(:,:,hm_metadata%iirs), stats )
       end if
       if ( hm_metadata%iiri > 0 ) then
-        call stats_update( "lh_rim_mc", lh_hydromet_mc(:,hm_metadata%iiri), stats, icol )
+        call stats_update( "lh_rim_mc", lh_hydromet_mc(:,:,hm_metadata%iiri), stats )
       end if
       if ( hm_metadata%iirg > 0 ) then
-        call stats_update( "lh_rgm_mc", lh_hydromet_mc(:,hm_metadata%iirg), stats, icol )
+        call stats_update( "lh_rgm_mc", lh_hydromet_mc(:,:,hm_metadata%iirg), stats )
       end if
       if ( hm_metadata%iiNi > 0 ) then
-        call stats_update( "lh_Nim_mc", lh_hydromet_mc(:,hm_metadata%iiNi), stats, icol )
+        call stats_update( "lh_Nim_mc", lh_hydromet_mc(:,:,hm_metadata%iiNi), stats )
       end if
       if ( hm_metadata%iiNr > 0 ) then
-        call stats_update( "lh_Nrm_mc", lh_hydromet_mc(:,hm_metadata%iiNr), stats, icol )
+        call stats_update( "lh_Nrm_mc", lh_hydromet_mc(:,:,hm_metadata%iiNr), stats )
       end if
       if ( hm_metadata%iiNs > 0 ) then
-        call stats_update( "lh_Nsm_mc", lh_hydromet_mc(:,hm_metadata%iiNs), stats, icol )
+        call stats_update( "lh_Nsm_mc", lh_hydromet_mc(:,:,hm_metadata%iiNs), stats )
       end if
       if ( hm_metadata%iiNg > 0 ) then
-        call stats_update( "lh_Ngm_mc", lh_hydromet_mc(:,hm_metadata%iiNg), stats, icol )
+        call stats_update( "lh_Ngm_mc", lh_hydromet_mc(:,:,hm_metadata%iiNg), stats )
       end if
 
-      call stats_update( "AKm", AKm(:), stats, icol )
-      call stats_update( "lh_AKm", lh_AKm(:), stats, icol )
-      call stats_update( "lh_rcm_avg", lh_rcm_avg(:), stats, icol )
-      call stats_update( "AKstd", AKstd(:), stats, icol )
-      call stats_update( "AKstd_cld", AKstd_cld(:), stats, icol )
-      call stats_update( "AKm_rcm", AKm_rcm(:), stats, icol )
-      call stats_update( "AKm_rcc", AKm_rcc(:), stats, icol )
+      call stats_update( "AKm", AKm, stats )
+      call stats_update( "lh_AKm", lh_AKm, stats )
+      call stats_update( "lh_rcm_avg", lh_rcm_avg, stats )
+      call stats_update( "AKstd", AKstd, stats )
+      call stats_update( "AKstd_cld", AKstd_cld, stats )
+      call stats_update( "AKm_rcm", AKm_rcm, stats )
+      call stats_update( "AKm_rcc", AKm_rcc, stats )
     end if
 
     return

@@ -58,13 +58,16 @@ module KK_upscaled_covariances
                                        mu_thl_1,mu_thl_2, &
                                        crt1, crt2, &
                                        cthl1, cthl2, &
-                                       level, &
-                                       stats, icol,         &
                                        wprtp_mc_src_tndcy, &
                                        wpthlp_mc_src_tndcy, &
                                        rtp2_mc_src_tndcy, &
                                        thlp2_mc_src_tndcy, &
-                                       rtpthlp_mc_src_tndcy )
+                                       rtpthlp_mc_src_tndcy, &
+                                       w_KK_evap_covar, rt_KK_evap_covar, &
+                                       thl_KK_evap_covar, w_KK_auto_covar, &
+                                       rt_KK_auto_covar, thl_KK_auto_covar, &
+                                       w_KK_accr_covar, rt_KK_accr_covar, &
+                                       thl_KK_accr_covar )
     ! Description:
 
     ! References:
@@ -95,10 +98,6 @@ module KK_upscaled_covariances
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
-    use stats_netcdf, only: &
-        stats_type, &
-        stats_update
 
     implicit none
 
@@ -198,15 +197,6 @@ module KK_upscaled_covariances
       cthl1,    & ! Coefficient c_thl (1st PDF component)   [(kg/kg)/K]
       cthl2       ! Coefficient c_thl (2nd PDF component)   [(kg/kg)/K]
 
-    integer, intent(in) :: &
-      level         ! Vertical level index                  [-]
-
-    type(stats_type), intent(inout) :: &
-      stats
-
-    integer, intent(in) :: &
-      icol
-
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       wprtp_mc_src_tndcy,   & ! Microphysics tendency for w'rt'  [m*(kg/kg)/s^2]
@@ -215,8 +205,7 @@ module KK_upscaled_covariances
       thlp2_mc_src_tndcy,   & ! Microphysics tendency for thl'^2 [K^2/s]
       rtpthlp_mc_src_tndcy    ! Microphysics tend. for rt'thl'   [K*(kg/kg)/s]
 
-    ! Local Variables
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), intent(out) :: &
       w_KK_evap_covar,   & ! Covar. of w and KK evap. tend.    [m*(kg/kg)/s^2]
       rt_KK_evap_covar,  & ! Covar. of rt and KK evap. tend.   [(kg/kg)^2/s]
       thl_KK_evap_covar, & ! Covar. of thl and KK evap. tend.  [K*(kg/kg)/s]
@@ -405,35 +394,6 @@ module KK_upscaled_covariances
        thl_KK_accr_covar = zero
 
     endif
-
-
-    if ( stats%l_sample ) then
-        ! Statistics
-        ! All of these covariance variables are being calculated on thermodynamic
-        ! grid levels (all inputs are on thermodynamic grid levels, so the output
-        ! is also on thermodynamic grid levels).  These covariances will be
-        ! combined in various ways to produce the microphysics tendency terms for
-        ! various model predictive variances and covariances.  These source
-        ! tendency terms will be interpolated to momentum grid levels.
-        ! Covariance of w and KK evaporation tendency.
-        call stats_update( "w_KK_evap_covar_zt", w_KK_evap_covar, stats, icol, level )
-        ! Covariance of r_t and KK evaporation tendency.
-        call stats_update( "rt_KK_evap_covar_zt", rt_KK_evap_covar, stats, icol, level )
-        ! Covariance of theta_l and KK evaporation tendency.
-        call stats_update( "thl_KK_evap_covar_zt", thl_KK_evap_covar, stats, icol, level )
-        ! Covariance of w and KK autoconversion tendency.
-        call stats_update( "w_KK_auto_covar_zt", w_KK_auto_covar, stats, icol, level )
-        ! Covariance of r_t and KK autoconversion tendency.
-        call stats_update( "rt_KK_auto_covar_zt", rt_KK_auto_covar, stats, icol, level )
-        ! Covariance of theta_l and KK autoconversion tendency.
-        call stats_update( "thl_KK_auto_covar_zt", thl_KK_auto_covar, stats, icol, level )
-        ! Covariance of w and KK accretion tendency.
-        call stats_update( "w_KK_accr_covar_zt", w_KK_accr_covar, stats, icol, level )
-        ! Covariance of r_t and KK accretion tendency.
-        call stats_update( "rt_KK_accr_covar_zt", rt_KK_accr_covar, stats, icol, level )
-        ! Covariance of theta_l and KK accretion tendency.
-        call stats_update( "thl_KK_accr_covar_zt", thl_KK_accr_covar, stats, icol, level )
-    end if
 
 
     ! Calculate the microphysics tendency for <w'r_t'>.

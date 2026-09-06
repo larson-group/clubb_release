@@ -215,8 +215,6 @@ module pdf_hydromet_microphys_wrapper
     logical :: &
       l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
 
-    integer :: i
-
     logical, parameter :: &
       l_calc_weights_all_levs = .false. ! .false. if all time steps use the same weights at all grid
                                         ! levels
@@ -276,17 +274,14 @@ module pdf_hydromet_microphys_wrapper
 
       ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
       call timer_start( "hydrometeor_mixed_moments" )
-      do i = 1, ngrdcol
-        call hydrometeor_mixed_moments( gr, gr%nzt, pdf_dim, hydromet_dim,                 & ! In
-                                        hydromet(i,:,:), hm_metadata,                      & ! In
-                                        mu_x_1_n(i,:,:), mu_x_2_n(i,:,:),                  & ! In
-                                        sigma_x_1_n(i,:,:), sigma_x_2_n(i,:,:),            & ! In
-                                        corr_array_1_n(i,:,:,:), corr_array_2_n(i,:,:,:),  & ! In
-                                        pdf_params, hydromet_pdf_params(i,:),              & ! In
-                                        precip_fracs,                                      & ! In
-                                        rtphmp_zt(i,:,:), thlphmp_zt(i,:,:), wp2hmp(i,:,:), & ! Out
-                                        stats, icol=i )                                      ! Inout
-       end do
+      call hydrometeor_mixed_moments( gr, ngrdcol, gr%nzt, pdf_dim, hydromet_dim, & ! In
+                                      hydromet, hm_metadata,                        & ! In
+                                      mu_x_1_n, mu_x_2_n,                           & ! In
+                                      sigma_x_1_n, sigma_x_2_n,                     & ! In
+                                      corr_array_1_n, corr_array_2_n,               & ! In
+                                      pdf_params, hydromet_pdf_params,              & ! In
+                                      precip_fracs, stats,                          & ! InOut
+                                      rtphmp_zt, thlphmp_zt, wp2hmp )                 ! Out
       call timer_stop( "hydrometeor_mixed_moments" )
 
       !$acc update device( mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n, &
@@ -375,16 +370,13 @@ module pdf_hydromet_microphys_wrapper
         !$acc              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped )
 
         call timer_start( "stats_accumulate_lh_api" )
-        do i = 1, ngrdcol
-          call stats_accumulate_lh_api( &
-                gr, gr%nzt, lh_num_samples, pdf_dim, rho_ds_zt(i,:),     & ! In
-                hydromet_dim, hm_metadata,                               & ! In
-                lh_sample_point_weights(i,:,:),  X_nl_all_levs(i,:,:,:), & ! In
-                lh_rt_clipped(i,:,:), lh_thl_clipped(i,:,:),             & ! In
-                lh_rc_clipped(i,:,:), lh_rv_clipped(i,:,:),              & ! In
-                lh_Nc_clipped(i,:,:),                                    & ! In
-                stats, icol=i )                                            ! InOut
-        end do
+        call stats_accumulate_lh_api( &
+               gr, gr%nzt, ngrdcol, lh_num_samples, pdf_dim, rho_ds_zt, & ! In
+               hydromet_dim, hm_metadata, & ! In
+               lh_sample_point_weights, X_nl_all_levs, & ! In
+               lh_rt_clipped, lh_thl_clipped, & ! In
+               lh_rc_clipped, lh_rv_clipped, lh_Nc_clipped, & ! In
+               stats ) ! InOut
         call timer_stop( "stats_accumulate_lh_api" )
       end if
 

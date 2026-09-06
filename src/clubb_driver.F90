@@ -545,7 +545,6 @@ module clubb_driver
     thlm,     & ! liq. water pot. temp., th_l (thermo. levels)   [K]
     rcm,      & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
     wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-    wp3_zm,   & ! w'^3 (momentum levels)                         [m^3/s^3]
     delta_zm
   
   real( kind = core_rknd ), dimension(:,:), allocatable :: &
@@ -600,7 +599,6 @@ module clubb_driver
     vpwp_pert         ! perturbed <v'w'>    [m^2/s^2]
 
   real( kind = core_rknd ), dimension(:,:), allocatable :: &
-    Skw_zm,         & ! Skewness of w on momentum levels  [-]
     Skw_zm_smooth,  & ! Smoothed version of Skw_zm
     Lscale            ! Length scale                      [m]
     
@@ -740,12 +738,12 @@ module clubb_driver
   !$omp  lscale_term_time_avg, chi_term, chi_term_time_avg, richardson_num_term, &
   !$omp  richardson_num_term_time_avg, norm_min_grid_dens, norm_grid_dens, um, upwp, vm, vpwp, &
   !$omp  up2, vp2, up3, vp3, wprtp, wpthlp, rtp2, rtp3, thlp2, thlp3, rtpthlp, wp2, wp2_zt, thvm, &
-  !$omp  exner, rtm, thlm, rcm, wp3, wp3_zm, delta_zm, p_in_Pa, cloud_frac, wpthvp, wp2thvp, wp2up, &
+  !$omp  exner, rtm, thlm, rcm, wp3, delta_zm, p_in_Pa, cloud_frac, wpthvp, wp2thvp, wp2up, &
   !$omp  rtpthvp, thlpthvp, wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, wpup2, wpvp2, wp2up2, &
   !$omp  wp2vp2, rho_ds_zt, thv_ds_zt, wm_zm, wm_zt, rho, rho_zm, rho_ds_zm, invrs_rho_ds_zm, &
   !$omp  invrs_rho_ds_zt, thv_ds_zm, thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
   !$omp  wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, rtpthlp_forcing, um_pert, &
-  !$omp  vm_pert, upwp_pert, vpwp_pert, Skw_zm, Skw_zm_smooth, Lscale, thlprcp, sigma_sqd_w, &
+  !$omp  vm_pert, upwp_pert, vpwp_pert, Skw_zm_smooth, Lscale, thlprcp, sigma_sqd_w, &
   !$omp  sigma_sqd_w_zt, wprcp, w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
   !$omp  cloudy_downdraft_frac, ice_supersat_frac, rcm_in_layer, cloud_cover, invrs_tau_zm, &
   !$omp  ug, vg, rtm_ref, thlm_ref, um_ref, vm_ref, rcm_mc, rvm_mc, thlm_mc, wprtp_mc, wpthlp_mc, &
@@ -2182,7 +2180,6 @@ module clubb_driver
     allocate( cloudy_downdraft_frac(ngrdcol, gr%nzt) )
     allocate( wp2(ngrdcol, gr%nzm) )       ! w'^2
     allocate( wp3(ngrdcol, gr%nzt) )       ! w'^3
-    allocate( wp3_zm(ngrdcol, gr%nzm) )       ! w'^3
     allocate( rtp2(ngrdcol, gr%nzm) )      ! rt'^2
     allocate( thlp2(ngrdcol, gr%nzm) )     ! thl'^2
     allocate( rtpthlp(ngrdcol, gr%nzm) )   ! rt'thlp'
@@ -2245,7 +2242,6 @@ module clubb_driver
 
     allocate( sigma_sqd_w(ngrdcol, gr%nzm) )    ! PDF width parameter (momentum levels)
     allocate( sigma_sqd_w_zt(ngrdcol, gr%nzt) ) ! PDF width parameter interp. to t-levs.
-    allocate( Skw_zm(ngrdcol, gr%nzm) )         ! Skewness of w on momentum levels
     allocate( Skw_zm_smooth(ngrdcol, gr%nzm) )  ! Skewness of w on momentum levels
     allocate( wp2_zt(ngrdcol, gr%nzt) )         ! wp2 interpolated to thermo. levels
     allocate( ug(ngrdcol, gr%nzt) )             ! u geostrophic wind
@@ -3332,9 +3328,6 @@ module clubb_driver
     use prescribe_forcings_module, only: &
       prescribe_forcings
 
-    use Skx_module, only: &
-      Skx_func !----------------------------------------- Procedure(s)
-  
     use calc_pressure, only: &
       calculate_thvm !-------------------------------- Procedure(s)
   
@@ -3375,9 +3368,7 @@ module clubb_driver
       compute_timestep, stat_fields_reader !------------ Procedure(s)
 
     use grid_class, only: &
-      zt2zm_api, &
-      zm2zt_api, &
-      zm2zt2zm
+      zm2zt_api
 
     use grid_adaptation_module, only: &
       normalize_grid_density, &
@@ -3861,85 +3852,57 @@ module clubb_driver
         !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
         !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2 ) 
 
-        wp3_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, wp3 )
-
-        ! Calculate Skw_zm for use in advance_microphys.
-        !$acc data copyin( wp2, wp3_zm, clubb_params ) copyout( Skw_zm )
-        call Skx_func( gr%nzm, ngrdcol, wp2, wp3_zm, &
-                        w_tol, clubb_params, &
-                        Skw_zm )
-        !$acc end data
-        
-        ! This field is smoothed by interpolating to thermodynamic levels and then
-        ! interpolating back to momentum levels.
-        Skw_zm_smooth = zm2zt2zm( gr%nzm, gr%nzt, ngrdcol, gr, Skw_zm )
-
-        wp2_zt = zm2zt_api( gr%nzm, gr%nzt, ngrdcol, gr, wp2, w_tol_sqd ) ! Positive definite quantity
-
         ! Call microphysics scheme and produce microphysics tendencies.
-        do i = 1, ngrdcol
-          call calc_microphys_scheme_tendcies( gr, dt_main, time_current, &               ! In
-                                  pdf_dim, hydromet_dim, runtype, &                       ! In
-                                  thlm(i,:), p_in_Pa(i,:), exner(i,:), rho(i,:), &
-                                  rho_zm(i,:), rtm(i,:), & ! In
-                                  rcm(i,:), cloud_frac(i,:), wm_zt(i,:), wm_zm(i,:), wp2_zt(i,:), &      ! In
-                                  hydromet(i,:,:), Nc_in_cloud(i,:), &                                ! In
-                                  hm_metadata, &                                       ! In
-                                  pdf_params, hydromet_pdf_params(i,:), &                 ! In
-                                  precip_fracs, &                                         ! In
-                                  X_nl_all_levs(i,:,:,:), X_mixt_comp_all_levs(i,:,:), &  ! In
-                                  lh_sample_point_weights(i,:,:), &                       ! In
-                                  mu_x_1_n(i,:,:), mu_x_2_n(i,:,:), &                     ! In
-                                  sigma_x_1_n(i,:,:), sigma_x_2_n(i,:,:), &               ! In
-                                  corr_array_1_n(i,:,:,:), corr_array_2_n(i,:,:,:), &     ! In
-                                  lh_rt_clipped(i,:,:), lh_thl_clipped(i,:,:), &          ! In
-                                  lh_rc_clipped(i,:,:), lh_rv_clipped(i,:,:), &           ! In
-                                  lh_Nc_clipped(i,:,:), &                                 ! In
-                                  silhs_config_flags%l_lh_importance_sampling, &          ! In
-                                  silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
-                                  clubb_config_flags%saturation_formula, &                ! In
-                                  stats,         &                                        ! Inout
-                                  i, &                                                    ! In
-                                  Nccnm(i,:), &                                                ! Inout
-                                  hydromet_mc(i,:,:), Ncm_mc(i,:), rcm_mc(i,:), rvm_mc(i,:), &                  ! Out
-                                  thlm_mc(i,:), hydromet_vel_zt(i,:,:), &                             ! Out
-                                  hydromet_vel_covar_zt_impc(i,:,:), &                           ! Out
-                                  hydromet_vel_covar_zt_expc(i,:,:), &                           ! Out
-                                  wprtp_mc(i,:), wpthlp_mc(i,:), rtp2_mc(i,:), &                         ! Out
-                                  thlp2_mc(i,:), rtpthlp_mc(i,:) )                                  ! Out
-        end do
+        call calc_microphys_scheme_tendcies( gr, ngrdcol, dt_main, time_current, &        ! In
+                                pdf_dim, hydromet_dim, runtype, &                         ! In
+                                thlm, p_in_Pa, exner, rho, rho_zm, rtm, &                 ! In
+                                rcm, cloud_frac, wm_zt, wm_zm, wp2, wp3, &                ! In
+                                clubb_params, &                                            ! In
+                                hydromet, Nc_in_cloud, &                                  ! In
+                                hm_metadata, &                                            ! In
+                                pdf_params, hydromet_pdf_params, &                        ! In
+                                precip_fracs, &                                           ! In
+                                X_nl_all_levs, X_mixt_comp_all_levs, &                    ! In
+                                lh_sample_point_weights, &                                ! In
+                                mu_x_1_n, mu_x_2_n, &                                     ! In
+                                sigma_x_1_n, sigma_x_2_n, &                               ! In
+                                corr_array_1_n, corr_array_2_n, &                         ! In
+                                lh_rt_clipped, lh_thl_clipped, &                          ! In
+                                lh_rc_clipped, lh_rv_clipped, &                           ! In
+                                lh_Nc_clipped, &                                          ! In
+                                silhs_config_flags%l_lh_importance_sampling, &            ! In
+                                silhs_config_flags%l_lh_instant_var_covar_src, &          ! In
+                                clubb_config_flags%saturation_formula, &                  ! In
+                                stats,         &                                          ! Inout
+                                Nccnm, &                                                  ! Inout
+                                hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &                    ! Out
+                                thlm_mc, hydromet_vel_zt, &                               ! Out
+                                hydromet_vel_covar_zt_impc, &                             ! Out
+                                hydromet_vel_covar_zt_expc, &                             ! Out
+                                wprtp_mc, wpthlp_mc, rtp2_mc, &                           ! Out
+                                thlp2_mc, rtpthlp_mc, &                                  ! Out
+                                Skw_zm_smooth )                                          ! Out
 
 
         call timer_stop( "calc_microphys_scheme_tendcies" )
         call timer_start( "advance_microphys" )
 
         ! Advance predictive microphysics fields one model timestep.
-        do i = 1, ngrdcol
-          call advance_microphys( gr, dt_main, time_current,                                  & ! In
-                                  hydromet_dim, hm_metadata,                                  & ! In
-                                  wm_zt(i,:), wp2(i,:),                                       & ! In
-                                  exner(i,:), rho(i,:), rho_zm(i,:), rcm(i,:),                & ! In
-                                  cloud_frac(i,:), Kh_zm(i,:), Skw_zm_smooth(i,:),            & ! In
-                                  rho_ds_zm(i,:), rho_ds_zt(i,:), invrs_rho_ds_zt(i,:),       & ! In
-                                  hydromet_mc(i,:,:), Ncm_mc(i,:), Lscale(i,:),               & ! In
-                                  hydromet_vel_covar_zt_impc(i,:,:),                          & ! In
-                                  hydromet_vel_covar_zt_expc(i,:,:),                          & ! In
-                                  clubb_params(i,:), nu_vert_res_dep,                         & ! In
-                                  clubb_config_flags%tridiag_solve_method,                    & ! In
-                                  clubb_config_flags%fill_holes_type,                         & ! In
-                                  clubb_config_flags%l_upwind_xm_ma,                          & ! In
-                                  stats, i,                                                   & ! Inout
-                                  hydromet(i,:,:), hydromet_vel_zt(i,:,:), hydrometp2(i,:,:), & ! Inout
-                                  K_hm(i,:,:), Ncm(i,:), Nc_in_cloud(i,:), rvm_mc(i,:),       & ! Inout
-                                  thlm_mc(i,:), err_info,                                     & ! Inout
-                                  wphydrometp(i,:,:), wpNcp(i,:) )                              ! Out
-
-          if ( clubb_at_least_debug_level_api( 0 ) ) then
-            if ( any(err_info%err_code == clubb_fatal_error) ) then
-              write(fstderr, *) err_info%err_header(i)
-            endif
-          endif
-        end do
+        call advance_microphys( gr, ngrdcol, dt_main, time_current, & ! In
+                                hydromet_dim, hm_metadata, & ! In
+                                wm_zt, wp2, exner, rho, rho_zm, rcm, & ! In
+                                cloud_frac, Kh_zm, Skw_zm_smooth, & ! In
+                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
+                                hydromet_mc, Ncm_mc, Lscale, & ! In
+                                hydromet_vel_covar_zt_impc, & ! In
+                                hydromet_vel_covar_zt_expc, & ! In
+                                clubb_params, nu_vert_res_dep, & ! In
+                                clubb_config_flags%tridiag_solve_method, & ! In
+                                clubb_config_flags%fill_holes_type, & ! In
+                                clubb_config_flags%l_upwind_xm_ma, & ! In
+                                stats, hydromet, hydromet_vel_zt, hydrometp2, & ! Inout
+                                K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
+                                err_info, wphydrometp, wpNcp ) ! Inout/Out
 
         !$acc update device( rcm_mc, rvm_mc, thlm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc )
 
@@ -3949,6 +3912,11 @@ module clubb_driver
 
         if ( clubb_at_least_debug_level_api( 0 ) ) then
           if ( any(err_info%err_code == clubb_fatal_error) ) then
+            do i = 1, ngrdcol
+              if ( err_info%err_code(i) == clubb_fatal_error ) then
+                write(fstderr, *) err_info%err_header(i)
+              endif
+            enddo
             write(fstderr,*) "Fatal error in advance_microphys:"
             exit mainloop
           endif
@@ -3969,12 +3937,9 @@ module clubb_driver
 
           ! Note:  it would be very easy to upscale the cloud water sedimentation
           !        flux, so we should look into adding an upscaled option.
-          do i = 1, ngrdcol 
-            call cloud_drop_sed( gr, rcm(i,:), Ncm(i,:),                      & ! Intent(in)
-                                  rho_zm(i,:), rho(i,:), exner(i,:), sigma_g,  & ! Intent(in)
-                                  stats, i,                                    & ! Intent(inout)
-                                  rcm_mc(i,:), thlm_mc(i,:) )                    ! Intent(inout)
-          end do
+          call cloud_drop_sed( gr, ngrdcol, rcm, Ncm, & ! In
+                               rho_zm, rho, exner, sigma_g, & ! In
+                               stats, rcm_mc, thlm_mc ) ! InOut
 
           !$acc update device( rcm_mc, thlm_mc )
 
@@ -4186,12 +4151,13 @@ module clubb_driver
       end if
 
       ! ======================= STATS FINALIZING AND PRINTOUTS =======================
-      if (stats%l_last_sample) then
-
+      ! Use the same enabled/suppression gate as stats_begin_timestep_api.
+      if ( l_stats ) then
         stats_time = real( time_initial + real( itime, kind = time_precision ) * &
                            real( dt_main, kind = time_precision ), kind = core_rknd )
 
         ! End statistics timestep and flush sampled buffers to file.
+        ! Flush sub-timestep averages every timestep and write at output boundaries.
         call timer_start( "stats_end_timestep_api" )
         call stats_end_timestep_api( stats_time, stats, err_info )
         call timer_stop( "stats_end_timestep_api" )
@@ -4468,7 +4434,6 @@ module clubb_driver
     deallocate( cloudy_downdraft_frac )
     deallocate( wp2 )       ! w'^2
     deallocate( wp3 )       ! w'^3
-    deallocate( wp3_zm )    ! w'^3
     deallocate( rtp2 )      ! rt'^2
     deallocate( thlp2 )     ! thl'^2
     deallocate( rtpthlp )   ! rt'thlp'
@@ -4531,7 +4496,6 @@ module clubb_driver
 
     deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
     deallocate( sigma_sqd_w_zt ) ! PDF width parameter interp. to t-levs.
-    deallocate( Skw_zm )         ! Skewness of w on momentum levels
     deallocate( wp2_zt )         ! wp2 interpolated to thermo. levels
     deallocate( Skw_zm_smooth )         ! Skewness of w on momentum levels
     deallocate( ug )             ! u geostrophic wind

@@ -16,7 +16,7 @@ module est_kessler_microphys_module
 !------------------------------------------------------------------------
 
   subroutine est_kessler_microphys_api &
-             ( nzt, num_samples, pdf_dim, &
+             ( nzt, num_samples, pdf_dim, ngrdcol, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, lh_sample_point_weights, &
                l_lh_importance_sampling, &
@@ -51,30 +51,31 @@ module est_kessler_microphys_module
     integer, intent(in) :: &
       nzt, &          ! Number of vertical levels
       num_samples, & ! Number of sample points
-      pdf_dim   ! Number of variates
+      pdf_dim, & ! Number of variates
+      ngrdcol    ! Number of model columns
 
-    real( kind = core_rknd ), dimension(num_samples,nzt,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       cloud_frac    ! Cloud fraction           [-]
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       rcm          ! Liquid water mixing ratio                [kg/kg]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
-    integer, dimension(num_samples,nzt), intent(in) :: &
+    integer, dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     logical, intent(in) :: &
       l_lh_importance_sampling ! Do importance sampling (SILHS) [-]
 
-    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
       AKm,       & ! Exact Kessler autoconversion, AKm,             [kg/kg/s]
       AKstd,     & ! Exact standard deviation of gba Kessler        [kg/kg/s]
@@ -83,13 +84,13 @@ module est_kessler_microphys_module
       AKm_rcc      ! Exact local gba Kessler based on w/in cloud rc [kg/kg/s]
 
     ! For comparison, estimate kth liquid water using Monte Carlo
-    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       lh_rcm_avg ! LH estimate of grid box avg liquid water [kg/kg]
 
     ! Local Variables
 
     ! Level on which calculations are occuring
-    integer :: level
+    integer :: i, level
 
     ! PDF parameters
     real( kind = core_rknd ) :: mixt_frac
@@ -126,6 +127,7 @@ module est_kessler_microphys_module
     ! ---- Begin Code ----
 
     do level = 1, nzt, 1
+      do i = 1, ngrdcol
       ! Extract PDF parameters
 
       !w1         = pdf_params(level)%w1
@@ -140,17 +142,17 @@ module est_kessler_microphys_module
       !thl2       = pdf_params(level)%thl2
       !sthl1      = pdf_params(level)%sthl1
       !sthl2      = pdf_params(level)%sthl2
-      mixt_frac   = pdf_params%mixt_frac(1,level)
+      mixt_frac   = pdf_params%mixt_frac(1,level) ! TODO(BFB): Change 1 to i.
 !     rc1         = pdf_params(level)%rc1
 !     rc2         = pdf_params(level)%rc2
 !     cloud_frac_1 = pdf_params(level)%cloud_frac_1
 !     cloud_frac_2 = pdf_params(level)%cloud_frac_2
       cloud_frac_1 = 1.0_core_rknd ! For in and out of cloud sampling -dschanen 30 Jul 09
       cloud_frac_2 = 1.0_core_rknd !     "    "
-      chi_1          = pdf_params%chi_1(1,level)
-      chi_2          = pdf_params%chi_2(1,level)
-      stdev_chi_1    = pdf_params%stdev_chi_1(1,level)
-      stdev_chi_2    = pdf_params%stdev_chi_2(1,level)
+      chi_1          = pdf_params%chi_1(1,level) ! TODO(BFB): Change 1 to i.
+      chi_2          = pdf_params%chi_2(1,level) ! TODO(BFB): Change 1 to i.
+      stdev_chi_1    = pdf_params%stdev_chi_1(1,level) ! TODO(BFB): Change 1 to i.
+      stdev_chi_2    = pdf_params%stdev_chi_2(1,level) ! TODO(BFB): Change 1 to i.
 
       ! Compute mean cloud fraction and cloud water
 
@@ -168,7 +170,7 @@ module est_kessler_microphys_module
       !    but we set means, covariance of hydromet mixing ratio's and number
       !    concentrations to constants.
 
-      rcm_sample(1:num_samples) = max( X_nl_all_levs(1:num_samples,level,1), zero)
+      rcm_sample(1:num_samples) = max( X_nl_all_levs(i,1:num_samples,level,1), zero)
 
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
@@ -179,10 +181,10 @@ module est_kessler_microphys_module
              cloud_frac_1, cloud_frac_2, &                                      ! Intent(in)
              rcm_sample, &                                                      ! Intent(in)
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(:,level), lh_sample_point_weights(:,level), & ! Intent(in)
+             X_mixt_comp_all_levs(i,:,level), lh_sample_point_weights(i,:,level), & ! Intent(in)
              l_lh_importance_sampling, &                                        ! Intent(in)
              coeff, r_crit, &                                                   ! Intent(in)
-             lh_AKm(level) )                                                    ! Intent(out)
+             lh_AKm(i,level) )                                                  ! Intent(out)
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       coeff = one
@@ -192,10 +194,10 @@ module est_kessler_microphys_module
              cloud_frac_1, cloud_frac_2, &                                      ! Intent(in)
              rcm_sample, &                                                      ! Intent(in)
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(:,level), lh_sample_point_weights(:,level), & ! Intent(in)
+             X_mixt_comp_all_levs(i,:,level), lh_sample_point_weights(i,:,level), & ! Intent(in)
              l_lh_importance_sampling, &                                        ! Intent(in)
              coeff, r_crit, &                                                   ! Intent(in)
-             lh_rcm_avg(level) )                                                ! Intent(out)
+             lh_rcm_avg(i,level) )                                              ! Intent(out)
 
       ! A test of the scheme:
       ! Compare exact (rcm) and Monte Carlo estimates (lh_rcm_avg) of
@@ -216,7 +218,7 @@ module est_kessler_microphys_module
       cloud_frac_2_crit  = 0.5_core_rknd*(1._core_rknd+erf(chi_n_2_crit/sqrt(2.0_core_rknd)))
       AK2               = K_one * ( (chi_2-r_crit)*cloud_frac_2_crit  & 
                          + stdev_chi_2*exp(-0.5_core_rknd*chi_n_2_crit**2)/(sqrt(2._core_rknd*pi)) )
-      AKm(level)        = mixt_frac * AK1 + (1._core_rknd-mixt_frac) * AK2
+      AKm(i,level)      = mixt_frac * AK1 + (1._core_rknd-mixt_frac) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
       ! For some reason, sometimes AK1var, AK2var are negative
@@ -227,35 +229,35 @@ module est_kessler_microphys_module
                + K_one * K_one * (stdev_chi_2**2) * cloud_frac_2_crit  & 
                - AK2**2  )
       ! This formula is for a grid box average:
-      AKstd(level)  = sqrt( mixt_frac * ( (AK1-AKm(level))**2 + AK1var ) & 
-                  + (1._core_rknd-mixt_frac) * ( (AK2-AKm(level))**2 + AK2var ) &
-                  )
+      AKstd(i,level) = sqrt( mixt_frac * ( (AK1-AKm(i,level))**2 + AK1var ) &
+                         + (1._core_rknd-mixt_frac) * ( (AK2-AKm(i,level))**2 + AK2var ) )
       ! This formula is for a within-cloud average:
-      if ( cloud_frac(level) > 0._core_rknd ) then
-        AKstd_cld(level) = sqrt( max( real( zero_threshold, kind=core_rknd ),   &
-                  (1._core_rknd/cloud_frac(level)) * ( mixt_frac * ( AK1**2 + AK1var ) &
+      if ( cloud_frac(i,level) > 0._core_rknd ) then
+        AKstd_cld(i,level) = sqrt( max( real( zero_threshold, kind=core_rknd ),   &
+                  (1._core_rknd/cloud_frac(i,level)) * ( mixt_frac * ( AK1**2 + AK1var ) &
                             + (1._core_rknd-mixt_frac) * ( AK2**2 + AK2var )  &
                             ) & 
-                 - (AKm(level)/cloud_frac(level))**2  ) & 
+                 - (AKm(i,level)/cloud_frac(i,level))**2  ) &
                         )
       else
-        AKstd_cld(level) = zero_threshold
+        AKstd_cld(i,level) = zero_threshold
       end if
 
       ! Kessler autoconversion, using grid box avg liquid, rcm, as input
-      AKm_rcm(level) = K_one * max( zero_threshold, rcm(level)-r_crit )
+      AKm_rcm(i,level) = K_one * max( zero_threshold, rcm(i,level)-r_crit )
 
       ! Kessler ac, using within cloud liquid, rcm/cloud_frac, as input
       ! We found that for small values of cloud_frac this formula
       ! can still produce NaN values and therefore added this
       ! threshold of 0.001 here. -dschanen 3 June 2009
-      if ( cloud_frac(level) > 0.001_core_rknd ) then
-        AKm_rcc(level) = cloud_frac(level) * K_one * &
-                         max( zero_threshold, rcm(level)/cloud_frac(level)-r_crit )
+      if ( cloud_frac(i,level) > 0.001_core_rknd ) then
+        AKm_rcc(i,level) = cloud_frac(i,level) * K_one * &
+                           max( zero_threshold, rcm(i,level)/cloud_frac(i,level)-r_crit )
       else
-        AKm_rcc(level) = zero_threshold
+        AKm_rcc(i,level) = zero_threshold
       end if
 
+      end do ! i = 1, ngrdcol
     end do ! level = 1, nzt
 
     return

@@ -6270,12 +6270,12 @@ module advance_xp2_xpyp_module
     ! Include effects of rain evaporation on rtp2
     do k = 1, nzt
       do i = 1, ngrdcol
-        temp_rtp2(i,k) = pdf_params%mixt_frac(i,k) &
-                    * ( ( pdf_params%rt_1(i,k) - ( rcm(i,k) + rvm(i,k) ) )**2 &
-                        + pdf_params%varnce_rt_1(i,k) ) &
-                    + ( 1.0_core_rknd - pdf_params%mixt_frac(i,k) ) &
-                        * ( ( pdf_params%rt_2(i,k) - ( rcm(i,k) + rvm(i,k) ) )**2 &
-                            + pdf_params%varnce_rt_2(i,k) )
+        temp_rtp2(i,k) = pdf_params%mixt_frac(1,k) & ! TODO(BFB): Change 1 to i.
+                    * ( ( pdf_params%rt_1(1,k) - ( rcm(i,k) + rvm(i,k) ) )**2 & ! TODO(BFB): Change 1 to i.
+                        + pdf_params%varnce_rt_1(1,k) ) & ! TODO(BFB): Change 1 to i.
+                    + ( 1.0_core_rknd - pdf_params%mixt_frac(1,k) ) & ! TODO(BFB): Change 1 to i.
+                        * ( ( pdf_params%rt_2(1,k) - ( rcm(i,k) + rvm(i,k) ) )**2 & ! TODO(BFB): Change 1 to i.
+                            + pdf_params%varnce_rt_2(1,k) ) ! TODO(BFB): Change 1 to i.
 
         rtp2_mc_zt(i,k) = rrm_evap(i,k)**2 * pf_const(i,k) * dt &
                            + 2.0_core_rknd * abs(rrm_evap(i,k)) &
@@ -6290,12 +6290,12 @@ module advance_xp2_xpyp_module
     !Include the effects of rain evaporation on thlp2
     do k = 1, nzt
       do i = 1, ngrdcol
-        temp_thlp2(i,k) = pdf_params%mixt_frac(i,k) &
-                        * ( ( pdf_params%thl_1(i,k) - thlm(i,k) )**2 &
-                            + pdf_params%varnce_thl_1(i,k) ) &
-                     + ( 1.0_core_rknd - pdf_params%mixt_frac(i,k) ) &
-                        * ( ( pdf_params%thl_2(i,k) - thlm(i,k) )**2 &
-                            + pdf_params%varnce_thl_2(i,k) )
+        temp_thlp2(i,k) = pdf_params%mixt_frac(1,k) & ! TODO(BFB): Change 1 to i.
+                        * ( ( pdf_params%thl_1(1,k) - thlm(i,k) )**2 & ! TODO(BFB): Change 1 to i.
+                            + pdf_params%varnce_thl_1(1,k) ) & ! TODO(BFB): Change 1 to i.
+                     + ( 1.0_core_rknd - pdf_params%mixt_frac(1,k) ) & ! TODO(BFB): Change 1 to i.
+                        * ( ( pdf_params%thl_2(1,k) - thlm(i,k) )**2 & ! TODO(BFB): Change 1 to i.
+                            + pdf_params%varnce_thl_2(1,k) ) ! TODO(BFB): Change 1 to i.
 
         thlp2_mc_zt(i,k) = ( rrm_evap(i,k) * Lv / ( Cp * exner(i,k) ) )**2 &
                            * pf_const(i,k) * dt &
@@ -6310,10 +6310,12 @@ module advance_xp2_xpyp_module
     ! rtpthlp - added 07/13 rstorer
     do k = 1, nzt
       do i = 1, ngrdcol
-        temp_wp2(i,k) = pdf_params%mixt_frac(i,k) &
-                      * ( ( pdf_params%w_1(i,k) - wm(i,k) )**2 + pdf_params%varnce_w_1(i,k) ) &
-                   + ( 1.0_core_rknd - pdf_params%mixt_frac(i,k) ) &
-                      * ( ( pdf_params%w_2(i,k) - wm(i,k) )**2 + pdf_params%varnce_w_2(i,k) )
+        temp_wp2(i,k) = pdf_params%mixt_frac(1,k) & ! TODO(BFB): Change 1 to i.
+                      * ( ( pdf_params%w_1(1,k) - wm(i,k) )**2 & ! TODO(BFB): Change 1 to i.
+                          + pdf_params%varnce_w_1(1,k) ) & ! TODO(BFB): Change 1 to i.
+                   + ( 1.0_core_rknd - pdf_params%mixt_frac(1,k) ) & ! TODO(BFB): Change 1 to i.
+                      * ( ( pdf_params%w_2(1,k) - wm(i,k) )**2 & ! TODO(BFB): Change 1 to i.
+                          + pdf_params%varnce_w_2(1,k) ) ! TODO(BFB): Change 1 to i.
 
         wprtp_mc_zt(i,k) = abs(rrm_evap(i,k)) * sqrt(pf_const(i,k)) * sqrt(temp_wp2(i,k))
 

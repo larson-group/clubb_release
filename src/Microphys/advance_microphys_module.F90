@@ -34,7 +34,7 @@ module advance_microphys_module
   contains
 
   !=============================================================================
-  subroutine advance_microphys( gr, dt, time_current, &                    ! In
+  subroutine advance_microphys( gr, ngrdcol, dt, time_current, &           ! In
                                 hydromet_dim, hm_metadata, &               ! In
                                 wm_zt, wp2, &                              ! In
                                 exner, rho, rho_zm, rcm, &                 ! In
@@ -48,7 +48,6 @@ module advance_microphys_module
                                 fill_holes_type, &                         ! In
                                 l_upwind_xm_ma, &                          ! In
                                 stats,         &                           ! Inout
-                                icol, &                                    ! In
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                                 K_hm, Ncm, Nc_in_cloud, rvm_mc, &          ! Inout
                                 thlm_mc, err_info, &                       ! Inout
@@ -113,6 +112,9 @@ module advance_microphys_module
     type (grid), intent(in) :: &
       gr
 
+    integer, intent(in) :: &
+      ngrdcol
+
     real( kind = core_rknd ), intent(in) ::  & 
       dt           ! Model timestep duration         [s]
 
@@ -125,7 +127,7 @@ module advance_microphys_module
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
       exner,           & ! Exner function                            [-]
       rho,             & ! Density on thermodynamic levels           [kg/m^3]
@@ -134,25 +136,25 @@ module advance_microphys_module
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       wp2,        & ! Variance of vertical velocity (momentum levels) [m^2/s^2]
       rho_zm,     & ! Density on momentum levels                      [kg/m^3]
       rho_ds_zm,  & ! Dry, static density on momentum levels          [kg/m^3]
       Kh_zm,      & ! Kh Eddy diffusivity on momentum grid            [m^2/s]
       Skw_zm        ! Skewness of w on momentum levels                [-]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
       hydromet_mc    ! Microphysics tendency for mean hydrometeors  [units/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       Ncm_mc, & ! Microphysics tendency for Ncm                     [num/kg/s]
       Lscale    ! Length-scale                                      [m]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
@@ -170,22 +172,19 @@ module advance_microphys_module
     type(stats_type), intent(inout) :: &
       stats
 
-    integer, intent(in) :: &
-      icol
-
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(inout) :: &
       hydromet,        & ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
       hydromet_vel_zt    ! Mean hydrometeor sed. vel. on thermo. levs. [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(inout) :: &
       hydrometp2,      & ! Variance of hydrometeor (overall) (m-levs.) [units^2]
       K_hm               ! hm eddy diffusivity on momentum grid        [m^2/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
 
@@ -193,20 +192,20 @@ module advance_microphys_module
       err_info        ! err_info struct containing err_code and err_header
 
     !---------------------- Output Variables ----------------------
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(out) :: &
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)   [(m/s)units]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(out) :: &
       wpNcp          ! Covariance < w'N_c' > (momentum levels)   [(m/s)(num/kg)]
 
     !---------------------- Local Variables ----------------------
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim) :: &
       hydromet_vel    ! Mean hydrometeor sedimentation velocity, <V_xx> [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim) :: &
       hydromet_vel_covar       ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim) :: &
       hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
 
     ! Turbulent advection for hydrometeors -- down-gradient approximation for
@@ -215,13 +214,19 @@ module advance_microphys_module
     ! <w'Nc'> = - K_Nc & d<Nc>/dz;
     ! where the coefficients of diffusion, K_hm and K_Nc are variable and depend
     ! on multiple factors.
-    real( kind = core_rknd ), dimension(gr%nzm) :: &
-      K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc             [m^2/s]
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
+      K_Nc, &  ! Coefficient of diffusion (turb. adv.) for Nc             [m^2/s]
+      rrm_zm   ! Rain water mixing ratio on momentum levels               [kg/kg]
 
     integer :: k, i    ! Loop indices
 
-    integer :: &
+    integer, dimension(ngrdcol) :: &
       cloud_top_level    ! Vertical level index of cloud top    [-]
+
+    real(kind=core_rknd), dimension(ngrdcol) :: &
+      precip_rate_sfc, &
+      rain_flux_sfc, &
+      rrm_sfc
 
     logical, parameter :: &
       l_use_non_local_diff_fac = .false. ! Use a non-local factor for
@@ -270,20 +275,19 @@ module advance_microphys_module
        if ( l_prevent_hm_ta_above_cloud ) then
 
           ! Find the vertical level index of cloud top.
-          cloud_top_level = get_cloud_top_level( gr%nzt, rcm, hydromet, &
-                                                 hydromet_dim, hm_metadata%iiri )
+          cloud_top_level = get_cloud_top_level( gr%nzt, ngrdcol, rcm, &
+                              hydromet, hydromet_dim, hm_metadata%iiri )
 
        endif ! l_prevent_hm_ta_above_cloud
 
        ! Solve for the value of K_hm, the coefficient of diffusion for
        ! hydrometeors.
-       K_hm = calculate_K_hm( gr, wp2, Kh_zm, Skw_zm, Lscale, &
+       K_hm = calculate_K_hm( gr, ngrdcol, wp2, Kh_zm, Skw_zm, Lscale, &
                               hydromet_dim, hm_metadata%hydromet_tol, &
-                              hydromet, hydrometp2, &
-                              clubb_params, &
+                              hydromet, hydrometp2, clubb_params, &
                               l_use_non_local_diff_fac )
 
-       do i = 1, hydromet_dim, 1
+       do k = 1, hydromet_dim
 
           ! Prevent the turbulent advection of hydrometeors to altitudes above
           ! cloud top.
@@ -293,22 +297,24 @@ module advance_microphys_module
              ! variable, and since momentum grid levels are located above their
              ! corresponding thermodynamic grid levels, set K_hm to 0 starting
              ! at the vertical-level index of cloud_top_level.
-             if ( cloud_top_level > 1 &
-                  .and. i /= iiri .and. i /= iiNi ) then
-                K_hm(cloud_top_level:gr%nzm,i) = zero
-             endif ! cloud_top_level > 1
+             do i = 1, ngrdcol
+               if ( cloud_top_level(i) > 1 &
+                    .and. k /= iiri .and. k /= iiNi ) then
+                  K_hm(i,cloud_top_level(i):gr%nzm,k) = zero
+               endif ! cloud_top_level > 1
+             enddo
              
           endif ! l_prevent_hm_ta_above_cloud
 
-       enddo ! i = 1, hydromet_dim, 1
+       enddo ! k = 1, hydromet_dim
 
     endif ! hydromet_dim > 0
 
     if ( stats%l_sample ) then
-      do i = 1, hydromet_dim, 1
-        if ( len_trim(hm_metadata%hydromet_list(i)) > 0 ) then
-          khm_name = "K_hm_"//trim(hm_metadata%hydromet_list(i)(1:2))
-          call stats_update( khm_name, K_hm(:,i), stats, icol )
+      do k = 1, hydromet_dim, 1
+        if ( len_trim(hm_metadata%hydromet_list(k)) > 0 ) then
+          khm_name = "K_hm_"//trim(hm_metadata%hydromet_list(k)(1:2))
+          call stats_update( khm_name, K_hm(:,:,k), stats )
         end if
       end do
     end if
@@ -319,7 +325,9 @@ module advance_microphys_module
        ! Solve for the value of K_Nc, the coefficient of diffusion for cloud
        ! droplet concentration.
        do k = 1, gr%nzm, 1
-          K_Nc(k) = clubb_params(ic_K_hm) * Kh_zm(k)
+          do i = 1, ngrdcol
+             K_Nc(i,k) = clubb_params(i,ic_K_hm) * Kh_zm(i,k)
+          enddo
        enddo ! k = 1, gr%nzm, 1
 
     endif ! l_predict_Nc
@@ -333,7 +341,7 @@ module advance_microphys_module
 
     if ( hydromet_dim > 0 ) then
 
-       call advance_hydrometeor( gr, dt, hydromet_dim, hm_metadata, &
+       call advance_hydrometeor( gr, ngrdcol, dt, hydromet_dim, hm_metadata, &
                                  wm_zt, exner, cloud_frac, K_hm, &
                                  rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                  hydromet_mc, hydromet_vel_covar_zt_impc, &
@@ -342,7 +350,7 @@ module advance_microphys_module
                                  l_upwind_xm_ma, &
                                  tridiag_solve_method, &
                                  fill_holes_type, &
-                                 stats, icol,         &
+                                 stats,               &
                                  hydromet, hydromet_vel_zt, &
                                  hydrometp2, rvm_mc, thlm_mc, err_info, &
                                  wphydrometp, hydromet_vel, &
@@ -355,7 +363,7 @@ module advance_microphys_module
        if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "calling advance_hydrometeor"
-          call write_adv_micro_errors( gr, dt, time_current, hydromet_dim,  & ! In
+          call write_adv_micro_errors( gr, ngrdcol, dt, time_current, hydromet_dim, & ! In
                                        wm_zt, wp2, &                          ! In
                                        exner, rho, rho_zm, rcm, &             ! In
                                        cloud_frac, Kh_zm, Skw_zm, &           ! In
@@ -383,12 +391,12 @@ module advance_microphys_module
     if ( l_predict_Nc ) then
 
        ! Nc is predicted.
-       call advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
+       call advance_Ncm( gr, ngrdcol, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          nu_vert_res_dep, &
                          l_upwind_xm_ma, &
                          tridiag_solve_method, &
-                         stats, icol,         &
+                         stats,               &
                          Ncm, Nc_in_cloud, err_info, &
                          wpNcp )
 
@@ -396,7 +404,7 @@ module advance_microphys_module
          if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
            write(fstderr,*) "in advance_Ncm"
-           call write_adv_micro_errors( gr, dt, time_current, hydromet_dim, & ! In
+           call write_adv_micro_errors( gr, ngrdcol, dt, time_current, hydromet_dim, & ! In
                                         wm_zt, wp2, &                         ! In
                                         exner, rho, rho_zm, rcm, &            ! In
                                         cloud_frac, Kh_zm, Skw_zm, &          ! In
@@ -427,8 +435,8 @@ module advance_microphys_module
     endif ! l_predict_Nc
 
     if ( stats%l_sample ) then
-      call stats_update( "Ncm", Ncm, stats, icol )
-      call stats_update( "Nc_in_cloud", Nc_in_cloud, stats, icol )
+      call stats_update( "Ncm", Ncm, stats )
+      call stats_update( "Nc_in_cloud", Nc_in_cloud, stats )
     end if
 
     if ( iirr > 0 ) then
@@ -449,13 +457,13 @@ module advance_microphys_module
 
       if ( stats%l_sample ) then
         call stats_update( "precip_rate_zt", &
-                          max( - ( hydromet(:,iirr) &
-                                   * hydromet_vel_zt(:,iirr) &
-                                   + hydromet_vel_covar_zt(:,iirr) ), &
+                          max( - ( hydromet(:,:,iirr) &
+                                   * hydromet_vel_zt(:,:,iirr) &
+                                   + hydromet_vel_covar_zt(:,:,iirr) ), &
                                zero ) &
                           * ( rho / rho_lw ) &
                           * sec_per_day &
-                          * mm_per_m, stats, icol)
+                          * mm_per_m, stats )
       end if
 
       ! Precipitation Flux (W/m^2) is defined on momentum levels.  The
@@ -470,12 +478,12 @@ module advance_microphys_module
       ! as a positive downward quantity, so the minus (-) sign is necessary.
 
       if ( stats%l_sample ) then
+        rrm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, hydromet(:,:,iirr) )
         call stats_update( "Fprec", &
-                          max( - ( zt2zm_api( gr, hydromet(:,iirr) )  &
-                                   * hydromet_vel(:,iirr) &
-                                   + hydromet_vel_covar(:,iirr) ), &
+                          max( - ( rrm_zm * hydromet_vel(:,:,iirr) &
+                                   + hydromet_vel_covar(:,:,iirr) ), &
                                zero ) &
-                          * rho_zm * Lv, stats, icol)
+                          * rho_zm * Lv, stats )
       end if
 
       ! Store values of surface fluxes for statistics
@@ -483,40 +491,40 @@ module advance_microphys_module
 
       if ( trim( microphys_scheme ) /= "morrison" ) then
       if ( stats%l_sample ) then
-        call stats_update( "precip_rate_sfc", &
-                              max( - ( hydromet(1,iirr) &
-                                       * hydromet_vel_zt(1,iirr) &
-                                       + hydromet_vel_covar_zt(1,iirr) ), &
-                                   zero ) &
-                              * ( rho(1) / rho_lw ) &
-                              * sec_per_day &
-                              * mm_per_m, stats, icol)
+        do i = 1, ngrdcol
+          precip_rate_sfc(i) = max( - ( hydromet(i,1,iirr) &
+                                         * hydromet_vel_zt(i,1,iirr) &
+                                         + hydromet_vel_covar_zt(i,1,iirr) ), zero ) &
+                               * ( rho(i,1) / rho_lw ) * sec_per_day * mm_per_m
+        enddo
+        call stats_update( "precip_rate_sfc", precip_rate_sfc, stats )
       end if
       endif ! microphys_scheme /= "morrison"
 
       if ( stats%l_sample ) then
-        call stats_update( "rain_flux_sfc", &
-                              max( - ( zt2zm_api( gr, hydromet(:,iirr), 1 )  &
-                                       * hydromet_vel(1,iirr) &
-                                       + hydromet_vel_covar(1,iirr) ), &
-                                   zero ) &
-                              * rho_zm(1) * Lv, stats, icol)
+        do i = 1, ngrdcol
+          rain_flux_sfc(i) = max( - ( rrm_zm(i,1) &
+                                       * hydromet_vel(i,1,iirr) &
+                                       + hydromet_vel_covar(i,1,iirr) ), zero ) &
+                             * rho_zm(i,1) * Lv
+        enddo
+        call stats_update( "rain_flux_sfc", rain_flux_sfc, stats )
       end if
 
       ! Also store the value of surface rain water mixing ratio.
 
       if ( stats%l_sample ) then
-        call stats_update( "rrm_sfc", &
-                              ( zt2zm_api( gr, hydromet(:,iirr), 1 ) ), stats, icol)
+        rrm_sfc = rrm_zm(:,1)
+        call stats_update( "rrm_sfc", rrm_sfc, stats )
       end if
 
     endif ! iirr > 0
 
-    call stats_accumulate_hydromet_api( gr, hydromet_dim, hm_metadata, &
-                                        hydromet, rho_ds_zt, &
-                                        stats, icol )
+    call stats_accumulate_hydromet_api( gr, ngrdcol, hydromet_dim, &
+                                              hm_metadata, hydromet, &
+                                              rho_ds_zt, stats )
 
-    call write_adv_micro_errors( gr, dt, time_current, hydromet_dim, & ! In
+    call write_adv_micro_errors( gr, ngrdcol, dt, time_current, hydromet_dim, & ! In
                                  wm_zt, wp2, &                         ! In
                                  exner, rho, rho_zm, rcm, &            ! In
                                  cloud_frac, Kh_zm, Skw_zm, &          ! In
@@ -537,7 +545,7 @@ module advance_microphys_module
   end subroutine advance_microphys
 
   !=============================================================================
-  subroutine advance_hydrometeor( gr, dt, hydromet_dim, hm_metadata, &
+  subroutine advance_hydrometeor( gr, ngrdcol, dt, hydromet_dim, hm_metadata, &
                                   wm_zt, exner, cloud_frac, K_hm, &
                                   rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                   hydromet_mc, hydromet_vel_covar_zt_impc, &
@@ -546,7 +554,7 @@ module advance_microphys_module
                                   l_upwind_xm_ma, &
                                   tridiag_solve_method, &
                                   fill_holes_type, &
-                                  stats, icol,         &
+                                  stats,               &
                                   hydromet, hydromet_vel_zt, &
                                   hydrometp2, rvm_mc, thlm_mc, err_info, &
                                   wphydrometp, hydromet_vel, &
@@ -609,10 +617,13 @@ module advance_microphys_module
     type (grid), intent(in) :: &
       gr
 
+    integer, intent(in) :: &
+      ngrdcol
+
     real( kind = core_rknd ), intent(in) ::  & 
       dt    ! Duration of one model time step         [s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       wm_zt,      & ! mean w wind component on thermodynamic levels  [m/s]
       exner,      & ! Exner function, (p/p1000mb)^(Rd/Cp)            [-]
       cloud_frac    ! Cloud fraction                                 [-]
@@ -623,18 +634,20 @@ module advance_microphys_module
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(in) :: &
-      K_hm,      & ! Coefficient of diffusion (turb. adv.) for hydrometeors [m^2/s]
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(in) :: &
+      K_hm    ! Coefficient of diffusion (turb. adv.) for hydrometeors [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       rho_ds_zm    ! Dry, static density on momentum levels   [kg/m^3]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
       hydromet_mc     ! Change in hydrometeors due to microphysics  [units/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
@@ -654,17 +667,14 @@ module advance_microphys_module
     type(stats_type), intent(inout) :: &
       stats
 
-    integer, intent(in) :: &
-      icol
-
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(inout) :: &
       hydromet,        & ! Hydrometeor mean, <h_m> (thermodynamic levs.) [units]
       hydromet_vel_zt    ! Mean hydrometeor sed. velocity on thermo. levs. [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(inout) :: &
       hydrometp2         ! Variance of hydrometeor (overall) (m-levs.) [units^2]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
 
@@ -672,31 +682,31 @@ module advance_microphys_module
       err_info        ! err_info struct containing err_code and err_header
 
     !---------------------------- Output Variables ----------------------------
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(out) :: &
       wphydrometp,  & ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
       hydromet_vel    ! Mean hydrometeor sedimentation velocity, <V_hm>    [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(out) :: &
       hydromet_vel_covar       ! Covariance of V_hm & h_m (m-levs)  [units(m/s)]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(out) :: &
       hydromet_vel_covar_zt    ! Covariance of V_hm & h_m (t-levs)  [units(m/s)]
 
     !---------------------------- Local Variables ----------------------------
-    real( kind = core_rknd ), dimension(3,1,gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ta    ! LHS corresponding to contribution from turbulent adv.  [1/s]
 
-    real( kind = core_rknd ), dimension(3,gr%nzt) :: &
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       sed_diff_lhs,       & ! Variables use to save stats results
       sed_turb_lhs
       
-    real( kind = core_rknd ), dimension(3,gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ma    ! LHS corresponding to contribution from mean advection  [1/s]
 
-    real( kind = core_rknd ), dimension(3,gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       lhs    ! Left hand side array
 
-    real( kind = core_rknd ), dimension(gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       rhs    ! Right hand side vector
 
     character(len=10) :: hydromet_name
@@ -704,19 +714,19 @@ module advance_microphys_module
     real( kind = core_rknd ) :: &
       max_velocity    ! Maximum sedimentation velocity         [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       hydromet_zm     ! Mean of hydrometeor interp. to m-levs. [units vary]
 
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim) :: &
       ratio_hmp2_on_hmm2    ! Value of <hm'^2> / <hm>^2    [-]
       
-    real( kind = core_rknd ), dimension(gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       xpwp,       & ! x'w' for arbitrary x
       K_hm_nu_hm    ! K_hm + nu_vert_res_dep%nu_hm
 
     logical :: l_fill_holes_hm = .true.
 
-    integer :: i, k    ! Loop indices
+    integer :: i, k, ihm    ! Loop indices
 
     character(len=32) :: &
       name_bt, name_hf, name_wvhf, name_cl, name_mc
@@ -728,10 +738,10 @@ module advance_microphys_module
 
     ! Loop over each type of precipitating hydrometeor and advance one model
     ! time step.
-    do i = 1, hydromet_dim
+    do ihm = 1, hydromet_dim
 
        ! Set up hydrometeor stats names and velocity caps.
-       call setup_stats_names( i, hydromet_dim, hm_metadata%hydromet_list, &
+       call setup_stats_names( ihm, hydromet_dim, hm_metadata%hydromet_list, &
                                max_velocity,                                &
                                name_bt, name_hf, name_wvhf,                &
                                name_cl, name_mc )
@@ -740,83 +750,94 @@ module advance_microphys_module
           if ( len_trim(name_mc) > 0 ) then
             ! Explicit microphysics contribution for this hydrometeor species.
             ! Update explicit contributions to the hydrometeor species.
-            call stats_update( name_mc, hydromet_mc(:,i), stats, icol )
+            call stats_update( name_mc, hydromet_mc(:,:,ihm), stats )
           end if
           if ( len_trim(name_bt) > 0 ) then
                 ! Save prior value of the hydrometeors for determining total time
                 ! tendency.
-                call stats_begin_budget( name_bt, hydromet(:,i) / dt, stats, icol )
+                call stats_begin_budget( name_bt, hydromet(:,:,ihm) / dt, stats )
           end if
        end if
 
        ! Set realistic limits on sedimentation velocities, following the
        ! numbers in the Morrison microphysics.
        do k = 1, gr%nzt
-          if ( clubb_at_least_debug_level_api( 1 ) ) then
-            ! Print a warning if the velocity has a large magnitude or the
-            ! velocity is in the wrong direction.
-             if ( hydromet_vel_zt(k,i) < max_velocity .or. &
-                  hydromet_vel_zt(k,i) > zero_threshold ) then
+          do i = 1, ngrdcol
+             if ( clubb_at_least_debug_level_api( 1 ) ) then
+               ! Print a warning if the velocity has a large magnitude or the
+               ! velocity is in the wrong direction.
+                if ( hydromet_vel_zt(i,k,ihm) < max_velocity .or. &
+                     hydromet_vel_zt(i,k,ihm) > zero_threshold ) then
 
-                write(fstderr,*) trim( hm_metadata%hydromet_list(i) )// &
-                                 " velocity at k = ", k, " = ", &
-                                 hydromet_vel_zt(k,i), "m/s"
+                   write(fstderr,*) trim( hm_metadata%hydromet_list(ihm) )// &
+                                    " velocity at i, k = ", i, k, " = ", &
+                                    hydromet_vel_zt(i,k,ihm), "m/s"
+                endif
              endif
-          endif
-          hydromet_vel_zt(k,i) &
-          = min( max( hydromet_vel_zt(k,i), max_velocity ), zero_threshold )
+             hydromet_vel_zt(i,k,ihm) = min( max( hydromet_vel_zt(i,k,ihm), &
+                                                   max_velocity ), zero_threshold )
+          enddo
        enddo ! k = 1, gr%nzt, 1
 
        ! Interpolate velocity to the momentum grid for a centered difference
        ! approximation of the sedimenation term.
-       hydromet_vel(:,i) = zt2zm_api( gr, hydromet_vel_zt(:,i) )
-       hydromet_vel(gr%nzm,i) = zero ! Upper boundary condition
+       hydromet_vel(:,:,ihm) = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, &
+                                          hydromet_vel_zt(:,:,ihm) )
+       hydromet_vel(:,gr%nzm,ihm) = zero ! Upper boundary condition
 
        ! Calculate the value of <hm'^2> / <hm>^2.  This will be used to update
        ! <hm'^2> after <hm> has been advanced one model timestep.  This method
        ! is being used because CLUBB does not currently have a predictive
        ! equation for <hm'^2> (hydrometp2).
-       hydromet_zm = zt2zm_api( gr, hydromet(:,i) )
+       hydromet_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, hydromet(:,:,ihm) )
 
        do k = 1, gr%nzm, 1
+          do i = 1, ngrdcol
+             if ( hydromet_zm(i,k) > hm_metadata%hydromet_tol(ihm) ) then
 
-          if ( hydromet_zm(k) > hm_metadata%hydromet_tol(i) ) then
+                ! Calculate the ratio of the overall variance of the hydrometeor
+                ! to the overall mean of the hydrometeor squared.
+                ratio_hmp2_on_hmm2(i,k,ihm) = hydrometp2(i,k,ihm) / hydromet_zm(i,k)**2
 
-             ! Calculate the ratio of the overall variance of the hydrometeor
-             ! to the overall mean of the hydrometeor squared.
-             ratio_hmp2_on_hmm2(k,i) = hydrometp2(k,i) / hydromet_zm(k)**2
+             else  ! hydromet_zm(i,k) <= hydromet_tol(ihm)
 
-          else  ! hydromet_zm(k) <= hydromet_tol(i)
+                ! The overall mean of the hydrometeor is 0 or is treated as 0.  The
+                ! overall variance of the hydrometeor is also 0 in this scenario.
+                ! The ratio is undefined, but will be assigned a value of 0.
+                ratio_hmp2_on_hmm2(i,k,ihm) = zero
 
-             ! The overall mean of the hydrometeor is 0 or is treated as 0.  The
-             ! overall variance of the hydrometeor is also 0 in this scenario.
-             ! The ratio is undefined, but will be assigned a value of 0.
-             ratio_hmp2_on_hmm2(k,i) = zero
-
-          endif ! hydromet_zm(k) > hydromet_tol(i)
-
+             endif ! hydromet_zm(i,k) > hydromet_tol(ihm)
+          enddo
        enddo ! k = 1, gr%nzm, 1
 
        ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
        ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
        ! A Crank-Nicholson time-stepping scheme is used for this variable.
        ! This is the portion of the calculation using < h_m > from timestep t. 
-       K_hm_nu_hm(:) = K_hm(:,i) + nu_vert_res_dep%nu_hm(1)
-       
-       call calc_xpwp( gr, K_hm_nu_hm, hydromet(:,i), &
-                       xpwp )
+       do k = 1, gr%nzm
+          do i = 1, ngrdcol
+             K_hm_nu_hm(i,k) = K_hm(i,k,ihm) + nu_vert_res_dep%nu_hm(i)
+          enddo
+       enddo
+
+       !$acc data copyin( gr, gr%invrs_dzm, K_hm_nu_hm, hydromet(:,:,ihm) ) &
+       !$acc      copyout( xpwp )
+       call calc_xpwp( gr%nzm, gr%nzt, ngrdcol, gr, K_hm_nu_hm, &
+                       hydromet(:,:,ihm), xpwp )
+       !$acc end data
         
-       wphydrometp(2:gr%nzm-1,i) = - one_half * xpwp(2:gr%nzm-1)
+       wphydrometp(:,2:gr%nzm-1,ihm) = - one_half * xpwp(:,2:gr%nzm-1)
 
        ! A zero-flux boundary condition is used for hydrometeors.
-       wphydrometp(1,i) = zero
-       wphydrometp(gr%nzm,i) = zero
+       wphydrometp(:,1,ihm) = zero
+       wphydrometp(:,gr%nzm,ihm) = zero
 
        ! Add implicit terms to the LHS matrix
-       call microphys_lhs( gr, trim( hm_metadata%hydromet_list(i) ), l_hydromet_sed(i), & ! In
-                           dt, K_hm(:,i), nu_vert_res_dep%nu_hm(1), wm_zt,  & ! In
-                           hydromet_vel(:,i), hydromet_vel_zt(:,i),         & ! In
-                           hydromet_vel_covar_zt_impc(:,i),                 & ! In
+       call microphys_lhs( gr, ngrdcol, trim( hm_metadata%hydromet_list(ihm) ), & ! In
+                           l_hydromet_sed(ihm), dt, K_hm(:,:,ihm), & ! In
+                           nu_vert_res_dep%nu_hm, wm_zt, & ! In
+                           hydromet_vel(:,:,ihm), hydromet_vel_zt(:,:,ihm), & ! In
+                           hydromet_vel_covar_zt_impc(:,:,ihm), & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,           & ! In
                            l_upwind_xm_ma,                                  & ! In
                            stats,                                           & ! Inout
@@ -824,118 +845,134 @@ module advance_microphys_module
                            lhs )                                              ! Out
 
        ! Set up explicit term in the RHS vector
-       call microphys_rhs( gr, trim( hm_metadata%hydromet_list(i) ), dt, l_hydromet_sed(i), & ! In
-                           hydromet(:,i), hydromet_mc(:,i),                     & ! In
-                           K_hm(:,i), nu_vert_res_dep%nu_hm(1), cloud_frac,     & ! In
-                           hydromet_vel_covar_zt_expc(:,i),                     & ! In
+       call microphys_rhs( gr, ngrdcol, trim( hm_metadata%hydromet_list(ihm) ), & ! In
+                           dt, l_hydromet_sed(ihm), & ! In
+                           hydromet(:,:,ihm), hydromet_mc(:,:,ihm), & ! In
+                           K_hm(:,:,ihm), nu_vert_res_dep%nu_hm, cloud_frac, & ! In
+                           hydromet_vel_covar_zt_expc(:,:,ihm), & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,               & ! In
-                           stats, icol,                                         & ! Inout
+                           stats,                                               & ! Inout
                            rhs )                                                  ! Out
 
        !!!!! Advance hydrometeor one time step.
-       call microphys_solve( gr, trim( hm_metadata%hydromet_list(i) ), l_hydromet_sed(i), & ! In
+       call microphys_solve( gr, ngrdcol, trim( hm_metadata%hydromet_list(ihm) ), & ! In
+                             l_hydromet_sed(ihm), & ! In
                              lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs,      & ! In
                              cloud_frac,                                      & ! In
                              tridiag_solve_method,                            & ! In
-                             stats, icol,                                     & ! Inout
-                             lhs, rhs, hydromet(:,i), err_info )                ! InOut
+                             stats,                                           & ! Inout
+                             lhs, rhs, hydromet(:,:,ihm), err_info )             ! InOut
 
        if ( clubb_at_least_debug_level_api( 0 ) ) then
            if ( any(err_info%err_code == clubb_fatal_error) ) then
                 write(fstderr,*) err_info%err_header_global
                 write(fstderr,*) "Error in hydrometeor field " &
-                                  // trim( hm_metadata%hydromet_list(i) )
+                                  // trim( hm_metadata%hydromet_list(ihm) )
 
-                write(fstderr,*) trim( hm_metadata%hydromet_list(i) ) // " = ", hydromet(:,i)
+                write(fstderr,*) trim( hm_metadata%hydromet_list(ihm) ) // " = ", &
+                                 hydromet(:,:,ihm)
      
            endif !  err_info%err_code == clubb_fatal_error 
         end if
 
-    enddo ! i = 1, hydromet_dim, 1
+    enddo ! ihm = 1, hydromet_dim, 1
 
     ! Now that all precipitating hydrometeors have been advanced, fill holes in
     ! hydromet profiles.
-    call fill_holes_driver_api( gr, gr%nzt, dt, hydromet_dim,         & ! Intent(in)
-                                hm_metadata, l_fill_holes_hm,         & ! Intent(in)
-                                rho_ds_zt, exner,                     & ! Intent(in)
-                                fill_holes_type,                      & ! Intent(in)
-                                stats, icol,                          & ! Intent(inout)
-                                thlm_mc, rvm_mc, hydromet )             ! Intent(inout)
+    call fill_holes_driver_api( gr, ngrdcol, gr%nzt, dt, hydromet_dim, & ! Intent(in)
+                                     hm_metadata, l_fill_holes_hm, & ! Intent(in)
+                                     rho_ds_zt, exner, fill_holes_type, & ! Intent(in)
+                                     stats, thlm_mc, rvm_mc, hydromet ) ! Intent(inout)
 
     ! Loop over each type of precipitating hydrometeor and calculate hydrometeor
     ! covariances (<w'hm'> and <V_hm'hm'>) and other quantities requiring the
     ! value of hydromet (<hm>) from the (t+1) timestep.
-    do i = 1, hydromet_dim
+    do ihm = 1, hydromet_dim
 
        ! Set up hydrometeor stats names and velocity caps.
-       call setup_stats_names( i, hydromet_dim, hm_metadata%hydromet_list, &
+       call setup_stats_names( ihm, hydromet_dim, hm_metadata%hydromet_list, &
                                max_velocity,                                &
                                name_bt, name_hf, name_wvhf,                &
                                name_cl, name_mc )
 
        ! Print warning message if any hydrometeor species has a value < 0.
-       if ( any( hydromet(:,i) < zero_threshold ) ) then
+       if ( any( hydromet(:,:,ihm) < zero_threshold ) ) then
 
-          hydromet_name = hm_metadata%hydromet_list(i)
+          hydromet_name = hm_metadata%hydromet_list(ihm)
 
           if ( clubb_at_least_debug_level_api( 1 ) ) then
              do k = 1, gr%nzt
-                if ( hydromet(k,i) < zero_threshold ) then
-                   write(fstderr,*) trim( hydromet_name ) //" < ", &
-                                    zero_threshold, &
-                                    " in advance_microphys at k= ", k
-                endif
+                do i = 1, ngrdcol
+                   if ( hydromet(i,k,ihm) < zero_threshold ) then
+                      write(fstderr,*) trim( hydromet_name ) //" < ", &
+                                       zero_threshold, &
+                                       " in advance_microphys at i, k= ", i, k
+                   endif
+                enddo
              enddo
           endif
 
-       endif ! hydromet(:,i) < 0
+       endif ! hydromet(:,:,ihm) < 0
 
        ! Lower boundary condition
        ! Hydrometeors that are below the model lower boundary level have
        ! sedimented out of the model domain, and is not conserved.
-       if ( hydromet(1,i) < hm_metadata%hydromet_tol(i) ) then
-          hydromet(1,i) = zero_threshold
-       endif
+       do i = 1, ngrdcol
+          if ( hydromet(i,1,ihm) < hm_metadata%hydromet_tol(ihm) ) then
+             hydromet(i,1,ihm) = zero_threshold
+          endif
+       enddo
 
        ! Calculate the value of <hm'^2> (hydrometp2).  This is based on the
        ! ratio of <hm'^2> / <hm>^2 (ratio_hmp2_on_hmm2) that was saved before
        ! hydrometeors were updated.  This method is being used because CLUBB
        ! does not currently have a predictive equation for <hm'^2>.
-       hydromet_zm = max( zt2zm_api( gr, hydromet(:,i) ), 0.0_core_rknd )
+       hydromet_zm = max( zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, &
+                                     hydromet(:,:,ihm) ), 0.0_core_rknd )
 
        do k = 1, gr%nzm, 1
-          hydrometp2(k,i) = ratio_hmp2_on_hmm2(k,i) * hydromet_zm(k)**2
+          do i = 1, ngrdcol
+             hydrometp2(i,k,ihm) = ratio_hmp2_on_hmm2(i,k,ihm) * hydromet_zm(i,k)**2
+          enddo
        enddo ! k = 1, gr%nz, 1
 
        ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
        ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
        ! A Crank-Nicholson time-stepping scheme is used for this variable.
        ! This is the portion of the calculation using < h_m > from timestep t+1.
-       K_hm_nu_hm(:) = K_hm(:,i) + nu_vert_res_dep%nu_hm(1)
-       
-       call calc_xpwp( gr, K_hm_nu_hm, hydromet(:,i), &
-                       xpwp )
+       do k = 1, gr%nzm
+          do i = 1, ngrdcol
+             K_hm_nu_hm(i,k) = K_hm(i,k,ihm) + nu_vert_res_dep%nu_hm(i)
+          enddo
+       enddo
+
+       !$acc data copyin( gr, gr%invrs_dzm, K_hm_nu_hm, hydromet(:,:,ihm) ) &
+       !$acc      copyout( xpwp )
+       call calc_xpwp( gr%nzm, gr%nzt, ngrdcol, gr, K_hm_nu_hm, &
+                       hydromet(:,:,ihm), xpwp )
+       !$acc end data
         
-       wphydrometp(2:gr%nzm-1,i) = - one_half * xpwp(2:gr%nzm-1)
+       wphydrometp(:,2:gr%nzm-1,ihm) = - one_half * xpwp(:,2:gr%nzm-1)
        
        ! A zero-flux boundary condition is used for hydrometeors.
-       wphydrometp(1,i) = zero
-       wphydrometp(gr%nzm,i) = zero
+       wphydrometp(:,1,ihm) = zero
+       wphydrometp(:,gr%nzm,ihm) = zero
 
        !!! Calculate the covariance of hydrometeor sedimentation velocity and
        !!! the hydrometeor, which is solved semi-implicitly on thermodynamic
        !!! levels.
-       hydromet_vel_covar_zt(:,i) &
-       = hydromet_vel_covar_zt_impc(:,i) * hydromet(:,i) &
-         + hydromet_vel_covar_zt_expc(:,i)
+       hydromet_vel_covar_zt(:,:,ihm) &
+       = hydromet_vel_covar_zt_impc(:,:,ihm) * hydromet(:,:,ihm) &
+         + hydromet_vel_covar_zt_expc(:,:,ihm)
 
        !!! Calculate the covariance of hydrometeor sedimentation velocity and
        !!! the hydrometeor, < V_hm'h_m' >, by interpolating the thermodynamic
        !!! level results to momentum levels.
-       hydromet_vel_covar(:,i) = zt2zm_api( gr, hydromet_vel_covar_zt(:,i) )
+       hydromet_vel_covar(:,:,ihm) = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, &
+                                                hydromet_vel_covar_zt(:,:,ihm) )
 
        ! Boundary conditions for < V_hm'hm' >.
-       hydromet_vel_covar(gr%nzm,i) = zero
+       hydromet_vel_covar(:,gr%nzm,ihm) = zero
 
        ! Statistics for all covariances involving hydrometeors:  < w'h_m' >,
        ! <V_rr'r_r'>, and <V_Nr'N_r'>.
@@ -944,27 +981,27 @@ module advance_microphys_module
        ! Covariance of sedimentation velocity of N_r and N_r.
 
        if ( stats%l_sample ) then
-          if ( len_trim(hm_metadata%hydromet_list(i)) > 0 ) then
-             name_hmp2 = trim( hm_metadata%hydromet_list(i)(1:2) )//"p2"
-             name_wp = "wp"//trim( hm_metadata%hydromet_list(i)(1:2) )//"p"
-             call stats_update( name_hmp2, hydrometp2(:,i), stats, icol )
-             call stats_update( name_wp, wphydrometp(:,i), stats, icol )
+          if ( len_trim(hm_metadata%hydromet_list(ihm)) > 0 ) then
+             name_hmp2 = trim( hm_metadata%hydromet_list(ihm)(1:2) )//"p2"
+             name_wp = "wp"//trim( hm_metadata%hydromet_list(ihm)(1:2) )//"p"
+             call stats_update( name_hmp2, hydrometp2(:,:,ihm), stats )
+             call stats_update( name_wp, wphydrometp(:,:,ihm), stats )
           end if
-          if ( trim( hm_metadata%hydromet_list(i) ) == "rrm" ) then
-            call stats_update( "Vrrprrp", hydromet_vel_covar(:,hm_metadata%iirr), stats, icol )
-          elseif ( trim( hm_metadata%hydromet_list(i) ) == "Nrm" ) then
-            call stats_update( "VNrpNrp", hydromet_vel_covar(:,hm_metadata%iiNr), stats, icol )
+          if ( trim( hm_metadata%hydromet_list(ihm) ) == "rrm" ) then
+            call stats_update( "Vrrprrp", hydromet_vel_covar(:,:,hm_metadata%iirr), stats )
+          elseif ( trim( hm_metadata%hydromet_list(ihm) ) == "Nrm" ) then
+            call stats_update( "VNrpNrp", hydromet_vel_covar(:,:,hm_metadata%iiNr), stats )
           endif
        end if
 
        if ( stats%l_sample ) then
           if ( len_trim(name_bt) > 0 ) then
                 ! Total time tendency
-                call stats_finalize_budget( name_bt, hydromet(:,i) / dt, stats, icol )
+                call stats_finalize_budget( name_bt, hydromet(:,:,ihm) / dt, stats )
           end if
        end if
 
-    enddo ! i = 1, hydromet_dim, 1
+    enddo ! ihm = 1, hydromet_dim, 1
 
 
     return
@@ -972,12 +1009,12 @@ module advance_microphys_module
   end subroutine advance_hydrometeor
 
   !=============================================================================
-  subroutine advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
+  subroutine advance_Ncm( gr, ngrdcol, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           nu_vert_res_dep, &
                           l_upwind_xm_ma, &
                           tridiag_solve_method, &
-                          stats, icol,         &
+                          stats,               &
                           Ncm, Nc_in_cloud, err_info, &
                           wpNcp )
 
@@ -1032,23 +1069,26 @@ module advance_microphys_module
     type (grid), intent(in) :: &
       gr
 
+    integer, intent(in) :: &
+      ngrdcol
+
     real( kind = core_rknd ), intent(in) ::  & 
       dt    ! Duration of one model time step         [s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       wm_zt,      & ! mean w wind component on thermodynamic levels  [m/s]
       cloud_frac, & ! Cloud fraction                                 [-]
       rcm           ! Mean cloud water mixing ratio                  [kg/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       K_Nc,       & ! Coefficient of diffusion (turb. adv.) for Nc   [m^2/s]
       rho_ds_zm     ! Dry, static density on momentum levels   [kg/m^3]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
 
     type(nu_vertical_res_dep), intent(in) :: &
@@ -1065,10 +1105,7 @@ module advance_microphys_module
     type(stats_type), intent(inout) :: &
       stats
 
-    integer, intent(in) :: &
-      icol
-
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
@@ -1076,43 +1113,43 @@ module advance_microphys_module
       err_info        ! err_info struct containing err_code and err_header
 
     !------------------------------- Output Variables -------------------------------
-    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(out) :: &
       wpNcp    ! Covariance < w'N_c' > (momentum levels)    [(m/s)(num/kg)]
 
     !------------------------------- Locak Variables -------------------------------
-    real( kind = core_rknd ), dimension(gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       Ncm_vel_covar_zt_impc, & ! Imp. comp. <V_Nc'N_c'> t-levs [m/s]
       Ncm_vel_covar_zt_expc    ! Exp. comp. <V_Nc'N_c'> t-levs [(num/kg)(m/s)]
 
-    real( kind = core_rknd ), dimension(gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       Ncm_vel       ! Mean N_c sedimentation velocity, <V_Nc> (m-levs.) [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       Ncm_vel_zt    ! Mean N_c sedimenation velocity on thermo. levs.   [m/s]
 
-    real( kind = core_rknd ), dimension(3,gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       lhs    ! Left hand side array
 
-    real( kind = core_rknd ), dimension(gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       rhs    ! Right hand side vector
 
-    real( kind = core_rknd ), dimension(gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       Ncm_mvr_min, & ! Min. allowable Ncm due to max. cloud droplet mvr [num/kg]
       Ncm_min,     & ! Minimum allowable mean cloud droplet conc.       [num/kg]
       Ncic_min       ! Min. allowable in-cloud mean cloud droplet conc. [num/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       xpwp,       & ! x'w' for arbitrary x
       K_Nc_nu_hm    ! K_Nc + nu_vert_res_dep%nu_hm
 
-    real( kind = core_rknd ), dimension(3,1,gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ta    ! LHS corresponding to contribution from turbulent adv.  [1/s]
 
-    real( kind = core_rknd ), dimension(3,gr%nzt) :: &
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       sed_diff_lhs,       & ! Variables use to save stats results
       sed_turb_lhs
       
-    real( kind = core_rknd ), dimension(3,gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ma    ! LHS corresponding to contribution from mean advection  [1/s]
 
     ! Sedimentation velocity of cloud droplet concentration is not considered in
@@ -1120,7 +1157,7 @@ module advance_microphys_module
     logical, parameter :: &
       l_Ncm_sed = .false. ! Flag to sediment Ncm with sedimentation vel. Ncm_vel
 
-    integer :: k    ! Loop index
+    integer :: i, k    ! Loop indices
 
     !------------------------------- Begin Code -------------------------------
 
@@ -1136,16 +1173,16 @@ module advance_microphys_module
 
     if ( stats%l_sample ) then
        ! Update explicit contributions to cloud droplet concentration.
-       call stats_update( "Ncm_mc", Ncm_mc, stats, icol )
+       call stats_update( "Ncm_mc", Ncm_mc, stats )
 
        if ( l_in_cloud_Nc_diff ) then
           ! Save prior value of Ncm for determining total time tendency.
           call stats_begin_budget( "Ncm_bt", &
                                   ( Nc_in_cloud * max(cloud_frac, cloud_frac_min) ) / dt, &
-                                  stats, icol )
+                                  stats )
        else
           ! Save prior value of Ncm for determining total time tendency.
-          call stats_begin_budget( "Ncm_bt", Ncm / dt, stats, icol )
+          call stats_begin_budget( "Ncm_bt", Ncm / dt, stats )
        endif
     end if
 
@@ -1153,22 +1190,27 @@ module advance_microphys_module
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
     ! A Crank-Nicholson time-stepping scheme is used for this variable.
     ! This is the portion of the calculation using < N_c > from timestep t.
-    K_Nc_nu_hm(:) = K_Nc(:) + nu_vert_res_dep%nu_hm(1)
-    
-    call calc_xpwp( gr, K_Nc_nu_hm, Ncm, &
-                    xpwp )
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        K_Nc_nu_hm(i,k) = K_Nc(i,k) + nu_vert_res_dep%nu_hm(i)
+      enddo
+    enddo
+
+    !$acc data copyin( gr, gr%invrs_dzm, K_Nc_nu_hm, Ncm ) copyout( xpwp )
+    call calc_xpwp( gr%nzm, gr%nzt, ngrdcol, gr, K_Nc_nu_hm, Ncm, xpwp )
+    !$acc end data
      
-    wpNcp(2:gr%nzm-1) = - one_half * xpwp(2:gr%nzm-1)
+    wpNcp(:,2:gr%nzm-1) = - one_half * xpwp(:,2:gr%nzm-1)
 
     ! A zero-flux boundary condition is used for N_c.
-    wpNcp(1) = zero
-    wpNcp(gr%nzm) = zero
+    wpNcp(:,1) = zero
+    wpNcp(:,gr%nzm) = zero
 
     ! Covariance of vertical velocity and N_c.
 
     ! Add implicit terms to the LHS array
-    call microphys_lhs( gr, "Ncm", l_Ncm_sed, & ! In
-                        dt, K_Nc, nu_vert_res_dep%nu_hm(1), wm_zt, &  ! In
+    call microphys_lhs( gr, ngrdcol, "Ncm", l_Ncm_sed, & ! In
+                        dt, K_Nc, nu_vert_res_dep%nu_hm, wm_zt, &  ! In
                         Ncm_vel, Ncm_vel_zt, & ! In
                         Ncm_vel_covar_zt_impc, & ! In
                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
@@ -1180,23 +1222,23 @@ module advance_microphys_module
     ! Set up explicit term in the RHS vector
     if ( l_in_cloud_Nc_diff ) then
 
-       call microphys_rhs( gr, "Ncm", dt, l_Ncm_sed, &
+       call microphys_rhs( gr, ngrdcol, "Ncm", dt, l_Ncm_sed, &
                            Nc_in_cloud, &
                            Ncm_mc / max( cloud_frac, cloud_frac_min ), &
-                           K_Nc, nu_vert_res_dep%nu_hm(1), cloud_frac, &
+                           K_Nc, nu_vert_res_dep%nu_hm, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                           stats, icol,         &
+                           stats,               &
                            rhs )
 
     else
 
-       call microphys_rhs( gr, "Ncm", dt, l_Ncm_sed, &
+       call microphys_rhs( gr, ngrdcol, "Ncm", dt, l_Ncm_sed, &
                            Ncm, Ncm_mc, &
-                           K_Nc, nu_vert_res_dep%nu_hm(1), cloud_frac, &
+                           K_Nc, nu_vert_res_dep%nu_hm, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                           stats, icol,         &
+                           stats,               &
                            rhs )
 
     endif
@@ -1205,22 +1247,22 @@ module advance_microphys_module
     !!!!! Advance Ncm one time step.
     if ( l_in_cloud_Nc_diff ) then
 
-       call microphys_solve( gr, "Ncm", l_Ncm_sed,                       & ! In
+       call microphys_solve( gr, ngrdcol, "Ncm", l_Ncm_sed,              & ! In
                              lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, & ! In
                              cloud_frac,                                 & ! In
                              tridiag_solve_method,                       & ! In
-                             stats, icol,                                & ! Inout
+                             stats,                                      & ! Inout
                              lhs, rhs, Nc_in_cloud, err_info )             ! InOut
 
        Ncm = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
 
     else
 
-       call microphys_solve( gr, "Ncm", l_Ncm_sed,                       & ! In
+       call microphys_solve( gr, ngrdcol, "Ncm", l_Ncm_sed,              & ! In
                              lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, & ! In
                              cloud_frac,                                 & ! In
                              tridiag_solve_method,                       & ! In
-                             stats, icol,                                & ! Inout
+                             stats,                                      & ! Inout
                              lhs, rhs, Ncm, err_info )                     ! InOut
 
        Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
@@ -1260,32 +1302,36 @@ module advance_microphys_module
 
        if ( clubb_at_least_debug_level_api( 1 ) ) then
           do k = 1, gr%nzt
-             if ( Ncm(k) < Ncm_min(k) ) then
-                write(fstderr,*) "Ncm < ", Ncm_min(k), &
-                                 " in advance_microphys at k = ", k
-             endif ! Ncm(k) < Ncm_min(k)
+             do i = 1, ngrdcol
+                if ( Ncm(i,k) < Ncm_min(i,k) ) then
+                   write(fstderr,*) "Ncm < ", Ncm_min(i,k), &
+                                    " in advance_microphys at i, k = ", i, k
+                endif ! Ncm(i,k) < Ncm_min(i,k)
+             enddo
           enddo ! k = 1, gr%nzt, 1
        endif ! clubb_at_least_debug_level_api( 1 )
     endif ! Ncm < Ncm_min
     ! Store the previous value of Ncm for the effect of clipping.
 
     if ( stats%l_sample ) then
-          call stats_begin_budget( "Ncm_cl", Ncm / dt, stats, icol )
+          call stats_begin_budget( "Ncm_cl", Ncm / dt, stats )
     end if
 
     if ( any( Ncm < Ncm_min ) ) then
 
        ! Clip any values of Ncm below the minimum threshold value of Ncm_min to
        ! the minimum threshold value.
-       where ( Ncm < Ncm_min )
-          Ncm = Ncm_min
-       end where
+       do k = 1, gr%nzt
+          do i = 1, ngrdcol
+             if ( Ncm(i,k) < Ncm_min(i,k) ) Ncm(i,k) = Ncm_min(i,k)
+          enddo
+       enddo
 
     endif ! Ncm < Ncm_min
     ! Enter the new value of Ncm for the effect of clipping.
 
     if ( stats%l_sample ) then
-          call stats_finalize_budget( "Ncm_cl", Ncm / dt, stats, icol )
+          call stats_finalize_budget( "Ncm_cl", Ncm / dt, stats )
     end if
 
     ! Calculate the minimum threshold value for in-cloud mean cloud droplet
@@ -1297,33 +1343,40 @@ module advance_microphys_module
 
     ! Clip any negative values of Nc_in_cloud to the minimum threshold value of
     ! Ncic_min.
-    where ( Nc_in_cloud < Ncic_min )
-       Nc_in_cloud = Ncic_min
-    end where
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        if ( Nc_in_cloud(i,k) < Ncic_min(i,k) ) Nc_in_cloud(i,k) = Ncic_min(i,k)
+      enddo
+    enddo
 
     ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
     ! A Crank-Nicholson time-stepping scheme is used for this variable.
     ! This is the portion of the calculation using < N_c > from timestep t+1. 
-    K_Nc_nu_hm(:) = K_Nc(:) + nu_vert_res_dep%nu_hm(1)
-    
-    call calc_xpwp( gr, K_Nc_nu_hm, Ncm, &
-                    xpwp )
+    do k = 1, gr%nzm
+      do i = 1, ngrdcol
+        K_Nc_nu_hm(i,k) = K_Nc(i,k) + nu_vert_res_dep%nu_hm(i)
+      enddo
+    enddo
+
+    !$acc data copyin( gr, gr%invrs_dzm, K_Nc_nu_hm, Ncm ) copyout( xpwp )
+    call calc_xpwp( gr%nzm, gr%nzt, ngrdcol, gr, K_Nc_nu_hm, Ncm, xpwp )
+    !$acc end data
      
-    wpNcp(2:gr%nzm-1) = - one_half * xpwp(2:gr%nzm-1)
+    wpNcp(:,2:gr%nzm-1) = - one_half * xpwp(:,2:gr%nzm-1)
 
     ! A zero-flux boundary condition is used for N_c.
-    wpNcp(1) = zero
-    wpNcp(gr%nzm) = zero
+    wpNcp(:,1) = zero
+    wpNcp(:,gr%nzm) = zero
 
     ! Statistics for all covariances involving N_c:  < w'N_c' >.
 
     if ( stats%l_sample ) then
-       call stats_update( "wpNcp", wpNcp, stats, icol )
+       call stats_update( "wpNcp", wpNcp, stats )
     end if
 
     if ( stats%l_sample ) then
-          call stats_finalize_budget( "Ncm_bt", Ncm / dt, stats, icol )
+          call stats_finalize_budget( "Ncm_bt", Ncm / dt, stats )
     end if
 
     return
@@ -1331,11 +1384,11 @@ module advance_microphys_module
   end subroutine advance_Ncm
 
   !=============================================================================
-  subroutine microphys_solve( gr, solve_type, l_sed, &
+  subroutine microphys_solve( gr, ngrdcol, solve_type, l_sed, &
                               lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, &
                               cloud_frac, &
                               tridiag_solve_method, &
-                              stats, icol,         &
+                              stats,               &
                               lhs, rhs, hmm, err_info )
 
     ! Description:
@@ -1377,54 +1430,54 @@ module advance_microphys_module
     !------------------------ Input Variables ------------------------
     type (grid), intent(in) :: gr
 
+    integer, intent(in) :: &
+      ngrdcol
+
     character(len=*), intent(in) :: &
       solve_type  ! Description of which hydrometeor is being solved for.
 
     logical, intent(in) ::  & 
       l_sed    ! Whether to add a hydrometeor sedimentation term.
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       cloud_frac    ! Cloud fraction (thermodynamic levels)        [-]
 
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
-    real( kind = core_rknd ), intent(in), dimension(3,1,gr%nzt) :: & 
+    real( kind = core_rknd ), intent(in), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ta    ! LHS corresponding to contribution from turbulent adv.  [1/s]
 
-    real( kind = core_rknd ), intent(in), dimension(3,gr%nzt) :: &
+    real( kind = core_rknd ), intent(in), dimension(3,ngrdcol,gr%nzt) :: &
       sed_diff_lhs,       & ! Variables use to save stats results
       sed_turb_lhs
       
-    real( kind = core_rknd ), intent(in), dimension(3,gr%nzt) :: & 
+    real( kind = core_rknd ), intent(in), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ma    ! LHS corresponding to contribution from mean advection  [1/s]
 
     type(stats_type), intent(inout) :: &
       stats
 
-    integer, intent(in) :: &
-      icol
-
     !------------------------ Input/Output Variables ------------------------
-    real( kind = core_rknd ), intent(inout), dimension(3,gr%nzt) :: &
+    real( kind = core_rknd ), intent(inout), dimension(3,ngrdcol,gr%nzt) :: &
       lhs    ! Left hand side
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
       rhs    ! Right hand side vector
 
-    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) :: &
       hmm    ! Mean value of hydrometeor (thermodynamic levels)    [units vary]
 
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 
     !------------------------ Local Variables ------------------------
-    integer :: k, km1, kp1  ! Array indices
+    integer :: i, k, km1, kp1  ! Array indices
 
     character(len=16) :: &
       name_ma, name_ta, name_sd, name_ts
 
-    real( kind = core_rknd ), dimension(gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       ma_term, sd_term, ta_term, ts_term
 
     !---------------------------- Begin Code ----------------------------
@@ -1481,10 +1534,12 @@ module advance_microphys_module
     end select
 
     ! Solve system using a tridiag_solve.
+    !$acc data copyin( lhs, rhs ) copyout( hmm )
     call tridiag_solve( solve_type, tridiag_solve_method, & ! Intent(in)
-                        gr%nzt,                           & ! Intent(in)
+                        ngrdcol, gr%nzt, .false.,         & ! Intent(in)
                         lhs, rhs, err_info,               & ! Intent(inout)
                         hmm )                               ! Intent(out)
+    !$acc end data
 
     if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
@@ -1507,51 +1562,59 @@ module advance_microphys_module
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nzt )
 
+          do i = 1, ngrdcol
           if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
-             ma_term(k) = -lhs_ma(3,k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) &
-                          -lhs_ma(2,k) * hmm(k)   * max( cloud_frac(k), cloud_frac_min ) &
-                          -lhs_ma(1,k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min )
-             ta_term(k) = -lhs_ta(3,1,k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) &
-                          -lhs_ta(2,1,k) * hmm(k)   * max( cloud_frac(k), cloud_frac_min ) &
-                          -lhs_ta(1,1,k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min )
+             ma_term(i,k) = -lhs_ma(3,i,k) * hmm(i,km1) &
+                              * max( cloud_frac(i,k), cloud_frac_min ) &
+                            -lhs_ma(2,i,k) * hmm(i,k) &
+                              * max( cloud_frac(i,k), cloud_frac_min ) &
+                            -lhs_ma(1,i,k) * hmm(i,kp1) &
+                              * max( cloud_frac(i,k), cloud_frac_min )
+             ta_term(i,k) = -lhs_ta(3,i,k) * hmm(i,km1) &
+                              * max( cloud_frac(i,k), cloud_frac_min ) &
+                            -lhs_ta(2,i,k) * hmm(i,k) &
+                              * max( cloud_frac(i,k), cloud_frac_min ) &
+                            -lhs_ta(1,i,k) * hmm(i,kp1) &
+                              * max( cloud_frac(i,k), cloud_frac_min )
           else
-             ma_term(k) = -lhs_ma(3,k) * hmm(km1) &
-                          -lhs_ma(2,k) * hmm(k) &
-                          -lhs_ma(1,k) * hmm(kp1)
-             ta_term(k) = -lhs_ta(3,1,k) * hmm(km1) &
-                          -lhs_ta(2,1,k) * hmm(k) &
-                          -lhs_ta(1,1,k) * hmm(kp1)
+             ma_term(i,k) = -lhs_ma(3,i,k) * hmm(i,km1) &
+                            -lhs_ma(2,i,k) * hmm(i,k) &
+                            -lhs_ma(1,i,k) * hmm(i,kp1)
+             ta_term(i,k) = -lhs_ta(3,i,k) * hmm(i,km1) &
+                            -lhs_ta(2,i,k) * hmm(i,k) &
+                            -lhs_ta(1,i,k) * hmm(i,kp1)
           endif
 
           if ( l_sed .and. len_trim(name_sd) > 0 ) then
-             sd_term(k) = - sed_diff_lhs(3,k) * hmm(km1) &
-                          - sed_diff_lhs(2,k) * hmm(k) &
-                          - sed_diff_lhs(1,k) * hmm(kp1)
+             sd_term(i,k) = - sed_diff_lhs(3,i,k) * hmm(i,km1) &
+                            - sed_diff_lhs(2,i,k) * hmm(i,k) &
+                            - sed_diff_lhs(1,i,k) * hmm(i,kp1)
           end if
 
           if ( l_sed .and. len_trim(name_ts) > 0 ) then
-             ts_term(k) = - sed_turb_lhs(3,k) * hmm(km1) &
-                          - sed_turb_lhs(2,k) * hmm(k) &
-                          - sed_turb_lhs(1,k) * hmm(kp1)
+             ts_term(i,k) = - sed_turb_lhs(3,i,k) * hmm(i,km1) &
+                            - sed_turb_lhs(2,i,k) * hmm(i,k) &
+                            - sed_turb_lhs(1,i,k) * hmm(i,kp1)
           end if
+          enddo
 
        enddo
 
        if ( len_trim(name_ma) > 0 ) then
-         call stats_update( name_ma, ma_term, stats, icol )
+         call stats_update( name_ma, ma_term, stats )
        end if
        if ( len_trim(name_sd) > 0 .and. l_sed ) then
-         call stats_update( name_sd, sd_term, stats, icol )
+         call stats_update( name_sd, sd_term, stats )
        end if
        if ( len_trim(name_ts) > 0 .and. l_sed ) then
           ! Finalize implicit contributions.
-          call stats_finalize_budget( name_ts, ts_term, stats, icol )
+          call stats_finalize_budget( name_ts, ts_term, stats )
        end if
        if ( len_trim(name_ta) > 0 ) then
           ! For Ncm, diffusion in this solve is formed using in-cloud values.
           ! The cloud-fraction scaling is accounted for in the sampled tendency
           ! so the turbulent-advection budget remains balanced.
-          call stats_finalize_budget( name_ta, ta_term, stats, icol )
+          call stats_finalize_budget( name_ta, ta_term, stats )
        end if
     end if
 
@@ -1561,7 +1624,7 @@ module advance_microphys_module
   end subroutine microphys_solve
 
   !=============================================================================
-  subroutine microphys_lhs( gr, solve_type, l_sed, dt, K_hm, nu, wm_zt, &
+  subroutine microphys_lhs( gr, ngrdcol, solve_type, l_sed, dt, K_hm, nu, wm_zt, &
                             V_hm, V_hmt, &
                             Vhmphmp_zt_impc, &
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
@@ -1612,6 +1675,9 @@ module advance_microphys_module
     !------------------------------ Input Variables ------------------------------
     type (grid), intent(in) :: gr
 
+    integer, intent(in) :: &
+      ngrdcol
+
     ! Constant parameters
     integer, parameter :: & 
       kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
@@ -1628,23 +1694,23 @@ module advance_microphys_module
     real( kind = core_rknd ), intent(in) ::  & 
       dt       ! Model timestep                                          [s]
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
       nu       ! Background diffusion coefficient                        [m^2/s]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: &
       wm_zt, & ! w wind component on thermodynamic levels                [m/s]
       V_hmt    ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nzm) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzm) :: &
       V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
       K_hm     ! Coefficient of diffusion (turb. adv.) for hydrometeor   [m^2/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in)  :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in)  :: &
       Vhmphmp_zt_impc, & ! Implicit comp. of <V_hm'h_m'> on t-levs  [units(m/s)]
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in)  :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in)  :: &
       rho_ds_zm          ! Dry, static density on momentum levels   [kg/m^3]
 
     logical, intent(in) :: &
@@ -1656,35 +1722,35 @@ module advance_microphys_module
       stats
 
     !------------------------------ Output Variables ------------------------------
-    real( kind = core_rknd ), intent(out), dimension(3,1,gr%nzt) :: & 
+    real( kind = core_rknd ), intent(out), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ta    ! LHS corresponding to contribution from turbulent adv.  [1/s]
 
-    real( kind = core_rknd ), intent(out), dimension(3,gr%nzt) :: &
+    real( kind = core_rknd ), intent(out), dimension(3,ngrdcol,gr%nzt) :: &
       sed_diff_lhs,       & ! Variables use to save stats results
       sed_turb_lhs
       
-    real( kind = core_rknd ), intent(out), dimension(3,gr%nzt) :: & 
+    real( kind = core_rknd ), intent(out), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ma    ! LHS corresponding to contribution from mean advection  [1/s]
 
-    real( kind = core_rknd ), intent(out), dimension(3,gr%nzt) :: & 
+    real( kind = core_rknd ), intent(out), dimension(3,ngrdcol,gr%nzt) :: &
       lhs    ! Left hand side of tridiagonal matrix
 
     !------------------------------ Local Variables ------------------------------
-    real( kind = core_rknd ), dimension(gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       Vhmphmp_impc ! Implicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
 
-    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       Kh_zt,                & ! Eddy diffusivity coefficient, thermo levels [m2/s]
       invrs_rho_ds_zt_col     ! Inv. dry, static density @ thermo. levs.    [m^3/kg]
 
-    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       Kh_zm,                & ! Eddy diffusivity coefficient, momentum levels [m2/s]
       rho_ds_zm_col           ! Dry, static density on momentum levels        [kg/m^3]
       
-    real( kind = core_rknd ), dimension(1) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       nu_col
       
-    real( kind = core_rknd ), dimension(1,gr%nzt) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       wm_zt_col
 
     integer :: k, km1, kp1, i  ! Array indices
@@ -1720,16 +1786,10 @@ module advance_microphys_module
       name_ts = ""
     end select
 
-    ! Some procedures expect arrays that are dimension(ngrdcol,nz), so the aruments 
-    ! to be passed to those procedures have a dummy dimension hardcoded to 1.
-    ! For visual clarity and consistency with other routines, we use i to index
-    ! those dummy dimensions, but we always want i=1.
-    i = 1
-
     ! Interpolate the implicit component of < V_hm'h_m' >, a momentum-level
     ! variable that is calculated on thermodynamic levels, from thermodynamic
     ! levels to momentum levels.
-    Vhmphmp_impc = zt2zm_api( gr, Vhmphmp_zt_impc )
+    Vhmphmp_impc = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, Vhmphmp_zt_impc )
 
     ! Reset LHS Matrix for current timestep.
     lhs = zero
@@ -1740,48 +1800,50 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    Kh_zm(i,:) = K_hm
-    Kh_zt(i,:) = max( zm2zt_api(gr,K_hm), 0._core_rknd )
-    invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
-    rho_ds_zm_col(i,:) = rho_ds_zm
-    nu_col(i) = nu
+    Kh_zm = K_hm
+    Kh_zt = max( zm2zt_api( gr%nzm, gr%nzt, ngrdcol, gr, K_hm ), 0._core_rknd )
+    invrs_rho_ds_zt_col = invrs_rho_ds_zt
+    rho_ds_zm_col = rho_ds_zm
+    nu_col = nu
 
     !$acc data copyin( gr, gr%invrs_dzm, gr%invrs_dzt, Kh_zm, Kh_zt, nu_col, &
     !$acc              invrs_rho_ds_zt_col, rho_ds_zm_col ) &
     !$acc       copyout( lhs_ta )
-    call diffusion_zt_lhs( gr%nzm, gr%nzt, i, gr, Kh_zm, Kh_zt, nu_col, &
+    call diffusion_zt_lhs( gr%nzm, gr%nzt, ngrdcol, gr, Kh_zm, Kh_zt, nu_col, &
                            invrs_rho_ds_zt_col, rho_ds_zm_col, &
                            lhs_ta )
     !$acc end data
 
-    do k = 1, gr%nzt, 1
-       lhs_ta(:,i,k) = one_half * lhs_ta(:,i,k)
-    enddo ! k = 1, gr%nzt, 1
+    lhs_ta = one_half * lhs_ta
 
     ! The lower boundary condition needs to be applied here at level 1.
 
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-    lhs_ta(kp1_tdiag,i,1) &
-    = - one_half * invrs_rho_ds_zt(1) &
-        * ( gr%invrs_dzt(i,1) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(i,2) )
+    do i = 1, ngrdcol
+       lhs_ta(kp1_tdiag,i,1) &
+       = - one_half * invrs_rho_ds_zt(i,1) &
+           * ( gr%invrs_dzt(i,1) * ( Kh_zm(i,2) + nu(i) ) &
+               * rho_ds_zm(i,2) * gr%invrs_dzm(i,2) )
 
-    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-    lhs_ta(k_tdiag,i,1) &
-    = + one_half * invrs_rho_ds_zt(1) &
-        * ( gr%invrs_dzt(i,1) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(i,2) )
+       ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+       lhs_ta(k_tdiag,i,1) &
+       = + one_half * invrs_rho_ds_zt(i,1) &
+           * ( gr%invrs_dzt(i,1) * ( Kh_zm(i,2) + nu(i) ) &
+               * rho_ds_zm(i,2) * gr%invrs_dzm(i,2) )
 
-    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-    lhs_ta(km1_tdiag,i,1) = zero
-    
-    wm_zt_col(i,:) = wm_zt
+       ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+       lhs_ta(km1_tdiag,i,1) = zero
+    enddo
+
+    wm_zt_col = wm_zt
 
     ! LHS mean advection term.
     !$acc data copyin( gr, gr%weights_zt2zm, gr%invrs_dzt, gr%invrs_dzm, wm_zt_col ) &
     !$acc      copyout( lhs_ma )
-    call term_ma_zt_lhs( gr%nzm, gr%nzt, 1, wm_zt_col, gr%weights_zt2zm, & ! intent(in)
-                         gr%invrs_dzt, gr%invrs_dzm,  & ! intent(in)
-                         l_upwind_xm_ma, gr%grid_dir, & ! intent(in)
-                         lhs_ma(:,:) )
+    call term_ma_zt_lhs( gr%nzm, gr%nzt, ngrdcol, wm_zt_col, & ! In
+                         gr%weights_zt2zm, gr%invrs_dzt, gr%invrs_dzm, & ! In
+                         l_upwind_xm_ma, gr%grid_dir, & ! In
+                         lhs_ma ) ! Out
     !$acc end data
 
     ! Setup LHS Matrix
@@ -1790,16 +1852,17 @@ module advance_microphys_module
        km1 = max( k-1, 1 )
        kp1 = min( k+1, gr%nzt )
 
-       ! LHS time tendency.
-       lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / dt )
+       do i = 1, ngrdcol
+          ! LHS time tendency.
+          lhs(k_tdiag,i,k) = lhs(k_tdiag,i,k) + ( one / dt )
 
-       lhs(:,k) = lhs(:,k) + lhs_ta(:,i,k)
+          lhs(:,i,k) = lhs(:,i,k) + lhs_ta(:,i,k)
 
-       ! LHS mean advection term.
-       lhs(kp1_tdiag:km1_tdiag,k) &
-       = lhs(kp1_tdiag:km1_tdiag,k) + lhs_ma(kp1_tdiag:km1_tdiag,k)
+          ! LHS mean advection term.
+          lhs(kp1_tdiag:km1_tdiag,i,k) &
+          = lhs(kp1_tdiag:km1_tdiag,i,k) + lhs_ma(kp1_tdiag:km1_tdiag,i,k)
 
-       if ( l_sed ) then
+          if ( l_sed ) then
 
           ! LHS mean sedimentation term.
           ! Note: the Morrison microphysics has its own sedimentation code,
@@ -1810,33 +1873,33 @@ module advance_microphys_module
 
              ! Sedimentation (both mean and turbulent) uses centered
              ! differencing.  This is the default method.
-             lhs(kp1_tdiag:km1_tdiag,k) & 
-             = lhs(kp1_tdiag:km1_tdiag,k) & 
-               + sed_centered_diff_lhs( gr, V_hm(kp1), V_hm(k), rho_ds_zm(kp1), &
-                                        rho_ds_zm(k), invrs_rho_ds_zt(k), &
+             lhs(kp1_tdiag:km1_tdiag,i,k) &
+             = lhs(kp1_tdiag:km1_tdiag,i,k) &
+               + sed_centered_diff_lhs( gr, V_hm(i,kp1), V_hm(i,k), rho_ds_zm(i,kp1), &
+                                        rho_ds_zm(i,k), invrs_rho_ds_zt(i,k), &
                                         gr%invrs_dzt(i,k), k )
 
           else
 
              ! Sedimentation (both mean and turbulent) uses "upwind"
              ! differencing.
-             lhs(kp1_tdiag:km1_tdiag,k) & 
-             = lhs(kp1_tdiag:km1_tdiag,k) & 
-               + sed_upwind_diff_lhs( gr, V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                                      rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+             lhs(kp1_tdiag:km1_tdiag,i,k) &
+             = lhs(kp1_tdiag:km1_tdiag,i,k) &
+               + sed_upwind_diff_lhs( gr, V_hmt(i,k), V_hmt(i,kp1), rho_ds_zt(i,k), &
+                                      rho_ds_zt(i,kp1), invrs_rho_ds_zt(i,k), &
                                       gr%invrs_dzm(i,kp1), k )
 
           endif
 
           ! LHS turbulent sedimentation term.
-          lhs(kp1_tdiag:km1_tdiag,k) & 
-          = lhs(kp1_tdiag:km1_tdiag,k) & 
-             + term_turb_sed_lhs( gr, Vhmphmp_impc(kp1), Vhmphmp_impc(k), &
-                                  Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
-                                  rho_ds_zm(kp1), rho_ds_zm(k), &
-                                  rho_ds_zt(kp1), rho_ds_zt(k), &
+          lhs(kp1_tdiag:km1_tdiag,i,k) &
+          = lhs(kp1_tdiag:km1_tdiag,i,k) &
+             + term_turb_sed_lhs( gr, Vhmphmp_impc(i,kp1), Vhmphmp_impc(i,k), &
+                                  Vhmphmp_zt_impc(i,kp1), Vhmphmp_zt_impc(i,k), &
+                                  rho_ds_zm(i,kp1), rho_ds_zm(i,k), &
+                                  rho_ds_zt(i,kp1), rho_ds_zt(i,k), &
                                   gr%invrs_dzt(i,k), gr%invrs_dzm(i,kp1), &
-                                  invrs_rho_ds_zt(k), k )
+                                  invrs_rho_ds_zt(i,k), k )
 
        endif ! l_sed
 
@@ -1845,27 +1908,27 @@ module advance_microphys_module
           if ( l_sed .and. len_trim(name_sd) > 0 ) then
 
              if ( .not. l_upwind_diff_sed ) then
-                sed_diff_lhs(1:3,k) &
-                = sed_centered_diff_lhs( gr, V_hm(kp1), V_hm(k), rho_ds_zm(kp1), &
-                                         rho_ds_zm(k), invrs_rho_ds_zt(k), &
+                sed_diff_lhs(1:3,i,k) &
+                = sed_centered_diff_lhs( gr, V_hm(i,kp1), V_hm(i,k), rho_ds_zm(i,kp1), &
+                                         rho_ds_zm(i,k), invrs_rho_ds_zt(i,k), &
                                          gr%invrs_dzt(i,k), k )
              else
-                sed_diff_lhs(1:3,k) &
-                = sed_upwind_diff_lhs( gr, V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                                       rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                sed_diff_lhs(1:3,i,k) &
+                = sed_upwind_diff_lhs( gr, V_hmt(i,k), V_hmt(i,kp1), rho_ds_zt(i,k), &
+                                       rho_ds_zt(i,kp1), invrs_rho_ds_zt(i,k), &
                                        gr%invrs_dzm(i,kp1), k )
              endif
 
           endif
 
           if ( l_sed .and. len_trim(name_ts) > 0 ) then
-             sed_turb_lhs(1:3,k) &
-             = term_turb_sed_lhs( gr, Vhmphmp_impc(kp1), Vhmphmp_impc(k), &
-                                  Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
-                                  rho_ds_zm(kp1), rho_ds_zm(k), &
-                                  rho_ds_zt(kp1), rho_ds_zt(k), &
+             sed_turb_lhs(1:3,i,k) &
+             = term_turb_sed_lhs( gr, Vhmphmp_impc(i,kp1), Vhmphmp_impc(i,k), &
+                                  Vhmphmp_zt_impc(i,kp1), Vhmphmp_zt_impc(i,k), &
+                                  rho_ds_zm(i,kp1), rho_ds_zm(i,k), &
+                                  rho_ds_zt(i,kp1), rho_ds_zt(i,k), &
                                   gr%invrs_dzt(i,k), gr%invrs_dzm(i,kp1), &
-                                  invrs_rho_ds_zt(k), k )
+                                  invrs_rho_ds_zt(i,k), k )
           endif
 
        endif
@@ -1876,30 +1939,32 @@ module advance_microphys_module
           if ( len_trim(name_sd) > 0 ) then
 
              if ( .not. l_upwind_diff_sed ) then
-                sed_diff_lhs(1:3,k) &
-                = sed_centered_diff_lhs( gr, V_hm(kp1), V_hm(k), rho_ds_zm(kp1), &
-                                         rho_ds_zm(k), invrs_rho_ds_zt(k), &
+                sed_diff_lhs(1:3,i,k) &
+                = sed_centered_diff_lhs( gr, V_hm(i,kp1), V_hm(i,k), rho_ds_zm(i,kp1), &
+                                         rho_ds_zm(i,k), invrs_rho_ds_zt(i,k), &
                                          gr%invrs_dzt(i,k), k )
              else
-                sed_diff_lhs(1:3,k) &
-                = sed_upwind_diff_lhs( gr, V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                                       rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
+                sed_diff_lhs(1:3,i,k) &
+                = sed_upwind_diff_lhs( gr, V_hmt(i,k), V_hmt(i,kp1), rho_ds_zt(i,k), &
+                                       rho_ds_zt(i,kp1), invrs_rho_ds_zt(i,k), &
                                        gr%invrs_dzm(i,kp1), k )
              endif
 
           endif
 
           if ( len_trim(name_ts) > 0 ) then
-             sed_turb_lhs(1:3,k) &
-             = term_turb_sed_lhs( gr, Vhmphmp_impc(kp1), Vhmphmp_impc(k), &
-                                  Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
-                                  rho_ds_zm(kp1), rho_ds_zm(k), &
-                                  rho_ds_zt(kp1), rho_ds_zt(k), &
+             sed_turb_lhs(1:3,i,k) &
+             = term_turb_sed_lhs( gr, Vhmphmp_impc(i,kp1), Vhmphmp_impc(i,k), &
+                                  Vhmphmp_zt_impc(i,kp1), Vhmphmp_zt_impc(i,k), &
+                                  rho_ds_zm(i,kp1), rho_ds_zm(i,k), &
+                                  rho_ds_zt(i,kp1), rho_ds_zt(i,k), &
                                   gr%invrs_dzt(i,k), gr%invrs_dzm(i,kp1), &
-                                  invrs_rho_ds_zt(k), k )
+                                  invrs_rho_ds_zt(i,k), k )
           endif
 
-       endif
+          endif
+
+       enddo ! i = 1, ngrdcol
 
     enddo ! 1..gr%nzt
 
@@ -1909,12 +1974,12 @@ module advance_microphys_module
   end subroutine microphys_lhs
 
   !=============================================================================
-  subroutine microphys_rhs( gr, solve_type, dt, l_sed, &
+  subroutine microphys_rhs( gr, ngrdcol, solve_type, dt, l_sed, &
                             hmm, hmm_tndcy, &
                             K_hm, nu, cloud_frac, &
                             Vhmphmp_zt_expc, &
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                            stats, icol,         &
+                            stats,               &
                             rhs )
 
     ! Description:
@@ -1962,6 +2027,9 @@ module advance_microphys_module
     type (grid), intent(in) :: &
       gr
 
+    integer, intent(in) :: &
+      ngrdcol
+
     character(len=*), intent(in) :: &
       solve_type  ! Description of which hydrometeor is being solved for.
 
@@ -1971,7 +2039,7 @@ module advance_microphys_module
     logical, intent(in) :: &
       l_sed    ! Flag for hydrometeor sedimentation
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       hmm,             & ! Mean value of hydrometeor (t-levs.)      [units]
       hmm_tndcy,       & ! Microphysics tendency (thermo. levels)   [units/s]
       cloud_frac,      & ! Cloud fraction                           [-]
@@ -1979,39 +2047,36 @@ module advance_microphys_module
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       K_hm,            & ! Coef. of diffusion for hydrometeor       [m^2/s]
       rho_ds_zm          ! Dry, static density on momentum levels   [kg/m^3]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       nu                 ! Background diffusion coefficient         [m^2/s]
 
     type(stats_type), intent(inout) :: &
       stats
 
-    integer, intent(in) :: &
-      icol
-
     !-------------------------- Output Variable --------------------------
-    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
       rhs   ! Right hand side
 
     !-------------------------- Local Variables --------------------------
-    real( kind = core_rknd ), dimension(gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       Vhmphmp_expc  ! Explicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
 
-    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       Kh_zt,                & ! Eddy diffusivity coefficient, thermo levels [m2/s]
       invrs_rho_ds_zt_col     ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
 
-    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       Kh_zm,                & ! Eddy diffusivity coefficient, momentum levels [m2/s]
       rho_ds_zm_col           ! Dry, static density on momentum levels      [kg/m^3]
       
-    real( kind = core_rknd ), dimension(1) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       nu_col
 
-    real( kind = core_rknd ), dimension(3,gr%nzt) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,gr%nzt) :: &
       lhs_ta    ! LHS corresponding to contribution from turbulent advection
 
 
@@ -2020,7 +2085,7 @@ module advance_microphys_module
     character(len=16) :: &
       name_ta, name_ts
 
-    real( kind = core_rknd ), dimension(gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       ta_rhs, ts_rhs
 
     !-------------------------- Begin Code --------------------------
@@ -2053,16 +2118,10 @@ module advance_microphys_module
       name_ts = ""
     end select
     
-    ! Some procedures expect arrays that are dimension(ngrdcol,nz), so the aruments 
-    ! to be passed to those procedures have a dummy dimension hardcoded to 1.
-    ! For visual clarity and consistency with other routines, we use i to index
-    ! those dummy dimensions, but we always want i=1.
-    i = 1
-
     ! Interpolate the explicit component of < V_hm'h_m' >, a momentum-level
     ! variable that is calculated on thermodynamic levels, from thermodynamic
     ! levels to momentum levels.
-    Vhmphmp_expc = zt2zm_api( gr, Vhmphmp_zt_expc )
+    Vhmphmp_expc = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, Vhmphmp_zt_expc )
 
     ! Initialize right-hand side vector to 0.
     rhs = zero
@@ -2073,38 +2132,40 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    Kh_zm(i,:) = K_hm
-    Kh_zt(i,:) = max( zm2zt_api(gr,K_hm), zero ) 
-    invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
-    rho_ds_zm_col(i,:) = rho_ds_zm
-    nu_col(i) = nu
+    Kh_zm = K_hm
+    Kh_zt = max( zm2zt_api( gr%nzm, gr%nzt, ngrdcol, gr, K_hm ), zero )
+    invrs_rho_ds_zt_col = invrs_rho_ds_zt
+    rho_ds_zm_col = rho_ds_zm
+    nu_col = nu
 
     !$acc data copyin( gr, gr%invrs_dzm, gr%invrs_dzt, Kh_zm, Kh_zt, nu_col, &
     !$acc              invrs_rho_ds_zt_col, rho_ds_zm_col ) &
     !$acc       copyout( lhs_ta )
-    call diffusion_zt_lhs( gr%nzm, gr%nzt, i, gr, Kh_zm, Kh_zt, nu_col, &
+    call diffusion_zt_lhs( gr%nzm, gr%nzt, ngrdcol, gr, Kh_zm, Kh_zt, nu_col, &
                            invrs_rho_ds_zt_col, rho_ds_zm_col, &
                            lhs_ta )
     !$acc end data
 
-    do k = 1, gr%nzt, 1
-       lhs_ta(:,k) = one_half * lhs_ta(:,k)
-    enddo ! k = 1, gr%nz, 1
+    lhs_ta = one_half * lhs_ta
 
     ! The lower boundary condition needs to be applied here at level 1.
 
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-    lhs_ta(kp1_tdiag,1) &
-    = - one_half * invrs_rho_ds_zt(1) &
-        * ( gr%invrs_dzt(i,1) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(i,2) )
+    do i = 1, ngrdcol
+       lhs_ta(kp1_tdiag,i,1) &
+       = - one_half * invrs_rho_ds_zt(i,1) &
+           * ( gr%invrs_dzt(i,1) * ( Kh_zm(i,2) + nu(i) ) &
+               * rho_ds_zm(i,2) * gr%invrs_dzm(i,2) )
 
-    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-    lhs_ta(k_tdiag,1) &
-    = + one_half * invrs_rho_ds_zt(1) &
-        * ( gr%invrs_dzt(i,1) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(i,2) )
+       ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+       lhs_ta(k_tdiag,i,1) &
+       = + one_half * invrs_rho_ds_zt(i,1) &
+           * ( gr%invrs_dzt(i,1) * ( Kh_zm(i,2) + nu(i) ) &
+               * rho_ds_zm(i,2) * gr%invrs_dzm(i,2) )
 
-    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-    lhs_ta(km1_tdiag,1) = zero
+       ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+       lhs_ta(km1_tdiag,i,1) = zero
+    enddo
 
     ! Hydrometeor right-hand side (explicit portion of the code).
     ta_rhs = 0.0_core_rknd
@@ -2114,54 +2175,59 @@ module advance_microphys_module
        km1 = max( k-1, 1 )
        kp1 = min( k+1, gr%nzt )
 
+       do i = 1, ngrdcol
        ! RHS time tendency.
-       rhs(k) = hmm(k) / dt
+       rhs(i,k) = hmm(i,k) / dt
 
        ! RHS microphysics tendency term (autoconversion, accretion, evaporation,
        ! etc.).
-       rhs(k) = rhs(k) + hmm_tndcy(k)
+       rhs(i,k) = rhs(i,k) + hmm_tndcy(i,k)
 
-       rhs(k) &
-       = rhs(k) &
-         - lhs_ta(km1_tdiag,k) * hmm(km1) &
-         - lhs_ta(k_tdiag,k) * hmm(k) &
-         - lhs_ta(kp1_tdiag,k) * hmm(kp1)
+       rhs(i,k) &
+       = rhs(i,k) &
+         - lhs_ta(km1_tdiag,i,k) * hmm(i,km1) &
+         - lhs_ta(k_tdiag,i,k) * hmm(i,k) &
+         - lhs_ta(kp1_tdiag,i,k) * hmm(i,kp1)
 
        ! RHS turbulent sedimentation term.
        if ( l_sed ) then
-          rhs(k) &
-          = rhs(k) &
-            + term_turb_sed_rhs( gr, Vhmphmp_expc(kp1), Vhmphmp_expc(k), &
-                                 Vhmphmp_zt_expc(kp1), Vhmphmp_zt_expc(k), &
-                                 rho_ds_zm(kp1), rho_ds_zm(k), &
-                                 rho_ds_zt(kp1), rho_ds_zt(k), &
+          rhs(i,k) &
+          = rhs(i,k) &
+            + term_turb_sed_rhs( gr, Vhmphmp_expc(i,kp1), Vhmphmp_expc(i,k), &
+                                 Vhmphmp_zt_expc(i,kp1), Vhmphmp_zt_expc(i,k), &
+                                 rho_ds_zm(i,kp1), rho_ds_zm(i,k), &
+                                 rho_ds_zt(i,kp1), rho_ds_zt(i,k), &
                                  gr%invrs_dzt(i,k), gr%invrs_dzm(i,kp1), &
-                                 invrs_rho_ds_zt(k), k )
+                                 invrs_rho_ds_zt(i,k), k )
        endif
 
        if ( stats%l_sample ) then
           if ( len_trim(name_ta) > 0 ) then
              if ( solve_type == "Ncm" .and. l_in_cloud_Nc_diff ) then
-                ta_rhs(k) = lhs_ta(3,k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) &
-                            + lhs_ta(2,k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) &
-                            + lhs_ta(1,k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min )
+                ta_rhs(i,k) = lhs_ta(3,i,k) * hmm(i,km1) &
+                              * max( cloud_frac(i,k), cloud_frac_min ) &
+                              + lhs_ta(2,i,k) * hmm(i,k) &
+                                * max( cloud_frac(i,k), cloud_frac_min ) &
+                              + lhs_ta(1,i,k) * hmm(i,kp1) &
+                                * max( cloud_frac(i,k), cloud_frac_min )
              else
-                ta_rhs(k) = lhs_ta(3,k) * hmm(km1) &
-                            + lhs_ta(2,k) * hmm(k) &
-                            + lhs_ta(1,k) * hmm(kp1)
+                ta_rhs(i,k) = lhs_ta(3,i,k) * hmm(i,km1) &
+                              + lhs_ta(2,i,k) * hmm(i,k) &
+                              + lhs_ta(1,i,k) * hmm(i,kp1)
              endif
           end if
           if ( l_sed .and. len_trim(name_ts) > 0 ) then
-             ts_rhs(k) = -term_turb_sed_rhs( gr, Vhmphmp_expc(kp1), Vhmphmp_expc(k), &
-                                             Vhmphmp_zt_expc(kp1), Vhmphmp_zt_expc(k), &
-                                             rho_ds_zm(kp1), rho_ds_zm(k), &
-                                             rho_ds_zt(kp1), rho_ds_zt(k), &
+             ts_rhs(i,k) = -term_turb_sed_rhs( gr, Vhmphmp_expc(i,kp1), Vhmphmp_expc(i,k), &
+                                             Vhmphmp_zt_expc(i,kp1), Vhmphmp_zt_expc(i,k), &
+                                             rho_ds_zm(i,kp1), rho_ds_zm(i,k), &
+                                             rho_ds_zt(i,kp1), rho_ds_zt(i,k), &
                                              gr%invrs_dzt(i,k), gr%invrs_dzm(i,kp1), &
-                                             invrs_rho_ds_zt(k), k )
+                                             invrs_rho_ds_zt(i,k), k )
              ! term_turb_sed_rhs is subtracted on the model RHS, so reverse the sign
              ! here when sampling the explicit turbulent-sedimentation budget term.
           end if
        end if
+       enddo ! i = 1, ngrdcol
 
     enddo ! k = 1, gr%nzt, 1
 
@@ -2170,12 +2236,12 @@ module advance_microphys_module
           ! Statistics: explicit contributions for the hydrometeor.
           ! hmm term ta has both implicit and explicit components; call
           ! stats_begin_budget for the explicit turbulent advection component.
-          call stats_begin_budget( name_ta, ta_rhs, stats, icol )
+          call stats_begin_budget( name_ta, ta_rhs, stats )
        end if
        if ( len_trim(name_ts) > 0 .and. l_sed ) then
           ! hmm term ts has both implicit and explicit components; call
           ! stats_begin_budget for the explicit turbulent sedimentation component.
-          call stats_begin_budget( name_ts, ts_rhs, stats, icol )
+          call stats_begin_budget( name_ts, ts_rhs, stats )
        end if
     end if
     
@@ -3231,7 +3297,7 @@ module advance_microphys_module
   end function term_turb_sed_rhs
 
   !=============================================================================
-  function calculate_K_hm( gr, wp2, Kh_zm, Skw_zm, Lscale, &
+  function calculate_K_hm( gr, ngrdcol, wp2, Kh_zm, Skw_zm, Lscale, &
                            hydromet_dim, hydromet_tol, &
                            hydromet, hydrometp2, &
                            clubb_params, &
@@ -3280,27 +3346,28 @@ module advance_microphys_module
     type (grid), intent(in) :: gr
 
     integer, intent(in) :: &
+      ngrdcol, &
       hydromet_dim
 
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: & 
       hydromet_tol
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       wp2,    & ! Variance of vertical velocity (momentum levels) [m^2/s^2]
       Kh_zm,  & ! Kh Eddy diffusivity on momentum grid            [m^2/s]
       Skw_zm    ! Skewness of w on momentum levels                [-]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       Lscale    ! Length-scale                                    [m]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(inout) :: &
       hydromet      ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
 
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(inout) :: &
       hydrometp2    ! Variance of hydrometeor (overall) (m-levs.) [units^2]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
@@ -3308,22 +3375,27 @@ module advance_microphys_module
                                   ! eddy-diffusivity applied to hydrometeors.
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim) :: &
       K_hm    ! Hydrometeor eddy diffusivity on momentum grid     [m^2/s]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim) :: &
+    real( kind = core_rknd ) :: &
       K_gamma ! Non-local factor of diffusion (t. adv.) for hydrometeors [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim) :: &
+      hydromet_zm ! Hydrometeor mean interpolated to momentum levels
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
+      Lscale_zm ! Length scale interpolated to momentum levels
 
     integer :: k, km1, i, h    ! Loop indices
 
     !---------------------------- Begin Code ----------------------------
 
-    ! Some procedures expect arrays that are dimension(ngrdcol,nz), so the aruments
-    ! to be passed to those procedures have a dummy dimension hardcoded to 1.
-    ! For visual clarity and consistency with other routines, we use i to index
-    ! those dummy dimensions, but we always want i=1.
-    i = 1
+    Lscale_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, Lscale )
+    do h = 1, hydromet_dim
+      hydromet_zm(:,:,h) = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, hydromet(:,:,h) )
+    enddo
 
     ! Loop over all hydrometeors.
     do h = 1, hydromet_dim, 1
@@ -3333,43 +3405,47 @@ module advance_microphys_module
 
           km1 = max( k-1, 1 )
 
-          K_hm(k,h) &
-          = clubb_params(ic_K_hm) * Kh_zm(k) &
-            * ( sqrt( hydrometp2(k,h) ) &
-                / max( zt2zm_api( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
-            * ( one + abs( Skw_zm(k) ) ) 
+          do i = 1, ngrdcol
+            K_hm(i,k,h) &
+            = clubb_params(i,ic_K_hm) * Kh_zm(i,k) &
+              * ( sqrt( hydrometp2(i,k,h) ) &
+                  / max( hydromet_zm(i,k,h), hydromet_tol(h) ) ) &
+              * ( one + abs( Skw_zm(i,k) ) )
 
-          if ( l_use_non_local_diff_fac ) then
-             K_gamma(k,h) &
-             = one &
-               - clubb_params(ic_K_hmb) &
-                 * ( ( max( zt2zm_api( gr, Lscale(:), k ), 0.0_core_rknd ) &
-                       / max( zt2zm_api( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
-                     * ( gr%invrs_dzm(i,k) &
-                         * ( hydromet(k,h) - hydromet(km1,h) ) ) )
+            if ( l_use_non_local_diff_fac ) then
+              K_gamma &
+              = one &
+                - clubb_params(i,ic_K_hmb) &
+                  * ( ( max( Lscale_zm(i,k), 0.0_core_rknd ) &
+                        / max( hydromet_zm(i,k,h), hydromet_tol(h) ) ) &
+                      * ( gr%invrs_dzm(i,k) &
+                          * ( hydromet(i,k,h) - hydromet(i,km1,h) ) ) )
 
-             K_hm(k,h) &
-             = K_hm(k,h) * max( K_gamma(k,h), clubb_params(iK_hm_min_coef) )
-          endif
+              K_hm(i,k,h) = K_hm(i,k,h) &
+                * max( K_gamma, clubb_params(i,iK_hm_min_coef) )
+            endif
 
-          if ( abs( gr%invrs_dzm(i,k) &
-                    * ( hydromet(k,h) - hydromet(km1,h) ) ) > eps ) then
+            if ( abs( gr%invrs_dzm(i,k) &
+                      * ( hydromet(i,k,h) - hydromet(i,km1,h) ) ) > eps ) then
 
-             ! Ensure the abs( correlation ) between w and hydromet does not
-             ! have a value greater than one.
-             K_hm(k,h) &
-             = min( K_hm(k,h), &
-                    ( sqrt( wp2(k) ) * sqrt( hydrometp2(k,h) ) ) &
-                    / abs( gr%invrs_dzm(i,k) &
-                           * ( hydromet(k,h) - hydromet(km1,h) ) ) )
+              ! Ensure the abs( correlation ) between w and hydromet does not
+              ! have a value greater than one.
+              K_hm(i,k,h) &
+              = min( K_hm(i,k,h), &
+                     ( sqrt( wp2(i,k) ) * sqrt( hydrometp2(i,k,h) ) ) &
+                     / abs( gr%invrs_dzm(i,k) &
+                            * ( hydromet(i,k,h) - hydromet(i,km1,h) ) ) )
 
-          endif ! | d<hm>/dz | > 0
+            endif ! | d<hm>/dz | > 0
+          enddo
 
        enddo ! k = 1, gr%nzm-1, 1
 
        ! Set K_hm at the lower and upper boundaries (not used in calculations).
-       K_hm(1,h) = zero
-       K_hm(gr%nzm,h) = zero
+       do i = 1, ngrdcol
+         K_hm(i,1,h) = zero
+         K_hm(i,gr%nzm,h) = zero
+       enddo
 
     enddo ! i = 1, hydromet_dim, 1
 
@@ -3379,7 +3455,7 @@ module advance_microphys_module
   end function calculate_K_hm
 
   !=============================================================================
-  function get_cloud_top_level( nzt, rcm, hydromet, &
+  function get_cloud_top_level( nzt, ngrdcol, rcm, hydromet, &
                                 hydromet_dim, iiri ) &
   result( cloud_top_level )
 
@@ -3397,8 +3473,7 @@ module advance_microphys_module
 
     use constants_clubb, only: &
         rc_tol, & ! Constant(s)
-        ri_tol, &
-        zero
+        ri_tol
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -3408,55 +3483,53 @@ module advance_microphys_module
     ! Input Variables
     integer, intent(in) :: &
       nzt, &    ! Number of model thermodynamic vertical grid levels
+      ngrdcol, & ! Number of model columns
       hydromet_dim, &
       iiri
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       rcm    ! Mean cloud water mixing ratio                [kg/kg]
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor mean, <h_m> (thermo. levels)    [units vary]
 
     ! Return Variable
-    integer :: &
+    integer, dimension(ngrdcol) :: &
       cloud_top_level    ! Vertical level index of cloud top
 
-    ! Local Variable
-    real( kind = core_rknd ), dimension(nzt) :: &
-      rim    ! Mean cloud ice mixing ratio                [kg/kg]
-
-    integer :: k    ! Vertical level index
+    integer :: i, k    ! Column and vertical level indices
 
     !---------------------------- Begin Code ----------------------------
 
-    ! Include cloud ice when the microphysics scheme includes ice mixing ratio.
-    if ( iiri > 0 ) then
-       rim = hydromet(:, iiri)
-    else
-       rim = zero
-    endif ! iiri > 0
+    cloud_top_level = 1
 
     ! Start at the model upper boundary and loop downwards until cloud top is
     ! found or the model lower boundary is reached.
-    k = nzt
-    do
-       if ( rcm(k) > rc_tol .or. rim(k) > ri_tol ) then
-          ! A level with mean cloud water mixing ratio (or mean cloud ice mixing
-          ! ratio, when it is included in the microphysics scheme) that is
-          ! greater than the tolerance amount has been found.  Cloud top has
-          ! been found.
-          cloud_top_level = k
-          exit
-       elseif ( k == 1 ) then
-          ! There was not any cloud found in the model vertical domain.
-          ! Return a value of 1.
-          cloud_top_level = 1
-          exit
-       else
-          ! Continue down another vertical level.
-          k = k - 1
-       endif
-    enddo
+    ! Keep the column index innermost so each level is traversed contiguously.
+    ! Include cloud ice when the microphysics scheme includes ice mixing ratio.
+    if ( iiri > 0 ) then
+      do k = nzt, 1, -1
+        do i = 1, ngrdcol
+          if ( cloud_top_level(i) == 1 ) then
+            if ( rcm(i,k) > rc_tol .or. hydromet(i,k,iiri) > ri_tol ) then
+              ! A level with mean cloud water mixing ratio (or mean cloud ice mixing
+              ! ratio, when it is included in the microphysics scheme) that is
+              ! greater than the tolerance amount has been found.  Cloud top has
+              ! been found.
+              cloud_top_level(i) = k
+            endif
+          endif
+        enddo
+      enddo
+    else
+      do k = nzt, 1, -1
+        do i = 1, ngrdcol
+          if ( cloud_top_level(i) == 1 .and. rcm(i,k) > rc_tol ) then
+            cloud_top_level(i) = k
+          endif
+        enddo
+      enddo
+    endif ! iiri > 0
 
 
     return
@@ -3464,7 +3537,7 @@ module advance_microphys_module
   end function get_cloud_top_level
 
   !=============================================================================
-  subroutine write_adv_micro_errors( gr, dt, time_current, hydromet_dim,  & ! In
+  subroutine write_adv_micro_errors( gr, ngrdcol, dt, time_current, hydromet_dim, & ! In
                                      wm_zt, wp2, &                          ! In
                                      exner, rho, rho_zm, rcm, &             ! In
                                      cloud_frac, Kh_zm, Skw_zm, &           ! In
@@ -3515,6 +3588,9 @@ module advance_microphys_module
     type (grid), intent(in) :: &
       gr
 
+    integer, intent(in) :: &
+      ngrdcol
+
     real( kind = core_rknd ), intent(in) :: &
       dt           ! Model timestep duration         [s]
 
@@ -3524,7 +3600,7 @@ module advance_microphys_module
     integer, intent(in) :: &
       hydromet_dim
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       exner,           & ! Exner function                           [-]
       rho,             & ! Density on thermodynamic levels          [kg/m^3]
@@ -3533,25 +3609,25 @@ module advance_microphys_module
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       wp2,        & ! Variance of vertical velocity (momentum levels) [m^2/s^2]
       rho_zm,     & ! Density on momentum levels                      [kg/m^3]
       rho_ds_zm,  & ! Dry, static density on momentum levels   [kg/m^3]
       Kh_zm,      & ! Kh Eddy diffusivity on momentum grid            [m^2/s]
       Skw_zm        ! Skewness of w on momentum levels                [-]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
       hydromet_mc    ! Microphysics tendency for mean hydrometeors  [units/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       Ncm_mc, & ! Microphysics tendency for Ncm                     [num/kg/s]
       Lscale    ! Length-scale                                      [m]
 
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
@@ -3563,27 +3639,27 @@ module advance_microphys_module
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Input/Output Variables for advance_microphys
-    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
       hydromet,        & ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
       hydromet_vel_zt    ! Mean hydrometeor sed. vel. on thermo. levs. [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(in) :: &
       hydrometp2,      & ! Variance of hydrometeor (overall) (m-levs.) [units^2]
       K_hm               ! hm eddy diffusivity on momentum grid        [m^2/s]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
 
     ! Output Variables for advance_microphys
-    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)   [(m/s)units]
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(in) :: &
       wpNcp          ! Covariance < w'N_c' > (momentum levels)   [(m/s)(num/kg)]
 
     type(err_info_type), intent(in) :: &
@@ -3625,7 +3701,7 @@ module advance_microphys_module
                            hydromet_vel_covar_zt_expc
 
           write(fstderr,*) "clubb_params = ", clubb_params
-          write(fstderr,*) "nu_vert_res_dep%nu_hm = ", nu_vert_res_dep%nu_hm(1)
+          write(fstderr,*) "nu_vert_res_dep%nu_hm = ", nu_vert_res_dep%nu_hm
           write(fstderr,*) "l_upwind_xm_ma = ", l_upwind_xm_ma
 
           write(fstderr,*) "Intent(inout)"

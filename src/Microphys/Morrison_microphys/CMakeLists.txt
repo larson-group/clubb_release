@@ -7,5 +7,4 @@ add_library(morrison_microphys_lib ${MORRISON_MICROPHYS_SOURCES})
 disable_compiler_warnings(morrison_microphys_lib)
 
 target_link_libraries(morrison_microphys_lib PRIVATE clubb_core_lib 
-                                                     microphys_utils_lib
                                                 )

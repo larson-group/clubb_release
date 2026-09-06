@@ -59,13 +59,12 @@ module cloud_sed_module
 contains
 
   !=============================================================================
-  subroutine cloud_drop_sed( gr, rcm, Ncm, &
+  subroutine cloud_drop_sed( gr, ngrdcol, rcm, Ncm, &
                              rho_zm, rho, exner, sigma_g, &
-                             stats, icol,         &
-                             rcm_mc, thlm_mc )
+                             stats, rcm_mc, thlm_mc )
 
     ! Description:
-    ! Account for cloud droplet sedimentation.
+    ! Account for cloud droplet sedimentation in all model columns.
     !
     ! Sedimentation flux of cloud droplets should be treated by assuming a
     ! log-normal size distribution of droplets falling in a Stoke's regime, in
@@ -124,83 +123,99 @@ contains
     ! External
     intrinsic :: exp, log
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     type (grid), intent(in) :: &
-      gr
+      gr                       ! Model grid [-]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: & 
+    integer, intent(in) :: &
+      ngrdcol                  ! Number of model columns [-]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: &
       rcm,    & ! Mean cloud water mixing ratio        [kg/kg]
       Ncm,    & ! Mean cloud droplet concentration     [num/kg]
       rho,    & ! Density on thermodynamic levels      [kg/m^3]
       exner     ! Exner function                       [-]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzm) :: &
       rho_zm    ! Density on momentum levels           [kg/m^3]
 
     real( kind = core_rknd ), intent(in) :: &
       sigma_g   ! Geometric standard deviation of cloud droplets   [-]
 
+    !------------------------ Input/Output Variables ------------------------
     type(stats_type), intent(inout) :: &
-      stats
+      stats     ! Statistics runtime context [-]
 
-    integer, intent(in) :: &
-      icol
-
-    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt) :: &
       rcm_mc,  & ! r_c tendency due to microphysics     [kg/kg)/s] 
       thlm_mc    ! thlm tendency due to microphysics    [K/s] 
 
-    ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nzm) ::  & 
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       Fcsed      ! Cloud water sedimentation flux         [kg/(m^2 s)]
 
-    real( kind = core_rknd ), dimension(gr%nzt) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       sed_rcm    ! d(rcm)/dt due to cloud sedimentation   [kg/(m^2 s)]
 
-    integer :: k  ! Loop index
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
+      rcm_zm, & ! Cloud water mixing ratio on momentum levels [kg/kg]
+      Ncm_zm    ! Cloud droplet concentration on momentum levels [num/kg]
 
+    integer :: &
+      i, & ! Column loop index [-]
+      k    ! Vertical-level loop index [-]
+
+    !--------------------------- Begin Code ---------------------------
+
+    rcm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, rcm )
+    Ncm_zm = zt2zm_api( gr%nzm, gr%nzt, ngrdcol, gr, Ncm )
 
     ! Define cloud water sedimentation flux on momentum levels.
-    do k = 2, gr%nzm-1, 1
-
-       if ( zt2zm_api( gr, rcm, k )  > zero .AND. zt2zm_api( gr, Ncm, k ) > zero ) then
-
-          Fcsed(k) &
-          = 1.19E8_core_rknd & 
-            * ( ( three / ( four * pi * rho_lw * zt2zm_api( gr, Ncm, k ) * rho_zm(k) ) &
-                )**two_thirds ) & 
-            * ( ( rho_zm(k) * zt2zm_api( gr, rcm, k ) )**(five/three) ) & 
-            * exp( five*( ( log( sigma_g ) )**2 ) ) ! See Ackerman - eq. no. 7
-
-       else
-
-          Fcsed(k) = zero
-
-       endif
-
-    enddo ! k = 2, gr%nzm-1, 1
+    do k = 2, gr%nzm-1
+      do i = 1, ngrdcol
+        if ( rcm_zm(i,k) > zero .and. Ncm_zm(i,k) > zero ) then
+          Fcsed(i,k) = 1.19E8_core_rknd &
+            * ( ( three / ( four * pi * rho_lw &
+                * Ncm_zm(i,k) * rho_zm(i,k) ) )**two_thirds ) &
+            * ( ( rho_zm(i,k) * rcm_zm(i,k) )**(five/three) ) &
+            * exp( five * ( log( sigma_g )**2 ) ) ! See Ackerman - eq. no. 7
+        else
+          Fcsed(i,k) = zero
+        endif
+      enddo
+    enddo
 
     ! Boundary conditions.
-    Fcsed(1)     = zero
-    Fcsed(gr%nzm) = zero
+    do i = 1, ngrdcol
+      Fcsed(i,1) = zero
+      Fcsed(i,gr%nzm) = zero
+    enddo
 
     ! Find drc/dt due to cloud water sedimentation flux.
     ! This value is defined on thermodynamic levels.
     ! Fcsed units:  kg (liquid) / [ m^2 * s ]
     ! Multiply by Lv for units of W / m^2.
     ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
-    sed_rcm = (one/rho) * ddzm( gr, Fcsed )
+    !$acc data copyin( gr, gr%invrs_dzt, Fcsed ) copyout( sed_rcm )
+    sed_rcm = ddzm( gr%nzm, gr%nzt, ngrdcol, gr, Fcsed )
+    !$acc end data
+
+    sed_rcm = ( one / rho ) * sed_rcm
 
     if ( stats%l_sample ) then
-      call stats_update( "sed_rcm", sed_rcm, stats, icol )
-      call stats_update( "Fcsed", Fcsed, stats, icol )
+      call stats_update( "sed_rcm", sed_rcm, stats )
+      call stats_update( "Fcsed", Fcsed, stats )
     end if
 
     ! + thlm/rtm_microphysics -- cloud water sedimentation.
     ! Code addition by Brian for cloud water sedimentation.
 
-    rcm_mc  = rcm_mc + sed_rcm
-    thlm_mc = thlm_mc - ( Lv / (Cp*exner) ) * sed_rcm
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
+        rcm_mc(i,k) = rcm_mc(i,k) + sed_rcm(i,k)
+        thlm_mc(i,k) = thlm_mc(i,k) - ( Lv / ( Cp * exner(i,k) ) ) * sed_rcm(i,k)
+      enddo
+    enddo
 
 
     return

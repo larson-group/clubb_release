@@ -58,7 +58,7 @@ module gfdl_activation
   contains
 
   !-----------------------------------------------------------------------------
-  SUBROUTINE aer_act_clubb_quadrature_Gauss( gr, pdf_params, p_in_Pa,            & ! Intent(in)
+  SUBROUTINE aer_act_clubb_quadrature_Gauss( gr, ngrdcol, pdf_params, p_in_Pa, & ! Intent(in)
                                              aeromass_clubb, temp_clubb_act, & ! Intent(in)
                                              Ndrop_max )                       ! Intent(out)
 
@@ -74,6 +74,8 @@ module gfdl_activation
 
     type(grid), intent(in) :: gr
 
+    integer, intent(in) :: ngrdcol
+
     intrinsic :: real
     ! ---> h1g, 2010-08-24, dumping Nact
     ! removed since it was not being used  -meyern
@@ -81,16 +83,18 @@ module gfdl_activation
     ! <--- h1g, 2010-08-24
 
     type( pdf_parameter ), intent(in) :: pdf_params
-    real( kind = core_rknd ),  intent(in),    dimension(:)       ::    p_in_Pa
-    real( kind = core_rknd ),  intent(in),    dimension(:)       ::    temp_clubb_act
-    real( kind = core_rknd ), intent(inout),  dimension(:, :)    ::    aeromass_clubb
-    real( kind = core_rknd ), intent(out),    dimension(:)       ::    Ndrop_max
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,gr%nzt) :: &
+      p_in_Pa, temp_clubb_act
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,gr%nzt,4) :: &
+      aeromass_clubb
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: &
+      Ndrop_max
 
     real( kind = core_rknd )                ::  drop
     integer             ::  Tym, ier
     character(len=256)  ::  ermesg
 
-    integer            :: iz_clubb
+    integer            :: i, iz_clubb
 
     real( kind = core_rknd ) :: P1_updraft, P2_updraft ! probability of updraft
     ! updraft probability threshold
@@ -98,37 +102,38 @@ module gfdl_activation
     real( kind = core_rknd ), parameter :: wp2_eps = 0.0001_core_rknd  ! w variance threshold
 
     ! temporary variables for passing into aer_ccn_act_wpdf_k, which uses reals
-    real, dimension(size(aeromass_clubb(1,:))) :: aeromass_clubb_r4
+    real, dimension(size(aeromass_clubb,3)) :: aeromass_clubb_r4
     real                                       :: drop_r4
  
     !=======================================================================
-    Tym = size(aeromass_clubb, 2)
+    Tym = size(aeromass_clubb, 3)
 
     do iz_clubb = 1, gr%nzt
+      do i = 1, ngrdcol
 
-      if( pdf_params%varnce_w_1(1,iz_clubb) > wp2_eps) then
+      if( pdf_params%varnce_w_1(i,iz_clubb) > wp2_eps) then
         P1_updraft = 0.5_core_rknd + 0.5_core_rknd &
-            * erff( pdf_params%w_1(1,iz_clubb) &
-            / sqrt( 2.0_core_rknd*pdf_params%varnce_w_1(1,iz_clubb)) )
-        P1_updraft = P1_updraft * pdf_params%mixt_frac(1,iz_clubb) &
-            * pdf_params%cloud_frac_1(1,iz_clubb)
-      else if( pdf_params%w_1(1,iz_clubb) > 0.0_core_rknd) then
-          P1_updraft = pdf_params%mixt_frac(1,iz_clubb) * pdf_params%cloud_frac_1(1,iz_clubb)
+            * erff( pdf_params%w_1(i,iz_clubb) &
+            / sqrt( 2.0_core_rknd*pdf_params%varnce_w_1(i,iz_clubb)) )
+        P1_updraft = P1_updraft * pdf_params%mixt_frac(i,iz_clubb) &
+            * pdf_params%cloud_frac_1(i,iz_clubb)
+      else if( pdf_params%w_1(i,iz_clubb) > 0.0_core_rknd) then
+          P1_updraft = pdf_params%mixt_frac(i,iz_clubb) * pdf_params%cloud_frac_1(i,iz_clubb)
       else
         ! Eric Raut added to remove compiler warning
           P1_updraft = 0.0_core_rknd
       end if
 
 
-      if( pdf_params%varnce_w_2(1,iz_clubb) > wp2_eps) then
+      if( pdf_params%varnce_w_2(i,iz_clubb) > wp2_eps) then
         P2_updraft = 0.5_core_rknd + &
-                      0.5_core_rknd*erff( pdf_params%w_2(1,iz_clubb) &
-                      / sqrt( 2.0_core_rknd*pdf_params%varnce_w_2(1,iz_clubb)) )
-        P2_updraft = P2_updraft * ( 1.0_core_rknd-pdf_params%mixt_frac(1,iz_clubb) ) &
-                      * pdf_params%cloud_frac_2(1,iz_clubb)
-      else if( pdf_params%w_2(1,iz_clubb) > 0.0_core_rknd) then
-           P2_updraft = ( 1.0_core_rknd-pdf_params%mixt_frac(1,iz_clubb) ) &
-                          * pdf_params%cloud_frac_2(1,iz_clubb)
+                      0.5_core_rknd*erff( pdf_params%w_2(i,iz_clubb) &
+                      / sqrt( 2.0_core_rknd*pdf_params%varnce_w_2(i,iz_clubb)) )
+        P2_updraft = P2_updraft * ( 1.0_core_rknd-pdf_params%mixt_frac(i,iz_clubb) ) &
+                      * pdf_params%cloud_frac_2(i,iz_clubb)
+      else if( pdf_params%w_2(i,iz_clubb) > 0.0_core_rknd) then
+           P2_updraft = ( 1.0_core_rknd-pdf_params%mixt_frac(i,iz_clubb) ) &
+                          * pdf_params%cloud_frac_2(i,iz_clubb)
       else
         ! Eric Raut added to remove compiler warning
         P2_updraft = 0.0_core_rknd
@@ -142,37 +147,38 @@ module gfdl_activation
         P2_updraft = 0.0_core_rknd
       end if
 
-      aeromass_clubb_r4 = real(aeromass_clubb(iz_clubb, :))
+      aeromass_clubb_r4 = real(aeromass_clubb(i,iz_clubb,:))
       ! Eric Raut initialized drop, which was previously uninitialized!!!
       drop = 0.0_core_rknd
       drop_r4 = real(drop)
 
-      call aer_ccn_act_wpdf_k( real(temp_clubb_act(iz_clubb)), real(p_in_Pa(iz_clubb)),&!intent(in)
-                              real(pdf_params%w_1(1,iz_clubb)),                      &! intent(in)
-                              real(pdf_params%varnce_w_1(1,iz_clubb)),               &! intent(in)
+      call aer_ccn_act_wpdf_k( real(temp_clubb_act(i,iz_clubb)), real(p_in_Pa(i,iz_clubb)),&!intent(in)
+                              real(pdf_params%w_1(i,iz_clubb)),                      &! intent(in)
+                              real(pdf_params%varnce_w_1(i,iz_clubb)),               &! intent(in)
                               aeromass_clubb_r4, Tym,             &! intent(in)
                               drop_r4,   ier,   ermesg )                        ! intent(out)
     
-      Ndrop_max(iz_clubb) = drop * P1_updraft
+      Ndrop_max(i,iz_clubb) = drop * P1_updraft
 
-      call aer_ccn_act_wpdf_k( real(temp_clubb_act(iz_clubb)), real(p_in_Pa(iz_clubb)),&!intent(in)
-                             real(pdf_params%w_2(1,iz_clubb)),                        &! intent(in)
-                             real(pdf_params%varnce_w_2(1,iz_clubb)),                 &! intent(in)
+      call aer_ccn_act_wpdf_k( real(temp_clubb_act(i,iz_clubb)), real(p_in_Pa(i,iz_clubb)),&!intent(in)
+                             real(pdf_params%w_2(i,iz_clubb)),                        &! intent(in)
+                             real(pdf_params%varnce_w_2(i,iz_clubb)),                 &! intent(in)
                              aeromass_clubb_r4, Tym,               &! intent(in)
                              drop_r4,   ier,   ermesg )                         ! intent(out)
 
-      aeromass_clubb(iz_clubb, :) = real(aeromass_clubb_r4, kind = core_rknd)
+      aeromass_clubb(i,iz_clubb,:) = real(aeromass_clubb_r4, kind = core_rknd)
       drop = real(drop, kind = core_rknd)
 
       ! in-cloud activated droplet concentration
-      Ndrop_max(iz_clubb) = Ndrop_max(iz_clubb) + drop * P2_updraft
+      Ndrop_max(i,iz_clubb) = Ndrop_max(i,iz_clubb) + drop * P2_updraft
 
       ! get the layer-averaged activated droplet concentration (/cm3)
-      Ndrop_max(iz_clubb) = Ndrop_max(iz_clubb) *  &
-                 (  pdf_params%mixt_frac(1,iz_clubb)  * pdf_params%cloud_frac_1(1,iz_clubb) + &
-                   (1._core_rknd- pdf_params%mixt_frac(1,iz_clubb)) * &
-                   pdf_params%cloud_frac_2(1,iz_clubb) )
+      Ndrop_max(i,iz_clubb) = Ndrop_max(i,iz_clubb) *  &
+                 (  pdf_params%mixt_frac(i,iz_clubb)  * pdf_params%cloud_frac_1(i,iz_clubb) + &
+                   (1._core_rknd- pdf_params%mixt_frac(i,iz_clubb)) * &
+                   pdf_params%cloud_frac_2(i,iz_clubb) )
 
+      enddo
   end do
 return
 end subroutine aer_act_clubb_quadrature_Gauss
