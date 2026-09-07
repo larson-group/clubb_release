@@ -1,0 +1,162 @@
+commit 900681c91bdbdf8d6cd069bab01663ebac1a3279
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sat Sep 5 22:53:52 2026 -0500
+
+    Microphys loop push (#1355)
+    
+    * First set of loop pushes - feature addition to stats too to allow for calling stats_update multiple times in a timestep and averaging the results, which is quite nice for silhs and allows us to get rid of the special microphysics stats type
+    
+    * More loop pushes
+    
+    * Tiny changes to restore BFBness
+    
+    * Pushing loop into advance_microphys
+    
+    * Little more loop push
+    
+    * More basic loop pushing
+    
+    * More loop pushing, also found what seems to be a bug with additional columns, theres code that uses only the first one. Im leaving this in for now to maintain BFBness, but labeled the problem areas with TODOs
+    
+    * Potentially final batch of loop pushes
+    
+    * Adding acc fixes for microphys stuff - the 2D versions called are GPUized, so they need acc data statements surrounding them
+    
+    * Removing unneccesary single col versions of lots of things
+    
+    * Restoring some comments and formatting
+    
+    * A little more restoration, maybe unnecceary
+
+commit 53920ce2095c4b721f59936d5933dd6da8bcb590
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Sep 2 13:15:01 2026 -0500
+
+    Clubb JAX (#1351)
+    
+    * Testing new porting shortcut by creating a jax version of advance_xm_wpxp.py - it wen't well. Also updating the porting shortcut with more tips.
+    
+    * Small update to porting shortcut
+    
+    * Iterative improvements to porting shortcut
+    
+    * Using porting script to port advance_xp2_xpyp in one go - still some issues that seems to require rerunning to fix issues, which is sad but maybe the best we can do with such a simple method
+    
+    * Little bug fixes
+    
+    * Updates to make the ports create better jax in the sense that it is more jit-ready
+    
+    * Adding a more general plan to also use CLUBB-JAX and using it on advance_xm_wpxp
+    
+    * Cleanup
+    
+    * More properly jax-izing the current jax ports
+    
+    * More formatting of ported jax code
+    
+    * More formatting of ported jax code
+    
+    * Updates in pursuit of full jit-compatibility
+    
+    * Adding jit compile test
+    
+    * Fully jitting advance_xp2_xpyp
+    
+    * Copying parameter_indices from CLUBB-JAX but subtracting 1 to avoid -1 in code
+    
+    * Little update to port shortcut
+    
+    * Jitting and formatting CLUBB-JAX
+    
+    * Mostly formatting
+    
+    * Updating jax code
+    
+    * Improving stats outputting
+    
+    * Compile mono flux range loops with JAX
+    
+    * Improvement to jax mixing length port
+    
+    * Organizing stats code
+    
+    * Making jax work on GPU
+    
+    * Improvements to prescribe forcings code
+    
+    * Mainly prescribe forcings formatting work
+    
+    * Small improvements, getting rid of unneccesary weird jit statement
+    
+    * Radiation porting completed. Bugsrad and silhs radiation were
+    intentionally left out for now.
+    
+    * Removing stale code and adding a proposal.md file detailing a potential future feature to make the python_api work with current jax code
+    
+    * Proper port of model flags and parameters and constants and such - those there were all kinda put into one file before
+    
+    * new jenkinsfile added
+    
+    * Tiny cleanup and adding back some stats outputs for microphysics that we need for some reason
+    
+    * limited to only one process. Find out built time
+    
+    * made jenkins jax tests faster by running them not so extensively
+    
+    * Mainly working on README, also some other tiny things: changing default test stats list to standard instead of all_stats, and renaming run_jax.sh to run_jax_wrapper.sh
+    
+    ---------
+    
+    Co-authored-by: Daniel Ebel <debel@uwm.edu>
+
+commit 2cd63f391364ece6bd63ccffa31f7c4b421ee531
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Aug 28 19:38:31 2026 -0500
+
+    Adding -debug to branch vs master bindiff test, this is to turn off compiler optimizations that can cause innocent changes to cause tiny differences
+
+commit 3a5ea18d3acadfec92c6af657031dddb5c1cb662
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Wed Aug 26 09:31:27 2026 -0500
+
+    Attempted fix for Jenkins clubb_BFB_gfortran_test to include "bomex_5day_4scam" (#1349)
+
+commit 639e840b79fd413417d16751d1556da5ebc0e5e0
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Aug 25 17:45:26 2026 -0500
+
+    Bug fix: the i in rho is the column dimension, not time dimension. Since this fixes a bug, it is technically BIT_CHANGING
+
+commit 55a6f491250c667eb115fb97202275c81c6a5cdd
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Tue Aug 25 16:13:35 2026 -0500
+
+    Add blank line in order to trigger Jenkins tests
+
+commit 313fc4213b88e04bcd664f3155adb4fbaa04a3f1
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Tue Aug 25 14:14:46 2026 -0500
+
+    Added blank line in order to run Jenkins test
+
+commit 49b28e58b3463c7c376bc4a49c6ba92b13c38739
+Author: Trevor Hancock <hancoct@uwm.edu>
+Date:   Tue Aug 25 13:07:56 2026 -0500
+
+    Adding 'bomex_5day_4scam' to MIN_CASES for Jenkins clubb_BFB_gfortran_test. This is BIT_CHANGING.
+
+commit b2993e0082ef3958bb215698697b34655a20b1af
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Aug 24 15:40:06 2026 -0500
+
+    Remove a blank line in order to trigger nightly tests
+    
+    Removed unnecessary blank line at the beginning of the module.
+
+commit d7fa9a72d2b8d10690060876afe44fd1c9677131
+Author: Trevor-Hancock5 <hancoct@uwm.edu>
+Date:   Mon Aug 24 15:08:35 2026 -0500
+
+    Fixed clubb python (#1346)
+    
+    - Necessary changes to get 'clubb_python_test_branch' jenkins test to pass
