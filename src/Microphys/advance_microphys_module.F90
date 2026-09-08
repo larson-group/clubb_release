@@ -985,6 +985,9 @@ module advance_microphys_module
              name_hmp2 = trim( hm_metadata%hydromet_list(ihm)(1:2) )//"p2"
              name_wp = "wp"//trim( hm_metadata%hydromet_list(ihm)(1:2) )//"p"
              call stats_update( name_hmp2, hydrometp2(:,:,ihm), stats )
+             ! This section has not been GPUized yet, but this variable has a GPU copy.
+             ! Update that copy with the CPU result before stats reads it back.
+             !$acc update device( wphydrometp(:,:,ihm) ) if_present
              call stats_update( name_wp, wphydrometp(:,:,ihm), stats )
           end if
           if ( trim( hm_metadata%hydromet_list(ihm) ) == "rrm" ) then

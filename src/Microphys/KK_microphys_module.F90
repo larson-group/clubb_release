@@ -1107,6 +1107,10 @@ module KK_microphys_module
        thlp2_mc   = zt2zm_api( nzm, nzt, ngrdcol, gr, thlp2_mc_zt )
        rtpthlp_mc = zt2zm_api( nzm, nzt, ngrdcol, gr, rtpthlp_mc_zt )
 
+       ! This section has not been fully GPUized yet, but these variables have GPU copies.
+       ! Copy the GPU interpolation results back before setting boundaries on the CPU.
+       !$acc update host( wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc ) if_present
+
        ! Set values of microphysics tendency terms to 0 at model lower boundary.
        wprtp_mc(:,1)   = zero
        wpthlp_mc(:,1)  = zero

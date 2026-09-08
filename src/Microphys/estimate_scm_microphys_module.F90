@@ -283,6 +283,11 @@ module estimate_scm_microphys_module
       lh_wpthlp_mc = zt2zm_api( nzm, nzt, ngrdcol, gr, lh_wpthlp_mc_zt )
       lh_rtpthlp_mc = zt2zm_api( nzm, nzt, ngrdcol, gr, lh_rtpthlp_mc_zt )
 
+      ! This section has not been fully GPUized yet, but these variables have GPU copies.
+      ! Copy the GPU interpolation results back for the remaining CPU code.
+      !$acc update host( lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
+      !$acc              lh_wpthlp_mc, lh_rtpthlp_mc ) if_present
+
       ! Stats sampling for LH variance/covariance tendencies.
       if ( stats%l_sample ) then
         call stats_update( "lh_rtp2_mc", lh_rtp2_mc, stats )

@@ -695,6 +695,9 @@ contains
     !----------------------- Begin Code -----------------------
 
     if ( stats%l_sample ) then
+      ! Microphysics has not been fully GPUized yet, but these variables have GPU copies.
+      ! Update those copies with the CPU results before stats reads them back.
+      !$acc update device( lh_thlm_mc, lh_rcm_mc, lh_rvm_mc ) if_present
       call stats_update( "lh_thlm_mc", lh_thlm_mc, stats )
       call stats_update( "lh_rcm_mc", lh_rcm_mc, stats )
       call stats_update( "lh_rvm_mc", lh_rvm_mc, stats )
