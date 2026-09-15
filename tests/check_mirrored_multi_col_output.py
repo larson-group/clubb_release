@@ -1,13 +1,9 @@
 #!/usr/bin/python3
 
 # =========================================================================================================
-# Description: Checks mirrored multi-column stats output in a directory.
-#              By mirrored, we mean column 1 should match column N, column 2 should match column N-1, etc.
-#              This script exits non-zero if any mirrored-column comparison exceeds the tolerance.
-#
-#              A mirrored parameter file can be created by running "utilities/create_multi_col_params.py" with
-#              "-mode dup_tweak -mirror true". Then generate output with run_scm.py/run_scm_all.py and run
-#              this script on the output directory containing *_stats.nc files.
+# Description: Compares forward- and reverse-order multi-column stats output.
+#              This script exits non-zero if any mirrored-column comparison
+#              exceeds the tolerance.
 # =========================================================================================================
 
 import argparse
@@ -54,7 +50,7 @@ def _compare_mirrored_columns_vectorized(data_with_col_last):
     return np.ma.filled(avg_by_pair, 0.0), np.ma.filled(max_by_pair, 0.0)
 
 
-def check_file(file_path, tolerance, verbose):
+def check_file(file_path, reverse_file_path, tolerance, verbose):
     try:
         dset = netCDF4.Dataset(file_path)
     except Exception as err:
@@ -67,10 +63,22 @@ def check_file(file_path, tolerance, verbose):
             return False
 
         ngrdcol = len(dset.dimensions["col"])
-        if ngrdcol < 2:
-            print(f"Skipping {file_path}: col dimension size is {ngrdcol}.")
-            return False
+        try:
+            reverse_dset = netCDF4.Dataset(reverse_file_path)
+        except Exception as err:
+            print(f"Error opening file {reverse_file_path}: {err}")
+            return True
 
+        if "col" not in reverse_dset.dimensions:
+            print(f"Missing 'col' dimension in {reverse_file_path}.")
+            reverse_dset.close()
+            return True
+        if len(reverse_dset.dimensions["col"]) != ngrdcol:
+            print(f"Column-count mismatch between {file_path} and {reverse_file_path}.")
+            reverse_dset.close()
+            return True
+
+        ngrdcol *= 2
         print(f"Testing {file_path} with ngrdcol = {ngrdcol}")
         differences_found = False
         checked_var_count = 0
@@ -95,6 +103,13 @@ def check_file(file_path, tolerance, verbose):
             # Normalize to a canonical shape where the mirrored column axis is always last,
             # regardless of whether the file stored it as (time, z, col), (time, col), etc.
             data = np.moveaxis(data, col_axis, -1)
+            reverse_var = reverse_dset.variables[var_name]
+            reverse_data = np.moveaxis(
+                np.ma.array(reverse_var[:], copy=False),
+                reverse_var.dimensions.index("col"),
+                -1,
+            )
+            data = np.ma.concatenate((data, reverse_data), axis=-1)
 
             # Fast all-zero detection for this variable.
             if data.count() > 0 and float(np.ma.max(np.ma.abs(data))) == 0.0:
@@ -127,17 +142,21 @@ def check_file(file_path, tolerance, verbose):
             f"all_zero={all_zero_var_count}, differing={differing_var_count}"
         )
 
+        reverse_dset.close()
         return differences_found
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Check mirrored columns in *_stats.nc output files."
+        description="Compare forward- and reverse-order *_stats.nc output files."
     )
     parser.add_argument(
-        "directory",
-        nargs=1,
-        help="Directory containing *_stats.nc files to check",
+        "forward_directory",
+        help="Directory containing forward-order output",
+    )
+    parser.add_argument(
+        "reverse_directory",
+        help="Directory containing reverse-order output",
     )
     parser.add_argument(
         "-t",
@@ -154,25 +173,29 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    directory = args.directory[0]
-
-    if not os.path.isdir(directory):
-        print(f"Error: {directory} is not a valid directory.")
+    if not os.path.isdir(args.forward_directory):
+        print(f"Error: {args.forward_directory} is not a valid directory.")
+        sys.exit(1)
+    if not os.path.isdir(args.reverse_directory):
+        print(f"Error: {args.reverse_directory} is not a valid directory.")
         sys.exit(1)
 
     matching_files = sorted(
-        os.path.join(directory, f)
-        for f in os.listdir(directory)
+        os.path.join(args.forward_directory, f)
+        for f in os.listdir(args.forward_directory)
         if f.endswith("_stats.nc")
     )
 
     if not matching_files:
-        print(f"No *_stats.nc files found in directory: {directory}")
-        sys.exit(0)
+        print(f"No *_stats.nc files found in directory: {args.forward_directory}")
+        sys.exit(1)
 
     differences_found_any = False
-    for file_path in matching_files:
-        if check_file(file_path, args.tol, args.verbose):
+    for forward_path in matching_files:
+        reverse_path = os.path.join(
+            args.reverse_directory, os.path.basename(forward_path)
+        )
+        if check_file(forward_path, reverse_path, args.tol, args.verbose):
             differences_found_any = True
 
     if differences_found_any:

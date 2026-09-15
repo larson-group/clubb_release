@@ -6,7 +6,8 @@ pipeline {
     stage('Modify Config Flags') {
       steps {
         sh '''sed -i "s:set(GPU_DEFINITIONS CLUBB_GPU CUDA):set(GPU_DEFINITIONS CLUBB_GPU CUDA SILHS_MULTI_COL_RAND_DUPLICATE):g" cmake/toolchains/linux_x86_64_nvhpc.cmake''' // only edits GPU entry
-        sh '''utilities/create_multi_col_params.py -n 6 -mode dup_tweak -mirror true'''
+        sh '''utilities/create_multi_col_params.py -hr C8/0.2:0.8/3 -out_file clubb_params_abc.in
+              utilities/create_multi_col_params.py -hr C8/0.8:0.2/3 -out_file clubb_params_cba.in'''
       }
     }
     stage('Compile GPU_ACC') {
@@ -20,13 +21,14 @@ pipeline {
       steps {
         lock( "GPU_${env.NODE_NAME}" ) {
           sh '''ulimit -s 8388608
-                run_scripts/run_scm_all.py -nproc 1 -debug 0 -params clubb_params_multi_col.in -max_iters 200 -override penta_solve_method=2,tridiag_solve_method=2,l_lh_straight_mc=.true.'''
+                run_scripts/run_scm_all.py -nproc 1 -params clubb_params_abc.in -out_dir output/abc -max_iters 200 -override l_lh_straight_mc=.true.
+                run_scripts/run_scm_all.py -nproc 1 -params clubb_params_cba.in -out_dir output/cba -max_iters 200 -override l_lh_straight_mc=.true.'''
         }
       }
     }
     stage('Run Check Script') {
       steps {
-        sh '''python tests/check_mirrored_multi_col_output.py output'''
+        sh '''python tests/check_mirrored_multi_col_output.py output/abc output/cba'''
       }
     }
   }

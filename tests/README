@@ -42,18 +42,18 @@ Examples:
 
 ### `check_mirrored_multi_col_output.py`
 
-Checks that mirrored columns in multi-column `*_stats.nc` output match. This is
-intended for output generated from mirrored multi-column parameter files.
+Compares multi-column `*_stats.nc` output from an ABC run against a CBA run
+after reversing the CBA column axis.
 
 Examples:
 
-- `python3 tests/check_mirrored_multi_col_output.py output/multicol`
-  Checks every `*_stats.nc` file in `output/multicol` with exact matching.
+- `python3 tests/check_mirrored_multi_col_output.py output/abc output/cba`
+  Compares every ABC output column with the corresponding reversed CBA column.
 
-- `python3 tests/check_mirrored_multi_col_output.py -t 1e-14 output/multicol`
-  Allows small average absolute differences between mirrored columns.
+- `python3 tests/check_mirrored_multi_col_output.py -t 1e-14 output/abc output/cba`
+  Allows small average absolute differences between the two runs.
 
-- `python3 tests/check_mirrored_multi_col_output.py -v output/multicol`
+- `python3 tests/check_mirrored_multi_col_output.py -v output/abc output/cba`
   Prints each variable checked in addition to the summary.
 
 ### `run_G_unit_tests.py`
