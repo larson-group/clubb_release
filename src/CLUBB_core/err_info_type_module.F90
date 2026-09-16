@@ -282,7 +282,7 @@ module err_info_type_module
                                    " / Chunk index ", err_info%chunk_idx, &
                                    NEW_LINE('a'), "Grid column index i = ", i, &
                                    ", Latitude ", err_info%host_lat(i), &
-                                   " / Longitude ", err_info%host_lat(i), NEW_LINE('a'), &
+                                   " / Longitude ", err_info%host_lon(i), NEW_LINE('a'), &
                                    "Latitude range from -90 to 90 degrees, ", &
                                    "Longitude range from -180 to 180 degrees"
     end do

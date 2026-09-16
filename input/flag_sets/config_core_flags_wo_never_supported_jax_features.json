@@ -1,12 +1,4 @@
 {
-    "flag1": {
-        "l_godunov_upwind_wpxp_ta": true,
-        "penta_solve_method": 1,
-        "tridiag_solve_method": 1,
-        "l_diffuse_rtm_and_thlm": true,
-        "saturation_formula": 2,
-        "fill_holes_type": 4
-    },
     "flag2": {
         "saturation_formula": 1,
         "l_godunov_upwind_xpyp_ta": true,

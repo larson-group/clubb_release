@@ -19,7 +19,6 @@ Modes:
 """
 
 import argparse
-import json
 import os
 import subprocess
 import sys
@@ -36,9 +35,16 @@ from run_scm_all import (
     positive_int,
 )
 
-DEFAULT_MAX_WORKERS = 8
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+    # Make sure utilities folder can be found. We could omit this and run python3 -m run_scripts.run_clubb_w_varying_flags.
+    # But this has become the python scripts convention :/
+
+from utilities.flag_sets import build_override_arg, get_flag_sets, read_flag_settings  # noqa: E402
+
+DEFAULT_MAX_WORKERS = 8
 DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_flags_config_core_flags.json"
 
 
@@ -144,33 +150,6 @@ def get_cli_args():
 # ------------------------------------------------------------------------------
 
 
-def read_flag_settings(path):
-    """Load the JSON mapping from flag-set name to override values."""
-    if not path.endswith(".json"):
-        print("Error: Flag config file must be a JSON file.")
-        sys.exit(1)
-
-    print(f"Reading settings from {path}...")
-    with open(path) as f:
-        return json.load(f)
-
-
-def get_flag_sets(skip_default, flag_dict):
-    """Normalize JSON flag sets and optionally inject the unmodified default run."""
-    flag_sets = {}
-
-    if not skip_default:
-        flag_sets["default"] = None
-
-    for flag_set_name, overrides in flag_dict.items():
-        if flag_set_name == "default":
-            print("Error: 'default' may not be used as a flag set name.")
-            sys.exit(1)
-        flag_sets[flag_set_name] = overrides
-
-    return flag_sets
-
-
 def determine_run_cases(args):
     """Resolve the requested case selection into a concrete list of case names."""
     if args.case_name is not None:
@@ -184,25 +163,6 @@ def determine_run_cases(args):
     if args.min_cases:
         return MIN_CASES
     return STANDARD_CASES
-
-
-def format_override_value(value):
-    """Render Python values into Fortran-friendly override strings."""
-    if isinstance(value, bool):
-        return ".true." if value else ".false."
-    if isinstance(value, (int, float)):
-        return str(value)
-    return str(value)
-
-
-def build_override_arg(overrides):
-    """Serialize one flag set into the comma-delimited -override format."""
-    if not overrides:
-        return None
-    return ",".join(
-        f"{key}={format_override_value(value)}"
-        for key, value in overrides.items()
-    )
 
 
 def build_tasks(root, flag_sets, run_cases, args):
@@ -340,8 +300,13 @@ def main():
 
     # Build the full task matrix up front so the execution phase is only
     # responsible for scheduling and reporting.
-    flag_dict = read_flag_settings(args.flag_config_file)
-    flag_sets = get_flag_sets(args.skip_default_flags, flag_dict)
+    print(f"Reading settings from {args.flag_config_file}...")
+    try:
+        flag_dict = read_flag_settings(args.flag_config_file)
+        flag_sets = get_flag_sets(args.skip_default_flags, flag_dict)
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
     run_cases = determine_run_cases(args)
     tasks = build_tasks(root, flag_sets, run_cases, args)
 

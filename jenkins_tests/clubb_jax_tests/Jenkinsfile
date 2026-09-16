@@ -8,12 +8,12 @@ pipeline {
               ./compile.py -debug'''
       }
     }
-    stage('Run Jax Python vs Fortran cases') {
+    stage('Run Jax Python vs Fortran cases w varying flags') {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
               ulimit -s 8388608
-              python3 tests/run_jax_vs_fortran_cases.py -debug 0 -stats input/stats/standard_stats.in --max-iters 10''' //our code in jax is really sloow -> use faster tests
+              python3 tests/run_jax_vs_fortran_cases.py -debug 0 -stats input/stats/standard_stats.in --max-iters 5 --flag-config-file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json''' //our code in jax is really sloow -> use shorter tests
       }
     }
   }

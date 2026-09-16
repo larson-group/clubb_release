@@ -133,6 +133,19 @@ Examples:
 Runs selected cases with both the JAX driver and the Fortran standalone driver,
 then compares outputs with `run_bindiff_all.py`.
 
+Every case runs once per flag set. The unmodified "default" flag set is always
+included unless `--skip-default-flags` is given. Results are written as
+
+    output/tests/jax_driver_test_results/
+      jax_output/<flag set>/*.nc
+      fortran_output/<flag set>/*.nc
+      logs/<flag set>/<case>_{run_jax,run_fortran,bindiff}.log
+      case_compare_summary.json
+      final_bindiff.log
+
+so the two output roots can be compared directly with
+`run_bindiff_all.py --flag-sets`, which is what the final combined diff does.
+
 Examples:
 
 - `python3 tests/run_jax_vs_fortran_cases.py --cases bomex --jobs 1`
@@ -146,6 +159,10 @@ Examples:
 
 - `python3 tests/run_jax_vs_fortran_cases.py --keep-existing`
   Reuses existing output directories instead of deleting them before the run.
+
+- `python3 tests/run_jax_vs_fortran_cases.py --flag-config-file input/flag_sets/run_bindiff_w_flags_config_example.json`
+  Also runs every case under each flag set in the JSON file, using the same
+  config format as `run_scripts/run_clubb_w_varying_flags.py`.
 
 ### `run_loss_output_consistency.py`
 
