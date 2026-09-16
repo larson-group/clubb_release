@@ -543,19 +543,19 @@ module microphys_driver
           do i = 1, ngrdcol
             if ( l_morr_xp2_mc ) then
               !Use the moister rt_1/rt_2 rather than rtm in morrison microphys
-              if ( pdf_params%rt_1(1,k) > pdf_params%rt_2(1,k) ) then ! TODO(BFB): Change 1 to i.
-                rvm(i,k) = pdf_params%rt_1(1,k) & ! TODO(BFB): Change 1 to i.
-                           - pdf_params%rc_1(1,k) ! TODO(BFB): Change 1 to i.
+              if ( pdf_params%rt_1(i,k) > pdf_params%rt_2(i,k) ) then
+                rvm(i,k) = pdf_params%rt_1(i,k) &
+                           - pdf_params%rc_1(i,k)
               else
-                rvm(i,k) = pdf_params%rt_2(1,k) & ! TODO(BFB): Change 1 to i.
-                           - pdf_params%rc_2(1,k) ! TODO(BFB): Change 1 to i.
+                rvm(i,k) = pdf_params%rt_2(i,k) &
+                           - pdf_params%rc_2(i,k)
               endif
 
               !Also use the colder of thl_1/thl_2
-              if ( pdf_params%thl_1(1,k) < pdf_params%thl_2(1,k) ) then ! TODO(BFB): Change 1 to i.
-                thlm_morr(i,k) = pdf_params%thl_1(1,k) ! TODO(BFB): Change 1 to i.
+              if ( pdf_params%thl_1(i,k) < pdf_params%thl_2(i,k) ) then
+                thlm_morr(i,k) = pdf_params%thl_1(i,k)
               else
-                thlm_morr(i,k) = pdf_params%thl_2(1,k) ! TODO(BFB): Change 1 to i.
+                thlm_morr(i,k) = pdf_params%thl_2(i,k)
               endif
             else
               rvm(i,k) = rtm(i,k) - rcm(i,k)

@@ -221,30 +221,28 @@ module mixed_moment_PDF_integrals
     do hm_idx = 1, hydromet_dim
       hm_tol = hydromet_tols(hm_idx)
       do k = 1, nzt
-        ! The scalar wrapper historically used the first-column PDF and
-        ! precipitation parameters for every column.  Preserve that access
-        ! pattern here so this loop refactor is bit-for-bit neutral.
-        mu_rt_1 = pdf_params%rt_1(1,k)
-        mu_rt_2 = pdf_params%rt_2(1,k)
-        mu_thl_1 = pdf_params%thl_1(1,k)
-        mu_thl_2 = pdf_params%thl_2(1,k)
-        ! Unpack the standard deviations of rt and thl in each PDF component.
-        sigma_rt_1 = sqrt( pdf_params%varnce_rt_1(1,k) )
-        sigma_rt_2 = sqrt( pdf_params%varnce_rt_2(1,k) )
-        sigma_thl_1 = sqrt( pdf_params%varnce_thl_1(1,k) )
-        sigma_thl_2 = sqrt( pdf_params%varnce_thl_2(1,k) )
-        ! Unpack the mixture fraction.
-        mixt_frac = pdf_params%mixt_frac(1,k)
-        ! Unpack the precipitation fraction in each PDF component.
-        precip_frac_1 = precip_fracs%precip_frac_1(1,k)
-        precip_frac_2 = precip_fracs%precip_frac_2(1,k)
-        ! Unpack the coefficients of rt and thl in the chi/eta PDF transformation
-        ! equations for each PDF component.
-        crt_1 = pdf_params%crt_1(1,k)
-        crt_2 = pdf_params%crt_2(1,k)
-        cthl_1 = pdf_params%cthl_1(1,k)
-        cthl_2 = pdf_params%cthl_2(1,k)
         do i = 1, ngrdcol
+          ! Unpack the PDF and precipitation parameters for this column.
+          mu_rt_1 = pdf_params%rt_1(i,k)
+          mu_rt_2 = pdf_params%rt_2(i,k)
+          mu_thl_1 = pdf_params%thl_1(i,k)
+          mu_thl_2 = pdf_params%thl_2(i,k)
+          ! Unpack the standard deviations of rt and thl in each PDF component.
+          sigma_rt_1 = sqrt( pdf_params%varnce_rt_1(i,k) )
+          sigma_rt_2 = sqrt( pdf_params%varnce_rt_2(i,k) )
+          sigma_thl_1 = sqrt( pdf_params%varnce_thl_1(i,k) )
+          sigma_thl_2 = sqrt( pdf_params%varnce_thl_2(i,k) )
+          ! Unpack the mixture fraction.
+          mixt_frac = pdf_params%mixt_frac(i,k)
+          ! Unpack the precipitation fraction in each PDF component.
+          precip_frac_1 = precip_fracs%precip_frac_1(i,k)
+          precip_frac_2 = precip_fracs%precip_frac_2(i,k)
+          ! Unpack the coefficients of rt and thl in the chi/eta PDF transformation
+          ! equations for each PDF component.
+          crt_1 = pdf_params%crt_1(i,k)
+          crt_2 = pdf_params%crt_2(i,k)
+          cthl_1 = pdf_params%cthl_1(i,k)
+          cthl_2 = pdf_params%cthl_2(i,k)
           ! Unpack the means and standard deviations of w in each PDF component.
           mu_w_1 = mu_x_1_n(i,k,hm_metadata%iiPDF_w)
           mu_w_2 = mu_x_2_n(i,k,hm_metadata%iiPDF_w)
@@ -339,10 +337,10 @@ module mixed_moment_PDF_integrals
         ! Unpack the tolerance value for the second hydrometeor, hmy.
         hmy_tol = hydromet_tols(hmy_idx)
         do k = 1, nzt
-          mixt_frac = pdf_params%mixt_frac(1,k)
-          precip_frac_1 = precip_fracs%precip_frac_1(1,k)
-          precip_frac_2 = precip_fracs%precip_frac_2(1,k)
           do i = 1, ngrdcol
+            mixt_frac = pdf_params%mixt_frac(i,k)
+            precip_frac_1 = precip_fracs%precip_frac_1(i,k)
+            precip_frac_2 = precip_fracs%precip_frac_2(i,k)
             mu_hm_1 = hydromet_pdf_params(i,k)%mu_hm_1(hm_idx)
             mu_hm_2 = hydromet_pdf_params(i,k)%mu_hm_2(hm_idx)
             ! Unpack the mean (in-precip) of the second hydrometeor, hmy, in
