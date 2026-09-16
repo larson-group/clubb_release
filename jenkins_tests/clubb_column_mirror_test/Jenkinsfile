@@ -1,0 +1,42 @@
+pipeline {
+
+  agent any
+
+  stages {
+    stage('Modify Config Flags') {
+      steps {
+        sh '''sed -i "s:add_compile_definitions(__GFORTRAN__):add_compile_definitions(__GFORTRAN__ SILHS_MULTI_COL_RAND_DUPLICATE):g" cmake/toolchains/linux_x86_64_gcc.cmake'''
+        sh '''utilities/create_multi_col_params.py -hr C8/0.2:0.8/3 -out_file clubb_params_abc.in
+              utilities/create_multi_col_params.py -hr C8/0.8:0.2/3 -out_file clubb_params_cba.in'''
+      }
+    }
+    stage('Compile CPU') {
+      steps {
+          sh ''' source /etc/profile.d/larson-group.sh
+                 module load gcc netcdf-fortran
+                 ./compile.py'''
+      }
+    }
+    stage('Run CPU') {
+      steps {
+          sh '''ulimit -s 8388608
+                run_scripts/run_scm_all.py -nproc 2 -params clubb_params_abc.in -out_dir output/abc -max_iters 200 -override l_lh_straight_mc=.true.
+                run_scripts/run_scm_all.py -nproc 2 -params clubb_params_cba.in -out_dir output/cba -max_iters 200 -override l_lh_straight_mc=.true.'''
+      }
+    }
+    stage('Run Check Script') {
+      steps {
+        sh '''python tests/check_mirrored_multi_col_output.py output/abc output/cba'''
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_column_mirror_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+        emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}
