@@ -42,19 +42,46 @@ Examples:
 
 ### `check_mirrored_multi_col_output.py`
 
-Compares multi-column `*_stats.nc` output from an ABC run against a CBA run
-after reversing the CBA column axis.
+Tests column independence: reordering columns should not change their
+individual results. The script generates distinct parameter columns, runs
+the same case in forward and reverse order, and compares matching columns.
 
-Examples:
+```sh
+python3 tests/check_mirrored_multi_col_output.py -case rico -n 3
+```
 
-- `python3 tests/check_mirrored_multi_col_output.py output/abc output/cba`
-  Compares every ABC output column with the corresponding reversed CBA column.
+`-n 3` varies `C8` evenly from 0.2 to 0.8:
 
-- `python3 tests/check_mirrored_multi_col_output.py -t 1e-14 output/abc output/cba`
-  Allows small average absolute differences between the two runs.
+| Run | First column | Second column | Third column |
+| --- | --- | --- | --- |
+| Forward (ABC) | A: `C8 = 0.2` | B: `C8 = 0.5` | C: `C8 = 0.8` |
+| Reverse (CBA) | C: `C8 = 0.8` | B: `C8 = 0.5` | A: `C8 = 0.2` |
 
-- `python3 tests/check_mirrored_multi_col_output.py -v output/abc output/cba`
-  Prints each variable checked in addition to the summary.
+Column A must match A across runs, and likewise for B and C; the three columns should
+differ from each other. This exposes accidental dependencies on column order,
+such as reading column `1` instead of `i`, or carrying temporary values
+between columns. Single-column runs and identical columns can hide these bugs.
+
+Use `-hr PARAM/MIN:MAX/NPOINTS` for custom parameter ranges. Multiple ranges
+form a grid; this example generates six columns, then reverses their order:
+
+```sh
+python3 tests/check_mirrored_multi_col_output.py -case rico -hr 'C8/0.2:0.8/3,C11/0.2:0.8/2'
+```
+
+The runner automatically configures and builds a dedicated gfortran CPU
+executable with the required SILHS sampling settings. Rerunning reuses the
+build and rebuilds changed sources as needed. Have CMake, gfortran, and the
+usual CLUBB build dependencies available; no manual toolchain edits are needed.
+Use `-exe PATH` to skip compilation and use your own test executable.
+
+Omit `-case` to run the standard case set, or select several with
+`-cases rico,rico_silhs,mc3e`. Defaults are three columns, 200 timesteps
+(`-max_iters`), and two concurrent cases (`-nproc`). Use `-config` / `-params`
+for alternate base parameters. Additional `run_scm.py` options are forwarded,
+for example `-debug 1`; the `--` separator is optional. See `--help` for options and
+the [script header](check_mirrored_multi_col_output.py) for build and diagnostic
+details.
 
 ### `run_G_unit_tests.py`
 
