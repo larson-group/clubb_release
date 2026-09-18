@@ -60,7 +60,9 @@ python3 tests/check_mirrored_multi_col_output.py -case rico -n 3
 Column A must match A across runs, and likewise for B and C; the three columns should
 differ from each other. This exposes accidental dependencies on column order,
 such as reading column `1` instead of `i`, or carrying temporary values
-between columns. Single-column runs and identical columns can hide these bugs.
+between columns. Any bug that could cause information from one column to 
+infect other columns should cause this test to fail, because changing 
+the column order should change which column is the infectious one. 
 
 Use `-hr PARAM/MIN:MAX/NPOINTS` for custom parameter ranges. Multiple ranges
 form a grid; this example generates six columns, then reverses their order:
@@ -73,7 +75,6 @@ The runner automatically configures and builds a dedicated gfortran CPU
 executable with the required SILHS sampling settings. Rerunning reuses the
 build and rebuilds changed sources as needed. Have CMake, gfortran, and the
 usual CLUBB build dependencies available; no manual toolchain edits are needed.
-Use `-exe PATH` to skip compilation and use your own test executable.
 
 Omit `-case` to run the standard case set, or select several with
 `-cases rico,rico_silhs,mc3e`. Defaults are three columns, 200 timesteps
