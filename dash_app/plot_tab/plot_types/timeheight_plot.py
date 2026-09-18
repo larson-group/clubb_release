@@ -3,6 +3,9 @@ import plotly.graph_objects as go
 from dash import Input, Output, MATCH, State, callback_context
 from plotly.subplots import make_subplots
 
+from dash_app.plot_tab.async_callbacks import task_callback
+from dash_app.plot_tab.case_cache import resolve_case_data
+
 from ..benchmark_overlay import extract_benchmark_timeheight_panels
 from . import shared
 from .base_plot import BasePlotType
@@ -227,7 +230,7 @@ class TimeHeightPlotType(BasePlotType):
         return fig
 
     def register_callbacks(self, app):
-        @app.callback(
+        @task_callback(app, self.plot_type_id,
             Output(self.graph_id(MATCH), "figure"),
             Input(self.var_input_id(MATCH), "value"),
             Input("plots-case-data", "data"),
@@ -258,6 +261,7 @@ class TimeHeightPlotType(BasePlotType):
             size_store_value,
             relayout_data,
         ):
+            case_data = resolve_case_data(case_data)
             size_value = shared.normalize_plot_size(size_store_value)
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)
             fig = self.build_figure(

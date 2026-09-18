@@ -22,11 +22,15 @@ def perform_action(
     *,
     internal: bool = True,
     timeout_seconds: float = 10.0,
+    ensure_running: bool = True,
 ) -> dict[str, Any]:
     """Dispatch one Dash-owned action through the durable broker."""
     if not internal:
         raise ValueError("shared broker client only supports internal Dash actions")
-    ensure_broker()
+    # High-frequency native UI polling uses the runtime already ensured at
+    # startup. Avoid a second HTTP request for the full broker status each time.
+    if ensure_running:
+        ensure_broker()
     connection = read_connection()
     request = Request(
         str(connection["url"]).rstrip("/") + "/actions",

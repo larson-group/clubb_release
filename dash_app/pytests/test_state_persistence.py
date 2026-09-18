@@ -48,52 +48,26 @@ def test_adding_or_removing_one_output_preserves_every_other_selection():
     assert _update_output_dirs(current, "remove", "/tmp/one") == ["/tmp/two"]
 
 
-def test_output_changes_commit_only_after_picker_closes():
+def test_case_loading_consumes_directory_selection_directly():
     app = Dash(__name__)
     register_case_callbacks(app)
-    entry = next(
-        value
-        for key, value in app.callback_map.items()
-        if "plots-loaded-output-dirs.data" in key
-    )
-    commit = entry["callback"].__wrapped__
-
-    loaded, warning = commit(True, ["/tmp/one", "/tmp/two"], ["/tmp/one"])
-    assert loaded is no_update
-    assert warning == "Close dropdown to load changes"
-
-    loaded, warning = commit(False, ["/tmp/one", "/tmp/two"], ["/tmp/one"])
-    assert loaded == ["/tmp/one", "/tmp/two"]
-    assert warning == ""
+    entry = next(entry for key, entry in app.callback_map.items()
+                 if 'plots-case-data.data' in key)
+    assert 'plots-output-dirs' in {item['id'] for item in entry['inputs']}
+    assert 'plots-loaded-output-dirs' not in {item['id'] for item in entry['inputs']}
 
 
-def test_case_loading_consumes_committed_not_draft_outputs():
-    app = Dash(__name__)
-    register_case_callbacks(app)
-    consumers = [
-        entry
-        for entry in app.callback_map.values()
-        if "plots-loaded-output-dirs" in {item["id"] for item in entry["inputs"]}
-    ]
-
-    assert len(consumers) == 3
-    assert all(
-        "plots-output-dirs" not in {item["id"] for item in entry["inputs"]}
-        for entry in consumers
-    )
-
-
-def test_output_catalog_refresh_is_tab_scoped_and_ten_second_driven():
+def test_output_catalog_refresh_handles_open_refresh_and_new_directory():
     app = Dash(__name__)
     register_case_callbacks(app)
 
     refresh = app.callback_map["plots-output-catalog.data"]
     assert [(item["id"], item["property"]) for item in refresh["inputs"]] == [
-        ("dashboard-tabs", "value"),
-        ("plots-output-refresh-interval", "n_intervals"),
+        ("plots-output-menu-expanded", "data"),
+        ("plots-output-refresh", "n_clicks"),
+        ("plots-output-dirs", "data"),
     ]
     assert [(item["id"], item["property"]) for item in refresh["state"]] == [
-        ("plots-output-dirs", "data"),
         ("plots-output-catalog", "data"),
     ]
 

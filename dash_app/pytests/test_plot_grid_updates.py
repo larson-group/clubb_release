@@ -1,6 +1,6 @@
 """Regression tests for preserving mounted Plot cards during grid edits."""
 
-from dash import html, no_update
+from dash import Dash, html, no_update
 
 from dash_app.plot_tab import callbacks_grid
 
@@ -61,3 +61,27 @@ def test_unchanged_plot_order_does_not_touch_the_grid():
         {"name": "arm"},
         _current_children(1, 2),
     ) is no_update
+
+
+def test_case_change_preserves_figures_and_does_not_upload_the_grid():
+    app = Dash(__name__)
+    callbacks_grid.register_grid_callbacks(app)
+    entry = app.callback_map['plots-plot-container.children']
+    assert not any(state['id'] == 'plots-plot-container' for state in entry['state'])
+    render = entry['callback'].__wrapped__
+    assert render({'name': 'rico', 'preserve_plot_view': False}, [1, 2],
+                  {'1': {'plot_type': 'profile'}, '2': {'plot_type': 'profile'}},
+                  [{'type': 'plots-card', 'index': 1}, {'type': 'plots-card', 'index': 2}]) is no_update
+
+
+def test_explicit_set_view_can_still_replace_card_variables(monkeypatch):
+    from types import SimpleNamespace
+    app = Dash(__name__)
+    callbacks_grid.register_grid_callbacks(app)
+    render = app.callback_map['plots-plot-container.children']['callback'].__wrapped__
+    monkeypatch.setattr(callbacks_grid, 'callback_context', SimpleNamespace(
+        triggered=[{'prop_id': 'plots-case-data.data'}]))
+    replacement = [html.Div('requested cards')]
+    monkeypatch.setattr(callbacks_grid, 'render_plot_grid', lambda *args: replacement)
+    assert render({'name': 'rico', 'replace_plot_cards': True}, [1], {'1': {}},
+                  [{'type': 'plots-card', 'index': 1}]) is replacement

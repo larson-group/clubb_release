@@ -215,6 +215,13 @@ def test_profile_command_selects_implementation_and_install(tmp_path, implementa
         assert "-install_dir" not in command
 
 
+def test_profile_jax_command_uses_source_launcher_without_install(tmp_path):
+    command = profile_command({**settings(tmp_path), "implementation": "jax"})
+    assert "-jax=cpu" in command
+    assert "-install_dir" not in command
+    assert "-exe" not in command
+
+
 def test_existing_profile_requires_overwrite_confirmation(tmp_path):
     request = settings(tmp_path)
     target = profile_save_target(request)
@@ -784,8 +791,8 @@ def test_profile_tab_registers_callbacks(monkeypatch):
         if key == "profile-results.data"
     )
     input_ids = {item["id"] for item in data_callback["inputs"]}
-    assert "profile-interval" in input_ids
-    assert "profile-active-results" not in input_ids
+    assert "profile-interval" not in input_ids
+    assert "profile-active-results" in input_ids
     graph_callback = next(
         (key, entry)
         for key, entry in app.callback_map.items()
@@ -794,7 +801,9 @@ def test_profile_tab_registers_callbacks(monkeypatch):
     graph_key, graph_callback = graph_callback
     assert "profile-status.children" not in graph_key
     graph_input_ids = {item["id"] for item in graph_callback["inputs"]}
-    assert "profile-job" in graph_input_ids
+    assert "profile-job" not in graph_input_ids
+    assert "profile-active-results" in graph_input_ids
+    assert "profile-job" in {item["id"] for item in graph_callback["state"]}
     assert "profile-selected-runs" in graph_input_ids
     assert "profile-interval" not in graph_input_ids
     assert "profile-results" not in graph_input_ids

@@ -64,14 +64,20 @@
     var dragging = false;
 
     function startDrag(ev) {
-      if (ev.button !== 0) return;
+      if (ev.button !== 0 || dragging) return;
       dragging = true;
+      // Window listeners belong to this gesture, not every past tab mount.
+      window.addEventListener("pointermove", moveDrag);
+      window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
+      window.addEventListener("blur", endDrag);
       document.body.classList.add("run-ui-dragging");
       ev.preventDefault();
     }
 
     function moveDrag(ev) {
       if (!dragging) return;
+      if (!layout.isConnected) { endDrag({type: "pointercancel"}); return; }
       var rect = layout.getBoundingClientRect();
       var rightW = clampRightWidth(layout, rect.right - ev.clientX);
       applyRightWidth(layout, rightW);
@@ -80,7 +86,12 @@
     function endDrag(ev) {
       if (!dragging) return;
       dragging = false;
+      window.removeEventListener("pointermove", moveDrag);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      window.removeEventListener("blur", endDrag);
       document.body.classList.remove("run-ui-dragging");
+      if (ev.type === "pointercancel" || ev.type === "blur" || !layout.isConnected) return;
       var rect = layout.getBoundingClientRect();
       var rightW = clampRightWidth(layout, rect.right - ev.clientX);
       applyRightWidth(layout, rightW);
@@ -88,8 +99,6 @@
     }
 
     divider.addEventListener("pointerdown", startDrag);
-    window.addEventListener("pointermove", moveDrag);
-    window.addEventListener("pointerup", endDrag);
   }
 
   function hydrateWidth() {

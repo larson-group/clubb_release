@@ -27,4 +27,6 @@
 # after an individual child setup failure.
 # Runtime source fingerprints are metadata/lifecycle policy, not an API
 # contract, so they do not require a protocol bump.
-BROKER_PROTOCOL_VERSION = 30
+# Version 31 adds bounded native Plot tasks in broker-owned worker processes.
+# Version 32 batches native Plot result polling across cards.
+BROKER_PROTOCOL_VERSION = 32

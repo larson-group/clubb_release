@@ -1,5 +1,7 @@
 from dash import ALL, Input, Output, State, callback_context, no_update
 
+from dash_app.plot_tab.case_cache import resolve_case_data
+
 from .plot_types.budget_plot import PLOT as budget_plot
 from .plot_types.custom_plot import PLOT as custom_plot
 from .plot_types.pdf_contour_plot import PLOT as pdf_contour_plot
@@ -76,6 +78,7 @@ def register_control_callbacks(app):
     )
     def update_time_label(case_data, time_range, time_point, time_override):
         """Show the active time window or point directly in the section header."""
+        case_data = resolve_case_data(case_data)
         if not case_data:
             return "Time", "Start time", "Average Length"
         active_time = resolve_active_time_values(case_data, time_range, time_point, time_override)
@@ -93,6 +96,7 @@ def register_control_callbacks(app):
     )
     def update_height_label(case_data, height_range):
         """Show the active height window directly in the section header."""
+        case_data = resolve_case_data(case_data)
         if not case_data:
             return "Height"
         active_range = height_range or case_data.get("default_height_range") or [0.0, 1.0]
@@ -114,6 +118,7 @@ def register_control_callbacks(app):
     )
     def sync_start_control_to_average_length(average_minutes, case_data, current_start, duration_min, duration_max, time_override):
         """Move start time in chunks that match the selected averaging window."""
+        case_data = resolve_case_data(case_data)
         step = max(1.0e-6, float(average_minutes or 1.0)) * 60.0
         duration_marks = duration_slider_marks(duration_min or 1.0, duration_max or duration_min or 1.0, average_minutes)
         if not case_data:
@@ -155,6 +160,7 @@ def register_control_callbacks(app):
     )
     def apply_time_window_preset(_loss_clicks, _pyplotgen_clicks, case_data, duration_min, duration_max):
         """Jump the time sliders to the loss or pyplotgen averaging window."""
+        case_data = resolve_case_data(case_data)
         if not case_data:
             return no_update, no_update, no_update
         trigger = callback_context.triggered_id
@@ -191,7 +197,7 @@ def register_control_callbacks(app):
         if not time_override:
             return no_update
         if callback_context.triggered_id == "plots-case-data":
-            return None
+            return no_update if (_case_data or {}).get("preserve_plot_view") else None
         if _matches_symbolic_slider(time_override, time_range, time_point):
             return no_update
         return None
@@ -207,6 +213,7 @@ def register_control_callbacks(app):
     )
     def update_playback(_toggle_clicks, _slower_clicks, _faster_clicks, case_data, playback):
         """Update playback state in response to transport controls or mode changes."""
+        case_data = resolve_case_data(case_data)
         current = dict(playback or {"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False, "target_point": None})
         current["interval_s"] = normalize_playback_interval(current.get("interval_s", DEFAULT_PLAYBACK_INTERVAL_S))
         trigger = callback_context.triggered_id
@@ -248,6 +255,7 @@ def register_control_callbacks(app):
     )
     def sync_playback_ui(playback, case_data):
         """Translate playback state into interval timing and button presentation."""
+        case_data = resolve_case_data(case_data)
         state = dict(playback or {"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False})
         interval_s = normalize_playback_interval(state.get("interval_s", DEFAULT_PLAYBACK_INTERVAL_S))
         enabled = bool(case_data)
@@ -284,6 +292,7 @@ def register_control_callbacks(app):
     )
     def advance_time_point(_n_intervals, playback, average_minutes, time_point, time_point_min, time_point_max, case_data):
         """Advance one playback frame when the current frame is not still rendering."""
+        case_data = resolve_case_data(case_data)
         if not playback or not playback.get("playing") or playback.get("inflight"):
             return no_update, no_update
         min_point = float(time_point_min if time_point_min is not None else 0.0)

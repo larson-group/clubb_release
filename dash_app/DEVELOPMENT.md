@@ -87,6 +87,90 @@ PID and process start time), removes its private record, and starts the stable
 endpoint without changing its persisted URL or bearer credential. Multiple live
 Dash processes are rejected rather than selected unpredictably.
 
+## Startup and page loading
+
+Hidden `dcc.Tab` children still participate in Dash's callback graph. Use
+`lazy_tabs.LazyTabs` to register page builders without constructing their bodies
+at startup. Register every callback and route before serving the app; only
+layout construction is deferred. A browser-side gate requests each page once,
+including a persisted initial selection. The loader applies workspace
+persistence to new controls and keeps visited bodies in the layout, preserving
+form/runtime state across navigation. Loaded/request stores are memory-only.
+An explicit dashboard handoff also loads its target, even with `preserve_tab`,
+so requests can update an unvisited workspace without changing the visible tab.
+
+Compile, Run, Profile, and Tune load atomically as one group because their build
+selector callbacks span all four tabs. Its shared overlay loads with the group
+but stays outside tab bodies so it remains visible from each tab. Tutorial and
+Misc have separate gates for each lesson/tool, also requiring the parent tab to
+be active. Component JavaScript still loads eagerly: lazy bundles in the current
+Dash version caused slider-tooltip callbacks to access unmounted React nodes
+during rapid navigation. Defer page bodies, but retain `eager_loading=True`
+until that browser regression is resolved.
+
+First visits can still take time to initialize a selected diagnostic. This is
+separate from broker-owned background work; do not enable Flask request threads
+to work around NetCDF loading. When adding a cross-tab callback, check that its
+inputs, state, and outputs exist together, including on a fresh browser page.
+
+## Avoiding repeated work
+
+Profile publishes a compact result signature when its manifest/CSV files or job
+state change. Its graphs depend on that signal and comparison controls, not on
+every log update or interval tick. File signatures include modification time,
+change time, size, and inode; timestamps cross the browser boundary as strings
+because JavaScript numbers cannot preserve nanoseconds. Timing CSVs derive the
+summary and process tables together. Keep file-change detection working for
+same-size overwrites and atomic replacements, not just appended rows.
+
+Reports and Tune workspace activity polling pause outside their tabs and refresh
+on reentry. Tune job supervision/leases continue independently. Activity state
+still uses its lock and atomic writes, but unchanged transactions do not rewrite
+the file. Trajectory discovery caches only compatibility booleans in a bounded
+LRU keyed by file version; it retains no NetCDF handles/arrays and retries I/O
+errors. Resize handlers attach window listeners only during a drag, so tab
+remounts cannot accumulate handlers retaining old layouts.
+
+See [PERFORMANCE_AUDIT.md](PERFORMANCE_AUDIT.md) for measurements and remaining
+opportunities from the September 2026 audit.
+
+## Plot data and workspace state
+
+`plots-case-data` is a memory-only browser descriptor. Large time arrays and
+variable catalogs live in the process-shared `plot_tab/case_cache.py` cache;
+callbacks needing those fields call `resolve_case_data` before using them.
+UI-neutral services still accept and return full metadata. Persist only intent
+in `plots-case-selection`, not the derived snapshot or its cache key. Keep the
+legacy workspace migration in `assets/37_workspace_persistence.js` compatible
+with exported workspaces.
+
+Read time/column selections before materializing NetCDF fields. Cache reduced
+profiles and images through the byte-bounded extraction cache, keyed by file
+signature and selection. Do not reintroduce full-cube preloads or request
+threads for HDF5. Profile, budget, and subcolumn playback can update trace values
+with Dash patches while preserving manual zoom.
+
+Directory selection and chooser rendering run in the browser. Register expensive
+native Plot callbacks with `plot_tab/async_callbacks.py:task_callback`; its fixed
+task names execute in broker-owned spawned processes through `plot_tab/tasks.py`.
+There are separate single-worker lanes for metadata and figures, so figure work
+does not delay case discovery. Warm workers retain extraction caches. The
+same-origin `/plots/tasks` proxy accepts only submit/poll for these registered
+tasks; it does not expose broker credentials or general function execution.
+
+Browser callbacks return immediately, keep existing figures visibly marked, and
+batch polling across pending cards without repeating the broker status probe.
+Unchanged control values do not resubmit figures. Keep cards mounted on ordinary
+case switches; grid callbacks need card ids, not serialized figure children.
+Page/card revisions and selection generations
+discard superseded results; queued work is replaced or dropped before execution.
+The broker retains at most 128 request scopes and 64 MiB of serialized results,
+expiring inactive records after two minutes. A missing record is resubmitted,
+including after a broker restart. These transient UI tasks do not create durable
+scientific job/artifact records. Broker shutdown closes their worker pools.
+Playback patches require a successful accepted figure with matching inputs;
+worker render flags alone cannot establish a valid patch base across browsers.
+
 ## Controls
 
 Do not add extra `+` and `-` buttons for entry boxes unless they are truly useful for the workflow. Numeric inputs and text boxes should stay simple when direct editing is sufficient.
@@ -214,13 +298,11 @@ the chooser's JAX selection.
 The Profile tab is a browser interface to `utilities/time_clubb.py`. Its top
 benchmark panel configures the case, process/per-process-batch-size sweep,
 repetitions, executable, configuration, overrides, and additional
-`run_scm.py` arguments. A direct one-second polling path reads the active
-summary and process rows and renders figures server-side, so results appear
-after each measured repetition while the broker-owned job is running; warmups
-remain hidden. Browser stores retain only compact timer/process choices rather
-than the growing raw timing table. The running row counter and all four figures
-are returned by the same callback response, so visible progress cannot advance
-independently of the plots. Stored profiles can be overlaid, compared with a baseline, or
+`run_scm.py` arguments. While visible, the tab checks active results once per
+second and refreshes figures when timing files change; warmups remain hidden.
+Logs and job status update independently, without rebuilding unchanged plots.
+Browser stores retain compact progress and timer choices rather than the
+growing raw timing table. Stored profiles can be overlaid, compared with a baseline, or
 viewed as process distributions and exclusive-cost decompositions. The right
 rail has a profile-selection section above a separate set of shared comparison
 controls; plot-specific options remain beside the plot they affect. The
@@ -239,7 +321,10 @@ process-count/batch-size point in `batches.csv`, raw timer observations in
 `logs/<batch-id>/`. Child processes otherwise run in temporary directories,
 which are deleted after each workload is aggregated. Warmups are retained with
 `phase=warmup` but excluded from the default plots. Dash derives statistical
-summaries in memory instead of storing duplicate summary files. **Export
+summaries in memory instead of storing duplicate summary files. Failed warmups
+and repetitions show a child log excerpt in the console and retain its complete
+runner/model diagnostics in a `*_failed.log` file, even if another process
+succeeded. **Export
 selected** downloads complete profiles as a ZIP; **Import** accepts those ZIPs
 on another machine or checkout. Provenance includes the effective vertical
 level count, observed model steps, source revision, executable checksum, host,

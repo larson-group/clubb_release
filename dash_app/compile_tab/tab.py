@@ -9,8 +9,13 @@ from .discovery import discover_compile_state
 from .layout import build_layout
 
 
-def build_tab(app):
+def build_tab(app, *, lazy=None):
     """Build the Compile tab and register callbacks."""
-    initial_state = discover_compile_state()
     register_compile_callbacks(app)
-    return dcc.Tab(id="dashboard-tab-compile", label="Compile", value="compile", children=build_layout(initial_state))
+
+    def layout():
+        return build_layout(discover_compile_state())
+
+    if lazy is not None:
+        return lazy.tab(id="dashboard-tab-compile", label="Compile", value="compile", build=layout)
+    return dcc.Tab(id="dashboard-tab-compile", label="Compile", value="compile", children=layout())

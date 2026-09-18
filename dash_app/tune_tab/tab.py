@@ -113,13 +113,17 @@ def build_initial_tune_state():
     }
 
 
-def build_tab(app):
+def build_tab(app, *, lazy=None):
     """Build the tuning tab and register its callback groups."""
-    initial_state = build_initial_tune_state()
 
     register_settings_callbacks(app)
     register_run_callbacks(app)
     register_display_callbacks(app)
     register_workspace_callbacks(app)
 
-    return dcc.Tab(id="dashboard-tab-tune", label="Tune", value="tune", children=build_layout(initial_state))
+    def layout():
+        return build_layout(build_initial_tune_state())
+
+    if lazy is not None:
+        return lazy.tab(id="dashboard-tab-tune", label="Tune", value="tune", build=layout)
+    return dcc.Tab(id="dashboard-tab-tune", label="Tune", value="tune", children=layout())

@@ -10,6 +10,7 @@ from dash import dcc, html
 from netCDF4 import Dataset, chartostring
 
 from ..case_definitions import load_case_definitions
+from dash_app.shared.array_cache import ArrayCache
 from dash_app.shared.netcdf import (
     file_signature as _file_signature,
     find_dimension as find_dim,
@@ -106,9 +107,8 @@ SUBCOLUMN_CATALOG = [
 ]
 
 _CACHE_MAX_ENTRIES = 256
-_EXTRACT_CACHE = OrderedDict()
-_PRELOAD_CACHE = OrderedDict()
-_PLOT_DATA_CACHE = OrderedDict()
+_EXTRACT_CACHE = ArrayCache(max_bytes=32 * 1024 * 1024, max_entries=_CACHE_MAX_ENTRIES)
+_EXTRACT_SIGNATURES = OrderedDict()
 _DATASET_META_CACHE = OrderedDict()
 _COLLECTION_META_CACHE = OrderedDict()
 
@@ -155,37 +155,24 @@ def _freeze_cached_value(value):
 
 
 def _cached_extract(key, builder):
+    signature = key[1]
+    path = signature[0]
+    previous = _EXTRACT_SIGNATURES.get(path)
+    if previous is not None and previous != signature:
+        # Drop superseded file versions, including results for other variables.
+        for old_key in list(_EXTRACT_CACHE):
+            if old_key[1][0] == path and old_key[1] != signature:
+                del _EXTRACT_CACHE[old_key]
+    _EXTRACT_SIGNATURES[path] = signature
+    _EXTRACT_SIGNATURES.move_to_end(path)
+    while len(_EXTRACT_SIGNATURES) > _CACHE_MAX_ENTRIES:
+        _EXTRACT_SIGNATURES.popitem(last=False)
     cached = _EXTRACT_CACHE.get(key)
     if cached is not None:
         _EXTRACT_CACHE.move_to_end(key)
         return cached
     value = _freeze_cached_value(builder())
     _EXTRACT_CACHE[key] = value
-    _EXTRACT_CACHE.move_to_end(key)
-    while len(_EXTRACT_CACHE) > _CACHE_MAX_ENTRIES:
-        _EXTRACT_CACHE.popitem(last=False)
-    return value
-
-
-def _cached_preload(key, builder):
-    cached = _PRELOAD_CACHE.get(key)
-    if cached is not None:
-        _PRELOAD_CACHE.move_to_end(key)
-        return cached
-    value = _freeze_cached_value(builder())
-    _PRELOAD_CACHE[key] = value
-    _PRELOAD_CACHE.move_to_end(key)
-    return value
-
-
-def _cached_plot_data(key, builder):
-    cached = _PLOT_DATA_CACHE.get(key)
-    if cached is not None:
-        _PLOT_DATA_CACHE.move_to_end(key)
-        return cached
-    value = _freeze_cached_value(builder())
-    _PLOT_DATA_CACHE[key] = value
-    _PLOT_DATA_CACHE.move_to_end(key)
     return value
 
 
@@ -203,8 +190,7 @@ def _cached_lru(cache, max_entries, key, builder):
 
 
 def clear_all_caches():
-    _PLOT_DATA_CACHE.clear()
-    _PRELOAD_CACHE.clear()
+    _EXTRACT_SIGNATURES.clear()
     _EXTRACT_CACHE.clear()
     _DATASET_META_CACHE.clear()
     _COLLECTION_META_CACHE.clear()
@@ -1460,6 +1446,9 @@ def make_plot_card(controls, graph_id, size_button=None, size_value="normal", su
         [
             header,
             dcc.Store(id=size_store_id, data=normalize_plot_size(size_value)) if size_store_id is not None else html.Div(style={"display": "none"}),
+            html.Div(id=({"type": "plots-load-message", "index": graph_id["index"]}
+                         if isinstance(graph_id, dict) else f"{graph_id}-load-message"),
+                     className="plots-load-message", role="status"),
             html.Div(id=render_signal_id, style={"display": "none"}) if render_signal_id is not None else html.Div(style={"display": "none"}),
             html.Div(
                 dcc.Graph(id=graph_id, config={"displayModeBar": True}, className="plots-graph", style={"height": "100%"}),
@@ -1896,102 +1885,12 @@ def collection_nominal_height_spacing(collection):
     return float(np.median(spacings))
 
 
-def _tz_plot_data_key(path, var_name, meta):
-    info = meta["var_info"][var_name]
-    return (
-        "tz_plot_data",
-        _file_signature(path),
-        var_name,
-        info["dims"],
-        info["t_dim"],
-        info["z_dim"],
-        info["col_dim"],
-    )
-
-
-def ensure_tz_plot_data(path, var_name):
-    meta = dataset_metadata_for_path(path)
-    info = meta["var_info"].get(var_name)
-    if not info or info["t_dim"] is None or info["z_dim"] is None:
-        return None
-    key = _tz_plot_data_key(path, var_name, meta)
-
-    def _build():
-        ds_info = DatasetInfo(path)
-        try:
-            info = ds_info.var_info[var_name]
-            dims = tuple(info["dims"])
-            t_dim = info["t_dim"]
-            z_dim = info["z_dim"]
-            col_dim = info["col_dim"]
-            var = ds_info.ds.variables[var_name]
-            slices = []
-            kept_dims = []
-            for dim in dims:
-                lowered = dim.lower()
-                if dim == t_dim or dim == z_dim:
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-                elif dim == col_dim:
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-                elif lowered in X_DIM_NAMES or lowered in Y_DIM_NAMES:
-                    slices.append(0)
-                else:
-                    slices.append(0)
-            data = as_array(var[tuple(slices)])
-            ordered_dims = list(kept_dims)
-            time_axis = ordered_dims.index(t_dim)
-            if time_axis != 0:
-                data = np.moveaxis(data, time_axis, 0)
-                ordered_dims.insert(0, ordered_dims.pop(time_axis))
-            z_axis = ordered_dims.index(z_dim)
-            if z_axis != 1:
-                data = np.moveaxis(data, z_axis, 1)
-                ordered_dims.insert(1, ordered_dims.pop(z_axis))
-            remaining_dims = [dim for dim in ordered_dims if dim not in {t_dim, z_dim}]
-            if not remaining_dims:
-                cube = np.asarray(data, dtype=float)[:, :, np.newaxis]
-                line_labels = (var_name,)
-                line_columns = (0,)
-            else:
-                line_labels = tuple(_line_labels_from_dims(remaining_dims, data.shape[2:], col_dim=col_dim))
-                cube = reshape_with_flat_tail(data, 2)
-                if col_dim in remaining_dims:
-                    col_axis = remaining_dims.index(col_dim)
-                    line_columns = tuple(int(index_tuple[col_axis]) for index_tuple in np.ndindex(*data.shape[2:]))
-                else:
-                    line_columns = tuple(0 for _ in range(cube.shape[2]))
-            time_vals = time_values_seconds(ds_info)
-            if time_vals is None:
-                time_vals = np.arange(cube.shape[0], dtype=float)
-            return {
-                "time_values": np.asarray(time_vals, dtype=float),
-                "z_values": np.asarray(get_z_values(ds_info, z_dim), dtype=float),
-                "cube": np.asarray(cube, dtype=float),
-                "line_labels": line_labels,
-                "line_columns": line_columns,
-                "columns_len": int(ds_info.columns_len or 1),
-                "units": variable_units(ds_info, var_name),
-                "long_name": variable_long_name(ds_info, var_name),
-                "z_units": dimension_units(ds_info, z_dim),
-                "bounds": _finite_bounds(cube),
-            }
-        finally:
-            ds_info.close()
-
-    return _cached_plot_data(key, _build)
-
-
 def column_filter_indices(column_filters):
     """Return a normalized list of filtered column indices from the plot store."""
-    if not isinstance(column_filters, dict):
-        return None
-    indices = column_filters.get("indices")
-    if indices is None:
+    if not isinstance(column_filters, dict) or column_filters.get("indices") is None:
         return None
     normalized = []
-    for value in indices:
+    for value in column_filters["indices"]:
         try:
             normalized.append(int(value))
         except (TypeError, ValueError):
@@ -1999,592 +1898,149 @@ def column_filter_indices(column_filters):
     return normalized
 
 
-def _line_columns_for_count(line_columns, line_count):
-    """Return a line-column tuple that is safe to index for every plotted line."""
-    normalized = tuple(int(value) for value in (line_columns or ()))
-    if len(normalized) >= line_count:
-        return normalized[:line_count]
-    return normalized + tuple(range(len(normalized), line_count))
+def _plot_selection_key(kind, path, var_name, time_range, col_index, column_mode, filters):
+    return (kind, _file_signature(path), var_name,
+            tuple(int(value) for value in time_range) if time_range is not None else None,
+            int(col_index), column_mode,
+            tuple(sorted(set(int(value) for value in filters))) if filters is not None and column_mode == "all" else None)
 
 
-def _line_indices_for_columns(line_columns, line_count, col_index=0, column_mode="single", column_filter_indices=None):
-    """Map the active column selection onto flattened plot line indices."""
-    if line_count <= 0:
-        return []
-    normalized_columns = _line_columns_for_count(line_columns, line_count)
-    if column_mode == "all":
-        if column_filter_indices is None:
-            return list(range(line_count))
-        selected_columns = {int(value) for value in column_filter_indices}
-        return [
-            idx
-            for idx, line_col in enumerate(normalized_columns)
-            if int(line_col) in selected_columns
-        ]
-    matching = [idx for idx, line_col in enumerate(normalized_columns) if int(line_col) == int(col_index)]
-    if not matching:
-        matching = [max(0, min(int(col_index), line_count - 1))]
-    return matching
+def _read_plot_selection(path, var_name, time_range=None, col_index=0,
+                         column_mode="single", column_filter_indices=None,
+                         *, subcolumns=False):
+    """Read only the requested time/column slab, in time × height × line order.
+
+    Keep length-one axes until reordering is complete. NetCDF orthogonal
+    indexing also supports disjoint filtered columns without reading the ones
+    between them. All reductions use float64, as the former full-cube path did.
+    This transient slab is never retained in a cache.
+    """
+    ds_info = DatasetInfo(path)
+    try:
+        info = ds_info.var_info[var_name]
+        t_dim, z_dim, col_dim = info["t_dim"], info["z_dim"], info["col_dim"]
+        if t_dim is None:
+            return None
+        tlen = len(ds_info.ds.dimensions[t_dim])
+        start, stop = 0, tlen
+        if time_range is not None:
+            low, high = sorted(int(value) for value in time_range)
+            start = max(0, min(low, tlen - 1))
+            stop = max(0, min(high, tlen - 1)) + 1 if tlen else 0
+        ncols = len(ds_info.ds.dimensions[col_dim]) if col_dim else 1
+        if column_mode == "all":
+            allowed = None if column_filter_indices is None else {int(value) for value in column_filter_indices}
+            columns = [index for index in range(ncols) if allowed is None or index in allowed]
+        else:
+            columns = [max(0, min(int(col_index), ncols - 1))] if ncols else []
+        if not columns:
+            return None
+        column_slice = (slice(columns[0], columns[-1] + 1)
+                        if columns == list(range(columns[0], columns[-1] + 1)) else columns)
+        slices, kept_dims = [], []
+        for dim in info["dims"]:
+            if dim == t_dim:
+                selection = slice(start, stop)
+            elif dim == col_dim:
+                selection = column_slice
+            elif dim == z_dim or (subcolumns and dim.lower() not in X_DIM_NAMES | Y_DIM_NAMES):
+                selection = slice(None)
+            else:
+                selection = 0
+            slices.append(selection)
+            if not isinstance(selection, int):
+                kept_dims.append(dim)
+        values = np.asarray(as_array(ds_info.ds.variables[var_name][tuple(slices)]), dtype=float)
+        leading_dims = [t_dim] + ([z_dim] if z_dim else [])
+        trailing_dims = [dim for dim in kept_dims if dim not in leading_dims]
+        order = [kept_dims.index(dim) for dim in leading_dims + trailing_dims]
+        values = np.transpose(values, order)
+        tail_shape = values.shape[len(leading_dims):]
+        labels = []
+        for indices in np.ndindex(*tail_shape):
+            parts = []
+            for dim, index in zip(trailing_dims, indices):
+                if dim == col_dim:
+                    parts.append(f"col {columns[index] + 1}")
+                elif dim == info["subcol_dim"]:
+                    parts.append(f"subcol {index + 1}")
+                else:
+                    parts.append(f"{dim} {index + 1}")
+            labels.append(" / ".join(parts) or var_name)
+        time_values = time_values_seconds(ds_info)
+        if time_values is None:
+            time_values = np.arange(tlen, dtype=float)
+        return {
+            "values": reshape_with_flat_tail(values, len(leading_dims)),
+            "labels": tuple(labels),
+            "z_values": np.asarray(get_z_values(ds_info, z_dim), dtype=float) if z_dim else None,
+            "time_values": np.asarray(time_values[start:stop], dtype=float),
+            "units": info["units"], "long_name": info["long_name"],
+            "z_units": ds_info.dim_units.get(z_dim, ""), "time_units": ds_info.time_units,
+            "columns_len": ds_info.columns_len,
+            "has_true_subcolumns": info["subcol_dim"] is not None and info["subcol_dim"] in trailing_dims,
+        }
+    finally:
+        ds_info.close()
 
 
 def extract_time_avg_profile_for_path(path, var_name, time_range, col_index=0, column_mode="single", column_filter_indices=None):
-    data = ensure_tz_plot_data(path, var_name)
-    if data is None:
+    meta = dataset_metadata_for_path(path)
+    info = meta["var_info"].get(var_name)
+    if not info or info["t_dim"] is None or info["z_dim"] is None:
         return None
-    cube = np.asarray(data["cube"], dtype=float)
-    if cube.ndim != 3 or cube.shape[0] == 0:
-        return None
-    start_idx, end_idx = int(time_range[0]), int(time_range[1])
-    if end_idx < start_idx:
-        start_idx, end_idx = end_idx, start_idx
-    tmax = cube.shape[0] - 1
-    start = max(0, min(start_idx, tmax))
-    end = max(0, min(end_idx, tmax))
-    if end < start:
-        start, end = end, start
-    window = cube[start : end + 1, :, :]
-    if column_mode == "all":
-        line_indices = _line_indices_for_columns(
-            data["line_columns"],
-            cube.shape[2],
-            col_index=col_index,
-            column_mode=column_mode,
-            column_filter_indices=column_filter_indices,
-        )
-        if not line_indices:
+    key = _plot_selection_key("profile", path, var_name, time_range, col_index, column_mode, column_filter_indices)
+
+    def _build():
+        data = _read_plot_selection(path, var_name, time_range, col_index, column_mode, column_filter_indices)
+        if data is None or not data["values"].shape[0]:
             return None
-        profiles = np.mean(window[:, :, line_indices], axis=0).T
-        labels = tuple(
-            data["line_labels"][idx]
-            for idx in line_indices
-        )
-        bounds = _finite_bounds(profiles)
-    else:
-        matching = _line_indices_for_columns(data["line_columns"], cube.shape[2], col_index=col_index, column_mode=column_mode)
-        profile = np.mean(window[:, :, matching], axis=(0, 2))
-        profiles = np.asarray(profile, dtype=float)[np.newaxis, :]
-        labels = (f"col {max(0, min(int(col_index), int(data['columns_len']) - 1)) + 1}",)
-        bounds = data["bounds"]
-    return {
-        "z_values": np.asarray(data["z_values"], dtype=float),
-        "profiles": np.asarray(profiles, dtype=float),
-        "labels": labels,
-        "units": data["units"],
-        "long_name": data["long_name"],
-        "z_units": data["z_units"],
-        "bounds": bounds,
-    }
+        values = data["values"]
+        if column_mode == "all":
+            profiles = np.mean(values, axis=0).T
+            labels = data["labels"]
+        else:
+            profiles = np.mean(values, axis=(0, 2))[np.newaxis, :]
+            labels = (f"col {max(0, min(int(col_index), int(data['columns_len']) - 1)) + 1}",)
+        return {"z_values": data["z_values"], "profiles": profiles, "labels": labels,
+                "units": data["units"], "long_name": data["long_name"],
+                "z_units": data["z_units"], "bounds": _finite_bounds(profiles)}
+
+    return _cached_extract(key, _build)
 
 
 def extract_time_height_for_path(path, var_name, col_index=0, column_mode="single", column_filter_indices=None):
-    data = ensure_tz_plot_data(path, var_name)
-    if data is None:
+    meta = dataset_metadata_for_path(path)
+    info = meta["var_info"].get(var_name)
+    if not info or info["t_dim"] is None or info["z_dim"] is None:
         return None
-    cube = np.asarray(data["cube"], dtype=float)
-    if cube.ndim != 3:
-        return None
-    matching = _line_indices_for_columns(
-        data["line_columns"],
-        cube.shape[2],
-        col_index=col_index,
-        column_mode=column_mode,
-        column_filter_indices=column_filter_indices,
-    )
-    if not matching:
-        return None
-    image = np.mean(cube[:, :, matching], axis=2)
-    return (
-        np.asarray(data["time_values"], dtype=float),
-        np.asarray(data["z_values"], dtype=float),
-        np.asarray(image, dtype=float),
-        data["units"],
-        data["long_name"],
-        data["z_units"],
-    )
+    key = _plot_selection_key("timeheight", path, var_name, None, col_index, column_mode, column_filter_indices)
+
+    def _build():
+        data = _read_plot_selection(path, var_name, None, col_index, column_mode, column_filter_indices)
+        if data is None:
+            return None
+        return (data["time_values"], data["z_values"], np.mean(data["values"], axis=2),
+                data["units"], data["long_name"], data["z_units"])
+
+    return _cached_extract(key, _build)
 
 
-def _timeseries_plot_data_key(path, var_name, meta):
-    info = meta["var_info"][var_name]
-    return (
-        "timeseries_plot_data",
-        _file_signature(path),
-        var_name,
-        info["dims"],
-        info["t_dim"],
-        info["col_dim"],
-    )
-
-
-def ensure_timeseries_plot_data(path, var_name):
+def extract_timeseries_for_path(path, var_name, col_index=0, column_mode="single", column_filter_indices=None):
     meta = dataset_metadata_for_path(path)
     info = meta["var_info"].get(var_name)
     if not info or info["t_dim"] is None or info["z_dim"] is not None:
         return None
-    key = _timeseries_plot_data_key(path, var_name, meta)
+    key = _plot_selection_key("timeseries", path, var_name, None, col_index, column_mode, column_filter_indices)
 
     def _build():
-        ds_info = DatasetInfo(path)
-        try:
-            info = ds_info.var_info[var_name]
-            dims = tuple(info["dims"])
-            t_dim = info["t_dim"]
-            col_dim = info["col_dim"]
-            var = ds_info.ds.variables[var_name]
-            slices = []
-            kept_dims = []
-            for dim in dims:
-                lowered = dim.lower()
-                if dim == t_dim:
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-                elif dim == col_dim:
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-                elif lowered in X_DIM_NAMES or lowered in Y_DIM_NAMES:
-                    slices.append(0)
-                else:
-                    slices.append(0)
-            data = as_array(var[tuple(slices)])
-            if data.ndim == 0:
-                lines = np.asarray([data], dtype=float)[:, np.newaxis]
-                line_labels = (var_name,)
-                line_columns = (0,)
-            else:
-                time_axis = kept_dims.index(t_dim) if t_dim in kept_dims else 0
-                if time_axis != 0:
-                    data = np.moveaxis(data, time_axis, 0)
-                    kept_dims = [kept_dims[time_axis]] + kept_dims[:time_axis] + kept_dims[time_axis + 1 :]
-                remaining_dims = [dim for dim in kept_dims if dim != t_dim]
-                if data.ndim == 1:
-                    lines = np.asarray(data, dtype=float)[:, np.newaxis]
-                    line_labels = (var_name,)
-                    line_columns = (0,)
-                else:
-                    line_labels = tuple(_line_labels_from_dims(remaining_dims, data.shape[1:], col_dim=col_dim))
-                    lines = reshape_with_flat_tail(data, 1)
-                    if col_dim in remaining_dims:
-                        col_axis = remaining_dims.index(col_dim)
-                        line_columns = tuple(int(index_tuple[col_axis]) for index_tuple in np.ndindex(*data.shape[1:]))
-                    else:
-                        line_columns = tuple(0 for _ in range(lines.shape[1]))
-            time_vals = time_values_seconds(ds_info)
-            if time_vals is None:
-                time_vals = np.arange(lines.shape[0], dtype=float)
-            return {
-                "time_values": np.asarray(time_vals, dtype=float),
-                "lines": np.asarray(lines, dtype=float),
-                "line_labels": line_labels,
-                "line_columns": line_columns,
-                "columns_len": int(ds_info.columns_len or 1),
-                "units": variable_units(ds_info, var_name),
-                "long_name": variable_long_name(ds_info, var_name),
-                "time_units": ds_info.time_units,
-            }
-        finally:
-            ds_info.close()
-
-    return _cached_plot_data(key, _build)
-
-
-def extract_timeseries_for_path(path, var_name, col_index=0, column_mode="single", column_filter_indices=None):
-    data = ensure_timeseries_plot_data(path, var_name)
-    if data is None:
-        return None
-    lines = np.asarray(data["lines"], dtype=float)
-    matching = _line_indices_for_columns(
-        data["line_columns"],
-        lines.shape[1],
-        col_index=col_index,
-        column_mode=column_mode,
-        column_filter_indices=column_filter_indices,
-    )
-    if not matching:
-        return None
-    selected = lines[:, matching]
-    labels = tuple(data["line_labels"][idx] for idx in matching)
-    return (
-        np.asarray(data["time_values"], dtype=float),
-        np.asarray(selected, dtype=float),
-        labels,
-        data["units"],
-        data["long_name"],
-        data["time_units"],
-    )
-
-
-def _profile_preload_key(ds_info, var_name, col_index):
-    info = ds_info.var_info[var_name]
-    dims = tuple(ds_info.ds.variables[var_name].dimensions)
-    return ("profile_preload", _file_signature(ds_info.path), var_name, dims, info["t_dim"], info["z_dim"], info["col_dim"], int(col_index))
-
-
-def get_profile_preload(ds_info, var_name, col_index=0):
-    """Return the cached full-time profile series for one variable/column, if present."""
-    return _PRELOAD_CACHE.get(_profile_preload_key(ds_info, var_name, col_index))
-
-
-def ensure_profile_preload(ds_info, var_name, col_index=0):
-    """Load and cache the full-time profile series for one variable/column."""
-    info = ds_info.var_info[var_name]
-    dims = tuple(ds_info.ds.variables[var_name].dimensions)
-    t_dim = info["t_dim"]
-    z_dim = info["z_dim"]
-    col_dim = info["col_dim"]
-    key = _profile_preload_key(ds_info, var_name, col_index)
-
-    def _build():
-        var = ds_info.ds.variables[var_name]
-        slices = []
-        kept_dims = []
-        for dim in dims:
-            if dim == t_dim:
-                slices.append(slice(None))
-                kept_dims.append(dim)
-            elif dim == z_dim:
-                slices.append(slice(None))
-                kept_dims.append(dim)
-            elif dim == col_dim:
-                cmax = len(ds_info.ds.dimensions[col_dim]) - 1
-                slices.append(max(0, min(int(col_index), cmax)))
-            elif dim.lower() in X_DIM_NAMES or dim.lower() in Y_DIM_NAMES:
-                slices.append(0)
-            else:
-                slices.append(0)
-        data = as_array(var[tuple(slices)])
-        if data.ndim >= 2 and t_dim in kept_dims and z_dim in kept_dims:
-            ordered_dims = list(kept_dims)
-            time_axis = ordered_dims.index(t_dim)
-            if time_axis != 0:
-                data = np.moveaxis(data, time_axis, 0)
-                ordered_dims.insert(0, ordered_dims.pop(time_axis))
-            z_axis = ordered_dims.index(z_dim)
-            if z_axis != 1:
-                data = np.moveaxis(data, z_axis, 1)
-                ordered_dims.insert(1, ordered_dims.pop(z_axis))
-            if data.ndim > 2:
-                flattened = reshape_with_flat_tail(data, 2)
-                data = flattened[:, :, 0] if flattened.shape[2] else np.empty(flattened.shape[:2], dtype=float)
-        elif data.ndim == 1:
-            data = np.asarray(data, dtype=float)[:, np.newaxis]
-        bounds = _finite_bounds(data)
-        return np.asarray(data, dtype=float), bounds
-
-    return _cached_preload(key, _build)
-
-
-def profile_preload_x_range(ds_info, var_name, col_index=0):
-    """Return a stable padded x-axis range derived from the full-time profile preload."""
-    _series, bounds = ensure_profile_preload(ds_info, var_name, col_index)
-    if bounds is None:
-        return None
-    return padded_range(bounds[0], bounds[1])
-
-
-def profile_preload_bounds(ds_info, var_name, col_index=0):
-    """Return the raw finite bounds for a cached full-time profile preload."""
-    _series, bounds = ensure_profile_preload(ds_info, var_name, col_index)
-    return bounds
-
-
-def _subcolumn_plot_data_key(path, resolved_name, meta):
-    info = meta["var_info"][resolved_name]
-    return (
-        "subcolumn_plot_data",
-        _file_signature(path),
-        resolved_name,
-        info["dims"],
-        info["t_dim"],
-        info["z_dim"],
-        info["col_dim"],
-        info["subcol_dim"],
-    )
-
-
-def ensure_subcolumn_plot_data(path, base_name):
-    meta = dataset_metadata_for_path(path)
-    resolved_name = resolve_subcolumn_var_from_names(base_name, meta["vars"])
-    if not resolved_name:
-        return None
-    info = meta["var_info"].get(resolved_name)
-    if not info or info["t_dim"] is None or info["z_dim"] is None:
-        return None
-    key = _subcolumn_plot_data_key(path, resolved_name, meta)
-
-    def _build():
-        ds_info = DatasetInfo(path)
-        try:
-            info = ds_info.var_info[resolved_name]
-            dims = tuple(info["dims"])
-            t_dim = info["t_dim"]
-            z_dim = info["z_dim"]
-            col_dim = info["col_dim"]
-            subcol_dim = info["subcol_dim"]
-            var = ds_info.ds.variables[resolved_name]
-            slices = []
-            kept_dims = []
-            for dim in dims:
-                lowered = dim.lower()
-                if dim == t_dim or dim == z_dim:
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-                elif dim == col_dim:
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-                elif lowered in X_DIM_NAMES or lowered in Y_DIM_NAMES:
-                    slices.append(0)
-                else:
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-            data = as_array(var[tuple(slices)])
-            ordered_dims = list(kept_dims)
-            time_axis = ordered_dims.index(t_dim)
-            if time_axis != 0:
-                data = np.moveaxis(data, time_axis, 0)
-                ordered_dims.insert(0, ordered_dims.pop(time_axis))
-            z_axis = ordered_dims.index(z_dim)
-            if z_axis != 1:
-                data = np.moveaxis(data, z_axis, 1)
-                ordered_dims.insert(1, ordered_dims.pop(z_axis))
-            remaining_dims = [dim for dim in ordered_dims if dim not in {t_dim, z_dim}]
-            if not remaining_dims:
-                profiles = np.asarray(data, dtype=float)[:, :, np.newaxis]
-                labels = (resolved_name,)
-                line_columns = (0,)
-                has_true_subcolumns = False
-            else:
-                labels = tuple(_line_labels_from_dims(remaining_dims, data.shape[2:], col_dim=col_dim, subcol_dim=subcol_dim))
-                profiles = reshape_with_flat_tail(data, 2)
-                if col_dim in remaining_dims:
-                    col_axis = remaining_dims.index(col_dim)
-                    line_columns = tuple(int(index_tuple[col_axis]) for index_tuple in np.ndindex(*data.shape[2:]))
-                else:
-                    line_columns = tuple(0 for _ in range(profiles.shape[2]))
-                has_true_subcolumns = bool(subcol_dim is not None and subcol_dim in remaining_dims)
-            return {
-                "resolved_name": resolved_name,
-                "z_values": np.asarray(get_z_values(ds_info, z_dim), dtype=float),
-                "profiles": np.asarray(profiles, dtype=float),
-                "labels": labels,
-                "line_columns": line_columns,
-                "has_true_subcolumns": has_true_subcolumns,
-                "units": variable_units(ds_info, resolved_name),
-                "long_name": variable_long_name(ds_info, resolved_name),
-                "z_units": dimension_units(ds_info, z_dim),
-                "bounds": _finite_bounds(profiles),
-            }
-        finally:
-            ds_info.close()
-
-    return _cached_plot_data(key, _build)
-
-
-def subcolumn_x_range_for_path(path, base_name, col_index=0, column_mode="single", column_filter_indices=None):
-    data = ensure_subcolumn_plot_data(path, base_name)
-    if data is None:
-        return None
-    full_profiles = np.asarray(data["profiles"], dtype=float)
-    matching = _line_indices_for_columns(
-        data["line_columns"],
-        full_profiles.shape[2],
-        col_index=col_index,
-        column_mode=column_mode,
-        column_filter_indices=column_filter_indices,
-    )
-    if not matching:
-        return None
-    if column_mode == "all" and column_filter_indices is None:
-        bounds = data["bounds"]
-    else:
-        bounds = _finite_bounds(full_profiles[:, :, matching])
-    if bounds is None:
-        return None
-    return padded_range(bounds[0], bounds[1])
-
-
-def extract_time_avg_profile(ds_info, var_name, time_range, col_index=0):
-    info = ds_info.var_info[var_name]
-    dims = tuple(ds_info.ds.variables[var_name].dimensions)
-    t_dim = info["t_dim"]
-    z_dim = info["z_dim"]
-    col_dim = info["col_dim"]
-    start_idx, end_idx = int(time_range[0]), int(time_range[1])
-    if end_idx < start_idx:
-        start_idx, end_idx = end_idx, start_idx
-    key = ("profile", _file_signature(ds_info.path), var_name, dims, t_dim, z_dim, col_dim, start_idx, end_idx, int(col_index))
-
-    preload = get_profile_preload(ds_info, var_name, col_index)
-    if preload is not None:
-        full_data, _bounds = preload
-        tmax = full_data.shape[0] - 1
-        start = max(0, min(start_idx, tmax))
-        end = max(0, min(end_idx, tmax))
-        if end < start:
-            start, end = end, start
-        window = np.asarray(full_data[start : end + 1, :], dtype=float)
-        if window.ndim == 1:
-            window = window[np.newaxis, :]
-        return get_z_values(ds_info, z_dim), np.asarray(np.mean(window, axis=0), dtype=float)
-
-    def _build():
-        var = ds_info.ds.variables[var_name]
-        slices = []
-        kept_dims = []
-        for dim in dims:
-            if dim == t_dim:
-                tmax = len(ds_info.ds.dimensions[t_dim]) - 1
-                start = max(0, min(start_idx, tmax))
-                end = max(0, min(end_idx, tmax))
-                if end < start:
-                    start, end = end, start
-                slices.append(slice(start, end + 1))
-                kept_dims.append(dim)
-            elif dim == z_dim:
-                slices.append(slice(None))
-                kept_dims.append(dim)
-            elif dim == col_dim:
-                cmax = len(ds_info.ds.dimensions[col_dim]) - 1
-                slices.append(max(0, min(int(col_index), cmax)))
-            elif dim.lower() in X_DIM_NAMES or dim.lower() in Y_DIM_NAMES:
-                slices.append(0)
-            else:
-                slices.append(0)
-        data = as_array(var[tuple(slices)])
-        if t_dim in kept_dims:
-            data = mean_over_axis(data, kept_dims.index(t_dim))
-        if data.ndim > 1:
-            z_axis = kept_dims.index(z_dim) if z_dim in kept_dims else 0
-            data = np.moveaxis(data, z_axis, 0)
-            flattened = reshape_with_flat_tail(data, 1)
-            data = flattened[:, 0] if flattened.shape[1] else np.empty(flattened.shape[0], dtype=float)
-        return get_z_values(ds_info, z_dim), np.asarray(data)
-
-    return _cached_extract(key, _build)
-
-
-def extract_time_height(ds_info, var_name, col_index=0, column_mode="single"):
-    info = ds_info.var_info[var_name]
-    t_dim = info["t_dim"]
-    z_dim = info["z_dim"]
-    col_dim = info["col_dim"]
-    if t_dim is None or z_dim is None:
-        return None
-    dims = tuple(ds_info.ds.variables[var_name].dimensions)
-    key = ("timeheight", _file_signature(ds_info.path), var_name, dims, t_dim, z_dim, col_dim, int(col_index), column_mode)
-
-    def _build():
-        var = ds_info.ds.variables[var_name]
-        slices = []
-        kept_dims = []
-        for dim in dims:
-            if dim == t_dim or dim == z_dim:
-                slices.append(slice(None))
-                kept_dims.append(dim)
-            elif dim == col_dim:
-                if column_mode == "all":
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-                else:
-                    cmax = len(ds_info.ds.dimensions[col_dim]) - 1
-                    slices.append(max(0, min(int(col_index), cmax)))
-            elif dim.lower() in X_DIM_NAMES or dim.lower() in Y_DIM_NAMES:
-                slices.append(0)
-            else:
-                slices.append(0)
-        data = as_array(var[tuple(slices)])
-        if col_dim in kept_dims:
-            col_axis = kept_dims.index(col_dim)
-            data = mean_over_axis(data, col_axis)
-            kept_dims = [dim for dim in kept_dims if dim != col_dim]
-        if data.ndim != 2:
+        data = _read_plot_selection(path, var_name, None, col_index, column_mode, column_filter_indices)
+        if data is None:
             return None
-        time_axis = kept_dims.index(t_dim)
-        z_axis = kept_dims.index(z_dim)
-        if time_axis != 0:
-            data = np.moveaxis(data, time_axis, 0)
-            if z_axis == 0:
-                z_axis = 1
-            else:
-                z_axis -= 1
-        if z_axis != 1:
-            data = np.moveaxis(data, z_axis, 1)
-        time_vals = time_values_seconds(ds_info)
-        if time_vals is None:
-            time_vals = np.arange(data.shape[0])
-        z_vals = get_z_values(ds_info, z_dim)
-        return time_vals, z_vals, data
+        return (data["time_values"], data["values"], data["labels"],
+                data["units"], data["long_name"], data["time_units"])
 
     return _cached_extract(key, _build)
-
-
-def extract_timeseries(ds_info, var_name, col_index=0, column_mode="single"):
-    info = ds_info.var_info[var_name]
-    t_dim = info["t_dim"]
-    z_dim = info["z_dim"]
-    col_dim = info["col_dim"]
-    if t_dim is None or z_dim is not None:
-        return None, None, None
-    dims = tuple(ds_info.ds.variables[var_name].dimensions)
-    key = ("timeseries", _file_signature(ds_info.path), var_name, dims, t_dim, col_dim, int(col_index), column_mode)
-
-    def _build():
-        var = ds_info.ds.variables[var_name]
-        slices = []
-        kept_dims = []
-        for dim in dims:
-            lowered = dim.lower()
-            if dim == t_dim:
-                slices.append(slice(None))
-                kept_dims.append(dim)
-            elif dim == col_dim:
-                if column_mode == "all":
-                    slices.append(slice(None))
-                    kept_dims.append(dim)
-                else:
-                    cmax = len(ds_info.ds.dimensions[col_dim]) - 1
-                    slices.append(max(0, min(int(col_index), cmax)))
-            elif lowered in X_DIM_NAMES or lowered in Y_DIM_NAMES:
-                slices.append(0)
-            else:
-                slices.append(0)
-        data = as_array(var[tuple(slices)])
-        if data.ndim == 0:
-            data = np.asarray([data], dtype=float)
-            time_vals = np.asarray([0.0], dtype=float)
-            return time_vals, data[:, np.newaxis], (var_name,)
-        time_axis = kept_dims.index(t_dim) if t_dim in kept_dims else 0
-        if time_axis != 0:
-            data = np.moveaxis(data, time_axis, 0)
-            kept_dims = [kept_dims[time_axis]] + kept_dims[:time_axis] + kept_dims[time_axis + 1 :]
-        remaining_dims = [dim for dim in kept_dims if dim != t_dim]
-        if data.ndim == 1:
-            lines = np.asarray(data)[:, np.newaxis]
-            labels = (var_name,)
-        else:
-            labels = tuple(_line_labels_from_dims(remaining_dims, data.shape[1:], col_dim=col_dim))
-            lines = reshape_with_flat_tail(data, 1)
-        time_vals = time_values_seconds(ds_info)
-        if time_vals is None:
-            time_vals = np.arange(lines.shape[0])
-        return np.asarray(time_vals), np.asarray(lines), labels
-
-    return _cached_extract(key, _build)
-
-
-def _line_labels_from_dims(remaining_dims, shape, col_dim=None, subcol_dim=None):
-    if not remaining_dims or not shape:
-        return ["line 1"]
-    labels = []
-    for index_tuple in np.ndindex(*shape):
-        parts = []
-        for dim_name, dim_index in zip(remaining_dims, index_tuple):
-            if dim_name == col_dim:
-                parts.append(f"col {dim_index + 1}")
-            elif dim_name == subcol_dim:
-                parts.append(f"subcol {dim_index + 1}")
-            else:
-                parts.append(f"{dim_name} {dim_index + 1}")
-        labels.append(" / ".join(parts))
-    return labels
 
 
 def extract_subcolumn_profiles(ds_info, base_name, time_range, col_index=0, column_mode="single"):
@@ -2592,33 +2048,20 @@ def extract_subcolumn_profiles(ds_info, base_name, time_range, col_index=0, colu
 
 
 def extract_subcolumn_profiles_for_path(path, base_name, time_range, col_index=0, column_mode="single", column_filter_indices=None):
-    data = ensure_subcolumn_plot_data(path, base_name)
-    if data is None:
+    meta = dataset_metadata_for_path(path)
+    name = resolve_subcolumn_var_from_names(base_name, meta["vars"])
+    info = meta["var_info"].get(name)
+    if not info or info["t_dim"] is None or info["z_dim"] is None:
         return None, None, None, False
-    start_idx, end_idx = int(time_range[0]), int(time_range[1])
-    if end_idx < start_idx:
-        start_idx, end_idx = end_idx, start_idx
-    full_profiles = np.asarray(data["profiles"], dtype=float)
-    tmax = full_profiles.shape[0] - 1
-    start = max(0, min(start_idx, tmax))
-    end = max(0, min(end_idx, tmax))
-    if end < start:
-        start, end = end, start
-    line_indices = _line_indices_for_columns(
-        data["line_columns"],
-        full_profiles.shape[2],
-        col_index=col_index,
-        column_mode=column_mode,
-        column_filter_indices=column_filter_indices,
-    )
-    if not line_indices:
-        return None, None, None, False
-    window = full_profiles[start : end + 1, :, line_indices]
-    if window.ndim == 2:
-        window = window[np.newaxis, :, :]
-    averaged = np.asarray(np.mean(window, axis=0), dtype=float)
-    labels = tuple(data["labels"][idx] for idx in line_indices)
-    return np.asarray(data["z_values"], dtype=float), averaged, labels, bool(data["has_true_subcolumns"])
+    key = _plot_selection_key("subcolumn", path, name, time_range, col_index, column_mode, column_filter_indices)
+
+    def _build():
+        data = _read_plot_selection(path, name, time_range, col_index, column_mode, column_filter_indices, subcolumns=True)
+        if data is None:
+            return None, None, None, False
+        return (data["z_values"], mean_over_axis(data["values"], 0), data["labels"], data["has_true_subcolumns"])
+
+    return _cached_extract(key, _build)
 
 
 def _decode_param_names(ds):

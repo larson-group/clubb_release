@@ -468,6 +468,8 @@ def serve() -> None:
         server_thread.join()
     finally:
         stop_event.set()
+        from dash_app.plot_tab.tasks import close_workers
+        close_workers()
         stop_broker_endpoint()
         server.shutdown()
         signal.signal(signal.SIGTERM, previous_sigterm)

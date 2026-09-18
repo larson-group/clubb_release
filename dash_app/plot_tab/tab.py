@@ -1,5 +1,6 @@
 from dash import dcc
 
+from .async_callbacks import register_task_routes
 from .callbacks_case import register_case_callbacks
 from .callbacks_controls import register_control_callbacks
 from .callbacks_grid import register_grid_callbacks
@@ -7,14 +8,15 @@ from .callbacks_params import register_param_callbacks
 from .callbacks_pyplotgen import register_pyplotgen_callbacks
 from .layout import build_layout
 from .plot_types.registry import register_plot_callbacks
-from .state import DEFAULT_OUTPUT_DIR, build_initial_plots_state
+from .state import build_initial_plots_state
 
 
-def build_tab(app):
+def build_tab(app, *, lazy=None):
 
     """Build the plots tab and register its callback groups."""
 
-    initial_state = build_initial_plots_state([DEFAULT_OUTPUT_DIR])
+    # Hydrate the saved selection in the background after the browser connects.
+    register_task_routes(app)
 
     # Wire case and directory selection first because the rest of the tab depends on case_data.
     register_case_callbacks(app)
@@ -34,5 +36,10 @@ def build_tab(app):
     # Finally register the plot-family figure callbacks that render individual cards.
     register_plot_callbacks(app)
 
-    return dcc.Tab(id="dashboard-tab-plots", label="Plots", value="plots", children=build_layout(initial_state))
+    def layout():
+        return build_layout(build_initial_plots_state([]))
+
+    if lazy is not None:
+        return lazy.tab(id="dashboard-tab-plots", label="Plots", value="plots", build=layout)
+    return dcc.Tab(id="dashboard-tab-plots", label="Plots", value="plots", children=layout())
  

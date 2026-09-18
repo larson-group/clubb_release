@@ -4,6 +4,9 @@ import numpy as np
 import plotly.graph_objects as go
 from dash import Input, MATCH, Output, Patch, State, callback_context
 
+from dash_app.plot_tab.async_callbacks import task_callback
+from dash_app.plot_tab.case_cache import resolve_case_data
+
 from . import shared
 from .base_plot import BasePlotType
 from .budget_groups import BUDGET_GROUPS, DEFAULT_BUDGET_GROUPS
@@ -145,7 +148,6 @@ class BudgetPlotType(BasePlotType):
             or not group_name
             or case_data.get("compare_mode")
             or (global_context.get("column_mode") or "single") == "all"
-            or (global_context.get("time_mode") or "range") != "point"
         ):
             return None
         trace_bundle = self._trace_bundle(files, group_name, case_data, global_context)
@@ -161,7 +163,7 @@ class BudgetPlotType(BasePlotType):
         )
 
     def register_callbacks(self, app):
-        @app.callback(
+        @task_callback(app, self.plot_type_id,
             Output(self.graph_id(MATCH), "figure"),
             Output(self.render_signal_id(MATCH), "children"),
             Input(self.var_input_id(MATCH), "value"),
@@ -191,6 +193,7 @@ class BudgetPlotType(BasePlotType):
             relayout_data,
             graph_id,
         ):
+            case_data = resolve_case_data(case_data)
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)

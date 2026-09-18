@@ -107,6 +107,7 @@ payload["finished"] = finished
 (Path.cwd() / f"trace_{output_dir.name}.json").write_text(json.dumps(payload), encoding="utf-8")
 
 if f"FAIL_COLUMNS={columns}" in override:
+    print("Synthetic child failure: requested column count is unavailable", file=sys.stderr)
     raise SystemExit(9)
 
 (output_dir / f"{case_name}.timing").write_text(
@@ -423,7 +424,7 @@ def test_live_results_have_workload_metadata_before_benchmark_finishes(tmp_path)
     assert live_rows[0]["total_columns"] == 1
 
 
-def test_failure_preserves_completed_and_failed_points(tmp_path):
+def test_failure_preserves_completed_and_failed_points(tmp_path, capsys):
     fake_runner = make_fake_run_scm(tmp_path)
     options = make_options(tmp_path, batch_sizes=(1, 2))
 
@@ -443,6 +444,54 @@ def test_failure_preserves_completed_and_failed_points(tmp_path):
     failed = next(row for row in timings if row["status"] == "failed" and not row["timer"])
     assert failed["return_code"] == "9"
     assert (run_dir / "logs" / "p0001_b000002" / "arm.log").is_file()
+    saved = run_dir / "logs" / "p0001_b000002" / "measured_001_process_000_failed.log"
+    assert "Synthetic child failure" in saved.read_text()
+    assert "model log" in saved.read_text()
+    console = capsys.readouterr().err
+    assert "Synthetic child failure" in console
+    assert f"Full failure log: {saved}" in console
+
+
+def test_failure_console_includes_namelist_error_without_launching_model(tmp_path, capsys):
+    executable = tmp_path / "model-must-not-run"
+    executable.write_text("#!/bin/sh\nexit 99\n")
+    executable.chmod(0o700)
+    options = make_options(tmp_path, warmups=1, name="invalid_override")
+    assert run_benchmark(
+        options,
+        ["-exe", str(executable), "-override", "missing_profile_flag=.true.", "-stats", "none", "-debug", "0"],
+    ) == 1
+    console = capsys.readouterr().err
+    assert "key 'missing_profile_flag' could not be matched" in console
+    assert "Process 0: run_scm.py exited with status 1" in console
+    saved = options.output / options.name / "logs" / "p0001_b000001" / "warmup_001_process_000_failed.log"
+    assert saved.is_file()
+    assert "key 'missing_profile_flag' could not be matched" in saved.read_text()
+    assert str(saved) in console
+
+
+def test_failure_report_uses_failed_sibling_and_bounds_console_output(tmp_path, capsys):
+    success_log = tmp_path / "success" / "run_scm.log"
+    failure_log = tmp_path / "failure" / "run_scm.log"
+    for log in (success_log, failure_log):
+        log.parent.mkdir()
+    success_log.write_text("success")
+    failure_log.write_text("early diagnostic\n" + "progress\n" * 1000 + "runner error\n")
+    (failure_log.parent / "arm_log").write_text("native model error\n")
+    results = [
+        time_clubb.ProcessResult(0, 0, "success", [], None, success_log),
+        time_clubb.ProcessResult(1, 9, "failed", [], None, failure_log, "exit 9"),
+    ]
+    time_clubb.report_failed_group(results, tmp_path / "profile", "b1", "arm", "measured", 2)
+    console = capsys.readouterr().err
+    assert "1/2 processes failed. Process 1: exit 9" in console
+    assert "runner error" in console
+    assert "native model error" in console
+    assert "early diagnostic" not in console
+    assert len(console.splitlines()) <= 42
+    saved = tmp_path / "profile" / "logs" / "b1" / "measured_002_process_001_failed.log"
+    assert "early diagnostic" in saved.read_text()
+    assert "native model error" in saved.read_text()
 
 
 def test_continue_on_error_completes_remaining_sweep_points(tmp_path):

@@ -28,6 +28,7 @@ from dash_app.compile_tab.tab import build_tab as build_compile_tab
 from dash_app.compile_tab.build_selector import build_selector_overlay
 from dash_app.misc_tab.tab import build_tab as build_misc_tab
 from dash_app.persistence import enable_workspace_persistence, utility_drawer
+from dash_app.lazy_tabs import LazyTabs
 from dash_app.plot_tab.tab import build_tab as build_plots_tab
 from dash_app.plot_tab.static import register_pyplotgen_routes
 from dash_app.profile_tab.tab import build_tab as build_profile_tab
@@ -190,6 +191,27 @@ def _reuse_existing_dashboard(host: str) -> bool:
     return True
 
 
+def build_dashboard_tabs(app):
+    # The shared build selector reads controls in all four workflow tabs.
+    # Mount these together; independent pages need only their own controls.
+    lazy = LazyTabs(
+        "dashboard-tabs", groups=(("compile", "run", "profile", "tune"),),
+        handoff_id="dashboard-request",
+    )
+    tabs = [
+        build_tutorial_tab(app, defer=True),
+        build_compile_tab(app, lazy=lazy),
+        build_run_tab(app, lazy=lazy),
+        build_profile_tab(app, lazy=lazy),
+        build_tune_tab(app, lazy=lazy),
+        build_plots_tab(app, lazy=lazy),
+        build_reports_tab(app, lazy=lazy),
+        build_misc_tab(app, defer=True),
+    ]
+    loaders = lazy.register(app, shared={"compile": ("dashboard-build-selector", build_selector_overlay)})
+    return html.Div([loaders, dcc.Tabs(tabs, id="dashboard-tabs", value="tutorial")])
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Dash app with multiple tabs for CLUBB NetCDF analysis."
@@ -240,10 +262,12 @@ def main():
 
     # HDF5-backed NetCDF access is not reliably thread-safe in the scientific
     # stack used here.  Keep Flask single-threaded and move explicitly marked
-    # expensive callbacks into Diskcache worker *processes* instead.
+    # expensive callbacks into worker processes (broker-owned for native plots).
     app = Dash(
         __name__,
         suppress_callback_exceptions=True,
+        # Lazy component bundles currently race slider teardown on tab changes.
+        # Defer page bodies/callbacks while keeping component scripts available.
         eager_loading=True,
         title=_app_title(),
         update_title=None,
@@ -254,16 +278,7 @@ def main():
     register_static_report_routes(app)
     register_pyplotgen_routes(app)
 
-    tabs = [
-        build_tutorial_tab(app),
-        build_compile_tab(app),
-        build_run_tab(app),
-        build_profile_tab(app),
-        build_tune_tab(app),
-        build_plots_tab(app),
-        build_reports_tab(app),
-        build_misc_tab(app),
-    ]
+    tabs = build_dashboard_tabs(app)
 
     broker_connection = read_connection()
     update_connection_logs(
@@ -298,8 +313,7 @@ def main():
         [
             dcc.Store(id="theme-store", data="dark"),
             dashboard_handoff(_app_title()),
-            dcc.Tabs(tabs, id="dashboard-tabs", value="tutorial"),
-            build_selector_overlay(),
+            tabs,
             utility_drawer(endpoint_details),
         ],
         id="app-root",

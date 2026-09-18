@@ -4,6 +4,9 @@ import numpy as np
 import plotly.graph_objects as go
 from dash import Input, Output, MATCH, Patch, State, callback_context, html
 
+from dash_app.plot_tab.async_callbacks import task_callback
+from dash_app.plot_tab.case_cache import resolve_case_data
+
 from . import shared
 from .base_plot import BasePlotType
 
@@ -65,7 +68,6 @@ class SubcolumnPlotType(BasePlotType):
         note_suffix = "time-averaged range"
         column_mode = global_context.get("column_mode") or "single"
         col_index = int(global_context.get("selected_column") or 0)
-        shared.ensure_subcolumn_plot_data(path, base_name)
         z_vals, profiles, labels, has_true_subcolumns = shared.extract_subcolumn_profiles_for_path(
             path,
             base_name,
@@ -147,7 +149,6 @@ class SubcolumnPlotType(BasePlotType):
             not files
             or not base_name
             or case_data.get("compare_mode")
-            or (global_context.get("time_mode") or "range") != "point"
         ):
             return None, None
         trace_bundle = self._trace_bundle(files, base_name, case_data, global_context)
@@ -166,7 +167,7 @@ class SubcolumnPlotType(BasePlotType):
         )
 
     def register_callbacks(self, app):
-        @app.callback(
+        @task_callback(app, self.plot_type_id,
             Output(self.graph_id(MATCH), "figure"),
             Output({"type": "subcolumn-note", "index": MATCH}, "children"),
             Output(self.render_signal_id(MATCH), "children"),
@@ -199,6 +200,7 @@ class SubcolumnPlotType(BasePlotType):
             relayout_data,
             graph_id,
         ):
+            case_data = resolve_case_data(case_data)
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)

@@ -39,12 +39,11 @@ def build_initial_run_state():
     }
 
 
-def build_tab(app):
+def build_tab(app, *, lazy=None):
     """Build the run tab and register its callback groups."""
-    initial_state = build_initial_run_state()
 
     # Wire case and stats selection first because the remaining callbacks depend on these stores.
-    register_selection_callbacks(app, initial_state["case_groups"])
+    register_selection_callbacks(app, load_case_groups(load_available_cases()))
 
     # Register settings synchronization before run lifecycle so dirty-state invalidation is in place.
     register_settings_callbacks(app)
@@ -55,4 +54,9 @@ def build_tab(app):
     # Register console rendering last because it depends on the selection and run-state stores above.
     register_console_callbacks(app)
 
-    return dcc.Tab(id="dashboard-tab-run", label="Run", value="run", children=build_layout(initial_state))
+    def layout():
+        return build_layout(build_initial_run_state())
+
+    if lazy is not None:
+        return lazy.tab(id="dashboard-tab-run", label="Run", value="run", build=layout)
+    return dcc.Tab(id="dashboard-tab-run", label="Run", value="run", children=layout())

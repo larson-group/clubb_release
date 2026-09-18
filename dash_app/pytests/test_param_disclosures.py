@@ -1,15 +1,34 @@
 from pathlib import Path
 
-from dash import html
+from dash import Dash, html, no_update
 
 from dash_app.plot_tab.callbacks_params import (
     _append_read_only_sections,
     _reconcile_compare_params,
+    register_param_callbacks,
 )
 from dash_app.plot_tab.plot_types.shared import (
     load_compare_flag_values,
     load_flag_values,
 )
+
+
+def test_initial_parameter_controls_do_not_resubmit_unchanged_selections():
+    app = Dash(__name__)
+    register_param_callbacks(app)
+    callbacks = {entry['callback'].__wrapped__.__name__: entry['callback'].__wrapped__
+                 for entry in app.callback_map.values() if 'callback' in entry}
+    data = {'ngrdcol': 3, 'params': {'C1': [1, 2, 3]}, 'allow_column_param_selection': True}
+    slider = callbacks['update_column_from_slider']
+    assert slider(1, data, 0) is no_update
+    assert slider(2, data, 0) == 1
+    params = callbacks['update_column_from_params']
+    assert params([1], ['C1'], data, 'single', 0) is no_update
+    assert params([3], ['C1'], data, 'single', 0) == 2
+    filters = callbacks['update_column_filters']
+    empty = {'indices': None, 'filters': {}, 'active_count': None}
+    assert filters(data, 'single', [], [], [], [], empty) is no_update
+    assert filters(data, 'all', [], [], [], [], empty) is no_update
 
 
 def _write_run_input(stats_path: Path, body: str, suffix=".in"):

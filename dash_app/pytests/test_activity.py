@@ -4,6 +4,33 @@ from pathlib import Path
 from dash_app.shared import activity
 
 
+def test_idle_polls_do_not_rewrite_activity_but_real_handoffs_do(tmp_path, monkeypatch):
+    monkeypatch.setattr(activity, "ACTIVITY_PATH", tmp_path / "activity.json")
+    monkeypatch.setattr(activity, "LOCK_PATH", tmp_path / "activity.lock")
+    activity.reset_activity()
+    writes = []
+    original = activity.atomic_write_json
+    monkeypatch.setattr(activity, "atomic_write_json", lambda *args: (writes.append(1), original(*args)))
+    for _ in range(10):
+        assert activity.claim_ui_request(0) is None
+    assert writes == []
+    request = activity.publish_tab_request("plots", "Open Plots")
+    assert activity.claim_ui_request(0)["id"] == request["id"]
+    assert activity.acknowledge_ui_request(request["id"])
+    assert len(writes) == 3
+    assert activity.claim_ui_request(request["id"]) is None
+    assert len(writes) == 3
+
+
+def test_activity_detects_nested_updates(tmp_path, monkeypatch):
+    monkeypatch.setattr(activity, "ACTIVITY_PATH", tmp_path / "activity.json")
+    monkeypatch.setattr(activity, "LOCK_PATH", tmp_path / "activity.lock")
+    activity.reset_activity()
+    with activity._locked_state() as state:
+        state["jobs"]["compile"] = {"state": "running"}
+    assert activity.read_activity()["jobs"]["compile"]["state"] == "running"
+
+
 def test_activity_stream_keeps_events_and_latest_plot_request(tmp_path, monkeypatch):
     monkeypatch.setattr(activity, "ACTIVITY_PATH", Path(tmp_path) / "activity.json")
     monkeypatch.setattr(activity, "LOCK_PATH", Path(tmp_path) / "activity.lock")

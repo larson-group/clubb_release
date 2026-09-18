@@ -8,6 +8,7 @@ remaining parcel energy at every traversed model level for visualization.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import netCDF4 as nc
@@ -631,6 +632,17 @@ def profile_metrics(calculated, reference):
     }
 
 
+@lru_cache(maxsize=2048)
+def _trajectory_compatible(path, signature):
+    """Cache only compatibility, never arrays or open NetCDF handles."""
+    try:
+        inspect_dataset(path, read_times=False)
+    except ValueError:
+        return False
+    # Do not cache transient I/O failures; the next refresh should retry them.
+    return True
+
+
 def discover_netcdf_file_records(repo_root):
     """Return trajectory-compatible stats files with shared unique labels."""
     root = Path(repo_root).resolve()
@@ -643,7 +655,10 @@ def discover_netcdf_file_records(repo_root):
         try:
             # Discovery needs only compatibility, not every timestep from
             # every output file. The selected file loads its time axis later.
-            inspect_dataset(path, read_times=False)
+            stat = path.stat()
+            signature = (stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size, stat.st_ino)
+            if not _trajectory_compatible(str(path), signature):
+                continue
         except (OSError, ValueError):
             continue
         compatible.append({**record, "path": str(path.resolve())})

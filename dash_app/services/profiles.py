@@ -54,6 +54,8 @@ def _output_label(path: Path, output_root: Path) -> str:
 def discover_output_directories(
     root: Path | None = None,
     selected_dirs: list[str] | None = None,
+    *,
+    recursive: bool = True,
 ) -> list[dict[str, Any]]:
     """Find output subdirectories that directly contain readable stats files.
 
@@ -64,6 +66,7 @@ def discover_output_directories(
     output_root = Path(root or OUTPUT_ROOT).expanduser().resolve()
     records = discover_stats_directories(
         [output_root],
+        recursive=recursive,
         max_depth=5,
         exclude_dir_names=_EXCLUDED_DISCOVERY_ROOTS,
         max_directories=_MAX_DISCOVERED_OUTPUT_DIRECTORIES,

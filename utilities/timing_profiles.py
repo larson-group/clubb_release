@@ -227,6 +227,7 @@ def write_profile_readme(profile_dir: Path, manifest: dict[str, Any]) -> None:
         "- `batches.csv`: one row per process-count/per-process-batch-size workload.",
         "- `timings.csv`: raw observations for every process, timer, warmup, and measured repetition.",
         "- `logs/`: one representative CLUBB input, setup, log, and native timing file per workload.",
+        "- `logs/*/*_failed.log`: runner/model diagnostics from one failed process per unsuccessful repetition or warmup.",
         "",
         "Warmup observations are retained in `timings.csv` with `phase=warmup`; analysis views ignore them by default.",
         "",
@@ -556,10 +557,11 @@ def load_profiles(
             started = str(record.get("started_utc") or "").replace("T", " ")[:16]
             discriminator = " · ".join(value for value in (revision, started) if value) or run_id[-8:]
             label = f"{label} · {discriminator}"
-        summaries.extend({**row, "profile_id": run_id, "profile_label": label} for row in read_profile_rows(output_root, run_id))
+        summary_rows, process_rows = _derived_rows(_find_profile_dir(Path(output_root), run_id))
+        summaries.extend({**row, "profile_id": run_id, "profile_label": label} for row in summary_rows)
         processes.extend(
             {**row, "profile_id": run_id, "profile_label": label}
-            for row in read_profile_rows(output_root, run_id, processes=True)
+            for row in process_rows
         )
     return summaries, processes
 

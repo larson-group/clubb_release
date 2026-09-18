@@ -263,8 +263,8 @@ def initial_plot_state_for_case(case_data):
 
 def initialize_case_state(output_dirs=None):
     """Build the initial plots-tab state from the currently available output files."""
-    directories = list(output_dirs or [DEFAULT_OUTPUT_DIR])
-    cases = scan_output_cases(directories)
+    directories = list([DEFAULT_OUTPUT_DIR] if output_dirs is None else output_dirs)
+    cases = scan_output_cases(directories) if directories else {}
     ordered_names = ordered_case_names(cases.keys())
     if not ordered_names:
         return {
@@ -293,6 +293,7 @@ def initialize_case_state(output_dirs=None):
         }
     case_name = ordered_names[0]
     case_data = build_case_data(case_name, cases[case_name], directories)
+    case_data["available_cases"] = ordered_names
     plot_order, plot_state, next_id = initial_plot_state_for_case(case_data)
     slider_min, slider_max, slider_step = average_length_bounds(case_data)
     default_duration = default_average_length(slider_min, slider_max)

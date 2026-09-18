@@ -3,6 +3,9 @@ import itertools
 import math
 import numpy as np
 
+from dash_app.plot_tab.case_cache import resolve_case_data
+
+from .async_callbacks import task_callback
 from .plot_types.shared import (
     closest_column,
     load_compare_flag_values,
@@ -390,13 +393,14 @@ def _varying_param_slider(name, current_val, unique_vals):
 
 def register_param_callbacks(app):
     """Register callbacks for loading, presenting, and selecting column parameters."""
-    @app.callback(
+    @task_callback(app, "params",
         Output("plots-param-data", "data"),
         Output("plots-param-names", "data"),
         Input("plots-case-data", "data"),
     )
     def load_params(case_data):
         """Load tunable parameter data and split it into varying and constant groups."""
+        case_data = resolve_case_data(case_data)
         if not case_data:
             return None, None
         ncols = max(int(case_data.get("columns_len") or 1), 1)
@@ -484,6 +488,7 @@ def register_param_callbacks(app):
     )
     def render_param_panel(param_data, param_names, col_idx, column_mode, case_data, column_filters):
         """Render the column-selection UI for the current case and plot mode."""
+        case_data = resolve_case_data(case_data)
         if not param_data:
             return [html.Div("Select a case to enable column controls.")]
         ncols = param_data.get("ngrdcol", 1)
@@ -554,12 +559,13 @@ def register_param_callbacks(app):
         Input({"type": "plots-column-filter-slider", "name": ALL}, "value"),
         State({"type": "plots-column-filter-enabled", "name": ALL}, "id"),
         State({"type": "plots-column-filter-slider", "name": ALL}, "id"),
+        State("plots-column-filters", "data"),
     )
-    def update_column_filters(param_data, column_mode, enabled_values, slider_values, enabled_ids, slider_ids):
+    def update_column_filters(param_data, column_mode, enabled_values, slider_values, enabled_ids, slider_ids, current_filters):
         """Compute the active overplot column subset from fixed-parameter controls."""
         empty_filter = {"indices": None, "filters": {}, "active_count": None}
         if column_mode != "all" or not param_data:
-            return empty_filter
+            return no_update if current_filters == empty_filter else empty_filter
         slider_by_name = {
             item.get("name"): value
             for item, value in zip(slider_ids or [], slider_values or [])
@@ -575,25 +581,28 @@ def register_param_callbacks(app):
             requested_filters[name] = slider_by_name.get(name, 0)
         indices, normalized_filters = _column_indices_for_filters(param_data, requested_filters)
         if not normalized_filters:
-            return empty_filter
-        return {
+            return no_update if current_filters == empty_filter else empty_filter
+        updated = {
             "indices": indices,
             "filters": normalized_filters,
             "active_count": len(indices or []),
         }
+        return no_update if updated == current_filters else updated
 
     @app.callback(
         Output("plots-selected-column", "data", allow_duplicate=True),
         Input("plots-column-index-slider", "value"),
         State("plots-param-data", "data"),
+        State("plots-selected-column", "data"),
         prevent_initial_call=True,
     )
-    def update_column_from_slider(value, param_data):
+    def update_column_from_slider(value, param_data, current_column):
         """Map the visible column slider value back to the zero-based selected column."""
         if value is None or not param_data:
             return no_update
         ncols = param_data.get("ngrdcol", 1)
-        return max(0, min(int(value) - 1, ncols - 1))
+        selected = max(0, min(int(value) - 1, ncols - 1))
+        return no_update if selected == current_column else selected
 
     @app.callback(
         Output("plots-selected-column", "data", allow_duplicate=True),
@@ -601,9 +610,10 @@ def register_param_callbacks(app):
         State("plots-param-names", "data"),
         State("plots-param-data", "data"),
         State("plots-column-mode", "value"),
+        State("plots-selected-column", "data"),
         prevent_initial_call=True,
     )
-    def update_column_from_params(values, names, param_data, column_mode):
+    def update_column_from_params(values, names, param_data, column_mode, current_column):
         """Choose the nearest matching column from the current parameter slider values."""
         if column_mode != "single" or not param_data or not names or not param_data.get("allow_column_param_selection"):
             return no_update
@@ -612,4 +622,5 @@ def register_param_callbacks(app):
         for name, value in zip(names, values or []):
             if name in params and value is not None:
                 selection[name] = value
-        return closest_column(params, selection)
+        selected = closest_column(params, selection)
+        return no_update if selected == current_column else selected

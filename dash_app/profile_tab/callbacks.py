@@ -37,6 +37,7 @@ from .runtime import (
     read_log_tail,
     read_profile_data,
     read_profile_results,
+    profile_results_signature,
 )
 
 
@@ -628,12 +629,13 @@ def register_profile_callbacks(app) -> None:
         Input("dashboard-broker-jobs", "data"),
         Input("dashboard-tabs", "value"),
         State("profile-job", "data"),
+        State("profile-active-results", "data"),
     )
-    def refresh_profile(_ticks, action, broker_snapshot, selected_tab, current_job):
+    def refresh_profile(_ticks, action, broker_snapshot, selected_tab, current_job, current_progress):
         if (
             selected_tab != "profile"
             and callback_context.triggered_id
-            in {"profile-interval", "dashboard-broker-jobs"}
+            in {"profile-interval", "dashboard-broker-jobs", "dashboard-tabs"}
         ):
             return (no_update,) * 7
         action = dict(action or {})
@@ -644,7 +646,8 @@ def register_profile_callbacks(app) -> None:
         else:
             job = broker_job or launch_job or dict(current_job or {})
         run_id = ""
-        rows: list[dict[str, Any]] = []
+        row_count = 0
+        signature = None
         if action.get("kind") == "error" and not broker_job:
             message = str(action.get("message") or "Profile action failed")
             status = message
@@ -658,19 +661,26 @@ def register_profile_callbacks(app) -> None:
             log_text = "No profile runs yet."
             start_disabled, cancel_disabled = False, True
         else:
-            run_id, rows = read_profile_results(job)
+            signature = profile_results_signature(job)
+            if signature is not None and signature == (current_progress or {}).get("signature"):
+                run_id = str(job.get("run_id") or "")
+                row_count = int((current_progress or {}).get("row_count") or 0)
+            else:
+                run_id, rows = read_profile_results(job)
+                row_count = len(rows)
             if run_id and run_id != job.get("run_id"):
-                job = {**job, "run_id": run_id, "result_rows": len(rows)}
-            status, class_name, start_disabled, cancel_disabled = _status_view(job, len(rows))
+                job = {**job, "run_id": run_id, "result_rows": row_count}
+            status, class_name, start_disabled, cancel_disabled = _status_view(job, row_count)
             log_text = str(job.get("log_tail") or "") or read_log_tail(job.get("log"))
         progress = {
             "run_id": run_id,
-            "row_count": len(rows),
-            "tick": int(_ticks or 0),
+            "row_count": row_count,
+            "signature": signature,
+            "state": job.get("state", "idle"),
         }
         return (
-            job,
-            progress,
+            job if job != current_job else no_update,
+            progress if progress != current_progress else no_update,
             status,
             class_name,
             log_text or "Waiting for timing output…",
@@ -684,7 +694,6 @@ def register_profile_callbacks(app) -> None:
         Output("profile-decomposition-graph", "figure"),
         Output("profile-variability-graph", "figure"),
         Output("profile-result-summary", "children"),
-        Input("profile-job", "data"),
         Input("profile-active-results", "data"),
         Input("profile-selected-runs", "value"),
         Input("profile-output", "value"),
@@ -697,9 +706,10 @@ def register_profile_callbacks(app) -> None:
         Input("profile-x-axis", "value"),
         Input("profile-x-scale", "value"),
         Input("theme-store", "data"),
+        Input("dashboard-tabs", "value"),
+        State("profile-job", "data"),
     )
     def refresh_profile_figures(
-        job,
         _active_results,
         selected,
         output_value,
@@ -712,7 +722,11 @@ def register_profile_callbacks(app) -> None:
         x_axis,
         x_scale,
         theme_name,
+        selected_tab,
+        job,
     ):
+        if selected_tab != "profile":
+            return (no_update,) * 5
         try:
             plot_rows, process_rows = load_profile_plot_data(output_value, selected, job)
         except OSError:
@@ -832,22 +846,22 @@ def register_profile_callbacks(app) -> None:
         Output("profile-selection-library", "data"),
         Input("profile-output", "value"),
         Input("profile-library-action", "data"),
-        Input("profile-job", "data"),
         Input("profile-active-results", "data"),
         State("profile-selected-runs", "value"),
         State("profile-baseline-run", "value"),
         State("profile-detail-run", "value"),
         State("profile-selection-library", "data"),
+        State("profile-job", "data"),
     )
     def refresh_profile_library(
         output_value,
         library_action,
-        job,
         _active_rows,
         current_selected,
         current_baseline,
         current_detail,
         current_library,
+        job,
     ):
         library_key = str(resolve_library_path(output_value))
         try:
@@ -856,11 +870,16 @@ def register_profile_callbacks(app) -> None:
             return [], [], [], [], None, [], None, f"Unable to read profile library: {exc}", library_key
         options = [profile_option(record) for record in catalog]
         action = dict(library_action or {})
+        library_action_triggered = callback_context.triggered_id == "profile-library-action"
         preferred, replace_existing = profile_selection_preferences(
             job,
             action,
-            library_action_triggered=callback_context.triggered_id == "profile-library-action",
+            library_action_triggered=library_action_triggered,
         )
+        # Explicit library actions also reload selected files edited externally.
+        reload_selected = library_action_triggered and action.get("kind") in {
+            "refreshed", "imported", "deleted",
+        }
         library_changed = str(current_library or "") != library_key
         selected, baseline, detail = reconcile_profile_selection(
             catalog,
@@ -884,11 +903,11 @@ def register_profile_callbacks(app) -> None:
         return (
             catalog,
             options,
-            selected,
+            selected if selected != current_selected or reload_selected else no_update,
             selected_options,
-            baseline,
+            baseline if baseline != current_baseline else no_update,
             selected_options,
-            detail,
+            detail if detail != current_detail else no_update,
             status,
             library_key,
         )
@@ -897,15 +916,17 @@ def register_profile_callbacks(app) -> None:
         Output("profile-results", "data"),
         Input("profile-selected-runs", "value"),
         Input("profile-output", "value"),
-        Input("profile-interval", "n_intervals"),
+        Input("profile-active-results", "data"),
         State("profile-job", "data"),
+        State("profile-results", "data"),
     )
-    def load_selected_profile_data(selected, output_value, _ticks, active_job):
+    def load_selected_profile_data(selected, output_value, _progress, active_job, current):
         try:
             summary_rows, _process_rows = load_profile_plot_data(output_value, selected, active_job)
         except OSError:
             return []
-        return profile_control_rows(summary_rows)
+        rows = profile_control_rows(summary_rows)
+        return rows if rows != current else no_update
 
     @app.callback(
         Output("profile-interval", "disabled"),
@@ -930,7 +951,7 @@ def register_profile_callbacks(app) -> None:
         options = timer_options(rows or [], default_timer)
         values = [option["value"] for option in options]
         if selected_timer in values:
-            return options, selected_timer
+            return options, no_update
         if default_timer in values:
             return options, default_timer
         return options, (values[0] if values else None)

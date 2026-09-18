@@ -119,7 +119,7 @@ def test_static_route_serves_only_completed_fixed_exports(tmp_path, monkeypatch)
 
 def test_plot_header_contains_export_control_and_browser_state():
     initial = {"case_data": {}, "enabled_benchmarks": []}
-    selector = _directory_case_selector(initial)
+    selector = _directory_case_selector(initial, [])
     stores = _plots_stores(
         {
             **initial,
@@ -127,7 +127,7 @@ def test_plot_header_contains_export_control_and_browser_state():
             "plot_state": {},
             "next_id": 1,
             "selected_column": 0,
-        }
+        }, []
     )
 
     assert _find(selector, "plots-pyplotgen-run") is not None

@@ -197,16 +197,31 @@ def register_workspace_callbacks(app):
         except Exception as exc:
             return [], html.Div(f"Could not load saved Tune workspaces: {exc}", className="tune-validation-message")
 
+    app.clientside_callback(
+        "function(tab) { return tab !== 'tune'; }",
+        Output("tune-workspace-status-interval", "disabled"),
+        Input("dashboard-tabs", "value"),
+    )
+
     @app.callback(
         Output("tune-workspace-activity", "data"),
         Input("tune-workspace-status-interval", "n_intervals"),
+        Input("dashboard-tabs", "value"),
+        State("tune-workspace-activity", "data"),
     )
-    def refresh_workspace_activity(_status_tick):
+    def refresh_workspace_activity(_status_tick, selected_tab, previous):
         """Poll only compact state records for the cross-workspace indicator."""
         from dash_app.shared.broker_client import perform_action
 
+        if selected_tab != "tune":
+            return no_update
         try:
-            return list((perform_action("list_tuning_workspace_activity", {}, internal=True) or {}).get("activity") or [])
+            result = perform_action(
+                "list_tuning_workspace_activity", {}, internal=True,
+                ensure_running=False, timeout_seconds=3.0,
+            )
+            activity = list((result or {}).get("activity") or [])
+            return no_update if activity == previous else activity
         except Exception:
             # The activity cue is advisory. Do not erase a usable workspace
             # browser or surface a periodic transport failure as a UI error.

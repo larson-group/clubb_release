@@ -4,6 +4,9 @@ import numpy as np
 import plotly.graph_objects as go
 from dash import Input, MATCH, Output, Patch, State, callback_context, html
 
+from dash_app.plot_tab.async_callbacks import task_callback
+from dash_app.plot_tab.case_cache import resolve_case_data
+
 from .. import benchmark_overlay
 from ..profile_loss import compute_profile_loss
 from . import shared
@@ -67,6 +70,8 @@ class ProfilePlotType(BasePlotType):
         ]
 
     def _single_trace_specs(self, files, var_name, case_data, global_context):
+        if "_profile_trace_bundle" in global_context:
+            return global_context["_profile_trace_bundle"]
         path, _meta = shared.dataset_info_for_var(files, var_name)
         if path is None:
             return None
@@ -415,14 +420,14 @@ class ProfilePlotType(BasePlotType):
         case_data = global_context.get("case_data") or {}
         files = case_data.get("files") or []
         var_name = state.get("var")
-        if not files or not var_name or (global_context.get("time_mode") or "range") != "point":
+        if not files or not var_name:
             return None
         if case_data.get("compare_mode"):
             return self._build_compare_patch(files, var_name, case_data, global_context)
         return self._build_single_patch(files, var_name, case_data, global_context)
 
     def register_callbacks(self, app):
-        @app.callback(
+        @task_callback(app, self.plot_type_id,
             Output(self.graph_id(MATCH), "figure"),
             Output(self.render_signal_id(MATCH), "children"),
             Output(self.error_id(MATCH), "children"),
@@ -457,6 +462,7 @@ class ProfilePlotType(BasePlotType):
             relayout_data,
             graph_id,
         ):
+            case_data = resolve_case_data(case_data)
             plot_id = int((graph_id or {}).get("index", -1))
             size_value = shared.normalize_plot_size(size_store_value)
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)
@@ -478,11 +484,12 @@ class ProfilePlotType(BasePlotType):
                 "size": size_value,
                 "theme_name": theme_name,
             }
+            error_children = ""
+            if case_data and not case_data.get("compare_mode") and var_name:
+                trace_bundle = self._single_trace_specs(case_data.get("files") or [], var_name, case_data, global_context)
+                global_context["_profile_trace_bundle"] = trace_bundle
+                error_children = self._build_error_panel(trace_bundle, var_name, case_data, global_context)
             if active_time["mode"] == "slider" and triggered_id == "plots-global-time-point" and plot_id >= 0 and self._has_full_render(plot_id):
-                error_children = ""
-                if not (case_data or {}).get("compare_mode"):
-                    trace_bundle = self._single_trace_specs(case_data.get("files") or [], var_name, case_data, global_context)
-                    error_children = self._build_error_panel(trace_bundle, var_name, case_data, global_context)
                 patch = self.build_patch(
                     {"var": var_name, "size": size_value},
                     global_context,
@@ -493,10 +500,6 @@ class ProfilePlotType(BasePlotType):
                 {"var": var_name, "size": size_value},
                 global_context,
             )
-            error_children = ""
-            if not (case_data or {}).get("compare_mode"):
-                trace_bundle = self._single_trace_specs(case_data.get("files") or [], var_name, case_data, global_context)
-                error_children = self._build_error_panel(trace_bundle, var_name, case_data, global_context)
             if triggered_id == "plots-case-data" and (case_data or {}).get("preserve_plot_view"):
                 shared.apply_relayout_ranges(fig, relayout_data)
             if plot_id >= 0:

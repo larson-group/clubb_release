@@ -44,15 +44,21 @@
     var maxW = Math.max(420, Math.round(window.innerWidth * 0.8));
 
     function startDrag(ev) {
-      if (ev.button !== 0) return;
+      if (ev.button !== 0 || dragging) return;
       maxW = Math.max(420, Math.round(window.innerWidth * 0.8));
       dragging = true;
+      // Window listeners belong to this gesture, not every past tab mount.
+      window.addEventListener("pointermove", moveDrag);
+      window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
+      window.addEventListener("blur", endDrag);
       document.body.classList.add("plots-ui-dragging");
       ev.preventDefault();
     }
 
     function moveDrag(ev) {
       if (!dragging) return;
+      if (!layout.isConnected) { endDrag({type: "pointercancel"}); return; }
       var rect = layout.getBoundingClientRect();
       var rightW = rect.right - ev.clientX;
       if (rightW < minW) rightW = minW;
@@ -63,7 +69,12 @@
     function endDrag(ev) {
       if (!dragging) return;
       dragging = false;
+      window.removeEventListener("pointermove", moveDrag);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      window.removeEventListener("blur", endDrag);
       document.body.classList.remove("plots-ui-dragging");
+      if (ev.type === "pointercancel" || ev.type === "blur" || !layout.isConnected) return;
       var rect = layout.getBoundingClientRect();
       var rightW = rect.right - ev.clientX;
       if (rightW < minW) rightW = minW;
@@ -74,8 +85,6 @@
     }
 
     divider.addEventListener("pointerdown", startDrag);
-    window.addEventListener("pointermove", moveDrag);
-    window.addEventListener("pointerup", endDrag);
   }
 
   function hydrateWidth() {

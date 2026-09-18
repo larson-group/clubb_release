@@ -2,6 +2,8 @@ import re
 
 from dash import ALL, MATCH, Input, Output, Patch, State, callback_context, no_update
 
+from dash_app.plot_tab.case_cache import resolve_case_data
+
 from .layout import child_id, render_plot_card, render_plot_grid
 from .plot_types.registry import PLOT_TYPES
 from .plot_types.specs import PLOT_FAMILY_SPECS
@@ -172,6 +174,7 @@ def register_dropdown_search_callback(app, spec):
         State({"type": spec.dropdown_type, "index": MATCH}, "value"),
     )
     def _update_dropdown_options(search_value, case_data, current_value):
+        case_data = resolve_case_data(case_data)
         options = list(module.case_data_options(case_data))
         return _ranked_dropdown_options(options, search_value, current_value)
 
@@ -211,16 +214,19 @@ def register_grid_callbacks(app):
         Input("plots-case-data", "data"),
         Input("plots-plot-order", "data"),
         State("plots-plot-state", "data"),
-        State("plots-plot-container", "children"),
+        State({"type": "plots-card", "index": ALL}, "id"),
     )
-    def render_plot_container(case_data, plot_order, plot_state, current_children):
-        """Render case changes fully but patch isolated card additions/removals."""
-        case_triggered = any(
-            item.get("prop_id") == "plots-case-data.data"
-            for item in (callback_context.triggered or [])
-        )
-        if case_triggered and not bool((case_data or {}).get("preserve_plot_view")):
+    def render_plot_container(case_data, plot_order, plot_state, mounted_ids):
+        """Keep mounted graphs across case changes; send only ids back to Dash."""
+        case_data = resolve_case_data(case_data)
+        if (case_data or {}).get("replace_plot_cards") and any(
+            item.get("prop_id") == "plots-case-data.data" for item in callback_context.triggered
+        ):
             return render_plot_grid(plot_order or [], plot_state or {}, case_data)
+        # Dropdown options and figure callbacks already consume the new case.
+        # Replacing their cards also replaces figure props with empty defaults.
+        current_children = [*[{"props": {"id": item}} for item in (mounted_ids or [])],
+                            {"props": {"id": "plots-add-card"}}]
         return update_plot_grid_children(
             plot_order or [],
             plot_state or {},
@@ -242,6 +248,7 @@ def register_grid_callbacks(app):
     )
     def synchronize_plot_instances(case_data, plot_order, plot_state, next_id, dashboard_request):
         """Publish a safe current-card snapshot for typed Plot inspection."""
+        case_data = resolve_case_data(case_data)
         snapshot = {
             "case": str((case_data or {}).get("name") or ""),
             "output_dirs": [str(path) for path in (case_data or {}).get("output_dirs") or []],
@@ -495,6 +502,7 @@ def register_grid_callbacks(app):
     )
     def add_plot(budget_ts, custom_ts, pdf_contour_ts, profile_ts, timeseries_ts, timeheight_ts, subcolumn_ts, case_data, plot_order, plot_state, next_id, last_add_ts):
         """Append one new plot card of the requested family and move the add-card to the end."""
+        case_data = resolve_case_data(case_data)
         if not case_data:
             return no_update, no_update, no_update, no_update
         timestamps = {
@@ -542,6 +550,7 @@ def register_grid_callbacks(app):
     )
     def remove_plot(timestamps, ids, dashboard_request, case_data, plot_order, plot_state, next_id):
         """Remove one native or typed-requested card through the shared service."""
+        case_data = resolve_case_data(case_data)
         if (
             isinstance(dashboard_request, dict)
             and dashboard_request.get("tab") == "plots"

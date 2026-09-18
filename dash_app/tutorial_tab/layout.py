@@ -7,7 +7,7 @@ from .clubb_equations import build_page as build_equations_page
 from .welcome import build_page as build_welcome_page
 
 
-def build_layout():
+def build_layout(*, lazy=None):
     """Build the tutorial page rail and its initial lessons."""
     return html.Div(
         dcc.Tabs(
@@ -27,19 +27,19 @@ def build_layout():
                     selected_className="tutorial-page-tab-selected",
                     children=build_welcome_page(),
                 ),
-                dcc.Tab(
+                (lazy.tab if lazy is not None else dcc.Tab)(
                     label="CLUBB Equations",
                     value="tutorial-equations",
                     className="tutorial-page-tab",
                     selected_className="tutorial-page-tab-selected",
-                    children=build_equations_page(),
+                    **({"build": build_equations_page} if lazy is not None else {"children": build_equations_page()}),
                 ),
-                dcc.Tab(
+                (lazy.tab if lazy is not None else dcc.Tab)(
                     label="ADG1 two-Gaussian explorer",
                     value="tutorial-adg1-explorer",
                     className="tutorial-page-tab",
                     selected_className="tutorial-page-tab-selected",
-                    children=build_adg1_explorer_layout(),
+                    **({"build": build_adg1_explorer_layout} if lazy is not None else {"children": build_adg1_explorer_layout()}),
                 ),
             ],
         ),

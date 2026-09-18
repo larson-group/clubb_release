@@ -18,7 +18,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PYPLOTGEN_ROOT = REPO_ROOT / "postprocessing" / "pyplotgen"
 PYPLOTGEN_SCRIPT = PYPLOTGEN_ROOT / "pyplotgen.py"
 PYPLOTGEN_OUTPUT_ROOT = REPO_ROOT / "output" / "pyplotgen"
-_PROCESSES: dict[int, subprocess.Popen[bytes]] = {}
 _PROGRESS_RE = re.compile(rb"Progress:\s*(\d+)\s+of\s+(\d+)\s+total")
 
 
@@ -86,7 +85,6 @@ def start_pyplotgen(output_dirs: list[str]) -> tuple[dict[str, Any], subprocess.
         log_handle.close()
         raise
     process._clubb_log_handle = log_handle  # type: ignore[attr-defined]
-    _PROCESSES[process.pid] = process
     job = {
         "state": "running",
         "run_id": run_id,
@@ -107,7 +105,6 @@ def start_pyplotgen(output_dirs: list[str]) -> tuple[dict[str, Any], subprocess.
 
 def release_pyplotgen(process: subprocess.Popen[bytes]) -> None:
     """Release the broker's process and log handles after completion."""
-    _PROCESSES.pop(process.pid, None)
     handle = getattr(process, "_clubb_log_handle", None)
     if handle is not None:
         handle.close()

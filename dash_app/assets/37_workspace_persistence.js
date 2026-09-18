@@ -8,8 +8,48 @@
   function ownedKey(key, meta) {
     var exact = (meta.store_ids || []).concat(meta.extra_keys || []);
     exact.push(meta.schema_key);
-    return exact.indexOf(key) >= 0 || key.indexOf(String(meta.token || "")) >= 0;
+    return key === "plots-case-data" || key === "plots-case-data-timestamp" ||
+      exact.indexOf(key) >= 0 || key.indexOf(String(meta.token || "")) >= 0;
   }
+
+  function migratePlotSelection(workspaceToken) {
+    // Preserve old workspaces without keeping rebuildable NetCDF metadata.
+    var legacy = window.localStorage.getItem("plots-case-data");
+    if (legacy !== null) {
+      try {
+        var data = JSON.parse(legacy);
+        if (data && data.name && !window.localStorage.getItem("plots-case-selection")) {
+          var selection = {name: data.name, output_dirs: data.output_dirs || []};
+          var controls = {
+            average_minutes: "plots-global-time-range",
+            time_start_seconds: "plots-global-time-point",
+            height_range: "plots-global-height-range",
+            column_mode: "plots-column-mode"
+          };
+          function savedJSON(key) {
+            try { return JSON.parse(window.localStorage.getItem(key)); }
+            catch (_) { return null; }
+          }
+          Object.keys(controls).forEach(function (field) {
+            var prefix = "_dash_persistence." + controls[field] + ".value.";
+            var token = workspaceToken || (document.title + ":dashboard-workspace:v1");
+            var saved = savedJSON(prefix + JSON.stringify(token));
+            if (Array.isArray(saved)) { selection[field] = saved[0]; }
+          });
+          ["selected-column", "time-override"].forEach(function (field) {
+            var saved = savedJSON("plots-" + field);
+            if (saved !== null) { selection[field.replace("-", "_")] = saved; }
+          });
+          window.localStorage.setItem("plots-case-selection", JSON.stringify(selection));
+        }
+      } catch (_) { /* Ignore malformed legacy metadata. */ }
+      window.localStorage.removeItem("plots-case-data");
+      window.localStorage.removeItem("plots-case-data-timestamp");
+    }
+  }
+
+  // Assets load before Dash mounts its Stores, so hydration sees the selection.
+  migratePlotSelection();
 
   function ownedKeys(meta) {
     var keys = [];
@@ -142,6 +182,7 @@
               restored += 1;
             }
           });
+          migratePlotSelection(meta.token);
           window.setTimeout(function () { window.location.reload(); }, 100);
           return "Restored " + restored + " entries from " + (filename || "workspace") + ".";
         } catch (error) {

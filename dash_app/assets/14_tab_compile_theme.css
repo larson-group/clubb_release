@@ -468,6 +468,11 @@
   gap: 6px;
 }
 
+.compile-build-row > .compile-warning {
+  /* Keep optional warnings above the card and its narrow action column. */
+  grid-column: 1 / -1;
+}
+
 .compile-build-actions {
   display: grid;
   grid-template-rows: 1fr 1fr;

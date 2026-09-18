@@ -27,19 +27,28 @@ def _opened_report_url(report, request_id) -> str:
     return f"{report.url}?open={token}"
 
 
-def build_tab(app):
+def build_tab(app, *, lazy=None):
     """Build the permanent tab once; report publication only changes data files."""
+
+    app.clientside_callback(
+        "function(tab) { return tab !== 'reports'; }",
+        Output("reports-catalog-poll", "disabled"),
+        Input("dashboard-tabs", "value"),
+    )
 
     @app.callback(
         Output("reports-pages", "children"),
         Output("reports-catalog-token", "data"),
         Output("reports-pages", "value", allow_duplicate=True),
         Input("reports-catalog-poll", "n_intervals"),
+        Input("dashboard-tabs", "value"),
         State("reports-catalog-token", "data"),
         State("reports-pages", "value"),
         prevent_initial_call=True,
     )
-    def refresh_report_catalog(_poll_count, previous_token, current_value):
+    def refresh_report_catalog(_poll_count, selected_tab, previous_token, current_value):
+        if selected_tab != "reports":
+            return no_update, no_update, no_update
         reports = discover_reports()
         token = catalog_token(reports)
         if token == previous_token:
@@ -73,4 +82,6 @@ def build_tab(app):
             return no_update, no_update
         return report_tab_value(report.report_id), _opened_report_url(report, (request or {}).get("id"))
 
+    if lazy is not None:
+        return lazy.tab(label="Reports", value="reports", build=build_layout)
     return dcc.Tab(label="Reports", value="reports", children=build_layout())

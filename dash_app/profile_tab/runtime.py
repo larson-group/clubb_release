@@ -270,6 +270,28 @@ def read_profile_results(job: dict[str, Any] | None) -> tuple[str, list[dict[str
     return run_id, rows
 
 
+def profile_results_signature(job: dict[str, Any]) -> list | None:
+    """Observe result changes cheaply, including atomic file replacement."""
+    run_id = _clean(job.get("run_id"))
+    if not run_id:
+        return None  # The first result still needs normal run-id discovery.
+    root = _resolved_output(job.get("output"))
+    manifest = read_profile_manifest(root)
+    directory = (
+        root if manifest and str(manifest.get("run_id") or root.name) == run_id
+        else profile_directory(root, run_id)
+    )
+    signatures = []
+    for name in ("profile.json", "batches.csv", "timings.csv"):
+        try:
+            stat = (directory / name).stat()
+            # Nanosecond timestamps lose precision as JavaScript numbers.
+            signatures.append(f"{stat.st_mtime_ns}:{stat.st_ctime_ns}:{stat.st_size}:{stat.st_ino}")
+        except OSError:
+            signatures.append(None)
+    return [str(directory), run_id, signatures]
+
+
 def read_log_tail(path: str | Path | None, max_characters: int = MAX_LOG_CHARACTERS) -> str:
     try:
         with Path(str(path)).open("rb") as handle:

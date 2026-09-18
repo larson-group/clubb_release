@@ -31,7 +31,7 @@ def register_pyplotgen_callbacks(app):
     @app.callback(
         Output("plots-pyplotgen-action", "data"),
         Input("plots-pyplotgen-run", "n_clicks"),
-        State("plots-loaded-output-dirs", "data"),
+        State("plots-output-dirs", "data"),
         State("dashboard-broker-jobs", "data"),
         State("plots-pyplotgen-action", "data"),
         prevent_initial_call=True,

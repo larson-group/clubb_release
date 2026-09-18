@@ -1,6 +1,9 @@
 import plotly.graph_objects as go
 from dash import Input, Output, State, MATCH, callback_context
 
+from dash_app.plot_tab.async_callbacks import task_callback
+from dash_app.plot_tab.case_cache import resolve_case_data
+
 from . import shared
 from .base_plot import BasePlotType
 
@@ -112,7 +115,7 @@ class TimeSeriesPlotType(BasePlotType):
         return fig
 
     def register_callbacks(self, app):
-        @app.callback(
+        @task_callback(app, self.plot_type_id,
             Output(self.graph_id(MATCH), "figure"),
             Input(self.var_input_id(MATCH), "value"),
             Input("plots-case-data", "data"),
@@ -124,6 +127,7 @@ class TimeSeriesPlotType(BasePlotType):
             State(self.graph_id(MATCH), "relayoutData"),
         )
         def _update_timeseries_graph(var_name, case_data, selected_column, column_mode, column_filters, theme_name, size_store_value, relayout_data):
+            case_data = resolve_case_data(case_data)
             size_value = shared.normalize_plot_size(size_store_value)
             fig = self.build_figure(
                 {"var": var_name, "size": size_value},

@@ -3485,6 +3485,8 @@ def stop_run(case: str, output_dir: str | None = None) -> dict[str, Any]:
 def stop_all_broker_work(*, reason: str = "dashboard manager is stopping") -> dict[str, Any]:
     """Best-effort, idempotent shutdown of every broker-owned worker."""
     _BROKER_SHUTTING_DOWN.set()
+    from dash_app.plot_tab.tasks import close_workers
+    close_workers()
     snapshot = broker_jobs()
     requested: list[str] = []
     errors: list[str] = []
@@ -4567,6 +4569,13 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return launch_compile_request(dict(payload.get("options") or {}), env_id=payload.get("env_id", "current"))
     if action == "launch_profile_request":
         return launch_profile_request(dict(payload.get("settings") or {}))
+    if action in {"plot_task_submit", "plot_task_poll"}:
+        from dash_app.plot_tab.tasks import manager
+        if action == "plot_task_submit":
+            return manager().submit(payload)
+        if "requests" in payload:
+            return manager().poll_many(payload["requests"])
+        return manager().poll(str(payload.get("scope") or ""), int(payload.get("revision") or 0))
     if action == "launch_pyplotgen_request":
         return launch_pyplotgen_request(list(payload.get("output_dirs") or []))
     if action == "stop_pyplotgen_request":

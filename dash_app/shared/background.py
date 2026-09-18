@@ -14,7 +14,7 @@ def create_background_manager(repo_root: Path | str) -> DiskcacheManager:
     """Build the local process manager used by explicitly expensive callbacks.
 
     Diskcache starts a separate process per active callback.  That keeps the
-    main Dash server responsive while a case is opened and, critically, avoids
+    main Dash server responsive during background analysis and, critically, avoids
     concurrent HDF5 access from Dash request threads.  Its state is placed in
     the same private runtime area as the local agent broker rather than in the
     checkout or a shared ``/tmp`` directory.

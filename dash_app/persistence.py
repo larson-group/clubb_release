@@ -27,10 +27,9 @@ PERSISTENT_STORE_IDS = frozenset(
         "run-multicol-row-order",
         "run-selected-cases",
         "run-selected-stats-file",
-        # Plot workspace. plots-case-data is intentionally included because it
-        # owns case selection; directory callbacks refresh its derived fields.
+        # Plot workspace: save intent, rebuild metadata in the background.
         "plots-output-dirs",
-        "plots-case-data",
+        "plots-case-selection",
         "plots-enabled-benchmarks",
         "plots-plot-order",
         "plots-plot-state",

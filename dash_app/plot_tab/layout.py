@@ -2,10 +2,10 @@ import os
 from pathlib import Path
 
 from dash import dcc, html
-from dash_app.services import profiles as profile_service
 from utilities.output_paths import OUTPUT_ROOT
 
 from .plot_types import shared
+from .case_cache import compact_case_data
 from .plot_types.registry import PLOT_TYPES
 from .state import DEFAULT_OUTPUT_DIR, DEFAULT_PLAYBACK_INTERVAL_S
 
@@ -270,18 +270,16 @@ def child_id(child):
 
 def _initial_case_buttons(initial_state):
     """Render initial case buttons before callback hydration."""
-    cases = profile_service.scan_case_outputs([DEFAULT_OUTPUT_DIR])
     selected_name = ((initial_state or {}).get("case_data") or {}).get("name")
-    available_names = shared.ordered_case_names(cases.keys())
+    available_names = ((initial_state or {}).get("case_data") or {}).get("available_cases") or []
     if not available_names:
         return [html.Div("No cases found in the active outputs.")]
-    return [case_button(name, bool(cases.get(name)), selected=(name == selected_name)) for name in available_names]
+    return [case_button(name, True, selected=(name == selected_name)) for name in available_names]
 
 
-def _directory_case_selector(initial_state):
+def _directory_case_selector(initial_state, initial_catalog):
     """Build the combined directory/case selection header block."""
     initial_dirs = [DEFAULT_OUTPUT_DIR]
-    initial_catalog = profile_service.discover_output_directories(selected_dirs=initial_dirs)
     return html.Div(
         [
             html.Div(
@@ -312,6 +310,7 @@ def _directory_case_selector(initial_state):
                                             ),
                                             html.Div(
                                                 [
+                                                    html.Button("Refresh outputs", id="plots-output-refresh", n_clicks=0),
                                                     html.Button("Add extra folder", id="plots-show-extra-dir", n_clicks=0),
                                                     html.Div(
                                                         [
@@ -380,7 +379,8 @@ def _directory_case_selector(initial_state):
                 [
                     html.Div("Cases", style={"fontWeight": "600", "marginBottom": "8px"}),
                     html.Div(id="plots-case-button-container", children=_initial_case_buttons(initial_state)),
-                    html.Div(id="plots-output-pending-warning", className="plots-output-pending-warning"),
+                    html.Div(id="plots-catalog-status", role="status"),
+                    html.Div(id="plots-load-status", role="status"),
                 ],
                 style={"padding": "12px", "minHeight": "100%"},
             ),
@@ -394,15 +394,17 @@ def _directory_case_selector(initial_state):
     )
 
 
-def _plots_stores(initial_state):
+def _plots_stores(initial_state, initial_catalog):
     """Build the stores and interval used to coordinate the plots tab."""
     return [
+        dcc.Store(id="plots-path-context", data={"repo": str(Path(__file__).resolve().parents[2]),
+                  "output": str(Path(OUTPUT_ROOT).resolve()), "home": str(Path.home())}),
         dcc.Store(id="plots-output-dirs", data=[DEFAULT_OUTPUT_DIR]),
-        dcc.Store(id="plots-loaded-output-dirs", data=[DEFAULT_OUTPUT_DIR]),
-        dcc.Store(id="plots-output-catalog", data=profile_service.discover_output_directories(selected_dirs=[DEFAULT_OUTPUT_DIR])),
+        dcc.Store(id="plots-output-catalog", data=initial_catalog),
         dcc.Store(id="plots-output-menu-expanded", data=False),
         dcc.Store(id="plots-output-delete-confirm", data=None),
-        dcc.Store(id="plots-case-data", data=initial_state["case_data"]),
+        dcc.Store(id="plots-case-data", data=compact_case_data(initial_state["case_data"])),
+        dcc.Store(id="plots-case-selection", data=None),
         dcc.Store(id="plots-enabled-benchmarks", data=initial_state["enabled_benchmarks"]),
         dcc.Store(id="plots-plot-order", data=initial_state["plot_order"]),
         dcc.Store(id="plots-plot-state", data=initial_state["plot_state"]),
@@ -419,7 +421,6 @@ def _plots_stores(initial_state):
         dcc.Store(id="plots-pyplotgen-opened-run", data=None),
         dcc.Store(id="plots-playback", data={"playing": False, "interval_s": DEFAULT_PLAYBACK_INTERVAL_S, "inflight": False, "target_point": None}),
         dcc.Interval(id="plots-pyplotgen-progress-interval", interval=500, disabled=True, n_intervals=0),
-        dcc.Interval(id="plots-output-refresh-interval", interval=10_000, disabled=True, n_intervals=0),
         dcc.Interval(id="plots-output-delete-expiry", interval=250, disabled=True, n_intervals=0),
         dcc.Interval(id="plots-playback-interval", interval=int(DEFAULT_PLAYBACK_INTERVAL_S * 1000), disabled=True, n_intervals=0),
     ]
@@ -528,6 +529,7 @@ def _column_section(initial_state):
             labelStyle=MODE_RADIO_LABEL_STYLE,
             style={"marginBottom": "10px", "textAlign": "center"},
         ),
+        html.Div(id="plots-param-status", role="status"),
         html.Div(id="plots-param-panel", style={"paddingRight": "8px", "marginTop": "10px"}),
     ]
 
@@ -544,10 +546,11 @@ def _right_pane(initial_state):
 
 def build_layout(initial_state):
     """Assemble the full static plots-tab layout from the provided initial state."""
+    initial_catalog = []  # The browser requests discovery after mounting.
     return html.Div(
         [
-            html.Div([_directory_case_selector(initial_state)], style={"marginBottom": "12px"}),
-            *_plots_stores(initial_state),
+            html.Div([_directory_case_selector(initial_state, initial_catalog)], style={"marginBottom": "12px"}),
+            *_plots_stores(initial_state, initial_catalog),
             html.Div(id="plots-help-modal"),
             html.Div(
                 [_left_pane(initial_state), html.Div(id="plots-pane-divider", className="plots-pane-divider"), _right_pane(initial_state)],

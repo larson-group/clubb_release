@@ -12,6 +12,47 @@ def _write_signature(path):
     path.write_bytes(b"CDF\x01\x00\x00\x00\x00")
 
 
+def test_trajectory_discovery_reuses_only_unchanged_file_checks(tmp_path, monkeypatch):
+    from dash_app.misc_tab.mixing_length_trajectories import analysis
+
+    output = tmp_path / "output"
+    output.mkdir()
+    path = output / "arm_stats.nc"
+    _write_signature(path)
+    calls = []
+    monkeypatch.setattr(analysis, "inspect_dataset", lambda path, **kwargs: calls.append(path))
+    analysis._trajectory_compatible.cache_clear()
+    assert len(analysis.discover_netcdf_file_records(tmp_path)) == 1
+    assert len(analysis.discover_netcdf_file_records(tmp_path)) == 1
+    assert len(calls) == 1
+    path.write_bytes(path.read_bytes() + b"updated")
+    assert len(analysis.discover_netcdf_file_records(tmp_path)) == 1
+    assert len(calls) == 2
+    replacement = output / "replacement.nc"
+    replacement.write_bytes(path.read_bytes())
+    replacement.replace(path)
+    assert len(analysis.discover_netcdf_file_records(tmp_path)) == 1
+    assert len(calls) == 3
+
+
+def test_trajectory_discovery_retries_transient_io_failures(tmp_path, monkeypatch):
+    from dash_app.misc_tab.mixing_length_trajectories import analysis
+
+    output = tmp_path / "output"
+    output.mkdir()
+    _write_signature(output / "arm_stats.nc")
+    attempts = []
+    def inspect(path, **kwargs):
+        attempts.append(path)
+        if len(attempts) == 1:
+            raise OSError("writer temporarily holds the file")
+    monkeypatch.setattr(analysis, "inspect_dataset", inspect)
+    analysis._trajectory_compatible.cache_clear()
+    assert analysis.discover_netcdf_file_records(tmp_path) == []
+    assert len(analysis.discover_netcdf_file_records(tmp_path)) == 1
+    assert len(attempts) == 2
+
+
 def test_directory_and_file_discovery_share_direct_stats_contract(tmp_path):
     run = tmp_path / "nested" / "run"
     run.mkdir(parents=True)

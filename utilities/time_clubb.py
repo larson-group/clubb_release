@@ -674,6 +674,43 @@ def choose_representative(
     return None
 
 
+def report_failed_group(
+    results: Sequence[ProcessResult],
+    profile_dir: Path,
+    batch_id: str,
+    case_name: str,
+    phase: str,
+    repetition: int,
+) -> None:
+    """Show one failed child's diagnostics and retain its full log."""
+    failed = [result for result in results if result.status != "success"]
+    result = failed[0]
+    destination = profile_dir / "logs" / batch_id
+    destination.mkdir(parents=True, exist_ok=True)
+    log_path = destination / f"{phase}_{repetition:03d}_process_{result.process_index:03d}_failed.log"
+    sources = [result.log_file]
+    model_log = result.log_file.parent / f"{case_name}_log"
+    if model_log.is_file():
+        sources.append(model_log)
+    with log_path.open("wb") as output:
+        for source in sources:
+            output.write(f"--- {source.name} ---\n".encode())
+            with source.open("rb") as handle:
+                shutil.copyfileobj(handle, output)
+            output.write(b"\n")
+    # Keep the main console bounded even when a child wrote a very large log.
+    with log_path.open("rb") as handle:
+        handle.seek(max(0, log_path.stat().st_size - 8192))
+        tail = handle.read().decode("utf-8", errors="replace")
+    print(
+        f"{len(failed)}/{len(results)} processes failed. "
+        f"Process {result.process_index}: {result.message}",
+        file=sys.stderr,
+    )
+    print("\n".join(tail.splitlines()[-40:]), file=sys.stderr)
+    print(f"Full failure log: {log_path}", file=sys.stderr, flush=True)
+
+
 def archive_representative(
     profile_dir: Path,
     batch_id: str,
@@ -1033,6 +1070,10 @@ def run_benchmark(
                                     if run_failed:
                                         failed = True
                                         print(f"{label} failed; compact timing rows were preserved.", file=sys.stderr)
+                                        report_failed_group(
+                                            results, profile_root, batch_id, options.case_name,
+                                            phase, repetition,
+                                        )
                                         if not options.continue_on_error:
                                             stop_after_batch = True
                                             break

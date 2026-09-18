@@ -255,6 +255,33 @@ def test_jax_selector_replaces_compiled_build_rows_with_managed_runtime():
     assert "compile-run-implementation-choice-selected" in buttons[0].className
 
 
+def test_jax_selector_and_badges_do_not_inspect_fortran_builds(monkeypatch):
+    monkeypatch.setattr(callbacks, "build_implementation_capability", lambda *_, **kw: (True, ""))
+
+    def unexpected():
+        raise AssertionError("JAX must not inspect the selected Fortran install")
+
+    monkeypatch.setattr(callbacks, "selected_build_info", unexpected)
+    app = Dash(__name__)
+    callbacks.register_compile_callbacks(app)
+    update = next(
+        entry["callback"].__wrapped__ for entry in app.callback_map.values()
+        if entry.get("callback") and entry["callback"].__name__ == "update_build_selector"
+    )
+    values = update(
+        {"trigger_id": "profile-selected-build-badge"},
+        {"builds": [{"name": "gcc_Fortran", "path": "/build/gcc"}]},
+        {}, {}, {}, "jax", "cpu", {"cpu": {"status": "ready", "selectable": True}}, "", False,
+    )
+    panel, compute, timing_note = values[0]
+    assert panel.children[1].children[2].children == "JAX"
+    assert compute.children[0].children == "Compute"
+    assert "timer files required by Profile" in timing_note.children
+    for badge in (values[3], values[6], values[9]):
+        assert badge[0].children == "JAX"
+        assert badge[1].children == "CPU"
+
+
 def test_jax_selector_displays_wrapper_metadata_and_disables_unavailable_gpu():
     runtime_info = {
         "cpu": {

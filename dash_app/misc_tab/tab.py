@@ -3,11 +3,12 @@
 from dash import Input, Output, dcc, no_update
 
 from dash_app.misc_tab.registry import discover_subtabs, register_subtab_callbacks
+from dash_app.lazy_tabs import LazyTabs
 
 from .layout import build_layout, subtab_page_value
 
 
-def build_tab(app):
+def build_tab(app, *, defer=False):
     """Register collected tool callbacks and build the final top-level tab."""
     subtabs = discover_subtabs()
     register_subtab_callbacks(app, subtabs)
@@ -27,4 +28,7 @@ def build_tab(app):
             return subtab_page_value(selected) if selected is not None else no_update
         return no_update
 
-    return dcc.Tab(label="Misc", value="misc", children=build_layout(subtabs))
+    lazy = LazyTabs("misc-pages", parent=("dashboard-tabs", "misc")) if defer else None
+    layout = build_layout(subtabs, lazy=lazy)
+    children = [lazy.register(app), layout] if lazy is not None else layout
+    return dcc.Tab(label="Misc", value="misc", children=children)

@@ -632,10 +632,6 @@ def render_compact_build_selector(
     implementation = normalize_run_implementation(implementation)
     jax_profile = normalize_jax_profile(jax_profile)
     jax_runtime_info = dict(jax_runtime_info or {})
-    builds = (discovery or {}).get("builds", [])
-    visual = visual_state or build_visual_state(statuses, failures, job)
-    selected_build = selected_build_from_discovery(discovery)
-    selected_path = (selected_build or {}).get("path")
     items = [
         html.Div(
             [
@@ -739,7 +735,16 @@ def render_compact_build_selector(
                 labelClassName="compile-jax-prealloc-label",
             ), title="Available after selecting a compatible GPU. Has no effect on CPU runs."),
         ], className="compile-run-implementation-panel"))
+        if trigger_id == "profile-selected-build-badge":
+            items.append(html.Div(
+                "JAX does not yet write the timer files required by Profile.",
+                className="compile-run-implementation-note",
+            ))
         return items
+    builds = (discovery or {}).get("builds", [])
+    visual = visual_state or build_visual_state(statuses, failures, job)
+    selected_build = selected_build_from_discovery(discovery)
+    selected_path = (selected_build or {}).get("path")
     if not builds:
         items.append(html.Div("No builds found.", className="compile-build-selector-empty"))
         return items
@@ -1390,8 +1395,8 @@ def register_compile_callbacks(app):
             jax_gpu,
             jax_xla_prealloc,
         )
-        selected_info = selected_build_info()
-        selected_build = selected_build_from_discovery(discovery)
+        selected_info = selected_build_info() if implementation != "jax" else {}
+        selected_build = selected_build_from_discovery(discovery) if implementation != "jax" else None
         if implementation == "jax":
             available, reason = build_implementation_capability(
                 "", "jax", jax_profile=jax_profile
@@ -1506,6 +1511,7 @@ def register_compile_callbacks(app):
     @app.callback(
         Output("compile-discovery", "data"),
         Input("compile-refresh", "n_clicks"),
+        prevent_initial_call=True,
     )
     def refresh_discovery(_n_clicks):
         return discover_compile_state()

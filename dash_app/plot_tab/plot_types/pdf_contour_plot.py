@@ -22,6 +22,9 @@ from utilities.sam_3d_reference import (
     load_snapshot,
 )
 
+from dash_app.plot_tab.async_callbacks import task_callback
+from dash_app.plot_tab.case_cache import resolve_case_data
+
 from .. import benchmark_overlay
 from . import shared
 from .base_plot import BasePlotType
@@ -2503,15 +2506,19 @@ class PdfContourPlotType(BasePlotType):
             Output(self.height_input_id(ALL), "min"),
             Output(self.height_input_id(ALL), "max"),
             Output(self.height_input_id(ALL), "value"),
+            Output(self.height_input_id(ALL), "step"),
             Input("plots-global-height-range", "value"),
+            Input("plots-case-data", "data"),
             State(self.height_input_id(ALL), "value"),
             prevent_initial_call=True,
         )
-        def constrain_pdf_height_controls(global_height_range, local_heights):
+        def constrain_pdf_height_controls(global_height_range, case_data, local_heights):
             """Keep local contour heights inside the global plot-height selection."""
-            return constrained_pdf_heights(global_height_range, local_heights)
+            step = max(float((case_data or {}).get("height_step") or 1.0), 1.0e-6)
+            return (*constrained_pdf_heights(global_height_range, local_heights),
+                    [step] * len(local_heights or []))
 
-        @app.callback(
+        @task_callback(app, self.plot_type_id,
             Output(self.graph_id(MATCH), "figure"),
             Output(self.render_signal_id(MATCH), "children"),
             Input(self.var_input_id(MATCH), "value"),
@@ -2545,6 +2552,7 @@ class PdfContourPlotType(BasePlotType):
             size_store_value,
             relayout_data,
         ):
+            case_data = resolve_case_data(case_data)
             size_value = shared.normalize_plot_size(size_store_value or "large")
             active_time = shared.resolve_active_time_values(case_data, time_range, time_point, time_override)
             signal = int(active_time["start_seconds"]) if active_time["start_seconds"] is not None else ""

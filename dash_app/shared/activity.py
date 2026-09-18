@@ -7,6 +7,7 @@ import hashlib
 import json
 import time
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
@@ -138,11 +139,16 @@ def _locked_state() -> Iterator[dict[str, Any]]:
         except OSError:
             pass
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        exists = ACTIVITY_PATH.is_file()
         state = _read_state()
+        original = deepcopy(state)
         try:
             yield state
         finally:
-            atomic_write_json(ACTIVITY_PATH, state)
+            # Idle handoff polls and duplicate acknowledgments are reads, not
+            # changes: avoid a temporary file, fsync, and rename every tick.
+            if not exists or state != original:
+                atomic_write_json(ACTIVITY_PATH, state)
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 

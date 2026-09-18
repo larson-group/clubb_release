@@ -14,17 +14,17 @@ def subtab_page_value(subtab: SubtabSpec) -> str:
     return subtab.page_value or f"misc-{subtab.slug}"
 
 
-def build_layout(subtabs: Sequence[SubtabSpec] | None = None):
+def build_layout(subtabs: Sequence[SubtabSpec] | None = None, *, lazy=None):
     """Build the persistent left-side page rail for miscellaneous tools."""
     specs = tuple(subtabs) if subtabs is not None else discover_subtabs()
     first_value = subtab_page_value(specs[0]) if specs else "misc-empty"
     pages = [
-        dcc.Tab(
+        (lazy.tab if lazy is not None else dcc.Tab)(
             label=subtab.title,
             value=subtab_page_value(subtab),
             className="misc-directory-card",
             selected_className="misc-directory-card-selected",
-            children=subtab.build_layout(),
+            **({"build": subtab.build_layout} if lazy is not None else {"children": subtab.build_layout()}),
         )
         for subtab in specs
     ]

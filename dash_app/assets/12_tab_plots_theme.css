@@ -31,14 +31,6 @@
   font-size: .76rem;
 }
 
-.plots-output-pending-warning {
-  min-height: 1.1rem;
-  margin-top: 8px;
-  color: #f59e0b;
-  font-size: .78rem;
-  font-weight: 700;
-}
-
 .plots-output-menu {
   position: relative;
   z-index: 1001;
@@ -1075,4 +1067,24 @@ body.plots-ui-dragging * {
 
 @media (max-width: 680px) {
   #app-root .pdf-compact-slider { width: 100%; min-width: 0; flex: 1 1 100%; }
+}
+
+/* Keep the current figure visible while its replacement is prepared. */
+.plots-load-message:empty,
+#plots-load-status:empty,
+#plots-param-status:empty,
+#plots-catalog-status:empty {
+    display: none;
+}
+.plots-load-message,
+#plots-load-status,
+#plots-param-status,
+#plots-catalog-status {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    padding: 0.25rem 0;
+}
+.plots-param-panel--loading {
+    pointer-events: none;
+    opacity: 0.5;
 }

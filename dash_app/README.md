@@ -99,6 +99,14 @@ python3 dash_app/app.py
 Use `python3 dash_app/app.py --help` for host, port, debug, and threading options.
 Dash serializes ordinary callbacks to protect NetCDF/HDF5 access; use
 `--threaded` only for diagnostics on a stack known to be thread-safe.
+`-debug` enables developer tools and reloading without changing that threading
+default. Leave it off when comparing interaction performance.
+
+Pages load on their first visit and retain their state when you switch tabs.
+Tutorial lessons and Misc tools initialize individually; Compile, Run, Profile,
+and Tune initialize together because they share the build selector. Unvisited
+pages do not scan outputs or generate figures during startup. Saved tab and
+control selections still restore on refresh.
 
 The launcher supervises Dash and attempts recovery after a crash. Lifecycle
 and broker details are in the
@@ -110,6 +118,7 @@ Use **Profile** to choose a case, process counts, batch sizes, and repetitions.
 Results appear after each measured repetition; warmups are excluded from the
 default plots. Saved profiles can be overlaid, compared with a baseline, or
 viewed as process distributions and exclusive-cost decompositions.
+JAX does not yet emit the native timer files required by Profile.
 
 Reusing a profile name asks for confirmation before replacing the existing
 profile. **Export selected** downloads complete profiles as a ZIP; **Import**
@@ -117,6 +126,16 @@ loads those ZIPs on another machine or checkout. Profiles include run and build
 metadata so Dash can flag potentially incomparable results. Storage and update
 details are documented in the
 [development notes](./DEVELOPMENT.md#profile-results).
+
+### Plot loading
+
+The output chooser discovers folders when Plots first loads, when opened, or
+when **Refresh outputs** is clicked. Adding and removing folders updates the
+selection immediately; metadata and figures load in background workers.
+Existing figures stay visible with an updating label until replacements are
+ready. Rapid changes apply only the latest selection. The selected case, plot
+cards, and view controls survive a browser refresh; older saved workspaces
+migrate automatically.
 
 ### JULY_2017 statistics vs. 3-D recreation viewer
 
