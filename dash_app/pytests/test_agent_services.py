@@ -33,6 +33,49 @@ def isolate_broker_activity(tmp_path, monkeypatch):
     activity.reset_activity()
 
 
+def test_jax_build_identity_tracks_repository_runtime_not_fortran_install(tmp_path, monkeypatch):
+    import platform
+
+    from dash_app.shared import actions
+
+    jax_root = tmp_path / "clubb_jax"
+    (jax_root / "src").mkdir(parents=True)
+    wrapper = jax_root / "run_jax.py"
+    driver = jax_root / "src" / "clubb_standalone.py"
+    requirements = jax_root / (
+        "requirements-metal.txt"
+        if platform.system() == "Darwin"
+        else "requirements-cuda13.txt"
+    )
+    wrapper.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    driver.write_text("def main(): pass\n", encoding="utf-8")
+    requirements.write_text("jax GPU requirements\n", encoding="utf-8")
+    monkeypatch.setattr(actions, "REPO_ROOT", tmp_path)
+    monkeypatch.setenv("CLUBB_JAX_ACCELERATOR", "cpu")
+    monkeypatch.setenv("CLUBB_JAX_PRECISION", "single")
+
+    identity = actions._scm_build_identity(
+        {
+            "implementation": "jax",
+            "jax_profile": "gpu",
+            "install_dir": str(tmp_path / "install" / "selected"),
+        }
+    )
+
+    assert identity["implementation"] == "jax"
+    assert identity["runtime"] == "repository-managed"
+    assert identity["install_directory"] is None
+    assert identity["executable"]["path"] == str(wrapper)
+    assert identity["driver"]["path"] == str(driver)
+    assert identity["requirements"]["path"] == str(requirements)
+    assert identity["precision"] == "single"
+    assert identity["profile"] == "gpu"
+    assert identity["accelerator"] == (
+        "metal" if platform.system() == "Darwin" else "cuda13"
+    )
+    assert identity["driver"]["sha256"]
+
+
 def _concurrent_job_submit(path, start, results):
     """Process target used to prove the persistent request lock, not threads."""
     store = JobStore(Path(path))
@@ -87,6 +130,19 @@ def test_strict_public_scm_request_rejects_paths_and_unknown_fields():
             case="arm",
             run_options={"max_iters": 0},
         )
+    with pytest.raises(ValidationError):
+        ScmRunRequest(
+            request_id="request-123",
+            case="arm",
+            implementation="numpy",
+        )
+    with pytest.raises(ValidationError):
+        ScmRunRequest(
+            request_id="request-123",
+            case="arm",
+            implementation="jax",
+            jax_profile="tpu",
+        )
 
 
 def test_strict_public_scm_batch_request_rejects_duplicate_cases_and_paths():
@@ -109,7 +165,10 @@ def test_mcp_output_dir_stays_below_repository_output_root(tmp_path, monkeypatch
         actions._resolve_mcp_output_dir(str(tmp_path / "outside"))
 
 
-def test_scm_batch_submission_uses_one_flat_output_and_is_idempotent(tmp_path, monkeypatch):
+@pytest.mark.parametrize("profile,gpu,prealloc", [("cpu", "", None),
+    ("gpu", "GPU-aaaaaaaa-1111-2222-3333-000000000001", False),
+    ("gpu", "GPU-aaaaaaaa-1111-2222-3333-000000000001", True)])
+def test_scm_batch_submission_uses_one_flat_output_and_is_idempotent(tmp_path, monkeypatch, profile, gpu, prealloc):
     from dash_app.shared import actions
 
     store = JobStore(tmp_path / "jobs.json")
@@ -118,6 +177,10 @@ def test_scm_batch_submission_uses_one_flat_output_and_is_idempotent(tmp_path, m
 
     def fake_launch(case, stats, config, overrides, cli_options, *, job_id, run_id, batch_job_id):
         assert (tmp_path / "agent_artifacts" / job_id / "manifest.json").is_file()
+        assert cli_options["implementation"] == "jax"
+        assert cli_options["jax_profile"] == profile
+        assert cli_options["jax_gpu"] == gpu
+        assert cli_options["jax_xla_prealloc"] is prealloc
         output_dir = cli_options["out_dir"]
         Path(output_dir, f"{case}_stats.nc").write_bytes(b"CDF\x01batch-run")
         calls.append((case, output_dir, job_id, run_id, batch_job_id))
@@ -137,7 +200,15 @@ def test_scm_batch_submission_uses_one_flat_output_and_is_idempotent(tmp_path, m
     monkeypatch.setattr(actions, "broker_jobs", lambda: {"runs": {}})
     monkeypatch.setattr(actions, "_ensure_scm_batch_watcher", lambda _job_id: None)
 
-    request = ScmRunBatchRequest(request_id="batch-request-123", cases=["arm", "bomex"], max_workers=2)
+    request = ScmRunBatchRequest(
+        request_id="batch-request-123",
+        cases=["arm", "bomex"],
+        implementation="jax",
+        jax_profile=profile,
+        jax_gpu=gpu,
+        jax_xla_prealloc=prealloc,
+        max_workers=2,
+    )
     first = actions.submit_scm_batch(request)
     assert calls == []
     actions._start_queued_scm_batch_children(first["job_id"])
@@ -155,6 +226,8 @@ def test_scm_batch_submission_uses_one_flat_output_and_is_idempotent(tmp_path, m
     assert not (output_directory / "batch_manifest.json").exists()
     manifest = artifacts.get_manifest(first["job_id"])
     assert manifest["batch_id"] == first["batch_id"]
+    assert manifest["job"]["build_identity"]["implementation"] == "jax"
+    assert manifest["job"]["build_identity"]["install_directory"] is None
     assert first["accepted_cases"] == ["arm", "bomex"]
     assert first["skipped_cases"] == []
     with pytest.raises(ValidationError):
@@ -815,6 +888,12 @@ def test_mcp_exposes_closed_world_typed_tools_and_annotations():
     assert by_name["list_plots"].annotations.readOnlyHint is True
     schema = by_name["submit_scm_run"].inputSchema
     assert schema["$defs"]["ScmRunRequest"]["additionalProperties"] is False
+    assert set(schema["$defs"]["ScmRunRequest"]["properties"]["implementation"]["enum"]) == {
+        "fortran", "python", "jax"
+    }
+    assert set(schema["$defs"]["ScmRunRequest"]["properties"]["jax_profile"]["enum"]) == {
+        "cpu", "gpu"
+    }
     batch_schema = by_name["submit_scm_batch"].inputSchema
     assert batch_schema["$defs"]["ScmRunBatchRequest"]["additionalProperties"] is False
     compile_schema = by_name["submit_compile"].inputSchema["$defs"]["CompileRequest"]

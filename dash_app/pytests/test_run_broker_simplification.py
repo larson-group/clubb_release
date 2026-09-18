@@ -1,4 +1,5 @@
 import base64
+import shlex
 import threading
 from pathlib import Path
 
@@ -8,6 +9,7 @@ import pytest
 from dash_app import app as dashboard_app
 from dash_app.services.jobs import ArtifactStore, JobStore
 from dash_app.services.models import ScmRunBatchRequest
+from dash_app.run_tab.telemetry import scm_run_view
 from dash_app.shared import actions, activity
 
 
@@ -37,6 +39,40 @@ def _set_runtime(store, child, *, pid, log):
         state="running",
         runtime={"proc_data": {"pid": pid, "log": str(log), "start_time": 10}},
     )
+
+
+@pytest.mark.parametrize("profile,prealloc", [("cpu", None), ("gpu", False), ("gpu", True)])
+def test_api_jax_batch_copy_commands_preserve_launch_target(tmp_path, monkeypatch, profile, prealloc):
+    _isolated_activity(tmp_path, monkeypatch)
+    store = _isolated_batch_services(tmp_path, monkeypatch)
+    gpu = "GPU-aaaaaaaa-1111-2222-3333-000000000001" if profile == "gpu" else ""
+    request = ScmRunBatchRequest(
+        request_id="jax-copy-command-audit",
+        cases=["arm", "bomex"],
+        implementation="jax",
+        jax_profile=profile,
+        jax_gpu=gpu,
+        jax_xla_prealloc=prealloc,
+        run_options={"max_iters": 1},
+    )
+    batch = actions.submit_scm_batch(request)
+    for child in batch["children"]:
+        for state in ("queued", "running", "finished"):
+            if state != "queued":
+                store.update(child["job_id"], state=state, runtime={"cli_options": {
+                    "implementation": "jax", "jax_profile": profile,
+                    "jax_gpu": gpu, "jax_xla_prealloc": prealloc, "max_iters": 1,
+                }})
+            command = shlex.split(scm_run_view(store.get(child["job_id"]))["command"])
+            modifier = ",xla_prealloc" if prealloc else ""
+            assert f"-jax={profile}{modifier}" in command
+            assert command[command.index("-max_iters") + 1] == "1"
+            assert command[-1] == child["case"]
+            if gpu:
+                assert f"CUDA_VISIBLE_DEVICES={gpu}" in command
+                assert f"XLA_PYTHON_CLIENT_PREALLOCATE={str(prealloc).lower()}" in command
+            else:
+                assert not any(part.startswith("CUDA_VISIBLE_DEVICES=") for part in command)
 
 
 def _native_output_resolver(root):

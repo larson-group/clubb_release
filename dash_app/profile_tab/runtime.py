@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import psutil
+from dash_app.shared.jax_device import jax_device_env, normalize_jax_gpu, jax_command_display
 
 from utilities.time_clubb import REQUIRED_TIMER, parse_positive_int_list
 from utilities.timing_profiles import (
@@ -125,6 +126,13 @@ def normalize_profile_settings(settings: dict[str, Any]) -> dict[str, Any]:
     implementation = _clean(settings.get("implementation")).lower() or "fortran"
     if implementation not in {"fortran", "python", "jax"}:
         raise ValueError("implementation must be Fortran, Python, or JAX")
+    jax_profile = _clean(settings.get("jax_profile")).lower() or "cpu"
+    if jax_profile not in {"cpu", "gpu"}:
+        raise ValueError("JAX profile must be CPU or GPU")
+    jax_gpu = normalize_jax_gpu(settings.get("jax_gpu"))
+    jax_xla_prealloc = settings.get("jax_xla_prealloc")
+    jax_device_env({"implementation": implementation, "jax_profile": jax_profile,
+                    "jax_gpu": jax_gpu, "jax_xla_prealloc": jax_xla_prealloc}, {})
     if executable and implementation != "fortran":
         raise ValueError("an explicit executable can only be used with Fortran")
     executable_path = Path(executable).expanduser() if executable else None
@@ -166,6 +174,9 @@ def normalize_profile_settings(settings: dict[str, Any]) -> dict[str, Any]:
         "override": _clean(settings.get("override")),
         "executable": str(executable_path.resolve()) if executable_path is not None else "",
         "implementation": implementation,
+        "jax_profile": jax_profile,
+        "jax_gpu": jax_gpu,
+        "jax_xla_prealloc": jax_xla_prealloc,
         "install_dir": str(install_path.resolve()) if install_path is not None else "",
         "extra_args": extra_args,
     }
@@ -208,15 +219,20 @@ def profile_command(settings: dict[str, Any]) -> list[str]:
         if normalized["implementation"] == "python":
             command.append("-python")
         elif normalized["implementation"] == "jax":
-            command.append("-jax")
-    if normalized["install_dir"] and not normalized["executable"]:
+            modifier = ",xla_prealloc" if normalized["jax_xla_prealloc"] is True else ""
+            command.append(f"-jax={normalized['jax_profile']}{modifier}")
+    if (
+        normalized["install_dir"]
+        and not normalized["executable"]
+        and normalized["implementation"] != "jax"
+    ):
         command.extend(("-install_dir", normalized["install_dir"]))
     command.extend(normalized["extra_args"])
     return command
 
 
 def profile_command_display(settings: dict[str, Any]) -> str:
-    return shlex.join(profile_command(settings))
+    return jax_command_display(profile_command(settings), settings)
 
 
 def summary_run_ids(output_dir: Path) -> list[str]:
@@ -289,7 +305,7 @@ def start_profile_process(settings: dict[str, Any]) -> dict[str, Any]:
         process = subprocess.Popen(
             command,
             cwd=REPO_ROOT,
-            env=os.environ.copy(),
+            env=jax_device_env(normalized),
             stdout=log_file,
             stderr=subprocess.STDOUT,
             start_new_session=True,
@@ -307,7 +323,7 @@ def start_profile_process(settings: dict[str, Any]) -> dict[str, Any]:
         "start_time": time.time(),
         "settings": normalized,
         "command": command,
-        "command_display": shlex.join(command),
+        "command_display": jax_command_display(command, normalized),
         "output": normalized["output"],
         "log": log_path,
         "existing_run_ids": existing_run_ids,

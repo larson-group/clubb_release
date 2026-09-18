@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import shlex
 import signal
@@ -147,6 +148,7 @@ from dash_app.services import (
 )
 from dash_app.services import profiles as profile_service
 from dash_app.shared.provenance import sha256_file, source_provenance
+from dash_app.shared.jax_device import jax_device_env
 from dash_app.shared.runtime import (
     atomic_write_json,
     exclusive_file_lock,
@@ -1217,6 +1219,7 @@ def _canonical_scm_request(request: ScmRunRequest) -> tuple[ScmRunRequest, dict[
     """
     from dash_app.run_tab.namelist import is_bool_value, is_true, read_namelist_entries
 
+    jax_device_env(request.model_dump(), {})
     config = _valid_tune_config(request.config)
     flag_entries = read_namelist_entries(tunable_config_file(config, "configurable_model_flags.in"))
     parameter_entries = read_namelist_entries(tunable_config_file(config, "tunable_parameters.in"))
@@ -1257,13 +1260,15 @@ def _normalize_dashboard_cli_options(cli_options: dict[str, Any] | None) -> dict
     raw = dict(cli_options or {})
     allowed = {
         "multicol", "batch_size", "max_iters", "debug", "dt_main", "dt_rad",
-        "tout", "out_dir", "extra_args", "implementation", "install_dir",
+        "tout", "out_dir", "extra_args", "implementation", "install_dir", "jax_profile", "jax_gpu", "jax_xla_prealloc",
     }
     unknown = sorted(set(raw) - allowed)
     if unknown:
         raise ValueError("unsupported run option(s): " + ", ".join(unknown))
     normalized: dict[str, Any] = {}
-    for key in allowed - {"extra_args"}:
+    if raw.get("jax_xla_prealloc") is not None:
+        normalized["jax_xla_prealloc"] = raw["jax_xla_prealloc"]
+    for key in allowed - {"extra_args", "jax_xla_prealloc"}:
         if key not in raw or raw[key] in {None, ""}:
             continue
         value = str(raw[key]).strip()
@@ -1275,6 +1280,16 @@ def _normalize_dashboard_cli_options(cli_options: dict[str, Any] | None) -> dict
         raise ValueError("implementation must be fortran, python, or jax")
     if "implementation" in normalized:
         normalized["implementation"] = implementation
+    if normalized.get("jax_profile"):
+        jax_profile = normalized["jax_profile"].lower()
+        if implementation != "jax":
+            raise ValueError("jax_profile requires the JAX implementation")
+        if jax_profile not in {"cpu", "gpu"}:
+            raise ValueError("JAX profile must be cpu or gpu")
+        normalized["jax_profile"] = jax_profile
+    jax_device_env(normalized, {})
+    if implementation == "jax":
+        normalized.pop("install_dir", None)
     if normalized.get("install_dir"):
         install_dir = Path(normalized["install_dir"]).expanduser().resolve()
         install_root = (REPO_ROOT / "install").resolve()
@@ -1338,7 +1353,7 @@ def _run_manifest_inputs(
 
 
 def _scm_build_identity(cli_options: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Capture the exact compiled executable selected by ``run_scm.py``.
+    """Capture the exact implementation selected by ``run_scm.py``.
 
     The regular SCM runner resolves ``install/selected`` before
     ``install/latest``.  Storing its resolved path and digest makes a later
@@ -1346,6 +1361,68 @@ def _scm_build_identity(cli_options: dict[str, Any] | None = None) -> dict[str, 
     """
     options = dict(cli_options or {})
     implementation = str(options.get("implementation") or "fortran").lower()
+    if implementation == "jax":
+        jax_root = REPO_ROOT / "clubb_jax"
+        requested_profile = str(options.get("jax_profile") or "").strip().lower()
+        if requested_profile:
+            profile = requested_profile
+            accelerator = (
+                "metal" if profile == "gpu" and platform.system() == "Darwin"
+                else "cuda13" if profile == "gpu"
+                else "cpu"
+            )
+        else:
+            accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").strip().lower()
+            profile = "gpu" if accelerator in {"cuda13", "metal"} else "cpu"
+        default_precision = "single" if accelerator == "metal" else "double"
+        precision_value = os.environ.get(
+            "CLUBB_JAX_PRECISION", default_precision
+        ).strip().lower()
+        precision = (
+            "single"
+            if precision_value in {"single", "float32", "f32", "32", "real4", "sp"}
+            else "double"
+        )
+        wrapper = jax_root / "run_jax.py"
+        driver = jax_root / "src" / "clubb_standalone.py"
+        requirements = jax_root / (
+            "requirements-cuda13.txt"
+            if accelerator == "cuda13"
+            else "requirements-metal.txt"
+            if accelerator == "metal"
+            else "requirements.txt"
+        )
+
+        def source_identity(path: Path) -> dict[str, Any]:
+            return {
+                "path": str(path),
+                "sha256": sha256_file(path),
+                "bytes": path.stat().st_size if path.is_file() else None,
+            }
+
+        return {
+            "install_selector": None,
+            "install_directory": None,
+            "implementation": "jax",
+            "runtime": "repository-managed",
+            "profile": profile,
+            "executable": source_identity(wrapper),
+            "launcher": source_identity(wrapper),
+            "driver": source_identity(driver),
+            "requirements": source_identity(requirements),
+            "environment": {
+                "CUDA_VISIBLE_DEVICES": options.get("jax_gpu") or os.environ.get("CUDA_VISIBLE_DEVICES", ""),
+                "CLUBB_JAX_ACCELERATOR": accelerator,
+                "CLUBB_JAX_PRECISION": precision_value or default_precision,
+                "CLUBB_JAX_VENV": os.environ.get("CLUBB_JAX_VENV", ""),
+                "CLUBB_JAX_TOOLS_DIR": os.environ.get("CLUBB_JAX_TOOLS_DIR", ""),
+                "XLA_PYTHON_CLIENT_PREALLOCATE": jax_device_env(options).get(
+                    "XLA_PYTHON_CLIENT_PREALLOCATE", "false"),
+            },
+            "precision": precision,
+            "accelerator": accelerator,
+        }
+
     selected = REPO_ROOT / "install" / "selected"
     latest = REPO_ROOT / "install" / "latest"
     install = Path(options["install_dir"]) if options.get("install_dir") else (
@@ -1486,11 +1563,14 @@ def _start_scm_submission(
             manifest_path=str(manifest),
             batch_job_id=batch_job_id,
         )
-        cli_options = dict(
-            native_cli_options
-            if native_cli_options is not None
-            else request.run_options.model_dump(exclude_none=True)
-        )
+        cli_options = request.run_options.model_dump(exclude_none=True)
+        if native_cli_options is not None:
+            cli_options.update(native_cli_options)
+        cli_options.setdefault("implementation", request.implementation)
+        if request.implementation == "jax":
+            cli_options.setdefault("jax_profile", request.jax_profile)
+            cli_options.setdefault("jax_gpu", request.jax_gpu)
+            cli_options.setdefault("jax_xla_prealloc", request.jax_xla_prealloc)
         if native_overrides is None:
             override_text = _typed_override_text(request.overrides)
             if override_text:
@@ -1551,6 +1631,10 @@ def _canonical_scm_batch_request(request: ScmRunBatchRequest) -> tuple[ScmRunBat
     representative = ScmRunRequest(
         request_id="canonical-scm-batch",
         case=cases[0],
+        implementation=request.implementation,
+        jax_profile=request.jax_profile,
+        jax_gpu=request.jax_gpu,
+        jax_xla_prealloc=request.jax_xla_prealloc,
         stats_file=request.stats_file,
         config=request.config,
         overrides=request.overrides,
@@ -1573,6 +1657,10 @@ def _batch_child_request(request: ScmRunBatchRequest, parent: dict[str, Any], ca
     return ScmRunRequest(
         request_id=f"{parent['job_id']}-{case}",
         case=case,
+        implementation=request.implementation,
+        jax_profile=request.jax_profile,
+        jax_gpu=request.jax_gpu,
+        jax_xla_prealloc=request.jax_xla_prealloc,
         stats_file=request.stats_file,
         config=request.config,
         overrides=request.overrides,
@@ -1720,7 +1808,15 @@ def submit_scm_batch(
     submission_origin = str(origin or "unknown")[:32]
     submission_visibility = "internal" if visibility == "internal" else "user"
     common_inputs = _run_common_manifest_inputs(request.stats_file, request.config)
-    build_identity = _scm_build_identity(normalized_native_cli_options)
+    build_identity = _scm_build_identity(
+        normalized_native_cli_options
+        or {
+            "implementation": request.implementation,
+            "jax_profile": request.jax_profile,
+            "jax_gpu": request.jax_gpu,
+            "jax_xla_prealloc": request.jax_xla_prealloc,
+        }
+    )
 
     def create_batch(transaction):
         parent, created = transaction.submit("scm_batch", request.request_id, payload)
@@ -1855,6 +1951,10 @@ def submit_scm_run(
     batch_request = ScmRunBatchRequest(
         request_id=request.request_id,
         cases=[request.case],
+        implementation=request.implementation,
+        jax_profile=request.jax_profile,
+        jax_gpu=request.jax_gpu,
+        jax_xla_prealloc=request.jax_xla_prealloc,
         stats_file=request.stats_file,
         config=request.config,
         overrides=request.overrides,

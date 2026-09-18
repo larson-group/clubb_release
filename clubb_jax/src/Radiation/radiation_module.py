@@ -37,7 +37,10 @@ configure_jax_precision()
 
 @partial(
     jax.jit,
-    static_argnames=("ngrdcol", "hydromet_dim", "pdf_dim", "lh_num_samples", "day", "month", "year"),
+    static_argnames=(
+        "ngrdcol", "hydromet_dim", "pdf_dim", "lh_num_samples",
+        "l_rad_itime", "day", "month", "year",
+    ),
 )
 def advance_clubb_radiation(
     gr, ngrdcol, hydromet_dim, pdf_dim, lh_num_samples,
@@ -62,6 +65,8 @@ def advance_clubb_radiation(
     Returns the Fortran ``stats`` and ``err_info`` inout values, followed by
     soil/vegetation inout values, ``radht``, and explicit radiation-module
     arrays in the same order as their source ownership.
+
+    ``l_rad_itime`` is a static Boolean supplied by the host timestep schedule.
     """
     # ------------------------ Input Variables ------------------------
 
@@ -85,34 +90,24 @@ def advance_clubb_radiation(
             deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,
         )
 
-    # JAX adaptation: ``lax.cond`` requires branch callables for the source
-    # ``if ( l_rad_itime )`` block and its retained module-output values.
     # Only advance radiation if l_rad_itime is true.
-    def advance(_):
+    if l_rad_itime:
         # Advance a radiation scheme
         # With this call ordering, snow and ice water mixing ratio will be
         # updated by the microphysics, but thlm and rtm will not.  This
         # somewhat inconsistent, but we would need to move the call to
         # radiation before the call the microphysics to change this.
         # -dschanen 17 Aug 2009
-        return radiation_driver(
+        (
+            stats, err_info, radht, Frad, Frad_SW_up, Frad_LW_up,
+            Frad_SW_down, Frad_LW_down, radht_SW, radht_LW, Frad_SW, Frad_LW,
+        ) = radiation_driver(
             gr, time_current, time_initial, hydromet_dim,
             ngrdcol, day, month, year, lat_vals, lon_vals,
             rho, rho_zm, p_in_Pa, exner, cloud_frac, ice_supersat_frac,
             thlm, rtm, rcm, hydromet, hm_metadata, stats, err_info,
             radiation_parameters,
         )
-
-    def retain(_):
-        return (
-            stats, err_info, radht, Frad, Frad_SW_up, Frad_LW_up,
-            Frad_SW_down, Frad_LW_down, radht_SW, radht_LW, Frad_SW, Frad_LW,
-        )
-
-    (
-        stats, err_info, radht, Frad, Frad_SW_up, Frad_LW_up,
-        Frad_SW_down, Frad_LW_down, radht_SW, radht_LW, Frad_SW, Frad_LW,
-    ) = jax.lax.cond(l_rad_itime, advance, retain, operand=None)
 
     # We update stats here each sample timestep - even if radiation is not advanced
     stats = update_radiation_variables(

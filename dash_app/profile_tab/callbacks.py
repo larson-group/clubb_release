@@ -59,7 +59,10 @@ PROFILE_OVERWRITE_OPEN = "profile-overwrite-modal"
 PROFILE_OVERWRITE_CLOSED = "profile-overwrite-modal profile-overwrite-modal-hidden"
 
 
-def collect_profile_settings(values: list[Any], implementation: Any = None) -> dict[str, Any]:
+def collect_profile_settings(
+    values: list[Any], implementation: Any = None, jax_profile: Any = None, jax_gpu: Any = None,
+    jax_xla_prealloc: bool | None = None,
+) -> dict[str, Any]:
     mapped = dict(zip(SETTING_STATE_IDS, values))
     settings = {
         "case_name": mapped.get("profile-case"),
@@ -77,7 +80,10 @@ def collect_profile_settings(values: list[Any], implementation: Any = None) -> d
         "extra_args": mapped.get("profile-extra-args"),
     }
     if implementation is not None:
-        settings.update(selected_launch_target(implementation))
+        settings.update(
+            selected_launch_target(implementation, jax_profile=jax_profile, jax_gpu=jax_gpu,
+                                   jax_xla_prealloc=jax_xla_prealloc)
+        )
     return settings
 
 
@@ -432,6 +438,9 @@ def register_profile_callbacks(app) -> None:
         Input("profile-overwrite-cancel-button", "n_clicks"),
         *_setting_states(),
         State("compile-run-implementation", "data"),
+        State("compile-run-jax-profile", "data"),
+        State("compile-run-jax-gpu", "data"),
+        State("compile-run-jax-xla-prealloc", "data"),
         State("profile-pending-run", "data"),
         State("profile-overwrite-name", "value"),
         prevent_initial_call=True,
@@ -445,13 +454,18 @@ def register_profile_callbacks(app) -> None:
         *values,
     ):
         trigger = callback_context.triggered_id
-        setting_values = values[:-3]
-        implementation = values[-3]
+        setting_values = values[:-6]
+        implementation = values[-6]
+        jax_profile = values[-5]
+        jax_gpu = values[-4]
+        jax_xla_prealloc = values[-3]
         pending = dict(values[-2] or {})
         proposed_name = str(values[-1] or "").strip()
         if trigger == "profile-start" and start_clicks:
             try:
-                settings = collect_profile_settings(list(setting_values), implementation)
+                settings = collect_profile_settings(
+                    list(setting_values), implementation, jax_profile, jax_gpu, jax_xla_prealloc
+                )
                 profile_command_display(settings)
                 confirmation = overwrite_confirmation(settings)
                 if confirmation:
@@ -587,11 +601,16 @@ def register_profile_callbacks(app) -> None:
         Output("profile-command-preview", "children"),
         *[Input(component_id, "value") for component_id in SETTING_STATE_IDS],
         Input("compile-run-implementation", "data"),
+        Input("compile-run-jax-profile", "data"),
+        Input("compile-run-jax-gpu", "data"),
+        Input("compile-run-jax-xla-prealloc", "data"),
     )
     def update_command_preview(*values):
         try:
             return profile_command_display(
-                collect_profile_settings(list(values[:-1]), values[-1])
+                collect_profile_settings(
+                    list(values[:-4]), values[-4], values[-3], values[-2], values[-1]
+                )
             )
         except ValueError as exc:
             return f"Configuration incomplete: {exc}"

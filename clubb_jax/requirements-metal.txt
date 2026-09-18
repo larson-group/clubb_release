@@ -1,0 +1,8 @@
+# Apple Silicon Metal runtime. jax-metal 0.1.1 is Apple's latest release and
+# is qualified against the JAX/JAXLIB 0.4.34 release line.
+jax==0.4.34
+jaxlib==0.4.34
+jax-metal==0.1.1
+netCDF4~=1.7
+tabulate~=0.10
+pytest>=8,<10

@@ -87,7 +87,7 @@ def advance_clubb_to_end(state: dict, l_stdout: bool = True):
 
         if l_stdout:
             print(f"iteration: {itime:8d} / {ifinal:8d}"
-                  f" -- time = {time_current:10.1f} / {state['time_final']:10.1f}")
+                  f" -- time = {time_current:10.1f} / {state['time_final']:10.1f}", flush=True)
 
 
 def _calculate_thvm(state: dict):

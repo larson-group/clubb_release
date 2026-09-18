@@ -469,6 +469,80 @@ def build_run_action_section():
     )
 
 
+def build_output_overwrite_dialog():
+    """Render the Run output-folder collision decision dialog."""
+    return html.Div(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div("!", className="run-overwrite-icon", **{"aria-hidden": "true"}),
+                        html.Div(
+                            [
+                                html.Div(
+                                    "Output folder already contains files",
+                                    className="run-overwrite-title",
+                                ),
+                                html.Div(
+                                    id="run-overwrite-message",
+                                    className="run-overwrite-message",
+                                ),
+                            ]
+                        ),
+                    ],
+                    className="run-overwrite-heading",
+                ),
+                html.Div(id="run-overwrite-details", className="run-overwrite-details"),
+                html.Label(
+                    "Output folder",
+                    htmlFor="run-overwrite-name",
+                    className="run-overwrite-label",
+                ),
+                dcc.Input(
+                    id="run-overwrite-name",
+                    type="text",
+                    value="",
+                    debounce=False,
+                    className="run-overwrite-input",
+                ),
+                html.Div(
+                    [
+                        html.Button(
+                            "Overwrite",
+                            id="run-overwrite-button",
+                            type="button",
+                            n_clicks=0,
+                            className="run-overwrite-button run-overwrite-button-danger",
+                        ),
+                        html.Button(
+                            "Rename",
+                            id="run-rename-button",
+                            type="button",
+                            n_clicks=0,
+                            disabled=True,
+                            className="run-overwrite-button run-overwrite-button-primary",
+                            title="Enter a different output folder to rename and run.",
+                        ),
+                        html.Button(
+                            "Cancel",
+                            id="run-overwrite-cancel-button",
+                            type="button",
+                            n_clicks=0,
+                            className="run-overwrite-button run-overwrite-button-cancel",
+                        ),
+                    ],
+                    className="run-overwrite-actions",
+                ),
+            ],
+            className="run-overwrite-panel",
+            role="dialog",
+            **{"aria-modal": "true", "aria-labelledby": "run-overwrite-message"},
+        ),
+        id="run-overwrite-modal",
+        className="run-overwrite-modal run-overwrite-modal-hidden",
+    )
+
+
 def build_console_shell(_cases):
     """Render the browser-owned container for broker-discovered runs."""
     return html.Div(
@@ -850,7 +924,9 @@ def build_layout(initial_data):
             dcc.Store(id="run-selected-stats-file", data=initial_data["default_stats_name"]),
             dcc.Store(id="run-resolved-output-dir"),
             dcc.Store(id="run-action-result"),
+            dcc.Store(id="run-pending-request", data={}),
             dcc.Store(id="run-ui-render-signal"),
+            build_output_overwrite_dialog(),
             html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell(initial_data["cases"])], className="run-left-pane"),
             html.Div(id="run-pane-divider", className="run-pane-divider"),
             # The settings pane intentionally grows with its controls.  It is

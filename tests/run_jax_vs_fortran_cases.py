@@ -16,46 +16,11 @@ import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-def _reexec_with_repo_jax_python() -> None:
-    """Initialize and use the repository-local JAX environment."""
-    repo_root = Path(__file__).resolve().parents[1]
-    launcher = repo_root / "clubb_jax" / "run_jax_wrapper.sh"
-    if not launcher.is_file():
-        return
-
-    initialized_env_var = "_CLUBB_JAX_HARNESS_ENV_INITIALIZED"
-    if os.environ.get(initialized_env_var) != "1":
-        init_env = subprocess.run([str(launcher), "--init_env"], check=False)
-        if init_env.returncode != 0:
-            raise SystemExit(init_env.returncode)
-
-    accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").lower()
-    default_venv = ".venv-jax-cuda13" if accelerator == "cuda13" else ".venv-jax"
-    venv_dir = Path(os.environ.get("CLUBB_JAX_VENV", repo_root / default_venv))
-    if not venv_dir.is_absolute():
-        venv_dir = repo_root / venv_dir
-    venv_python = venv_dir / "bin" / "python"
-    if not venv_python.is_file():
-        return
-
-    if Path(sys.executable).absolute() == venv_python.absolute():
-        return
-
-    exec_env = os.environ.copy()
-    exec_env[initialized_env_var] = "1"
-    os.execve(
-        str(venv_python),
-        [str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]],
-        exec_env,
-    )
-
-
-_reexec_with_repo_jax_python()
-
 CLUBB_ROOT = Path(__file__).resolve().parents[1]
 if str(CLUBB_ROOT) not in sys.path:
     sys.path.insert(0, str(CLUBB_ROOT))
 
+from clubb_jax.run_jax import ensure_environment  # noqa: E402
 from utilities.flag_sets import build_override_arg, get_flag_sets, read_flag_settings  # noqa: E402
 
 
@@ -160,39 +125,6 @@ def _run_and_log(cmd: list[str], cwd: Path, log_path: Path) -> int:
         proc = subprocess.run(cmd, cwd=str(cwd), stdout=log, stderr=subprocess.STDOUT)
         log.write(f"\n[exit_code] {proc.returncode}\n")
     return proc.returncode
-
-
-def _check_jax_runtime() -> str | None:
-    """Validate the interpreter before launching every case with it."""
-    accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").lower()
-    probe = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            (
-                "import jax, jaxlib, netCDF4, sys, tabulate; "
-                "backend = jax.default_backend(); "
-                "expected = 'gpu' if sys.argv[1] == 'cuda13' else 'cpu'; "
-                "assert backend == expected, "
-                "f'requested {sys.argv[1]} but JAX initialized {backend}: {jax.devices()}'; "
-                "print(f'jax={jax.__version__} jaxlib={jaxlib.__version__} "
-                "backend={backend} devices={jax.devices()}')"
-            ),
-            accelerator,
-        ],
-        text=True,
-        capture_output=True,
-    )
-    if probe.returncode == 0:
-        return probe.stdout.strip()
-
-    detail = (probe.stderr or probe.stdout).strip()
-    print(f"ERROR: JAX runtime check failed with {sys.executable}:\n{detail}")
-    print(
-        "Create or repair the selected repository JAX environment, or invoke this script with a Python "
-        "environment containing compatible jax and jaxlib packages."
-    )
-    return None
 
 
 def _acquire_run_lock(repo_root: Path):
@@ -403,18 +335,16 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    ensure_environment()
     accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").lower()
-    if accelerator == "cuda13" and args.jobs != 1:
+    if accelerator in {"cuda13", "metal"} and args.jobs != 1:
         print(
             "WARNING: GPU comparison currently runs one case process at a time to avoid "
             "multiple JAX workers contending for the same device; forcing -j 1."
         )
         args.jobs = 1
 
-    jax_runtime = _check_jax_runtime()
-    if jax_runtime is None:
-        return 2
-    print(f"Python runtime: {sys.executable} ({jax_runtime})")
+    print(f"Python runtime: {sys.executable}")
 
     cases = list(args.cases) if args.cases else list(DEFAULT_CASES.keys())
     case_iters = {

@@ -43,7 +43,15 @@ def scm_run_view(record: dict[str, Any]) -> dict[str, Any]:
         display.get("stats_file") or request.get("stats_file") or DEFAULT_STATS_NAME
     )
     config = str(display.get("config") or request.get("config") or "default")
-    cli_options = dict(display.get("cli_options") or runtime.get("cli_options") or {})
+    # Queued API jobs have their launch target in the typed request; older
+    # display records may contain only run_options. Once launched, prefer the
+    # actual runtime options over either submission snapshot.
+    cli_options = dict(request.get("run_options") or {})
+    for key in ("implementation", "jax_profile", "jax_gpu", "jax_xla_prealloc"):
+        if key in request:
+            cli_options[key] = request[key]
+    cli_options.update(display.get("cli_options") or {})
+    cli_options.update(runtime.get("cli_options") or {})
     raw_output_directory = (
         record.get("output_directory")
         or runtime.get("output_directory")

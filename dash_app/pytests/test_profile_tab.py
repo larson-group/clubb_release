@@ -197,7 +197,9 @@ def test_profile_command_covers_timer_and_forwarded_run_settings(tmp_path):
     assert normalize_profile_settings(overwrite_settings)["run_id"] == "CPU_baseline"
 
 
-@pytest.mark.parametrize(("implementation", "flag"), (("python", "-python"), ("jax", "-jax")))
+@pytest.mark.parametrize(
+    ("implementation", "flag"), (("python", "-python"), ("jax", "-jax=cpu"))
+)
 def test_profile_command_selects_implementation_and_install(tmp_path, implementation, flag):
     install = tmp_path / "install"
     install.mkdir()
@@ -207,7 +209,10 @@ def test_profile_command_selects_implementation_and_install(tmp_path, implementa
     command = profile_command(request)
 
     assert flag in command
-    assert command[command.index("-install_dir") + 1] == str(install.resolve())
+    if implementation == "python":
+        assert command[command.index("-install_dir") + 1] == str(install.resolve())
+    else:
+        assert "-install_dir" not in command
 
 
 def test_existing_profile_requires_overwrite_confirmation(tmp_path):
@@ -630,7 +635,7 @@ def test_empty_profile_selection_is_only_defaulted_for_a_new_library():
 def test_only_active_jobs_and_new_import_events_are_preferred():
     action = {"kind": "imported", "run_ids": ["imported"]}
     preferred, replacement = profile_selection_preferences(
-        {"state": "finished", "run_id": "rtx3080"},
+        {"state": "finished", "run_id": "candidate-run"},
         action,
         library_action_triggered=False,
     )
@@ -638,12 +643,12 @@ def test_only_active_jobs_and_new_import_events_are_preferred():
     assert replacement is None
 
     preferred, replacement = profile_selection_preferences(
-        {"state": "running", "run_id": "rtx3080"},
+        {"state": "running", "run_id": "candidate-run"},
         action,
         library_action_triggered=True,
     )
-    assert preferred == ["imported", "rtx3080"]
-    assert replacement == "rtx3080"
+    assert preferred == ["imported", "candidate-run"]
+    assert replacement == "candidate-run"
 
 
 def test_profile_layout_contains_settings_panel_graph_and_lifecycle_controls():

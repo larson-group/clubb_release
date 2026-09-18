@@ -145,7 +145,7 @@ def advance_clubb_to_end(state: dict, l_stdout: bool = True, max_steps: int | No
         time_current = time_initial + itime * dt_main
         if l_stdout:
             print(f"iteration: {itime:8d} / {ifinal:8d}"
-                  f" -- time = {time_current:10.1f} / {state['time_final']:10.1f}")
+                  f" -- time = {time_current:10.1f} / {state['time_final']:10.1f}", flush=True)
 
 
 def _prescribe_forcings(state: dict, time_current):
@@ -452,7 +452,7 @@ def _advance_radiation(
         state['radht_SW'], state['radht_LW'], state['Frad_SW'], state['Frad_LW'],
     ) = advance_clubb_radiation(
         state['gr'], state['ngrdcol'], state['hydromet_dim'], 0, 0,
-        jnp.asarray(l_rad_itime), state['dt_main'], state['day'], state['month'], state['year'],
+        l_rad_itime, state['dt_main'], state['day'], state['month'], state['year'],
         state['lat_vals'], state['lon_vals'], jnp.asarray(time_current), state['time_initial'],
         state['rho'], state['rho_zm'], state['p_in_Pa'], state['exner'],
         state['wpthlp_sfc'], state['wprtp_sfc'], state['p_sfc'],

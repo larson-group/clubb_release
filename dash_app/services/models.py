@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from dash_app.shared.jax_device import GPU_UUID_PATTERN
 
 
 class StrictModel(BaseModel):
@@ -38,6 +39,10 @@ class ScmRunOptions(StrictModel):
 class ScmRunRequest(StrictModel):
     request_id: str = Field(min_length=8, max_length=128)
     case: str = Field(pattern=r"^[A-Za-z0-9_]+$")
+    implementation: Literal["fortran", "python", "jax"] = "fortran"
+    jax_profile: Literal["cpu", "gpu"] = "cpu"
+    jax_gpu: str = Field(default="", pattern=GPU_UUID_PATTERN, description="Full GPU UUID; empty inherits the server environment.")
+    jax_xla_prealloc: bool | None = Field(default=None, strict=True, description="GPU preallocation override; null preserves the launcher default/environment.")
     stats_file: str = "standard_stats.in"
     config: str = Field(default="default", pattern=r"^[A-Za-z0-9_.-]+$")
     overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
@@ -59,6 +64,10 @@ class ScmRunBatchRequest(StrictModel):
 
     request_id: str = Field(min_length=8, max_length=128)
     cases: list[str] = Field(min_length=1, max_length=64)
+    implementation: Literal["fortran", "python", "jax"] = "fortran"
+    jax_profile: Literal["cpu", "gpu"] = "cpu"
+    jax_gpu: str = Field(default="", pattern=GPU_UUID_PATTERN, description="Full GPU UUID; empty inherits the server environment.")
+    jax_xla_prealloc: bool | None = Field(default=None, strict=True, description="GPU preallocation override; null preserves the launcher default/environment.")
     stats_file: str = "standard_stats.in"
     config: str = Field(default="default", pattern=r"^[A-Za-z0-9_.-]+$")
     overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)

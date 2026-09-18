@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import json
 import os
+import platform
+import subprocess
 from pathlib import Path
 from typing import Any
 
 from dash import ALL, Input, Output, dcc, html
+from dash_app.shared.jax_device import jax_device_env, normalize_jax_gpu
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -16,6 +20,53 @@ BUILD_SELECTOR_TRIGGER_IDS = (
     "profile-selected-build-badge",
 )
 RUN_IMPLEMENTATIONS = ("fortran", "python", "jax")
+JAX_PROFILES = ("cpu", "gpu")
+
+
+def inspect_jax_runtime_profiles(repo_root: Path = REPO_ROOT, *, jax_gpu="", jax_xla_prealloc=False) -> dict[str, dict[str, Any]]:
+    """Read profile metadata from the JAX wrapper without preparing an environment."""
+    wrapper = Path(repo_root) / "clubb_jax" / "run_jax.py"
+    profiles: dict[str, dict[str, Any]] = {}
+    if not wrapper.is_file() or not os.access(wrapper, os.X_OK):
+        return profiles
+    for profile in JAX_PROFILES:
+        error = "JAX runtime inspection returned invalid metadata."
+        try:
+            result = subprocess.run(
+                [str(wrapper), f"--profile={profile}", "--info=json"],
+                cwd=repo_root,
+                env=jax_device_env({"implementation": "jax", "jax_profile": profile,
+                                    "jax_xla_prealloc": jax_xla_prealloc if profile == "gpu" else None,
+                                    "jax_gpu": jax_gpu if profile == "gpu" else ""}),
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+            payload = json.loads(result.stdout) if result.returncode == 0 else None
+            if result.returncode != 0:
+                detail = next(iter((result.stderr or result.stdout).strip().splitlines()), "")
+                error = f"JAX runtime inspection failed (exit {result.returncode}). {detail}".strip()
+        except subprocess.TimeoutExpired:
+            payload = None
+            error = "JAX runtime inspection timed out. Reopen the selector to retry."
+        except (OSError, json.JSONDecodeError) as exc:
+            payload = None
+            error = f"JAX runtime inspection failed: {exc}"
+        if (
+            isinstance(payload, dict)
+            and payload.get("schema_version") == 1
+            and payload.get("profile") == profile
+            and payload.get("status")
+            in {"ready", "setup_required", "unavailable", "unknown"}
+            and isinstance(payload.get("selectable"), bool)
+        ):
+            profiles[profile] = payload
+        else:
+            profiles[profile] = {
+                "schema_version": 1, "profile": profile, "status": "unknown",
+                "selectable": False, "reason": error,
+            }
+    return profiles
 
 
 def _cmake_cache(path: Path) -> dict[str, str]:
@@ -104,14 +155,41 @@ def normalize_run_implementation(value: Any) -> str:
     return implementation if implementation in RUN_IMPLEMENTATIONS else "fortran"
 
 
+def normalize_jax_profile(value: Any) -> str:
+    profile = str(value or "cpu").strip().lower()
+    return profile if profile in JAX_PROFILES else "cpu"
+
+
 def build_implementation_capability(
     install_dir: str | Path,
     implementation: str,
     repo_root: Path = REPO_ROOT,
+    *,
+    jax_profile: Any = "cpu",
 ) -> tuple[bool, str]:
-    """Return whether an install can launch one implementation today."""
-    install = Path(install_dir)
+    """Return whether the selected implementation has its required runtime."""
     implementation = normalize_run_implementation(implementation)
+    if implementation == "jax":
+        profile = normalize_jax_profile(jax_profile)
+        jax_root = Path(repo_root) / "clubb_jax"
+        wrapper = jax_root / "run_jax.py"
+        driver = jax_root / "src" / "clubb_standalone.py"
+        requirements = jax_root / (
+            "requirements-metal.txt"
+            if profile == "gpu" and platform.system() == "Darwin"
+            else "requirements-cuda13.txt"
+            if profile == "gpu"
+            else "requirements.txt"
+        )
+        if not driver.is_file():
+            return False, "JAX standalone driver is missing"
+        if not wrapper.is_file() or not os.access(wrapper, os.X_OK):
+            return False, "JAX environment wrapper is missing or not executable"
+        if not requirements.is_file():
+            return False, "JAX requirements file is missing"
+        return True, ""
+
+    install = Path(install_dir)
     if implementation == "fortran":
         available = (install / "clubb_standalone").is_file()
         return available, "" if available else "Installed clubb_standalone is missing"
@@ -129,14 +207,35 @@ def build_implementation_capability(
     python_package = (runtime / "clubb_python").is_dir()
     if not (runtime.is_dir() and extension and backend and python_package):
         return False, "Python runtime is incomplete; rebuild with Python API enabled"
-    if implementation == "jax" and not (Path(repo_root) / "clubb_jax" / "clubb_standalone.py").is_file():
-        return False, "JAX standalone driver is missing"
     return True, ""
 
 
-def selected_launch_target(implementation: Any, repo_root: Path = REPO_ROOT) -> dict[str, str]:
+def selected_launch_target(
+    implementation: Any,
+    repo_root: Path = REPO_ROOT,
+    *,
+    jax_profile: Any = "cpu",
+    jax_gpu: Any = "",
+    jax_xla_prealloc: bool | None = None,
+) -> dict[str, str]:
     """Resolve and validate the implementation/install pair at submission time."""
     implementation = normalize_run_implementation(implementation)
+    if implementation == "jax":
+        profile = normalize_jax_profile(jax_profile)
+        available, reason = build_implementation_capability(
+            "", implementation, repo_root, jax_profile=profile
+        )
+        if not available:
+            raise ValueError(f"JAX cannot start: {reason}")
+        return {
+            "implementation": implementation,
+            "jax_profile": profile,
+            **({"jax_xla_prealloc": jax_xla_prealloc} if profile == "gpu" and jax_xla_prealloc is not None else {}),
+            **({"jax_gpu": normalize_jax_gpu(jax_gpu)} if profile == "gpu" and jax_gpu else {}),
+            "install_dir": "",
+            "build_name": f"{profile.upper()} environment",
+        }
+
     info = selected_build_info(repo_root)
     install_dir = str(info.get("target") or "")
     if not install_dir:
@@ -184,6 +283,15 @@ def build_selector_overlay():
                 data="fortran",
                 storage_type="local",
             ),
+            dcc.Store(
+                id="compile-run-jax-profile",
+                data="cpu",
+                storage_type="local",
+            ),
+            dcc.Store(id="compile-jax-runtime-info", data={}),
+            dcc.Store(id="compile-run-jax-gpu", data="", storage_type="local"),
+            dcc.Store(id="compile-run-jax-xla-prealloc", data=False, storage_type="local"),
+            html.Div(id="compile-build-selector-help", className="compile-selector-help-layer"),
             html.Div(
                 [
                     html.Button(
@@ -198,7 +306,7 @@ def build_selector_overlay():
                         id="compile-build-selector-menu",
                         className="compile-build-selector-menu",
                         role="dialog",
-                        **{"aria-label": "Choose or rebuild a CLUBB build"},
+                        **{"aria-label": "Choose a runtime or rebuild CLUBB"},
                     ),
                 ],
                 id="compile-build-selector-popover",

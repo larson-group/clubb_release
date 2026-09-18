@@ -5,138 +5,120 @@ Run tab for launching CLUBB cases, a Profile tab for configurable process-based
 timing sweeps, and a Plots tab for inspecting CLUBB NetCDF output. The app is
 intended to be run from an existing CLUBB checkout.
 
-The Run, Profile, and Tune action areas each show the effective default CLUBB
-build next to their launch buttons. This read-only badge follows
-`install/selected` (or the same `install/latest` fallback used by
-`run_scm.py`) and updates when the Compile tab selects another build. Hover it
-for the resolved install and CMake paths, Fortran compiler, build type,
-precision, accelerator, OpenMP, and GPTL details. Explicit runner `-exe` or
-`-install_dir` options still override the displayed default.
+## Quick start
 
-The Profile tab is a browser interface to `utilities/time_clubb.py`. Its top
-benchmark panel configures the case, process/per-process-batch-size sweep,
-repetitions, executable, configuration, overrides, and additional
-`run_scm.py` arguments. A direct one-second polling path reads the active
-summary and process rows and renders figures server-side, so results appear
-after each measured repetition while the broker-owned job is running; warmups
-remain hidden. Browser stores retain only compact timer/process choices rather
-than the growing raw timing table. The running row counter and all four figures
-are returned by the same callback response, so visible progress cannot advance
-independently of the plots. Stored profiles can be overlaid, compared with a baseline, or
-viewed as process distributions and exclusive-cost decompositions. The right
-rail has a profile-selection section above a separate set of shared comparison
-controls; plot-specific options remain beside the plot they affect. The
-profile chooser shows the three newest unselected results by default, expands
-to the full library, and displays active comparisons as removable pills. The
-benchmark-label field indicates when its normalized profile name already
-exists. Starting that benchmark asks for confirmation, then replaces the
-existing profile in place instead of creating a timestamped version; any older
-same-label/same-case versions are removed from the active comparison selection.
-
-The selected directory is a collection of compact, directly commit-able
-profile folders. Each benchmark creates `<profile-name>/` containing
-`README.md`, profile-wide `profile.json` provenance, one workload row per
-process-count/batch-size point in `batches.csv`, raw timer observations in
-`timings.csv`, and one representative input/setup/log/native-timing set under
-`logs/<batch-id>/`. Child processes otherwise run in temporary directories,
-which are deleted after each workload is aggregated. Warmups are retained with
-`phase=warmup` but excluded from the default plots. Dash derives statistical
-summaries in memory instead of storing duplicate summary files. **Export
-selected** downloads complete profiles as a ZIP; **Import** accepts those ZIPs
-on another machine or checkout. Provenance includes the effective vertical
-level count, observed model steps, source revision, executable checksum, host,
-timer backend, and time basis so Dash can flag potentially incomparable runs.
-
-## Install
-
-The top-level launcher can create the local virtualenv, install dependencies,
-and start the foreground dashboard manager:
+From the repository root:
 
 ```bash
 ./launch_dashboard.sh
 ```
 
-The manager starts the runtime broker and Dash as child processes. Arguments
-are passed through to `dash_app/app.py`, for example:
+The launcher installs the dashboard dependencies and opens the app in your
+browser, normally at port `23404`. Keep the launching terminal open while using
+the app. Running the command again reopens this checkout's existing dashboard.
 
-```bash
-./launch_dashboard.sh --port 23404 -debug
-```
+To run a case:
 
-If Dash crashes or stops reporting its broker heartbeat, the manager retries it
-every 10 seconds for up to 5 minutes. A successful restart is selected without
-opening another browser tab. If Dash does not recover within that window, the
-manager reports the last failure, gracefully stops broker-owned work, stops the
-broker, and exits nonzero. `SIGINT`, `SIGTERM`, and terminal hangup use the same
-ordered shutdown.
+1. Open **Run** and click the runtime badge beside the launch button to choose
+   Fortran, Python, or JAX.
+2. Prepare the selected implementation: Fortran needs a build from the
+   **Compile** tab or `./compile.py`; Python needs a
+   [Python build](#python-runs-and-tuning). JAX sets up its own environment on
+   first use and needs no Fortran build.
+3. Choose a case and output directory, launch the run, and watch its log.
+4. Open **Plots** to view the output. You can also plot existing NetCDF files
+   without compiling or running anything.
 
-The broker also watches a private manager heartbeat. If the manager is killed
-without a chance to clean up, a replacement launcher can adopt the broker for
-30 seconds. After that grace period, the broker stops the orphaned Dash process
-group and active Compile/Run/Tune work, then exits.
+### Choosing CPU or GPU for JAX
 
-Dash serializes ordinary callbacks by default to protect NetCDF/HDF5 access.
-Explicitly expensive callbacks use isolated background worker processes. Use
-`--threaded` only for short diagnostics on a stack known to be thread-safe.
+In the runtime chooser, select JAX and then the CPU or a compatible GPU tile.
+NVIDIA tiles show the physical GPU index, model, and memory. The chooser
+remembers your preference in this browser. The first run may install the
+selected runtime; a missing or incompatible GPU produces an error.
 
-For manual setup, run this from the repository root:
+A selected GPU is used for all cases in that job; selecting it does not spread
+the cases across multiple GPUs. Leave **Preallocate GPU memory** off for a
+shared NVIDIA GPU. Enable it when you want up-front memory reservation; it is
+unavailable for CPU and Metal. The chooser's **?** button explains the options.
+See the [JAX guide](../clubb_jax/README.md#gpu-running) for
+hardware requirements and command-line equivalents.
 
-```bash
-python3 -m pip install -r dash_app/requirements.txt
-```
+Fortran and Python use the selected compiled build, which you can change or
+rebuild through the chooser. Tune uses its own Fortran/Python worker regardless
+of the JAX selection.
 
-Run the Dash test suite with the same environment:
+## Basic Workflows
 
-```bash
-tests/run_pytests.sh -dash
-```
+- **Run tab:** choose benchmark cases and settings, launch CLUBB, and watch the
+  run output in the browser.
+- **Profile tab:** measure runtime across process counts and batch sizes, then
+  compare saved profiles. See [profiling](#profiling) for details.
+- **Plots tab:** load one or more CLUBB output directories and make profile,
+  time-height, time-series, budget, and subcolumn plots from the NetCDF files.
+- **Tune tab:** configure and monitor tuning runs. This requires a
+  [Python build](#python-runs-and-tuning).
+- **Tutorial tab:** explore CLUBB concepts through interactive lessons,
+  including a guide to the model equations and the ADG1 two-Gaussian explorer.
+- **Reports tab:** browse saved investigation reports from `doc/reports/`,
+  including their figures, data, and provenance.
+- **Misc tab:** open focused diagnostics such as the SAM w–rₜ neighborhood
+  viewer and Mixing Length Trajectories explorer. Setup and implementation
+  notes are in [DEVELOPMENT.md](./DEVELOPMENT.md#misc-subtabs).
 
-Compile CLUBB before using the run tab:
+## Advanced usage
 
-```bash
-./compile.py
-```
+### Python runs and tuning
 
-Plotting existing NetCDF output does not require a fresh compile.
-
-Dash builds the Tune controls from a checked-in, Fortran-validated bound table;
-it does not need the Python/F2PY interface merely to start. Actual Tune jobs
-use CLUBB's in-memory F2PY loss driver, so compile with `-python` before
-running a tuning workflow:
-
-```bash
-./compile.py -python
-```
-
-When Dash is launched with `./launch_dashboard.sh`, build the extension with
-the same virtualenv Python that runs Dash. This avoids loading an F2PY module
-compiled against NumPy 1.x into a Tune worker's NumPy 2 environment:
+Python runs and Tune jobs require CLUBB's Python/F2PY interface. After the
+launcher has prepared the Dash environment, build it with that same Python:
 
 ```bash
 .venv-dash/bin/python compile.py -python
 ```
 
 Use the corresponding `bin/python` path if `CLUBB_DASH_VENV` names a different
-virtualenv.
+virtual environment. Using the same environment avoids NumPy compatibility
+problems when loading the compiled interface. The interface is not needed just
+to open the dashboard or configure Tune controls.
 
-## Run
+### Launch options and manual setup
 
-From the repository root:
+Pass application options through the launcher, for example:
 
 ```bash
+./launch_dashboard.sh --port 23404 -debug
+```
+
+For manual setup in your chosen Python environment:
+
+```bash
+python3 -m pip install -r dash_app/requirements.txt
 python3 dash_app/app.py
 ```
-or
-```bash
-python3 dash_app/app.py &
-```
 
-By default the app opens in a browser at port `23404`, or the next available
-port. Starting it again while this checkout's dashboard is already running
-reopens the registered dashboard instead of starting a second process. Use
-`python3 dash_app/app.py --help` for host, port, debug, and threading options.
+Use `python3 dash_app/app.py --help` for host, port, debug, and threading options.
+Dash serializes ordinary callbacks to protect NetCDF/HDF5 access; use
+`--threaded` only for diagnostics on a stack known to be thread-safe.
 
-## JULY_2017 statistics vs. 3-D recreation viewer
+The launcher supervises Dash and attempts recovery after a crash. Lifecycle
+and broker details are in the
+[development notes](./DEVELOPMENT.md#local-mcp-endpoint-lifecycle).
+
+### Profiling
+
+Use **Profile** to choose a case, process counts, batch sizes, and repetitions.
+Results appear after each measured repetition; warmups are excluded from the
+default plots. Saved profiles can be overlaid, compared with a baseline, or
+viewed as process distributions and exclusive-cost decompositions.
+
+Reusing a profile name asks for confirmation before replacing the existing
+profile. **Export selected** downloads complete profiles as a ZIP; **Import**
+loads those ZIPs on another machine or checkout. Profiles include run and build
+metadata so Dash can flag potentially incomparable results. Storage and update
+details are documented in the
+[development notes](./DEVELOPMENT.md#profile-results).
+
+### JULY_2017 statistics vs. 3-D recreation viewer
 
 For a deliberately small, standalone comparison of horizontally averaged
 fields only, run:
@@ -149,9 +131,9 @@ It overlays the original JULY_2017 SAM profile statistic with the matching
 resolved horizontal average recalculated from each 3-D recreation snapshot.
 The recreated curve does not include any native SAM SGS contribution.
 
-## Local agent integration
+### Local agent integration
 
-### Runtime boundary
+#### Runtime boundary
 
 The durable local broker is dashboard runtime infrastructure, not an agent
 implementation. Its canonical modules live under `dash_app/shared/`:
@@ -179,7 +161,7 @@ ends that transient connection. The durable broker continues to own
 Compile/Run/Tune/artifact workers and recovery across dashboard or adapter
 restarts.
 
-### Add the running dashboard to a Codex chat
+#### Add the running dashboard to a Codex chat
 
 The manager-owned broker starts one loopback-only Streamable HTTP MCP endpoint
 for the checkout. Open the dashboard's bottom-left utilities menu
@@ -365,53 +347,7 @@ stdio adapter remains available as a static fallback:
 codex mcp add clubb-dash -- .venv-dash/bin/python dash_app/agent_integration/mcp_server.py
 ```
 
-### ADG1 two-Gaussian explorer
-
-The Tutorial tab includes the active ADG1 two-Gaussian explorer. It visualizes
-the normalized ADG1 diagnosis and a direct-control trivariate comparison using
-the same grid moments. It is a teaching visualization, not a replacement for
-the full Fortran PDF diagnosis.
-
-## Basic Workflows
-
-- **Run tab:** choose benchmark cases and settings, launch CLUBB, and watch the
-  run output in the browser.
-- **Plots tab:** load one or more CLUBB output directories and make profile,
-  time-height, time-series, budget, and subcolumn plots from the NetCDF files.
-- **Tune tab:** configure and monitor tuner runs when the branch and local build
-  support the tuner workflow. This requires a CLUBB build compiled with
-  `./compile.py -python`.
-- **Tutorial tab:** follow short interactive explanations of CLUBB concepts.
-  The welcome page suggests a path through the lessons; a vertical page rail
-  opens each lesson. The CLUBB Equations page provides a clickable quick
-  reference for the core prognostic budgets, PDF transport closures, and
-  cloud/buoyancy diagnostics. Its colors preserve the official equation
-  document's ownership convention, while a stable inspector explains each
-  term's physical role, source, closure path, and implementation relevance.
-  The next lesson opens the ADG1 two-Gaussian explorer, where shared moments
-  and the supplied moments show how ADG1 component placement and covariance
-  allocation change the PDF geometry.
-- **Reports tab:** browse immutable, static investigation bundles from
-  `doc/reports/`. Each bundle carries its own HTML, figures, excerpts, data,
-  and provenance. Dash polls the published JSON catalog, so an agent can add a
-  completed report without editing dashboard source or restarting the app.
-- **Misc tab:** browse living investigations and focused diagnostics from a
-  persistent left-side vertical directory, including the SAM w–rₜ time-height
-  neighborhood and the Mixing Length Trajectories explorer. The neighborhood
-  browses a pre-rendered 5×5 atlas generated by
-  `python -m dash_app.misc_tab.sam_w_rt_neighborhood.atlas`; the trajectory
-  explorer reconstructs upward and downward parcel-energy paths from a
-  compatible CLUBB statistics file and compares them with its stored
-  `Lscale_up`, `Lscale_down`, and `Lscale` profiles.
-
-The equation-guide content is curated in
-`dash_app/tutorial_tab/clubb_equations_demo/` from
-`doc/CLUBBeqns.tex` and the corresponding current routines in
-`src/CLUBB_core/`. It deliberately emphasizes the continuous closed equations;
-an on-page caveat distinguishes them from implicit discretization, host
-coupling, surface forcing, clipping, limiters, and other enabled adjustments.
-
-## LES Benchmark Overlays
+### LES Benchmark Overlays
 
 The plots tab can overlay LES benchmark data for cases that define SAM or
 COAMPS benchmark files in:
@@ -431,7 +367,7 @@ input/les_and_clubb_benchmark_runs/
 options when the configured files exist on the local machine. If the archive is
 mounted somewhere else, retarget that symlink locally.
 
-## Shared UI components
+### Shared UI components
 
 Reusable themed overlay notecards live in `dash_app/shared/notecard.py`, with
 their common styles in `dash_app/assets/05_shared_modal.css`. `notecard`
@@ -439,3 +375,14 @@ supports small, medium, large, and full-window panels with arbitrary Dash
 content. Plot-card help and tutorial explanations use the same component as the
 Compile tab source-check log; plot-family help text is centralized in
 `dash_app/plot_tab/plot_types/help_content.py`.
+
+### Development and tests
+
+Run the Dash test suite with the dashboard environment:
+
+```bash
+tests/run_pytests.sh -dash
+```
+
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for UI conventions, service boundaries,
+and how runtime selections are recorded in jobs.

@@ -5,9 +5,12 @@ from dash_app.run_tab.callbacks_runs import (
     complete_run_overrides,
     expand_linked_parameter_values,
     fresh_batch_request_id,
+    prepared_run_with_output,
+    run_output_rename_available,
+    submit_prepared_run,
 )
 from dash_app.run_tab.tab import build_tab
-from dash_app.run_tab.runtime import build_case_command
+from dash_app.run_tab.runtime import build_case_command, output_directory_details
 
 
 def test_complete_run_overrides_freezes_effective_values_not_only_deltas():
@@ -41,10 +44,20 @@ def test_cancel_command_does_not_share_the_polling_callback():
     app = Dash(__name__, suppress_callback_exceptions=True)
     app.layout = build_tab(app)
 
-    action_inputs = {
-        item["id"] for item in app.callback_map["run-action-result.data"]["inputs"]
-    }
-    assert {"run-button", "run-cancel", "run-clear"} <= action_inputs
+    action_callback = next(
+        entry
+        for key, entry in app.callback_map.items()
+        if "run-action-result.data" in key
+    )
+    action_inputs = {item["id"] for item in action_callback["inputs"]}
+    assert {
+        "run-button",
+        "run-cancel",
+        "run-clear",
+        "run-overwrite-button",
+        "run-rename-button",
+        "run-overwrite-cancel-button",
+    } <= action_inputs
     assert "run-sync-interval" not in action_inputs
     assert not any("run-snapshot.data" in key for key in app.callback_map)
 
@@ -148,8 +161,98 @@ def test_run_command_uses_snapshotted_python_or_jax_build():
     jax_command = build_case_command(
         "bomex",
         "standard_stats.in",
-        {"implementation": "jax", "install_dir": "/tmp/build-two"},
+        {
+            "implementation": "jax",
+            "jax_profile": "gpu",
+            "install_dir": "/tmp/build-two",
+        },
     )
 
     assert "-python -install_dir '/tmp/build one' arm" in python_command
-    assert "-jax -install_dir /tmp/build-two bomex" in jax_command
+    assert "-jax=gpu bomex" in jax_command
+    assert "-install_dir" not in jax_command
+
+
+def test_output_directory_details_count_only_stats_cases(tmp_path):
+    output = tmp_path / "results"
+    output.mkdir()
+    (output / "arm_stats.nc").write_bytes(b"CDF")
+    (output / "bomex_stats.nc").write_bytes(b"CDF")
+    (output / "run.log").write_text("done", encoding="utf-8")
+    (output / "nested").mkdir()
+
+    details = output_directory_details(output)
+
+    assert details["path"] == str(output.resolve())
+    assert details["nonempty"] is True
+    assert details["case_count"] == 2
+    assert details["created"] != "Not created yet"
+    assert details["last_edited"] != "Not created yet"
+
+
+def test_output_rename_changes_only_the_frozen_output_target(tmp_path):
+    current = tmp_path / "current"
+    renamed = tmp_path / "renamed"
+    pending = {
+        "cases": ["arm"],
+        "output_dir": str(current),
+        "cli_options": {"out_dir": str(current), "debug": "0"},
+    }
+
+    updated = prepared_run_with_output(pending, renamed)
+
+    assert run_output_rename_available(renamed, pending) is True
+    assert run_output_rename_available(current, pending) is False
+    assert updated["output_dir"] == str(renamed)
+    assert updated["cli_options"] == {"out_dir": str(renamed), "debug": "0"}
+    assert pending["cli_options"]["out_dir"] == str(current)
+
+
+def test_prepared_run_submission_preserves_frozen_settings():
+    calls = []
+    gpu = "GPU-aaaaaaaa-1111-2222-3333-000000000001"
+
+    def perform_action(action, payload, *, internal):
+        calls.append((action, payload, internal))
+        return {"job_id": "batch-job"}
+
+    result = submit_prepared_run(
+        {
+            "cases": ["arm", "bomex"],
+            "stats": "standard_stats.in",
+            "config": "default",
+            "overrides": {"flags": {"l_uv_nudge": ".true."}},
+            "typed_overrides": {"l_uv_nudge": ".true."},
+            "cli_options": {
+                "implementation": "jax",
+                "jax_profile": "gpu",
+                "jax_gpu": gpu,
+                "jax_xla_prealloc": False,
+                "out_dir": "renamed",
+            },
+            "typed_options": {"max_iters": 10},
+            "max_workers": 2,
+            "output_dir": "renamed",
+            "implementation": "jax",
+            "jax_profile": "gpu",
+            "jax_gpu": gpu,
+            "jax_xla_prealloc": False,
+        },
+        perform_action,
+    )
+
+    assert result["job_id"] == "batch-job"
+    action, payload, internal = calls[0]
+    assert action == "domain_submit_scm_batch"
+    assert internal is True
+    assert payload["request"]["cases"] == ["arm", "bomex"]
+    assert payload["request"]["implementation"] == "jax"
+    assert payload["request"]["jax_profile"] == "gpu"
+    assert payload["request"]["jax_gpu"] == gpu
+    assert payload["request"]["jax_xla_prealloc"] is False
+    assert payload["request"]["max_workers"] == 2
+    assert payload["native_cli_options"]["implementation"] == "jax"
+    assert payload["native_cli_options"]["jax_profile"] == "gpu"
+    assert payload["native_cli_options"]["jax_gpu"] == gpu
+    assert payload["native_cli_options"]["jax_xla_prealloc"] is False
+    assert payload["native_cli_options"]["out_dir"] == "renamed"

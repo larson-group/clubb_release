@@ -23,6 +23,23 @@ SELECTED_INSTALL = os.path.join(INSTALL_DIR, "selected")
 LATEST_INSTALL = os.path.join(INSTALL_DIR, "latest")
 
 
+def extract_jax_options(argv):
+    # argparse's nargs="?" would consume CASE in "-jax CASE". Extract only
+    # attached values (-jax=VALUE); the JAX launcher interprets their contents.
+    normalized = []
+    value = None
+    occurrences = 0
+    for token in argv:
+        option, separator, attached = token.partition("=")
+        if option == "-jax":
+            occurrences += 1
+            value = attached if separator else None
+            normalized.append("-jax")
+        else:
+            normalized.append(token)
+    return normalized, value, occurrences
+
+
 def run_case(
     run_cmd,
     run_cwd,
@@ -146,14 +163,15 @@ def choose_run_command(args):
             pythonpath_entries.append(existing_pythonpath)
         run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
     elif args.jax:
-        jax_driver = os.path.join(CLUBB_ROOT, "clubb_jax", "src", "clubb_standalone.py")
-        if not os.path.isfile(jax_driver):
-            sys.exit(f"JAX standalone driver not found: {jax_driver}")
-        jax_launcher = os.path.join(CLUBB_ROOT, "clubb_jax", "run_jax_wrapper.sh")
+        jax_launcher = os.path.join(CLUBB_ROOT, "clubb_jax", "run_jax.py")
         if not os.path.isfile(jax_launcher):
             sys.exit(f"JAX launcher not found: {jax_launcher}")
         executable = jax_launcher
         run_cmd = [jax_launcher]
+        if args.jax_options is not None:
+            # Keep profile/modifier parsing in the launcher so CLI and Dash
+            # share its validation and environment setup rules.
+            run_cmd.append(f"--options={args.jax_options}")
     else:
         install_dir, install_source = choose_install_dir(args)
         show_install_dir = True
@@ -272,7 +290,8 @@ def main():
         help="Run the Python standalone driver (python -m clubb_python_driver.clubb_standalone)")
 
     run_group.add_argument("-jax", action="store_true",
-        help="Run the JAX standalone driver (python -m clubb_jax.src.clubb_standalone)")
+        help=("Run through the JAX wrapper. An optional attached -jax=VALUE is "
+              "forwarded unchanged; see clubb_jax/run_jax.py --launcher-help."))
 
     run_group.add_argument(
         "-gdb",
@@ -319,7 +338,11 @@ def main():
         ))
 
     parser.add_argument("case_name", help="Name of the case to run")
-    args = parser.parse_args()
+    normalized_argv, jax_options, jax_occurrences = extract_jax_options(sys.argv[1:])
+    args = parser.parse_args(normalized_argv)
+    if jax_occurrences > 1:
+        parser.error("-jax may be specified only once.")
+    args.jax_options = jax_options
 
     ndefined = sum(bool(x) for x in [args.exe, args.driver_test, args.python, args.jax])
     if ndefined > 1:

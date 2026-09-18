@@ -1,4 +1,8 @@
+import json
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from dash import Dash, dcc, html
 from dash.development.base_component import Component
@@ -9,8 +13,10 @@ from dash_app.compile_tab.build_selector import (
     build_implementation_capability,
     build_selector_overlay,
     build_selector_trigger,
+    inspect_jax_runtime_profiles,
     register_build_selector_position_callback,
     selected_build_info,
+    selected_launch_target,
     selector_popover_style,
 )
 from dash_app.compile_tab import callbacks
@@ -40,6 +46,16 @@ def component_id_count(component, target: str) -> int:
         component_id_count(child, target)
         for child in (children if isinstance(children, (list, tuple)) else [children])
     )
+
+
+def component_text(component) -> str:
+    if isinstance(component, str):
+        return component
+    if not isinstance(component, Component):
+        return ""
+    children = getattr(component, "children", None)
+    values = children if isinstance(children, (list, tuple)) else [children]
+    return " ".join(component_text(child) for child in values if child is not None)
 
 
 def write_cache(path: Path) -> None:
@@ -134,6 +150,7 @@ def test_shared_overlay_is_single_and_position_callback_owns_its_anchor():
     callback_key = next(iter(app.callback_map))
     assert "compile-build-selector-anchor.data" in callback_key
     assert component_id_count(app.layout, "compile-build-selector-root") == 1
+    assert component_id_count(app.layout, "compile-build-selector-help") == 1
 
 
 def test_selector_position_stays_in_the_viewport_and_can_open_above():
@@ -189,7 +206,238 @@ def test_build_capabilities_follow_installed_runtime_contents(tmp_path):
     (runtime / "libclubb_f2py_backend.so").touch()
     assert build_implementation_capability(install, "python", tmp_path)[0] is True
     assert build_implementation_capability(install, "jax", tmp_path)[0] is False
-    jax_driver = tmp_path / "clubb_jax" / "clubb_standalone.py"
-    jax_driver.parent.mkdir()
+    jax_root = tmp_path / "clubb_jax"
+    jax_driver = jax_root / "src" / "clubb_standalone.py"
+    jax_driver.parent.mkdir(parents=True)
     jax_driver.touch()
+    wrapper = jax_root / "run_jax.py"
+    wrapper.touch(mode=0o755)
+    (jax_root / "requirements.txt").touch()
     assert build_implementation_capability(install, "jax", tmp_path)[0] is True
+
+
+def test_jax_launch_target_does_not_require_a_compiled_install(tmp_path):
+    jax_root = tmp_path / "clubb_jax"
+    (jax_root / "src").mkdir(parents=True)
+    (jax_root / "src" / "clubb_standalone.py").touch()
+    (jax_root / "requirements.txt").touch()
+    (jax_root / "run_jax.py").touch(mode=0o755)
+
+    target = selected_launch_target("jax", tmp_path)
+
+    assert target == {
+        "implementation": "jax",
+        "jax_profile": "cpu",
+        "install_dir": "",
+        "build_name": "CPU environment",
+    }
+
+
+def test_jax_selector_replaces_compiled_build_rows_with_managed_runtime():
+    menu = callbacks.render_compact_build_selector(
+        {"builds": []},
+        implementation="jax",
+    )
+
+    assert len(menu) == 2
+    assert menu[0].children[2] is None
+    toolbar = menu[0].children[0]
+    assert toolbar.children[0].children == "Run with"
+    assert toolbar.children[1].children == "?"
+    assert toolbar.children[1].className == "plots-card-help"
+    assert menu[1].children[0].children == "Compute"
+    buttons = menu[1].children[1].children
+    assert [button.id["index"] for button in buttons] == ["cpu", "gpu"]
+    assert component_text(buttons[0]).startswith("CPU ")
+    assert component_text(buttons[1]).startswith("GPU ")
+    assert buttons[0].to_plotly_json()["props"]["aria-pressed"] == "true"
+    assert buttons[1].to_plotly_json()["props"]["aria-pressed"] == "false"
+    assert "compile-run-implementation-choice-selected" in buttons[0].className
+
+
+def test_jax_selector_displays_wrapper_metadata_and_disables_unavailable_gpu():
+    runtime_info = {
+        "cpu": {
+            "status": "ready",
+            "selectable": True,
+            "hardware": {"cpu": {"model": "Test CPU", "logical_cpus": 16}},
+            "runtime": {
+                "python": {"version": "3.12.4", "installed": True},
+                "jax": {"required": "0.11.0", "installed": "0.11.0"},
+            },
+        },
+        "gpu": {
+            "status": "unavailable",
+            "selectable": False,
+            "reason": "CUDA 13 requires NVIDIA driver 580 or newer; detected 470.239",
+            "hardware": {
+                "cpu": {},
+                "gpus": [
+                    {
+                        "name": "Test GPU",
+                        "memory_mib": 24576,
+                        "driver_version": "470.239",
+                        "compute_capability": "8.0",
+                    }
+                ],
+            },
+            "runtime": {
+                "cuda_major": 13,
+                "python": {"version": "3.12.4", "installed": True},
+                "jax": {"required": "0.11.0", "installed": "0.11.0"},
+            },
+        },
+    }
+
+    menu = callbacks.render_compact_build_selector(
+        {"builds": []}, implementation="jax", jax_runtime_info=runtime_info
+    )
+
+    buttons = menu[1].children[1].children
+    assert buttons[0].disabled is False
+    assert buttons[1].disabled is True
+    text = component_text(menu[1])
+    assert "Test CPU | 16 logical CPUs" in text
+    assert "Test GPU · 24 GiB" in text
+    assert "Unavailable" in text
+    assert "Python 3.12.4" not in text
+    assert "requires NVIDIA driver 580" in buttons[1].title
+    help_text = component_text(callbacks.render_build_selector_help(runtime_info))
+    assert "Test GPU | 24.0 GiB | driver 470.239 | compute 8.0" in help_text
+    assert "Python 3.12.4 | JAX 0.11.0 | CUDA 13 | Unavailable" in help_text
+    assert "requires NVIDIA driver 580" in help_text
+    assert "CUDA_VISIBLE_DEVICES" in help_text
+
+
+def test_profile_card_describes_selected_gpu_not_first_inventory_entry():
+    info = {
+        "status": "ready",
+        "hardware": {
+            "gpus": [{"name": "Test GPU A"}, {"name": "Test GPU B"}],
+            "selected_gpu": {"name": "Test GPU B", "memory_mib": 8192},
+        },
+    }
+    card = callbacks.render_jax_profile_info("gpu", info, compact=True)
+    assert component_text(card) == "GPU Ready Test GPU B · 8 GiB"
+    del info["hardware"]["selected_gpu"]
+    assert "2 NVIDIA GPUs available" in component_text(
+        callbacks.render_jax_profile_info("gpu", info, compact=True)
+    )
+
+
+def test_runtime_help_ignores_mount_events_and_opens_and_closes(monkeypatch):
+    app = Dash(__name__, suppress_callback_exceptions=True)
+    callbacks.register_compile_callbacks(app)
+    toggle = app.callback_map["compile-build-selector-help.children"]["callback"].__wrapped__
+    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: None)
+    assert toggle([0], [], {}) is callbacks.no_update
+    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: {
+        "type": "compile-selector-help-open", "index": "runtime",
+    })
+    help_card = toggle([1], [], {})
+    assert help_card.className == "shared-notecard-overlay"
+    assert "Choosing a runtime" in component_text(help_card)
+    assert "Close" in component_text(help_card)
+    monkeypatch.setattr(callbacks, "clicked_trigger_id", lambda: {
+        "type": "compile-selector-help-close", "index": "runtime",
+    })
+    assert toggle([1], [1], {}) == ""
+
+
+def test_jax_selector_checks_each_profile_source_independently(monkeypatch):
+    monkeypatch.setattr(
+        callbacks,
+        "build_implementation_capability",
+        lambda _install, _implementation, *, jax_profile: (
+            (True, "")
+            if jax_profile == "cpu"
+            else (False, "GPU requirements are missing")
+        ),
+    )
+
+    menu = callbacks.render_compact_build_selector(
+        {"builds": []}, implementation="jax", jax_profile="cpu"
+    )
+
+    buttons = menu[1].children[1].children
+    assert buttons[0].disabled is False
+    assert buttons[1].disabled is True
+    assert buttons[1].title == "GPU requirements are missing"
+
+
+def test_dash_runtime_inspection_accepts_only_wrapper_schema(tmp_path, monkeypatch):
+    wrapper = tmp_path / "clubb_jax" / "run_jax.py"
+    wrapper.parent.mkdir(parents=True)
+    wrapper.touch(mode=0o755)
+
+    def fake_run(command, **_kwargs):
+        profile = command[1].split("=", 1)[1]
+        payload = {
+            "schema_version": 1,
+            "profile": profile,
+            "selectable": profile == "cpu",
+            "status": "ready" if profile == "cpu" else "unavailable",
+        }
+        return subprocess.CompletedProcess(command, 0, json.dumps(payload), "")
+
+    monkeypatch.setattr("dash_app.compile_tab.build_selector.subprocess.run", fake_run)
+
+    info = inspect_jax_runtime_profiles(tmp_path)
+
+    assert info["cpu"]["selectable"] is True
+    assert info["gpu"]["selectable"] is False
+
+
+def test_jax_gpu_capability_and_launch_target_use_native_requirements(tmp_path):
+    import platform
+
+    jax_root = tmp_path / "clubb_jax"
+    (jax_root / "src").mkdir(parents=True)
+    (jax_root / "src" / "clubb_standalone.py").touch()
+    (jax_root / "requirements.txt").touch()
+    (jax_root / "run_jax.py").touch(mode=0o755)
+
+    available, reason = build_implementation_capability(
+        "", "jax", tmp_path, jax_profile="gpu"
+    )
+    assert available is False
+    assert "requirements" in reason.lower()
+
+    requirements_name = (
+        "requirements-metal.txt"
+        if platform.system() == "Darwin"
+        else "requirements-cuda13.txt"
+    )
+    (jax_root / requirements_name).touch()
+    target = selected_launch_target("jax", tmp_path, jax_profile="GPU")
+    assert target["jax_profile"] == "gpu"
+    assert target["build_name"] == "GPU environment"
+
+
+@pytest.mark.parametrize("failure", ["exit", "timeout", "json", "schema"])
+def test_dash_runtime_probe_failure_is_visible(tmp_path, monkeypatch, failure):
+    wrapper = tmp_path / "clubb_jax" / "run_jax.py"
+    wrapper.parent.mkdir()
+    wrapper.touch(mode=0o755)
+
+    def fake_run(command, **kwargs):
+        if failure == "timeout":
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+        if failure == "exit":
+            return subprocess.CompletedProcess(command, 1, "", "probe failed")
+        return subprocess.CompletedProcess(command, 0, "not json" if failure == "json" else "{}", "")
+
+    monkeypatch.setattr("dash_app.compile_tab.build_selector.subprocess.run", fake_run)
+    for profile, info in inspect_jax_runtime_profiles(tmp_path).items():
+        assert info["status"] == "unknown"
+        assert info["selectable"] is False
+        assert info["reason"]
+        card = component_text(callbacks.render_jax_profile_info(profile, info, compact=True))
+        assert "Checking" not in card
+        assert "Unknown" in card
+
+
+def test_metal_preallocation_is_disabled():
+    info = {"gpu": {"status": "setup_required", "selectable": True,
+                    "runtime": {"accelerator": "metal"}}}
+    assert not callbacks.jax_preallocation_available(info, "gpu", "")

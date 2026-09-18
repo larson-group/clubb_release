@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import datetime
+from pathlib import Path
 
 from .namelist import write_temp_namelist
 from .state import (
@@ -25,6 +27,47 @@ from .state import (
     set_child_stack_limit,
 )
 from dash_app.shared.tunable_configs import tunable_config_file
+from dash_app.shared.jax_device import jax_device_env, jax_command_display
+from utilities.output_paths import resolve_output_dir
+
+
+def _format_output_timestamp(timestamp):
+    """Format one filesystem timestamp in the dashboard server's timezone."""
+    return datetime.fromtimestamp(timestamp).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+
+
+def output_directory_details(value):
+    """Describe an existing Run output target without creating or changing it."""
+    path = resolve_output_dir(value).resolve()
+    if path.exists() and not path.is_dir():
+        raise ValueError("output path is an existing file")
+    if not path.exists():
+        return {
+            "path": str(path),
+            "exists": False,
+            "nonempty": False,
+            "created": "Not created yet",
+            "last_edited": "Not created yet",
+            "case_count": 0,
+        }
+
+    entries = list(path.iterdir())
+    path_stat = path.stat()
+    created_at = getattr(path_stat, "st_birthtime", path_stat.st_ctime)
+    edited_at = max(
+        [path_stat.st_mtime]
+        + [entry.stat().st_mtime for entry in entries if entry.exists()]
+    )
+    return {
+        "path": str(path),
+        "exists": True,
+        "nonempty": bool(entries),
+        "created": _format_output_timestamp(created_at),
+        "last_edited": _format_output_timestamp(edited_at),
+        "case_count": sum(
+            1 for entry in entries if entry.is_file() and entry.name.endswith("_stats.nc")
+        ),
+    }
 
 
 def ensure_cuda_mps():
@@ -154,9 +197,11 @@ def append_launch_target(cmd, cli_options):
     if implementation == "python":
         cmd.append("-python")
     elif implementation == "jax":
-        cmd.append("-jax")
+        jax_profile = clean_cli_option((cli_options or {}).get("jax_profile")).lower()
+        modifier = ",xla_prealloc" if (cli_options or {}).get("jax_xla_prealloc") is True else ""
+        cmd.append(f"-jax={jax_profile}{modifier}" if jax_profile else "-jax")
     install_dir = clean_cli_option((cli_options or {}).get("install_dir"))
-    if install_dir:
+    if install_dir and implementation != "jax":
         cmd.extend(["-install_dir", install_dir])
 
 
@@ -177,7 +222,7 @@ def build_case_command(case_name, stats_name, cli_options=None, config_name=None
             cmd.extend([flag, value])
     cmd.extend(extra_cli_args(cli_options))
     cmd.append(case_name)
-    return " ".join(shlex.quote(str(part)) for part in cmd)
+    return jax_command_display([str(part) for part in cmd], cli_options)
 
 
 def start_case_process(case_name, stats_name, overrides, cli_options=None, config_name=None):
@@ -226,7 +271,7 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None, confi
     proc = subprocess.Popen(
         cmd,
         cwd=REPO_ROOT,
-        env=run_child_env(),
+        env=jax_device_env(cli_options, run_child_env()),
         stdout=log_file,
         stderr=subprocess.STDOUT,
         text=True,

@@ -35,6 +35,10 @@ Run a case from the repository root by adding `-jax`:
 ./run_scripts/run_scm.py -jax arm
 ```
 
+Bare `-jax` selects CPU unless the legacy `CLUBB_JAX_ACCELERATOR` environment
+variable is set. The explicit forms `-jax=cpu` and `-jax=gpu` are also
+accepted, case-insensitively.
+
 ### Run Options
 
 The statistics registry controls which model fields are collected and written.
@@ -61,7 +65,8 @@ model results. `all_stats.in` gives maximal output coverage at the highest cost.
 Debug checks also affect performance. Many cases default to `debug_level = 2`;
 passing `-debug 0` typically saves about 10% of runtime and is appropriate when
 the additional checks are not needed. `-max_iters` can limit a run to a smaller
-number of timesteps as well, but reducing iterations makes testing fundamentally more permissive, so changing it should be considered only for rapid smoke tests:
+number of timesteps as well, but reducing iterations makes testing fundamentally
+more permissive, so use it only when a partial run is sufficient:
 
 ```bash
 ./run_scripts/run_scm.py -jax \
@@ -70,35 +75,35 @@ number of timesteps as well, but reducing iterations makes testing fundamentally
 
 ### GPU Running
 
-To use an NVIDIA GPU with the CUDA 13 JAX packages, select the accelerator when
-initializing the environment and running:
+Use `-jax=gpu` to run on an NVIDIA GPU on Linux or an Apple Silicon GPU on macOS:
 
 ```bash
-CLUBB_JAX_ACCELERATOR=cuda13 ./clubb_jax/run_jax_wrapper.sh --init_env
-
-CLUBB_JAX_ACCELERATOR=cuda13 CUDA_VISIBLE_DEVICES=0 \
-  ./run_scripts/run_scm.py -jax -stats none -debug 0 arm
+./run_scripts/run_scm.py -jax=gpu -stats none -debug 0 arm
 ```
 
-The launcher verifies that JAX initialized the CUDA backend and fails rather
-than silently falling back to CPU. `CUDA_VISIBLE_DEVICES` selects the GPU.
+The launcher checks GPU compatibility and prepares a separate environment on
+first use. It reports an error if the requested GPU backend is unavailable.
+Apple Metal runs use float32 because the plugin does not support float64.
+See [Inspect Runtime Support](#inspect-runtime-support) to check your setup
+without starting a run.
 
-By default, JAX reserves 75% of the GPU's memory when the first JAX operation
-runs. This reduces allocation overhead and memory fragmentation when JAX owns
-the device, but it can leave too little memory for a desktop display or other
-processes using a shared GPU and can cause an out-of-memory error at startup.
-Disable preallocation when that reservation causes contention:
+On NVIDIA systems, select a card using its index from `nvidia-smi`:
 
 ```bash
-CLUBB_JAX_ACCELERATOR=cuda13 CUDA_VISIBLE_DEVICES=0 \
-XLA_PYTHON_CLIENT_PREALLOCATE=false \
-  ./run_scripts/run_scm.py -jax arm
+CUDA_VISIBLE_DEVICES=1 ./run_scripts/run_scm.py -jax=gpu arm
 ```
 
-With preallocation disabled, JAX allocates memory as the run needs it. This
-usually lowers its initial footprint, but it is more vulnerable to memory
-fragmentation; keep the default when the run owns the GPU and needs most of its
-memory.
+CUDA memory preallocation is off by default unless enabled through the
+`XLA_PYTHON_CLIENT_PREALLOCATE` environment variable. This lets JAX allocate
+memory as needed when sharing a GPU. To enable up-front memory reservation:
+
+```bash
+./run_scripts/run_scm.py -jax=gpu,xla_prealloc arm
+```
+
+This option applies only to NVIDIA CUDA. See
+[Advanced GPU Options](#advanced-gpu-options) for device selection details
+and memory trade-offs.
 
 ## Testing
 
@@ -155,15 +160,18 @@ directly with pytest. For example:
 No Fortran build is required for a JAX-only run. Runtime and test dependencies
 are declared in [`requirements.txt`](./requirements.txt) for CPU and
 [`requirements-cuda13.txt`](./requirements-cuda13.txt) for NVIDIA CUDA 13.
-Python 3.12 or newer uses JAX/JAXLIB 0.11.0; Python 3.11 is supported with
-JAX/JAXLIB 0.10.0.
+Apple Silicon uses the isolated [`requirements-metal.txt`](./requirements-metal.txt)
+profile with Python 3.11 or 3.12 and JAX/JAXLIB 0.4.34 because Apple's experimental
+plugin requires its own compatible JAX line. CPU and CUDA use JAX/JAXLIB 0.11.0
+on Python 3.12 or newer; Python 3.11 is supported with JAX/JAXLIB 0.10.0.
 
 ### Automatic Setup With uv
 
 The launcher handles the default environment automatically:
 
 ```bash
-./clubb_jax/run_jax_wrapper.sh --init_env
+./clubb_jax/run_jax.py --init_env
+./clubb_jax/run_jax.py --profile=gpu --init_env
 ```
 
 It performs the following steps:
@@ -172,7 +180,8 @@ It performs the following steps:
 2. Reuses `uv` from `PATH`, or downloads the pinned `uv` version into
    `.clubb-jax-tools/`.
 3. Downloads Python 3.12 through `uv` only when no supported Python is present.
-4. Creates `.venv-jax` for CPU or `.venv-jax-cuda13` for CUDA 13.
+4. Creates `.venv-jax` for CPU, `.venv-jax-cuda13` for CUDA 13, or
+   `.venv-jax-metal` for Apple Metal.
 5. Installs and validates the matching requirements file.
 
 Managed Python installations, the `uv` cache, and the virtualenv stay inside
@@ -185,8 +194,34 @@ The managed locations and interpreter can be overridden:
 PYTHON=python3.12 \
 CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
 CLUBB_JAX_TOOLS_DIR=/path/to/clubb-jax-tools \
-  ./clubb_jax/run_jax_wrapper.sh --init_env
+  ./clubb_jax/run_jax.py --init_env
 ```
+
+### Inspect Runtime Support
+
+The launcher can inspect the selected profile without creating an environment,
+installing packages, or initializing JAX:
+
+```bash
+./clubb_jax/run_jax.py --profile=cpu --info
+./clubb_jax/run_jax.py --profile=gpu --info
+```
+
+The report shows the detected devices, Python and JAX versions, environment
+path, and whether setup is needed. Hardware discovery works before the JAX
+environment is installed. The report does not initialize JAX or test available
+GPU memory; the run itself reports the devices JAX actually uses.
+
+For machine-readable output:
+
+```bash
+./clubb_jax/run_jax.py --profile=gpu --info=json
+```
+
+The CUDA 13 profile checks for an NVIDIA driver version of at least 580 and
+compute capability of at least 7.5 on each exposed GPU. JAX's installed packages
+supply the CUDA runtime libraries, so a local CUDA toolkit is not required.
+Metal support remains experimental.
 
 ### Create A Virtualenv With uv
 
@@ -202,8 +237,8 @@ CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
   ./run_scripts/run_scm.py -jax arm
 ```
 
-Use `requirements-cuda13.txt` and set `CLUBB_JAX_ACCELERATOR=cuda13` for a GPU
-environment.
+Use `requirements-cuda13.txt` on NVIDIA Linux or `requirements-metal.txt` on
+Apple Silicon. In either case, `-jax=gpu` selects the native GPU profile.
 
 ### Use A Standard Virtualenv
 
@@ -221,3 +256,24 @@ CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
 The launcher never clears a custom `CLUBB_JAX_VENV`. It validates the selected
 Python and installed packages, then uses `uv` to repair missing or incompatible
 requirements if necessary.
+
+### Advanced GPU Options
+
+`CUDA_VISIBLE_DEVICES` accepts physical indices from `nvidia-smi`, full GPU
+UUIDs, or unique UUID prefixes. Find UUIDs with `nvidia-smi -L`. The launcher
+converts selections to full UUIDs so CUDA's enumeration order cannot change
+which cards are selected. Lists retain their order: `1,0` exposes physical
+GPU 1 as JAX device 0. Invalid, ambiguous, duplicate, or empty selections are
+rejected before setup. Selection supports whole GPUs, not MIG instances;
+all exposed GPUs must meet the CUDA requirements.
+
+Without `xla_prealloc`, the launcher respects an existing
+`XLA_PYTHON_CLIENT_PREALLOCATE` setting and otherwise defaults to `false`.
+The modifier overrides that variable to `true`. Direct launcher users can pass
+`--profile=gpu --xla-prealloc`.
+
+Preallocation can reduce allocation overhead and fragmentation when a run
+has the GPU to itself. Leaving it disabled lowers the initial memory footprint,
+which helps on shared GPUs. JAX can still cache allocated memory; neither
+setting limits total memory use or guarantees that a run will fit. The launch
+report shows the effective setting.

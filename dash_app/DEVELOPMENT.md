@@ -182,3 +182,65 @@ data generation.
 Prototype work belongs outside `dash_app/misc_tab/`; the production app must
 neither import nor register it. This keeps the dashboard usable when
 prototype-only directories are absent from a checkout.
+
+## Runtime selection and JAX job settings
+
+The runtime chooser uses the read-only report from
+[`clubb_jax/run_jax.py`](../clubb_jax/run_jax.py). Hardware discovery does not
+require an installed JAX environment. A compatible device whose environment
+needs setup remains selectable.
+
+GPU choices are stored by UUID. Until a specific GPU is chosen, the inherited
+selection retains the server's `CUDA_VISIBLE_DEVICES` setting (or CUDA's
+default); an unmapped active default has its own tile. Explicit selections
+override visibility for that job and all its cases or profiling workers. They
+do not distribute work across GPUs. CPU runs ignore a saved GPU selection.
+
+The preallocation checkbox is enabled only for a compatible CUDA selection,
+including one that needs environment setup. It is disabled during checks and
+for CPU, Metal, or unavailable selections. Both checked and unchecked values
+explicitly override the server's `XLA_PYTHON_CLIENT_PREALLOCATE` setting. Freeze
+the effective GPU and preallocation settings into each submitted Run/Profile
+request and include them in command previews. Enabling preallocation maps to
+`-jax=gpu,xla_prealloc`.
+
+Compiled implementations follow `install/selected`, falling back to
+`install/latest`. Explicit runner `-exe` or `-install_dir` options override
+that default. Tune continues to use its Fortran/F2PY worker independently of
+the chooser's JAX selection.
+
+## Profile results
+
+The Profile tab is a browser interface to `utilities/time_clubb.py`. Its top
+benchmark panel configures the case, process/per-process-batch-size sweep,
+repetitions, executable, configuration, overrides, and additional
+`run_scm.py` arguments. A direct one-second polling path reads the active
+summary and process rows and renders figures server-side, so results appear
+after each measured repetition while the broker-owned job is running; warmups
+remain hidden. Browser stores retain only compact timer/process choices rather
+than the growing raw timing table. The running row counter and all four figures
+are returned by the same callback response, so visible progress cannot advance
+independently of the plots. Stored profiles can be overlaid, compared with a baseline, or
+viewed as process distributions and exclusive-cost decompositions. The right
+rail has a profile-selection section above a separate set of shared comparison
+controls; plot-specific options remain beside the plot they affect. The
+profile chooser shows the three newest unselected results by default, expands
+to the full library, and displays active comparisons as removable pills. The
+benchmark-label field indicates when its normalized profile name already
+exists. Starting that benchmark asks for confirmation, then replaces the
+existing profile in place instead of creating a timestamped version; any older
+same-label/same-case versions are removed from the active comparison selection.
+
+The selected directory is a collection of compact, directly commit-able
+profile folders. Each benchmark creates `<profile-name>/` containing
+`README.md`, profile-wide `profile.json` provenance, one workload row per
+process-count/batch-size point in `batches.csv`, raw timer observations in
+`timings.csv`, and one representative input/setup/log/native-timing set under
+`logs/<batch-id>/`. Child processes otherwise run in temporary directories,
+which are deleted after each workload is aggregated. Warmups are retained with
+`phase=warmup` but excluded from the default plots. Dash derives statistical
+summaries in memory instead of storing duplicate summary files. **Export
+selected** downloads complete profiles as a ZIP; **Import** accepts those ZIPs
+on another machine or checkout. Provenance includes the effective vertical
+level count, observed model steps, source revision, executable checksum, host,
+timer backend, and time basis so Dash can flag potentially incomparable runs.

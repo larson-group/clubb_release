@@ -8,15 +8,18 @@ from pathlib import Path
 import shutil
 import time
 
-from dash import ALL, Input, Output, State, callback_context, html, no_update
+from dash import ALL, Input, Output, State, callback_context, dcc, html, no_update
 
-from dash_app.shared.notecard import notecard
+from dash_app.shared.notecard import information_body, notecard
 
 from .build_selector import (
     BUILD_SELECTOR_TRIGGER_IDS,
+    JAX_PROFILES,
     RUN_IMPLEMENTATIONS,
     build_implementation_capability,
     build_selector_trigger_children,
+    inspect_jax_runtime_profiles,
+    normalize_jax_profile,
     normalize_run_implementation,
     register_build_selector_position_callback,
     selected_build_info,
@@ -447,6 +450,171 @@ def selected_build_from_discovery(discovery):
     return next((build for build in builds if build.get("is_selected")), None)
 
 
+def render_jax_profile_info(profile, info, *, source_error="", compact=False, label=None):
+    """Render wrapper-owned hardware and runtime metadata for one JAX profile."""
+    info = dict(info or {})
+    hardware = info.get("hardware") if isinstance(info.get("hardware"), dict) else {}
+    runtime = info.get("runtime") if isinstance(info.get("runtime"), dict) else {}
+    cpu = hardware.get("cpu") if isinstance(hardware.get("cpu"), dict) else {}
+    gpus = hardware.get("gpus") if isinstance(hardware.get("gpus"), list) else []
+    gpu = hardware.get("selected_gpu") or (gpus[0] if gpus else {})
+    gpu = gpu if isinstance(gpu, dict) else {}
+    python = runtime.get("python") if isinstance(runtime.get("python"), dict) else {}
+    jax = runtime.get("jax") if isinstance(runtime.get("jax"), dict) else {}
+    status = str(info.get("status") or "checking")
+    status_label = {
+        "ready": "Ready",
+        "setup_required": "Setup on first run",
+        "unavailable": "Unavailable",
+        "unknown": "Unknown",
+        "checking": "Inspecting",
+    }.get(status, status.replace("_", " ").title())
+
+    if profile == "cpu":
+        model = str(cpu.get("model") or "Inspecting CPU")
+        logical_cpus = cpu.get("logical_cpus")
+        hardware_line = model + (
+            f" | {logical_cpus} logical CPUs" if logical_cpus else ""
+        )
+    elif gpu:
+        details = []
+        memory_mib = gpu.get("memory_mib")
+        if isinstance(memory_mib, int):
+            details.append(f"{memory_mib / 1024:.1f} GiB")
+        if gpu.get("driver_version"):
+            details.append(f"driver {gpu['driver_version']}")
+        if gpu.get("compute_capability"):
+            details.append(f"compute {gpu['compute_capability']}")
+        hardware_line = str(gpu.get("name") or "NVIDIA GPU")
+        if details:
+            hardware_line += " | " + " | ".join(details)
+    else:
+        if info.get("status") == "unknown":
+            hardware_line = "GPU inspection failed"
+        else:
+            hardware_line = "No usable GPU detected" if info else "Inspecting GPU"
+
+    runtime_parts = []
+    if python.get("version"):
+        runtime_parts.append(
+            f"Python {python['version']}"
+            + ("" if python.get("installed") else " planned")
+        )
+    installed_jax = jax.get("installed")
+    required_jax = jax.get("required")
+    if installed_jax and required_jax and installed_jax != required_jax:
+        runtime_parts.append(f"JAX {installed_jax} -> {required_jax}")
+    elif installed_jax:
+        runtime_parts.append(f"JAX {installed_jax}")
+    elif required_jax:
+        runtime_parts.append(f"JAX {required_jax} planned")
+    if runtime.get("cuda_major"):
+        runtime_parts.append(f"CUDA {runtime['cuda_major']}")
+    runtime_parts.append(status_label)
+    if runtime.get("xla_preallocate") is not None:
+        runtime_parts.append(f"XLA preallocation: {runtime['xla_preallocate']}")
+    reason = source_error or str(info.get("reason") or "")
+    if compact:
+        if profile == "gpu" and gpu:
+            hardware_line = str(gpu.get("name") or "NVIDIA GPU")
+            if not hardware.get("selected_gpu") and len(gpus) > 1:
+                hardware_line = f"{len(gpus)} NVIDIA GPUs available"
+            elif isinstance(gpu.get("memory_mib"), int):
+                hardware_line += f" · {gpu['memory_mib'] / 1024:g} GiB"
+        badge = {
+            "ready": "Ready", "setup_required": "Auto setup",
+            "unavailable": "Unavailable", "unknown": "Unknown", "checking": "Checking",
+            "unchecked": "Check on selection",
+        }.get(status, status_label)
+        if source_error:
+            badge = "Unavailable"
+        return html.Span(
+            [
+                html.Span([
+                    html.Span(label or profile.upper(), className="compile-profile-name"),
+                    html.Span(badge, className="compile-profile-status"),
+                ], className="compile-profile-card-header"),
+                html.Span(hardware_line, className="compile-profile-description"),
+            ],
+            className="compile-profile-card-content",
+        )
+    return html.Div(
+        [
+            html.Div(
+                "CPU" if profile == "cpu" else "GPU",
+                className="compile-run-jax-profile-info-title",
+            ),
+            html.Div(hardware_line, className="compile-run-jax-profile-info-hardware"),
+            html.Div(
+                " | ".join(runtime_parts),
+                className="compile-run-jax-profile-info-runtime",
+            ),
+            html.Div(reason, className="compile-run-jax-profile-info-reason")
+            if reason
+            else None,
+        ],
+        className=(
+            "compile-run-jax-profile-info "
+            f"compile-run-jax-profile-info-{status}"
+        ),
+    )
+
+
+def render_build_selector_help(runtime_info):
+    """Use the same explanatory notecard as the plot-card help controls."""
+    body = information_body(
+        "Choose how CLUBB runs in Run and Profile. Your choice is remembered; "
+        "jobs already running won't change.",
+        [
+            {"heading": "Choose a version", "bullets": [
+                "Fortran: use one of your compiled CLUBB builds.",
+                "Python: run through Python using a Python-enabled Fortran build.",
+                "JAX: choose CPU or GPU below. Required software is set up automatically.",
+            ]},
+            {"heading": "CPU or GPU?", "paragraphs": [
+                "CPU uses your processor. Each GPU tile selects one NVIDIA graphics card; its number matches nvidia-smi. Click a tile to choose it.",
+                "Auto setup means a first-run installation is needed. Unavailable means that option can't be used. Ready means setup is complete, but a run still needs enough free memory.",
+            ]},
+            {"heading": "Preallocate GPU memory", "paragraphs": [
+                "Leave this unchecked when sharing the GPU with other apps. Checking it reserves memory up front, which can help performance but leaves less for other apps. It's available only after selecting a compatible GPU and has no effect on CPU runs.",
+            ]},
+            {"heading": "Using Tune?", "paragraphs": [
+                "Tune uses Fortran regardless of this chooser.",
+            ]},
+        ],
+    )
+    details = [
+        render_jax_profile_info(profile, (runtime_info or {}).get(profile),
+            source_error=build_implementation_capability("", "jax", jax_profile=profile)[1])
+        for profile in JAX_PROFILES
+    ]
+    return notecard(
+        "Choosing a runtime", [body, html.Details([
+            html.Summary("Technical details"),
+            html.P("GPU choices are saved by UUID and override CUDA_VISIBLE_DEVICES for each new job. "
+                   "The memory checkbox overrides XLA_PYTHON_CLIENT_PREALLOCATE. "
+                   "For command-line runs, -jax=gpu,xla_prealloc enables preallocation; "
+                   "otherwise an explicit environment setting is preserved, defaulting to false."),
+            *details,
+        ])],
+        {"type": "compile-selector-help-close", "index": "runtime"}, size="medium",
+    )
+
+
+def jax_preallocation_available(runtime_info, profile, gpu):
+    """Require a compatible selection, not stale metadata for a different GPU."""
+    info = (runtime_info or {}).get("gpu") or {}
+    selected = ((info.get("hardware") or {}).get("selected_gpu") or {}).get("uuid")
+    return (
+        profile == "gpu"
+        and (info.get("runtime") or {}).get("accelerator") != "metal"
+        and info.get("selectable") is True
+        and info.get("status") in {"ready", "setup_required"}
+        and (not gpu or gpu == selected)
+        and build_implementation_capability("", "jax", jax_profile="gpu")[0]
+    )
+
+
 def render_compact_build_selector(
     discovery,
     statuses=None,
@@ -455,9 +623,15 @@ def render_compact_build_selector(
     visual_state=None,
     implementation="fortran",
     trigger_id="",
+    jax_profile="cpu",
+    jax_runtime_info=None,
+    jax_gpu="",
+    jax_xla_prealloc=False,
 ):
     """Render the shared name-and-rebuild selector without Compile-tab metadata."""
     implementation = normalize_run_implementation(implementation)
+    jax_profile = normalize_jax_profile(jax_profile)
+    jax_runtime_info = dict(jax_runtime_info or {})
     builds = (discovery or {}).get("builds", [])
     visual = visual_state or build_visual_state(statuses, failures, job)
     selected_build = selected_build_from_discovery(discovery)
@@ -465,7 +639,12 @@ def render_compact_build_selector(
     items = [
         html.Div(
             [
-                html.Div("Implementation", className="compile-build-selector-heading"),
+                html.Div([
+                    html.Div("Run with", className="compile-build-selector-heading"),
+                    html.Button("?", id={"type": "compile-selector-help-open", "index": "runtime"},
+                        type="button", n_clicks=0, className="plots-card-help",
+                        title="About runtime selection", **{"aria-label": "About runtime selection"}),
+                ], className="compile-selector-toolbar"),
                 html.Div(
                     [
                         html.Button(
@@ -473,6 +652,7 @@ def render_compact_build_selector(
                             id={"type": "compile-run-implementation-choice", "index": name},
                             type="button",
                             n_clicks=0,
+                            **{"aria-pressed": str(name == implementation).lower()},
                             className=(
                                 "compile-run-implementation-choice "
                                 "compile-run-implementation-choice-selected"
@@ -485,15 +665,81 @@ def render_compact_build_selector(
                     className="compile-run-implementation-choices",
                 ),
                 html.Div(
-                    "Tune currently uses its F2PY worker backend; this choice is saved for future Tune support."
-                    if trigger_id == "tune-selected-build-badge"
-                    else "Choose the implementation, then its supporting CLUBB build.",
+                    "Tune uses the Fortran worker.",
                     className="compile-run-implementation-note",
-                ),
+                ) if trigger_id == "tune-selected-build-badge" else None,
             ],
             className="compile-run-implementation-panel",
         )
     ]
+    if implementation == "jax":
+        profile_info = {
+            profile: dict(jax_runtime_info.get(profile) or {})
+            for profile in JAX_PROFILES
+        }
+        profile_source = {
+            profile: build_implementation_capability(
+                "", "jax", jax_profile=profile
+            )
+            for profile in JAX_PROFILES
+        }
+        tiles = []
+
+        def add_tile(profile, index, label, info, selected, title=""):
+            available, source_error = profile_source[profile]
+            disabled = not available or info.get("selectable") is False
+            tiles.append(html.Button(
+                render_jax_profile_info(profile, info, source_error=source_error,
+                                        compact=True, label=label),
+                id={"type": "compile-run-jax-profile-choice", "index": index},
+                type="button", n_clicks=0, disabled=disabled,
+                title=(source_error or str(info.get("reason") or "")) if disabled
+                      else title or f"Use {label}",
+                className="compile-profile-card compile-run-implementation-choice" + (
+                    " compile-run-implementation-choice-selected" if selected else ""),
+                **{"aria-pressed": str(selected).lower()},
+            ))
+
+        add_tile("cpu", "cpu", "CPU", profile_info["cpu"], jax_profile == "cpu")
+        hardware = profile_info["gpu"].get("hardware") or {}
+        gpus = [gpu for gpu in hardware.get("gpus") or [] if gpu.get("uuid")]
+        inspected_uuid = (hardware.get("selected_gpu") or {}).get("uuid")
+        effective_uuid = jax_gpu or inspected_uuid
+        for gpu in gpus:
+            uuid = gpu["uuid"]
+            # The wrapper report describes its selected device, not every card.
+            # Do not apply one card's compatibility result to another device.
+            info = dict(profile_info["gpu"]) if uuid == inspected_uuid else {
+                "status": "unchecked", "selectable": True,
+            }
+            info["hardware"] = {"selected_gpu": gpu, "gpus": [gpu]}
+            add_tile("gpu", uuid, f"GPU {gpu.get('index', '?')}", info,
+                     jax_profile == "gpu" and uuid == effective_uuid,
+                     f"{uuid} | PCI {gpu.get('pci_bus_id', 'unknown')}")
+
+        if jax_gpu and jax_gpu not in {gpu["uuid"] for gpu in gpus}:
+            add_tile("gpu", jax_gpu, "Saved GPU", {
+                "status": "unavailable", "selectable": False,
+                "reason": f"Selected GPU is no longer detected: {jax_gpu}",
+            }, jax_profile == "gpu")
+        elif not gpus or (jax_profile == "gpu" and not effective_uuid):
+            # Keep an inherited, unmapped selection honest until a card is chosen.
+            add_tile("gpu", "gpu", "GPU Default" if gpus else "GPU", profile_info["gpu"],
+                     jax_profile == "gpu", "Use the dashboard environment")
+
+        items.append(html.Div([
+            html.Div("Compute", className="compile-build-selector-heading"),
+            html.Div(tiles, className="compile-run-jax-profile-choices"),
+            html.Div(dcc.Checklist(
+                id={"type": "compile-jax-prealloc-choice", "index": "setting"},
+                options=[{"label": "Preallocate GPU memory", "value": "enabled",
+                          "disabled": not jax_preallocation_available(jax_runtime_info, jax_profile, jax_gpu)}],
+                value=["enabled"] if jax_xla_prealloc else [],
+                className="compile-jax-prealloc",
+                labelClassName="compile-jax-prealloc-label",
+            ), title="Available after selecting a compatible GPU. Has no effect on CPU runs."),
+        ], className="compile-run-implementation-panel"))
+        return items
     if not builds:
         items.append(html.Div("No builds found.", className="compile-build-selector-empty"))
         return items
@@ -1012,6 +1258,21 @@ def delete_all_existing_builds(builds):
 def register_compile_callbacks(app):
     register_build_selector_position_callback(app)
 
+    @app.callback(
+        Output("compile-build-selector-help", "children"),
+        Input({"type": "compile-selector-help-open", "index": ALL}, "n_clicks"),
+        Input({"type": "compile-selector-help-close", "index": ALL}, "n_clicks"),
+        State("compile-jax-runtime-info", "data"),
+        prevent_initial_call=True,
+    )
+    def toggle_selector_help(_open, _close, runtime_info):
+        trigger = clicked_trigger_id()
+        if not isinstance(trigger, dict):
+            return no_update
+        if trigger.get("type") == "compile-selector-help-close":
+            return ""
+        return render_build_selector_help(runtime_info)
+
     selector_outputs = [
         output
         for component_id in BUILD_SELECTOR_TRIGGER_IDS
@@ -1035,6 +1296,56 @@ def register_compile_callbacks(app):
         return normalize_run_implementation(triggered.get("index") or current)
 
     @app.callback(
+        Output("compile-jax-runtime-info", "data"),
+        Input("compile-build-selector-anchor", "data"),
+        Input("compile-run-implementation", "data"),
+        Input("compile-run-jax-gpu", "data"),
+        Input("compile-run-jax-xla-prealloc", "data"),
+        prevent_initial_call=True,
+    )
+    def refresh_jax_runtime_info(anchor, implementation, jax_gpu, jax_xla_prealloc):
+        if not anchor or normalize_run_implementation(implementation) != "jax":
+            return no_update
+        return inspect_jax_runtime_profiles(jax_gpu=jax_gpu, jax_xla_prealloc=jax_xla_prealloc)
+
+    @app.callback(
+        Output("compile-run-jax-xla-prealloc", "data"),
+        Input({"type": "compile-jax-prealloc-choice", "index": ALL}, "value"),
+        State("compile-jax-runtime-info", "data"),
+        State("compile-run-jax-profile", "data"),
+        State("compile-run-jax-gpu", "data"),
+        State("compile-run-jax-xla-prealloc", "data"),
+        prevent_initial_call=True,
+    )
+    def select_jax_preallocation(values, runtime_info, profile, gpu, current):
+        if not values or not jax_preallocation_available(runtime_info, profile, gpu):
+            return no_update
+        enabled = "enabled" in (values[0] or [])
+        return enabled if enabled != current else no_update
+
+    @app.callback(
+        Output("compile-run-jax-profile", "data"),
+        Output("compile-run-jax-gpu", "data"),
+        Input({"type": "compile-run-jax-profile-choice", "index": ALL}, "n_clicks"),
+        State("compile-jax-runtime-info", "data"),
+        prevent_initial_call=True,
+    )
+    def select_run_jax_compute(_clicks, runtime_info):
+        """Select the backend and physical device atomically, even on reselect."""
+        trigger = clicked_trigger_id()
+        if not isinstance(trigger, dict):
+            return no_update, no_update
+        choice = trigger.get("index")
+        if choice == "cpu":
+            return "cpu", no_update
+        if choice == "gpu":
+            return "gpu", ""
+        gpus = ((runtime_info or {}).get("gpu", {}).get("hardware") or {}).get("gpus") or []
+        if choice in {gpu.get("uuid") for gpu in gpus}:
+            return "gpu", choice
+        return no_update, no_update
+
+    @app.callback(
         Output("compile-build-selector-menu", "children"),
         Output("compile-build-selector-popover", "className"),
         Output("compile-build-selector-menu", "style"),
@@ -1045,10 +1356,26 @@ def register_compile_callbacks(app):
         Input("compile-build-failures", "data"),
         Input("compile-job", "data"),
         Input("compile-run-implementation", "data"),
+        Input("compile-run-jax-profile", "data"),
+        Input("compile-jax-runtime-info", "data"),
+        Input("compile-run-jax-gpu", "data"),
+        Input("compile-run-jax-xla-prealloc", "data"),
     )
-    def update_build_selector(anchor, discovery, statuses, failures, job, implementation):
+    def update_build_selector(
+        anchor,
+        discovery,
+        statuses,
+        failures,
+        job,
+        implementation,
+        jax_profile,
+        jax_runtime_info,
+        jax_gpu,
+        jax_xla_prealloc,
+    ):
         """Keep every trigger and the one shared selector on Compile's build state."""
         implementation = normalize_run_implementation(implementation)
+        jax_profile = normalize_jax_profile(jax_profile)
         visual = build_visual_state(statuses, failures, job)
         menu = render_compact_build_selector(
             discovery,
@@ -1058,10 +1385,38 @@ def register_compile_callbacks(app):
             visual,
             implementation,
             (anchor or {}).get("trigger_id", ""),
+            jax_profile,
+            jax_runtime_info,
+            jax_gpu,
+            jax_xla_prealloc,
         )
         selected_info = selected_build_info()
         selected_build = selected_build_from_discovery(discovery)
-        if selected_build:
+        if implementation == "jax":
+            available, reason = build_implementation_capability(
+                "", "jax", jax_profile=jax_profile
+            )
+            runtime_info = dict((jax_runtime_info or {}).get(jax_profile) or {})
+            runtime_status = str(runtime_info.get("status") or "checking")
+            if runtime_info.get("selectable") is False:
+                available = False
+                reason = str(runtime_info.get("reason") or "JAX profile unavailable")
+            selected_name = "CPU" if jax_profile == "cpu" else "GPU"
+            if jax_profile == "gpu" and jax_gpu:
+                gpus = (runtime_info.get("hardware") or {}).get("gpus") or []
+                selected_gpu = next((gpu for gpu in gpus if gpu.get("uuid") == jax_gpu), {})
+                selected_name = f"GPU {selected_gpu.get('index', '?')} · {selected_gpu.get('name', 'unavailable')}"
+            if not available:
+                status_class = "compile-build-card-failed"
+                status_label = reason
+            elif runtime_status == "ready":
+                status_class = "compile-build-card-current"
+                status_label = "ready"
+            else:
+                status_class = "compile-build-card-checking"
+                status_label = runtime_status.replace("_", " ")
+        elif selected_build:
+            selected_name = selected_info["name"]
             status_info = displayed_build_status(selected_build, statuses, visual)
             status = status_info.get("status", "checking")
             status_class = build_card_status_class(selected_build, status, visual["failed_paths"])
@@ -1072,6 +1427,7 @@ def register_compile_callbacks(app):
                 status_class += " compile-build-card-rebuild-queued"
             status_label = status_info.get("label") or status.replace("_", " ")
         else:
+            selected_name = selected_info["name"]
             status_class = (
                 "compile-build-card-failed"
                 if selected_info["status"] in {"missing", "broken"}
@@ -1082,7 +1438,7 @@ def register_compile_callbacks(app):
         for component_id in BUILD_SELECTOR_TRIGGER_IDS:
             trigger_values.extend(
                 (
-                    build_selector_trigger_children(selected_info["name"], implementation),
+                    build_selector_trigger_children(selected_name, implementation),
                     " ".join(
                         (
                             "selected-build-badge",
@@ -1092,7 +1448,7 @@ def register_compile_callbacks(app):
                             else "",
                         )
                     ).strip(),
-                    f"{implementation.title()} using {selected_info['name']} — {status_label}. Click to configure.",
+                    f"{implementation.title()} using {selected_name} — {status_label}. Click to configure.",
                 )
             )
         popover_class = "compile-build-selector-popover"
