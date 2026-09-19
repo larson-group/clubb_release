@@ -13,6 +13,7 @@ import os
 import sys
 
 import numpy as np
+import pytest
 import jax
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
@@ -49,8 +50,9 @@ def test_mean_fill_raises_dry_top_and_conserves_mass():
 
     m_before = _col_mass(rtm, rho, dz)
     out = np.asarray(fill_holes_vertical(
+        nz=nzt, ngrdcol=1, grid_dir_indx=1,
         field=rtm_j, rho_ds=jnp.asarray(rho), dz=jnp.asarray(dz),
-        threshold=RT_TOL, lower_k=0, upper_k=nzt - 1, fill_holes_type=2))
+        threshold=RT_TOL, lower_hf_level=0, upper_hf_level=nzt - 1, fill_holes_type=2))
     m_after = _col_mass(out, rho, dz)
 
     assert np.all(out >= RT_TOL - 1e-300), "dry top not raised to threshold"
@@ -75,8 +77,9 @@ def test_mean_fill_noop_when_all_above_threshold():
     dz = np.full((1, nzt), 40.0)
     rtm = jnp.asarray(np.linspace(8.0e-3, 1.0e-6, nzt)[None, :])  # all >> rt_tol
     out = fill_holes_vertical(
+        nz=nzt, ngrdcol=1, grid_dir_indx=1,
         field=rtm, rho_ds=jnp.asarray(rho), dz=jnp.asarray(dz),
-        threshold=RT_TOL, lower_k=0, upper_k=nzt - 1, fill_holes_type=2)
+        threshold=RT_TOL, lower_hf_level=0, upper_hf_level=nzt - 1, fill_holes_type=2)
     assert np.array_equal(np.asarray(out), np.asarray(rtm)), "fill changed an all-above-threshold field"
     print("  mean-field fill: bitwise no-op when all >= threshold  PASS")
 
@@ -90,8 +93,9 @@ def test_thlm_fill_is_noop():
     thl_tol = 1.0e-2
     thlm = jnp.asarray(np.linspace(298.0, 320.0, nzt)[None, :])
     out = fill_holes_vertical(
+        nz=nzt, ngrdcol=1, grid_dir_indx=1,
         field=thlm, rho_ds=jnp.asarray(rho), dz=jnp.asarray(dz),
-        threshold=thl_tol, lower_k=0, upper_k=nzt - 1, fill_holes_type=2)
+        threshold=thl_tol, lower_hf_level=0, upper_hf_level=nzt - 1, fill_holes_type=2)
     assert np.array_equal(np.asarray(out), np.asarray(thlm)), "thlm fill changed thlm"
     print("  thlm fill: no-op (thlm >> thl_tol)  PASS")
 
@@ -103,11 +107,7 @@ def test_fill_holes_vertical_f2py():
     "FP-floor": that 5.91e-08 was the SAME float32 artifact later diagnosed at iter 432 (the file lacked
     jax_enable_x64) — with x64 it is bit-faithful (~3.3e-16), NOT an FP-floor. SKIPs if clubb_f2py is unbuilt.
     (iter 437)"""
-    try:
-        import clubb_f2py
-    except Exception as e:
-        print(f"  f2py fill_holes_vertical oracle: SKIP ({type(e).__name__})")
-        return
+    clubb_f2py = pytest.importorskip("clubb_f2py")
     rng = np.random.default_rng(0)
     worst = 0.0
     for fht in (1, 2):
@@ -115,8 +115,9 @@ def test_fill_holes_vertical_f2py():
             ng, nz = 2, 16
             field = rng.uniform(-0.05, 1.0, (ng, nz))   # negatives = holes to fill
             rho = rng.uniform(0.3, 1.2, (ng, nz)); dz = rng.uniform(20.0, 120.0, (ng, nz)); thr = 1e-3
-            j = np.asarray(fill_holes_vertical(jnp.asarray(field), jnp.asarray(rho), jnp.asarray(dz),
-                                               thr, 0, nz - 1, fht, 1))
+            j = np.asarray(fill_holes_vertical(
+                nz, ng, thr, 0, nz - 1, jnp.asarray(dz), jnp.asarray(rho), 1, fht, jnp.asarray(field),
+            ))
             f = np.asarray(clubb_f2py.f2py_fill_holes_vertical(thr, 1, nz, dz.copy(), rho.copy(), 1, fht, field.copy()))
             worst = max(worst, float(np.max(np.abs(j - f))))
     assert worst < 1e-12, f"fill_holes_vertical f2py mismatch {worst:.2e}"
@@ -129,18 +130,16 @@ def test_fill_holes_wp2_from_horz_tke_f2py():
     a direct proportional borrow (NOT the FP-floor mass_frac redistribution), so it bit-shadows the f2py oracle
     cleanly. The JAX lower_k/upper_k are 0-based (Fortran lower/upper_hf_level = +1). SKIPs if clubb_f2py is unbuilt.
     (iter 432)"""
-    try:
-        import clubb_f2py
-    except Exception as e:
-        print(f"  f2py fill_holes_wp2_from_horz_tke oracle: SKIP ({type(e).__name__})")
-        return
+    clubb_f2py = pytest.importorskip("clubb_f2py")
     rng = np.random.default_rng(4)
     worst = 0.0
     for _ in range(20):
         ng, nzm = 2, 12
         wp2 = rng.uniform(-0.1, 1.0, (ng, nzm))   # negatives / sub-threshold -> holes to fill
         up2 = rng.uniform(0.05, 1.0, (ng, nzm)); vp2 = rng.uniform(0.05, 1.0, (ng, nzm)); thr = 1e-3
-        j = fill_holes_wp2_from_horz_tke(jnp.asarray(wp2), jnp.asarray(up2), jnp.asarray(vp2), thr, 0, nzm - 1)
+        j = fill_holes_wp2_from_horz_tke(
+            nzm, ng, thr, 0, nzm - 1, jnp.asarray(wp2), jnp.asarray(up2), jnp.asarray(vp2),
+        )
         f = clubb_f2py.f2py_fill_holes_wp2_from_horz_tke(thr, 1, nzm, np.asfortranarray(wp2.copy()),
                                                          np.asfortranarray(up2.copy()), np.asfortranarray(vp2.copy()))
         for k in range(3):   # wp2, up2, vp2

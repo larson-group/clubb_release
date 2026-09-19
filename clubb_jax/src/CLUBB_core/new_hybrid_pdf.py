@@ -17,7 +17,7 @@ Porting deviations:
   wrappers around the equivalent `new_pdf.py` formulas. The Fortran keeps
   separate implementations; JAX keeps one tested implementation and documents
   the alias.
-- Guarded denominators and `_ssqrt` avoid tracing invalid inactive branches.
+- Guarded denominators and `sqrt_clipped` avoid tracing invalid inactive branches.
 - Fortran subroutine outputs are returned as tuples.
 
 !=============================================================================
@@ -69,7 +69,8 @@ Porting deviations:
 
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.new_pdf import _ssqrt, calc_coef_wp4_implicit, calc_mixture_fraction
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
+from clubb_jax.src.CLUBB_core.new_pdf import calc_coef_wp4_implicit, calc_mixture_fraction
 
 
 def calc_coef_wp2xp_implicit(wp2, mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd):
@@ -99,9 +100,9 @@ def calc_coef_wp2xp_implicit(wp2, mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma
     omf = 1.0 - mf
     F_safe = jnp.where(F > 0.0, F, 1.0)
     # Calculate coef_wp2xp_implicit.
-    coef = (_ssqrt(mf * omf)
+    coef = (sqrt_clipped(mf * omf)
             * (F * (omf / mf - mf / omf) + c1 - c2)
-            * _ssqrt(wp2 / F_safe))
+            * sqrt_clipped(wp2 / F_safe))
     return jnp.where(F > 0.0, coef, 0.0)
 
 
@@ -151,7 +152,7 @@ def calculate_w_params(wm, wp2, Skw, F_w, zeta_w):
     omf = 1.0 - mf
 
     # Calculate the mean of w in the 1st PDF component.
-    mu_w_1_v = wm + _ssqrt(F_w * (omf / mf) * wp2)
+    mu_w_1_v = wm + sqrt_clipped(F_w * (omf / mf) * wp2)
     # Calculate the mean of w in the 2nd PDF component.
     mu_w_2_v = wm - (mf / omf) * (mu_w_1_v - wm)
     # Calculate the standard deviation of w in the 1st PDF component.
@@ -164,7 +165,7 @@ def calculate_w_params(wm, wp2, Skw, F_w, zeta_w):
     #           = sqrt( ( 1 - F_w )
     #                   / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ) * <w'^2> )
     c2_v = (1.0 - F_w) / ((zeta + 2.0) * omf)
-    sig1_v = _ssqrt(c1_v * wp2); sig2_v = _ssqrt(c2_v * wp2)
+    sig1_v = sqrt_clipped(c1_v * wp2); sig2_v = sqrt_clipped(c2_v * wp2)
 
     # The mixture fraction produced is invalid.  This should only happen in
     # the scenario where F_w = 0 and | Skw | > 0, where the value of
@@ -205,9 +206,9 @@ def calculate_responder_params(xm, xp2, Skx, wpxp, wp2, F_w, mixt_frac):
     den_safe = jnp.where(gate, 3.0 * F_w * wp2 * xp2, 1.0)
 
     # Calculate the mean of x in the 1st PDF component.
-    mu_x_1_v = xm + _ssqrt(omf / mf) * wpxp / _ssqrt(fw_wp2_safe)
+    mu_x_1_v = xm + sqrt_clipped(omf / mf) * wpxp / sqrt_clipped(fw_wp2_safe)
     # Calculate the mean of x in the 2nd PDF component.
-    mu_x_2_v = xm - _ssqrt(mf / omf) * wpxp / _ssqrt(fw_wp2_safe)
+    mu_x_2_v = xm - sqrt_clipped(mf / omf) * wpxp / sqrt_clipped(fw_wp2_safe)
     # Calculate the variance of x in the 1st PDF component.
     # sigma_x_1^2
     # = ( 1 + sqrt( ( 1 - mixt_frac ) / mixt_frac )
@@ -215,7 +216,7 @@ def calculate_responder_params(xm, xp2, Skx, wpxp, wp2, F_w, mixt_frac):
     #     - ( ( 1 + mixt_frac ) / mixt_frac )
     #       * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ) )
     #   * <x'^2>
-    c1_v = (1.0 + _ssqrt(omf / mf) * Skx * _ssqrt(fw_wp2_safe * xp2) / (3.0 * wpxp_safe)
+    c1_v = (1.0 + sqrt_clipped(omf / mf) * Skx * sqrt_clipped(fw_wp2_safe * xp2) / (3.0 * wpxp_safe)
             - ((1.0 + mf) / mf) * wpxp ** 2 / den_safe)
     # Mathematically, the value of coef_sigma_x_1_sqd cannot be less than 0.
     # Numerically, this can happen when numerical round off error causes an
@@ -229,7 +230,7 @@ def calculate_responder_params(xm, xp2, Skx, wpxp, wp2, F_w, mixt_frac):
     #     + ( ( mixt_frac - 2 ) / ( 1 - mixt_frac ) )
     #       * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ) )
     #   * <x'^2>
-    c2_v = (1.0 - _ssqrt(mf / omf) * Skx * _ssqrt(fw_wp2_safe * xp2) / (3.0 * wpxp_safe)
+    c2_v = (1.0 - sqrt_clipped(mf / omf) * Skx * sqrt_clipped(fw_wp2_safe * xp2) / (3.0 * wpxp_safe)
             + ((mf - 2.0) / omf) * wpxp ** 2 / den_safe)
     # Mathematically, the value of coef_sigma_x_2_sqd cannot be less than 0.
     # Numerically, this can happen when numerical round off error causes an
@@ -271,9 +272,9 @@ def calc_coefs_wpxp2_semiimpl(wp2, wpxp, mixt_frac, F_w, coef_sigma_x_1_sqd, coe
 
     # Calculate coef_wpxp2_implicit and term_wpxp2_explicit.
     vary = (F_w > 0.0) & (wp2 > 0.0)
-    sFwwp2 = _ssqrt(F_w * wp2)
+    sFwwp2 = sqrt_clipped(F_w * wp2)
     sFwwp2_safe = jnp.where(sFwwp2 > 0.0, sFwwp2, 1.0)
-    base = _ssqrt(mf * omf)
+    base = sqrt_clipped(mf * omf)
     coef = base * sFwwp2 * (cx1 - cx2)
     term = base * wpxp ** 2 / sFwwp2_safe * (omf / mf - mf / omf)
     return jnp.where(vary, coef, 0.0), jnp.where(vary, term, 0.0)
@@ -305,7 +306,7 @@ def calc_coefs_wpxpyp_semiimpl(wp2, wpxp, wpyp, mixt_frac, F_w,
     omf = 1.0 - mf
 
     # Calculate coef_wpxpyp_implicit and term_wpxpyp_explicit.
-    s1 = _ssqrt(cx1 * cy1); s2 = _ssqrt(cx2 * cy2)
+    s1 = sqrt_clipped(cx1 * cy1); s2 = sqrt_clipped(cx2 * cy2)
     xy_vary = ((cx1 * cy1 > 0.0) | (cx2 * cy2 > 0.0)) & (F_w > 0.0) & (wp2 > 0.0)
     denom = mf * s1 + omf * s2
     denom_safe = jnp.where(denom > 0.0, denom, 1.0)
@@ -317,9 +318,9 @@ def calc_coefs_wpxpyp_semiimpl(wp2, wpxp, wpyp, mixt_frac, F_w,
     #         * sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
     f_xy = (s1 - s2) / denom_safe
 
-    sFwwp2 = _ssqrt(F_w * wp2)
+    sFwwp2 = sqrt_clipped(F_w * wp2)
     sFwwp2_safe = jnp.where(sFwwp2 > 0.0, sFwwp2, 1.0)
-    base = _ssqrt(mf * omf)
+    base = sqrt_clipped(mf * omf)
 
     coef_vary = base * sFwwp2 * f_xy
     term_vary = base * wpxp * wpyp / sFwwp2_safe * (omf / mf - mf / omf - f_xy)

@@ -76,7 +76,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import eps as _EPS  # noqa: E402
 
 
 # grad-safe sqrt(max(x,0)) — the canonical tracer-toolkit helper.
-from clubb_jax.src.CLUBB_core.pdf_utilities import _safe_sqrt as _ssqrt
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 
 
 def calc_setter_parameters(xm, xp2, Skx, sgn_wpxp, big_L_x_1, big_L_x_2):
@@ -95,7 +95,7 @@ def calc_setter_parameters(xm, xp2, Skx, sgn_wpxp, big_L_x_1, big_L_x_2):
     mu1n = L1 * jnp.sqrt(factor_plus / factor_minus) * sgn
     # Calculate the normalized mean of x in the 2nd PDF component.
     mu2n = -L2 * jnp.sqrt(factor_minus / factor_plus) * sgn
-    sqrt_xp2 = _ssqrt(xp2)
+    sqrt_xp2 = sqrt_clipped(xp2)
     # Calculate the mean of x in the 1st PDF component.
     mu_x_1 = xm + mu1n * sqrt_xp2
     # Calculate the mean of x in the 2nd PDF component.
@@ -141,7 +141,7 @@ def calc_respnder_parameters(xm, xp2, Skx, sgn_wpxp, mixt_frac, big_L_x_1):
     mu1n = L1 * jnp.sqrt((1.0 + t) / (1.0 - t)) * sgn
     # Calculate the normalized mean of x in the 2nd PDF component.
     mu2n = -(mf / (1.0 - mf)) * mu1n
-    sqrt_xp2 = _ssqrt(xp2)
+    sqrt_xp2 = sqrt_clipped(xp2)
     # Calculate the mean of x in the 1st PDF component.
     mu_x_1 = xm + mu1n * sqrt_xp2
     # Calculate the mean of x in the 2nd PDF component.

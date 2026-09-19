@@ -12,6 +12,7 @@ from clubb_jax.src.CLUBB_core.advance_clubb_core_module import advance_clubb_cor
 from clubb_jax.src.CLUBB_core.advance_helper_module import calculate_thlp2_rad
 from clubb_jax.src.CLUBB_core.calc_pressure import calculate_thvm
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.Benchmark_cases.prescribe_forcings import prescribe_forcings
 from clubb_jax.src.Radiation.radiation_module import advance_clubb_radiation
 
@@ -35,7 +36,11 @@ def _err_code_summary(err_info) -> str:
 
 
 def advance_clubb_to_end(state: dict, l_stdout: bool = True, max_steps: int | None = None):
-    """Run the CLUBB time loop."""
+    """Run the CLUBB time loop.
+
+    For JAX differentiation, initialize with debug=-1 and stats disabled,
+    and pass l_stdout=False. Set configuration before tracing the driver.
+    """
 
     dt_main = state['dt_main']
     dt_rad = state['dt_rad']
@@ -116,7 +121,7 @@ def advance_clubb_to_end(state: dict, l_stdout: bool = True, max_steps: int | No
         l_rad_itime = (itime % rad_interval == 0) or (itime == 1)
 
         _advance_radiation(state=state, time_current=time_current, l_rad_itime=l_rad_itime)
-        if state['err_info'].is_fatal():
+        if clubb_at_least_debug_level(0) and state['err_info'].is_fatal():
             raise RuntimeError(
                 "Fatal error in radiation; "
                 f"{_err_code_summary(state['err_info'])}"
@@ -412,7 +417,8 @@ def _advance_clubb_core(state: dict):
         state['_wpsclrpthlp'],
         state['_jax_stats'],
     ) = result
-    if state['err_info'].is_fatal():
+    # Host inspection/raising is disabled at debug=-1, as in core routines.
+    if clubb_at_least_debug_level(0) and state['err_info'].is_fatal():
         nonfinite = []
         for name, value in state.items():
             if not hasattr(value, "dtype"):

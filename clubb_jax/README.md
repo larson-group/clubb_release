@@ -105,6 +105,32 @@ This option applies only to NVIDIA CUDA. See
 [Advanced GPU Options](#advanced-gpu-options) for device selection details
 and memory trade-offs.
 
+## Differentiability: initial test
+
+We have a quick check that JAX can differentiate one full driver timestep for
+BOMEX and ATEX. It checks forward and reverse derivatives using an artificial
+scalar loss. **This is not a meaningful tuning objective or a working tuning
+workflow yet**, and it does not establish that long runs or every configuration
+can be differentiated.
+
+Run it from the repository root:
+
+```bash
+.venv-jax/bin/python -m pytest -q clubb_jax/tests/test_full_timestep_grad.py
+```
+
+The [test](tests/test_full_timestep_grad.py) sets up the normal driver with:
+
+- `l_diag_Lscale_from_tau=.true.`: currently required for this reverse-mode
+  test. The default parcel-based mixing-length loops are still unsupported.
+  This selects different mixing-length physics; the default remains unchanged.
+- `debug=-1` and statistics disabled: keeps host error checks and file output
+  out of differentiation. The test checks returned errors afterward.
+- `l_stdout=False`: turns off progress printing.
+
+Clipping and branch changes still need care when interpreting gradients. The
+comments in the test explain its setup and finite-difference checks.
+
 ## Testing
 
 The main regression test runs the same SCM cases through JAX and the original

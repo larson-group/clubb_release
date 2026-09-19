@@ -38,6 +38,8 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 import jax.scipy.special as jsp
 
 from clubb_jax.src.CLUBB_core.constants_clubb import (
@@ -69,9 +71,6 @@ from clubb_jax.src.CLUBB_core.pdf_params import (
     init_pdf_implicit_coefs_terms_api,
 )
 
-
-def _safe_sqrt(value):
-    return jnp.sqrt(jnp.maximum(value, 0.0))
 
 
 def _unsupported_pdf_type_message(iiPDF_type):
@@ -640,16 +639,16 @@ def pdf_closure(
         # Correlation of w and chi for each component.
         corr_w_chi_1 = calc_corr_chi_x(
             crt_1, cthl_1,
-            _safe_sqrt(adg1["varnce_rt_1"]),
-            _safe_sqrt(adg1["varnce_thl_1"]),
+            sqrt_clipped(adg1["varnce_rt_1"]),
+            sqrt_clipped(adg1["varnce_thl_1"]),
             stdev_chi_1,
             corr_w_rt_1,
             corr_w_thl_1,
         )
         corr_w_chi_2 = calc_corr_chi_x(
             crt_2, cthl_2,
-            _safe_sqrt(adg1["varnce_rt_2"]),
-            _safe_sqrt(adg1["varnce_thl_2"]),
+            sqrt_clipped(adg1["varnce_rt_2"]),
+            sqrt_clipped(adg1["varnce_thl_2"]),
             stdev_chi_2,
             corr_w_rt_2,
             corr_w_thl_2,
@@ -657,16 +656,16 @@ def pdf_closure(
         # Correlation of w and eta for each component.
         corr_w_eta_1 = calc_corr_eta_x(
             crt_1, cthl_1,
-            _safe_sqrt(adg1["varnce_rt_1"]),
-            _safe_sqrt(adg1["varnce_thl_1"]),
+            sqrt_clipped(adg1["varnce_rt_1"]),
+            sqrt_clipped(adg1["varnce_thl_1"]),
             stdev_eta_1,
             corr_w_rt_1,
             corr_w_thl_1,
         )
         corr_w_eta_2 = calc_corr_eta_x(
             crt_2, cthl_2,
-            _safe_sqrt(adg1["varnce_rt_2"]),
-            _safe_sqrt(adg1["varnce_thl_2"]),
+            sqrt_clipped(adg1["varnce_rt_2"]),
+            sqrt_clipped(adg1["varnce_thl_2"]),
             stdev_eta_2,
             corr_w_rt_2,
             corr_w_thl_2,
@@ -890,16 +889,16 @@ def pdf_closure(
             mf[:, :, None] * ((sclr1 - sclrm) * rc_1[:, :, None])
             + (1.0 - mf[:, :, None]) * ((sclr2 - sclrm) * rc_2[:, :, None])
             + mf[:, :, None] * corr_sclr_rt_1 * crt_1[:, :, None]
-            * _safe_sqrt(varnce_sclr1 * adg1["varnce_rt_1"][:, :, None])
+            * sqrt_clipped(varnce_sclr1 * adg1["varnce_rt_1"][:, :, None])
             * cloud_frac_1[:, :, None]
             + (1.0 - mf[:, :, None]) * corr_sclr_rt_2 * crt_2[:, :, None]
-            * _safe_sqrt(varnce_sclr2 * adg1["varnce_rt_2"][:, :, None])
+            * sqrt_clipped(varnce_sclr2 * adg1["varnce_rt_2"][:, :, None])
             * cloud_frac_2[:, :, None]
             - mf[:, :, None] * corr_sclr_thl_1 * cthl_1[:, :, None]
-            * _safe_sqrt(varnce_sclr1 * adg1["varnce_thl_1"][:, :, None])
+            * sqrt_clipped(varnce_sclr1 * adg1["varnce_thl_1"][:, :, None])
             * cloud_frac_1[:, :, None]
             - (1.0 - mf[:, :, None]) * corr_sclr_thl_2 * cthl_2[:, :, None]
-            * _safe_sqrt(varnce_sclr2 * adg1["varnce_thl_2"][:, :, None])
+            * sqrt_clipped(varnce_sclr2 * adg1["varnce_thl_2"][:, :, None])
             * cloud_frac_2[:, :, None]
         )
         sclrpthvp = (
@@ -1038,11 +1037,11 @@ def transform_pdf_chi_eta_component(tl, rsatl, rt, exner_in,
     vrnc_rt_t  = crt**2 * varnce_rt
     vrnc_thl_t = cthl**2 * varnce_thl
     corr_t     = (2.0 * corr_rt_thl * crt * cthl
-                  * jnp.sqrt(varnce_rt * varnce_thl))
+                  * sqrt_clipped(varnce_rt * varnce_thl))
     vrnc_chi   = vrnc_rt_t - corr_t + vrnc_thl_t
     vrnc_eta   = vrnc_rt_t + corr_t + vrnc_thl_t
-    stdev_chi  = _safe_sqrt(vrnc_chi)
-    stdev_eta  = _safe_sqrt(vrnc_eta)
+    stdev_chi  = sqrt_clipped(vrnc_chi)
+    stdev_eta  = sqrt_clipped(vrnc_eta)
     covar_chi_eta = vrnc_rt_t - vrnc_thl_t
     # smooth_corr_quotient (pdf_utilities.F90:1360)
     _denom_thresh = chi_tol * eta_tol
@@ -1142,10 +1141,10 @@ def calc_wp2xp2_pdf(wm, xm, w_1, w_2, x_1, x_2,
     dx_2 = x_2 - xm
 
     term1 = (dw_1 ** 2 * (dx_1 ** 2 + varnce_x_1)
-             + 4.0 * corr_w_x_1 * _safe_sqrt(varnce_w_1 * varnce_x_1) * dx_1 * dw_1
+             + 4.0 * corr_w_x_1 * sqrt_clipped(varnce_w_1 * varnce_x_1) * dx_1 * dw_1
              + (dx_1 ** 2 + (1.0 + 2.0 * corr_w_x_1 ** 2) * varnce_x_1) * varnce_w_1)
     term2 = (dw_2 ** 2 * (dx_2 ** 2 + varnce_x_2)
-             + 4.0 * corr_w_x_2 * _safe_sqrt(varnce_w_2 * varnce_x_2) * dx_2 * dw_2
+             + 4.0 * corr_w_x_2 * sqrt_clipped(varnce_w_2 * varnce_x_2) * dx_2 * dw_2
              + (dx_2 ** 2 + (1.0 + 2.0 * corr_w_x_2 ** 2) * varnce_x_2) * varnce_w_2)
 
     # Calculate <w'x'^2> by integrating over the PDF.
@@ -1192,8 +1191,8 @@ def calc_wp2xp_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
     vx1 = jnp.asarray(varnce_x_1); vx2 = jnp.asarray(varnce_x_2)
     c1 = jnp.asarray(corr_w_x_1); c2 = jnp.asarray(corr_w_x_2)
     # Calculate <w'^2 x'> by integrating over the PDF.
-    return (a * ((dw1 ** 2 + vw1) * dx1 + 2.0 * c1 * _safe_sqrt(vw1 * vx1) * dw1)
-            + (1.0 - a) * ((dw2 ** 2 + vw2) * dx2 + 2.0 * c2 * _safe_sqrt(vw2 * vx2) * dw2))
+    return (a * ((dw1 ** 2 + vw1) * dx1 + 2.0 * c1 * sqrt_clipped(vw1 * vx1) * dw1)
+            + (1.0 - a) * ((dw2 ** 2 + vw2) * dx2 + 2.0 * c2 * sqrt_clipped(vw2 * vx2) * dw2))
 
 
 def calc_wpxp2_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
@@ -1236,8 +1235,8 @@ def calc_wpxp2_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
     vx1 = jnp.asarray(varnce_x_1); vx2 = jnp.asarray(varnce_x_2)
     c1 = jnp.asarray(corr_w_x_1); c2 = jnp.asarray(corr_w_x_2)
     # Calculate <w'x'^2> by integrating over the PDF.
-    return (a * (dw1 * (dx1 ** 2 + vx1) + 2.0 * c1 * _safe_sqrt(vw1 * vx1) * dx1)
-            + (1.0 - a) * (dw2 * (dx2 ** 2 + vx2) + 2.0 * c2 * _safe_sqrt(vw2 * vx2) * dx2))
+    return (a * (dw1 * (dx1 ** 2 + vx1) + 2.0 * c1 * sqrt_clipped(vw1 * vx1) * dx1)
+            + (1.0 - a) * (dw2 * (dx2 ** 2 + vx2) + 2.0 * c2 * sqrt_clipped(vw2 * vx2) * dx2))
 
 
 def calc_wpxpyp_pdf(wm, xm, ym, w_1, w_2, x_1, x_2, y_1, y_2,
@@ -1297,10 +1296,10 @@ def calc_wpxpyp_pdf(wm, xm, ym, w_1, w_2, x_1, x_2, y_1, y_2,
     cwy1 = jnp.asarray(corr_w_y_1); cwy2 = jnp.asarray(corr_w_y_2)
     cxy1 = jnp.asarray(corr_x_y_1); cxy2 = jnp.asarray(corr_x_y_2)
     # Calculate <w'x'y'> by integrating over the PDF.
-    comp1 = (dw1 * dx1 * dy1 + cxy1 * _safe_sqrt(vx1 * vy1) * dw1
-             + cwy1 * _safe_sqrt(vw1 * vy1) * dx1 + cwx1 * _safe_sqrt(vw1 * vx1) * dy1)
-    comp2 = (dw2 * dx2 * dy2 + cxy2 * _safe_sqrt(vx2 * vy2) * dw2
-             + cwy2 * _safe_sqrt(vw2 * vy2) * dx2 + cwx2 * _safe_sqrt(vw2 * vx2) * dy2)
+    comp1 = (dw1 * dx1 * dy1 + cxy1 * sqrt_clipped(vx1 * vy1) * dw1
+             + cwy1 * sqrt_clipped(vw1 * vy1) * dx1 + cwx1 * sqrt_clipped(vw1 * vx1) * dy1)
+    comp2 = (dw2 * dx2 * dy2 + cxy2 * sqrt_clipped(vx2 * vy2) * dw2
+             + cwy2 * sqrt_clipped(vw2 * vy2) * dx2 + cwx2 * sqrt_clipped(vw2 * vx2) * dy2)
     return a * comp1 + (1.0 - a) * comp2
 
 
@@ -1495,13 +1494,13 @@ def calc_xprcp_component(wm, rtm, thlm, um, vm, rcm,
         stdev_chi_safe = jnp.where(active, stdev_chi_i, 1.0)
         wprcp = wprcp + jnp.where(
             active,
-            corr_w_chi_i * _safe_sqrt(varnce_w_i) * stdev_chi_i * cloud_frac_i,
+            corr_w_chi_i * sqrt_clipped(varnce_w_i) * stdev_chi_i * cloud_frac_i,
             0.0,
         )
         wp2rcp = wp2rcp + jnp.where(
             active,
             2.0 * (w_i - wm) * corr_w_chi_i
-            * _safe_sqrt(varnce_w_i) * stdev_chi_i * cloud_frac_i
+            * sqrt_clipped(varnce_w_i) * stdev_chi_i * cloud_frac_i
             + corr_w_chi_i ** 2 * varnce_w_i * stdev_chi_i
             * jnp.exp(-chi_i ** 2 / (2.0 * stdev_chi_safe ** 2)) / sqrt_2pi,
             0.0,

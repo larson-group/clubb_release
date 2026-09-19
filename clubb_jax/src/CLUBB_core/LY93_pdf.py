@@ -23,7 +23,7 @@ configure_jax_precision()
 
 
 # Grad-safe sqrt(max(x,0)); the Fortran uses sqrt directly.
-from clubb_jax.src.CLUBB_core.pdf_utilities import _safe_sqrt as _ssqrt
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 
 
 def _scbrt(x):
@@ -54,7 +54,7 @@ def calc_params_LY93(xm, xp2, Skx, mixt_frac):
     sgn = jnp.where(Skx >= 0.0, 1.0, -1.0)
 
     # Calculate B_x, the LY function for the spread of the PDF component means.
-    B_x = sgn * _ssqrt(xp2) * _scbrt(jnp.abs(Skx) / omf)
+    B_x = sgn * sqrt_clipped(xp2) * _scbrt(jnp.abs(Skx) / omf)
 
     # Calculate the mean of x in the 1st PDF component.
     mu_x_1 = xm - B_x * omf

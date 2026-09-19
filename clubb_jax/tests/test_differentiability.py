@@ -106,12 +106,8 @@ def test_penta_solver_differentiable():
     print(f"  penta_lu_solve: grad w.r.t. rhs finite+correct (rel {rel:.1e})  PASS")
 
 
-@pytest.mark.xfail(
-    reason="fill_holes_vertical uses dynamic fori_loop bounds, which are not reverse-mode differentiable",
-    strict=False,
-)
 def test_fill_holes_differentiable():
-    """fill_holes_vertical (jitted Iter291; sliding-window fori_loop + global-fallback lax.cond)
+    """fill_holes_vertical (static sliding-window fori_loop + global-fallback lax.cond)
     is reverse-mode differentiable w.r.t. the field. The mass-conserving redistribution must keep the
     gradient flowing (the hole-fill is the only clip in several prognostic update paths)."""
     from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical

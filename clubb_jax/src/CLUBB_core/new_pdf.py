@@ -19,8 +19,7 @@ Porting deviations:
   impossible PDF state is guarded before these routines are used by the core.
 - sort_roots uses jnp.sort instead of the explicit Fortran three-root sorting
   network; it returns the same values.
-- _ssqrt is imported from pdf_utilities so sibling JAX PDF modules can share a
-  grad-safe sqrt helper.
+- sqrt_clipped is the shared JAX helper for finite clipped-root gradients.
 
 !=============================================================================
 !
@@ -250,6 +249,8 @@ Porting deviations:
 """
 import jax.numpy as jnp
 
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
+
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
 
@@ -355,9 +356,6 @@ def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
     return jnp.where(F > 0.0, mf_pos, mf_symmetric)
 
 
-# grad-safe sqrt(max(x,0)) — the canonical tracer-toolkit helper (re-exported under _ssqrt
-# so new_hybrid_pdf can keep `from new_pdf import _ssqrt`, mirroring the Fortran shared helper).
-from clubb_jax.src.CLUBB_core.pdf_utilities import _safe_sqrt as _ssqrt
 
 
 def calc_coef_wpxp2_implicit(wp2, xp2, wpxp, sgn_wpxp, mixt_frac, F_w, F_x,
@@ -393,24 +391,24 @@ def calc_coef_wpxp2_implicit(wp2, xp2, wpxp, sgn_wpxp, mixt_frac, F_w, F_x,
     omf = 1.0 - mf
 
     F_spread = F_x * (omf / mf - mf / omf)
-    base = _ssqrt(mf * omf) * _ssqrt(wp2)
+    base = sqrt_clipped(mf * omf) * sqrt_clipped(wp2)
 
     # ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0
     #   and coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0 )
     # or wp2 * xp2 = 0
-    branchB = base * _ssqrt(F_w) * (F_spread + (cx1 - cx2))
+    branchB = base * sqrt_clipped(F_w) * (F_spread + (cx1 - cx2))
 
     cwcx1 = cw1 * cx1
     cwcx2 = cw2 * cx2
-    denom = mf * _ssqrt(cwcx1) + omf * _ssqrt(cwcx2)
+    denom = mf * sqrt_clipped(cwcx1) + omf * sqrt_clipped(cwcx2)
     # Factor involving coef_sigma_... coefficients
-    coefs_factor = (_ssqrt(cwcx1) - _ssqrt(cwcx2)) / jnp.where(denom > 0.0, denom, 1.0)
-    denom2 = _ssqrt(wp2) * _ssqrt(xp2)
+    coefs_factor = (sqrt_clipped(cwcx1) - sqrt_clipped(cwcx2)) / jnp.where(denom > 0.0, denom, 1.0)
+    denom2 = sqrt_clipped(wp2) * sqrt_clipped(xp2)
     wpxp_ratio = wpxp / jnp.where(denom2 > 0.0, denom2, 1.0)
-    branchA = base * (_ssqrt(F_w) * F_x * (omf / mf - mf / omf)
-                      + _ssqrt(F_w) * (cx1 - cx2)
-                      + 2.0 * _ssqrt(F_x) * coefs_factor * sgn * wpxp_ratio
-                      - 2.0 * _ssqrt(F_w) * F_x * coefs_factor)
+    branchA = base * (sqrt_clipped(F_w) * F_x * (omf / mf - mf / omf)
+                      + sqrt_clipped(F_w) * (cx1 - cx2)
+                      + 2.0 * sqrt_clipped(F_x) * coefs_factor * sgn * wpxp_ratio
+                      - 2.0 * sqrt_clipped(F_w) * F_x * coefs_factor)
 
     # Calculate coef_wpxp2_implicit.
     cond = ((cwcx1 > 0.0) | (cwcx2 > 0.0)) & (wp2 * xp2 > 0.0)
@@ -432,21 +430,21 @@ def calc_setter_var_params(xm, xp2, Skx, sgn_wpxp, F_x, zeta_x):
     mixt_frac = calc_mixture_fraction(Skx, F_x, zeta, sgn)
     omf = 1.0 - mixt_frac
     # Calculate the mean of x in the 1st PDF component.
-    mu_x_1 = xm + sgn * _ssqrt(F_x * (omf / mixt_frac) * xp2)
+    mu_x_1 = xm + sgn * sqrt_clipped(F_x * (omf / mixt_frac) * xp2)
     # Calculate the mean of x in the 2nd PDF component.
     mu_x_2 = xm - (mixt_frac / omf) * (mu_x_1 - xm)
     # Calculate the standard deviation of x in the 1st PDF component.
     # sigma_x_1 = sqrt( ( ( zeta_x + 1 ) * ( 1 - F_x ) )
     #                   / ( ( zeta_x + 2 ) * mixt_frac ) * <x'^2> )
     coef_sigma_x_1_sqd = ((zeta + 1.0) * (1.0 - F_x)) / ((zeta + 2.0) * mixt_frac)
-    sigma_x_1 = _ssqrt(coef_sigma_x_1_sqd * xp2)
+    sigma_x_1 = sqrt_clipped(coef_sigma_x_1_sqd * xp2)
     # Calculate the standard deviation of x in the 2nd PDF component.
     # sigma_x_2 = sqrt( ( mixt_frac * sigma_x_1^2 )
     #                   / ( ( 1 - mixt_frac ) * ( 1 + zeta_x ) ) )
     #           = sqrt( ( 1 - F_x )
     #                   / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ) * <x'^2> )
     coef_sigma_x_2_sqd = (1.0 - F_x) / ((zeta + 2.0) * omf)
-    sigma_x_2 = _ssqrt(coef_sigma_x_2_sqd * xp2)
+    sigma_x_2 = sqrt_clipped(coef_sigma_x_2_sqd * xp2)
     return mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, mixt_frac, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd
 
 
@@ -491,7 +489,7 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
     F_safe = jnp.where(F_x > 0.0, F_x, 1.0)
 
     # Calculate the mean of x in the 1st PDF component.
-    mu_x_1_v = xm + sgn * _ssqrt(F_x * (omf / mf) * xp2)
+    mu_x_1_v = xm + sgn * sqrt_clipped(F_x * (omf / mf) * xp2)
     # Calculate the mean of x in the 2nd PDF component.
     mu_x_2_v = xm - (mf / omf) * (mu_x_1_v - xm)
     # Calculate the variance of x in the 1st PDF component.
@@ -503,7 +501,7 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
     #     / ( 3 * mixt_frac * sqrt( F_x ) )
     #     - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
     #     + 1 ) * <x'^2>
-    c1_v = (_ssqrt(mf * omf) * Skx * sgn / (3.0 * mf * _ssqrt(F_safe))
+    c1_v = (sqrt_clipped(mf * omf) * Skx * sgn / (3.0 * mf * sqrt_clipped(F_safe))
             - (1.0 + mf) * F_x / (3.0 * mf) + 1.0)
     # Calculate the variance of x in the 2nd PDF component.
     # sigma_x_2^2
@@ -598,7 +596,7 @@ def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
     max_neg = jnp.asarray(max_Skx2_neg_Skx_sgn_wpxp, dtype=jnp.float64)
     omf = 1.0 - mf
 
-    Dterm = _ssqrt(mf * omf) * Skx * sgn
+    Dterm = sqrt_clipped(mf * omf) * Skx * sgn
 
     # Set up the coefficients in the equation for the limit of sqrt(F_x) based
     # on the 1st PDF component standard deviation (sigma_x_1) being greater than
@@ -678,22 +676,22 @@ def calc_coefs_wp2xp_semiimpl(wp2, xp2, sgn_wpxp, mixt_frac, F_w, F_x,
     cx1 = jnp.asarray(coef_sigma_x_1_sqd, dtype=jnp.float64); cx2 = jnp.asarray(coef_sigma_x_2_sqd, dtype=jnp.float64)
     omf = 1.0 - mf
 
-    base = _ssqrt(mf * omf)
-    swp2 = _ssqrt(wp2)
+    base = sqrt_clipped(mf * omf)
+    swp2 = sqrt_clipped(wp2)
     F_spread = omf / mf - mf / omf
-    explicit_prefac = base * _ssqrt(F_x) * _ssqrt(xp2) * wp2 * sgn
+    explicit_prefac = base * sqrt_clipped(F_x) * sqrt_clipped(xp2) * wp2 * sgn
 
     # Calculate coef_wp2xp_implicit and term_wp2xp_explicit.
     cwcx1 = cw1 * cx1
     cwcx2 = cw2 * cx2
-    denom = mf * _ssqrt(cwcx1) + omf * _ssqrt(cwcx2)
+    denom = mf * sqrt_clipped(cwcx1) + omf * sqrt_clipped(cwcx2)
     # Factor involving coef_sigma_... coefficients
-    coefs_factor = (_ssqrt(cwcx1) - _ssqrt(cwcx2)) / jnp.where(denom > 0.0, denom, 1.0)
+    coefs_factor = (sqrt_clipped(cwcx1) - sqrt_clipped(cwcx2)) / jnp.where(denom > 0.0, denom, 1.0)
 
-    coef_full = base * 2.0 * _ssqrt(F_w) * swp2 * coefs_factor
+    coef_full = base * 2.0 * sqrt_clipped(F_w) * swp2 * coefs_factor
     term_full = explicit_prefac * (F_w * F_spread + (cw1 - cw2) - 2.0 * F_w * coefs_factor)
 
-    coef_red = base * _ssqrt(F_w) * swp2 * F_spread
+    coef_red = base * sqrt_clipped(F_w) * swp2 * F_spread
     term_red = explicit_prefac * (cw1 - cw2)
 
     # coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0
@@ -737,7 +735,7 @@ def calc_coefs_wpxpyp_semiimpl(wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mi
     omf = 1.0 - mf
 
     def _cfactor(p1, p2):
-        s1, s2 = _ssqrt(p1), _ssqrt(p2)
+        s1, s2 = sqrt_clipped(p1), sqrt_clipped(p2)
         denom = mf * s1 + omf * s2
         # When coef_sigma_*_1_sqd * coef_sigma_*_1_sqd = 0 and
         # coef_sigma_*_2_sqd * coef_sigma_*_2_sqd = 0, the value of
@@ -753,10 +751,10 @@ def calc_coefs_wpxpyp_semiimpl(wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mi
     # Calculate coefs_factor_xy.
     factor_xy = _cfactor(cx1 * cy1, cx2 * cy2)
 
-    base = _ssqrt(mf * omf)
-    sFw_wp2 = _ssqrt(F_w) * _ssqrt(wp2)
-    Fx_xp2_sx = _ssqrt(F_x) * _ssqrt(xp2) * sx
-    Fy_yp2_sy = _ssqrt(F_y) * _ssqrt(yp2) * sy
+    base = sqrt_clipped(mf * omf)
+    sFw_wp2 = sqrt_clipped(F_w) * sqrt_clipped(wp2)
+    Fx_xp2_sx = sqrt_clipped(F_x) * sqrt_clipped(xp2) * sx
+    Fy_yp2_sy = sqrt_clipped(F_y) * sqrt_clipped(yp2) * sy
     spread = omf / mf - mf / omf
 
     coef_A = base * sFw_wp2 * factor_xy

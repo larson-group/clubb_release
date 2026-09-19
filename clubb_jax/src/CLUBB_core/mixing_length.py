@@ -27,6 +27,7 @@ configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import (
+    sqrt_clipped,
     calc_Ri_zm,
     smooth_heaviside_peskin,
     smooth_max,
@@ -1396,7 +1397,7 @@ def diagnose_Lscale_from_tau(
         + jnp.zeros((ngrdcol, nzm))
     )
 
-    norm_ddzt_umvm = jnp.sqrt(ddzt_umvm_sqd)
+    norm_ddzt_umvm = sqrt_clipped(ddzt_umvm_sqd)
     smooth_norm_ddzt_umvm = zm2zt2zm(nzm, nzt, ngrdcol, gr, norm_ddzt_umvm)
 
     invrs_tau_shear_smooth = (
@@ -1437,9 +1438,7 @@ def diagnose_Lscale_from_tau(
         )
         brunt_freq_pos = jnp.sqrt(brunt_vaisala_freq_clipped)
     else:
-        brunt_freq_pos = jnp.sqrt(
-            jnp.maximum(zero_threshold, brunt_vaisala_freq_sqd_smth)
-        )
+        brunt_freq_pos = sqrt_clipped(brunt_vaisala_freq_sqd_smth)
 
     ice_supersat_frac_zm = zt2zm(
         nzm,

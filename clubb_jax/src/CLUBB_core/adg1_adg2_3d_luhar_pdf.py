@@ -23,7 +23,7 @@ Implements:
   ADG1_ADG2_responder_params - PDF component params for rt/thl/u/v/sclr
   ADG1_pdf_driver            - top-level ADG1 PDF parameter driver
   calc_comp_corrs_binormal   - PDF component correlations (pdf_utilities.F90;
-                                   _safe_sqrt-hardened grad variant of pdf_utilities.calc_comp_corrs_binormal)
+                                   sqrt_clipped-hardened grad variant of pdf_utilities.calc_comp_corrs_binormal)
   calc_Luhar_params / close_Luhar_pdf / max_cubic_root / backsolve_Luhar_params
   Luhar_3D_pdf_driver / ADG2_pdf_driver
 
@@ -34,11 +34,10 @@ live in pdf_closure_module.py, mirroring their Fortran home pdf_closure_module.F
 import jax
 import jax.numpy as jnp
 
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
+
 from clubb_jax.src.CLUBB_core.constants_clubb import rt_tol, thl_tol, w_tol_sqd, zero_threshold, eps
 
-
-def _safe_sqrt(value):
-    return jnp.sqrt(jnp.maximum(value, 0.0))
 
 
 def ADG1_w_closure(wm, wp2, Skw, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag):
@@ -107,14 +106,14 @@ def ADG1_w_closure(wm, wp2, Skw, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag):
     # standard deviation above the overall mean for w.
     one_minus_mf = 1.0 - mixt_frac
     sigma_factor = 1.0 - sigma_sqd_w
-    # _safe_sqrt (REFACTOR B5): sigma_factor = 1-sigma_sqd_w -> 0 in well-mixed/surface layers, so the bare
+    # sqrt_clipped (REFACTOR B5): sigma_factor = 1-sigma_sqd_w -> 0 in well-mixed/surface layers, so the bare
     # sqrt has an inf reverse-mode gradient there (the bomex thlm surface nan). Forward-identical (arg >= 0).
-    w_1_n = _safe_sqrt(one_minus_mf / mixt_frac * sigma_factor)
+    w_1_n = sqrt_clipped(one_minus_mf / mixt_frac * sigma_factor)
     # The normalized mean of w for Gaussian "plume" 2 is w_2_n.  It's value
     # will always be less than 0.  As an example, a value of -0.5 would
     # indicate that the actual mean of w for Gaussian "plume" 2 is found 0.5
     # standard deviations below the overall mean for w.
-    w_2_n = -_safe_sqrt(mixt_frac / one_minus_mf * sigma_factor)
+    w_2_n = -sqrt_clipped(mixt_frac / one_minus_mf * sigma_factor)
 
     # The mean of w for Gaussian "plume" 1 is w_1.
     w_1 = wm + sqrt_wp2 * w_1_n
@@ -418,10 +417,10 @@ def close_Luhar_pdf(xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd):
     # The variance of x in the 2nd PDF component.
     varnce_x_2 = jnp.where(vary, sigma_sqd_x_2 * xp2, 0.0)
     # Normalized mean of x in the 1st PDF component.
-    x_1_n = sgn * m * _safe_sqrt(sigma_sqd_x_1)
+    x_1_n = sgn * m * sqrt_clipped(sigma_sqd_x_1)
     # Normalized mean of x in the 2nd PDF component.
-    x_2_n = -sgn * m * _safe_sqrt(sigma_sqd_x_2)
-    sqrt_xp2 = _safe_sqrt(xp2)
+    x_2_n = -sgn * m * sqrt_clipped(sigma_sqd_x_2)
+    sqrt_xp2 = sqrt_clipped(xp2)
     # The mean of x in the 1st PDF component.
     x_1 = jnp.where(vary, xm + sqrt_xp2 * x_1_n, xm)
     # The mean of x in the 2nd PDF component.

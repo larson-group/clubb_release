@@ -75,6 +75,18 @@ from clubb_jax.src.CLUBB_core.grid_class import (
 from clubb_jax.src.CLUBB_core.saturation import sat_mixrat_liq
 
 
+def sqrt_clipped(value):
+    """Return sqrt(max(value, 0)), choosing zero derivative at value <= 0.
+
+    Guard the input as well as the output: masking sqrt(0) afterward still
+    allows its infinite derivative to contaminate inactive branches. This is
+    a boundary convention, not a finite classical derivative of sqrt at zero.
+    Positive inputs are unmodified, and NaN inputs remain NaN.
+    """
+    clipped = value <= 0.0
+    return jnp.where(clipped, 0.0, jnp.sqrt(jnp.where(clipped, 1.0, value)))
+
+
 def set_boundary_conditions_lhs(
     diag_index,
     low_bound,
@@ -578,9 +590,7 @@ def wp23_term_splat_lhs(
         rho_ds_zm,
         below_grnd_val,
     )
-    brunt_vaisala_freq_splat_clipped = jnp.sqrt(
-        jnp.maximum(0.0, brunt_vaisala_freq_sqd_splat)
-    )
+    brunt_vaisala_freq_splat_clipped = sqrt_clipped(brunt_vaisala_freq_sqd_splat)
     brunt_vaisala_freq_splat_smooth = zm2zt2zm(
         nzm, nzt, ngrdcol, gr, brunt_vaisala_freq_splat_clipped
     )

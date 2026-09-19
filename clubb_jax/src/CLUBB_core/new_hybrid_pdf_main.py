@@ -24,7 +24,7 @@ from __future__ import annotations
 import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.new_pdf import _ssqrt
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 from clubb_jax.src.CLUBB_core.new_hybrid_pdf import (
     calculate_w_params,
     calculate_responder_params,
@@ -159,16 +159,16 @@ def calc_responder_driver(xm, xp2, wpxp, wp2, mixt_frac, F_w, Skx):
     # When <w'^2> = 0 or <x'^2> = 0, <w'x'> = 0.  The correlation of w
     # and x is undefined, however, since <w'x'> = 0, Skx = 0.  Setting
     # corr_w_x = 0 in this scenario will set max_Skx = min_Skx = 0.
-    corr_w_x = jnp.where(wx > 0.0, wpxp / _ssqrt(jnp.where(wx > 0.0, wx, 1.0)), 0.0)
+    corr_w_x = jnp.where(wx > 0.0, wpxp / sqrt_clipped(jnp.where(wx > 0.0, wx, 1.0)), 0.0)
 
-    sqrt_F = _ssqrt(F_safe)
+    sqrt_F = sqrt_clipped(F_safe)
     F_3half = F_safe ** 1.5                                     # F_w**three_halves (gfortran pow)
-    base_mfomf = _ssqrt(mf * omf)
+    base_mfomf = sqrt_clipped(mf * omf)
     corr3 = corr_w_x * corr_w_x * corr_w_x                      # gfortran expands x**3 to x*x*x
     A = ((1.0 + mf) / base_mfomf * corr3 / F_3half
-         - _ssqrt(mf / omf) * 3.0 * corr_w_x / sqrt_F)
+         - sqrt_clipped(mf / omf) * 3.0 * corr_w_x / sqrt_F)
     B = ((mf - 2.0) / base_mfomf * corr3 / F_3half
-         + _ssqrt(omf / mf) * 3.0 * corr_w_x / sqrt_F)
+         + sqrt_clipped(omf / mf) * 3.0 * corr_w_x / sqrt_F)
 
     wpxp_nonneg = wpxp >= 0.0
     # When F_w = 0, <w'x'> = 0, and Skx = 0.

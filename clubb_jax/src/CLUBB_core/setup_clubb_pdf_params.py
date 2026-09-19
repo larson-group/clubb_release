@@ -64,8 +64,8 @@ from clubb_jax.src.CLUBB_core.hydromet_pdf_parameter_module import (
 from clubb_jax.src.CLUBB_core.index_mapping import hydromet2pdf_idx, pdf2hydromet_idx
 from clubb_jax.src.CLUBB_core.Nc_Ncn_eqns import Nc_in_cloud_to_Ncnm
 from clubb_jax.src.CLUBB_core.parameter_indices import ic_K_hm, iomicron, izeta_vrnce_rat
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 from clubb_jax.src.CLUBB_core.pdf_utilities import (
-    _safe_sqrt,
     compute_mean_binormal,
     compute_variance_binormal,
     corr_NN2NL,
@@ -1189,8 +1189,8 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     coef_A_s = jnp.where(coef_A != 0.0, coef_A, 1.0)
     # Calculate the mean (in-precip.) of the hydrometeor in the 1st PDF
     # component.
-    mu1 = jnp.where(thl_le, (-coef_B + _safe_sqrt(disc)) / (2.0 * coef_A_s),
-                    (-coef_B - _safe_sqrt(disc)) / (2.0 * coef_A_s))
+    mu1 = jnp.where(thl_le, (-coef_B + sqrt_clipped(disc)) / (2.0 * coef_A_s),
+                    (-coef_B - sqrt_clipped(disc)) / (2.0 * coef_A_s))
     # Calculate the mean (in-precip.) of the hydrometeor in the 2nd PDF
     # component.
     mu2 = (hmm - a * fp1 * mu1) / (oma_s * fp2_s)
@@ -1237,8 +1237,8 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
 
     # Calculate the in-precip. standard deviation of the hydrometeor in the 1st
     # and 2nd PDF components.
-    sig1_b = _safe_sqrt(R_b * (1.0 + zeta)) * mu1_b
-    sig2_b = _safe_sqrt(R_b) * mu2_b
+    sig1_b = sqrt_clipped(R_b * (1.0 + zeta)) * mu1_b
+    sig2_b = sqrt_clipped(R_b) * mu2_b
     # Calculate the mean of the hydrometeor in the 1st and 2nd PDF components.
     hm1_b = jnp.maximum(mu1_b * fp1, hm_tol)
     hm2_b = jnp.maximum(mu2_b * fp2, hm_tol)
@@ -1250,7 +1250,7 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     mu1_c1 = hmm / (a_s * fp1_s)
     # Calculate the in-precip. standard deviation of the hydrometeor in the 1st
     # PDF component.
-    sig1_c1 = _safe_sqrt((hmp2 + hmm ** 2 - a * fp1 * mu1_c1 ** 2) / (a_s * fp1_s))
+    sig1_c1 = sqrt_clipped((hmp2 + hmm ** 2 - a * fp1 * mu1_c1 ** 2) / (a_s * fp1_s))
     # Calculate the mean of the hydrometeor in the 1st PDF component.
     hm1_c1 = mu1_c1 * fp1
 
@@ -1261,7 +1261,7 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     mu2_c2 = hmm / (oma_s * fp2_s)
     # Calculate the in-precip. standard deviation of the hydrometeor in the 2nd
     # PDF component.
-    sig2_c2 = _safe_sqrt((hmp2 + hmm ** 2 - oma * fp2 * mu2_c2 ** 2) / (oma_s * fp2_s))
+    sig2_c2 = sqrt_clipped((hmp2 + hmm ** 2 - oma * fp2 * mu2_c2 ** 2) / (oma_s * fp2_s))
     # Calculate the mean of the hydrometeor in the 2nd PDF component.
     hm2_c2 = mu2_c2 * fp2
 
@@ -2290,6 +2290,6 @@ def compute_rtp2_from_chi(sigma_chi_1, sigma_chi_2, sigma_eta_1, sigma_eta_2,
     varnce_rt_2 = (corr_chi_eta_2 * sigma_chi_2 * sigma_eta_2
                    + 0.5 * sigma_chi_2 ** 2 + 0.5 * sigma_eta_2 ** 2) / (2.0 * crt_2 ** 2)
     rtm = mixt_frac * rt_1 + (1.0 - mixt_frac) * rt_2
-    sigma_rt_1 = _safe_sqrt(varnce_rt_1)
-    sigma_rt_2 = _safe_sqrt(varnce_rt_2)
+    sigma_rt_1 = sqrt_clipped(varnce_rt_1)
+    sigma_rt_2 = sqrt_clipped(varnce_rt_2)
     return compute_variance_binormal(rtm, rt_1, rt_2, sigma_rt_1, sigma_rt_2, mixt_frac)

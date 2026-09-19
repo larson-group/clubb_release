@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """test_fill_holes_sliding_window.py — validate the windowed mass-conserving hole-fill (fill_holes_type=2).
 
-`fill_holes_sliding_window(field, rho_dz, threshold, lower_k, upper_k, num_draw=2)` (fill_holes.py ↔
+`fill_holes_sliding_window` (fill_holes.py ↔
 fill_holes.F90:fill_holes_sliding_window) fills sub-threshold holes by sweeping a width-(2·num_draw+1) window over
 the levels k ∈ [lower_k+num_draw, upper_k−num_draw], doing a per-window mass-conserving fill (same clip+rescale as
 fill_holes_global), then a GLOBAL fallback (fill_holes_global over [lower_k, upper_k]) if any hole remains. Each
@@ -41,7 +41,9 @@ def test_conservation_and_no_holes():
     field, rho_dz = _setup(rng)
     thr = 0.1
     lo, hi = 1, 10           # window k sweeps 3..8, fallback over [1,10]
-    out = np.asarray(fill_holes_sliding_window(jnp.asarray(field), jnp.asarray(rho_dz), thr, lo, hi))
+    out = np.asarray(fill_holes_sliding_window(
+        _NZ, 1, thr, lo, hi, jnp.ones_like(field), jnp.asarray(rho_dz), jnp.asarray(field),
+    ))
     m_in = np.sum(field[0, lo:hi + 1] * rho_dz[0, lo:hi + 1])
     m_out = np.sum(out[0, lo:hi + 1] * rho_dz[0, lo:hi + 1])
     assert abs(m_in - m_out) / (abs(m_in) + 1e-300) < 1e-12, f"mass not conserved: {m_in} vs {m_out}"
@@ -55,7 +57,9 @@ def test_no_holes_is_noop():
     rng = np.random.default_rng(3)
     rho_dz = rng.uniform(0.5, 2.0, (1, _NZ))
     field = rng.uniform(0.5, 3.0, (1, _NZ))   # all > thr=0.1
-    out = np.asarray(fill_holes_sliding_window(jnp.asarray(field), jnp.asarray(rho_dz), 0.1, 1, 10))
+    out = np.asarray(fill_holes_sliding_window(
+        _NZ, 1, 0.1, 1, 10, jnp.ones_like(field), jnp.asarray(rho_dz), jnp.asarray(field),
+    ))
     assert np.max(np.abs(out - field)) < 1e-13, "no-hole field should be unchanged"
     print("  no-hole field: unchanged (noop)  PASS")
 
@@ -63,7 +67,9 @@ def test_no_holes_is_noop():
 def test_grad_finite():
     rng = np.random.default_rng(9)
     field, rho_dz = _setup(rng)
-    g = jax.grad(lambda f: jnp.sum(fill_holes_sliding_window(f, jnp.asarray(rho_dz), 0.1, 1, 10) ** 2))(jnp.asarray(field))
+    g = jax.grad(lambda f: jnp.sum(fill_holes_sliding_window(
+        _NZ, 1, 0.1, 1, 10, jnp.ones_like(f), jnp.asarray(rho_dz), f,
+    ) ** 2))(jnp.asarray(field))
     assert np.all(np.isfinite(np.asarray(g))), "non-finite grad"
     print("  jax.grad through fill_holes_sliding_window finite  PASS")
 

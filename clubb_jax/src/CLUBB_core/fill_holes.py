@@ -92,8 +92,10 @@ def fill_holes_global(
         jnp.abs(field_clipped_avg - threshold)
         > jnp.abs(field_clipped_avg + threshold) * eps / 2.0
     )
-    mass_fraction_global = (field_avg_global - threshold) / (
-        field_clipped_avg - threshold
+    # Guard the division itself: masking an unused 0/0 below still gives NaN
+    # reverse-mode derivatives. Keep the original denominator when scaling.
+    mass_fraction_global = (field_avg_global - threshold) / jnp.where(
+        safe_to_scale, field_clipped_avg - threshold, one
     )
     # Calculate normalized, filled field
     field_filled = threshold + mass_fraction_global * (field_clipped - threshold)
@@ -180,7 +182,11 @@ def fill_holes_sliding_window(
         )
         # Compute coefficient that makes the clipped field have the same mass as the
         # original field.  We should always have mass_fraction > 0.
-        mass_fraction = (field_avg - threshold) / (field_clipped_avg - threshold)
+        # Inactive windows must have finite derivatives too; the output mask
+        # alone cannot prevent an unused 0/0 from contaminating backpropagation.
+        mass_fraction = (field_avg - threshold) / jnp.where(
+            safe_to_scale, field_clipped_avg - threshold, one
+        )
         # Calculate normalized, filled field
         field_window_filled = threshold + mass_fraction * (field_clipped - threshold)
 
@@ -371,7 +377,12 @@ def fill_holes_wp2_from_horz_tke(
     no_up2_avail = jnp.abs(up2_avail) < _F64_EPS * 1000.0
     no_vp2_avail = jnp.abs(vp2_avail) < _F64_EPS * 1000.0
     # Calculate portion of up2/vp2 that we want to take away
-    ratio = jnp.where(up2_vp2_avail > zero, missing_wp2 / up2_vp2_avail, zero)
+    has_donor_energy = up2_vp2_avail > zero
+    ratio = jnp.where(
+        has_donor_energy,
+        missing_wp2 / jnp.where(has_donor_energy, up2_vp2_avail, one),
+        zero,
+    )
 
     up2_enough = jnp.where(
         no_up2_avail,

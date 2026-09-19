@@ -44,7 +44,7 @@ def _ref_coefs():
 
 def test_deterministic_coefficients():
     chi, crt, cthl, sdchi, sdeta, covar, corr = (float(x) for x in transform_pdf_chi_eta_component(
-        _TL, _RSATL, _RT, _EXNER, _VRT, _VTHL, _CORR))
+        _TL, _RSATL, _RT, _EXNER, _VTHL, _VRT, _CORR))
     beta, r_chi, r_crt, r_cthl = _ref_coefs()
     assert abs(chi - r_chi) < 1e-15 and abs(crt - r_crt) < 1e-15 and abs(cthl - r_cthl) < 1e-18, "coef mismatch"
     print(f"  β/χ/crt/cthl match closed form (χ={chi:.3e}, crt={crt:.4f}, cthl={cthl:.3e})  PASS")
@@ -53,7 +53,7 @@ def test_deterministic_coefficients():
 def test_variance_combination_monte_carlo():
     _, _, crt, cthl = _ref_coefs()
     _, _, _, sdchi, sdeta, covar, _ = (float(x) for x in transform_pdf_chi_eta_component(
-        _TL, _RSATL, _RT, _EXNER, _VRT, _VTHL, _CORR))
+        _TL, _RSATL, _RT, _EXNER, _VTHL, _VRT, _CORR))
     rng = np.random.default_rng(565)
     N = 12_000_000
     srt, sthl = math.sqrt(_VRT), math.sqrt(_VTHL)
@@ -72,10 +72,10 @@ def test_variance_combination_monte_carlo():
 
 def test_corr_quotient_and_grad():
     _, _, _, sdchi, sdeta, covar, corr = (float(x) for x in transform_pdf_chi_eta_component(
-        _TL, _RSATL, _RT, _EXNER, _VRT, _VTHL, _CORR))
+        _TL, _RSATL, _RT, _EXNER, _VTHL, _VRT, _CORR))
     # non-degenerate: corr_chi_eta ≈ covar / (stdev_chi·stdev_eta), within [-1,1]
     assert abs(corr - covar / (sdchi * sdeta)) < 1e-9 and -1.0 <= corr <= 1.0, "corr_chi_eta quotient off"
-    g = jax.grad(lambda rt: transform_pdf_chi_eta_component(_TL, _RSATL, rt, _EXNER, _VRT, _VTHL, _CORR)[0])(_RT)
+    g = jax.grad(lambda rt: transform_pdf_chi_eta_component(_TL, _RSATL, rt, _EXNER, _VTHL, _VRT, _CORR)[0])(_RT)
     assert np.isfinite(float(g)), "non-finite grad of chi wrt rt"
     print("  corr_chi_eta = covar/(σ_χ·σ_η) ∈ [−1,1]; finite grad  PASS")
 
@@ -90,3 +90,17 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def test_zero_component_variances_have_finite_derivatives():
+    import jax.numpy as jnp
+    def fn(variances):
+        return jnp.stack(transform_pdf_chi_eta_component(
+            _TL, _RSATL, _RT, _EXNER, variances[0], variances[1], _CORR))
+    for variances in (jnp.array([0., 0.]), jnp.array([0., 1e-6])):
+        fwd = jax.jit(jax.jacfwd(fn))(variances)
+        rev = jax.jit(jax.jacrev(fn))(variances)
+        assert np.isfinite(fwd).all()
+        assert np.isfinite(rev).all()
+        # The clipped correlation subtracts large terms whose residual is ~1e-10.
+        np.testing.assert_allclose(fwd, rev, rtol=1e-12, atol=1e-9)

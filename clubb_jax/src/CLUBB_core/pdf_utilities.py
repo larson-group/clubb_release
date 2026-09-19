@@ -22,7 +22,7 @@ Porting deviations:
 - Fortran routines with explicit `nz, ngrdcol` loops broadcast over the shapes
   supplied by callers.
 - Correlation clipping uses `jnp.clip` where the Fortran uses if/elseif blocks.
-- `_safe_sqrt` is a JAX-only helper for finite inactive-branch gradients; it is
+- `sqrt_clipped` is a JAX-only helper for finite inactive-branch gradients; it is
   forward-equivalent to sqrt(max(value,0)) for the non-negative variance inputs
   expected here.
 
@@ -36,6 +36,8 @@ See tests/test_pdf_utilities.py. All functions are jnp and differentiable.
 """
 import jax.numpy as jnp
 
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
+
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
 
@@ -48,9 +50,6 @@ _TINY = jnp.finfo(jnp.float64).tiny  # Fortran tiny(mu_x) for double precision
 _MIN_MAX_SMTH_MAG = 1.0e-9           # constants_clubb.F90 min_max_smth_mag
 _EPS = 1.0e-10                       # constants_clubb.F90 eps = max(1e-10, epsilon)
 
-
-def _safe_sqrt(value):
-    return jnp.sqrt(jnp.maximum(value, 0.0))
 
 
 def mean_L2N(mu_x, sigma2_on_mu2):
@@ -320,7 +319,7 @@ def calc_comp_corrs_binormal(xpyp, xm, ym, mu_x_1, mu_x_2, mu_y_1, mu_y_2,
     numerator = (xpyp - a * (mu_x_1 - xm) * (mu_y_1 - ym)
                  - (1.0 - a) * (mu_x_2 - xm) * (mu_y_2 - ym))
     # Calculate the denominator of the component correlation equation.
-    denominator = a * _safe_sqrt(sx1 * sy1) + (1.0 - a) * _safe_sqrt(sx2 * sy2)
+    denominator = a * sqrt_clipped(sx1 * sy1) + (1.0 - a) * sqrt_clipped(sx2 * sy2)
     # Calculate corr_x_y_1 and corr_x_y_2.
     corr = smooth_corr_quotient(numerator, denominator, _EPS)
     return corr, corr

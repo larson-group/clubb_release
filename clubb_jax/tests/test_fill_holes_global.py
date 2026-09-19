@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """test_fill_holes_global.py — validate the mass-conserving global hole-fill.
 
-`fill_holes_global(field, rho_dz, threshold, lower_k, upper_k)` (fill_holes.py ↔ fill_holes.F90:fill_holes_global)
+`fill_holes_global` (fill_holes.py ↔ fill_holes.F90:fill_holes_global)
 raises sub-threshold "holes" up to the threshold over [lower_k, upper_k] while CONSERVING the ρ·dz-weighted mass:
 it clips to max(threshold, field), then rescales (threshold + mass_frac·(clipped−threshold)) so the weighted mean is
 unchanged. It is the conservative-fill primitive underlying the hole-filling family but was untested (only
@@ -41,7 +41,9 @@ def test_mass_conservation_and_no_holes():
     field, rho_dz = _setup(rng)
     thr = 0.1
     lo, hi = 1, 8
-    out = np.asarray(fill_holes_global(jnp.asarray(field), jnp.asarray(rho_dz), thr, lo, hi))
+    out = np.asarray(fill_holes_global(
+        _NZ, 1, thr, lo, hi, jnp.ones_like(field), jnp.asarray(rho_dz), jnp.asarray(field),
+    ))
     # (1) ρ·dz-weighted mass conserved over [lo, hi]
     m_in = np.sum(field[0, lo:hi + 1] * rho_dz[0, lo:hi + 1])
     m_out = np.sum(out[0, lo:hi + 1] * rho_dz[0, lo:hi + 1])
@@ -56,7 +58,9 @@ def test_mass_conservation_and_no_holes():
 def test_grad_finite():
     rng = np.random.default_rng(7)
     field, rho_dz = _setup(rng)
-    g = jax.grad(lambda f: jnp.sum(fill_holes_global(f, jnp.asarray(rho_dz), 0.1, 1, 8) ** 2))(jnp.asarray(field))
+    g = jax.grad(lambda f: jnp.sum(fill_holes_global(
+        _NZ, 1, 0.1, 1, 8, jnp.ones_like(f), jnp.asarray(rho_dz), f,
+    ) ** 2))(jnp.asarray(field))
     assert np.all(np.isfinite(np.asarray(g))), "non-finite grad"
     print("  jax.grad through fill_holes_global finite  PASS")
 
