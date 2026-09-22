@@ -350,7 +350,7 @@ module prescribe_forcings_module
                 grid_remap_method, &
                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
                 rho_lin_spline_levels, &
-                p_sfc(1), &
+                p_sfc, &
                 thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, &
                 wm_zt, wm_zm,  ug, vg, &
                 sclrm_forcing, edsclrm_forcing )

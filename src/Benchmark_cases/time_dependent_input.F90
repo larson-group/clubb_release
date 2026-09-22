@@ -582,7 +582,8 @@ module time_dependent_input
               sclrm_forcing, edsclrm_forcing )
     !
     !  Description: This subroutine is a helper subroutine, that takes the forcings
-    !               in a 2D matrix and initializes the forcing variables.
+    !               in a 3D array (one set of forcing profiles per column) and
+    !               initializes the forcing variables.
     !
     !---------------------------------------------------------------------------------
 
@@ -639,7 +640,8 @@ module time_dependent_input
       rho,     & ! Air Density                                [kg/m^3]
       rtm        ! Total Water Mixing Ratio                   [kg/kg]
 
-    real( kind = core_rknd ), dimension(nforcings,nzt), intent(in) :: forcings_array
+    real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt), intent(in) :: &
+      forcings_array ! Forcing profiles for every column
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
@@ -665,7 +667,7 @@ module time_dependent_input
     !--------------------- Local Variables ---------------------
     integer :: i, k, n
 
-    real( kind = core_rknd ), dimension(nzt) :: temp_array
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: temp_array
 
     !--------------------- Begin Code ---------------------
 
@@ -675,7 +677,7 @@ module time_dependent_input
     ! data.
     do n=2, nforcings
 
-      temp_array = forcings_array(n,:)
+      temp_array = forcings_array(:,n,:)
 
       ! Check to see if temp_array is an actual profile or a dummy profile
       ! If it is a dummy profile we dont want it to apply itself as it may
@@ -694,7 +696,7 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                thlm_f(i,k) = temp_array(k) / exner(i,k)
+                thlm_f(i,k) = temp_array(i,k) / exner(i,k)
               end do
             end do
 
@@ -703,7 +705,7 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                thlm_f(i,k) = temp_array(k) ! n am not sure on the conversion of this
+                thlm_f(i,k) = temp_array(i,k) ! n am not sure on the conversion of this
               end do
             end do
 
@@ -712,7 +714,7 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                thlm_f(i,k) = temp_array(k)
+                thlm_f(i,k) = temp_array(i,k)
               end do
             end do
 
@@ -748,7 +750,7 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                rtm_f(i,k) = temp_array(k) * ( 1._core_rknd + rtm(i,k) )**2
+                rtm_f(i,k) = temp_array(i,k) * ( 1._core_rknd + rtm(i,k) )**2
               end do
             end do
 
@@ -757,7 +759,7 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                rtm_f(i,k) = temp_array(k)
+                rtm_f(i,k) = temp_array(i,k)
               end do
             end do
 
@@ -790,7 +792,7 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
             do i = 1, ngrdcol
-              um_ref(i,k) = temp_array(k)
+              um_ref(i,k) = temp_array(i,k)
             end do
           end do
 
@@ -799,7 +801,7 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              vm_ref(i,k) = temp_array(k)
+              vm_ref(i,k) = temp_array(i,k)
             end do
           end do
 
@@ -808,7 +810,7 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              um_f(i,k) = temp_array(k)
+              um_f(i,k) = temp_array(i,k)
             end do
           end do
 
@@ -817,7 +819,7 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              vm_f(i,k) = temp_array(k)
+              vm_f(i,k) = temp_array(i,k)
             end do
           end do
 
@@ -829,7 +831,7 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                wm_zt(i,k) = temp_array(k)
+                wm_zt(i,k) = temp_array(i,k)
               end do
             end do
 
@@ -838,22 +840,24 @@ module time_dependent_input
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                wm_zt(i,k) = - temp_array(k) / (grav * rho(i,k))
+                wm_zt(i,k) = - temp_array(i,k) / (grav * rho(i,k))
               end do
             end do
 
           case(omega_mb_hr_name)
 
-            !$acc parallel loop gang vector default(present)
+            !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
-              temp_array(k) = temp_array(k) * pascal_per_mb / sec_per_hr
+              do i = 1, ngrdcol
+                temp_array(i,k) = temp_array(i,k) * pascal_per_mb / sec_per_hr
+              end do
             end do
 
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
 
-                wm_zt(i,k) = - temp_array(k) / (grav * rho(i,k))
+                wm_zt(i,k) = - temp_array(i,k) / (grav * rho(i,k))
 
               end do
             end do
@@ -867,7 +871,7 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              ug(i,k) = temp_array(k)
+              ug(i,k) = temp_array(i,k)
             end do
           end do
 
@@ -876,7 +880,7 @@ module time_dependent_input
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              vg(i,k) = temp_array(k)
+              vg(i,k) = temp_array(i,k)
             end do
           end do
 
@@ -971,9 +975,11 @@ module time_dependent_input
       edsclrm_forcing ! Edscalar forcing [-]
 
     !--------------------- Local Variables ---------------------
-    integer :: n, before_time, after_time
+    integer :: i, n, before_time, after_time
 
-    real( kind = core_rknd ), dimension(nforcings,nzt) :: forcings_array
+    real( kind = core_rknd ), dimension(nzt) :: forcing_profile
+
+    real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt) :: forcings_array
 
     real( kind = core_rknd ) :: time_frac
 
@@ -984,10 +990,14 @@ module time_dependent_input
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
 
+    ! The forcings are read in on a single grid, so every column gets the same profile
     do n = 2, nforcings
-      forcings_array(n,:) = linear_interp_factor &
+      forcing_profile = linear_interp_factor &
                    ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
                      t_dependent_forcing_data(n)%values(:,before_time) )
+      do i = 1, ngrdcol
+        forcings_array(i,n,:) = forcing_profile
+      end do
     end do
 
     call apply_time_dependent_forcings_from_array( &
@@ -1099,9 +1109,13 @@ module time_dependent_input
     !--------------------- Local Variables ---------------------
     integer :: n, before_time, after_time, iv
 
-    real( kind = core_rknd ), dimension(gr_dycore%nzt) :: temp_array_dycore
+    integer :: i
 
-    real( kind = core_rknd ), dimension(1,nforcings,nzt) :: forcings_array
+    real( kind = core_rknd ), dimension(gr_dycore%nzt) :: forcing_profile_dycore
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr_dycore%nzt) :: temp_array_dycore
+
+    real( kind = core_rknd ), dimension(ngrdcol,nforcings,nzt) :: forcings_array
 
     real( kind = core_rknd ) :: time_frac
 
@@ -1118,18 +1132,24 @@ module time_dependent_input
 
     do n = 2, nforcings
 
-      temp_array_dycore = linear_interp_factor &
-                          ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
-                            t_dependent_forcing_data(n)%values(:,before_time) )
-      forcings_array(:,n,:) = remap_vals_to_target( 1, &
+      ! The forcings are stored on a single dycore grid, so every column starts from the
+      ! same profile, but each column is remapped to its own physics grid
+      forcing_profile_dycore = linear_interp_factor &
+                               ( time_frac, t_dependent_forcing_data(n)%values(:,after_time), &
+                                 t_dependent_forcing_data(n)%values(:,before_time) )
+      do i = 1, ngrdcol
+        temp_array_dycore(i,:) = forcing_profile_dycore
+      end do
+
+      forcings_array(:,n,:) = remap_vals_to_target( ngrdcol, &
                                                     gr_dycore, gr, &
                                                     gr_dycore%nzt, &
                                                     temp_array_dycore, &
                                                     gr%nzt, &
                                                     total_idx_rho_lin_spline, &
-                                                    rho_lin_spline_vals(1,:), &
-                                                    rho_lin_spline_levels(1,:), &
-                                                    iv, p_sfc(1), &
+                                                    rho_lin_spline_vals, &
+                                                    rho_lin_spline_levels, &
+                                                    iv, p_sfc, &
                                                     grid_remap_method, &
                                                     l_zt_variable )
     end do
@@ -1138,7 +1158,7 @@ module time_dependent_input
                                                    ngrdcol, nzm, nzt, &
                                                    sclr_dim, edsclr_dim, sclr_idx, &
                                                    gr, rtm, rho, exner,  &
-                                                   forcings_array(1,:,:), &
+                                                   forcings_array, &
                                                    thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
                                                    wm_zt, wm_zm,  ug, vg, &
                                                    sclrm_forcing, edsclrm_forcing )

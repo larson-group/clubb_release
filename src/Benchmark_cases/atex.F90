@@ -277,7 +277,7 @@ module atex
 
       do i = 1, ngrdcol
         rtm_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzt, gr%nzt, &
-                                                    gr_dycore%zt, gr%zt, &
+                                                    gr_dycore%zt(i,:), gr%zt(i,:), &
                                                     rtm(i,:) )
       end do
 

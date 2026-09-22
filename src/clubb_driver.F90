@@ -4957,7 +4957,7 @@ module clubb_driver
         ! Initialize Nccnm as in COAMPS-LES
         Nccnm(:,1:gr%nzt) &
         = 30.0_core_rknd &
-          * ( one + exp( -gr%zt(:,1:gr%nzt) / 2000.0_core_rknd ) ) &
+          * ( one + exp( -gr%zt(1:ngrdcol,1:gr%nzt) / 2000.0_core_rknd ) ) &
           * cm3_per_m3 / rho    ! Known magic number
 
     case default
@@ -5048,7 +5048,7 @@ module clubb_driver
         ! get pressure for the dycore grid
         do i = 1, ngrdcol
           p_in_Pa_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzt, gr%nzm, &
-                                                          gr_dycore%zt, gr%zm, &
+                                                          gr_dycore%zt(i,:), gr%zm(i,:), &
                                                           p_in_Pa_zm(i,:) )
         end do
         ! if we want to simulate the forcings from the host model on the dycore grid,

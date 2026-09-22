@@ -618,13 +618,15 @@ module remapping_module
 
       ! Calculate pressure levels from altitudes and densities
       mass_on_source_cells(i,:) = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, &
-                                                                 rho_lin_spline_vals, &
-                                                                 rho_lin_spline_levels, &
-                                                                 levels_source_idx, levels_source )
+                                                                 rho_lin_spline_vals(i,:), &
+                                                                 rho_lin_spline_levels(i,:), &
+                                                                 levels_source_idx, &
+                                                                 levels_source(i,:) )
       mass_on_target_cells(i,:) = calc_mass_over_grid_intervals( total_idx_rho_lin_spline, &
-                                                                 rho_lin_spline_vals, &
-                                                                 rho_lin_spline_levels, &
-                                                                 levels_target_idx, levels_target )
+                                                                 rho_lin_spline_vals(i,:), &
+                                                                 rho_lin_spline_levels(i,:), &
+                                                                 levels_target_idx, &
+                                                                 levels_target(i,:) )
       pressure_levels_source(i,1) = p_sfc(i)
       do k = 2, levels_source_idx
         pressure_levels_source(i,k) = pressure_levels_source(i,k-1) &
