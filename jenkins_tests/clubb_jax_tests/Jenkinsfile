@@ -8,6 +8,14 @@ pipeline {
               ./compile.py -debug'''
       }
     }
+    stage('Jax vs Fortran: standard stats') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ulimit -s 8388608
+              ./tests/run_jax_vs_fortran_cases.py -stats input/stats/standard_stats.in -j 4'''
+      }
+    }
     stage('Run Jax Python vs Fortran cases w varying flags') {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
