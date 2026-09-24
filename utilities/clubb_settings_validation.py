@@ -71,7 +71,7 @@ PARAMETER_NAMES = tuple(
 PARAMETER_PRIMARY_OWNERS: dict[str, tuple[str, tuple[str, ...]]] = {
     "retained unused parameters": (
         "src/CLUBB_core/parameters_tunable.F90",
-        ("C10", "C13"),
+        ("C10", "C13", "thlp2_rad_cloud_frac_thresh"),
     ),
     "wp2/wp3 closure and pressure": (
         "src/CLUBB_core/advance_wp2_wp3_module.F90",
@@ -128,17 +128,14 @@ PARAMETER_PRIMARY_OWNERS: dict[str, tuple[str, tuple[str, ...]]] = {
     ),
     "radiative / xp3 auxiliary closures": (
         "src/CLUBB_core/advance_helper_module.F90",
-        (
-            "thlp2_rad_coef", "thlp2_rad_cloud_frac_thresh", "xp3_coef_base",
-            "xp3_coef_slope",
-        ),
+        ("thlp2_rad_coef", "xp3_coef_base", "xp3_coef_slope"),
     ),
     "PDF type 4 (new PDF)": (
         "src/CLUBB_core/new_pdf_main.F90",
         ("coef_spread_DG_means_rt", "coef_spread_DG_means_thl"),
     ),
-    "PDF type 7 (hybrid PDF)": (
-        "src/CLUBB_core/new_hybrid_pdf_main.F90",
+    "PDF types 4 and 7 (w component spread)": (
+        "src/CLUBB_core/{new_pdf_main,new_hybrid_pdf_main}.F90",
         ("slope_coef_spread_DG_means_w", "pdf_component_stdev_factor_w"),
     ),
 }
@@ -282,7 +279,7 @@ def audit_gaps() -> dict[str, tuple[str, ...]]:
 # error.  Requirements and conflicts remain errors in ``validate_clubb_settings``.
 
 # Retained in the namelist for compatibility, but no model tendency reads them.
-UNUSED_PARAMETERS = ("C10", "C13")
+UNUSED_PARAMETERS = ("C10", "C13", "thlp2_rad_cloud_frac_thresh")
 
 # Each group is physically equal in all valid configurations.  The UI and
 # tuner represent a group as one coordinate and expand it before execution.
@@ -293,11 +290,13 @@ LINKED_PARAMETER_GROUPS = (
     ("C6rt_Lscale0", "C6thl_Lscale0"),
 )
 
-# Parameters unique to one PDF implementation.  They are inactive for every
-# other iiPDF_type, not merely discouraged.
-PDF_PARAMETER_OWNERS = {
-    4: ("coef_spread_DG_means_rt", "coef_spread_DG_means_thl"),
-    7: ("slope_coef_spread_DG_means_w", "pdf_component_stdev_factor_w"),
+# Parameters read only by the listed PDF implementations (iiPDF_type values).
+# They are inactive for every other iiPDF_type, not merely discouraged.
+PDF_TYPE_PARAMETERS = {
+    "coef_spread_DG_means_rt": (4,),
+    "coef_spread_DG_means_thl": (4,),
+    "slope_coef_spread_DG_means_w": (4, 7),
+    "pdf_component_stdev_factor_w": (4, 7),
 }
 
 # l_use_C7_Richardson replaces the entire tunable C7 function, including its
@@ -323,43 +322,12 @@ DIRECT_LSCALE_ONLY_PARAMETERS = (
     "Lscale_mu_coef", "Lscale_pert_coef", "C6rt_Lscale0", "C6thl_Lscale0",
 )
 
-# These options only enter the indicated scientific branch.
+# These options only enter the indicated scientific branch.  omicron and
+# zeta_vrnce_rat are deliberately absent: setup_clubb_pdf_params.F90 reads them
+# whether or not l_use_precip_frac is enabled.
 BRANCH_ONLY_PARAMETERS = {
-    "l_use_precip_frac": ("omicron", "zeta_vrnce_rat"),
-    "l_calc_thlp2_rad": ("thlp2_rad_coef", "thlp2_rad_cloud_frac_thresh"),
+    "l_calc_thlp2_rad": ("thlp2_rad_coef",),
 }
-
-# Flag-only consequences discovered in the same audit.  These are kept as
-# notes rather than forcibly rewritten: some are compile/build-context
-# dependent, and CLUBB's runtime owner remains responsible for any fatal
-# decision.  A UI may show an entry as ``no effect`` using this information.
-FLAG_EFFECT_RULES = (
-    (
-        "l_partial_upwind_wp3",
-        "has no effect unless iiPDF_type=1 (ADG1) and l_standard_term_ta=true",
-        "src/CLUBB_core/advance_wp2_wp3_module.F90",
-    ),
-    (
-        "l_Lscale_plume_centered",
-        "requires vertical Lscale averaging; the owner rejects it when l_avg_Lscale=false",
-        "src/CLUBB_core/mixing_length.F90",
-    ),
-    (
-        "l_predict_upwp_vpwp",
-        "requires implicit wpxp turbulent advection and PDF 1, 7, or 9",
-        "src/CLUBB_core/numerical_check.F90",
-    ),
-    (
-        "l_min_xp2_from_corr_wx / l_enable_relaxed_clipping",
-        "must have opposite values; both false is retained as a Fortran warning",
-        "src/CLUBB_core/numerical_check.F90",
-    ),
-    (
-        "l_damp_wp2_using_em",
-        "requires C1=C14 and l_stability_correct_tau_zm=false",
-        "src/CLUBB_core/numerical_check.F90",
-    ),
-)
 
 # Each entry is [minimum, maximum], matching Fortran's 2 x nparams table.
 # ``tiny(1._core_rknd)`` and ``1-epsilon(1._core_rknd)`` are encoded here with
@@ -546,7 +514,6 @@ class SettingsResolution:
     forced_parameters: dict[str, Any]
     allowed_flag_values: dict[str, list[Any]]
     conflicting_setting_keys: list[str]
-    flag_states: dict[str, dict[str, str]]
     flag_relationships: list[dict[str, Any]]
     parameter_states: dict[str, dict[str, str]]
     coupled_parameters: list[dict[str, Any]]
@@ -560,7 +527,6 @@ class SettingsResolution:
             "forced_parameters": dict(self.forced_parameters),
             "allowed_flag_values": {name: list(values) for name, values in self.allowed_flag_values.items()},
             "conflicting_setting_keys": list(self.conflicting_setting_keys),
-            "flag_states": {name: dict(state) for name, state in self.flag_states.items()},
             "flag_relationships": [dict(item) for item in self.flag_relationships],
             "parameter_states": {name: dict(state) for name, state in self.parameter_states.items()},
             "coupled_parameters": [dict(item) for item in self.coupled_parameters],
@@ -593,17 +559,12 @@ _FLAG_RELATIONSHIPS = (
 )
 
 _FLAG_NAME_ALIASES = {
-    "iipdf_type": "iiPDF_type",
-    "l_predict_upwp_vpwp": "l_predict_upwp_vpwp",
-    "l_damp_wp2_using_em": "l_damp_wp2_using_em",
-    "l_stability_correct_tau_zm": "l_stability_correct_tau_zm",
-    "l_min_xp2_from_corr_wx": "l_min_xp2_from_corr_wx",
-    "l_enable_relaxed_clipping": "l_enable_relaxed_clipping",
-    "l_use_c7_richardson": "l_use_C7_Richardson",
-    "l_use_c11_richardson": "l_use_C11_Richardson",
-    "l_diag_lscale_from_tau": "l_diag_Lscale_from_tau",
-    "l_use_precip_frac": "l_use_precip_frac",
-    "l_calc_thlp2_rad": "l_calc_thlp2_rad",
+    name.lower(): name
+    for name in (
+        *CONFIG_FLAG_NAMES,
+        *(flag for _, flags in CONFIG_FLAG_PRIMARY_OWNERS.values() for flag in flags),
+        *EXTERNAL_SETTING_OWNERS,
+    )
 }
 _PARAMETER_NAME_ALIASES = {name.lower(): name for name in PARAMETER_NAMES}
 
@@ -662,18 +623,17 @@ def parameter_activity(
         )
 
     if pdf_type is not None:
-        for owner, names in PDF_PARAMETER_OWNERS.items():
-            if pdf_type != owner:
+        for name, pdf_types in PDF_TYPE_PARAMETERS.items():
+            owners = " or ".join(str(owner) for owner in pdf_types)
+            if pdf_type in pdf_types:
+                states[name] = ("active", f"Used by PDF type {owners}.", "PDF-TYPE-OWNERS")
+            else:
                 _mark_inactive(
                     states,
-                    names,
-                    f"Only used by PDF type {owner}; current PDF type is {pdf_type}.",
-                    f"PDF{owner}-OWNERS",
+                    (name,),
+                    f"Only used by PDF type {owners}; current PDF type is {pdf_type}.",
+                    "PDF-TYPE-OWNERS",
                 )
-            else:
-                for name in names:
-                    if states[name][0] != "unused":
-                        states[name] = ("active", f"Used by PDF type {owner}.", f"PDF{owner}-OWNERS")
 
     for flag_name, names in RICHARDSON_REPLACED_PARAMETERS.items():
         if _as_bool(normalized.get(flag_name, False)):
@@ -820,17 +780,12 @@ def resolve_clubb_settings(
     for members in linked_parameter_groups(effective_flags):
         left, right = members
         supplied = [name for name in (left, right) if name in supplied_parameters]
+        master = follower = None
         if len(supplied) == 1:
             master = supplied[0]
             follower = right if master == left else left
             forced_parameters[follower] = supplied_parameters[master]
-            coupled.append({"members": [left, right], "master": master, "follower": follower, "relation": "equal"})
-        elif len(supplied) == 2:
-            coupled.append({"members": [left, right], "master": None, "follower": None, "relation": "equal"})
-        else:
-            coupled.append({"members": [left, right], "master": None, "follower": None, "relation": "equal"})
-
-    flag_states: dict[str, dict[str, str]] = {}
+        coupled.append({"members": [left, right], "master": master, "follower": follower, "relation": "equal"})
 
     parameter_states = {
         name: {"state": state, "reason": reason, "rule_id": rule_id}
@@ -859,7 +814,6 @@ def resolve_clubb_settings(
         forced_parameters=forced_parameters,
         allowed_flag_values=allowed,
         conflicting_setting_keys=sorted(conflict_keys),
-        flag_states=flag_states,
         flag_relationships=list(flag_relationship_groups()),
         parameter_states=parameter_states,
         coupled_parameters=coupled,
@@ -1054,7 +1008,6 @@ def validate_clubb_settings(
     l_implemented: bool = False,
     l_input_fields: bool = False,
     explicit_turbulent_adv_wpxp: bool = False,
-    advance_orders: Mapping[str, int] | None = None,
     sponge_flags: Mapping[str, Any] | None = None,
     is_gpu: bool = False,
     l_avg_Lscale: bool | None = None,
@@ -1130,8 +1083,8 @@ def validate_clubb_settings(
     if saturation_formula is not None and not 1 <= saturation_formula <= 4:
         issues.append(ValidationIssue("invalid_saturation_formula", "saturation_formula must be between 1 and 4.", setting="saturation_formula"))
     call_placement = integer_flag("ipdf_call_placement", 1)
-    if call_placement is not None and not 1 <= call_placement <= 2:
-        issues.append(ValidationIssue("invalid_pdf_call_placement", "ipdf_call_placement must be 1 or 2.", setting="ipdf_call_placement"))
+    if call_placement is not None and not 1 <= call_placement <= 3:
+        issues.append(ValidationIssue("invalid_pdf_call_placement", "ipdf_call_placement must be between 1 and 3.", setting="ipdf_call_placement"))
     if is_gpu and l_input_fields:
         issues.append(ValidationIssue("gpu_input_fields", "l_input_fields=true is not usable in a GPU build.", setting="l_input_fields"))
 
@@ -1173,22 +1126,6 @@ def validate_clubb_settings(
         issues.append(ValidationIssue("coamps_requires_predict_nc", "COAMPS microphysics requires l_predict_Nc=true.", setting="l_predict_Nc"))
     if normalized_microphysics in {"kk", "khairoutdinov_kogan"} and _as_bool(flag("l_predict_Nc")):
         issues.append(ValidationIssue("kk_requires_diagnosed_nc", "KK microphysics requires l_predict_Nc=false.", setting="l_predict_Nc"))
-
-    orders = {"order_xm_wpxp": 1, "order_wp2_wp3": 2, "order_xp2_xpyp": 3, "order_windm": 4}
-    orders.update(advance_orders or {})
-    active_orders: dict[int, str] = {}
-    for name, raw_order in orders.items():
-        try:
-            order = int(raw_order)
-        except (TypeError, ValueError):
-            issues.append(ValidationIssue("invalid_advance_order", f"{name} must be -1 or between 1 and 4.", setting=name))
-            continue
-        if order != -1 and order not in {1, 2, 3, 4}:
-            issues.append(ValidationIssue("invalid_advance_order", f"{name} must be -1 or between 1 and 4.", setting=name))
-        elif order != -1 and order in active_orders:
-            issues.append(ValidationIssue("duplicate_advance_order", f"{name} and {active_orders[order]} use order {order}; active advance orders must be unique.", setting=name))
-        elif order != -1:
-            active_orders[order] = name
 
     if _as_bool(flag("l_diag_Lscale_from_tau")):
         for name in ("C1", "C1b", "C2rt", "C2thl", "C2rtthl", "C6rt", "C6rtb", "C6thl", "C6thlb", "C14"):

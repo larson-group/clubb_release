@@ -77,7 +77,7 @@ def test_pdf_four_and_seven_owners_and_c10_are_explicitly_classified():
     new_pdf = resolve_clubb_settings({"iiPDF_type": 4})
     hybrid_pdf = resolve_clubb_settings({"iiPDF_type": 7})
     assert new_pdf.parameter_states["coef_spread_DG_means_rt"]["state"] == "active"
-    assert new_pdf.parameter_states["slope_coef_spread_DG_means_w"]["state"] == "inactive-mode"
+    assert new_pdf.parameter_states["slope_coef_spread_DG_means_w"]["state"] == "active"
     assert hybrid_pdf.parameter_states["slope_coef_spread_DG_means_w"]["state"] == "active"
     assert hybrid_pdf.parameter_states["coef_spread_DG_means_rt"]["state"] == "inactive-mode"
     assert hybrid_pdf.parameter_states["C10"]["state"] == "unused"

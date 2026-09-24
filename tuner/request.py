@@ -329,11 +329,6 @@ def evaluate_tune_settings(config: str, override: str = "") -> dict:
     return evaluate_settings(schema, flag_values=override_flags, parameter_values=override_parameters)
 
 
-def resolve_tune_settings(config: str, override: str = ""):
-    """Deprecated compatibility alias for :func:`evaluate_tune_settings`."""
-    return evaluate_tune_settings(config, override)
-
-
 def apply_required_parameter_links(parameter_ranges: list[dict], resolution: dict) -> list[dict]:
     """Expand a sampled coordinate to all model-required equal targets."""
     updated = [dict(spec, targets=list(spec["targets"])) for spec in parameter_ranges]

@@ -486,8 +486,12 @@ def get_subroutine_name(subroutine):
 #---------------------------------------------------------------------
 
   first_line = subroutine[0]
-  name = first_line[ first_line.find("subroutine") + 11 : first_line.find("(") ]
-  return name.strip()
+  # the name is the word after "subroutine" or "function", in any case
+  words = first_line[ first_line.find(":") + 1 : ].replace("(", " ").split()
+  for i in range(len(words) - 1):
+    if( words[i].lower() == "subroutine" or words[i].lower() == "function" ):
+      return words[i+1]
+  return first_line.strip()
 # END get_subroutine_name
 
 

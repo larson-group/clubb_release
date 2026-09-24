@@ -104,6 +104,9 @@ def _fortran_rejects(clubb_api, ErrInfo, params, flags, *, l_input_fields: bool 
             clubb_config_flags=flags,
             err_info=ErrInfo(ngrdcol=1),
         )
+    # err_code lives in Fortran module storage and ErrInfo(ngrdcol=1) does not
+    # overwrite it, so clear it or every later case would inherit this result.
+    clubb_api.reset_err_code()
     return any(int(code) != 0 for code in result.err_code)
 
 
@@ -138,12 +141,16 @@ def run_test() -> None:
     _assert_case_matches(clubb_api, ErrInfo, "EM damping relation", param_updates={"C1": 2.0, "C14": 1.0}, flag_updates={"l_damp_wp2_using_em": True})
     _assert_case_matches(clubb_api, ErrInfo, "EM damping stability flag", flag_updates={"l_damp_wp2_using_em": True, "l_stability_correct_tau_zm": True})
     _assert_case_matches(clubb_api, ErrInfo, "PDF type range", flag_updates={"iiPDF_type": 11})
-    _assert_case_matches(clubb_api, ErrInfo, "PDF needs input fields", flag_updates={"iiPDF_type": 2})
-    _assert_case_matches(clubb_api, ErrInfo, "input field PDF accepted", flag_updates={"iiPDF_type": 2}, l_input_fields=True)
+    # The default flags predict upwp/vpwp, which already rejects PDF 2, so turn
+    # it off to exercise only the input-field rule.
+    _assert_case_matches(clubb_api, ErrInfo, "PDF needs input fields", flag_updates={"iiPDF_type": 2, "l_predict_upwp_vpwp": False})
+    _assert_case_matches(clubb_api, ErrInfo, "input field PDF accepted", flag_updates={"iiPDF_type": 2, "l_predict_upwp_vpwp": False}, l_input_fields=True)
     _assert_case_matches(clubb_api, ErrInfo, "saturation formula range", flag_updates={"saturation_formula": 5})
-    _assert_case_matches(clubb_api, ErrInfo, "PDF placement range", flag_updates={"ipdf_call_placement": 3})
-    _assert_case_matches(clubb_api, ErrInfo, "predicted wind PDF relation", flag_updates={"l_predict_upwp_vpwp": True, "iiPDF_type": 4})
+    _assert_case_matches(clubb_api, ErrInfo, "PDF placement range", flag_updates={"ipdf_call_placement": 4})
+    _assert_case_matches(clubb_api, ErrInfo, "PDF pre/post placement accepted", flag_updates={"ipdf_call_placement": 3})
+    _assert_case_matches(clubb_api, ErrInfo, "predicted wind PDF relation", flag_updates={"l_predict_upwp_vpwp": True, "iiPDF_type": 4}, l_input_fields=True)
     _assert_case_matches(clubb_api, ErrInfo, "xp2 clipping relation", flag_updates={"l_min_xp2_from_corr_wx": True, "l_enable_relaxed_clipping": True})
+    _assert_case_matches(clubb_api, ErrInfo, "valid baseline after rejecting cases")
     print("PASS CLUBB Python/Fortran settings-validation parity")
 
 

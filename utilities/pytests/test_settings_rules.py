@@ -15,6 +15,7 @@ def _codes(**kwargs):
 def test_c10_is_explicitly_unused():
     assert resolve_clubb_settings(parameters={"C10": 1.0}).parameter_states["C10"]["state"] == "unused"
     assert resolve_clubb_settings(parameters={"C13": 1.0}).parameter_states["C13"]["state"] == "unused"
+    assert parameter_activity(flags={"l_calc_thlp2_rad": True})["thlp2_rad_cloud_frac_thresh"][0] == "unused"
 
 
 def test_hand_maintained_audit_covers_each_parameter_once():
@@ -29,6 +30,10 @@ def test_hand_maintained_audit_covers_each_parameter_once():
 def test_pdf_parameter_activity():
     assert resolve_clubb_settings({"iiPDF_type": 4}).parameter_states["coef_spread_DG_means_rt"]["state"] == "active"
     assert resolve_clubb_settings({"iiPDF_type": 7}).parameter_states["coef_spread_DG_means_rt"]["state"] == "inactive-mode"
+    for pdf_type, state in ((1, "inactive-mode"), (4, "active"), (7, "active")):
+        states = resolve_clubb_settings({"iiPDF_type": pdf_type}).parameter_states
+        assert states["slope_coef_spread_DG_means_w"]["state"] == state
+        assert states["pdf_component_stdev_factor_w"]["state"] == state
 
 
 def test_required_equal_parameter_pairs():
@@ -54,11 +59,8 @@ def test_pdf_input_field_constraint():
 
 def test_range_constraints():
     assert "invalid_pdf_call_placement" in _codes(parameters={}, flags={"ipdf_call_placement": 9})
+    assert "invalid_pdf_call_placement" not in _codes(parameters={}, flags={"ipdf_call_placement": 3})
     assert "invalid_saturation_formula" in _codes(parameters={}, flags={"saturation_formula": 9})
-
-
-def test_advance_order_constraint():
-    assert "duplicate_advance_order" in _codes(parameters={}, advance_orders={"order_xm_wpxp": 1, "order_xp2_xpyp": 1})
 
 
 def test_tau_lscale_warning():
@@ -84,12 +86,12 @@ def test_lscale_mode_switches_the_correct_parameter_families():
 
 
 def test_branch_controls_disable_only_their_owned_parameters():
-    precipitation = parameter_activity(flags={"l_use_precip_frac": False})
-    assert precipitation["omicron"][0] == "inactive-mode"
-    assert precipitation["zeta_vrnce_rat"][0] == "inactive-mode"
     radiation = parameter_activity(flags={"l_calc_thlp2_rad": False})
     assert radiation["thlp2_rad_coef"][0] == "inactive-mode"
-    assert radiation["thlp2_rad_cloud_frac_thresh"][0] == "inactive-mode"
+    # setup_clubb_pdf_params.F90 reads these outside its l_use_precip_frac branch.
+    precipitation = parameter_activity(flags={"l_use_precip_frac": False})
+    assert precipitation["omicron"][0] == "active"
+    assert precipitation["zeta_vrnce_rat"][0] == "active"
 
 
 def test_lscale_plume_centered_constraint():

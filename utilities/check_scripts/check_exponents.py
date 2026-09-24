@@ -80,16 +80,21 @@ def line_has_bad_exponent(line):
     if( len(exponent) > 0 and exponent[0] == '(' ):
       exponent = exponent[1:]
 
-    # Remove any double precision markers
-    if( exponent.find("d0") != -1 ):
-      exponent = exponent[:exponent.find("d0")]
+    exponent = exponent.strip()
+
+    # Remove any double precision markers, e.g. 2.d0
+    if( exponent.endswith("d0") ):
+      exponent = exponent[:-2]
       # Make sure there's still a decimal so the script knows this is a double
       if( exponent.find(".") == -1 ):
         exponent += ".0"
 
-    # Remove anything after an underscore
-    if( exponent.find("_") != -1 ):
-      exponent = exponent[:exponent.find("_")]
+    # Remove a kind suffix, e.g. 2._core_rknd, but only if it ends the
+    # exponent, so that e.g. "1._core_rknd / b_expn" is left whole
+    kind_index = exponent.find("_")
+    if( kind_index != -1 and
+        exponent[kind_index+1:].replace("_", "").isalnum() ):
+      exponent = exponent[:kind_index]
 
     try:
       # If this conversion fails, the exponent is not a single number
