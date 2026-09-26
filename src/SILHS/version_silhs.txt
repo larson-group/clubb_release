@@ -1,0 +1,173 @@
+commit 8f4f60104e839514cc8fa69801bebe0d1e26dfbb
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Thu Sep 24 09:53:45 2026 -0500
+
+    lil cleanup without directory refactoring done (#1364)
+    
+    * lil utilities dir cleanup without directory refactoring
+    
+    * Rename utilities/README to utilities/README.md
+    
+    Pure rename with no content change, so git and GitHub detect it as a rename
+    rather than a delete plus create. -> Did not work
+    
+    * added gh links in readme
+
+commit 8b60ee73f5faaa22d874985220f1bbaf9e2cc10f
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Sep 23 16:15:31 2026 -0500
+
+    Adding a stage in the jax test to just do a basic run with standard_stats
+
+commit bc8d70735e710ef36f81e42f58843908ae3ddcbc
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Tue Sep 22 14:23:15 2026 -0500
+
+    Delete utilities/check_division.py
+    
+    @shellwitz and I updated this script to python3, ran it, and discovered that it finds too many instances of division in CLUBB to be useful.  So let's delete it.
+
+commit eb20e0988129b0a57d5df04a39b5c4a965e2397f
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Tue Sep 22 11:07:39 2026 -0500
+
+    F90 fix multicol+l add dycore grid (#1363)
+    
+    fixed 2d array passing into 1d array fns. Technically BIT_CHANGING for multicol
+
+commit 77b73e25b7c54c85e9714178efbd6dc893834dc5
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Sep 18 21:28:02 2026 -0500
+
+    Making certain things differentiation safe, various parts had issues with sqrt or divisions that needed clipping for reverse mode calcualtions. Lot's of code sections seemed to already have worked around this with a safe_sqrt method (or some variation) that I standardized and put in advance_helper. (#1361)
+
+commit 5b5bf5f74f30e0332db965215e3de5e6baf72d6e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Sep 18 11:32:28 2026 -0500
+
+    Improving README section for column mirror test
+
+commit af35e5202409ab58c575e8d2841f59d31ba80c94
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Sep 18 11:19:27 2026 -0500
+
+    Dash Improvements (#1360)
+    
+    * Improve Dash plot responsiveness and bound data caches
+    
+    * Dash improvements, mainly for performance
+    
+    * Removing performance audit file that is no longer needed:
+
+commit 17b29a7e938300692cec5c6c7e78aae7b9578568
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Sep 18 01:50:27 2026 -0500
+
+    Jax integration (#1356)
+    
+    * Starting to integrate jax with dash more and making the run_scm -jax flag a little more useful by being able to choose to run on the CPU or GPU via -jax=cpu or -jax=gpu rather than requireing environment variables
+    
+    * Making the jax option even fancier, dash runner chooser is better/smarter now too
+    
+    * Make CLUBB-JAX launcher portable across macOS and Linux
+    
+    * Making the jax device detection work without needing the venvs setup first.
+    
+    * Keep JAX radiation compiled with static timestep scheduling
+    
+    Preserve the host radiation flag as a static JIT argument and mirror the Fortran conditional directly. Remove the Metal-only eager execution path and redundant branch helpers.
+    
+    Cover both schedule states, statistics cadence, soil update ordering, and alternating time-dependent radiation calls. Validated with CPU and Metal tests and three-step standalone runs.
+    
+    * Microphys loop push (#1355)
+    
+    * First set of loop pushes - feature addition to stats too to allow for calling stats_update multiple times in a timestep and averaging the results, which is quite nice for silhs and allows us to get rid of the special microphysics stats type
+    
+    * More loop pushes
+    
+    * Tiny changes to restore BFBness
+    
+    * Pushing loop into advance_microphys
+    
+    * Little more loop push
+    
+    * More basic loop pushing
+    
+    * More loop pushing, also found what seems to be a bug with additional columns, theres code that uses only the first one. Im leaving this in for now to maintain BFBness, but labeled the problem areas with TODOs
+    
+    * Potentially final batch of loop pushes
+    
+    * Adding acc fixes for microphys stuff - the 2D versions called are GPUized, so they need acc data statements surrounding them
+    
+    * Removing unneccesary single col versions of lots of things
+    
+    * Restoring some comments and formatting
+    
+    * A little more restoration, maybe unnecceary
+    
+    * Little OpenACC fixes for microphys code RESOLVED:900681c91bdbdf8d6cd069bab01663ebac1a3279
+    
+    * renamed jax jenkins test to clubb_jax_tests
+    
+    * Making column mirror test work by comparing two different output files rather than one. This test now runs once with 3 different columns in a certain order, say ABC, and again with reverse order CBA, then ensures that A=A B=B and C=C (bit-for-bit equivalence) in both files. This should fail now actually, as there is currently a bug, and this update is intented to improve this test so that it fails before we fix the bug
+    
+    * Making column mirror test use CPU. This makes it much faster and doesn't change the test at all - not sure why I made it use GPU originally.
+    
+    * Fixing microphys bug that has been around for quite a while. This happened when making clubb standalone use multiple columns, and only affects columns other than the first. This is BIT_CHANGING, but only for microphysics cases using multiple columns (#1358)
+    
+    * Test different f90 vs jax flags (#1357)
+    
+    * wip
+    
+    * wip
+    
+    * test is basically done -> find out why some jax runs fail, mabe also run fortran even if jax fails
+    
+    * fortran is tested regardless of whether jax fails
+    
+    * changed jenkinsfile + removed l_Lscale_plume_centered from flag file + flag_set readme + lil print F90 fix
+    
+    * added comments and a new flagset for jax tests
+    
+    * added new jax flag config file to Jenkinstest
+    
+    * Small UI fixes to make entry boxes refresh better
+    
+    * Making python/jax driver status prints happen right away
+    
+    * Removing accidentally added file
+    
+    * Improving readmes
+    
+    * Simpliciation cleanup
+    
+    ---------
+    
+    Co-authored-by: Daniel Ebel <debel@uwm.edu>
+    Co-authored-by: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+
+commit e2f38c22369792200d556168276e492b5bff6717
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Sep 17 01:43:31 2026 -0500
+
+    Consolidating column mirror test functionality into the test script itself - now the script does it all, no need to configure/build/run anymore. Also hugely improving comments and explainations
+
+commit 3a0c0fbbeb0eae52b7b98be4555b18dc6036398a
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Wed Sep 16 15:41:39 2026 -0500
+
+    Test different f90 vs jax flags (#1357)
+    
+    * wip
+    
+    * wip
+    
+    * test is basically done -> find out why some jax runs fail, mabe also run fortran even if jax fails
+    
+    * fortran is tested regardless of whether jax fails
+    
+    * changed jenkinsfile + removed l_Lscale_plume_centered from flag file + flag_set readme + lil print F90 fix
+    
+    * added comments and a new flagset for jax tests
+    
+    * added new jax flag config file to Jenkinstest
