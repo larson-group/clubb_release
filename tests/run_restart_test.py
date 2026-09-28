@@ -47,8 +47,10 @@ def _read_model_times(model_file: Path) -> tuple[float, float]:
     return values["time_initial"], values["time_final"]
 
 
-def _run_scm(case_name: str, override: str | None = None) -> tuple[int, str]:
-    cmd = [str(RUN_SCM)]
+def _run_scm(
+    case_name: str, extra_opts: list[str], override: str | None = None
+) -> tuple[int, str]:
+    cmd = [str(RUN_SCM), *extra_opts]
     if override is not None:
         cmd.extend(["-override", override])
     cmd.append(case_name)
@@ -106,7 +108,19 @@ def _compare_final_timestep(case_name: str, var_name: str) -> bool:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run CLUBB restart bit-for-bit test.")
+    parser = argparse.ArgumentParser(
+        description="Run CLUBB restart bit-for-bit test.",
+        #RawDescriptionHelpFormatter so the line breaks are kept.
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Unrecognized options are forwarded to run_scm.py for both runs,\n"
+            "e.g. run_restart_test.py bomex -multicol 4 (case_name must come first).\n"
+            "Caveats:\n"
+            "  -override    is replaced by the test's own restart override.\n"
+            "  -out_dir, -tout, -stats, etc. change the output location or contents,\n"
+            "               so the test may not find or compare the results."
+        ),
+    )
     parser.add_argument("case_name", help="Case name (e.g., bomex, rico_silhs)")
     parser.add_argument(
         "-v", "--var", default="thlm", help="Variable name to compare (default: thlm)"
@@ -116,7 +130,8 @@ def main() -> int:
         action="store_true",
         help="Keep output/<case>* and restart/ files after the test finishes.",
     )
-    args = parser.parse_args()
+    # Unrecognized options are forwarded to run_scm.py (e.g. -multicol 4)
+    args, extra_opts = parser.parse_known_args()
 
     model_file = CLUBB_ROOT / "input" / "case_setups" / f"{args.case_name}_model.in"
     if not model_file.is_file():
@@ -136,7 +151,7 @@ def main() -> int:
         _cleanup_case_outputs(args.case_name)
 
         print(f"Running standard {args.case_name} case... ", end="", flush=True)
-        ret, out = _run_scm(args.case_name)
+        ret, out = _run_scm(args.case_name, extra_opts)
         if ret != 0:
             print("FAILED")
             print(out, end="")
@@ -161,7 +176,7 @@ def main() -> int:
             end="",
             flush=True,
         )
-        ret, out = _run_scm(args.case_name, override=override)
+        ret, out = _run_scm(args.case_name, extra_opts, override=override)
         if ret != 0:
             print("FAILED")
             print(out, end="")

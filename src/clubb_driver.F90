@@ -3235,7 +3235,7 @@ module clubb_driver
               restart_path_case, time_restart,                                     & ! Intent(in)
               um(i,:), upwp(i,:), vm(i,:), vpwp(i,:), up2(i,:), vp2(i,:), rtm(i,:),& ! Intent(inout)
               wprtp(i,:), thlm(i,:), wpthlp(i,:), rtp2(i,:), rtp3(i,:),            & ! Intent(inout)
-              thlp2, thlp3, rtpthlp(i,:), wp2, wp3(i,:),                           & ! Intent(inout)
+              thlp2(i, :), thlp3(i, :), rtpthlp(i,:), wp2(i, :), wp3(i,:),         & ! Intent(inout)
               p_in_Pa(i,:), exner(i,:), rcm(i,:), cloud_frac(i,:),                 & ! Intent(inout)
               wpthvp(i,:), wp2thvp(i,:), wp2up(i,:), rtpthvp(i,:), thlpthvp(i,:),  & ! Intent(inout)
               wp2rtp(i,:), wp2thlp(i,:), uprcp(i,:), vprcp(i,:),                   & ! Intent(inout)
