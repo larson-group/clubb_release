@@ -620,13 +620,10 @@ def component_precip_frac_specify(
 
     f_p(2) = ( f_p - mixt_frac * f_p(1) ) / ( 1 - mixt_frac );
 
-    and also has an upper limit of 1.  When upsilon = 1, all of the
-    precipitation is found in the 1st PDF component (as long as
-    f_p <= mixt_frac, otherwise it would cause f_p(1) to be greater than 1).
-    When upsilon = 0, all of the precipitation is found in the 2nd PDF
-    component (as long as f_p <= 1 - mixt_frac, otherwise it would cause
-    f_p(2) to be greater than 1).  When upsilon is between 0 and 1,
-    precipitation is split between the two PDF components accordingly.
+    and also has an upper limit of 1.  Precipitation is split between the two
+    PDF components according to upsilon.  Whenever hydrometeors are present,
+    each PDF component has a precipitation fraction of at least
+    precip_frac_tol, including when upsilon = 0 or upsilon = 1.
     """
     del hydromet_dim
 
@@ -649,169 +646,7 @@ def component_precip_frac_specify(
         1.0,
     )
 
-    # There are hydrometeors found at this grid level.
     # Loop over all vertical levels.
-    precip_frac_1_one = jnp.where(
-        precip_frac <= mixt_frac,
-        # All the precipitation is found in the 1st PDF component.
-        precip_frac / mixt_frac_safe,
-        # Some precipitation is found in the 2nd PDF component.
-        1.0,
-    )
-    precip_frac_2_one_initial = (
-        precip_frac - mixt_frac
-    ) / one_minus_mixt_frac_safe
-    precip_frac_1_one_recalc = (
-        precip_frac - one_minus_mixt_frac * precip_frac_tol
-    ) / mixt_frac_safe
-    precip_frac_2_one_if_1_gt_1 = (
-        precip_frac - mixt_frac
-    ) / one_minus_mixt_frac_safe
-    precip_frac_2_one_if_1_lt_tol = precip_frac_tol * (
-        (precip_frac / precip_frac_tol - mixt_frac)
-        / one_minus_mixt_frac_safe
-    )
-    precip_frac_1_one_checked = jnp.where(
-        precip_frac_1_one_recalc > 1.0,
-        1.0,
-        jnp.where(
-            precip_frac_1_one_recalc < precip_frac_tol,
-            precip_frac_tol,
-            precip_frac_1_one_recalc,
-        ),
-    )
-    precip_frac_2_one_checked = jnp.where(
-        precip_frac_1_one_recalc > 1.0,
-        precip_frac_2_one_if_1_gt_1,
-        jnp.where(
-            precip_frac_1_one_recalc < precip_frac_tol,
-            # fp = a*fp1+(1-a)*fp2 solving for fp2
-            precip_frac_2_one_if_1_lt_tol,
-            precip_frac_tol,
-        ),
-    )
-    precip_frac_2_one = jnp.where(
-        precip_frac <= mixt_frac,
-        0.0,
-        jnp.where(
-            (precip_frac_2_one_initial > 1.0)
-            & (
-                jnp.abs(precip_frac - 1.0)
-                < jnp.abs(precip_frac + 1.0) / 2.0 * eps
-            ),
-            # Set precip_frac_2 = 1.
-            1.0,
-            jnp.where(
-                precip_frac_2_one_initial < precip_frac_tol,
-                # Since precipitation is found in the 2nd PDF component, it
-                # must have a value of at least precip_frac_tol.
-                precip_frac_2_one_checked,
-                precip_frac_2_one_initial,
-            ),
-        ),
-    )
-    precip_frac_1_one = jnp.where(
-        precip_frac <= mixt_frac,
-        precip_frac_1_one,
-        jnp.where(
-            (precip_frac_2_one_initial > 1.0)
-            & (
-                jnp.abs(precip_frac - 1.0)
-                < jnp.abs(precip_frac + 1.0) / 2.0 * eps
-            ),
-            1.0,
-            jnp.where(
-                precip_frac_2_one_initial < precip_frac_tol,
-                # Recalculate precip_frac_1
-                precip_frac_1_one_checked,
-                precip_frac_1_one,
-            ),
-        ),
-    )
-
-    precip_frac_1_zero = jnp.where(
-        precip_frac <= one_minus_mixt_frac,
-        # All the precipitation is found in the 2nd PDF component.
-        0.0,
-        # Some precipitation is found in the 1st PDF component.
-        (precip_frac - one_minus_mixt_frac) / mixt_frac_safe,
-    )
-    precip_frac_2_zero = jnp.where(
-        precip_frac <= one_minus_mixt_frac,
-        precip_frac / one_minus_mixt_frac_safe,
-        1.0,
-    )
-    precip_frac_2_zero_recalc = (
-        precip_frac - mixt_frac * precip_frac_tol
-    ) / one_minus_mixt_frac_safe
-    precip_frac_1_zero_if_2_gt_1 = (
-        (precip_frac - 1.0) + mixt_frac
-    ) / mixt_frac_safe
-    precip_frac_1_zero_if_2_lt_tol = (
-        (precip_frac - precip_frac_tol) / mixt_frac_safe
-        + precip_frac_tol
-    )
-    precip_frac_2_zero_checked = jnp.where(
-        precip_frac_2_zero_recalc > 1.0,
-        1.0,
-        jnp.where(
-            precip_frac_2_zero_recalc < precip_frac_tol,
-            precip_frac_tol,
-            precip_frac_2_zero_recalc,
-        ),
-    )
-    precip_frac_1_zero_checked = jnp.where(
-        precip_frac_2_zero_recalc > 1.0,
-        precip_frac_1_zero_if_2_gt_1,
-        jnp.where(
-            precip_frac_2_zero_recalc < precip_frac_tol,
-            # fp = a*fp1+(1-a)*fp2 solving for fp1
-            precip_frac_1_zero_if_2_lt_tol,
-            precip_frac_1_zero,
-        ),
-    )
-    precip_frac_1_zero_initial = (
-        precip_frac - one_minus_mixt_frac
-    ) / mixt_frac_safe
-    precip_frac_1_zero = jnp.where(
-        precip_frac <= one_minus_mixt_frac,
-        precip_frac_1_zero,
-        jnp.where(
-            (precip_frac_1_zero_initial > 1.0)
-            & (
-                jnp.abs(precip_frac - 1.0)
-                < jnp.abs(precip_frac + 1.0) / 2.0 * eps
-            ),
-            # Set precip_frac_1 = 1.
-            1.0,
-            jnp.where(
-                precip_frac_1_zero_initial < precip_frac_tol,
-                # Since precipitation is found in the 1st PDF component, it
-                # must have a value of at least precip_frac_tol.
-                precip_frac_1_zero_checked,
-                precip_frac_1_zero,
-            ),
-        ),
-    )
-    precip_frac_2_zero = jnp.where(
-        precip_frac <= one_minus_mixt_frac,
-        precip_frac_2_zero,
-        jnp.where(
-            (precip_frac_1_zero_initial > 1.0)
-            & (
-                jnp.abs(precip_frac - 1.0)
-                < jnp.abs(precip_frac + 1.0) / 2.0 * eps
-            ),
-            precip_frac_2_zero,
-            jnp.where(
-                precip_frac_1_zero_initial < precip_frac_tol,
-                # Recalculate precip_frac_2
-                precip_frac_2_zero_checked,
-                precip_frac_2_zero,
-            ),
-        ),
-    )
-
     # Precipitation is found in both PDF components.  Each component
     # must have a precipitation fraction that is at least
     # precip_frac_tol and that does not exceed 1.
@@ -909,24 +744,8 @@ def component_precip_frac_specify(
         ),
     )
 
-    l_upsilon_one = (
-        jnp.abs(upsilon_precip_frac_rat - 1.0)
-        < jnp.abs(upsilon_precip_frac_rat + 1.0) / 2.0 * eps
-    )
-    l_upsilon_zero = (
-        jnp.abs(upsilon_precip_frac_rat)
-        < jnp.abs(upsilon_precip_frac_rat) / 2.0 * eps
-    )
-    precip_frac_1 = jnp.where(
-        l_upsilon_one,
-        precip_frac_1_one,
-        jnp.where(l_upsilon_zero, precip_frac_1_zero, precip_frac_1_general),
-    )
-    precip_frac_2 = jnp.where(
-        l_upsilon_one,
-        precip_frac_2_one,
-        jnp.where(l_upsilon_zero, precip_frac_2_zero, precip_frac_2_general),
-    )
+    precip_frac_1 = precip_frac_1_general
+    precip_frac_2 = precip_frac_2_general
 
     # There aren't any hydrometeors found at the grid level.
     precip_frac_1 = jnp.where(has_hydromet, precip_frac_1, 0.0)
