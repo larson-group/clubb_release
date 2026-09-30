@@ -1,6 +1,11 @@
 # Runtime dependency for the Python wrappers and the F2PY extension interface.
-numpy
+numpy~=2.2
+# NumPy 2's F2PY builds extensions through Meson.
+meson
+ninja
 
 # Test dependencies used by clubb_python_api/tests/.
 pytest
 netCDF4
+# run_python_vs_fortran_cases.py invokes run_bindiff_all.py.
+tabulate~=0.10

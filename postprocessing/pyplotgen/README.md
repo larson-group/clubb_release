@@ -1,5 +1,5 @@
 # Quickstart
-Pyplotgen takes parameters in the form `python3 ./PyPlotGen.py [OPTIONS]`
+Pyplotgen takes parameters in the form `python3 ./pyplotgen.py [OPTIONS]`
 Pyplotgen only supports input in the netcdf (.nc) format.
 
 ## Example Run Commands
@@ -77,11 +77,10 @@ The user can either change this line of code to match their file name (probably 
 | --priority-variables | Outputs a small subset of interesting variables (including budgets for these variables if used with the -b option).  The subset can be modified by going into a VariableGroup file in the [config folder](https://github.com/larson-group/clubb_release/tree/master/postprocessing/pyplotgen/config) and editing the Priority property.  Useful for cutting down time for generating movies (animations). |
 | --sam-style-budgets | Outputs CLUBB budgets similar to SAM budgets, i.e. by gathering terms so that they can be viewed in comparison to SAM budgets.  Must be used with the -b or --plot-budgets option. |
 
-## Installing Dependencies
-To install the dependencies necessary for PyPlotgen to run, go to the `postprocessing/pyplotgen` directory in your checkout of CLUBB and run the command
-```
-pip3 install -r requirements.txt
-```
+## Python dependencies
+Run `pyplotgen.py` normally. It uses uv to prepare the shared CLUBB Python
+environment with its plotting packages on first use; no manual installation is
+needed.
 
 ## Creating movies (i.e., animations)
 PyPlotGen can create animations of CLUBB variable profiles, including budgets and SILHS subcolumns.  Currently the code is capable of outputting .mp4 and .avi files although .mp4 is probably preferred due to greater compatibility with web browsers which is how output is typically viewed.  The python package OpenCV is required for making movies, although pyplotgen can still be used for creating figures without OpenCV and will not complain if OpenCV is not present.  Having FFmpeg (a free software not associated with python) installed on your computer, while not a requirement, helps greatly because it will make .mp4 files compatible with a wider range of browers including Firefox and Chrome.  The movie frame rate is set in config/Style_definitions.py under FRAMES_PER_SECOND.

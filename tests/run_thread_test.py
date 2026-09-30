@@ -241,4 +241,8 @@ def main():
 
 
 if __name__ == "__main__":
+    sys.path.insert(0, str(REPO_ROOT))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
     main()

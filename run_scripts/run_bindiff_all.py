@@ -42,17 +42,24 @@ Usage:
     -f {skip,replace,enumerate}  Write per-case diff logs to output/bindiffs/
 """
 
-import netCDF4
 import argparse
-import sys
-import os
+import contextlib
 import filecmp
+import io
+import multiprocessing as mp
+import os
+import sys
+from pathlib import Path
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
+
+import netCDF4
 import numpy as np
 import tabulate
-import multiprocessing as mp
-import io
-import contextlib
-from pathlib import Path
 
 scriptPath = os.path.dirname(os.path.realpath(__file__))+'/'
 outFilePath = os.path.normpath(scriptPath+"../output/bindiffs/")

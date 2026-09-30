@@ -2,7 +2,7 @@
 """Generate the static directional-Lscale PDF-10 coherence report.
 
 Run from repository root with:
-  PYTHONPATH=.:.venv-dash/lib/python3.14/site-packages .venv-dash/bin/python \
+  PYTHONPATH=. python \
     doc/reports/directional-lscale-pdf-coherence/snippets/generate_report.py
 """
 
@@ -13,11 +13,17 @@ from pathlib import Path
 import subprocess
 import sys
 
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[5]))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv("dash")
+
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(__file__).resolve().parents[5]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 

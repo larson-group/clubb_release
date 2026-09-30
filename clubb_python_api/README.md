@@ -307,13 +307,12 @@ It does two small setup steps before calling `pytest`:
 - sets `PYTHONPATH` so the installed Python runtime, source-tree tests,
   and repo-root code are importable during the test run
 
-After that it just runs:
+The API tests use an existing F2PY build in `install/latest/python`; the test
+runner does not compile CLUBB. It runs pytest with the shared Python environment
+if one has been set up, or with `python3` otherwise. Build the F2PY interface
+with the same interpreter if no compatible build exists yet.
 
-```bash
-python3 -m pytest tests/ "$@"
-```
-
-So the script is mainly a convenience entrypoint. It lets you run the suite from
+The script is mainly a convenience entrypoint. It lets you run the suite from
 the repo root without having to remember the working directory and import-path
 setup each time.
 
@@ -334,7 +333,7 @@ You can still pass ordinary pytest flags through the script. For example:
 Run a single test file:
 
 ```bash
-python3 -m pytest clubb_python_api/tests/test_udt_roundtrip.py -q
+bash clubb_python_api/run_pytests.sh tests/test_udt_roundtrip.py -q
 ```
 
 The test suite covers a few different kinds of checks:

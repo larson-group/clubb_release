@@ -69,19 +69,17 @@ of the JAX selection.
 
 ### Python runs and tuning
 
-Python runs and Tune jobs require CLUBB's Python/F2PY interface. After the
-launcher has prepared the Dash environment, build it with that same Python:
+Python runs and Tune jobs require CLUBB's Python/F2PY interface. Build it with:
 
 ```bash
-.venv-dash/bin/python compile.py -python
+./compile.py -python
 ```
 
-Use the corresponding `bin/python` path if `CLUBB_DASH_VENV` names a different
-virtual environment. Using the same environment avoids NumPy compatibility
-problems when loading the compiled interface. The interface is not needed just
-to open the dashboard or configure Tune controls.
+The build prepares and uses the shared Python environment automatically, so
+the compiled interface matches Dash's NumPy version. The interface is not
+needed just to open the dashboard or configure Tune controls.
 
-### Launch options and manual setup
+### Launch options
 
 Pass application options through the launcher, for example:
 
@@ -89,14 +87,9 @@ Pass application options through the launcher, for example:
 ./launch_dashboard.sh --port 23404 -debug
 ```
 
-For manual setup in your chosen Python environment:
-
-```bash
-python3 -m pip install -r dash_app/requirements.txt
-python3 dash_app/app.py
-```
-
-Use `python3 dash_app/app.py --help` for host, port, debug, and threading options.
+The dashboard launcher installs Dash packages into that environment with uv on
+first launch. Use `./launch_dashboard.sh --help` for host, port, debug, and
+threading options.
 Dash serializes ordinary callbacks to protect NetCDF/HDF5 access; use
 `--threaded` only for diagnostics on a stack known to be thread-safe.
 `-debug` enables developer tools and reloading without changing that threading
@@ -139,12 +132,8 @@ migrate automatically.
 
 ### JULY_2017 statistics vs. 3-D recreation viewer
 
-For a deliberately small, standalone comparison of horizontally averaged
-fields only, run:
-
-```bash
-.venv-dash/bin/python dash_app/july_2017_les_comparison.py
-```
+For a deliberately small comparison of horizontally averaged fields only,
+use the JULY_2017 viewer in Dash.
 
 It overlays the original JULY_2017 SAM profile statistic with the matching
 resolved horizontal average recalculated from each 3-D recreation snapshot.
@@ -363,7 +352,7 @@ For terminal/IDE MCP hosts that are configured from the repository root, the
 stdio adapter remains available as a static fallback:
 
 ```bash
-codex mcp add clubb-dash -- .venv-dash/bin/python dash_app/agent_integration/mcp_server.py
+codex mcp add clubb-dash -- python3 dash_app/agent_integration/mcp_server.py
 ```
 
 ### LES Benchmark Overlays

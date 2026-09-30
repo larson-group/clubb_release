@@ -89,4 +89,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    sys.path.insert(0, str(DEFAULT_CLUBB_ROOT))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
     sys.exit(main())

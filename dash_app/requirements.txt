@@ -5,9 +5,8 @@ plotly~=6.7
 numpy~=2.2
 scipy~=1.15
 netCDF4~=1.7
-# 3.9 has no CPython 3.14 wheels, causing the launcher to fall back to a
-# fragile source build.  3.10 retains this application's API usage and ships
-# compatible wheels for the dashboard's supported interpreter.
+# Matplotlib 3.10 retains the APIs used by the dashboard and has wheels for
+# the supported Python versions.
 matplotlib>=3.10,<3.11
 # ReportBuilder uses Pillow to cap published PNG/JPEG evidence at 1200 px.
 pillow>=10,<13

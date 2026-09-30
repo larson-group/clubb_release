@@ -85,5 +85,5 @@ def test_override_value_accepts_the_optional_cli_prefix():
 
 
 def test_override_value_rejects_a_setting_outside_all_namelists():
-    with pytest.raises(ValueError, match="not present"):
+    with pytest.raises(ValueError, match="could not be matched"):
         override_value("missing_flag=.true.", "&configurable_clubb_flags_nl\n/\n")

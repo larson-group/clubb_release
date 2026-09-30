@@ -72,10 +72,13 @@ def run_quiet_python():
 
     def _run(script: str) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
-        env["PYTHONPATH"] = f"{repo_root}:{api_root}{os.pathsep}{env['PYTHONPATH']}" if "PYTHONPATH" in env else f"{repo_root}:{api_root}"
+        f2py_dir = Path(env.get("CLUBB_F2PY_DIR", repo_root / "install/latest/python"))
+        env["PYTHONPATH"] = os.pathsep.join(
+            (str(f2py_dir), str(repo_root), str(api_root), env.get("PYTHONPATH", ""))
+        )
         return subprocess.run(
             [sys.executable, "-c", script],
-            cwd=api_root,
+            cwd=repo_root,  # Avoid an obsolete clubb_f2py.so in the source directory.
             env=env,
             capture_output=True,
             text=True,

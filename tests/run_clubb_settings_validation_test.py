@@ -16,6 +16,12 @@ from contextlib import contextmanager
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if __name__ == "__main__":
+    sys.path.insert(0, str(ROOT))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
+
 _api_candidates = [
     ROOT / "install" / "latest" / "python",
     *ROOT.glob("build/*_PYTHON/clubb_python_api/f2py_runtime"),

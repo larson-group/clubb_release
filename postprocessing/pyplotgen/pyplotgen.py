@@ -21,6 +21,15 @@ from difflib import SequenceMatcher
 from multiprocessing import Pool, Array
 from multiprocessing import freeze_support
 
+import sys
+from pathlib import Path
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv("plot")
+
 
 from config import Case_definitions, Style_definitions
 from python_html_gallery import gallery

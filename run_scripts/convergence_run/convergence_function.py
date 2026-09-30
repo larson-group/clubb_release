@@ -1,8 +1,16 @@
 import argparse
-import numpy as np
 import os
-import sys
 import shutil
+import sys
+from pathlib import Path
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
+
+import numpy as np
 
 def modify_ic_profile(clubb_dir, case_dir, grid_dir, case, dz, refine): 
 

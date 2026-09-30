@@ -278,4 +278,8 @@ def main():
 
 
 if __name__ == "__main__":
+    if "-python" in sys.argv[1:]:
+        from utilities.setup_python_venv import ensure_python_venv
+
+        ensure_python_venv()
     main()

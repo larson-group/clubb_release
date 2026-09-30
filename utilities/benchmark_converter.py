@@ -11,10 +11,17 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Iterable
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
 
 import numpy as np
 from netCDF4 import Dataset

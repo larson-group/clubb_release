@@ -406,7 +406,7 @@ def main():
     run_cmake_build(build_log)
 
     # If build finished, set symlink "latest" to new install directory
-    link_path = os.path.join(CLUBB_ROOT, "install/latest") 
+    link_path = os.path.join(CLUBB_ROOT, "install/latest")
     if os.path.lexists(link_path): os.remove(link_path)
     os.symlink(inst_dir, link_path)
 
@@ -437,4 +437,8 @@ def main():
 
 
 if __name__ == "__main__":
+    if "-python" in sys.argv[1:]:
+        from utilities.setup_python_venv import ensure_python_venv
+
+        ensure_python_venv()
     sys.exit(main())

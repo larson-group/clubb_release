@@ -44,6 +44,11 @@ The following 4 compilers are supported, each of which has 2 or more aliases:
 
 If no compiler is specified, `compile.py` will default to gfortran! 
 
+For F2PY builds, run `./compile.py -python`. It prepares the shared Python
+environment with uv and uses it for the build automatically. The environment
+uses Python 3.12 or newer; uv downloads 3.12 when needed. Ordinary Fortran
+builds do not need Python packages.
+
 `compile.py` will create a subfolder named `build/<compiler>_*` and place all compiled libraries and 
 binaries in subdirectories corresponding to the corresponding source code directories. o
 

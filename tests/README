@@ -15,15 +15,22 @@ unit tests separate from environment-specific test suites:
 
 - `tests/run_pytests.sh -unit` runs the safe default suite in `utilities/pytests/`
   and `tuner/pytests/`.
-- `tests/run_pytests.sh -dash` runs Dash tests with `.venv-dash/bin/python`.  Install
-  `dash_app/requirements.txt` into that environment first.
-- `tests/run_pytests.sh -api` runs the compiled F2PY suite and therefore requires
-  `./compile.py -python` first.
+- `tests/run_pytests.sh -dash` prepares the shared `.venv-python` environment
+  with uv, then runs the Dash tests there.
+- `tests/run_pytests.sh -api` tests an existing compatible F2PY build in
+  `install/latest/python`. It prepares the shared Python environment if needed,
+  but does not compile CLUBB.
 - `tests/run_pytests.sh -all` runs all three suites in that order.
 
 Bare `python3 -m pytest` intentionally runs only the fast unit suite. SCM,
 GPU, and other expensive scripts below remain explicit test harnesses rather
 than accidental pytest collection.
+
+Python test scripts prepare and use the shared environment automatically.
+For F2PY tests, build the extension once with `./compile.py -python` first.
+The shared environment uses Python 3.12 or newer; uv downloads 3.12 when
+needed. `./launch_dashboard.sh` adds Dash packages automatically. JAX manages
+its own environments on first use.
 
 ## Test Scripts
 

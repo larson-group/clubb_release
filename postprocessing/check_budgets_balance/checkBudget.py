@@ -13,6 +13,14 @@ from builtins import range
 import sys  # Handles command line arguments
 import re   # Regular expressions
 import builtins
+from pathlib import Path
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
+
 from netCDF4 import Dataset
 from numpy import * # External library for handling large data sets
 from time import strftime

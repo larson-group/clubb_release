@@ -16,12 +16,18 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
 
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
+
 try:
     import numpy as np
     from netCDF4 import Dataset
 except Exception as exc:  # pragma: no cover - runtime dependency check
     print(f"ERROR: missing dependency: {exc}", file=sys.stderr)
-    print("Install with: pip install netCDF4 numpy", file=sys.stderr)
+    print("Run this script directly to prepare its Python dependencies.", file=sys.stderr)
     raise SystemExit(2)
 
 

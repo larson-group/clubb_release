@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #######################################################################
 # $Id$
 #
@@ -10,10 +10,18 @@
 #
 #######################################################################
 import argparse
-import numpy as np
 import os
-import sys
 import shutil
+import sys
+from pathlib import Path
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from utilities.setup_python_venv import ensure_python_venv
+
+    ensure_python_venv()
+
+import numpy as np
 from convergence_function import modify_ic_profile
 
 # check that Python 3 is being used

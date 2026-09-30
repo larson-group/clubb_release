@@ -135,8 +135,8 @@ Run './compile.py -help' to view the different options you can use when compilin
 -------------------------------------------------------
 The Dash app provides a browser interface for common CLUBB workflows.  It can
 launch specific case runs from the run tab and plot CLUBB NetCDF output from
-the plots tab.  Compile CLUBB first if you want to run cases through the app;
-plotting requires running first or using existing output files.
+the plots tab. You can open Dash and plot existing output without compiling.
+Fortran and Python runs need a build, which you can make from the Compile tab.
 
 The recommended way to start the app is the top-level launcher.  It creates a
 local virtual environment if needed, installs the Dash dependencies, and starts
@@ -150,15 +150,9 @@ Arguments are passed through to `dash_app/app.py`.  For example:
 ./launch_dashboard.sh --port 23404 -debug
 `
 
-For manual setup, run this from the CLUBB directory:
-`
-python3 -m pip install -r dash_app/requirements.txt
-python3 dash_app/app.py
-`
-
 The app opens in a browser on port 23404, or the next available port.  Use
-`./launch_dashboard.sh --help` or `python3 dash_app/app.py --help` to see host,
-port, debug, and threading options.
+`./launch_dashboard.sh --help` to see host, port, debug, and threading
+options.
 
 For more detail on app workflows and LES benchmark overlays, see
 `dash_app/README.md`.

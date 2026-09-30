@@ -57,7 +57,7 @@ To bring legacy report assets into the same policy, run the checked-in
 maintenance command from repository root:
 
 ```bash
-PYTHONPATH=. .venv-dash/bin/python doc/reports/resize_raster_assets.py
+PYTHONPATH=. python doc/reports/resize_raster_assets.py
 ```
 
 It changes only report PNG/JPEG files whose largest dimension exceeds 1200.
