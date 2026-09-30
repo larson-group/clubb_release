@@ -42,7 +42,7 @@ def _make_advance_inputs(ngrdcol: int):
     )
 
     clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
-    nu_vert_res_dep, lmin, mixt_frac_max_mag = clubb_api.calc_derrived_params(
+    nu_vert_res_dep, lmin, mixt_frac_max_mag = clubb_api.calc_derived_params(
         gr=gr,
         ngrdcol=ngrdcol,
         grid_type=1,

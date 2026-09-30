@@ -633,7 +633,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         iiedsclr_rt, iiedsclr_thl, iiedsclr_co2,
     )
 
-    nu_vert_res_dep, lmin, mixt_frac_max_mag = clubb_api.calc_derrived_params(
+    nu_vert_res_dep, lmin, mixt_frac_max_mag = clubb_api.calc_derived_params(
         gr=gr,
         ngrdcol=ngrdcol,
         grid_type=grid_type,

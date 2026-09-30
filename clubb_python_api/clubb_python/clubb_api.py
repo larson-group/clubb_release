@@ -90,7 +90,7 @@ from clubb_python.CLUBB_core.parameters_tunable import (
     init_clubb_params,
     get_param_names,
     get_parameter_hard_bounds,
-    calc_derrived_params,
+    calc_derived_params,
     check_parameters,
 )
 from clubb_python.CLUBB_core.pdf_parameter_module import (

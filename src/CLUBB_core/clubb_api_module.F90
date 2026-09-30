@@ -407,7 +407,7 @@ module clubb_api_module
     zero_pdf_params_api, &
     init_pdf_implicit_coefs_terms_api, &
     zero_pdf_implicit_coefs_terms_api, &
-    calc_derrived_params_api, &
+    calc_derived_params_api, &
     compute_current_date_api, &
     gregorian2julian_day_api, &
     leap_year_api
@@ -463,9 +463,9 @@ module clubb_api_module
     module procedure setup_grid_api_multi_col
   end interface
 
-  interface calc_derrived_params_api
-    module procedure calc_derrived_params_api_single_col
-    module procedure calc_derrived_params_api_multi_col
+  interface calc_derived_params_api
+    module procedure calc_derived_params_api_single_col
+    module procedure calc_derived_params_api_multi_col
   end interface
   
   interface setup_grid_heights_api
@@ -2288,18 +2288,18 @@ contains
   end function lin_interpolate_two_points_api
 
   !================================================================================================
-  ! calc_derrived_params_api
+  ! calc_derived_params_api
   ! Adjusts background eddy diffusivity based on vertical grid spacing
   ! and calculates
   !================================================================================================
 
-  subroutine calc_derrived_params_api_single_col( gr, grid_type, deltaz,    & ! Intent(in)
+  subroutine calc_derived_params_api_single_col( gr, grid_type, deltaz,    & ! Intent(in)
                                                   clubb_params,             & ! Intent(in)
                                                   l_prescribed_avg_deltaz,  & ! Intent(in)
                                                   nu_vert_res_dep, lmin,    & ! Intent(inout)
                                                   mixt_frac_max_mag )         ! Intent(inout)
 
-    use parameters_tunable, only : calc_derrived_params
+    use parameters_tunable, only : calc_derived_params
 
     implicit none
 
@@ -2327,7 +2327,7 @@ contains
       clubb_params  ! Tuneable model parameters      [-]
 
     logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz ! used in calc_derived_params_api. If .true., avg_deltaz = deltaz
 
     ! Output Variables
     type(nu_vertical_res_dep), intent(inout) :: &
@@ -2347,27 +2347,27 @@ contains
     deltaz_col(1) = deltaz
     clubb_params_col(1,:) = clubb_params
 
-    call calc_derrived_params( gr, 1, grid_type, deltaz_col,  & ! Intent(in)
+    call calc_derived_params( gr, 1, grid_type, deltaz_col,  & ! Intent(in)
                                clubb_params,                  & ! Intent(in)
                                l_prescribed_avg_deltaz,       & ! Intent(in)
                                nu_vert_res_dep, lmin,         & ! Intent(inout)
                                mixt_frac_max_mag )              ! Intent(inout)
 
-  end subroutine calc_derrived_params_api_single_col
+  end subroutine calc_derived_params_api_single_col
   
   !================================================================================================
-  ! calc_derrived_params_api - Adjusts background eddy diffusivity based
+  ! calc_derived_params_api - Adjusts background eddy diffusivity based
   ! on vertical grid spacing
   !                    and calculates 
   !================================================================================================
 
-  subroutine calc_derrived_params_api_multi_col( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
+  subroutine calc_derived_params_api_multi_col( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
                                                  clubb_params,                    & ! Intent(in)
                                                  l_prescribed_avg_deltaz,         & ! Intent(in)
                                                  nu_vert_res_dep, lmin,           & ! Intent(inout)
                                                  mixt_frac_max_mag )                ! Intent(inout)
 
-    use parameters_tunable, only : calc_derrived_params
+    use parameters_tunable, only : calc_derived_params
 
     implicit none
 
@@ -2398,7 +2398,7 @@ contains
       clubb_params  ! Tuneable model parameters      [-]
 
     logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz ! used in calc_derived_params_api. If .true., avg_deltaz = deltaz
 
     ! Output Variables
     type(nu_vertical_res_dep), intent(inout) :: &
@@ -2408,13 +2408,13 @@ contains
       mixt_frac_max_mag, &
       lmin    ! Min. value for the length scale    [m]
 
-    call calc_derrived_params( gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
+    call calc_derived_params( gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
                                clubb_params,                   & ! Intent(in)
                                l_prescribed_avg_deltaz,        & ! Intent(in)
                                nu_vert_res_dep, lmin,          & ! Intent(inout)
                                mixt_frac_max_mag )               ! Intent(inout)
 
-  end subroutine calc_derrived_params_api_multi_col
+  end subroutine calc_derived_params_api_multi_col
 
   !================================================================================================
   ! init_pdf_params - allocates arrays for pdf_params

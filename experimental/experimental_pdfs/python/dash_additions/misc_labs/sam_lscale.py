@@ -181,7 +181,7 @@ def _compute_native_lscale_profile(
             err_info=err_info,
         )
         params = api.init_clubb_params(ngrdcol, iunit=10, filename="")
-        _nu, lmin, _mixture_limit = api.calc_derrived_params(
+        _nu, lmin, _mixture_limit = api.calc_derived_params(
             gr=grid,
             ngrdcol=ngrdcol,
             grid_type=2,

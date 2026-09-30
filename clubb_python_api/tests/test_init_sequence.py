@@ -26,7 +26,7 @@ from clubb_python.clubb_api import (
     get_default_config_flags, init_config_flags,
     init_err_info, get_err_code,
     setup_grid,
-    init_clubb_params, get_param_names, calc_derrived_params,
+    init_clubb_params, get_param_names, calc_derived_params,
     init_pdf_params, init_pdf_params_zm, init_pdf_implicit, init_pdf_implicit_coefs_terms,
 )
 
@@ -220,16 +220,16 @@ class TestClubbParams:
         np.testing.assert_array_equal(params[0], params[2])
 
 
-class TestCalcDerrivedParams:
+class TestCalcDerivedParams:
     """Test derived parameter calculation."""
 
     def test_produces_finite_outputs(self):
-        """calc_derrived_params should return finite lmin and mixt_frac_max_mag."""
+        """calc_derived_params should return finite lmin and mixt_frac_max_mag."""
         ngrdcol = 1
         nzmax = 11
         dz = 500.0
 
-        # Full init sequence up to calc_derrived_params
+        # Full init sequence up to calc_derived_params
         init_err_info(ngrdcol)
 
         zm = np.arange(nzmax, dtype=np.float64) * dz
@@ -250,7 +250,7 @@ class TestCalcDerrivedParams:
 
         params = init_clubb_params(ngrdcol, iunit=10, filename="")
         deltaz_arr = np.full(ngrdcol, dz, dtype=np.float64)
-        nu_vert_res_dep, lmin, mixt_frac_max_mag = calc_derrived_params(
+        nu_vert_res_dep, lmin, mixt_frac_max_mag = calc_derived_params(
             gr=gr,
             ngrdcol=ngrdcol,
             grid_type=1, deltaz=deltaz_arr,
@@ -359,7 +359,7 @@ class TestFullInitSequence:
 
         # 4. Init params + derived params
         params = init_clubb_params(ngrdcol, iunit=10, filename="")
-        nu_vert_res_dep, lmin, mfmm = calc_derrived_params(
+        nu_vert_res_dep, lmin, mfmm = calc_derived_params(
             gr=gr, ngrdcol=ngrdcol, grid_type=1,
             deltaz=np.full(ngrdcol, dz, dtype=np.float64),
             clubb_params=params,

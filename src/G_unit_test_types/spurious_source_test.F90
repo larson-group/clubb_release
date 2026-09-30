@@ -40,7 +40,7 @@ module spurious_source_test
 
     use clubb_api_module, only: &
         setup_grid_api, & ! Procedure(s)
-        calc_derrived_params_api
+        calc_derived_params_api
 
     use grid_class, only: &
         zm2zt_api,      &
@@ -627,7 +627,7 @@ module spurious_source_test
                          gr, err_info_dummy )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
-    call calc_derrived_params_api( gr, grid_type, deltaz, &
+    call calc_derived_params_api( gr, grid_type, deltaz, &
                            clubb_params(1,:), &
                            l_prescribed_avg_deltaz, &
                            nu_vert_res_dep, lmin, &

@@ -33,7 +33,7 @@ module parameters_tunable
 
   public :: set_default_parameters, check_parameters_api, init_clubb_params_api, &
             read_param_minmax, read_param_constraints, &
-            calc_derrived_params, get_parameter_hard_bounds_api, &
+            calc_derived_params, get_parameter_hard_bounds_api, &
             nu_vertical_res_dep
 
   ! ``no_*_bound`` denotes an open endpoint in parameter_hard_bounds.
@@ -665,14 +665,14 @@ module parameters_tunable
   end subroutine check_parameter_hard_bounds
 
   !=============================================================================
-  subroutine calc_derrived_params( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
+  subroutine calc_derived_params( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
                                    clubb_params,                    & ! Intent(in)
                                    l_prescribed_avg_deltaz,         & ! Intent(in)
                                    nu_vert_res_dep, lmin,           & ! Intent(inout)
                                    mixt_frac_max_mag )                ! Intent(inout)
 
     ! Description:
-    !   Calculates clubb parameters that should be derrived from other quantities.
+    !   Calculates CLUBB parameters that should be derived from other quantities.
     !
     !   Adjusts the values of background eddy diffusivity based on
     !   vertical grid spacing.
@@ -749,7 +749,7 @@ module parameters_tunable
       deltaz  ! Change per height level        [m]
 
     logical, intent(in) :: &
-      l_prescribed_avg_deltaz ! used in calc_derrived_params_api. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz ! used in calc_derived_params_api. If .true., avg_deltaz = deltaz
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
       clubb_params  ! Tuneable model parameters      [-]
@@ -905,7 +905,7 @@ module parameters_tunable
       
     return
 
-  end subroutine calc_derrived_params
+  end subroutine calc_derived_params
 
   !=============================================================================
   subroutine init_clubb_params_api( ngrdcol, iunit, filename, &

@@ -53,7 +53,7 @@ def get_parameter_hard_bounds(nparams_in: int) -> list[dict]:
     ]
 
 
-def calc_derrived_params(
+def calc_derived_params(
     gr: Grid, ngrdcol: int, grid_type: int,
     deltaz: np.ndarray,
     clubb_params: np.ndarray,
@@ -64,7 +64,7 @@ def calc_derrived_params(
     set_fortran_grid(gr)
     if nu_vert_res_dep is not None:
         set_fortran_nu_vert_res_dep(nu_vert_res_dep)
-    lmin, mixt_frac_max_mag = clubb_f2py.f2py_calc_derrived_params(
+    lmin, mixt_frac_max_mag = clubb_f2py.f2py_calc_derived_params(
         grid_type,
         f_arr(deltaz),
         f_arr(clubb_params),

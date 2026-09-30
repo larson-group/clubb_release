@@ -19,7 +19,7 @@ from clubb_jax.src.CLUBB_core.grid_class import zt2zm
 from clubb_jax.src.CLUBB_core.model_flags import get_default_config_flags
 from clubb_jax.src.CLUBB_core.numerical_check import check_clubb_settings
 from clubb_jax.src.CLUBB_core.parameters_tunable import (
-    calc_derrived_params,
+    calc_derived_params,
     get_param_names,
     init_clubb_params,
 )
@@ -627,7 +627,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         iiedsclr_thl=iiedsclr_thl,
         iiedsclr_CO2=iiedsclr_co2,
     )
-    nu_vert_res_dep, lmin, mixt_frac_max_mag = calc_derrived_params(
+    nu_vert_res_dep, lmin, mixt_frac_max_mag = calc_derived_params(
         gr=gr,
         ngrdcol=ngrdcol,
         grid_type=grid_type,

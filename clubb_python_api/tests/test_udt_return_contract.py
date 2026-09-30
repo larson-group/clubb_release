@@ -63,7 +63,7 @@ UDT_ARG_RETURN_MANIFEST = {
     "numerical_check.parameterization_check": {("err_info",)},
     "numerical_check.pdf_closure_check": {("err_info",)},
     "numerical_check.sfc_varnce_check": {("err_info",)},
-    "parameters_tunable.calc_derrived_params": {("nu_vert_res_dep",)},
+    "parameters_tunable.calc_derived_params": {("nu_vert_res_dep",)},
     "parameters_tunable.check_parameters": {("err_info",)},
     "pdf_closure.pdf_closure_driver": {("implicit_coefs_terms", "pdf_params", "pdf_params_zm", "err_info")},
     "pdf_parameter_module.zero_pdf_params": {("pdf_params",)},
@@ -148,7 +148,7 @@ FULL_RETURN_PATTERN_MANIFEST = {
     "numerical_check.sfc_varnce_check": {
         ("err_info",),
     },
-    "parameters_tunable.calc_derrived_params": {
+    "parameters_tunable.calc_derived_params": {
         ("nu_vert_res_dep", "value", "value"),
     },
     "parameters_tunable.check_parameters": {

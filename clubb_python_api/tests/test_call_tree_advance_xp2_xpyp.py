@@ -39,7 +39,7 @@ def _setup_env(tmp_path: Path, ngrdcol: int = 1):
     )
 
     clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
-    nu_vert_res_dep, _, _ = clubb_api.calc_derrived_params(
+    nu_vert_res_dep, _, _ = clubb_api.calc_derived_params(
         gr=gr,
         ngrdcol=ngrdcol,
         grid_type=1,

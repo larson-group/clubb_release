@@ -41,7 +41,7 @@ def _make_grid(ngrdcol=1, nzmax=11, dz=500.0):
     )
 
     params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
-    _nu_vert_res_dep, lmin, mfmm = clubb_api.calc_derrived_params(
+    _nu_vert_res_dep, lmin, mfmm = clubb_api.calc_derived_params(
         gr=gr, ngrdcol=ngrdcol, grid_type=1,
         deltaz=np.full(ngrdcol, dz, dtype=np.float64),
         clubb_params=params,

@@ -472,7 +472,7 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, nparams), intent(out) :: clubb_params
     end subroutine
 
-    subroutine f2py_calc_derrived_params(ngrdcol, grid_type, deltaz, &
+    subroutine f2py_calc_derived_params(ngrdcol, grid_type, deltaz, &
         clubb_params, l_prescribed_avg_deltaz, lmin, mixt_frac_max_mag)
       integer, intent(in) :: ngrdcol, grid_type
       double precision, dimension(ngrdcol), intent(in) :: deltaz

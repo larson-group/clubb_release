@@ -16,7 +16,7 @@ References:
 
 Porting deviations:
 The JAX driver needs ``get_param_names``, ``init_clubb_params``,
-``calc_derrived_params``, and ``check_parameters``.  The Fortran tuner-only
+``calc_derived_params``, and ``check_parameters``.  The Fortran tuner-only
 ``read_param_minmax`` and ``read_param_constraints`` routines are omitted.
 Fortran ``pack_parameters`` and ``unpack_parameters`` are represented by
 ``PARAM_NAMES``/``PNAME_IDX`` plus a Python dictionary of defaults.  Fortran
@@ -230,7 +230,7 @@ def init_clubb_params(ngrdcol: int, filename: str) -> np.ndarray:
     return values
 
 
-def calc_derrived_params(
+def calc_derived_params(
     gr,
     ngrdcol: int,
     grid_type: int,
@@ -238,10 +238,10 @@ def calc_derrived_params(
     clubb_params: np.ndarray,
     l_prescribed_avg_deltaz: bool,
 ) -> tuple[NuVertResDep, float, float]:
-    """Calculate parameters that should be derrived from other quantities.
+    """Calculate parameters that should be derived from other quantities.
 
     Description:
-      Calculates clubb parameters that should be derrived from other quantities.
+      Calculates CLUBB parameters that should be derived from other quantities.
 
       Adjusts the values of background eddy diffusivity based on
       vertical grid spacing.

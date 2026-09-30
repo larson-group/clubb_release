@@ -256,7 +256,7 @@ FALSE_OPTIONAL_ARG_EXCEPTIONS = {
 }
 
 PUBLIC_API_OMITTED_ARG_EXCEPTIONS = {
-    "f2py_calc_derrived_params": {
+    "f2py_calc_derived_params": {
         "lmin",
         "mixt_frac_max_mag",
     },

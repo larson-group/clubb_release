@@ -968,7 +968,7 @@ module clubb_driver
       set_default_clubb_config_flags_api, &  
       initialize_clubb_config_flags_type_api, &
       init_pdf_params_api, &
-      calc_derrived_params_api, &
+      calc_derived_params_api, &
       iiPDF_new, &        ! Constants
       iiPDF_new_hybrid
 
@@ -2723,8 +2723,8 @@ module clubb_driver
 
     end if
 
-    ! Calculate clubb parameters that should be derrived from other quantities
-    call calc_derrived_params_api( gr, ngrdcol, grid_type, deltaz,              & ! Intent(in)
+    ! Calculate CLUBB parameters that should be derived from other quantities
+    call calc_derived_params_api( gr, ngrdcol, grid_type, deltaz,              & ! Intent(in)
                                    clubb_params,                                & ! Intent(in)
                                    clubb_config_flags%l_prescribed_avg_deltaz,  & ! Intent(in)
                                    nu_vert_res_dep, lmin,                       & ! intent(inout)
@@ -2841,7 +2841,7 @@ module clubb_driver
     use clubb_api_module, only: &
       zero_pdf_implicit_coefs_terms_api, & ! Procedure(s)
       zero_pdf_params_api, &
-      calc_derrived_params_api, &
+      calc_derived_params_api, &
       check_clubb_settings_api, &
       clubb_at_least_debug_level_api, &
       zero_precip_fracs_api, &
@@ -3276,7 +3276,7 @@ module clubb_driver
       !$acc update host( deltaz, clubb_params, gr%zt, gr%zm )
     end if
 
-    call calc_derrived_params_api( gr, ngrdcol, grid_type, deltaz,              & ! Intent(in)
+    call calc_derived_params_api( gr, ngrdcol, grid_type, deltaz,              & ! Intent(in)
                                    clubb_params,                                & ! Intent(in)
                                    clubb_config_flags%l_prescribed_avg_deltaz,  & ! Intent(in)
                                    nu_vert_res_dep, lmin,                       & ! intent(inout)

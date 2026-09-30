@@ -131,24 +131,24 @@ def test_param_values_match_fortran():
     print(f"  init_clubb_params values match Fortran exactly ({j.shape[1]} params, max diff 0.0)  PASS")
 
 
-def test_calc_derrived_params_f2py():
-    """`calc_derrived_params` (parameters_tunable.F90:calc_Derrived_Params_api) computes the DERIVED tunable params
+def test_calc_derived_params_f2py():
+    """`calc_derived_params` (parameters_tunable.F90:calc_derived_params_api) computes the derived tunable params
     from the base clubb_params + grid: `lmin` (the mixing-length floor) and `mixt_frac_max_mag` (the PDF mixture-fraction
     cap) — both load-bearing (lmin clips Lscale; mixt_frac_max_mag bounds the ADG1 closure). Validate the two scalars vs
-    `f2py_calc_derrived_params`. SKIPs if clubb_f2py/clubb_python are unbuilt. (iter 468)"""
+    `f2py_calc_derived_params`. SKIPs if clubb_f2py/clubb_python are unbuilt. (iter 468)"""
     try:
         import clubb_f2py
         from clubb_python import clubb_api
         from clubb_python.derived_types.err_info import ErrInfo
     except Exception as e:
-        print(f"  f2py calc_derrived_params oracle: SKIP ({type(e).__name__})")
+        print(f"  f2py calc_derived_params oracle: SKIP ({type(e).__name__})")
         return
     fn = os.path.join(_ROOT, "input", "tunable_parameters", "tunable_parameters.in")
     if not os.path.exists(fn):
-        print("  f2py calc_derrived_params: SKIP (tunable_parameters.in absent)")
+        print("  f2py calc_derived_params: SKIP (tunable_parameters.in absent)")
         return
     from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-    from clubb_jax.src.CLUBB_core.parameters_tunable import calc_derrived_params, init_clubb_params
+    from clubb_jax.src.CLUBB_core.parameters_tunable import calc_derived_params, init_clubb_params
     NG, DZ, ZTOP = 2, 40.0, 1200.0
     jgr = setup_grid(ngrdcol=NG, deltaz=DZ, zm_init=0.0, zm_top=ZTOP, grid_type=1)
     ng, nzm = jgr.zm.shape
@@ -160,12 +160,12 @@ def test_calc_derrived_params_f2py():
                          thermodynamic_heights=np.asfortranarray(np.asarray(jgr.zt)), err_info=ErrInfo(ngrdcol=ng))
     cp = np.asarray(init_clubb_params(ng, filename=fn))
     deltaz = np.full(ng, DZ)
-    _, j_lmin, j_mfmm = calc_derrived_params(jgr, ng, 1, deltaz, cp, False)
-    f_lmin, f_mfmm = clubb_f2py.f2py_calc_derrived_params(1, deltaz, cp, 0)
+    _, j_lmin, j_mfmm = calc_derived_params(jgr, ng, 1, deltaz, cp, False)
+    f_lmin, f_mfmm = clubb_f2py.f2py_calc_derived_params(1, deltaz, cp, 0)
     d_lmin = float(np.max(np.abs(np.asarray(j_lmin) - np.asarray(f_lmin))))
     d_mfmm = abs(float(j_mfmm) - float(np.asarray(f_mfmm).ravel()[0]))
-    assert d_lmin < 1e-12 and d_mfmm < 1e-12, f"calc_derrived_params mismatch: lmin {d_lmin:.2e}, mixt_frac_max_mag {d_mfmm:.2e}"
-    print(f"  f2py calc_derrived_params: lmin + mixt_frac_max_mag match exactly (diff {max(d_lmin, d_mfmm):.1e})  PASS")
+    assert d_lmin < 1e-12 and d_mfmm < 1e-12, f"calc_derived_params mismatch: lmin {d_lmin:.2e}, mixt_frac_max_mag {d_mfmm:.2e}"
+    print(f"  f2py calc_derived_params: lmin + mixt_frac_max_mag match exactly (diff {max(d_lmin, d_mfmm):.1e})  PASS")
 
 
 def main():
@@ -175,7 +175,7 @@ def main():
     test_parameter_hard_bounds_match_f2py()
     test_parameter_validation_rejects_hard_bound_and_equality()
     test_param_values_match_fortran()
-    test_calc_derrived_params_f2py()
+    test_calc_derived_params_f2py()
     print("All param-name checks PASSED")
 
 

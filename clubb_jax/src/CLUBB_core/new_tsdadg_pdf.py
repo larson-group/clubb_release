@@ -127,7 +127,7 @@ def calc_setter_parameters(xm, xp2, Skx, sgn_wpxp, big_L_x_1, big_L_x_2):
 
 def calc_respnder_parameters(xm, xp2, Skx, sgn_wpxp, mixt_frac, big_L_x_1):
     """new_tsdadg_pdf.F90:calc_respnder_parameters (the misspelling "respnder" is deliberate — it mirrors the
-    Fortran subroutine name exactly, like the preserved "derrived" typo in parameters_tunable).
+    Fortran subroutine name exactly).
     Calculates the PDF component means, the PDF component standard deviations,
     and the mixture fraction for the variable that sets the PDF.
     """

@@ -122,13 +122,13 @@ subroutine f2py_init_clubb_params_file(ngrdcol, filename, flen, nparams_in, club
 
 end subroutine f2py_init_clubb_params_file
 
-subroutine f2py_calc_derrived_params(ngrdcol, grid_type, deltaz, &
+subroutine f2py_calc_derived_params(ngrdcol, grid_type, deltaz, &
     clubb_params, l_prescribed_avg_deltaz, lmin, mixt_frac_max_mag) &
-  bind(C, name="f2py_calc_derrived_params_")
+  bind(C, name="f2py_calc_derived_params_")
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid, stored_nu_vert_res_dep
-  use parameters_tunable, only: calc_derrived_params
+  use parameters_tunable, only: calc_derived_params
   use parameter_indices, only: nparams
 
   implicit none
@@ -142,8 +142,8 @@ subroutine f2py_calc_derrived_params(ngrdcol, grid_type, deltaz, &
   lmin = 0.0_core_rknd
   mixt_frac_max_mag = 0.0_core_rknd
 
-  call calc_derrived_params(stored_grid, ngrdcol, grid_type, deltaz, &
+  call calc_derived_params(stored_grid, ngrdcol, grid_type, deltaz, &
                             clubb_params, l_prescribed_avg_deltaz, &
                             stored_nu_vert_res_dep, lmin, mixt_frac_max_mag)
 
-end subroutine f2py_calc_derrived_params
+end subroutine f2py_calc_derived_params
