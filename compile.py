@@ -47,6 +47,25 @@ def canonical_compiler_from_path(path):
     """Map a compiler executable path to its canonical toolchain name."""
     return canonical_compiler(os.path.basename(path))
 
+
+def update_install_aliases(install_dir, update_selected=True, install_root=None):
+    """Publish the completed install as latest and, normally, selected."""
+    install_root = install_root or os.path.join(CLUBB_ROOT, "install")
+    names = ("latest", "selected") if update_selected else ("latest",)
+    for name in names:
+        alias = os.path.join(install_root, name)
+        if os.path.lexists(alias) and not os.path.islink(alias):
+            raise RuntimeError(f"Cannot update {alias}: it is not a symlink")
+    for name in names:
+        alias = os.path.join(install_root, name)
+        temporary = f"{alias}.tmp.{os.getpid()}"
+        try:
+            os.symlink(install_dir, temporary)
+            os.replace(temporary, alias)
+        finally:
+            if os.path.lexists(temporary):
+                os.unlink(temporary)
+
 def run_and_log(cmd, logfile, term_out=True):
     """Run a subprocess command, log output, optionally print to terminal, return exit code."""
 
@@ -345,6 +364,8 @@ def main():
     parser.add_argument("-debug", action="store_true", help="Compile in debug mode")
     parser.add_argument("-run_tests", action="store_true", help="Run ctests after compilation")
     parser.add_argument("-python", action="store_true", help="Enable F2PY Python extension build")
+    parser.add_argument("-no_update_selected", action="store_true",
+                        help="Update install/latest without changing install/selected")
     parser.add_argument("-fresh", action="store_true", 
                         help="Delete the selected build directory before configuring")
     parser.add_argument("-skip_source_checks", action="store_true",
@@ -405,10 +426,8 @@ def main():
     # Compile with cmake command
     run_cmake_build(build_log)
 
-    # If build finished, set symlink "latest" to new install directory
-    link_path = os.path.join(CLUBB_ROOT, "install/latest")
-    if os.path.lexists(link_path): os.remove(link_path)
-    os.symlink(inst_dir, link_path)
+    # Only publish aliases after the build has installed successfully.
+    update_install_aliases(inst_dir, update_selected=not args.no_update_selected)
 
     if args.skip_source_checks:
         print("\n\033[92mBuild completed successfully.\033[0m")

@@ -408,6 +408,7 @@ def selected_environment(discovery, env_id):
 def build_compile_argv(options):
     """Build the compile.py argument vector after the Python executable."""
     argv = [sys.executable, "-u", "compile.py"]
+    argv.append("-no_update_selected")  # Dash selects a build after compilation.
     argv.append("-skip_source_checks")
     precision = options.get("precision") or "double"
     gpu = options.get("gpu") or "none"

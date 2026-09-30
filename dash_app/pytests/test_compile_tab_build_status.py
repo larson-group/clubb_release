@@ -95,6 +95,7 @@ def test_rebuild_command_preserves_discovered_tuning_flag():
 
     argv = runtime.build_compile_argv(options)
 
+    assert "-no_update_selected" in argv
     assert "-tuning" in argv
     assert "-gptl" in argv
     assert "-install" in argv
