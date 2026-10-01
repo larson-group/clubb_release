@@ -39,6 +39,7 @@ Usage:
     -pt THRESHOLD  Min avg absolute percent diff to report a variable
     -s             Scale diffs by average field magnitude
     -case CASE     Compare only the named case (e.g. 'bomex')
+    -strict        Also fail on missing variables or mismatched shapes
     -f {skip,replace,enumerate}  Write per-case diff logs to output/bindiffs/
 """
 
@@ -123,6 +124,7 @@ def main():
     parser.add_argument("-pt", "--percent_thresh", dest="percent_thresh", type=float, action="store", help="(float) Define the maximum average absolute percent difference for an individual variable to be treated as different.")
     parser.add_argument("-s", "--scale", action="store_true", help="Scale absolute differences by the average field value.")
     parser.add_argument("-case", "--case", action="store", default=None, help="Compare only the specified case name (e.g. 'bomex'). When omitted, all cases found in both directories are compared.")
+    parser.add_argument("-strict", action="store_true", help="Also fail when a paired NetCDF file has missing variables or mismatched variable shapes.")
     parser.add_argument("--flag-sets", action="store_true", help="Treat each immediate child directory as one flag-set output directory and compare matching flag sets.")
     parser.add_argument("dirs", nargs=2, help="Need 2 clubb output directories containing netCDF files with the same name to diff. Usage: python run_bindiff_all.py dir_path1 dir_path2")
     args = parser.parse_args()
@@ -174,11 +176,12 @@ def main():
             percent_error_threshold,
             args.scale,
             case_filter=args.case,
+            strict=args.strict,
         ))
 
     linux_diff, diff_in_files, file_skipped, passed_cases, failed_cases = find_diffs_in_all_files(
         args.dirs[0], args.dirs[1], args.fileout, args.verbose, abs_error_threshold, percent_error_threshold, args.scale,
-        case_filter=args.case,
+        case_filter=args.case, strict=args.strict,
     )
 
     print("\nSUMMARY:")
@@ -186,7 +189,7 @@ def main():
         if not diff_in_files:
             print("Differences detected by linux diff but no differences in the common variables of the netCDF files compared.")
         else:
-            print("There were differences detected in the common variables in netCDF (*.nc) files.")
+            print("There were differences detected in the netCDF (*.nc) files.")
     else:
         print("Linux diff did not detect any differences in the compared files.")
     if args.verbose>=1:
@@ -407,7 +410,7 @@ def _summarize_flag_differences(summary):
             print(f"    {case_name}: {reasons}")
 
 
-def compare_flag_set_outputs(dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, case_filter=None):
+def compare_flag_set_outputs(dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, case_filter=None, strict=False):
     """Compare two run_clubb_w_varying_flags.py output roots."""
     global outFilePath
 
@@ -509,6 +512,7 @@ def compare_flag_set_outputs(dir1, dir2, save_to_file, verbose, thresh, percent_
                 percent_thresh,
                 l_scale,
                 case_filter=case_filter,
+                strict=strict,
             )
         finally:
             outFilePath = original_out_file_path
@@ -516,7 +520,7 @@ def compare_flag_set_outputs(dir1, dir2, save_to_file, verbose, thresh, percent_
         if diff_in_files:
             had_difference = True
             for case_name in failed_cases:
-                _add_flag_diff_summary(difference_summary, flag_name, case_name, "NetCDF values differ")
+                _add_flag_diff_summary(difference_summary, flag_name, case_name, "NetCDF comparison differs")
 
     _summarize_flag_differences(difference_summary)
 
@@ -528,7 +532,7 @@ def compare_flag_set_outputs(dir1, dir2, save_to_file, verbose, thresh, percent_
     return 0
 
 
-def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, case_filter=None):
+def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, case_filter=None, strict=False):
     # For each case with existing netCDF files in the diff folders:
     # 1. Create an output file if those are requested
     # 2. Loop through the netCDF files and call `find_diffs_in_common_vars` on each pair
@@ -560,7 +564,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_t
     nproc = min(nproc, max(1, len(case_order)))
 
     args_list = [
-        (case, cases[case], dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale)
+        (case, cases[case], dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, strict)
         for case in case_order
     ]
 
@@ -594,7 +598,7 @@ def _diff_case(args):
     """Process a single case (all its file pairs) in a worker-friendly way.
     Captures stdout to a StringIO buffer so that parallel workers don't
     interleave their output — the caller replays buffers in case order."""
-    case, files, dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale = args
+    case, files, dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, strict = args
     linux_diff_in_case = False
     diff_in_case = False
     file_skipped = False
@@ -629,7 +633,8 @@ def _diff_case(args):
                     content += ">The linux diff detected differences in " + ncfname + "<\n"
 
                 case_diff, new_content = find_diffs_in_common_vars(
-                    ncfname, dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale
+                    ncfname, dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale,
+                    strict=strict,
                 )
                 diff_in_case = case_diff or diff_in_case
 
@@ -644,7 +649,7 @@ def _diff_case(args):
 
         if diff_in_case:
             if verbose >= 1:
-                print(">>>Differences in common variables detected for case {}<<<".format(case))
+                print(">>>Differences detected for case {}<<<".format(case))
             if save_to_file:
                 # Create file to save diff log for <case> into
                 diff_file_name = os.path.join(outFilePath, case + filePostFix)
@@ -682,7 +687,7 @@ def _diff_case(args):
         "stdout": stdout.getvalue(),
     }
 
-def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs_error_threshold, percent_error_threshold, l_scale ):
+def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs_error_threshold, percent_error_threshold, l_scale, strict=False ):
     # This is the integral function of this script!
     # Compare content of one specific pair of files with the same name in each folder:
     # 1. Find the variables that are present in only one of the files
@@ -728,6 +733,7 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
     # Find variables that are only present in ONE of the files
     diff1 = set(dset1.variables.keys()).difference(dset2.variables.keys())
     diff2 = set(dset2.variables.keys()).difference(dset1.variables.keys())
+    structural_diff = strict and bool(diff1 or diff2)
     # Print those variables
     if diff1:
         var_set_diff_out = "\n{} contains the following extra variables:".format(os.path.join(dir1, test_file))
@@ -759,6 +765,7 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
                 'Avg % Diff',
                 'Earliest Timestep' ]]
     n_vars_compared = 0
+    n_stats_vars_compared = 0
     n_vars_with_nonzero_diff = 0
     n_vars_exceeding_threshold = 0
 
@@ -767,7 +774,15 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
     vars_in_common = set(dset1.variables.keys()).intersection(dset2.variables.keys())
     for var in sorted(vars_in_common):
 
-        n_vars_compared += 1
+        shape_1 = dset1[var].shape
+        shape_2 = dset2[var].shape
+        if shape_1 != shape_2:
+            shape_warning = "{}: The variable {} is not comparable because the shapes do not match: {}, {}".format("Error" if strict else "Warning", var, shape_1, shape_2)
+            print(shape_warning)
+            if save_to_file:
+                new_content += shape_warning + "\n"
+            structural_diff = structural_diff or strict
+            continue
 
         data_1 = np.asarray(dset1[var][...])
         data_2 = np.asarray(dset2[var][...])
@@ -781,15 +796,16 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
                 ))
             continue
 
-        try:
-            abs_diff = abs(data_1 - data_2)
-        except ValueError:
-            print("The variable {} is not comparable because the shapes do not match: {}, {}".format(var, data_1.shape, data_2.shape))
-            continue
+        abs_diff = abs(data_1 - data_2)
         if abs_diff.size == 0:
             if verbose >= 2:
                 print("Skipping variable {} because it has no values to compare.".format(var))
             continue
+
+        n_vars_compared += 1
+        # Coordinate agreement alone does not establish stats-output agreement.
+        if not (dset1[var].dimensions == (var,) or dset2[var].dimensions == (var,)):
+            n_stats_vars_compared += 1
 
         if not np.all(abs_diff == 0):
             n_vars_with_nonzero_diff += 1
@@ -858,14 +874,24 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
                         avg_abs_percent_diff,
                         earliest_timestep ] )
 
+    no_comparable_stats = n_stats_vars_compared == 0
+    if no_comparable_stats:
+        comparison_error = "Error: No comparable numeric stats fields in file {} (matching coordinates alone are insufficient).".format(test_file)
+        print(comparison_error)
+        if save_to_file:
+            new_content += comparison_error + "\n"
+
     if diff_in_common_vars:
       output = tabulate.tabulate(table, headers='firstrow')
+    elif no_comparable_stats:
+      output = "Stats comparison could not be completed."
     else:
       output = "All common-variable differences were below the active thresholds."
 
     summary_output = (
         "Comparison summary:\n"
         + "Variables compared: " + str(n_vars_compared) + "\n"
+        + "Stats fields compared: " + str(n_stats_vars_compared) + "\n"
         + "Variables with non-zero differences: " + str(n_vars_with_nonzero_diff) + "\n"
         + "Variables exceeding threshold: " + str(n_vars_exceeding_threshold)
     )
@@ -880,16 +906,23 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
         new_content += output + "\n"
         new_content += summary_output + "\n"
 
-    if not diff_in_common_vars:
+    if structural_diff:
+        structural_message = ">>Structural differences detected in file " + test_file + "<<"
+        if verbose >= 1:
+            print(structural_message)
+        if save_to_file:
+            new_content += structural_message + "\n"
+
+    if not diff_in_common_vars and not structural_diff and not no_comparable_stats:
         if verbose>=1:
             print(">>No differences detected in the common fields in file " + test_file + "<<")
-    else:
+    elif diff_in_common_vars:
         if verbose>=1:
             print(">>Differences above threshold were detected in the common fields in file " + test_file + "<<")
             
     dset1.close()
     dset2.close()
-    return (diff_in_common_vars, new_content)
+    return (diff_in_common_vars or structural_diff or no_comparable_stats, new_content)
 
 
 if __name__ == "__main__":

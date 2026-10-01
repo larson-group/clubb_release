@@ -85,7 +85,11 @@ Examples:
 
 ### `run_bindiff_all.py`
 
-Compares matching CLUBB NetCDF files in two output directories.
+Compares matching CLUBB NetCDF files in two output directories. Variables
+found on only one side and variable shape mismatches are warnings by default;
+`-strict` makes them failures too. Comparisons fail in either mode if a file pair
+has no comparable numeric stats fields (matching coordinates alone are not
+enough), or if the files have different numbers of timesteps.
 
 Examples:
 
@@ -94,6 +98,10 @@ Examples:
 
 - `python3 run_scripts/run_bindiff_all.py -v 2 output_a output_b`
   Prints detailed per-variable numerical differences.
+
+- `python3 run_scripts/run_bindiff_all.py -strict output_a output_b`
+  Also fails unless every variable has a counterpart with the same shape in
+  the paired file.
 
 - `python3 run_scripts/run_bindiff_all.py -case bomex -t 1e-12 -pt 1e-12 output_a output_b`
   Compares only `bomex` with strict absolute and percent thresholds.
