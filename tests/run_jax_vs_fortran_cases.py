@@ -6,14 +6,18 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
-import multiprocessing as mp
+import math
 import os
+import re
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
+import threading
 import time
-from dataclasses import asdict, dataclass
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 CLUBB_ROOT = Path(__file__).resolve().parents[1]
@@ -21,30 +25,74 @@ if str(CLUBB_ROOT) not in sys.path:
     sys.path.insert(0, str(CLUBB_ROOT))
 
 from clubb_jax.run_jax import ensure_environment  # noqa: E402
-from utilities.flag_sets import build_override_arg, get_flag_sets, read_flag_settings  # noqa: E402
+from utilities.flag_sets import build_override_arg, format_override_value, get_flag_sets, read_flag_settings  # noqa: E402
 
 
-# The python driver is much simpler and doesn't support all
-# features used by some cases (e.g. microphysics, BUGS, sponge layer, SILHS), so we
-# run a curated set of cases that avoid those features.
-# Values are per-case max_iters (number of timesteps to run).
-# None means run the full case (don't pass -max_iters to run_scm.py).
-DEFAULT_CASES = {
-    "arm":                    360,      # stable, diffs expected after ~600 60s-timesteps
-    "atex":                   360,      # stable, diffs expected after ~400 60s-timesteps
-    "bomex":                  None,
-    "cobra":                  360,      # very stable, limited for speed
-    "dycoms2_rf01":           None,
-    "dycoms2_rf01_fixed_sst": 300,      # stablish, switching to l_diag_Lscale_from_tau=.false.
-                                        # starting causing diffs after ~360 timesteps
-    "dycoms2_rf02_nd":        None,
-    "fire":                   None,
-    "gabls2":                 360,      # very stable, limited for speed
-    "gabls3_night":           360,      # very stable, limited for speed
-    "jun25_altocu":           180,      # stablish, diffs expected after ~200 60s-timesteps
-    "neutral":                None,
-    "wangara":                None,
-}
+@dataclass(frozen=True)
+class CaseConfig:
+    """Case, step limit, optional main timestep, and namelist overrides.
+
+    None preserves the case namelist's duration or timestep, respectively.
+    Radiation and statistics intervals remain at their case defaults.
+    """
+
+    case: str
+    max_iters: int | None = None
+    dt_main: int | None = None
+    overrides: dict | None = None
+    # A named variant can reuse a native case without duplicating its inputs.
+    input_case: str | None = None
+    # Percentage points, not fractional relative error (1e-3 means 0.001%).
+    percent_threshold: float = 1.0e-7
+
+    @property
+    def source_case(self) -> str:
+        return self.input_case or self.case
+
+
+# Curated JAX coverage, including supported microphysics. Unsupported driver
+# features (e.g. SILHS) remain excluded.
+DEFAULT_CASES = (
+    # --- Cases without microphysics ---
+    # Turbulence, forcing and radiation coverage at the standard tolerances.
+    CaseConfig("arm", 360),       # diffs expected after ~600 60s-timesteps
+    CaseConfig("atex", 360),      # diffs expected after ~400 60s-timesteps
+    CaseConfig("bomex"),
+    CaseConfig("cobra", 360),     # very stable, limited for speed
+    CaseConfig("dycoms2_rf01"),
+    CaseConfig("dycoms2_rf01_fixed_sst", 300),  # diffs after ~360 steps with l_diag_Lscale_from_tau=.false.
+    CaseConfig("dycoms2_rf02_nd"),
+    CaseConfig("fire"),
+    CaseConfig("gabls2", 360),    # very stable, limited for speed
+    CaseConfig("gabls3_night", 360),  # very stable, limited for speed
+    CaseConfig("jun25_altocu", 180),  # diffs expected after ~200 60s-timesteps
+    CaseConfig("neutral"),
+    CaseConfig("wangara"),
+
+    # --- KK microphysics ---
+    # Warm-rain coverage with the standard absolute/percentage tolerances.
+    CaseConfig("dycoms2_rf02_do"),  # Full native 360 steps at 60s, including every saved prefix.
+    CaseConfig("dycoms2_rf02_ds", 240),  # First cumulative failure at step 242; late roundoff amplification.
+    # Warm-rain KK variant of the native Morrison/SILHS case; native dt is 60s.
+    CaseConfig("lba_kk", 360, input_case="lba", overrides={
+        "microphysics_setting.microphys_scheme": '"khairoutdinov_kogan"',
+        "microphysics_setting.lh_microphys_type": '"disabled"',
+        "microphysics_setting.l_ice_microphys": False,
+        "microphysics_setting.l_graupel": False,
+    }),
+    CaseConfig("rico", 380, 60),  # First failing saved prefix: 385 steps; Fortran O0/O2: 390.
+
+    # --- Morrison microphysics ---
+    # The float32 core is sensitive to FMA/intermediate rounding: Fortran debug
+    # versus release builds reproduce these passing limits. Keep absolute 1e-7,
+    # but allow 1e-3 percent (0.001%). Short runs cover cloud processes and rain/ice
+    # startup; they do not establish long-term or graupel accuracy.
+    CaseConfig("lba", 93, percent_threshold=1.0e-3, overrides={
+        "microphysics_setting.lh_microphys_type": '"disabled"',
+    }),
+    CaseConfig("clex9_oct14", 73, percent_threshold=1.0e-3),  # 13 active rain/ice steps.
+    CaseConfig("nov11_altocu", 62, percent_threshold=1.0e-3),  # 2 active rain/ice steps.
+)
 
 RESULTS_DIRNAME = Path("output") / "tests" / "jax_driver_test_results"
 JAX_OUTPUT_DIRNAME = "jax_output"
@@ -86,45 +134,161 @@ class CaseResult:
     fortran_elapsed_s: float
     elapsed_s: float
     note: str = ""
-    avg_diff_timestep: float = -1.0
+    first_failing_timestep: int | None = None
+    jax_timesteps: int | None = None
+    fortran_timesteps: int | None = None
+    max_iters: int | None = None
+    dt_main: int | None = None
+    namelist_overrides: dict | None = None
+    input_case: str | None = None
+    bindiff_threshold: float = 1.0e-7
+    bindiff_percent_threshold: float = 1.0e-7
 
 
-def _parse_earliest_timesteps(log_path: Path) -> list[int]:
+def _parse_completed_timesteps(log_path: Path, *, jax: bool) -> int | None:
+    """Read completed model steps, not the configured cap or saved-output count."""
     if not log_path.exists():
-        return []
+        return None
     text = log_path.read_text(encoding="utf-8", errors="replace")
-    timesteps: list[int] = []
-    in_table = False
-    for line in text.splitlines():
-        if "Earliest Timestep" in line:
-            in_table = True
+    # JAX reports completion explicitly. Fortran prints each iteration after
+    # advancing it, so its last progress line gives the completed count.
+    pattern = (r"^Completed (\d+) timesteps\b" if jax else
+               r"^iteration:\s*(\d+)\s*/\s*\d+\s*-- time")
+    matches = re.findall(pattern, text, flags=re.MULTILINE)
+    return int(matches[-1]) if matches else None
+
+
+def _parse_model_timing(log_path: Path) -> tuple[float, float] | None:
+    """Read the model start time and main timestep from progress lines."""
+    if not log_path.exists():
+        return None
+    text = log_path.read_text(encoding="utf-8", errors="replace")
+    lines = re.findall(
+        r"^iteration:\s*(\d+)\s*/\s*\d+\s*-- time =\s*([-+]?\d+(?:\.\d+)?)",
+        text, flags=re.MULTILINE,
+    )
+    if len(lines) < 2:
+        return None
+    step_1, time_1 = int(lines[0][0]), float(lines[0][1])
+    step_2, time_2 = int(lines[1][0]), float(lines[1][1])
+    if step_2 <= step_1 or time_2 <= time_1:
+        return None
+    dt = (time_2 - time_1) / (step_2 - step_1)
+    return time_1 - step_1 * dt, dt
+
+
+def _first_failing_timestep(
+    report_path: Path, case: str, total: int,
+    model_timing: tuple[float, float] | None,
+) -> int | None:
+    """Map bindiff's first failing saved records to completed model steps."""
+    try:
+        files = json.loads(report_path.read_text(encoding="utf-8"))["cases"][case]["files"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+    first_failure = None
+    for file in files:
+        if not isinstance(file, dict):
             continue
-        if in_table:
-            stripped = line.strip()
-            if not stripped or stripped.startswith("="):
-                in_table = False
+        entry = file.get("first_failing_prefix")
+        if not isinstance(entry, dict):
+            continue
+        try:
+            record = entry["record"]
+            n_saved = entry["saved_records"]
+            if not (isinstance(record, int) and isinstance(n_saved, int)
+                    and 0 <= record < n_saved <= total):
                 continue
-            if set(stripped.replace(" ", "")) <= {"-"}:
-                continue
-            for tok in reversed(stripped.split()):
-                try:
-                    timesteps.append(int(tok))
-                    break
-                except ValueError:
+            if n_saved == total:
+                step = record + 1
+            else:
+                if model_timing is None or entry["output_time"] is None:
                     continue
-    return timesteps
+                start_time, dt = model_timing
+                step_value = (entry["output_time"] - start_time) / dt
+                if not math.isfinite(step_value):
+                    continue
+                step = round(step_value)
+                if abs(step_value - step) > 1e-3:
+                    continue
+            if 1 <= step <= total:
+                first_failure = step if first_failure is None else min(first_failure, step)
+        except (KeyError, TypeError, ValueError, ZeroDivisionError):
+            continue
+    return first_failure
 
 
-def _run_and_log(cmd: list[str], cwd: Path, log_path: Path) -> int:
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("w", encoding="utf-8") as log:
-        log.write("$ " + " ".join(shlex.quote(part) for part in cmd) + "\n\n")
-        # The child writes straight to the file descriptor, so flush the header
-        # first or it only lands, after the child's output, when the file closes.
-        log.flush()
-        proc = subprocess.run(cmd, cwd=str(cwd), stdout=log, stderr=subprocess.STDOUT)
-        log.write(f"\n[exit_code] {proc.returncode}\n")
-    return proc.returncode
+class ComparisonCancelled(Exception):
+    """Stop the current command and do not launch the rest of its case pair."""
+
+
+class RunSupervisor:
+    """Start each command, wait for it, and stop any programs it starts.
+
+    For a model run, this script starts run_scm.py, which starts the model.
+    The supervisor keeps them in one group so that interrupting this script
+    stops both, rather than leaving the model running in the background.
+    """
+
+    def __init__(self):
+        self.stopping = threading.Event()
+        self.signal_number = None
+
+    def handle_signal(self, signum, _frame):
+        # Do not raise inside Popen: a signal can arrive between creating a
+        # child and recording its handle. Polling lets that launch finish and
+        # then cleans up its entire group, even on repeated Ctrl-C.
+        self.signal_number = signum
+
+    def check_cancelled(self):
+        if self.signal_number is not None or self.stopping.is_set():
+            raise ComparisonCancelled()
+
+    @staticmethod
+    def _stop_group(proc):
+        # The launcher may already have exited while its model is still alive.
+        # Always address the group rather than checking only proc.poll().
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            proc.wait()
+            return
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline:
+            proc.poll()  # Reap the direct child while descendants shut down.
+            try:
+                os.killpg(proc.pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.05)
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait()
+
+    def run_and_log(self, cmd: list[str], cwd: Path, log_path: Path) -> int:
+        self.check_cancelled()
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("w", encoding="utf-8") as log:
+            log.write("$ " + " ".join(shlex.quote(part) for part in cmd) + "\n\n")
+            log.flush()
+            proc = subprocess.Popen(cmd, cwd=str(cwd), stdout=log,
+                                    stderr=subprocess.STDOUT, start_new_session=True)
+            try:
+                while True:
+                    self.check_cancelled()
+                    try:
+                        returncode = proc.wait(timeout=0.2)
+                        break
+                    except subprocess.TimeoutExpired:
+                        continue
+                self.check_cancelled()
+                log.write(f"\n[exit_code] {returncode}\n")
+                return returncode
+            finally:
+                self._stop_group(proc)
 
 
 def _acquire_run_lock(repo_root: Path):
@@ -155,14 +319,21 @@ def _tail(path: Path, n: int = 25) -> str:
 
 @dataclass
 class TaskCtx:
-    case: str
+    config: CaseConfig
     flag_data: FlagData
     repo_root: Path
-    stats: str
-    debug: str | None
-    max_iters: int | None
+    run_scm_args: list[str]
     bindiff_threshold: float
+    bindiff_percent_threshold: float
     run_output_root: Path
+    supervisor: RunSupervisor
+
+    @property
+    def output_group(self) -> str:
+        # Variants share the native case's namelist and NetCDF filenames. Give
+        # them separate immediate directories, also understood by --flag-sets.
+        suffix = f"__{self.config.case}" if self.config.input_case else ""
+        return self.flag_data.dir_name + suffix
 
 
 def _run_case_w_flags(task: TaskCtx) -> CaseResult:
@@ -171,21 +342,17 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
 
     start = time.time()
 
-    common_args = [
-        str(run_scm),
-        "-stats", task.stats,
-        "-multicol", HR_SPEC,
-    ]
-    if task.debug is not None:
-        common_args += ["-debug", task.debug]
-    if task.max_iters is not None:
-        common_args += ["-max_iters", str(task.max_iters)]
-
+    common_args = [str(run_scm), "-multicol", HR_SPEC]
+    if task.config.max_iters is not None and _forwarded_value(task.run_scm_args, "-max_iters") is None:
+        common_args += ["-max_iters", str(task.config.max_iters)]
+    if task.config.dt_main is not None and _forwarded_value(task.run_scm_args, "-dt_main") is None:
+        common_args += ["-dt_main", str(task.config.dt_main)]
+    common_args += task.run_scm_args
 
     #A subdirectory for each flagset is created to store the .nc output from that flagset.
     # The output directory will look like this:
     # output/tests/jax_driver_test_results/jax_output/<file_name + flag_name> and output/tests/jax_driver_test_results/fortran_output/<file_name + flag_name>
-    flag_dir_name = task.flag_data.dir_name
+    flag_dir_name = task.output_group
     jax_run_out_dir = task.run_output_root / JAX_OUTPUT_DIRNAME / flag_dir_name
     f90_run_out_dir = task.run_output_root / FORTRAN_OUTPUT_DIRNAME / flag_dir_name
     jax_run_out_dir.mkdir(parents=True, exist_ok=True)
@@ -194,28 +361,33 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
     jax_cmd = [sys.executable, *common_args, "-jax", "-out_dir", str(jax_run_out_dir)]
     f90_cmd = [sys.executable, *common_args, "-out_dir", str(f90_run_out_dir)]
 
-    override_arg = build_override_arg(task.flag_data.flag_dict)
+    # Explicit flag-set overrides take precedence over the curated case setup.
+    overrides = {**(task.config.overrides or {}), **(task.flag_data.flag_dict or {})}
+    override_arg = build_override_arg(overrides)
     if override_arg is not None:
         jax_cmd += ["-override", override_arg]
         f90_cmd += ["-override", override_arg]
 
-    jax_cmd.append(task.case)
-    f90_cmd.append(task.case)
+    jax_cmd.append(task.config.source_case)
+    f90_cmd.append(task.config.source_case)
 
     log_dir = task.run_output_root / LOGS_DIRNAME / flag_dir_name
-    jax_log = log_dir / f"{task.case}_run_jax.log"
-    f90_log = log_dir / f"{task.case}_run_fortran.log"
-    diff_log = log_dir / f"{task.case}_bindiff.log"
+    jax_log = log_dir / f"{task.config.case}_run_jax.log"
+    f90_log = log_dir / f"{task.config.case}_run_fortran.log"
+    diff_log = log_dir / f"{task.config.case}_bindiff.log"
+    diff_report = log_dir / f"{task.config.case}_bindiff.json"
 
     jax_start = time.time()
-    jax_rc = _run_and_log(jax_cmd, task.repo_root, jax_log)
+    jax_rc = task.supervisor.run_and_log(jax_cmd, task.repo_root, jax_log)
     jax_elapsed = time.time() - jax_start
 
     # Fortran runs even when JAX failed: a flag set that breaks both drivers is a
     # configuration problem, while one that breaks only JAX is a missing JAX feature.
     f90_start = time.time()
-    f90_rc = _run_and_log(f90_cmd, task.repo_root, f90_log)
+    f90_rc = task.supervisor.run_and_log(f90_cmd, task.repo_root, f90_log)
     f90_elapsed = time.time() - f90_start
+    jax_timesteps = _parse_completed_timesteps(jax_log, jax=True) if jax_rc == 0 else None
+    fortran_timesteps = _parse_completed_timesteps(f90_log, jax=False) if f90_rc == 0 else None
 
     if jax_rc != 0 or f90_rc != 0:
         if jax_rc != 0 and f90_rc != 0:
@@ -228,7 +400,13 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
             status = "fortran_failed"
             note = _tail(f90_log)
         return CaseResult(
-            case=task.case,
+            case=task.config.case,
+            input_case=task.config.input_case,
+            bindiff_threshold=task.bindiff_threshold,
+            bindiff_percent_threshold=task.bindiff_percent_threshold,
+            max_iters=task.config.max_iters,
+            dt_main=task.config.dt_main,
+            namelist_overrides=overrides or None,
             status=status,
             jax_rc=jax_rc,
             fortran_rc=f90_rc,
@@ -238,26 +416,43 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
             elapsed_s=time.time() - start,
             flag_data=task.flag_data,
             note=note,
+            jax_timesteps=jax_timesteps,
+            fortran_timesteps=fortran_timesteps,
         )
 
     diff_cmd = [
         sys.executable,
         str(run_bindiff),
         "-v", "2",
-        "-case", task.case,
+        "-strict",
+        "-case", task.config.source_case,
         "-t", str(task.bindiff_threshold),
-        "-pt", str(task.bindiff_threshold),
+        "-pt", str(task.bindiff_percent_threshold),
+        "--result-json", str(diff_report),
         str(jax_run_out_dir),
         str(f90_run_out_dir),
     ]
-    diff_rc = _run_and_log(diff_cmd, task.repo_root, diff_log)
+    diff_report.unlink(missing_ok=True)
+    diff_rc = task.supervisor.run_and_log(diff_cmd, task.repo_root, diff_log)
 
-    ts_list = _parse_earliest_timesteps(diff_log) if diff_rc != 0 else []
-    avg_ts = sum(ts_list) / len(ts_list) if ts_list else -1.0
+    # Matched runs show their completed steps directly. For a numerical diff,
+    # map bindiff's saved-prefix result to the model step shown in the table.
+    first_failing_timestep = None
+    if diff_rc != 0 and jax_timesteps is not None and jax_timesteps == fortran_timesteps:
+        first_failing_timestep = _first_failing_timestep(
+            diff_report, task.config.source_case, jax_timesteps,
+            _parse_model_timing(f90_log),
+        )
 
     status = "match" if diff_rc == 0 else "diff"
     return CaseResult(
-        case=task.case,
+        case=task.config.case,
+        input_case=task.config.input_case,
+        bindiff_threshold=task.bindiff_threshold,
+        bindiff_percent_threshold=task.bindiff_percent_threshold,
+        max_iters=task.config.max_iters,
+        dt_main=task.config.dt_main,
+        namelist_overrides=overrides or None,
         flag_data=task.flag_data,
         status=status,
         jax_rc=jax_rc,
@@ -266,71 +461,77 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
         jax_elapsed_s=jax_elapsed,
         fortran_elapsed_s=f90_elapsed,
         elapsed_s=time.time() - start,
-        note=_tail(diff_log),
-        avg_diff_timestep=avg_ts,
+        note=f"Bindiff report: {diff_report}",
+        first_failing_timestep=first_failing_timestep,
+        jax_timesteps=jax_timesteps,
+        fortran_timesteps=fortran_timesteps,
     )
+
+def _forwarded_value(arguments: list[str], option: str) -> str | None:
+    """Read the last value of a forwarded run_scm option."""
+    value = None
+    for i, argument in enumerate(arguments):
+        if argument == option and i + 1 < len(arguments):
+            value = arguments[i + 1]
+        elif argument.startswith(option + "="):
+            value = argument.split("=", 1)[1]
+    return value
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run SCM cases with both the JAX driver and Fortran standalone, "
-            "then compare outputs using run_bindiff_all.py."
-        )
+            "then compare outputs using run_bindiff_all.py. Other single-dash "
+            "run_scm.py options are forwarded to both runs."
+        ),
+        allow_abbrev=False,
     )
-    parser.add_argument("-j", "--jobs", type=int, default=8, help="Number of parallel case workers.")
+    parser.add_argument("-j", "-jobs", dest="jobs", type=int, default=1,
+                        help="Number of concurrent case pairs (default: 1; each JAX compilation can use several GiB).")
     parser.add_argument(
-        "-stats",
-        "--stats",
-        default="input/stats/standard_stats.in",
-        help="Stats setting forwarded to run_scm.py (use 'none' to disable stats output).",
-    )
-    parser.add_argument(
-        "-debug",
-        "--debug",
-        default=None,
-        help="Debug level forwarded to run_scm.py (0-3).",
-    )
-    parser.add_argument(
-        "--max-iters",
-        type=int,
-        default=None,
-        help="Override max_iters for all cases (default: use per-case values from DEFAULT_CASES).",
-    )
-    parser.add_argument(
-        "--bindiff-verbose",
-        type=int,
-        default=2,
-        choices=[0, 1, 2],
+        "-bindiff_verbose", type=int, default=2, choices=[0, 1, 2],
         help="Verbosity level for the final combined run_bindiff_all.py run.",
     )
     parser.add_argument(
-        "--bindiff-threshold",
-        type=float,
-        default=1.0e-7,
-        help="Difference threshold passed to run_bindiff_all.py via -t.",
+        "-bindiff_threshold", type=float, default=None,
+        help="Override both absolute and percentage thresholds (default: absolute 1e-7, per-case percentage).",
     )
     parser.add_argument(
-        "--keep-existing",
-        action="store_true",
-        help="Do not delete existing output dirs before rerun.",
+        "-bindiff_percent_threshold", type=float, default=None,
+        help="Override only the percentage threshold, in percentage points; takes precedence over -bindiff_threshold.",
     )
     parser.add_argument(
-        "--cases",
-        nargs="+",
-        default=None,
+        "-cases", nargs="+", default=None,
         help="Case names to run (default is the curated supported set).",
     )
-
     parser.add_argument(
-        "--flag-config-file", type=str, default=None,
-        help="JSON file describing alternate flag settings."
+        "-flag_config_file", type=str, default=None,
+        help="JSON file describing alternate flag settings.",
     )
-    parser.add_argument(
-        "--skip-default-flags",
-        action="store_true",
-        help="Do not run the unmodified default flag configuration.",
-    )
-    return parser.parse_args()
+    args, forwarded = parser.parse_known_args()
+    if args.jobs <= 0:
+        parser.error("-jobs must be positive")
+    # These options belong to the comparison, not to either individual model.
+    reserved = {"-jax", "-python", "-exe", "-driver_test", "-gdb",
+                "-out_dir", "-multicol", "-override", "-install_dir"}
+    for argument in forwarded:
+        option = argument.split("=", 1)[0]
+        if option.startswith("--"):
+            parser.error(f"Use single-dash run_scm.py options: {option}")
+        if option in reserved:
+            parser.error(f"{option} is controlled by the comparison harness")
+    for option in ("-max_iters", "-dt_main"):
+        value = _forwarded_value(forwarded, option)
+        if value is not None:
+            try:
+                positive = int(value) > 0
+            except ValueError:
+                positive = False
+            if not positive:
+                parser.error(f"{option} must be a positive integer")
+    args.run_scm_args = forwarded
+    return args
 
 
 def main() -> int:
@@ -344,13 +545,49 @@ def main() -> int:
         )
         args.jobs = 1
 
-    print(f"Python runtime: {sys.executable}")
+    supervisor = RunSupervisor()
+    previous_handlers = {sig: signal.signal(sig, supervisor.handle_signal)
+                         for sig in (signal.SIGINT, signal.SIGTERM)}
+    try:
+        return _run_comparisons(args, supervisor)
+    except ComparisonCancelled:
+        print("Comparison interrupted; stopped all active case process groups.", flush=True)
+        return 128 + (supervisor.signal_number or signal.SIGINT)
+    finally:
+        supervisor.stopping.set()
+        for sig, handler in previous_handlers.items():
+            signal.signal(sig, handler)
 
-    cases = list(args.cases) if args.cases else list(DEFAULT_CASES.keys())
-    case_iters = {
-        case: args.max_iters if args.max_iters is not None else DEFAULT_CASES.get(case)
-        for case in cases
-    }
+
+def _run_tasks(tasks, jobs, emit, supervisor):
+    # Workers only supervise external programs; processes add no compute
+    # parallelism here and can orphan grandchildren when Pool terminates them.
+    executor = ThreadPoolExecutor(max_workers=min(jobs, len(tasks)))
+    try:
+        futures = [executor.submit(_run_case_w_flags, task) for task in tasks]
+        for future in as_completed(futures):
+            supervisor.check_cancelled()
+            emit(future.result())
+    except BaseException:
+        supervisor.stopping.set()
+        raise
+    finally:
+        executor.shutdown(wait=True, cancel_futures=True)
+
+
+def _run_comparisons(args, supervisor) -> int:
+    defaults = {config.case: config for config in DEFAULT_CASES}
+    cases = list(args.cases) if args.cases else list(defaults)
+    max_iters = _forwarded_value(args.run_scm_args, "-max_iters")
+    dt_main = _forwarded_value(args.run_scm_args, "-dt_main")
+    configs = []
+    for case in cases:
+        config = defaults.get(case, CaseConfig(case))
+        if max_iters is not None:
+            config = replace(config, max_iters=int(max_iters))
+        if dt_main is not None:
+            config = replace(config, dt_main=int(dt_main))
+        configs.append(config)
 
     repo_root = Path(__file__).resolve().parents[1]
     run_lock = _acquire_run_lock(repo_root)
@@ -370,108 +607,144 @@ def main() -> int:
     # deleted, so a bad config file doesn't cost the last run's output.
     try:
         flag_config = read_flag_settings(args.flag_config_file) if args.flag_config_file else {}
-        flag_sets = get_flag_sets(args.skip_default_flags, flag_config)
+        flag_sets = get_flag_sets(False, flag_config)
     except (OSError, ValueError) as exc:
         print(f"ERROR: could not load flag sets: {exc}")
         return 2
-    if not flag_sets:
-        print("ERROR: no flag sets to run; --skip-default-flags needs --flag-config-file.")
-        return 2
-
-    if results_root.exists() and not args.keep_existing:
-        shutil.rmtree(results_root)
-
     flag_data_list = [
         FlagData(flag_name=name, flag_dict=overrides, flag_file=args.flag_config_file)
         for name, overrides in flag_sets.items()
     ]
 
-    for flag_data in flag_data_list:
-        (jax_output_root / flag_data.dir_name).mkdir(parents=True, exist_ok=True)
-        (f90_output_root / flag_data.dir_name).mkdir(parents=True, exist_ok=True)
-
     tasks = []
     for flag_data in flag_data_list:
-        for case in cases:
+        for config in configs:
             tasks.append(TaskCtx(
-                case=case,
+                config=config,
                 flag_data=flag_data,
                 repo_root=repo_root,
-                stats=args.stats,
-                debug=args.debug,
-                max_iters=case_iters[case],
-                bindiff_threshold=args.bindiff_threshold,
+                run_scm_args=args.run_scm_args,
+                bindiff_threshold=args.bindiff_threshold if args.bindiff_threshold is not None else 1.0e-7,
+                bindiff_percent_threshold=(
+                    args.bindiff_percent_threshold if args.bindiff_percent_threshold is not None
+                    else args.bindiff_threshold if args.bindiff_threshold is not None
+                    else config.percent_threshold
+                ),
                 run_output_root=results_root,
+                supervisor=supervisor,
             ))
 
-    print(
-        f"Running {len(cases)} case(s) x {len(flag_data_list)} flag set(s) "
-        f"= {len(tasks)} run pair(s) with {args.jobs} worker(s)"
+    output_owners = set()
+    for task in tasks:
+        key = (task.output_group, task.config.source_case)
+        if key in output_owners:
+            print(f"ERROR: duplicate output destination: {key}")
+            return 2
+        output_owners.add(key)
+    if results_root.exists():
+        shutil.rmtree(results_root)
+
+    print("\nRun settings:")
+    print(f"  Output: {results_root}")
+    print(f"  Statistics: {_forwarded_value(args.run_scm_args, '-stats') or 'input/stats/standard_stats.in'}")
+    print(f"  Debug: {_forwarded_value(args.run_scm_args, '-debug') or 'case default'}")
+    if args.run_scm_args:
+        print(f"  Forwarded to both runs: {shlex.join(args.run_scm_args)}")
+    print("  Columns: 4")
+    print(f"  Workers: {min(args.jobs, len(tasks))}")
+    default_percent = (
+        args.bindiff_percent_threshold if args.bindiff_percent_threshold is not None
+        else args.bindiff_threshold if args.bindiff_threshold is not None
+        else 1.0e-7
     )
-    print(f"Results root: {results_root}")
-    print(f"JAX output: {jax_output_root}")
-    print(f"Fortran output: {f90_output_root}")
-    print(f"Flag sets: {', '.join(fd.dir_name for fd in flag_data_list)}")
-    print(f"Stats: {args.stats}")
-    print(f"Debug: {args.debug if args.debug is not None else '(case default)'}")
-    print(f"JAX accelerator: {accelerator}")
+    print(
+        f"  Comparison limits: absolute {tasks[0].bindiff_threshold:g}; "
+        f"percentage {default_percent:g}%"
+    )
+
+    print("\nCases and flag sets:")
+    case_label = "case" if len(cases) == 1 else "cases"
+    flag_label = "flag set" if len(flag_data_list) == 1 else "flag sets"
+    pair_label = "pair" if len(tasks) == 1 else "pairs"
+    print(
+        f"  {len(cases)} {case_label} x {len(flag_data_list)} {flag_label}"
+        f" = {len(tasks)} JAX/Fortran {pair_label}"
+    )
+    print("  Flag sets:")
+    for flag_data in flag_data_list:
+        print(f"    {flag_data.dir_name}")
+        for setting, value in (flag_data.flag_dict or {}).items():
+            print(f"      - {setting} = {format_override_value(value)}")
+    print("  Cases:")
+    percent_by_case = {task.config.case: task.bindiff_percent_threshold for task in tasks}
+    for config in configs:
+        iterations = f"{config.max_iters} iterations" if config.max_iters is not None else "native duration"
+        print(f"    {config.case} ({iterations})")
+        if percent_by_case[config.case] != default_percent:
+            print(f"      - percentage limit: {percent_by_case[config.case]:g}%")
+        if config.input_case:
+            print(f"      - input case: {config.input_case}")
+        if config.dt_main is not None:
+            print(f"      - dt_main: {config.dt_main} s")
+        for setting, value in (config.overrides or {}).items():
+            print(f"      - {setting} = {format_override_value(value)}")
 
     start = time.time()
     results: list[CaseResult] = []
+    flag_width = max(24, max(len(fd.dir_name) for fd in flag_data_list))
+    case_width = max(22, max(len(config.case) for config in configs))
+    table_header = (
+        f"[{'Status':14}] {'Flag set':{flag_width}} {'Case':{case_width}} "
+        f"{'Timesteps':>13} {'JAX (s)':>10} {'Fortran (s)':>12} {'Total (s)':>10}"
+    )
+    print(f"\n{table_header}", flush=True)
+    print("-" * len(table_header), flush=True)
 
     def _emit(result: CaseResult) -> None:
         results.append(result)
-        ts_info = ""
-        if result.avg_diff_timestep >= 0:
-            ts_info = f" avg_diff_ts={result.avg_diff_timestep:.1f}"
+        total_steps = result.fortran_timesteps or result.jax_timesteps
+        if (result.status == "match" and total_steps is not None
+            and result.jax_timesteps == result.fortran_timesteps):
+            steps = f"{total_steps} / {total_steps}"
+        elif result.status == "diff" and result.first_failing_timestep is not None:
+            steps = f"{result.first_failing_timestep} / {total_steps}"
+        else:
+            steps = "-"
         print(
-            f"[{result.status:14}] {result.flag_data.dir_name:24} {result.case:22} "
-            f"jax={result.jax_elapsed_s:.1f}s f90={result.fortran_elapsed_s:.1f}s "
-            f"total={result.elapsed_s:.1f}s{ts_info}"
+            f"[{result.status:14}] {result.flag_data.dir_name:{flag_width}} {result.case:{case_width}} "
+            f"{steps:>13} {result.jax_elapsed_s:10.1f} {result.fortran_elapsed_s:12.1f} "
+            f"{result.elapsed_s:10.1f}",
+            flush=True,
         )
 
-    if args.jobs == 1:
-        for task in tasks:
-            _emit(_run_case_w_flags(task))
-    else:
-        try:
-            with mp.Pool(processes=args.jobs) as pool:
-                for result in pool.imap_unordered(_run_case_w_flags, tasks):
-                    _emit(result)
-        except (PermissionError, OSError) as exc:
-            print(f"WARNING: multiprocessing unavailable ({exc}); falling back to serial execution.")
-            for task in tasks:
-                _emit(_run_case_w_flags(task))
+    _run_tasks(tasks, args.jobs, _emit, supervisor)
 
     results.sort(key=lambda r: (r.flag_data.dir_name, r.case))
     statuses = ("match", "diff", "jax_failed", "fortran_failed", "both_failed")
 
-    # The final run re-diffs the same pairs the per-case runs already covered, but in
-    # --flag-sets mode it also reports flag sets or NetCDF files that exist on only one
-    # side -- which the per-case comparisons cannot see, since they only ever look at
-    # files present in both directories.
+    # Per-case comparisons enforce each case's tolerances. This additional audit
+    # uses the loosest selected percentage threshold so allowed Morrison differences
+    # do not fail it; it cannot override any per-case failure. --flag-sets also
+    # detects output directories/files present on only one side.
     final_bindiff_log = results_root / FINAL_BINDIFF_LOG_FILENAME
     final_diff_cmd = [
         sys.executable,
         str(run_bindiff),
         "--flag-sets",
+        "-strict",
         "-v", str(args.bindiff_verbose),
-        "-t", str(args.bindiff_threshold),
-        "-pt", str(args.bindiff_threshold),
+        "-t", str(tasks[0].bindiff_threshold),
+        "-pt", str(max(task.bindiff_percent_threshold for task in tasks)),
         str(jax_output_root),
         str(f90_output_root),
     ]
-    final_bindiff_rc = _run_and_log(final_diff_cmd, repo_root, final_bindiff_log)
-
-    # Aggregate from the per-case results rather than re-parsing the combined log, so
-    # the number survives a structurally failed final bindiff.
-    diff_timesteps = [r.avg_diff_timestep for r in results if r.avg_diff_timestep >= 0]
-    final_avg_ts = sum(diff_timesteps) / len(diff_timesteps) if diff_timesteps else -1.0
+    final_bindiff_rc = supervisor.run_and_log(final_diff_cmd, repo_root, final_bindiff_log)
 
     summary = {
         "total_cases": len(results),
         **{status: sum(r.status == status for r in results) for status in statuses},
         "elapsed_s": time.time() - start,
+        "run_scm_args": args.run_scm_args,
         "final_bindiff_rc": final_bindiff_rc,
         "flag_sets": {
             flag_data.dir_name: {
@@ -489,22 +762,35 @@ def main() -> int:
     summary_path = results_root / SUMMARY_FILENAME
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
-    print("\nSummary:")
-    print(json.dumps({k: v for k, v in summary.items() if k != "cases"}, indent=2))
-    if final_avg_ts >= 0:
-        print(f"Average earliest diff timestep (across all cases): {final_avg_ts:.1f}")
-    print(f"Detailed results: {summary_path}")
-    print(f"Final bindiff log: {final_bindiff_log} (rc={final_bindiff_rc})")
+    def _print_count_table(title: str, counts: dict) -> None:
+        failed = sum(counts[status] for status in ("jax_failed", "fortran_failed", "both_failed"))
+        print(f"\n{title}:")
+        print(f"  {'Match':>5} {'Diff':>4} {'Failed':>6}")
+        print(f"  {'-----':>5} {'----':>4} {'------':>6}")
+        print(f"  {counts['match']:>5} {counts['diff']:>4} {failed:>6}")
 
-    if any(summary[status] > 0 for status in statuses if status != "match"):
-        return 1
-    if final_bindiff_rc != 0:
-        print(
-            "ERROR: every case matched but the final flag-set bindiff still reported a "
-            f"problem (rc={final_bindiff_rc}); see {final_bindiff_log}."
-        )
-        return 1
-    return 0
+    if len(flag_data_list) > 1:
+        _print_count_table("Overall cases", summary)
+    for flag_data in flag_data_list:
+        _print_count_table(f"Flag set {flag_data.dir_name}", summary["flag_sets"][flag_data.dir_name])
+
+    case_failure = any(summary[status] > 0 for status in statuses if status != "match")
+    if final_bindiff_rc != 0 and not case_failure:
+        print("\nFinal bindiff audit failed despite all case comparisons matching.")
+
+    hours, remainder = divmod(summary["elapsed_s"], 3600)
+    minutes, seconds = divmod(remainder, 60)
+    duration = (
+        f"{int(hours)}h {int(minutes)}m {seconds:.1f}s" if hours >= 1
+        else f"{int(minutes)}m {seconds:.1f}s" if minutes >= 1
+        else f"{seconds:.1f}s"
+    )
+    audit_status = "passed" if final_bindiff_rc == 0 else f"failed (exit {final_bindiff_rc})"
+    print(f"\nTotal time: {duration}")
+    print(f"Results JSON: {summary_path}")
+    print(f"Bindiff log: {final_bindiff_log} [{audit_status}]")
+
+    return 1 if case_failure or final_bindiff_rc != 0 else 0
 
 
 if __name__ == "__main__":

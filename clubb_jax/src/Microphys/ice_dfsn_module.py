@@ -7,8 +7,7 @@ vertical recurrence — ported as a top-to-bottom `lax.scan`. The thermodynamic 
 diffusion denominator) do not depend on the carried mass, so they are precomputed vectorized; only the mass
 integration and the mass-dependent rates live in the scan.
 
-Single-column (1D, length nzt) to mirror the Fortran exactly (which hardcodes `gr%invrs_dzm(1,...)`); a
-multi-column driver vmaps over columns. Pure jnp → differentiable. Validated in `tests/test_ice_dfsn.py`
+The last axis is vertical; leading column axes are batched. Grid spacing is taken independently for each column. Stats and output tendencies are returned in order. Pure jnp → differentiable. Validated in `tests/test_ice_dfsn.py`
 against a literal NumPy transcription (rel ~1e-14), conservation of the rcm/thlm tendency coupling, the
 in-cloud/below-freezing branch, the over-depletion cap, and a finite `jax.grad`.
 """
@@ -30,36 +29,67 @@ _A_COEF, _B_EXPN = 2.05e-3, 1.8
 _K_U_COEF, _Q_EXPN, _N_EXPN = 55.0, 0.17, 0.70
 
 
-def Diff_denom(T_in_K, p_in_Pa, e_i):
-    """Denominator of the diffusional-growth equation (ice_dfsn_module.F90:Diff_denom; R&Y Eq. 9.4) [m s/kg]."""
-    Celsius = T_in_K - T_freeze_K
-    Ka = (5.69 + 0.017 * Celsius) * 0.00001          # cal/(cm s C)
-    Ka = 4.1868 * 100.0 * Ka                          # J/(m s K)
-    Dv = 0.221 * (T_in_K / T_freeze_K) ** 1.94 * (101325.0 / p_in_Pa)  # cm^2/s
-    Dv = Dv / 10000.0                                 # m^2/s
-    Fk = (Ls / (Rv * T_in_K) - 1.0) * Ls / (Ka * T_in_K)
-    Fd = (Rv * T_in_K) / (Dv * e_i)
-    return Fk + Fd
-
-
-def ice_dfsn(gr, dt, thlm, rcm, exner, p_in_Pa, rho, saturation_formula):
+def ice_dfsn(gr, ngrdcol, dt, thlm, rcm,
+    exner, p_in_Pa, rho, saturation_formula, stats):
     """Time tendencies of rcm and thlm from ice diffusional growth.
 
     Args:
-        gr:                 JAX grid (uses gr.invrs_dzm, single column, shape (1, nzm)).
+        gr:                 JAX grid with gr.invrs_dzm shaped (ngrdcol, nzm).
         dt:                 Model timestep [s].
-        thlm, rcm, exner, p_in_Pa, rho: 1D arrays, length nzt (thermodynamic grid).
+        thlm, rcm, exner, p_in_Pa, rho: Arrays shaped (ngrdcol, nzt) on the thermodynamic grid.
         saturation_formula: SATURATION_* integer for sat_mixrat_liq.
 
     Returns:
-        (rcm_icedfsn, thlm_icedfsn): 1D tendencies, each length nzt [kg/kg/s], [K/s].
+        (stats, rcm_icedfsn, thlm_icedfsn): updated statistics and tendencies
+        shaped (ngrdcol, nzt), in [kg/kg/s] and [K/s].
     """
+    # Description:
+    #   This subroutine is based on a COAMPS subroutine (nov11_icedfs)
+    #   written by Adam Smith and Vince Larson to calculate the
+    #   depletion of cloud water by the diffusional growth of ice.
+    #
+    #---------------Brian's comment--------------------------------------!
+    # This code does not use actual microphysics.  Diffusional growth of !
+    # ice is supposed to be the growth of ice due to diffusion of water  !
+    # vapor.  Liquid water is not involved in diffusional growth.        !
+    # However, in mixed phase clouds (both ice and liquid water), most   !
+    # of the water vapor condenses onto the liquid droplets due to the   !
+    # fact that they have so much more available surface area.  This     !
+    # brings the amount of water vapor in the atmosphere to the          !
+    # saturation level with respect to liquid water.  However, since the !
+    # saturation vapor pressure with respect to ice is less than the     !
+    # saturation vapor pressure with respect to liquid water, a          !
+    # saturated atmosphere with respect to liquid water is still         !
+    # supersaturated with respect to ice.  As a result, ice still grows  !
+    # due to diffusion.  When this happens, the environmental vapor      !
+    # pressure drops to the point of saturation with respect to ice.     !
+    # This leaves the atmosphere subsaturated with respect to liquid     !
+    # water.  As a result, some of the liquid water evaporates until     !
+    # the atmosphere becomes saturated with respect to liquid water      !
+    # again.  The process then repeats itself.  As a result, the ice     !
+    # essentially grows at the expense of the liquid water.  This is     !
+    # why the diffusional growth of ice is being deducted from liquid    !
+    # water in this subroutine.
+    #-------------------------------------------------------------------------------
+    # References:
+    #   Section 4.2 of Larson et al. (2006), "What determines altocumulus
+    #     dissipation time?", J. Geophys. Res., Vol. 111, D19207.
+    #
+    #   Mitchell, D. L. (1996), "Use of mass- and area- ...", J. Atmos. Sci.
+    #     Vol. 53, 1710--1723.
+    #
+    #   Rogers and Yau (1989), "A Short Course in Cloud Physics", 3rd. Ed.
+    #
+    #   Fleishauer et al. (2002), "Observed microphysical structure of
+    #     midlevel, mixed-phase clouds", J. Atmos. Sci., Vol. 59,
+    #     pp. 1779--1804.
+    #-------------------------------------------------------------------------------
     thlm = jnp.asarray(thlm)
     rcm = jnp.asarray(rcm)
     exner = jnp.asarray(exner)
     p_in_Pa = jnp.asarray(p_in_Pa)
     rho = jnp.asarray(rho)
-    nzt = thlm.shape[0]
+    nzt = thlm.shape[-1]
 
     # --- Vectorized thermodynamic factors (mass-independent) ---
     T_in_K = thlm2T_in_K(thlm, exner, rcm)
@@ -71,10 +101,10 @@ def ice_dfsn(gr, dt, thlm, rcm, exner, p_in_Pa, rho, saturation_formula):
     Denom = Diff_denom(T_in_K, p_in_Pa, e_i)
     factor = 4.0 * (S_i - 1.0) / Denom   # common 4*(S_i-1)/Denom term
 
-    # Lagged momentum-grid spacing used by dmass: Fortran gr%invrs_dzm(1,k-1) -> 0-based [k-2] = [j-1].
-    inv_dzm = gr.invrs_dzm[0]
-    lag_idx = jnp.clip(jnp.arange(nzt) - 1, 0, inv_dzm.shape[0] - 1)
-    inv_dzm_lag = inv_dzm[lag_idx]
+    # Lagged momentum-grid spacing used by dmass: Fortran gr%invrs_dzm(icol,k-1) -> 0-based [k-2] = [j-1].
+    inv_dzm = gr.invrs_dzm
+    lag_idx = jnp.clip(jnp.arange(nzt) - 1, 0, inv_dzm.shape[-1] - 1)
+    inv_dzm_lag = jnp.broadcast_to(inv_dzm[:, lag_idx], thlm.shape)
 
     # --- Sequential downward mass integration (top j=nzt-1 -> bottom j=0) ---
     def step(mass, inp):
@@ -92,12 +122,42 @@ def ice_dfsn(gr, dt, thlm, rcm, exner, p_in_Pa, rho, saturation_formula):
         next_mass = jnp.where(cloud, mass + dmass, mass)
         return next_mass, (rcm_ice, mass, diam, u_T_cm)
 
-    # Reverse so scan runs top -> bottom, then un-reverse the outputs.
-    rev = lambda a: a[::-1]
+    # JAX scan-boundary adapters: the recurrent vertical axis must be first and
+    # run top -> bottom. These two local transforms only change scan layout;
+    # they do not wrap physics or replace source routines.
+    rev = lambda a: jnp.moveaxis(a[..., ::-1], -1, 0)
+    restore = lambda a: jnp.moveaxis(a, 0, -1)[..., ::-1]
     xs = (rev(in_cloud), rev(factor), rev(rho), rev(rcm), rev(inv_dzm_lag))
-    _, (rcm_ice_r, mass_r, diam_r, u_T_cm_r) = jax.lax.scan(step, _MASS_INIT, xs)
-    rcm_icedfsn = rev(rcm_ice_r)
+    _, (rcm_ice_r, mass_r, diam_r, u_T_cm_r) = jax.lax.scan(step, jnp.full(thlm.shape[:-1], _MASS_INIT), xs)
+    rcm_icedfsn = restore(rcm_ice_r)
+    if stats.l_sample:
+        stats = stats.update('rcm_icedfs', rcm_icedfsn)
+        stats = stats.update('diam', restore(diam_r))
+        stats = stats.update('mass_ice_cryst', restore(mass_r))
+        stats = stats.update('u_T_cm', restore(u_T_cm_r))
 
     # thlm tendency (ice_dfsn_module.F90:305)
     thlm_icedfsn = -(Lv / (Cp * exner)) * rcm_icedfsn
-    return rcm_icedfsn, thlm_icedfsn
+    return stats, rcm_icedfsn, thlm_icedfsn
+
+
+def Diff_denom(T_in_K, p_in_Pa, e_i):
+    """Denominator of the diffusional-growth equation (ice_dfsn_module.F90:Diff_denom; R&Y Eq. 9.4) [m s/kg]."""
+    # Description:
+    #   Compute denominator of diffusional growth equation
+    #
+    # References:
+    #   Eqn. 9.4 of Rogers and Yau (1989), "A Short Course on Cloud Physics"
+    #
+    #-----------------------------------------------------------------------------
+    # Reference:  Eqn. 9.4 of Rogers and Yau (1989), "A Short Course on Cloud Physics"
+    # Constant Parameters
+    #   real, parameter :: Ls = 2.834e6
+    Celsius = T_in_K - T_freeze_K
+    Ka = (5.69 + 0.017 * Celsius) * 0.00001          # cal/(cm s C)
+    Ka = 4.1868 * 100.0 * Ka                          # J/(m s K)
+    Dv = 0.221 * (T_in_K / T_freeze_K) ** 1.94 * (101325.0 / p_in_Pa)  # cm^2/s
+    Dv = Dv / 10000.0                                 # m^2/s
+    Fk = (Ls / (Rv * T_in_K) - 1.0) * Ls / (Ka * T_in_K)
+    Fd = (Rv * T_in_K) / (Dv * e_i)
+    return Fk + Fd

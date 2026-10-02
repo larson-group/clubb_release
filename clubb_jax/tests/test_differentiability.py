@@ -202,7 +202,7 @@ def test_kk_microphysics_drivers_differentiable():
     gradients are finite-difference-correct — the 'differentiable composable' goal applied to
     the full rate-driver chain (Nc->Ncnm->log moments->analytic PDF integral incl. the D_v
     parabolic cylinder function)."""
-    from clubb_jax.src.Microphys.KK_microphys.kk_microphys_driver import (
+    from clubb_jax.tests.microphysics_test_inputs import (
         kk_autoconversion_mean, kk_accretion_mean, kk_evaporation_mean)
 
     def _fd(f, x0, eps):
@@ -247,7 +247,7 @@ def test_kk_autoconversion_driver_array_differentiable():
     chi (the edge that triggered nan grads before the Nc_Ncn safe-division / safe-sqrt fixes):
     very subsaturated points give a vanishing erfc denominator (~1e-170) whose bare gradient is
     0/0=nan. A custom-jvp safe division regularizes it while keeping the forward exact."""
-    from clubb_jax.src.Microphys.KK_microphys.kk_microphys_driver import kk_autoconversion_mean
+    from clubb_jax.tests.microphysics_test_inputs import kk_autoconversion_mean
     n = 60
     chi1 = jnp.linspace(-1.0e-3, 1.0e-3, n)          # subsaturated -> saturated
     chi2 = jnp.full(n, -3.0e-4)

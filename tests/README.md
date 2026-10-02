@@ -142,6 +142,53 @@ Examples:
 - `python3 tests/run_bindiff_w_flags.py -b old_ref,new_ref --no-compile --skip-default-flags`
   Reuses existing builds and compares only alternate flag sets.
 
+### `run_jax_comparison_mutation_test.py`
+
+Checks that the real JAX-versus-Fortran comparison can detect model errors.
+Runs BOMEX for four 60-second timesteps and four columns, using
+`input/stats/multi_col_stats.in` and the comparison harness's default tolerances.
+The numerical mutations use independent physical-signal checks with the
+effective tolerances in the comparison report.
+`CASE` and `TIMESTEPS_TO_RUN` are configured near the top of the script;
+the current mutation sites and run length are validated for BOMEX.
+An unmodified control must match, followed by four independent JAX mutations:
+
+- `heating`: replace zero heating with `1e-6 K/s` (about `6e-5 K` per step).
+- `parameter_handling`: read C8 `[0.2, 0.4, 0.6, 0.8]` as
+  `[0.2, 0.3, 0.4, 0.5]`, preserving column 1 and all other parameters.
+- `first_column`: use column 1's previous `wp3` in every column's timestep
+  equation, simulating a `(1,k)` instead of `(i,k)` indexing error.
+- `missing_stat`: omit `wprtp` from the JAX NetCDF output while still
+  calculating it, so strict bindiff must detect a missing variable.
+
+Each original/replacement pair is defined and briefly explained at the top of
+the script. Each mutation must make the comparison exit 1 with both models
+completing all four steps. The three numerical mutations must report their
+expected physical field (`thlm` or `wp3`) above threshold. For the two column
+mutations, column 1 must still match while each later column fails; a
+parameter-metadata difference alone does not count. The missing-stat mutation
+must report exactly `wprtp` absent from JAX output, with every other saved
+variable unchanged. Saved C8 values are checked independently. A crash,
+missing/empty/nonfinite required physical output, or a passing mutated
+comparison fails this test. The final summary shows each mutation's result
+and the output directory.
+
+Run from the repository root:
+
+    python3 tests/run_jax_comparison_mutation_test.py
+
+Uses CPU/double precision and the existing selected/latest Fortran install;
+build/install that executable first. The normal JAX launcher prepares its
+environment. Five JAX compilations are needed even though the runs are short.
+Source copies, commands, NetCDF files, logs and `mutation_test_summary.json`
+are retained in a new `output/tests/jax_comparison_mutation_*` directory.
+`-output-dir PATH` selects a new destination; `-timeout SECONDS` adjusts the
+300-second limit per comparison. `-mutations parameter_handling first_column`
+runs only those mutations, sharing one control. Working source and normal
+comparison outputs are preserved. These are representative numerical and
+output-schema errors through the entire runner, not exhaustive coverage of
+every field or scheme.
+
 ### `run_clubb_conv_test.py`
 
 Runs one case at several timesteps and checks convergence for a selected output
@@ -169,33 +216,38 @@ Runs selected cases with both the JAX driver and the Fortran standalone driver,
 then compares outputs with `run_bindiff_all.py`.
 
 Every case runs once per flag set. The unmodified "default" flag set is always
-included unless `--skip-default-flags` is given. Results are written as
+included for every run. Results are written as
 
     output/tests/jax_driver_test_results/
       jax_output/<flag set>/*.nc
       fortran_output/<flag set>/*.nc
       logs/<flag set>/<case>_{run_jax,run_fortran,bindiff}.log
+      logs/<flag set>/<case>_bindiff.json
       case_compare_summary.json
       final_bindiff.log
 
 so the two output roots can be compared directly with
 `run_bindiff_all.py --flag-sets`, which is what the final combined diff does.
 
+`DEFAULT_CASES` in the script defines the case list and any per-case overrides.
+Pass `run_scm.py` options such as `-max_iters`, `-dt_main`, `-stats`, and
+`-debug` directly; they apply to both models and override curated case settings.
+Effective step and timestep settings and forwarded options are recorded in the
+results JSON. The harness controls driver selection, output paths, columns, and
+case/flag overrides.
+
 Examples:
 
-- `python3 tests/run_jax_vs_fortran_cases.py --cases bomex --jobs 1`
+- `python3 tests/run_jax_vs_fortran_cases.py -cases bomex -jobs 1`
   Runs a single serial JAX-vs-Fortran comparison for easier debugging.
 
-- `python3 tests/run_jax_vs_fortran_cases.py --cases bomex atex --max-iters 3`
+- `python3 tests/run_jax_vs_fortran_cases.py -cases bomex atex -max_iters 3`
   Runs two cases with a short iteration limit.
 
-- `python3 tests/run_jax_vs_fortran_cases.py --bindiff-verbose 2 --bindiff-threshold 1e-12`
+- `python3 tests/run_jax_vs_fortran_cases.py -bindiff_verbose 2 -bindiff_threshold 1e-12`
   Runs the default case set and prints detailed strict bindiff output.
 
-- `python3 tests/run_jax_vs_fortran_cases.py --keep-existing`
-  Reuses existing output directories instead of deleting them before the run.
-
-- `python3 tests/run_jax_vs_fortran_cases.py --flag-config-file input/flag_sets/run_bindiff_w_flags_config_example.json`
+- `python3 tests/run_jax_vs_fortran_cases.py -flag_config_file input/flag_sets/run_bindiff_w_flags_config_example.json`
   Also runs every case under each flag set in the JSON file, using the same
   config format as `run_scripts/run_clubb_w_varying_flags.py`.
 

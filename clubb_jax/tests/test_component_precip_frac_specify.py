@@ -33,8 +33,8 @@ _TOL = 1.0e-3
 
 
 def _call(pf, mf, upsilon):
-    tol = np.full((_NG, 1), _TOL)
-    return component_precip_frac_specify(jnp.asarray(pf), jnp.asarray(mf), jnp.asarray(tol), float(upsilon))
+    return component_precip_frac_specify(2, jnp.array([1.e-10,1.]), float(upsilon),
+        jnp.ones((_NG,_NZT,2)),jnp.asarray(pf),jnp.asarray(mf),jnp.full((_NG,),_TOL))
 
 
 def test_conservation_general_branch_no_clip():
@@ -87,8 +87,8 @@ def test_grad_finite():
     rng = np.random.default_rng(99)
     mf = jnp.asarray(rng.uniform(0.4, 0.8, (_NG, _NZT)))
     pf0 = jnp.asarray(mf * rng.uniform(0.2, 0.9, (_NG, _NZT)))
-    tol = jnp.asarray(np.full((_NG, 1), _TOL))
-    g = jax.grad(lambda p: jnp.sum(sum(x ** 2 for x in component_precip_frac_specify(p, mf, tol, 0.55))))(pf0)
+    tol = jnp.full((_NG,), _TOL)
+    g = jax.grad(lambda p: jnp.sum(sum(x ** 2 for x in component_precip_frac_specify(2, jnp.array([1.e-10,1.]), .55, jnp.ones((_NG,_NZT,2)), p, mf, tol))))(pf0)
     assert np.all(np.isfinite(np.asarray(g))), "non-finite grad wrt pf"
     print("  jax.grad(component_precip_frac_specify) wrt pf finite  PASS")
 
@@ -104,3 +104,19 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def test_minimum_precipitation_fraction_does_not_lose_pdf_component():
+    # RF02 DS, step 21, fourth column, near cloud top. A one-ulp low fp2
+    # changes calc_comp_mu_sigma_hm's >= tolerance test and its physical branch.
+    tolerance=0.0999998450749649131
+    a=jnp.array([[0.046238554297345934, 0.02989385943152091]])
+    fp=jnp.full_like(a,tolerance)
+    def split(a,fp):
+        return component_precip_frac_specify(2,jnp.array([1.e-10,1.]),.5,
+            jnp.ones((1,2,2)),fp,a,jnp.array([tolerance]))
+    for run in (split,jax.jit(split)):
+        fp1,fp2=run(a,fp)
+        assert np.all(np.asarray(fp1)>=tolerance)
+        assert np.all(np.asarray(fp2)>=tolerance)
+        np.testing.assert_allclose(a*fp1+(1-a)*fp2,fp,rtol=2.e-15,atol=0.)

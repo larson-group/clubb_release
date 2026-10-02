@@ -15,8 +15,11 @@ and translated source lives under [`src/`](./src/):
 - `src/CLUBB_core/` contains the supported CLUBB core and JAX statistics code.
 - `src/Input_fields/` contains namelist, sounding, surface, and grid readers.
 - `src/Radiation/` contains the supported radiation code.
-- `src/Microphys/` and `src/Radiation/BUGSrad/` contain work in progress that is
-  not connected to the supported standalone path.
+- `src/Microphys/` contains KK and Morrison microphysics, including cloud
+  sedimentation and feedback to CLUBB. The strict comparison suite covers KK
+  and short Morrison runs; atmospheric ice and graupel validation remains
+  incomplete.
+- `src/Radiation/BUGSrad/` remains disconnected from the supported standalone path.
 
 The detailed support boundary and conversion workflow are documented in
 [`JAX_CONVERSION_PLAN.md`](./JAX_CONVERSION_PLAN.md).
@@ -143,7 +146,7 @@ Compile Fortran, then compare one case:
 
 ```bash
 ./compile.py
-./tests/run_jax_vs_fortran_cases.py --cases arm
+./tests/run_jax_vs_fortran_cases.py -cases arm
 ```
 
 The harness writes its logs, separate JAX and Fortran outputs, and final bindiff
@@ -151,26 +154,32 @@ report under `output/tests/jax_driver_test_results/`.
 
 ### Comparison Options
 
-The harness defaults to `standard_stats.in`. Its `-stats`, `-debug`, and
-`--max-iters` options are forwarded to both internal `run_scm.py` calls, so the
-JAX and Fortran runs use the same model settings. As with a normal run, reducing
-the statistics registry or debug level can make comparisons faster. Do not use
-`-stats none` for numerical validation because it leaves no statistics output
-to compare.
+The harness defaults to `standard_stats.in`. Single-dash `run_scm.py` options
+such as `-stats`, `-debug`, `-max_iters`, and `-dt_main` are forwarded to both
+model runs, so JAX and Fortran use the same settings.
+As with a normal run, reducing the statistics registry or debug level can make
+comparisons faster. Do not use `-stats none` for numerical validation because
+it leaves no statistics output to compare.
+
+The case list and per-case settings are defined in
+[`DEFAULT_CASES`](../tests/run_jax_vs_fortran_cases.py). Comparisons may override
+native case settings; the effective overrides are logged and recorded in the
+results JSON. Forwarded `-max_iters` and `-dt_main` override the configured
+step limit and main timestep for both models.
 
 Harness-specific options select cases and control parallelism or bindiff. For
 example, this runs two shortened cases in parallel with faster model settings:
 
 ```bash
 ./tests/run_jax_vs_fortran_cases.py \
-  --cases arm bomex -j 2 \
-  -stats input/stats/multi_col_stats.in -debug 0 --max-iters 120
+  -cases arm bomex -jobs 2 \
+  -stats input/stats/multi_col_stats.in -debug 0 -max_iters 120
 ```
 
-`--bindiff-threshold` changes the numerical difference threshold,
-`--bindiff-verbose` controls the final report detail, and `--keep-existing`
-preserves earlier output directories. GPU comparisons force one case worker at
-a time so multiple processes do not contend for the same device.
+`-bindiff_threshold` changes the numerical difference threshold and
+`-bindiff_verbose` controls the final report detail. Each run starts with a
+fresh results directory. GPU comparisons force one case worker at a time so
+multiple processes do not contend for the same device.
 
 ### Focused Python Tests
 

@@ -1,80 +1,283 @@
-"""JAX port of morrison_microphys_module.F90 — the CLUBB↔Morrison (M2005) microphysics interface driver.
+"""CLUBB–Morrison interface, following morrison_microphys_module.F90.
 
-Mirrors clubb_release/src/Microphys/morrison_microphys_module.F90: `morrison_microphys_driver` is the CLUBB-side
-wrapper that runs the full single-column M2005 step (the upstream WRF scheme in
-Microphys/Morrison_microphys/module_mp_graupel.py — `m2005_driver`), folds rain/ice/snow/cloud sedimentation
-(`morrison_sedimentation`) into the hydrometeor tendencies, and returns the CLUBB-form `*_mc` tendencies.
-morrison_microphys_step.py imports it, mirroring the Fortran `use morrison_microphys_module`.
-
-Pure-jnp → differentiable. Validated by `tests/test_morrison_rates.py`.
+Columns are batched; out arguments are returned in source order. The WRF core's
+inout fields and output diagnostics are returned under their Fortran names.
+The source's default-real conversions are retained (float32 in the debug build).
+Atmospheric validation currently covers LBA's warm-cloud/rain regime only.
 """
-
-from __future__ import annotations
-
+import jax
 import jax.numpy as jnp
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
+from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, Ls, grav, sec_per_day
+from clubb_jax.src.CLUBB_core import model_flags
+from clubb_jax.src.CLUBB_core.T_in_K_module import thlm2T_in_K, T_in_K2thlm
+from clubb_jax.src.Microphys import parameters_microphys as parameters
+from clubb_jax.src.Microphys.Morrison_microphys.module_mp_graupel import M2005MICRO_GRAUPEL
 
-from clubb_jax.src.CLUBB_core.constants_clubb import Cp as _CP, Lv as _LV
-from clubb_jax.src.Microphys.Morrison_microphys.module_mp_graupel import (
-    m2005_driver, morrison_sedimentation, _sizefix_exp_number,
-    _M_CONS_RAIN, _M_LAMMINR, _M_LAMMAXR,
-)
+
+def morrison_microphys_driver(
+        gr, ngrdcol, dt, nzt,
+        hydromet_dim, hm_metadata,
+        l_latin_hypercube, thlm, wm_zt, p_in_Pa,
+        exner, rho, cloud_frac, w_std_dev,
+        dzq, rcm, Ncm, chi, rvm, hydromet,
+        saturation_formula,
+        sample_weight, stats):
+    # Wrapper for the Morrison microphysics.
+    # Description:
+    # Wrapper for the Morrison microphysics
+    #
+    # References:
+    # None
+    #-----------------------------------------------------------------------
+    # Fortran internal procedures use host association; nonlocal assignment
+    # carries the immutable JaxStats object. Python definitions precede calls.
+    # Weighted SILHS branches remain disabled by the l_latin_hypercube guard.
+    def update_microphys_stat(name, value):
+        nonlocal stats
+        stats = stats.update(name, value)
+
+    def update_microphys_stat_sfc(name, value):
+        nonlocal stats
+        stats = stats.update(name, value)
+
+    def print_morr_error_output():
+        # Host diagnostic adaptation: emit batched state and process mappings
+        # instead of Fortran's per-level formatted field dump.
+        nonfinite = jnp.any(jnp.stack([
+            jnp.any(~jnp.isfinite(value)) for value in
+            (*final.values(), diagnostic['rcm_mc'], diagnostic['rvm_mc'], diagnostic['T_mc'])]))
+        jax.lax.cond(nonfinite,
+            lambda _: jax.debug.print(
+                'non-finite detected in a Morrison microphysics tendency\n'
+                'altitude={z}\nfinal={final}\ndiagnostic={diagnostic}',
+                z=gr.zt, final=final, diagnostic=diagnostic, ordered=True),
+            lambda _: None, operand=None)
+
+    # The version of the Morrison 2005 microphysics that is in SAM.
+    iirr, iiNr = hm_metadata.iirr, hm_metadata.iiNr
+    iiri, iiNi = hm_metadata.iiri, hm_metadata.iiNi
+    iirs, iiNs = hm_metadata.iirs, hm_metadata.iiNs
+    iirg, iiNg = hm_metadata.iirg, hm_metadata.iiNg
+    # Language adaptation of Fortran REAL(...), including its default-real
+    # rounding before the numerical core and conversion back to core_rknd.
+    zero = jnp.zeros_like(rcm)
+
+    # Determine temperature.
+    T_in_K = jnp.asarray(thlm2T_in_K(thlm, exner, rcm), dtype=jnp.float32)
+    if l_latin_hypercube:
+        raise NotImplementedError('SILHS microphysics is disabled')
+    cloud_frac_in = jnp.asarray(cloud_frac, dtype=jnp.float32)
+    wm_zt_r4, w_std_dev_r4 = jnp.asarray(wm_zt, dtype=jnp.float32), jnp.asarray(w_std_dev, dtype=jnp.float32)
+    rcm_r4, rvm_r4, Ncm_r4 = jnp.asarray(rcm, dtype=jnp.float32), jnp.asarray(rvm, dtype=jnp.float32), jnp.asarray(Ncm, dtype=jnp.float32)
+    hydromet_r4 = jnp.asarray(hydromet, dtype=jnp.float32)
+    if model_flags.l_evaporate_cold_rcm:
+        cold = T_in_K < 236.15
+        rcm_r4 = jnp.where(cold, 0.0, rcm_r4)
+        cloud_frac_in = jnp.where(cold, 0.0, cloud_frac_in)
+        Ncm_r4 = jnp.where(cold, 0.0, Ncm_r4)
+
+    # Unpack hydrometeor arrays; absent species have zero extent in metadata.
+    rrm, Nrm = hydromet[..., iirr], hydromet[..., iiNr]
+    rim, Nim, rsm, Nsm, rgm, Ngm = (zero,) * 6
+    species = [('qr', iirr), ('nr', iiNr)]
+    if parameters.l_ice_microphys:
+        rim, Nim = hydromet[..., iiri], hydromet[..., iiNi]
+        rsm, Nsm = hydromet[..., iirs], hydromet[..., iiNs]
+        species += [('qi', iiri), ('ni', iiNi), ('qs', iirs), ('ns', iiNs)]
+        if parameters.l_graupel:
+            rgm, Ngm = hydromet[..., iirg], hydromet[..., iiNg]
+            species += [('qg', iirg), ('ng', iiNg)]
+    hl_before = Cp * jnp.asarray(T_in_K, dtype=jnp.float64) + grav * gr.zt - Lv * (rcm + rrm) - Ls * (rim + rsm + rgm)
+    qto_before = rvm + rcm + rrm + rim + rsm + rgm
+
+    # Call the one-column Morrison microphysics core. The leading batch axis
+    # replaces Fortran's loop over i; output-only arguments are returned by name.
+    rim_r4, rsm_r4 = jnp.asarray(rim, dtype=jnp.float32), jnp.asarray(rsm, dtype=jnp.float32)
+    rrm_r4 = jnp.asarray(rrm, dtype=jnp.float32)
+    Nim_r4, Nsm_r4 = jnp.asarray(Nim, dtype=jnp.float32), jnp.asarray(Nsm, dtype=jnp.float32)
+    Nrm_r4 = jnp.asarray(Nrm, dtype=jnp.float32)
+    P_in_pa_r4, rho_r4 = jnp.asarray(p_in_Pa, dtype=jnp.float32), jnp.asarray(rho, dtype=jnp.float32)
+    dzq_r4 = jnp.asarray(dzq, dtype=jnp.float32)
+    rgm_r4, Ngm_r4 = jnp.asarray(rgm, dtype=jnp.float32), jnp.asarray(Ngm, dtype=jnp.float32)
+    output = M2005MICRO_GRAUPEL(
+        rcm_r4, rim_r4,
+        rsm_r4, rrm_r4, Ncm_r4,
+        Nim_r4, Nsm_r4, Nrm_r4,
+        T_in_K, rvm_r4,
+        P_in_pa_r4, rho_r4, dzq_r4,
+        wm_zt_r4, w_std_dev_r4,
+        jnp.asarray(dt, dtype=jnp.float32),
+        1, 1, 1, 1, 1, nzt, 1, 1, 1, 1, 1, nzt,
+        rgm_r4, Ngm_r4,
+        cloud_frac_in)
+    # JAX return adaptation: associate source inout/output arrays with the
+    # existing CLUBB state/statistics names, without changing their precision.
+    final = {key: output[source] for key, source in dict(
+        qc='QC3D', qi='QI3D', qs='QNI3D', qr='QR3D', nc='NC3D',
+        ni='NI3D', ns='NS3D', nr='NR3D', qg='QG3D', ng='NG3D',
+        T='T3D', qv='QV3D').items()}
+    diagnostic = dict(output)
+    for name, source in dict(qc_sten='QCSTEN', qr_sten='QRSTEN',
+        qi_sten='QISTEN', qs_sten='QNISTEN', qg_sten='QGSTEN',
+        rcm_mc='QC3DTEN', rvm_mc='QV3DTEN', T_mc='T3DTEN', rain_vel='FR',
+        eff_rad_cloud='EFFC', eff_rad_ice='EFFI', eff_rad_snow='EFFS',
+        eff_rad_rain='EFFR', eff_rad_graupel='EFFG').items():
+        diagnostic[name] = output[source]
+    diagnostic['Morr_precip_rate'] = output['PRECRT']
+    diagnostic['Morr_snow_rate'] = output['SNOWRT']
+    final = {name: jnp.asarray(value, dtype=jnp.float64) for name, value in final.items()}
+    diagnostic = {name: jnp.asarray(value, dtype=jnp.float64) for name, value in diagnostic.items()}
+    rcm_sten, rrm_sten = diagnostic['qc_sten'], diagnostic['qr_sten']
+    rim_sten, rsm_sten, rgm_sten = diagnostic['qi_sten'], diagnostic['qs_sten'], diagnostic['qg_sten']
+    if clubb_at_least_debug_level(2):
+        print_morr_error_output()
+    hl_after = Cp * final['T'] + grav * gr.zt - Lv * (final['qc'] + final['qr']) - Ls * (final['qi'] + final['qs'] + final['qg'])
+    hl_on_Cp_residual = (hl_after - hl_before - dt * Lv * (rcm_sten + rrm_sten) - dt * Ls * (rim_sten + rsm_sten + rgm_sten)) / Cp
+    qto_after = sum(final[name] for name in ('qv', 'qc', 'qr', 'qi', 'qs', 'qg'))
+    qto_residual = qto_after - qto_before - dt * (rcm_sten + rrm_sten + rim_sten + rsm_sten + rgm_sten)
+
+    # Pack hydrometeor arrays.
+    for name, index in species:
+        hydromet_r4 = hydromet_r4.at[..., index].set(jnp.asarray(final[name], dtype=jnp.float32))
+    rcm_mc, rvm_mc = diagnostic['rcm_mc'], diagnostic['rvm_mc']
+    rrm_auto, rrm_accr, rrm_evap = diagnostic['PRC'], diagnostic['PRA'], diagnostic['PRE']
+    Nrm_auto, Nrm_evap = diagnostic['NPRC1'], diagnostic['NSUBR']
+    # Include clipping in the tendencies returned to CLUBB.
+    hydromet_mc = (jnp.asarray(hydromet_r4, dtype=jnp.float64) - hydromet) / dt
+    Ncm_mc = (final['nc'] - Ncm) / dt
+    thlm_mc = (T_in_K2thlm(final['T'], exner, final['qc']) - thlm) / dt
+    # Sedimentation is handled within the Morrison microphysics.
+    hydromet_vel_zt = jnp.zeros_like(hydromet)
+    hydromet_vel_zt = hydromet_vel_zt.at[..., iirr].set(-diagnostic['rain_vel'])
+    # Preserve the source's level-order accumulation independently per column.
+    rsm_sd_morr_int = jax.lax.fori_loop(0, nzt, lambda k, integral:
+        integral + rho[:, k] * rsm_sten[:, k] * gr.dzt[:, k],
+        jnp.zeros((ngrdcol,), dtype=rho.dtype))
+    update_microphys_stat_sfc('rs_sd_morr_int', rsm_sd_morr_int)
+    if clubb_at_least_debug_level(1):
+        jax.lax.cond(jnp.any(rsm_sd_morr_int > jnp.max(rsm_sten, axis=1)),
+            lambda _: jax.debug.print(
+                'Warning: rsm_sd_morr was not conservative! '
+                'rsm_sd_morr_verical_integr = {value}', value=rsm_sd_morr_int,
+                ordered=True), lambda _: None, operand=None)
 
 
-def morrison_microphys_driver(rcm, Ncm, rrm, Nrm, rim, Nim, rsm, Nsm, rgm, Ngm,
-                              thlm, rvm, T_in_K, exner, pres, rho, cf3d, dzq, dt, igraup=0):
-    """JAX CLUBB-Morrison interface. Returns a dict of the CLUBB-form tendencies:
-    {rcm_mc, rvm_mc, thlm_mc, Ncm_mc, rrm_mc, Nrm_mc, rim_mc, Nim_mc, rsm_mc, Nsm_mc, rgm_mc, Ngm_mc}.
-    Inputs are the grid-mean CLUBB fields (rcm/Ncm cloud from the PDF; rrm…Ngm hydrometeors; thlm/rvm
-    prognostics; T_in_K=absolute temperature). Sedimentation (rain+ice+snow) is folded into the
-    hydrometeor *_mc via (field_final−field_initial)/dt; cloud-droplet sedimentation is the separate
-    CLUBB cloud_drop_sed (not here)."""
-    a = lambda x: jnp.asarray(x, dtype=jnp.float64)
-    rcm, Ncm, rvm, thlm = a(rcm), a(Ncm), a(rvm), a(thlm)
-    rrm, Nrm, rim, Nim = a(rrm), a(Nrm), a(rim), a(Nim)
-    rsm, Nsm, rgm, Ngm = a(rsm), a(Nsm), a(rgm), a(Ngm)
-    T_in_K, exner, pres, rho, dzq = a(T_in_K), a(exner), a(pres), a(rho), a(dzq)
-    # process tendencies (grid-mean) from the full single-column driver
-    ten = m2005_driver(rcm, Ncm, rrm, Nrm, rim, Nim, rsm, Nsm, rgm, Ngm,
-                       rvm, T_in_K, pres, rho, cf3d, dt, igraup=igraup)
-    # post-process fields (DUM = field + tendency·dt), then sedimentation on these. Cloud water is
-    # sedimented too (its tendency folds into rcm_mc/Ncm_mc — QC3DTEN += QCSTEN, :4885).
-    qr_p = rrm + ten['qr'] * dt; nr_p = Nrm + ten['nr'] * dt
-    qi_p = rim + ten['qi'] * dt; ni_p = Nim + ten['ni'] * dt
-    qs_p = rsm + ten['qni'] * dt; ns_p = Nsm + ten['ns'] * dt
-    qc_p = rcm + ten['qc'] * dt; nc_p = Ncm + ten['nc'] * dt
-    sed = morrison_sedimentation(qr_p, nr_p, qi_p, ni_p, qs_p, ns_p, rho, dzq, dt,
-                                 qc=qc_p, nc=nc_p, T=T_in_K)
-    clip = lambda x: jnp.maximum(x, 0.0)
-    # final fields = post-process + sedimentation, clipped ≥ 0
-    rrm_f = clip(qr_p + sed['qr'] * dt); Nrm_f = clip(nr_p + sed['nr'] * dt)
-    # The slope clamps are applied PRE-RATE inside m2005_driver (faithful to F90:1881-2002 — affects the
-    # rate inputs + all 5 species). The rain post-sed clamp is ALSO kept: the stored stats reflect the
-    # Fortran's NEXT-step pre-rate clamp on the (unclamped) post-sed output, so a per-step driver must
-    # clamp its OUTPUT to match (removing it regresses dycoms Nrm 1.0→1.15; Iter235/250).
-    Nrm_f = _sizefix_exp_number(rrm_f, Nrm_f, _M_CONS_RAIN, _M_LAMMINR, _M_LAMMAXR)
-    rim_f = clip(qi_p + sed['qi'] * dt); Nim_f = clip(ni_p + sed['ni'] * dt)
-    rsm_f = clip(qs_p + sed['qs'] * dt); Nsm_f = clip(ns_p + sed['ns'] * dt)
-    rgm_f = clip(rgm + ten['qg'] * dt); Ngm_f = clip(Ngm + ten['ng'] * dt)
-    Ncm_f = clip(nc_p + sed['nc'] * dt)
-    rcm_mc = ten['qc'] + sed['qc']   # rcm tendency = process (QC3DTEN, incl. PCC) + cloud sedimentation
-    # M2005 integrates the fields at the end (QC3D+=QC3DTEN·dt, T3D+=T3DTEN·dt, :4911-4929), so rcm_r4 =
-    # rcm + rcm_mc·dt and T_in_K = T + ten['T']·dt → thlm_mc = (ten['T'] − Lv/Cp·rcm_mc)/exner. The PCC
-    # parts of ten['T'] and rcm_mc cancel (thlm conserved under condensation); the cloud-sed rcm change
-    # remains — that is the strong WBF-like heating at cloud-top mixed-phase points (the 184-pt signal).
-    # thlm_mc: the float64-exact form. The Fortran computes this through a single-precision
-    # thlm<->T_in_K round-trip (morrison_microphys_module.F90:399/416/793, `real(...)`=REAL(4)), which
-    # algebraically reduces to (ten['T'] − Lv/Cp·rcm_mc)/exner once the T_in_K_init and rcm terms cancel
-    # (thlm is conserved under condensation; only the cloud-sed rcm change survives as the cloud-top heating).
-    # The REFACTOR drops the deliberate `real*4` round-trip (its sole effect was a ~1e-7 single-precision
-    # residual reproduced for bit-faithfulness, REFACTOR.md §3.1 A2) — float64 is simpler and more accurate;
-    # the clear-air case (mpace_a) now correctly gives thlm_mc≈0 instead of the ~2.8e-7 artifact.
-    thlm_mc = (ten['T'] - _LV / _CP * rcm_mc) / exner
-    return {
-        'rcm_mc': rcm_mc, 'rvm_mc': ten['qv'],
-        'thlm_mc': thlm_mc,
-        'Ncm_mc': (Ncm_f - Ncm) / dt,
-        'rrm_mc': (rrm_f - rrm) / dt, 'Nrm_mc': (Nrm_f - Nrm) / dt,
-        'rim_mc': (rim_f - rim) / dt, 'Nim_mc': (Nim_f - Nim) / dt,
-        'rsm_mc': (rsm_f - rsm) / dt, 'Nsm_mc': (Nsm_f - Nsm) / dt,
-        'rgm_mc': (rgm_f - rgm) / dt, 'Ngm_mc': (Ngm_f - Ngm) / dt,
-    }
+    update_microphys_stat('rrm_auto', rrm_auto)
+    update_microphys_stat('rrm_accr', rrm_accr)
+    update_microphys_stat('rrm_evap', rrm_evap)
+    update_microphys_stat('Nrm_auto', Nrm_auto)
+    update_microphys_stat('Nrm_evap', Nrm_evap)
+    update_microphys_stat('hl_on_Cp_residual', hl_on_Cp_residual)
+    update_microphys_stat('qto_residual', qto_residual)
+    update_microphys_stat('rgm_sd_morr', rgm_sten)
+    update_microphys_stat('rrm_sd_morr', rrm_sten)
+    update_microphys_stat('rsm_sd_morr', rsm_sten)
+    update_microphys_stat('rim_sd_mg_morr', rim_sten)
+    update_microphys_stat('rcm_sd_mg_morr', rcm_sten)
+    update_microphys_stat('PRC', diagnostic['PRC'])
+    update_microphys_stat('PRA', diagnostic['PRA'])
+    update_microphys_stat('PRE', diagnostic['PRE'])
+    update_microphys_stat('PSMLT', diagnostic['PSMLT'])
+    update_microphys_stat('EVPMS', diagnostic['EVPMS'])
+    update_microphys_stat('PRACS', diagnostic['PRACS'])
+    update_microphys_stat('EVPMG', diagnostic['EVPMG'])
+    update_microphys_stat('PRACG', diagnostic['PRACG'])
+    update_microphys_stat('PGMLT', diagnostic['PGMLT'])
+    update_microphys_stat('MNUCCC', diagnostic['MNUCCC'])
+    update_microphys_stat('PSACWS', diagnostic['PSACWS'])
+    update_microphys_stat('PSACWI', diagnostic['PSACWI'])
+    update_microphys_stat('QMULTS', diagnostic['QMULTS'])
+    update_microphys_stat('QMULTG', diagnostic['QMULTG'])
+    update_microphys_stat('PSACWG', diagnostic['PSACWG'])
+    update_microphys_stat('PGSACW', diagnostic['PGSACW'])
+    update_microphys_stat('PRD', diagnostic['PRD'])
+    update_microphys_stat('PRCI', diagnostic['PRCI'])
+    update_microphys_stat('PRAI', diagnostic['PRAI'])
+    update_microphys_stat('QMULTR', diagnostic['QMULTR'])
+    update_microphys_stat('QMULTRG', diagnostic['QMULTRG'])
+    update_microphys_stat('MNUCCD', diagnostic['MNUCCD'])
+    update_microphys_stat('PRACI', diagnostic['PRACI'])
+    update_microphys_stat('PRACIS', diagnostic['PRACIS'])
+    update_microphys_stat('EPRD', diagnostic['EPRD'])
+    update_microphys_stat('MNUCCR', diagnostic['MNUCCR'])
+    update_microphys_stat('PIACR', diagnostic['PIACR'])
+    update_microphys_stat('PIACRS', diagnostic['PIACRS'])
+    update_microphys_stat('PGRACS', diagnostic['PGRACS'])
+    update_microphys_stat('PRDS', diagnostic['PRDS'])
+    update_microphys_stat('EPRDS', diagnostic['EPRDS'])
+    update_microphys_stat('PSACR', diagnostic['PSACR'])
+    update_microphys_stat('PRDG', diagnostic['PRDG'])
+    update_microphys_stat('EPRDG', diagnostic['EPRDG'])
+    update_microphys_stat('NGSTEN', diagnostic['NGSTEN'])
+    update_microphys_stat('NRSTEN', diagnostic['NRSTEN'])
+    update_microphys_stat('NISTEN', diagnostic['NISTEN'])
+    update_microphys_stat('NSSTEN', diagnostic['NSSTEN'])
+    update_microphys_stat('NCSTEN', diagnostic['NCSTEN'])
+    update_microphys_stat('NPRC1', diagnostic['NPRC1'])
+    update_microphys_stat('NRAGG', diagnostic['NRAGG'])
+    update_microphys_stat('NPRACG', diagnostic['NPRACG'])
+    update_microphys_stat('NSUBR', diagnostic['NSUBR'])
+    update_microphys_stat('NSMLTR', diagnostic['NSMLTR'])
+    update_microphys_stat('NGMLTR', diagnostic['NGMLTR'])
+    update_microphys_stat('NPRACS', diagnostic['NPRACS'])
+    update_microphys_stat('NNUCCR', diagnostic['NNUCCR'])
+    update_microphys_stat('NIACR', diagnostic['NIACR'])
+    update_microphys_stat('NIACRS', diagnostic['NIACRS'])
+    update_microphys_stat('NGRACS', diagnostic['NGRACS'])
+    update_microphys_stat('NSMLTS', diagnostic['NSMLTS'])
+    update_microphys_stat('NSAGG', diagnostic['NSAGG'])
+    update_microphys_stat('NPRCI', diagnostic['NPRCI'])
+    update_microphys_stat('NSCNG', diagnostic['NSCNG'])
+    update_microphys_stat('NSUBS', diagnostic['NSUBS'])
+    update_microphys_stat('PCC', diagnostic['PCC'])
+    update_microphys_stat('NNUCCC', diagnostic['NNUCCC'])
+    update_microphys_stat('NPSACWS', diagnostic['NPSACWS'])
+    update_microphys_stat('NPRA', diagnostic['NPRA'])
+    update_microphys_stat('NPRC', diagnostic['NPRC'])
+    update_microphys_stat('NPSACWI', diagnostic['NPSACWI'])
+    update_microphys_stat('NPSACWG', diagnostic['NPSACWG'])
+    update_microphys_stat('NPRAI', diagnostic['NPRAI'])
+    update_microphys_stat('NMULTS', diagnostic['NMULTS'])
+    update_microphys_stat('NMULTG', diagnostic['NMULTG'])
+    update_microphys_stat('NMULTR', diagnostic['NMULTR'])
+    update_microphys_stat('NMULTRG', diagnostic['NMULTRG'])
+    update_microphys_stat('NNUCCD', diagnostic['NNUCCD'])
+    update_microphys_stat('NSUBI', diagnostic['NSUBI'])
+    update_microphys_stat('NGMLTG', diagnostic['NGMLTG'])
+    update_microphys_stat('NSUBG', diagnostic['NSUBG'])
+    update_microphys_stat('NACT', diagnostic['NACT'])
+    update_microphys_stat('SIZEFIX_NR', diagnostic['SIZEFIX_NR'])
+    update_microphys_stat('SIZEFIX_NC', diagnostic['SIZEFIX_NC'])
+    update_microphys_stat('SIZEFIX_NI', diagnostic['SIZEFIX_NI'])
+    update_microphys_stat('SIZEFIX_NS', diagnostic['SIZEFIX_NS'])
+    update_microphys_stat('SIZEFIX_NG', diagnostic['SIZEFIX_NG'])
+    update_microphys_stat('NEGFIX_NR', diagnostic['NEGFIX_NR'])
+    update_microphys_stat('NEGFIX_NC', diagnostic['NEGFIX_NC'])
+    update_microphys_stat('NEGFIX_NI', diagnostic['NEGFIX_NI'])
+    update_microphys_stat('NEGFIX_NS', diagnostic['NEGFIX_NS'])
+    update_microphys_stat('NEGFIX_NG', diagnostic['NEGFIX_NG'])
+    update_microphys_stat('NIM_MORR_CL', diagnostic['NIM_MORR_CL'])
+    update_microphys_stat('QC_INST', diagnostic['QC_INST'])
+    update_microphys_stat('QR_INST', diagnostic['QR_INST'])
+    update_microphys_stat('QI_INST', diagnostic['QI_INST'])
+    update_microphys_stat('QS_INST', diagnostic['QS_INST'])
+    update_microphys_stat('QG_INST', diagnostic['QG_INST'])
+    update_microphys_stat('NC_INST', diagnostic['NC_INST'])
+    update_microphys_stat('NR_INST', diagnostic['NR_INST'])
+    update_microphys_stat('NI_INST', diagnostic['NI_INST'])
+    update_microphys_stat('NS_INST', diagnostic['NS_INST'])
+    update_microphys_stat('NG_INST', diagnostic['NG_INST'])
+    update_microphys_stat('T_in_K_mc', diagnostic['T_mc'])
+    update_microphys_stat('eff_rad_cloud', diagnostic['eff_rad_cloud'])
+    update_microphys_stat('eff_rad_ice', diagnostic['eff_rad_ice'])
+    update_microphys_stat('eff_rad_snow', diagnostic['eff_rad_snow'])
+    update_microphys_stat('eff_rad_rain', diagnostic['eff_rad_rain'])
+    update_microphys_stat('eff_rad_graupel', diagnostic['eff_rad_graupel'])
+    # Core fallout is accumulated over dt; convert after promotion to core_rknd.
+    update_microphys_stat_sfc('precip_rate_sfc', diagnostic['Morr_precip_rate'] * sec_per_day / dt)
+    update_microphys_stat_sfc('morr_snow_rate', diagnostic['Morr_snow_rate'] * sec_per_day / dt)
+    rrm_auto_diag, rrm_accr_diag, rrm_evap_diag = rrm_auto, rrm_accr, rrm_evap
+    Nrm_auto_diag, Nrm_evap_diag = Nrm_auto, Nrm_evap
+    return (stats, hydromet_mc, hydromet_vel_zt, Ncm_mc, rcm_mc, rvm_mc, thlm_mc,
+            rrm_auto_diag, rrm_accr_diag, rrm_evap_diag, Nrm_auto_diag, Nrm_evap_diag)

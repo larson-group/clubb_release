@@ -1,9 +1,8 @@
 """JAX port of ``src/CLUBB_core/stats_clubb_utilities.F90``.
 
 Porting deviations:
-- Only ``stats_accumulate`` is ported here.  The Fortran
-  ``stats_accumulate_hydromet_api`` and ``stats_accumulate_lh_tend`` entry
-  points are not present because the current JAX core does not call them.
+- ``stats_accumulate`` and ``stats_accumulate_hydromet_api`` are ported.
+  ``stats_accumulate_lh_tend`` remains absent because SILHS is disabled.
 - Fortran ``stats_type`` mutation through ``stats_update`` is represented by
   functional updates to the JAX stats state.
 - OpenACC host/device synchronization comments are omitted because JAX handles
@@ -435,3 +434,18 @@ def stats_accumulate(
 
 
 __all__ = ["stats_accumulate"]
+
+
+def stats_accumulate_hydromet_api(gr, ngrdcol, hydromet_dim, hm_metadata, hydromet, rho_ds_zt, stats):
+    """Compute hydrometeor statistics; columns are batched in JAX."""
+    for name, idx in [('rrm', hm_metadata.iirr), ('rsm', hm_metadata.iirs),
+                      ('rim', hm_metadata.iiri), ('rgm', hm_metadata.iirg),
+                      ('Nim', hm_metadata.iiNi), ('Nrm', hm_metadata.iiNr),
+                      ('Nsm', hm_metadata.iiNs), ('Ngm', hm_metadata.iiNg)]:
+        if idx >= 0:
+            stats = stats.update(name, hydromet[..., idx])
+    for name, idx in [('swp', hm_metadata.iirs), ('iwp', hm_metadata.iiri), ('rwp', hm_metadata.iirr)]:
+        if idx >= 0 and stats.var_on_stats_list(name):
+            xtmp = jnp.stack([vertical_integral(gr.nzt, rho_ds_zt[i], hydromet[i, :, idx], gr.dzt[i]) for i in range(gr.ngrdcol)])
+            stats = stats.update(name, xtmp)
+    return stats

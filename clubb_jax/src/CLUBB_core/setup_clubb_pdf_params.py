@@ -53,7 +53,6 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     zero_threshold,
 )
 from clubb_jax.src.CLUBB_core.clip_explicit import clip_covar, clip_wphydrometp
-from clubb_jax.src.CLUBB_core.corr_varnce_module import assert_corr_symmetric
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt, zt2zm
 from clubb_jax.src.CLUBB_core.hydromet_pdf_parameter_module import (
@@ -663,16 +662,14 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
         stats = stats.update("Ncnm", Ncnm)
 
     if clubb_at_least_debug_level(2):
-        corr_array_1_host = jax.device_get(corr_array_1_n)
-        corr_array_2_host = jax.device_get(corr_array_2_n)
-        bad_corr = []
-        for i in range(ngrdcol):
-            bad_col = False
-            for k in range(nzt):
-                bad_col = bad_col or not assert_corr_symmetric(corr_array_1_host[i, k])
-                bad_col = bad_col or not assert_corr_symmetric(corr_array_2_host[i, k])
-            bad_corr.append(bad_col)
-        err_info = err_info.set_fatal(mask=jnp.asarray(bad_corr, dtype=bool))
+        # Preserve symmetry/unit-diagonal checks inside compiled physics.
+        from clubb_jax.src.CLUBB_core.constants_clubb import eps
+        bad_corr = jnp.zeros((ngrdcol,), dtype=bool)
+        for corr_array_n in (corr_array_1_n, corr_array_2_n):
+            symmetric = jnp.all(jnp.abs(corr_array_n - jnp.swapaxes(corr_array_n, -1, -2)) <= 1.e-6, axis=(1, 2, 3))
+            unit_diagonal = jnp.all(jnp.abs(jnp.diagonal(corr_array_n, axis1=-2, axis2=-1) - 1.0) <= eps, axis=(1, 2))
+            bad_corr = bad_corr | ~symmetric | ~unit_diagonal
+        err_info = err_info.set_fatal(mask=bad_corr)
 
     return (
         err_info,

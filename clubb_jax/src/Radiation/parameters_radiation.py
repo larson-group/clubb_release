@@ -169,7 +169,21 @@ def initialize_radiation_parameters(cfg: dict, rad_scheme: str, case_setups_dir:
             raise ValueError("Problem with Julian day conversion in gregorian2julian_day.")
 
     if rad_scheme == "lba":
-        lba_zrad, lba_krad = simple_rad_lba_init(case_setups_dir / "lba_forcings")
+        # The source driver passes forcings_file_path to simple_rad_lba_init.
+        # Aggregated namelists live in the output directory, not beside these
+        # tables. Preserve explicit paths and the SCM's run_scripts-relative
+        # convention, also allowing paths relative to a standalone namelist.
+        forcings_path = Path(str(cfg.get(
+            "forcings_file_path", case_setups_dir / "lba_forcings"
+        )).strip().strip("'\""))
+        if not forcings_path.is_absolute():
+            candidates = (
+                Path.cwd() / forcings_path,
+                case_setups_dir / forcings_path,
+                Path(__file__).resolve().parents[3] / "run_scripts" / forcings_path,
+            )
+            forcings_path = next((p for p in candidates if p.is_dir()), candidates[0])
+        lba_zrad, lba_krad = simple_rad_lba_init(forcings_path)
     else:
         lba_zrad = jnp.zeros((33,), dtype=jnp.float64)
         lba_krad = jnp.zeros((33, 36), dtype=jnp.float64)

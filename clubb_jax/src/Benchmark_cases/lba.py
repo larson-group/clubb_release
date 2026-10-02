@@ -13,7 +13,7 @@ from clubb_jax.src.Benchmark_cases.sfc_flux import (
     convert_latent_ht_to_m_s,
     convert_sens_ht_to_km_s,
 )
-from clubb_jax.src.CLUBB_core.constants_clubb import grav, sec_per_hr
+from clubb_jax.src.CLUBB_core.constants_clubb import grav, pi, sec_per_hr
 
 
 # ----------------------------------------------------------------------
@@ -67,7 +67,7 @@ def lba_sfclyr(ngrdcol, time_current, time_initial, z, rho_sfc, thlm_sfc, ubar):
     time = time_current - time_initial
     ft = jnp.maximum(
         0.0,
-        jnp.cos(0.5 * jnp.pi * ((5.25 - time / sec_per_hr) / 5.25)),
+        jnp.cos(0.5 * pi * ((5.25 - time / sec_per_hr) / 5.25)),
     )
 
     # Known magic numbers

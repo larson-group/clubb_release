@@ -400,13 +400,7 @@ def _prepare_environment(
     with lock_path.open("a+", encoding="utf-8") as lock_file:
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
         venv_python = venv / "bin" / "python"
-        if venv_python.is_file() and _python_is_compatible(venv_python, accelerator):
-            print(
-                f"==> Reusing JAX virtualenv: {venv} "
-                f"(Python {'.'.join(map(str, _python_version(venv_python)))})",
-                flush=True,
-            )
-        else:
+        if not (venv_python.is_file() and _python_is_compatible(venv_python, accelerator)):
             if venv.exists() and os.environ.get("CLUBB_JAX_VENV"):
                 fail(f"Custom virtualenv is incomplete or uses Python older than 3.11: {venv}")
             python_cmd = _find_python(accelerator)
@@ -460,6 +454,13 @@ def _prepare_environment(
     return venv_python
 
 
+def _print_runtime_summary(venv_python: Path, accelerator: str) -> None:
+    python_version = ".".join(map(str, _python_version(venv_python)))
+    print("CLUBB JAX runtime:")
+    print(f"  Environment: {venv_python.parent.parent} (Python {python_version})")
+    print(f"  Accelerator: {accelerator}", flush=True)
+
+
 def _verify_backend(venv_python: Path, accelerator: str, env: dict[str, str]) -> None:
     expected = {"cpu": "cpu", "cuda13": "gpu", "metal": "metal"}[accelerator]
     script = """
@@ -471,10 +472,15 @@ if expected == 'metal':
 else:
     ok = backend == expected
 assert ok, f'requested {expected} but JAX initialized {backend}: {jax.devices()}'
-print(
-    f'JAX environment ready: jax={jax.__version__} '
-    f'jaxlib={jaxlib.__version__} backend={backend} devices={jax.devices()}'
-)
+devices = jax.devices()
+labels = []
+for device in devices:
+    location = f'{device.platform.lower()}:{device.id}'
+    kind = str(getattr(device, 'device_kind', '')).strip()
+    labels.append(f'{location} ({kind})' if kind and kind.lower() != device.platform.lower()
+                  else location)
+print(f'  JAX: {jax.__version__} (jaxlib {jaxlib.__version__})')
+print(f'  {"Device" if len(labels) == 1 else "Devices"}: {", ".join(labels)}')
 """
     subprocess.run([str(venv_python), "-c", script, expected], env=env, check=True)
 
@@ -562,8 +568,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if accelerator == "cuda13":
         _normalize_cuda_visibility(env, venv)
 
-    print(f"==> CLUBB JAX profile: {profile} ({accelerator})", flush=True)
     venv_python = _prepare_environment(accelerator, requirements, venv, tools_dir, env)
+    _print_runtime_summary(venv_python, accelerator)
     if values["init_env"]:
         _verify_backend(venv_python, accelerator, env)
         return 0

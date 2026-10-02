@@ -40,6 +40,15 @@ _N_I, _MASS_INIT, _RCM_THR = 2000.0, 1.0e-11, 1.0e-5
 _A, _B, _KU, _Q, _N = 2.05e-3, 1.8, 55.0, 0.17, 0.70
 
 
+from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.Microphys.ice_dfsn_module import ice_dfsn as source_ice_dfsn
+
+
+def ice_dfsn(gr, dt, thlm, rcm, exner, p, rho, saturation_formula):
+    stats = JaxStats.empty(l_sample=False, names=(), ncol=1, max_nlev=thlm.shape[-1])
+    return tuple(x[0] for x in source_ice_dfsn(gr, 1, dt, *[jnp.asarray(x)[None,:] for x in (thlm, rcm, exner, p, rho)], saturation_formula, stats)[1:])
+
+
 def _make_grid_and_profile(nzt=40, deltaz=100.0):
     gr = setup_grid(1, deltaz, deltaz, deltaz * (nzt + 1))
     rng = np.random.default_rng(2026)
@@ -171,3 +180,23 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def test_columns_use_their_own_grid_spacing_eager_and_jit():
+    from types import SimpleNamespace
+    gr,thlm,rcm,exner,p,rho=_make_grid_and_profile()
+    spacing=jnp.concatenate((gr.invrs_dzm,gr.invrs_dzm*0.5),axis=0)
+    columns=[jnp.stack((jnp.asarray(x),jnp.asarray(x))) for x in (thlm,rcm,exner,p,rho)]
+    stats=JaxStats.empty(l_sample=False,names=(),ncol=2,max_nlev=len(thlm))
+    def run(invrs_dzm):
+        return source_ice_dfsn(SimpleNamespace(invrs_dzm=invrs_dzm),2,60.,
+            *columns,_SAT_FORMULA,stats)[1:]
+    eager=run(spacing);compiled=jax.jit(run)(spacing)
+    for i in range(2):
+        expected=_numpy_ice_dfsn(SimpleNamespace(invrs_dzm=spacing[i:i+1]),
+            60.,thlm,rcm,exner,p,rho)
+        for field,ref in zip(eager,expected):
+            np.testing.assert_allclose(field[i],ref,rtol=1.e-12,atol=1.e-20)
+    for a,b in zip(eager,compiled):
+        np.testing.assert_allclose(a,b,rtol=1.e-12,atol=1.e-20)
+    assert not np.array_equal(eager[0][0],eager[0][1])

@@ -21,11 +21,12 @@ import jax.numpy as jnp
 
 from clubb_jax.src.Benchmark_cases.lba import lba_sfclyr
 from clubb_jax.src.Benchmark_cases.diag_ustar_module import diag_ustar
-from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, grav, sec_per_hr
+from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, grav, pi, sec_per_hr
 
 
 def _ref(t, z, rho, thlm, ubar):
-    ft = max(0.0, math.cos(0.5 * math.pi * (5.25 - t / sec_per_hr) / 5.25))
+    # The source uses constants_clubb.pi, not the full-precision math constant.
+    ft = max(0.0, math.cos(0.5 * pi * (5.25 - t / sec_per_hr) / 5.25))
     wpthlp = (270.0 * ft ** 1.5) / (rho * Cp)
     wprtp = (554.0 * ft ** 1.3) / (rho * Lv)
     bflx = grav / thlm * wpthlp
@@ -48,7 +49,7 @@ def test_vs_literal():
 
 def test_diurnal_structure():
     # Peak at t = 5.25 h (ft = cos(0) = 1).
-    diurnal_factor = lambda t: max(0.0, math.cos(0.5 * math.pi * (5.25 - t / sec_per_hr) / 5.25))
+    diurnal_factor = lambda t: max(0.0, math.cos(0.5 * pi * (5.25 - t / sec_per_hr) / 5.25))
     assert abs(diurnal_factor(5.25 * 3600.0) - 1.0) < 1e-12, "peak not at 5.25 h"
     # ft = 0 before t such that 0.5pi(5.25-t_hr)/5.25 >= pi/2 -> t_hr <= 0 ; and after the symmetric cutoff.
     assert diurnal_factor(0.0) >= 0.0 and diurnal_factor(0.0) < 1e-12, "ft(0) should be ~0"

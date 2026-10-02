@@ -8,6 +8,14 @@ pipeline {
               ./compile.py -debug'''
       }
     }
+    stage('Expected failure test') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ulimit -s 8388608
+              python3 tests/run_jax_comparison_mutation_test.py'''
+      }
+    }
     stage('Jax vs Fortran: standard stats') {
       steps {
         sh '''source /etc/profile.d/larson-group.sh
@@ -21,7 +29,7 @@ pipeline {
         sh '''source /etc/profile.d/larson-group.sh
               module load gcc netcdf-fortran
               ulimit -s 8388608
-              python3 tests/run_jax_vs_fortran_cases.py -debug 0 -stats input/stats/standard_stats.in --max-iters 5 --flag-config-file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json''' //our code in jax is really sloow -> use shorter tests
+              python3 tests/run_jax_vs_fortran_cases.py -debug 0 -stats input/stats/standard_stats.in -max_iters 5 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json''' //our code in jax is really sloow -> use shorter tests
       }
     }
   }

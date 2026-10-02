@@ -1,12 +1,12 @@
 """Apply case-specific large-scale and surface forcings.
 
 TODO(port-scope): This standalone JAX driver intentionally omits the Fortran
-CLEX cases and dycore-grid forcing/remapping branches. CLEX input readers have
-not been ported, and this driver owns only the CLUBB physics grid rather than a
-host model's dycore grid. Consequently the supported-path interface below is
-narrower than the Fortran routine instead of retaining unusable arguments and
-branches. Add those source paths back only with their data owners and end-to-end
-correctness tests.
+CLEX November case and dycore-grid forcing/remapping branches. Its case-specific
+input reader has not been ported, and this driver owns only the CLUBB physics
+grid rather than a host model's dycore grid. Consequently the supported-path
+interface below is narrower than the Fortran routine instead of retaining
+unusable arguments and branches. Add those source paths back only with their
+data owners and end-to-end correctness tests.
 
 References:
     None.
@@ -28,6 +28,7 @@ from clubb_jax.src.Benchmark_cases.astex_a209 import astex_a209_sfclyr
 from clubb_jax.src.Benchmark_cases.atex import atex_sfclyr, atex_tndcy
 from clubb_jax.src.Benchmark_cases.atex_long import atex_long_sfclyr, atex_long_tndcy
 from clubb_jax.src.Benchmark_cases.bomex import bomex_sfclyr, bomex_tndcy
+from clubb_jax.src.Benchmark_cases.clex9_oct14 import clex9_oct14_read_t_dependent
 from clubb_jax.src.Benchmark_cases.cloud_feedback import cloud_feedback_sfclyr
 from clubb_jax.src.Benchmark_cases.cobra import cobra_sfclyr
 from clubb_jax.src.Benchmark_cases.dycoms2_rf01 import (
@@ -335,6 +336,15 @@ def prescribe_forcings(
             time_current, z_bot, rho_bot,
             thlm_bot, ubar,
         )
+    elif runtype == "clex9_oct14":
+        # There are no surface momentum or heat fluxes
+        # for the CLEX-9: Oct. 14 Altocumulus case.
+
+        # Ensure ustar is set.
+        ustar = jnp.zeros(ngrdcol)
+
+        # Read in time dependent inputs
+        sens_ht, latent_ht = clex9_oct14_read_t_dependent(time_current)
     elif runtype == "astex_a209":
         l_compute_momentum_flux = True
         wpthlp_sfc, wprtp_sfc, ustar, T_sfc = astex_a209_sfclyr(

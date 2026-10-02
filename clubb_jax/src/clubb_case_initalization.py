@@ -275,7 +275,7 @@ def _resolve_grid_file_path(namelist_dir: Path, grid_path_value) -> Path:
 
 def _check_unsupported_features(cfg: dict, flags, microphys_scheme: str,
                                 rad_scheme: str, l_calc_thlp2_rad: bool):
-    """Check for namelist settings that the Python driver does not support.
+    """Check for namelist settings that the JAX driver does not support.
 
     Raises ValueError with a clear message listing all unsupported features
     that are enabled, so the user can fix them all at once.
@@ -283,18 +283,15 @@ def _check_unsupported_features(cfg: dict, flags, microphys_scheme: str,
     errors = []
 
     # --- Microphysics ---
-    if microphys_scheme != "none":
+    if microphys_scheme not in {"none", "khairoutdinov_kogan", "morrison"}:
         errors.append(
             f"microphys_scheme = '{microphys_scheme}' is not supported "
-            "(only 'none' is implemented)."
+            "(supported: none, khairoutdinov_kogan, morrison)."
         )
 
-    # --- Cloud water sedimentation ---
-    if bool(cfg.get('l_cloud_sed', False)):
-        errors.append(
-            "l_cloud_sed = true is not supported "
-            "(cloud_drop_sed is not called from the Python driver)."
-        )
+    for name in ('l_gfdl_activation',):
+        if bool(cfg.get(name, False)):
+            errors.append(f"{name} is not yet supported by the microphysics interface")
 
     # --- Radiation ---
     supported_rad = {"none", "simplified", "simplified_bomex", "lba"}
@@ -678,9 +675,14 @@ def init_clubb_case(namelist_path: str) -> dict:
 
     # Keep a padded trailing extent for zero-species arrays because JAX kernels
     # cannot index a physically empty axis. The logical *_dim values remain authoritative.
-    hydromet_dim = 0
+    from clubb_jax.src.Microphys.microphys_init_cleanup import init_microphys
+    (hydromet_dim, pdf_dim, hm_metadata, silhs_config_flags, vert_decorr_coef,
+     corr_array_n_cloud, corr_array_n_below) = init_microphys(
+        0, runtype, cfg, None, 1.0e6, 1.0e6, clubb_params,
+        flags.l_diagnose_correlations, flags.l_const_Nc_in_cloud,
+        flags.l_fix_w_chi_eta_correlations)
     hm_dim_transport = max(hydromet_dim, 1)
-    l_mix_rat_hm = np.zeros((hm_dim_transport,), dtype=bool)
+    l_mix_rat_hm = hm_metadata.l_mix_rat_hm if hydromet_dim else np.zeros((hm_dim_transport,), dtype=bool)
     wphydrometp = np.zeros((ngrdcol, nzm, hm_dim_transport))
     wp2hmp = np.zeros((ngrdcol, nzt, hm_dim_transport))
     rtphmp_zt = np.zeros((ngrdcol, nzt, hm_dim_transport))
@@ -787,6 +789,7 @@ def init_clubb_case(namelist_path: str) -> dict:
             param_names=get_param_names(),
             sclr_dim=sclr_dim,
             edsclr_dim=edsclr_dim,
+            hydromet_list=hm_metadata.hydromet_list,
         )
         if not stats_writer.enabled:
             raise RuntimeError("stats_init completed but stats are not enabled")
@@ -919,7 +922,17 @@ def init_clubb_case(namelist_path: str) -> dict:
         wphydrometp=wphydrometp,
         wp2hmp=wp2hmp, rtphmp_zt=rtphmp_zt, thlphmp_zt=thlphmp_zt,
         hydromet=np.zeros((ngrdcol, nzt, hydromet_dim)),
-        hm_metadata=None,
+        hm_metadata=hm_metadata, pdf_dim=pdf_dim,
+        silhs_config_flags=silhs_config_flags, vert_decorr_coef=vert_decorr_coef,
+        corr_array_n_cloud=corr_array_n_cloud, corr_array_n_below=corr_array_n_below,
+        hydrometp2=jnp.zeros((ngrdcol, nzm, hydromet_dim)),
+        K_hm=jnp.zeros((ngrdcol, nzm, hydromet_dim)),
+        hydromet_vel_zt=jnp.zeros((ngrdcol, nzt, hydromet_dim)),
+        Nccnm=jnp.zeros((ngrdcol, nzt)),
+        rvm_mc=jnp.zeros((ngrdcol, nzt)),
+        wprtp_mc=jnp.zeros((ngrdcol, nzm)), wpthlp_mc=jnp.zeros((ngrdcol, nzm)),
+        rtp2_mc=jnp.zeros((ngrdcol, nzm)), thlp2_mc=jnp.zeros((ngrdcol, nzm)),
+        rtpthlp_mc=jnp.zeros((ngrdcol, nzm)),
         X_nl_all_levs=np.zeros((ngrdcol, 0, nzt, 0)),
         lh_rt_clipped=np.zeros((ngrdcol, 0, nzt)),
         lh_thl_clipped=np.zeros((ngrdcol, 0, nzt)),
@@ -944,6 +957,9 @@ def init_clubb_case(namelist_path: str) -> dict:
         # Output / diagnostic
         thlprcp=np.zeros((ngrdcol, nzm)),
     )
+
+    from clubb_jax.src.CLUBB_core.hydromet_pdf_parameter_module import init_precip_fracs
+    state['precip_fracs'] = init_precip_fracs(nzt, ngrdcol)
 
     # Initialize Time Dependent Input
     time_dependent_input.l_t_dependent = state['l_t_dependent']
@@ -973,4 +989,6 @@ def clean_up_clubb(state: dict):
         state['stats_writer'].finalize()
     if state['l_t_dependent']:
         time_dependent_input.finalize_t_dependent_input()
+    from clubb_jax.src.Microphys.microphys_init_cleanup import cleanup_microphys
+    cleanup_microphys()
     print("CLUBB cleanup complete.")

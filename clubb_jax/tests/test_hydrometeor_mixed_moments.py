@@ -18,6 +18,8 @@ for _p in (_ROOT, _ROOT + "/clubb_python_api"):
     if _p not in sys.path:
         sys.path.append(_p)
 
+from types import SimpleNamespace
+import pytest
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -105,15 +107,51 @@ def _ref(p):
     return rt, th, w2, hh
 
 
+def _run_interface(p):
+    """Pack independent scalar-loop fixtures into the source interface's types."""
+    from clubb_jax.src.CLUBB_core.grid_class import setup_grid
+    from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+    gr = setup_grid(1, 100., 100., 100. * (NZT + 1))
+    metadata = SimpleNamespace(iiPDF_w=0, iiPDF_chi=1, iiPDF_eta=2,
+        iirr=0, iiNr=1, iiri=2, iiPDF_rr=3, iiPDF_Nr=4, iiPDF_ri=5,
+        hydromet_tol=p['hydromet_tol'], hydromet_list=('rrm','Nrm','rim'))
+    pdf = SimpleNamespace(mixt_frac=p['mixt_frac'][None,:])
+    hm_pdf = SimpleNamespace()
+    mu=[];sigma=[];corr=[]
+    for i in (1,2):
+        for name in ('rt','thl'):
+            setattr(pdf,f'{name}_{i}',p[f'mu_{name}_{i}'][None,:])
+            setattr(pdf,f'varnce_{name}_{i}',p[f'sigma_{name}_{i}'][None,:]**2)
+        for name in ('crt','cthl'):
+            setattr(pdf,f'{name}_{i}',p[f'{name}_{i}'][None,:])
+        for name in ('mu_hm','sigma_hm','corr_chi_hm','corr_eta_hm','corr_hmx_hmy'):
+            setattr(hm_pdf,f'{name}_{i}',p[f'{name}_{i}'][None,...])
+        mu.append(jnp.concatenate((p[f'mu_w_{i}'][:,None],jnp.zeros((NZT,2)),p[f'mu_hm_{i}_n']),axis=-1)[None,...])
+        sigma.append(jnp.concatenate((jnp.stack([p[f'sigma_{name}_{i}'] for name in ('w','chi','eta')],axis=-1),p[f'sigma_hm_{i}_n']),axis=-1)[None,...])
+        corr.append(jnp.zeros((1,NZT,6,6)).at[0,:,3:,0].set(p[f'corr_w_hm_{i}_n']))
+    frac=SimpleNamespace(**{f'precip_frac_{i}':p[f'precip_frac_{i}'][None,:] for i in (1,2)})
+    stats=JaxStats.empty(l_sample=True,names=('rrpNrp','rrprip','Nrprip'),
+        grids=('zm',)*3,ncol=1,max_nlev=gr.nzm)
+    rt,th,w2,stats=hydrometeor_mixed_moments(gr,1,NZT,6,HM_DIM,
+        p['hydromet'][None,...],metadata,mu[0],mu[1],sigma[0],sigma[1],
+        corr[0],corr[1],pdf,hm_pdf,frac,stats)
+    return dict(rtphmp_zt=rt[0],thlphmp_zt=th[0],wp2hmp=w2[0],stats=stats)
+
+
 def test_driver_vs_literal_loop():
     p = _build_inputs()
-    out = hydrometeor_mixed_moments(p)
+    out = _run_interface(p)
     rt, th, w2, hh = _ref(p)
     for name, got, ref in (("rtphmp", out['rtphmp_zt'], rt), ("thlphmp", out['thlphmp_zt'], th),
-                           ("wp2hmp", out['wp2hmp'], w2), ("hmxphmyp", out['hmxphmyp_zt'], hh)):
+                           ("wp2hmp", out['wp2hmp'], w2)):
         got = np.asarray(got)
         rel = np.max(np.abs(got - ref) / (np.abs(ref) + 1e-30))
         assert rel < 1e-12, f"{name} vs literal loop rel {rel:.2e}"
+    from clubb_jax.src.CLUBB_core.grid_class import setup_grid, zt2zm
+    gr=setup_grid(1,100.,100.,100.*(NZT+1))
+    for slot,(i,j) in enumerate(((0,1),(0,2),(1,2))):
+        expected=zt2zm(gr.nzm,gr.nzt,1,gr,jnp.asarray(hh[:,j,i])[None,:])
+        np.testing.assert_allclose(out['stats'].buffers[1][slot],expected,rtol=1.e-12,atol=1.e-25)
     print(f"  hydrometeor_mixed_moments (nzt={NZT}, hm_dim={HM_DIM}): all 4 outputs vs literal Fortran-loop "
           f"transcription rel <1e-12  PASS")
 
@@ -122,7 +160,7 @@ def test_differentiable():
     p = _build_inputs()
     def loss(sig_w_1):
         q = dict(p); q['sigma_w_1'] = sig_w_1
-        out = hydrometeor_mixed_moments(q)
+        out = _run_interface(q)
         return jnp.sum(out['wp2hmp'] ** 2) + jnp.sum(out['rtphmp_zt'] ** 2)
     g = jax.grad(loss)(p['sigma_w_1'])
     assert np.isfinite(np.asarray(g)).all(), "non-finite grad through hydrometeor_mixed_moments"
@@ -136,8 +174,7 @@ def test_compute_mean_binormal_f2py():
     try:
         import clubb_f2py
     except Exception as e:
-        print(f"  f2py compute_mean_binormal oracle: SKIP ({type(e).__name__})")
-        return
+        pytest.skip(f"f2py compute_mean_binormal oracle unavailable: {e}")
     rng = np.random.default_rng(2)
     worst = 0.0
     for _ in range(200):

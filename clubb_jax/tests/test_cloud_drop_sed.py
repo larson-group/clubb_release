@@ -24,16 +24,17 @@ for _p in (_ROOT, _ROOT + "/clubb_python_api"):
         sys.path.append(_p)
 
 import numpy as np
+import pytest
 import jax
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.Microphys.cloud_sed_module import cloud_drop_sed
-from clubb_jax.src.CLUBB_core.constants_clubb import rho_lw, Cp, Lv
+from clubb_jax.src.CLUBB_core.constants_clubb import rho_lw, Cp, Lv, pi
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
 _NG, _DZ, _ZTOP = 2, 40.0, 1200.0
-_PI = float(np.pi)
+_PI = pi
 
 
 def _setup_f2py_grid():
@@ -52,11 +53,8 @@ def _setup_f2py_grid():
 
 
 def test_f2py_oracle():
-    try:
-        clubb_f2py, jgr, ng, nzm = _setup_f2py_grid()
-    except Exception as e:
-        print(f"  f2py cloud_drop_sed oracle: SKIP ({type(e).__name__})")
-        return
+    pytest.importorskip('clubb_f2py', reason='Fortran Python primitives are not built')
+    clubb_f2py, jgr, ng, nzm = _setup_f2py_grid()
     nzt = nzm - 1
     zt2zm = lambda a: np.asarray(clubb_f2py.f2py_zt2zm_2d(nzm, a))
     ddzm  = lambda a: np.asarray(clubb_f2py.f2py_ddzm_2d(nzt, a))
@@ -72,9 +70,15 @@ def test_f2py_oracle():
         rho = rng.uniform(0.5, 1.2, (ng, nzt))
         exner = rng.uniform(0.6, 1.0, (ng, nzt))
 
-        rcm_mc_j, thlm_mc_j, Fcsed_j = cloud_drop_sed(
-            jnp.asarray(rcm), jnp.asarray(Ncm), jnp.asarray(rho_zm), jnp.asarray(rho),
-            jnp.asarray(exner), sigma_g, jgr)
+        # Capture source statistics as well as returned inout tendencies.
+        class Capture:
+            def update(self, name, value):
+                setattr(self, name, value)
+                return self
+        captured, rcm_mc_j, thlm_mc_j = cloud_drop_sed(jgr, jgr.ngrdcol, jnp.asarray(rcm), jnp.asarray(Ncm), jnp.asarray(rho_zm),
+            jnp.asarray(rho), jnp.asarray(exner), sigma_g, Capture(), jnp.zeros_like(rcm),
+            jnp.zeros_like(rcm))
+        Fcsed_j = captured.Fcsed
 
         rcm_zm = zt2zm(rcm); Ncm_zm = zt2zm(Ncm)
         valid = (rcm_zm > 0.0) & (Ncm_zm > 0.0)

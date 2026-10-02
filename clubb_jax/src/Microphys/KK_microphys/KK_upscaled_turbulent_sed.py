@@ -30,7 +30,7 @@ from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import NR_TOL
 # KK_mvr_coef from its KK_tendency_coefs home in KK_microphys_module.
 from clubb_jax.src.Microphys.KK_microphys.parameters_KK import (
     KK_mvr_rr_exp as KK_MVR_RR_EXP, KK_mvr_Nr_exp as KK_MVR_NR_EXP)
-from clubb_jax.src.Microphys.KK_microphys_module import KK_MVR_COEF
+from clubb_jax.src.Microphys.KK_microphys.parameters_KK import KK_MVR_COEF
 
 _MICRON_PER_M = 1.0e6
 
@@ -86,7 +86,7 @@ def bivar_LL_covar_partial_Nr(mu_rr, mu_Nr, mu_rr_n, mu_Nr_n, s_rr, s_Nr, s_rr_n
                           s_Nr_n, s_rr_n, rho, a, b, NR_TOL, RR_TOL)
 
 
-def KK_sed_vel_covars(rr_1, rr_2, Nr_1, Nr_2, mvr,
+def KK_sed_vel_covars(rrm, rr_1, rr_2, Nrm, Nr_1, Nr_2, mvr,
                       mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2,
                       mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n,
                       sigma_rr_1, sigma_rr_2, sigma_Nr_1, sigma_Nr_2,
@@ -101,8 +101,6 @@ def KK_sed_vel_covars(rr_1, rr_2, Nr_1, Nr_2, mvr,
     Returns a dict: rr_KK_mvr_covar, Nr_KK_mvr_covar (the <x' R_vr'> covariances), and the
     Vrrprrp/VNrpNrp implicit (impc) + explicit (expc) components of <V_x' x'>."""
     a = mixt_frac
-    rrm = a * rr_1 + (1.0 - a) * rr_2          # within-step-consistent overall means
-    Nrm = a * Nr_1 + (1.0 - a) * Nr_2
 
     pr1 = bivar_LL_covar_partial_rr(mu_rr_1, mu_Nr_1, mu_rr_1_n, mu_Nr_1_n,
                       sigma_rr_1, sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, corr_rr_Nr_1_n)

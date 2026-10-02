@@ -415,3 +415,110 @@ __all__ = [
     "fill_holes_vertical",
     "fill_holes_wp2_from_horz_tke",
 ]
+
+
+# Microphysics callers use batched columns; source vertical/species loops below
+# are expressed as array operations and static species loops.
+def hole_filling_hm_one_lev(num_hm_fill, hm_one_lev):
+    from clubb_jax.src.CLUBB_core.constants_clubb import eps
+    total_hole = jnp.sum(jnp.minimum(hm_one_lev, 0.0), axis=-1, keepdims=True)
+    total_mass = jnp.sum(jnp.maximum(hm_one_lev, 0.0), axis=-1, keepdims=True)
+    hm_one_lev_filled = jnp.where(
+        jnp.abs(total_hole) > total_mass,
+        jnp.minimum(hm_one_lev, 0.0) * (1.0 + total_mass / jnp.where(total_hole != 0, total_hole, 1.0)),
+        jnp.maximum(hm_one_lev, 0.0) * (1.0 + total_hole / jnp.where(total_mass != 0, total_mass, 1.0)),
+    )
+    return jnp.where(jnp.abs(total_mass) < eps, hm_one_lev, hm_one_lev_filled)
+
+
+def fill_holes_hydromet_api(nzt, hydromet_dim, hydromet, l_frozen_hm, l_mix_rat_hm):
+    frozen = jnp.asarray(l_frozen_hm) & jnp.asarray(l_mix_rat_hm)
+    hydromet_frozen = jnp.where(frozen, hydromet, 0.0)
+    hydromet_frozen_filled = hole_filling_hm_one_lev(hydromet_dim, hydromet_frozen)
+    return jnp.where(frozen, hydromet_frozen_filled, hydromet)
+
+
+def fill_holes_wv(nzt, dt, exner, hydromet_name, rvm_mc, thlm_mc, hydromet):
+    from clubb_jax.src.CLUBB_core.constants_clubb import zero_threshold, Lv, Ls, Cp
+    rvm_clip_tndcy = jnp.where(hydromet < zero_threshold, hydromet / dt, 0.0)
+    rvm_mc = rvm_mc + rvm_clip_tndcy
+    if hydromet_name == 'rrm':
+        thlm_mc = thlm_mc - rvm_clip_tndcy * (Lv / (Cp * exner))
+    elif hydromet_name in ('rim', 'rsm', 'rgm'):
+        thlm_mc = thlm_mc - rvm_clip_tndcy * (Ls / (Cp * exner))
+    else:
+        raise ValueError('Fatal error in microphys_driver: unknown hydrometeor')
+    hydromet = jnp.maximum(hydromet, zero_threshold)
+    return rvm_mc, thlm_mc, hydromet
+
+
+def fill_holes_driver_api(gr, ngrdcol, nzt, dt, hydromet_dim, hm_metadata, l_fill_holes_hm,
+                         rho_ds_zt, exner, fill_holes_type, stats,
+                         thlm_mc, rvm_mc, hydromet):
+    from clubb_jax.src.CLUBB_core.constants_clubb import zero_threshold, Lv, Ls, Cp
+    # Start statistics for same-phase and vertical hole filling.
+    for i in range(hydromet_dim):
+        _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(i, hydromet_dim, hm_metadata.hydromet_list)
+        stats = stats.begin_budget(name_hf, hydromet[..., i] / dt)
+    if l_fill_holes_hm:
+        hydromet = fill_holes_hydromet_api(nzt, hydromet_dim, hydromet, hm_metadata.l_frozen_hm, hm_metadata.l_mix_rat_hm)
+    for i in range(hydromet_dim):
+        _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(i, hydromet_dim, hm_metadata.hydromet_list)
+        hydromet_name = hm_metadata.hydromet_list[i]
+        if hydromet_name.startswith('r'):
+            # Source calls each column with ngrdcol=1 but passes the full gr%dzt.
+            # Its explicit-shape dz(1,nzt) dummy uses the first nzt elements in
+            # Fortran storage order. Preserve that deliberately retained scalar
+            # grid-metric mapping, including on a multicolumn grid.
+            dz_scalar = gr.dzt.T.reshape(-1)[:nzt][None, :]
+            hydromet_filled = jax.vmap(lambda rho_col, hm_col: fill_holes_vertical(
+                nzt, 1, zero_threshold, 0, nzt - 1,
+                dz_scalar, rho_col[None, :], 1, fill_holes_type,
+                hm_col[None, :])[0])(rho_ds_zt, hydromet[..., i])
+            hydromet = hydromet.at[..., i].set(hydromet_filled)
+        stats = stats.finalize_budget(name_hf, hydromet[..., i] / dt)
+        stats = stats.begin_budget(name_wvhf, hydromet[..., i] / dt)
+        if hydromet_name.startswith('r'):
+            rvm_mc, thlm_mc, hydromet_filled = fill_holes_wv(nzt, dt, exner, hydromet_name, rvm_mc, thlm_mc, hydromet[..., i])
+            hydromet = hydromet.at[..., i].set(hydromet_filled)
+        stats = stats.finalize_budget(name_wvhf, hydromet[..., i] / dt)
+        if hydromet_name.startswith('r'):
+            stats = stats.begin_budget(name_cl, hydromet[..., i] / dt)
+            hydromet = hydromet.at[..., i].set(jnp.maximum(hydromet[..., i], zero_threshold))
+            small = hydromet[..., i] <= hm_metadata.hydromet_tol[i]
+            rvm_mc = rvm_mc + jnp.where(small, hydromet[..., i] / dt, 0.0)
+            latent_heat = Lv if hydromet_name == 'rrm' else Ls
+            thlm_mc = thlm_mc - jnp.where(small, (latent_heat / (Cp * exner)) * (hydromet[..., i] / dt), 0.0)
+            hydromet = hydromet.at[..., i].set(jnp.where(small, 0.0, hydromet[..., i]))
+            stats = stats.finalize_budget(name_cl, hydromet[..., i] / dt)
+    hydromet_clipped = clip_hydromet_conc_mvr(nzt, hydromet_dim, hm_metadata, hydromet)
+    for i in range(hydromet_dim):
+        if hm_metadata.hydromet_list[i].startswith('N'):
+            _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(i, hydromet_dim, hm_metadata.hydromet_list)
+            stats = stats.begin_budget(name_cl, hydromet[..., i] / dt)
+            hydromet = hydromet.at[..., i].set(hydromet_clipped[..., i])
+            stats = stats.finalize_budget(name_cl, hydromet[..., i] / dt)
+    return stats, thlm_mc, rvm_mc, hydromet
+
+
+def clip_hydromet_conc_mvr(nzt, hydromet_dim, hm_metadata, hydromet):
+    from clubb_jax.src.CLUBB_core.constants_clubb import pi, rho_lw, rho_ice
+    from clubb_jax.src.CLUBB_core.index_mapping import Nx2rx_hm_idx, mvr_hm_max
+    hydromet_clipped = hydromet
+    for idx in range(hydromet_dim):
+        if hm_metadata.hydromet_list[idx].startswith('N'):
+            density = rho_lw if hm_metadata.hydromet_list[idx] == 'Nrm' else rho_ice
+            Nxm_min_coef = 1.0 / ((4.0 / 3.0) * pi * density * mvr_hm_max(idx, hm_metadata) ** 3)
+            rx = hydromet[..., Nx2rx_hm_idx(idx, hm_metadata)]
+            hydromet_clipped = hydromet_clipped.at[..., idx].set(jnp.where(rx > 0.0, jnp.maximum(hydromet[..., idx], Nxm_min_coef * rx), 0.0))
+    return hydromet_clipped
+
+
+def setup_stats_names(ihm, hydromet_dim, hydromet_list):
+    name = hydromet_list[ihm]
+    max_velocity = {'rrm': -9.1, 'Nrm': -9.1, 'rim': -1.2, 'Nim': -1.2,
+                    'rsm': -2.0, 'Nsm': -2.0, 'rgm': -20.0, 'Ngm': -20.0, 'Ncm': -9.1}.get(name, 0.0)
+    if not max_velocity:
+        return 0.0, '', '', '', '', ''
+    return (max_velocity, name + '_bt', name + '_hf' if name.startswith('r') else '',
+            name + '_wvhf' if name.startswith('r') else '', name + '_cl', name + '_mc')

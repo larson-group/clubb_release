@@ -60,40 +60,15 @@ class CaseResult:
     avg_diff_timestep: float = -1.0
 
 
-def _parse_earliest_timesteps(log_path: Path) -> list[int]:
-    """Parse all 'Earliest Timestep' values from a -v 2 bindiff log.
-
-    The column format is either a bare integer (e.g. ``10``) or an integer
-    followed by a time string (e.g. ``10 (600s)``).  We scan backwards from
-    the end of each data row to find the first integer token.
-
-    Returns an empty list if no timestep diffs were found.
-    """
-    if not log_path.exists():
-        return []
-    text = log_path.read_text(encoding="utf-8", errors="replace")
-    timesteps: list[int] = []
-    in_table = False
-    for line in text.splitlines():
-        if "Earliest Timestep" in line:
-            in_table = True
-            continue
-        if in_table:
-            stripped = line.strip()
-            if not stripped or stripped.startswith("="):
-                in_table = False
-                continue
-            if set(stripped.replace(" ", "")) <= {"-"}:
-                continue
-            tokens = stripped.split()
-            # Scan backwards for the first pure-integer token.
-            for tok in reversed(tokens):
-                try:
-                    timesteps.append(int(tok))
-                    break
-                except ValueError:
-                    continue
-    return timesteps
+def _average_earliest_timestep(report_path: Path, case: str | None = None) -> float:
+    """Read bindiff's summary without parsing its human-readable log."""
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        result = report["cases"][case] if case is not None else report
+        value = result["average_earliest_timestep"]
+        return float(value) if value is not None else -1.0
+    except (OSError, ValueError, KeyError, TypeError):
+        return -1.0
 
 
 def _run_and_log(cmd: list[str], cwd: Path, log_path: Path) -> int:
@@ -176,9 +151,9 @@ def _run_case(
             note=_tail(f90_log),
         )
 
-    # Always use -v 2 for the per-case diff so we get the Earliest Timestep
-    # column in the output table.  The -case flag restricts comparison to
-    # just this case, avoiding prefix collisions in shared output dirs.
+    # The JSON report supplies the timing summary; -case avoids prefix
+    # collisions in the shared output directories.
+    diff_report = results_root / f"{case}_bindiff.json"
     diff_cmd = [
         sys.executable,
         str(run_bindiff),
@@ -186,13 +161,13 @@ def _run_case(
         "-case", case,
         "-t", str(bindiff_threshold),
         "-pt", str(bindiff_threshold),
+        "--result-json", str(diff_report),
         str(py_out),
         str(f90_out),
     ]
+    diff_report.unlink(missing_ok=True)
     diff_rc = _run_and_log(diff_cmd, repo_root, diff_log)
-
-    ts_list = _parse_earliest_timesteps(diff_log) if diff_rc != 0 else []
-    avg_ts = sum(ts_list) / len(ts_list) if ts_list else -1.0
+    avg_ts = _average_earliest_timestep(diff_report, case) if diff_rc != 0 else -1.0
 
     status = "match" if diff_rc == 0 else "diff"
     return CaseResult(
@@ -205,7 +180,7 @@ def _run_case(
         fortran_elapsed_s=f90_elapsed,
         elapsed_s=time.time() - start,
         case_dir=str(results_root),
-        note=_tail(diff_log),
+        note=f"Bindiff report: {diff_report}",
         avg_diff_timestep=avg_ts,
     )
 
@@ -380,18 +355,20 @@ def main() -> int:
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     final_bindiff_log = results_root / FINAL_BINDIFF_LOG_FILENAME
+    final_bindiff_report = results_root / "final_bindiff.json"
     final_diff_cmd = [
         sys.executable,
         str(run_bindiff),
         "-v", str(args.bindiff_verbose),
         "-t", str(args.bindiff_threshold),
         "-pt", str(args.bindiff_threshold),
+        "--result-json", str(final_bindiff_report),
         str(py_output_root),
         str(f90_output_root),
     ]
+    final_bindiff_report.unlink(missing_ok=True)
     final_bindiff_rc = _run_and_log(final_diff_cmd, repo_root, final_bindiff_log)
-    final_ts_list = _parse_earliest_timesteps(final_bindiff_log) if final_bindiff_rc != 0 else []
-    final_avg_ts = sum(final_ts_list) / len(final_ts_list) if final_ts_list else -1.0
+    final_avg_ts = _average_earliest_timestep(final_bindiff_report) if final_bindiff_rc != 0 else -1.0
 
     print("\nSummary:")
     print(json.dumps({k: v for k, v in summary.items() if k != "cases"}, indent=2))

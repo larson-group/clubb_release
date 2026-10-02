@@ -10,14 +10,15 @@ not yet ported; the local form here is the one used by the over-evaporation limi
 KK_microphys_adjust.)
 """
 import jax.numpy as jnp
+from clubb_jax.src.Microphys.KK_microphys import parameters_KK
 
-from clubb_jax.src.CLUBB_core.constants_clubb import rho_lw
+from clubb_jax.src.CLUBB_core.constants_clubb import rho_lw, pi
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import trivar_NLL_mean_eq
 # The KK evap exponents / r_0 / KK_Nrm_evap_nu live in their Fortran home parameters_KK.F90
 # (KK_Nrm_tendencies.F90:114-118 `use parameters_KK`)
 from clubb_jax.src.Microphys.KK_microphys.parameters_KK import (
     KK_evap_Supersat_exp as KK_EVAP_SUPERSAT_EXP, KK_evap_rr_exp as KK_EVAP_RR_EXP,
-    KK_evap_Nr_exp as KK_EVAP_NR_EXP, r_0 as _R_0, KK_Nrm_evap_nu as _KK_NRM_EVAP_NU,
+    KK_evap_Nr_exp as KK_EVAP_NR_EXP, KK_Nrm_evap_nu as _KK_NRM_EVAP_NU,
 )
 
 
@@ -25,7 +26,7 @@ def KK_Nrm_auto_mean(KK_rrm_auto_tndcy):
     """N_r autoconversion tendency. KK_Nrm_tendencies.F90:296.
 
     = (dr_r/dt)_auto / ((4/3) pi rho_lw r_0^3) — one new drop of radius r_0 per unit mass."""
-    return KK_rrm_auto_tndcy / ((4.0 / 3.0) * jnp.pi * rho_lw * _R_0 ** 3)
+    return KK_rrm_auto_tndcy / ((4.0 / 3.0) * pi * rho_lw * parameters_KK.r_0 ** 3)
 
 
 def KK_Nrm_evap_local_mean(KK_rrm_evap_tndcy, Nrm, rrm, dt):

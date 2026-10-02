@@ -40,11 +40,13 @@ Usage:
     -s             Scale diffs by average field magnitude
     -case CASE     Compare only the named case (e.g. 'bomex')
     -strict        Also fail on missing variables or mismatched shapes
+    --result-json PATH  Write machine-readable comparison diagnostics
     -f {skip,replace,enumerate}  Write per-case diff logs to output/bindiffs/
 """
 
 import argparse
 import contextlib
+import json
 import filecmp
 import io
 import multiprocessing as mp
@@ -126,18 +128,29 @@ def main():
     parser.add_argument("-case", "--case", action="store", default=None, help="Compare only the specified case name (e.g. 'bomex'). When omitted, all cases found in both directories are compared.")
     parser.add_argument("-strict", action="store_true", help="Also fail when a paired NetCDF file has missing variables or mismatched variable shapes.")
     parser.add_argument("--flag-sets", action="store_true", help="Treat each immediate child directory as one flag-set output directory and compare matching flag sets.")
+    parser.add_argument("--result-json", help="Write machine-readable comparison diagnostics to a JSON file for analysis by other scripts.")
     parser.add_argument("dirs", nargs=2, help="Need 2 clubb output directories containing netCDF files with the same name to diff. Usage: python run_bindiff_all.py dir_path1 dir_path2")
     args = parser.parse_args()
+    if args.flag_sets and args.result_json:
+        parser.error("--result-json is only supported for per-case comparisons")
 
     # Check if folders exist
     paths_exist = os.path.exists(args.dirs[0]) and os.path.exists(args.dirs[1])
 
     if not paths_exist:
         print("Chosen directories do not exist. Please input valid directories")
+        if args.result_json:
+            _write_result_json(args.result_json, *args.dirs, args.threshold or 0.0,
+                               args.percent_thresh, args.scale, args.strict, [], "error",
+                               ["missing_input_directory"])
         sys.exit(2)
 
     if os.path.samefile(args.dirs[0], args.dirs[1]):
         print("Input paths resolve to the same directory.")
+        if args.result_json:
+            _write_result_json(args.result_json, *args.dirs, args.threshold or 0.0,
+                               args.percent_thresh, args.scale, args.strict, [], "error",
+                               ["same_input_directory"])
         sys.exit(2)
 
     if args.verbose>=1:
@@ -181,7 +194,7 @@ def main():
 
     linux_diff, diff_in_files, file_skipped, passed_cases, failed_cases = find_diffs_in_all_files(
         args.dirs[0], args.dirs[1], args.fileout, args.verbose, abs_error_threshold, percent_error_threshold, args.scale,
-        case_filter=args.case, strict=args.strict,
+        case_filter=args.case, result_json=args.result_json, strict=args.strict,
     )
 
     print("\nSUMMARY:")
@@ -532,7 +545,7 @@ def compare_flag_set_outputs(dir1, dir2, save_to_file, verbose, thresh, percent_
     return 0
 
 
-def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, case_filter=None, strict=False):
+def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, case_filter=None, result_json=None, strict=False):
     # For each case with existing netCDF files in the diff folders:
     # 1. Create an output file if those are requested
     # 2. Loop through the netCDF files and call `find_diffs_in_common_vars` on each pair
@@ -556,6 +569,8 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_t
     case_order = list(cases.keys())
     if not case_order:
         print("No comparable netCDF files were found in the provided directories.")
+        if result_json is not None:
+            _write_result_json(result_json, dir1, dir2, thresh, percent_thresh, l_scale, strict, [], "error", ["no_comparable_files"])
         sys.exit(2)
 
     # Determine worker count (nproc - 2, but at least 1 and no more than number of cases)
@@ -564,7 +579,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_t
     nproc = min(nproc, max(1, len(case_order)))
 
     args_list = [
-        (case, cases[case], dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, strict)
+        (case, cases[case], dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, result_json is not None, strict)
         for case in case_order
     ]
 
@@ -591,17 +606,40 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_t
         else:
             passed_cases.append(result["case"])
 
+    if result_json is not None:
+        _write_result_json(result_json, dir1, dir2, thresh, percent_thresh, l_scale, strict, results,
+                           "diff" if diff_in_all_files else "match")
+
     return (linux_diff, diff_in_all_files, file_skipped, passed_cases, failed_cases)
+
+
+def _write_result_json(path, dir1, dir2, thresh, percent_thresh, scale, strict, results, status, issues=None):
+    """Save small, structured diagnostics without duplicating the numeric diff tables."""
+    all_timesteps = [step for result in results for step in result["earliest_timesteps"]]
+    report = {
+        "inputs": [str(Path(dir1).resolve()), str(Path(dir2).resolve())],
+        "result_json": str(Path(path).resolve()),
+        "thresholds": {"absolute": thresh, "percent": percent_thresh, "scaled": scale},
+        "strict": strict,
+        "status": status,
+        "issues": issues or [],
+        "average_earliest_timestep": sum(all_timesteps) / len(all_timesteps) if all_timesteps else None,
+        "cases": {result["case"]: result["report"] for result in results},
+    }
+    Path(path).write_text(json.dumps(report, indent=2), encoding="utf-8")
 
 
 def _diff_case(args):
     """Process a single case (all its file pairs) in a worker-friendly way.
     Captures stdout to a StringIO buffer so that parallel workers don't
     interleave their output — the caller replays buffers in case order."""
-    case, files, dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, strict = args
+    case, files, dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale, collect_prefixes, strict = args
     linux_diff_in_case = False
     diff_in_case = False
     file_skipped = False
+    file_reports = []
+    earliest_timesteps = []
+    log_path = None
 
     stdout = io.StringIO()
     with contextlib.redirect_stdout(stdout):
@@ -632,10 +670,19 @@ def _diff_case(args):
                 if save_to_file:
                     content += ">The linux diff detected differences in " + ncfname + "<\n"
 
+                prefix = {} if collect_prefixes else None
+                details = {} if collect_prefixes else None
                 case_diff, new_content = find_diffs_in_common_vars(
                     ncfname, dir1, dir2, save_to_file, verbose, thresh, percent_thresh, l_scale,
-                    strict=strict,
+                    prefix=prefix, strict=strict, details=details,
                 )
+                if details is not None:
+                    earliest_timesteps.extend(details.pop("_earliest_timesteps"))
+                    file_reports.append({"name": ncfname,
+                                         "inputs": [str(Path(file1).resolve()), str(Path(file2).resolve())],
+                                         "status": "diff" if case_diff else "match",
+                                         "comparison": "compared",
+                                         "first_failing_prefix": prefix or None, **details})
                 diff_in_case = case_diff or diff_in_case
 
                 if verbose >= 2:
@@ -644,6 +691,11 @@ def _diff_case(args):
                     content += new_content
                     content += "\n"
             else:
+                if collect_prefixes:
+                    file_reports.append({"name": ncfname,
+                                         "inputs": [str(Path(file1).resolve()), str(Path(file2).resolve())],
+                                         "status": "match", "comparison": "byte_identical",
+                                         "first_failing_prefix": None, "issues": [], "variables": {}})
                 if verbose >= 1:
                     print(">No differences detected by the linux diff in " + ncfname + "<")
 
@@ -658,6 +710,7 @@ def _diff_case(args):
                     # If file does not exist or should be overwritten, open file with default name and write content
                     with open(diff_file_name.format(''), "w") as caseLogFile:
                         caseLogFile.write(content)
+                    log_path = str(Path(diff_file_name.format('')).resolve())
                 elif save_to_file == "enumerate":
                     # (File exists already) First find which file index is next and create the file with that index in its name
                     i = 1
@@ -666,6 +719,7 @@ def _diff_case(args):
                         i = i + 1
                     with open(diff_file_name.format(i), "w") as caseLogFile:
                         caseLogFile.write(content)
+                    log_path = str(Path(diff_file_name.format(i)).resolve())
                 elif save_to_file == "skip":
                     file_skipped = True
                     if verbose >= 2:
@@ -685,9 +739,15 @@ def _diff_case(args):
         "diff_in_case": diff_in_case,
         "file_skipped": file_skipped,
         "stdout": stdout.getvalue(),
+        "earliest_timesteps": earliest_timesteps,
+        "report": {"status": "diff" if diff_in_case else "match", "log": log_path,
+                   "log_skipped": file_skipped,
+                   "average_earliest_timestep": (sum(earliest_timesteps) / len(earliest_timesteps)
+                                                 if earliest_timesteps else None),
+                   "files": file_reports},
     }
 
-def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs_error_threshold, percent_error_threshold, l_scale, strict=False ):
+def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs_error_threshold, percent_error_threshold, l_scale, prefix=None, strict=False, details=None ):
     # This is the integral function of this script!
     # Compare content of one specific pair of files with the same name in each folder:
     # 1. Find the variables that are present in only one of the files
@@ -699,6 +759,13 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
 
     # Assume no differences until proven otherwise
     diff_in_common_vars = False
+    if details is not None:
+        details.update({"issues": [], "variables": {}, "_earliest_timesteps": []})
+
+    def note_variable(name, category):
+        if details is not None:
+            details["variables"].setdefault(category, []).append(name)
+
     # Declare string containing all the output for <test_file>
     new_content = ""
 
@@ -726,6 +793,8 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
                 print(timestep_warning)
             if save_to_file:
                 new_content += timestep_warning + "\n"
+            if details is not None:
+                details["issues"].append("time_length_mismatch")
             dset1.close()
             dset2.close()
             return (True, new_content)
@@ -733,6 +802,10 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
     # Find variables that are only present in ONE of the files
     diff1 = set(dset1.variables.keys()).difference(dset2.variables.keys())
     diff2 = set(dset2.variables.keys()).difference(dset1.variables.keys())
+    for name in sorted(diff1):
+        note_variable(name, "only_left")
+    for name in sorted(diff2):
+        note_variable(name, "only_right")
     structural_diff = strict and bool(diff1 or diff2)
     # Print those variables
     if diff1:
@@ -768,6 +841,7 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
     n_stats_vars_compared = 0
     n_vars_with_nonzero_diff = 0
     n_vars_exceeding_threshold = 0
+    first_prefix_record = None
 
     # Create set of variables that are common to both files
     # These are the variables we can and want to compare the other variables are printed above
@@ -782,6 +856,7 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
             if save_to_file:
                 new_content += shape_warning + "\n"
             structural_diff = structural_diff or strict
+            note_variable(var, "shape_mismatch")
             continue
 
         data_1 = np.asarray(dset1[var][...])
@@ -794,12 +869,14 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
                 print("Skipping variable {} because it is not numeric: {} vs {}".format(
                     var, data_1.dtype, data_2.dtype
                 ))
+            note_variable(var, "non_numeric")
             continue
 
         abs_diff = abs(data_1 - data_2)
         if abs_diff.size == 0:
             if verbose >= 2:
                 print("Skipping variable {} because it has no values to compare.".format(var))
+            note_variable(var, "empty")
             continue
 
         n_vars_compared += 1
@@ -807,8 +884,11 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
         if not (dset1[var].dimensions == (var,) or dset2[var].dimensions == (var,)):
             n_stats_vars_compared += 1
 
-        if not np.all(abs_diff == 0):
-            n_vars_with_nonzero_diff += 1
+        if np.all(abs_diff == 0):
+            if details is not None:
+                note_variable(var, "all_zero" if np.all(data_1 == 0) else "identical")
+            continue
+        n_vars_with_nonzero_diff += 1
 
         sum_abs_diff = np.sum(abs_diff)
         avg_abs_diff = sum_abs_diff / abs_diff.size
@@ -821,9 +901,18 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
             sum_abs_diff = np.sum(abs_diff)
             avg_abs_diff = sum_abs_diff / abs_diff.size
 
-        # Fast path: if the absolute threshold already rejects this variable,
-        # we do not need clipping or percent-difference calculations.
-        if avg_abs_diff <= abs_error_threshold:
+        # Prefix diagnostics use the same gates over each saved-time prefix.
+        time_axis = _find_axis_index(dimensions, TIME_DIM_NAMES) if prefix is not None else None
+        if prefix is not None:
+            if time_axis is None:
+                prefix_abs = np.array([avg_abs_diff])
+            else:
+                by_record = np.moveaxis(abs_diff, time_axis, 0).reshape(abs_diff.shape[time_axis], -1)
+                count = np.arange(1, by_record.shape[0] + 1) * by_record.shape[1]
+                prefix_abs = np.cumsum(by_record.sum(axis=1)) / count
+
+        if avg_abs_diff <= abs_error_threshold and (prefix is None or np.all(prefix_abs <= abs_error_threshold)):
+            note_variable(var, "within_tolerance")
             continue
 
         # Clip fields to ignore tiny values for the % diff
@@ -835,10 +924,30 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
                                 / ( field_1_clipped+field_2_clipped )
         avg_abs_percent_diff = np.average(np.abs(percent_diff))
 
-        # Ignore the variable if it falls below either active reporting threshold.
-        if percent_error_threshold is not None and avg_abs_percent_diff <= percent_error_threshold:
+        if prefix is not None:
+            if time_axis is None:
+                prefix_percent = np.array([avg_abs_percent_diff])
+            else:
+                by_record = np.moveaxis(np.abs(percent_diff), time_axis, 0).reshape(abs_diff.shape[time_axis], -1)
+                prefix_percent = np.cumsum(by_record.sum(axis=1)) / count
+            failed_prefixes = np.flatnonzero(
+                (prefix_abs > abs_error_threshold)
+                & (percent_error_threshold is None or prefix_percent > percent_error_threshold)
+            )
+            if failed_prefixes.size:
+                record = int(failed_prefixes[0]) if time_axis is not None else 0
+                first_prefix_record = record if first_prefix_record is None else min(first_prefix_record, record)
+
+        if avg_abs_diff <= abs_error_threshold:
+            note_variable(var, "within_tolerance")
             continue
 
+        # Ignore the variable if it falls below either active reporting threshold.
+        if percent_error_threshold is not None and avg_abs_percent_diff <= percent_error_threshold:
+            note_variable(var, "within_tolerance")
+            continue
+
+        note_variable(var, "different")
         diff_in_common_vars = True
         n_vars_exceeding_threshold += 1
 
@@ -853,6 +962,8 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
             timestep_indices = np.where(timestep_mask)[0]
             if timestep_indices.size > 0:
                 ts_idx = int(timestep_indices[0])
+                if details is not None:
+                    details["_earliest_timesteps"].append(ts_idx)
                 time_axis = _find_axis_index(dimensions, TIME_DIM_NAMES)
                 if time_axis is not None:
                     time_dim = dimensions[time_axis]
@@ -876,6 +987,8 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
 
     no_comparable_stats = n_stats_vars_compared == 0
     if no_comparable_stats:
+        if details is not None:
+            details["issues"].append("no_comparable_stats")
         comparison_error = "Error: No comparable numeric stats fields in file {} (matching coordinates alone are insufficient).".format(test_file)
         print(comparison_error)
         if save_to_file:
@@ -920,6 +1033,16 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, verbose, abs
         if verbose>=1:
             print(">>Differences above threshold were detected in the common fields in file " + test_file + "<<")
             
+    if prefix is not None and first_prefix_record is not None:
+        n_saved = len(dset2.dimensions["time"]) if "time" in dset2.dimensions else None
+        output_time = None
+        if n_saved is not None and first_prefix_record < n_saved:
+            if "time_bnds" in dset2.variables and dset2["time_bnds"].shape == (n_saved, 2):
+                output_time = float(dset2["time_bnds"][first_prefix_record, 1])
+            elif "time" in dset2.variables and dset2["time"].shape == (n_saved,):
+                output_time = float(dset2["time"][first_prefix_record])
+        prefix.update({"record": first_prefix_record, "saved_records": n_saved, "output_time": output_time})
+
     dset1.close()
     dset2.close()
     return (diff_in_common_vars or structural_diff or no_comparable_stats, new_content)

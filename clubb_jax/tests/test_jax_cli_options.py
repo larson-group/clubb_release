@@ -149,10 +149,10 @@ def test_comparison_help_does_not_prepare_environment(tmp_path):
     root = Path(__file__).resolve().parents[2]
     env = os.environ | {"CLUBB_JAX_VENV": str(tmp_path / "venv"),
                         "CLUBB_JAX_TOOLS_DIR": str(tmp_path / "tools")}
-    result = subprocess.run([sys.executable, str(root / "tests/run_jax_vs_fortran_cases.py"), "--help"],
+    result = subprocess.run([sys.executable, str(root / "tests/run_jax_vs_fortran_cases.py"), "-h"],
                             env=env, capture_output=True, text=True, timeout=10)
     assert result.returncode == 0, result.stderr
-    assert "--cases" in result.stdout
+    assert "-cases" in result.stdout
     assert not (tmp_path / "venv").exists()
     assert not (tmp_path / "tools").exists()
 
@@ -169,7 +169,7 @@ def test_environment_setup_uses_launcher_paths_and_restarts_once(
     if custom_venv:
         monkeypatch.setenv("CLUBB_JAX_VENV", custom_venv)
     monkeypatch.setattr(run_jax, "REPO_ROOT", tmp_path)
-    monkeypatch.setattr(sys, "argv", ["compare.py", "--cases", "arm"])
+    monkeypatch.setattr(sys, "argv", ["compare.py", "-cases", "arm"])
     monkeypatch.setattr(sys, "executable", "/host/python")
     setup = []
     launched = []

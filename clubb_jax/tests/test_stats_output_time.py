@@ -66,10 +66,16 @@ def test_stats_timestamp_uses_end_of_current_model_step(monkeypatch):
         "nzt": 1,
         "ngrdcol": 1,
     }
+    state.update(gr=None, microphys_scheme='none', l_cloud_sed=False)
+    for name in ('rcm','rvm','thlm','wprtp','wpthlp','rtp2','thlp2','rtpthlp'):
+        state[name+'_mc']=0.0
+    for name in ('rtm','wprtp','wpthlp','rtp2','thlp2','rtpthlp'):
+        state[name+'_forcing']=0.0
     driver.advance_clubb_to_end(state, l_stdout=False)
 
     assert calls == [(180.0, stats)]
-    assert updates == [("Ncm", 0.5), ("Nc_in_cloud", 2.0)]
+    assert updates[:2] == [("Ncm", 0.5), ("Nc_in_cloud", 2.0)]
+    assert dict(updates)["rtm_mc"] == 0.0
     assert state["Ncm"] == 0.5
     assert state["_jax_stats"] is stats
 
@@ -86,17 +92,10 @@ def test_inlined_driver_helpers_stay_absent():
     assert all(not hasattr(driver, name) for name in removed_helpers)
 
 
-def test_driver_has_no_unsupported_microphysics_wiring():
+def test_driver_uses_canonical_microphysics_interfaces():
     source = Path(driver.__file__).read_text(encoding="utf-8")
-    removed_markers = (
-        "Microphys",
-        "calc_microphys_scheme_tendcies",
-        "_morr_",
-        "_kk_",
-        "cloud_drop_sed",
-        "l_cloud_sed",
-        "rcm_mc",
-        "thlm_mc",
-    )
-
-    assert all(marker not in source for marker in removed_markers)
+    for routine in ('pdf_hydromet_microphys_prep', 'calc_microphys_scheme_tendcies',
+                    'advance_microphys', 'cloud_drop_sed'):
+        assert routine in source
+    assert 'kk_microphys_step' not in source
+    assert 'morrison_microphys_step' not in source

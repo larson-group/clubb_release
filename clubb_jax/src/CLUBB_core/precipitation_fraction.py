@@ -501,10 +501,10 @@ def component_precip_frac_weighted(
     precip_frac_2_if_1_gt_1 = (
         precip_frac - mixt_frac
     ) / one_minus_mixt_frac_safe
-    precip_frac_2_if_1_lt_tol = precip_frac_tol_2d * (
-        (precip_frac / precip_frac_tol_2d - mixt_frac)
-        / one_minus_mixt_frac_safe
-    )
+    precip_frac_2_if_1_lt_tol = precip_frac_tol_2d * lax.optimization_barrier(jnp.where(
+        precip_frac == precip_frac_tol_2d, 1.0,
+        (precip_frac / precip_frac_tol_2d - mixt_frac) / one_minus_mixt_frac_safe
+    ))
     precip_frac_1_after_2_gt_1 = jnp.where(
         precip_frac_1_if_2_gt_1 > 1.0,
         1.0,
@@ -676,10 +676,15 @@ def component_precip_frac_specify(
     precip_frac_2_if_1_gt_1 = (
         precip_frac - mixt_frac
     ) / one_minus_mixt_frac_safe
-    precip_frac_2_if_1_lt_tol = precip_frac_tol * (
-        (precip_frac / precip_frac_tol - mixt_frac)
-        / one_minus_mixt_frac_safe
-    )
+    # Preserve the source's parenthesized ratio before multiplication. XLA
+    # reassociation otherwise makes fp2 one ulp below the minimum when fp==tol,
+    # changing calc_comp_mu_sigma_hm's strict two-component branch to one.
+    # The exact ratio is 1 when fp==tol; spell out that identity for eager
+    # reciprocal-based division too. This does not relax the physical threshold.
+    precip_frac_2_if_1_lt_tol = precip_frac_tol * lax.optimization_barrier(jnp.where(
+        precip_frac == precip_frac_tol, 1.0,
+        (precip_frac / precip_frac_tol - mixt_frac) / one_minus_mixt_frac_safe
+    ))
     precip_frac_1_after_2_gt_1 = jnp.where(
         precip_frac_1_if_2_gt_1 > 1.0,
         1.0,

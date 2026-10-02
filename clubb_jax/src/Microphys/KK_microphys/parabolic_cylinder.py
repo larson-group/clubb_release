@@ -1,72 +1,19 @@
-"""JAX parabolic cylinder function D_v(z) — oracle for KK_utilities.F90::Dv_fnc.
+"""JAX evaluator for the KK orders of Algorithm 850's parabolic cylinder function.
 
-The Fortran oracle computes D_v(z) via ACM TOMS Algorithm 850 (`parab`, a 3385-line
-branch-heavy routine in Parabolic.f90) called from `KK_utilities.F90::Dv_fnc`.
-That algorithm is the standard double-precision evaluator for the parabolic cylinder
-functions; faithful reproduction of every branch is not required for the rel_tol=1e-6
-regression gate (Algorithm 850 is itself not bit-identical to other evaluators such
-as scipy's). What IS required is a value-faithful, *differentiable* D_v.
-
-This module provides that via two convergent/asymptotic representations (DLMF 12.4 /
-12.9) selected by argument magnitude:
-
-  * z <= _Z_SWITCH       : the confluent-hypergeometric (1F1) series, DLMF 12.4.1.
-                          Bit-accurate (rel < 1e-9 vs scipy.special.pbdv) for z <~ 4;
-                          degrades to ~1e-4 by z ~ 6 (float64 cancellation against e^{-z^2/4}).
-  * z >  _Z_SWITCH       : the descending asymptotic series, DLMF 12.9.1, with PER-ELEMENT
-                          OPTIMAL TRUNCATION (sum stops at the minimal term). rel <~ 1e-13
-                          for z >~ 7, <~ 3e-5 at z ~ 6, and never returns garbage (a fixed
-                          term count would diverge for moderate z).
-
-`Dv_fnc` in the autoconversion/accretion dispatch (KK_upscaled_means.F90) is only ever
-called with |argument| <= parab_cyl_max_input = 49 (beyond that the const-PDF variant is
-used instead). Within that, the physically relevant autoconversion regime keeps the
-argument z = -s_c in the well-conditioned series/positive-asymptotic zones (cloudy points
-have s_c > 0, i.e. z < 0, on the smoothly-growing side).
-
-ACCURACY at the series<->asymptotic handoff: the two methods cross near z ~ 5.75 (chosen
-as _Z_SWITCH), where each carries a worst-case rel ~ 2e-4 for the steepest KK exponent
-(v = -(alpha+1) = -3.47); it is far smaller (<~1e-7) for less steep v and away from the
-band. The bivariate-mean integral that consumes D_v multiplies it by exp(-s_c^2/4), so
-arguments in this band (|s_c| ~ 5-6) enter with weight e^{-6..-9} ~ 1e-3..1e-4 and the
-points are strongly subsaturated (negligible autoconversion). A future gap-filling branch
-(Algorithm 850's intermediate Maclaurin / Tricomi-U representation) would close the band
-to full 1e-6.
-
-  * z <~ -8              : the GROWING asymptotic series (z -> -inf, DLMF 12.9.2 real form),
-                          D_v(z) ~ sqrt(2pi)/Gamma(-v) e^{z^2/4} (-z)^{-v-1} * series. Bit-accurate
-                          (rel < 1e-12 vs scipy.pbdv) over z in [-49, -7]. Ported Iter130 — needed
-                          when s_c is large positive (a narrow chi PDF, e.g. stratocumulus
-                          dycoms2_rf02_do has s_c ~ 32 -> D_v arg ~ -32, where the 1F1 series
-                          overflows). The three branches now cover the full z in [-49, 49] the
-                          dispatch uses.
-
-All operations are jnp and differentiable w.r.t. z (the three branches each evaluate on a clamped
-argument so the two unselected ones stay finite — see dv_parabolic_cylinder).
+Matches the source's default 1e-4 stopping rule, including simultaneous derivative
+convergence. A more accurate function changes KK process rates and does not match
+the configured Fortran model. All arithmetic and series evaluation are JAX-owned.
+Only the positive U order (a=-v-1/2>0) used by KK is needed here.
 """
 import jax
 import jax.numpy as jnp
 from jax import lax
-
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
+l_high_accuracy_parab_cyl_fnc = False
 
-_SQRT2 = jnp.sqrt(2.0)
-_SQRT_PI = jnp.sqrt(jnp.pi)
-
-# Crossover between the 1F1 series and the optimally-truncated positive-z asymptotic.
-# The two error curves cross near z ~ 5.75 (worst-case rel ~2e-4 there for v=-3.47,
-# far smaller for less steep v and away from the band). See module docstring.
-_Z_SWITCH = 5.75
-# Below this the 1F1 series overflows; the large-negative-z growing asymptotic takes over
-# (accurate to rel < 1e-12 for z <~ -7; the two overlap in [-26, -7]).
-_Z_SWITCH_NEG = -8.0
-
-# Number of fixed series terms (data-independent so it vmaps/jits cleanly).
-_N_SERIES = 220
-# Max asymptotic terms scanned; optimal truncation stops earlier, per element.
-_N_ASYM = 200
-
+_PHI = [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, -0.75, -2.5, -1.6666666666666667, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 3.28125, 27.875, 67.375, 64.16666666666667, 21.38888888888889, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, -27.0703125, -396.328125, -1814.5125, -3861.2291666666665, -4254.25, -2363.472222222222, -525.216049382716, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 329.91943359375, 7077.45703125, 49877.23984375, 173584.125, 344694.4244791667, 411244.1666666667, 292637.25231481483, 114759.70679012345, 19126.61779835391, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, -5328.1988525390625, -153266.17749023438, -1496065.721609933, -7447882.350390625, -22100856.07764757, -42015571.25390625, -52708852.66637731, -43565653.69020062, -22880216.541280866, -6933398.951903292, -924453.1935871056, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 107230.00190734863, 3911743.4463500977, 49592558.34827532, 327327256.2444545, 1320314667.6672144, 3526512665.7394314, 6506075517.774877, 8449099135.763165, 7726873009.8828125, 4881459532.087513, 2031139222.9600694, 501515857.5210048, 55723984.169000536, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -2585008.9745521545, -115109601.28864288, -1814958496.4086914, -15118535470.703432, -78228459666.49902, -273482436440.61774, -677676841014.5961, -1223138659577.85, -1629074225394.341, -1602934313802.8914, -1152270884857.3289, -588917533590.4779, -202879881562.49713, -42266641992.186905, -4025394475.446372, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 72622595.87882459, 3839296326.68252, 72972869796.83574, 741010050728.2101, 4728818470068.397, 20667683341938.664, 65097477007191.15, 152479523376491.22, 270645546827389.2, 367482071900019.3, 382220257297375.0, 302446999586890.6, 179020321106247.5, 76811168492401.27, 22575519201784.0, 4067661117438.5586, 338971759786.5466, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -2329974951.112289, -143186772419.2561, -3204421618368.1875, -38658804680937.32, -295696972623483.4, -1564351256647306.2, -6033601440981970.0, -1.7548357451443068e+16, -3.93402499946545e+16, -6.8913028780415736e+16, -9.50017512632197e+16, -1.0321323725341085e+17, -8.798283774755869e+16, -5.819340445259386e+16, -2.9268899384432144e+16, -1.0820487030026246e+16, -2772975429521833.5, -440154830082830.7, -32604061487617.09, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 84053846361.37582, 5906050907256.692, 152794280429199.78, 2146857055341596.0, 1.9259274438496756e+16, 1.2040144763837691e+17, 5.534637599190308e+17, 1.937739604392838e+18, 5.291532561100032e+18, 1.1452797885661395e+19, 1.9849372125387207e+19, 2.7701776760098775e+19, 3.1172857703295082e+19, 2.820265728883639e+19, 2.035670433471667e+19, 1.1563080908824599e+19, 5.055359283148228e+18, 1.641667477501438e+18, 3.7294563283379405e+17, 5.290008976365873e+16, 3526672650910582.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3367884798525.127, -266994698245891.97, -7868339035378479.0, -1.2673637292804178e+17, -1.3108561419391276e+18, -9.505095396241887e+18, -5.101386792176276e+19, -2.101016651567116e+20, -6.808090673494664e+20, -1.766396419169469e+21, -3.714461044542513e+21, -6.381319935521667e+21, -8.996413456126447e+21, -1.0421163556087997e+22, -9.899229839297132e+21, -7.6691116829056e+21, -4.798668661333287e+21, -2.38813446118916e+21, -9.232917563971068e+20, -2.673134110914762e+20, -5.453470253735578e+19, -6.991628530430228e+18, -4.2373506245031686e+17, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 148397423935013.4, 1.3128818258663568e+16, 4.354513840304042e+17, 7.937408485723114e+18, 9.335850626826999e+19, 7.735682430480004e+20, 4.769376606728079e+21, 2.269775156376338e+22, 8.555588114310101e+22, 2.6019721885133625e+23, 6.470624563461547e+23, 1.328296900615224e+24, 2.2651814999817015e+24, 3.220716113222633e+24, 3.82247612879457e+24, 3.781841350960097e+24, 3.1066201690090377e+24, 2.1037824849222232e+24, 1.1615210612867615e+24, 5.142929247310742e+23, 1.782066757331616e+23, 4.65460677784862e+22, 8.617150383625573e+21, 1.0078538460380787e+21, 5.599188033544882e+19]]
+_CHI = [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.25, 3.5, 2.3333333333333335, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, -4.21875, -33.625, -79.95833333333333, -75.83333333333333, -25.27777777777778, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 31.9921875, 453.109375, 2047.1125, 4330.520833333333, 4759.027777777777, 2641.527777777778, 587.0061728395061, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, -373.90869140625, -7859.49609375, -54833.22265625, -189793.22083333333, -375736.00052083336, -447530.4166666667, -318189.01311728393, -124738.81172839506, -20789.80195473251, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 5889.0618896484375, 167081.37817382812, 1618334.674874442, 8018883.473046875, 23725519.15985243, 45020597.459635414, 56413247.888020836, 46595060.47183642, 24461987.83320473, 7411564.39686214, 988208.5862482854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -116554.34989929199, -4209790.5294799805, -53046844.35861642, -348738575.260791, -1402928860.3276453, -3740348588.554579, -6891971112.248734, -8942654096.48529, -8173643819.459394, -5161879657.283629, -2147389212.053648, -530173906.52220505, -58908211.835800566, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2776491.120815277, 122708978.79421234, 1925312041.3459735, 15983788916.8361, 82508725486.56346, 287952809783.2672, 712650296975.9645, 1285107966580.4988, 1710504064563.1047, 1682287248047.254, 1208933528167.4146, 617751113141.8105, 212787605947.74542, 44328429406.439926, 4221755181.565707, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -77307924.64520037, -4062968417.3650646, -76913846048.5587, -778781085218.4028, -4959356633780.346, -21641132068083.79, -68082808844916.26, -159329371436569.03, -282612499203202.4, -383535732852395.06, -398767118978192.25, -315453595729638.25, -186682859410003.6, -80088585766097.86, -23536984672244.367, -4240753079882.753, -353396089990.2294, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2463116376.890134, 150652583603.01288, 3360186490494.4814, 40437382791704.195, 308720787738688.06, 1630902159338730.0, 6283277020019534.0, 1.82586739130722e+16, 4.090494117635711e+16, 7.16160913092478e+16, 9.86876344716178e+16, 1.0718384639440125e+17, 9.1345622223601e+16, 6.040685080730598e+16, 3.037829531931123e+16, 1.1229654792749016e+16, 2877683806119897.5, 456764446312371.5, 33834403430546.035, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -88364300020.93356, -6184760673789.15, -159549747541818.16, -2236938226816489.0, -2.003385477530794e+16, -1.2507962822893517e+17, -5.7437167795298624e+17, -2.0092775645474132e+18, -5.483258169122137e+18, -1.1861476998383737e+19, -2.054896302984248e+19, -2.8668438826053415e+19, -3.2252013255464104e+19, -2.9172870122949767e+19, -2.1053597837396406e+19, -1.1957474746245007e+19, -5.227324779598662e+18, -1.6974085190869652e+18, -3.855943784879151e+17, -5.469331314547767e+16, -3646220876365178.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3524530603107.691, 278502821903198.72, 8187462234898173.0, 1.3162709914661656e+17, 1.359407981935524e+18, 9.845374898471242e+18, 5.278925282161759e+19, 2.172436848554448e+20, 7.035035129016593e+20, 1.8243285728007925e+21, 3.834651403368052e+21, 6.585513896734532e+21, 9.281659895577362e+21, 1.0749119360152201e+22, 1.0208879014255828e+22, 7.907844921517711e+21, 4.947481686715096e+21, 2.4619791717949233e+21, 9.517804797963846e+20, 2.7554937227007875e+20, 5.621339871918922e+19, 7.206755562135774e+18, 4.367730643718651e+17, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -154712207932248.0, -1.364961720276542e+16, -4.517673493738655e+17, -8.221062051469232e+18, -9.656508943757407e+19, -7.992661886401232e+20, -4.92341832189101e+21, -2.34136194236705e+22, -8.820054629383682e+22, -2.6810485837564567e+23, -6.664473683818361e+23, -1.3676127378849653e+24, -2.3315512394358867e+24, -3.3142858376436297e+24, -3.932747815369541e+24, -3.890307474197961e+24, -3.1952976165643967e+24, -2.1636044537464937e+24, -1.1944493605833632e+24, -5.288387034108319e+23, -1.8323817220135198e+23, -4.785866536243759e+22, -8.859971761162727e+21, -1.03624409522225e+21, -5.756911640123611e+19]]
 
 def _gamma_real(x):
     """Gamma(x) for real x (differentiable), via reflection for x < 0.5.
@@ -80,134 +27,161 @@ def _gamma_real(x):
     return jnp.where(x >= 0.5, pos, refl)
 
 
-def _hyp1f1(a, b, w):
-    """Confluent hypergeometric 1F1(a; b; w) via a fixed-length series (DLMF 13.2.2).
 
-    a, b are scalars; w may be an array. Fixed _N_SERIES terms — chosen large enough
-    to converge for w = z^2/2 up to |z| ~ 7 (w ~ 25)."""
-    w = jnp.asarray(w, dtype=jnp.float64)
-    one = jnp.ones_like(w)
-
-    def body(carry, n):
-        term, total = carry
-        n = n.astype(jnp.float64)
-        term = term * (a + n) / ((b + n) * (n + 1.0)) * w
-        return (term, total + term), None
-
-    (_, total), _ = lax.scan(body, (one, one), jnp.arange(_N_SERIES))
-    return total
-
-
-def _dv_series(v, z):
-    """D_v(z) via the 1F1 series, DLMF 12.4.1. Accurate for |z| <~ 6."""
-    z = jnp.asarray(z, dtype=jnp.float64)
-    w = 0.5 * z * z
-    pref = (2.0 ** (0.5 * v)) * jnp.exp(-0.25 * z * z) * _SQRT_PI
-    t1 = _hyp1f1(-0.5 * v, 0.5, w) / _gamma_real(0.5 * (1.0 - v))
-    t2 = _SQRT2 * z * _hyp1f1(0.5 * (1.0 - v), 1.5, w) / _gamma_real(-0.5 * v)
-    return pref * (t1 - t2)
-
-
-def _dv_pos_asym(v, z):
-    """D_v(z) via the descending asymptotic series, DLMF 12.9.1 (z -> +inf).
-
-    D_v(z) ~ z^v e^{-z^2/4} sum_{s>=0} (-1)^s (-v)_{2s} / (s! (2 z^2)^s).
-
-    The series is asymptotic (eventually diverges), so each element is truncated at
-    its own minimal term: a term is accepted only while it is still strictly smaller
-    in magnitude than its predecessor AND no earlier term has already been rejected.
-    This keeps it accurate down to z ~ 5 and prevents the fixed-length divergence that
-    would otherwise return huge garbage for moderate z."""
-    z = jnp.asarray(z, dtype=jnp.float64)
-    two_z2 = 2.0 * z * z
-    one = jnp.ones_like(z)
-    big = jnp.full_like(z, jnp.inf)
-
-    def body(carry, s):
-        term, total, alive, prev_abs = carry
-        s = s.astype(jnp.float64)
-        # ratio term_s/term_{s-1}:  -( -v + 2s-2)( -v + 2s-1) / ( s * 2 z^2 )
-        term = term * (-((-v + 2.0 * s - 2.0) * (-v + 2.0 * s - 1.0)) / (s * two_z2))
-        a = jnp.abs(term)
-        keep = alive & (a <= prev_abs)         # optimal truncation, per element
-        total = total + jnp.where(keep, term, 0.0)
-        prev_abs = jnp.where(keep, a, prev_abs)
-        return (term, total, keep, prev_abs), None
-
-    (_, total, _, _), _ = lax.scan(
-        body, (one, one, jnp.ones_like(z, dtype=bool), big), jnp.arange(1, _N_ASYM))
-    return (z ** v) * jnp.exp(-0.25 * z * z) * total
+def _uv_series(a, x, eps):
+    # McLaurin series, Parabolic.f90:series, unscaled positive-a branch.
+    one = jnp.ones_like(x)
+    x2 = x*x
+    initial = (one, a*one, one, a*one, one+a*x2*0.5, (one+a*x2/6.0)*x,
+               a*x, one+a*x2*0.5, x2, x2*x, x, 0.5*one, one/6.0, jnp.ones_like(x, bool))
+    def body(carry, pair):
+        am1,a0,bm1,b0,y1,y2,y1p,y2p,x2k,x2km,x2kd,facto1,facto2,active = carry
+        terms = [jnp.zeros_like(x) for _ in range(4)]
+        for li in range(2):
+            k = 2 + 2*pair + li
+            twok = 2.0*k
+            zerk = 0.5*(k-1.0)
+            a2 = a*a0 + zerk*(twok-3.0)*am1
+            b2 = a*b0 + zerk*(twok-1.0)*bm1
+            x2k=x2k*x2; x2km=x2km*x2; x2kd=x2kd*x2
+            facto1d=facto1/(twok-1.0); facto2d=facto2/twok
+            facto1=facto1d/twok; facto2=facto2d/(twok+1.0)
+            ac=a2*(x2k*facto1); bc=b2*(x2km*facto2)
+            acd=a2*(x2kd*facto1d); bcd=b2*(x2k*facto2d)
+            y1=y1+ac; y2=y2+bc; y1p=y1p+acd; y2p=y2p+bcd
+            am1,a0,bm1,b0=a0,a2,b0,b2
+            terms=[t+v for t,v in zip(terms,(ac,bc,acd,bcd))]
+        error=jnp.maximum.reduce(jnp.stack([jnp.abs(t/jnp.maximum(y,eps)) for t,y in zip(terms,(y1,y2,y1p,y2p))]))
+        new=(am1,a0,bm1,b0,y1,y2,y1p,y2p,x2k,x2km,x2kd,facto1,facto2,active & (error>eps))
+        return tuple(jnp.where(active, n, c) for n,c in zip(new,carry)), None
+    out,_=lax.scan(body,initial,jnp.arange(100))
+    y1,y2=out[4],out[5]
+    ah=a*0.5; ahp14=0.25+ah; ahp34=0.5+ahp14
+    f1=jnp.sqrt(jnp.pi)/(2.0**ahp14*_gamma_real(ahp34))
+    f2=-jnp.sqrt(jnp.pi)/(2.0**(ah-0.25)*_gamma_real(ahp14))
+    u=f1*y1+f2*y2
+    f1=2.0**ahp14/jnp.pi*_gamma_real(ahp14)*jnp.sin(jnp.pi*(0.75-ah))**2
+    f2=2.0**(ahp14+0.5)/jnp.pi*_gamma_real(ah+0.75)*jnp.sin(jnp.pi*(0.25-ah))**2
+    return u,f1*y1+f2*y2
 
 
-def _dv_neg_asym(v, z):
-    """D_v(z) via the GROWING asymptotic series, z -> -inf (DLMF 12.9.2, real form).
-
-    D_v(z) ~ sqrt(2 pi)/Gamma(-v) * e^{z^2/4} * (-z)^{-v-1}
-             * sum_{s>=0} prod_{j=1..s} (v+2j-1)(v+2j) / (2 z^2)  (term ratio per s),
-    bit-accurate (rel < 1e-12 vs scipy.pbdv) for z <~ -7. Needed by the const_x2/general
-    bivar path when s_c is large positive (narrow chi PDF, e.g. stratocumulus): the D_v
-    argument -s_c reaches ~ -32, where the 1F1 series overflows. Optimal-truncation as in
-    _dv_pos_asym."""
-    z = jnp.asarray(z, dtype=jnp.float64)
-    two_z2 = 2.0 * z * z
-    one = jnp.ones_like(z)
-    big = jnp.full_like(z, jnp.inf)
-
-    def body(carry, s):
-        term, total, alive, prev_abs = carry
-        s = s.astype(jnp.float64)
-        term = term * ((v + 2.0 * s - 1.0) * (v + 2.0 * s) / (s * two_z2))
-        a = jnp.abs(term)
-        keep = alive & (a <= prev_abs)
-        total = total + jnp.where(keep, term, 0.0)
-        prev_abs = jnp.where(keep, a, prev_abs)
-        return (term, total, keep, prev_abs), None
-
-    (_, total, _, _), _ = lax.scan(
-        body, (one, one, jnp.ones_like(z, dtype=bool), big), jnp.arange(1, _N_ASYM))
-    return (_SQRT2 * _SQRT_PI / _gamma_real(-v)) * jnp.exp(0.25 * z * z) * (-z) ** (-v - 1.0) * total
-
-
-def dv_parabolic_cylinder(v, z):
-    """Parabolic cylinder function D_v(z), differentiable in z (DLMF 12).
-
-    v : scalar order (the KK exponent, static).
-    z : real argument (scalar or array).
-
-    Value-faithful to scipy.special.pbdv(v, z)[0] (and hence to the Fortran Dv_fnc oracle
-    within the gate tolerance) over the full z in [-49, 49] used by the dispatch: the 1F1
-    series for |z| <~ 6, the descending asymptotic for z >~ 5.75, and the GROWING asymptotic
-    (Iter130) for z <~ -8.
-    """
-    z = jnp.asarray(z, dtype=jnp.float64)
-    # Evaluate each branch on a CLAMPED argument restricted to its own valid side, so the two
-    # unselected branches are always finite (else jnp.where leaks nan/inf gradients): the 1F1
-    # series overflows for |z| >~ 26, the positive asymptotic z**v is complex for z<0, and the
-    # negative-growing (-z)^(...) is complex for z>0. Each agrees with the unclamped value where
-    # it is actually selected.
-    series = _dv_series(v, jnp.clip(z, _Z_SWITCH_NEG, _Z_SWITCH))
-    pos_asym = _dv_pos_asym(v, jnp.maximum(z, _Z_SWITCH))
-    neg_asym = _dv_neg_asym(v, jnp.minimum(z, _Z_SWITCH_NEG))
-    return jnp.where(z > _Z_SWITCH, pos_asym,
-                     jnp.where(z < _Z_SWITCH_NEG, neg_asym, series))
-
-
-# The inner series/asymptotic scans (_hyp1f1, _dv_*_asym) CLOSE OVER the concrete `z`/`w` arrays.
-# Called eagerly (per timestep), each scan bakes those values into its jaxpr as literal constants, so
-# XLA recompiles every step → the jit-cache grows without bound → OOM on long runs (rico, Iter290).
-# Jitting the public entry turns `v`/`z` into tracers, hoisting the captured arrays to scan operands, so
-# the whole D_v graph compiles ONCE and cache-hits every subsequent step. Numerically identical (jit is
-# value-preserving) and still differentiable. No static args: `v`/`z` are only used arithmetically.
-dv_parabolic_cylinder = jax.jit(dv_parabolic_cylinder)
+def _uv_elementary(a, x, eps):
+    # Elementary asymptotic expansion, positive a, unscaled functions.
+    mu=jnp.sqrt(2.0*a)
+    t=jnp.abs(x)/(mu*jnp.sqrt(2.0))
+    x2=x*x
+    tau=-a*0.5/(x2*0.25+a+x*0.5*jnp.sqrt(x2*0.25+a))
+    # Horner evaluation keeps the XLA graph compact when this kernel is called
+    # repeatedly by PDF moments. Coefficients are Algorithm 850's phi/chi table.
+    def polynomials(coefficients):
+        values = jnp.zeros((13,) + tau.shape, dtype=tau.dtype)
+        def horner(values, coefficients):
+            return values * tau + coefficients.reshape((13,) + (1,) * tau.ndim), None
+        return lax.scan(horner, values, jnp.asarray(coefficients).T[::-1])[0]
+    if l_high_accuracy_parab_cyl_fnc:
+        phi = polynomials(_PHI)
+        chi = polynomials(_CHI)
+    else:
+        # For KK orders a>=1.5 with x>=10, and the a>=21 recurrence
+        # seeds, the source's eps=1e-4 test converges by k=2. Retain that
+        # stopping test but avoid building unused degree-36 polynomials.
+        phi = jnp.stack((jnp.ones_like(x),
+            -1.666666666666666666666667*tau**3-2.5*tau**2-.75*tau,
+            21.38888888888888888888889*tau**6+64.16666666666666666666667*tau**5+67.375*tau**4+27.875*tau**3+3.28125*tau**2))
+        chi = jnp.stack((jnp.ones_like(x),
+            1.666666666666666666666667*tau**3+2.5*tau**2+1.25*tau,
+            -21.38888888888888888888889*tau**6-64.16666666666666666666667*tau**5-71.54166666666666666666667*tau**4-33.625*tau**3-4.21875*tau**2))
+    mu2=2.0*a
+    initial = (jnp.ones_like(x, bool), jnp.ones_like(x), jnp.ones_like(x),
+               jnp.zeros_like(x), jnp.zeros_like(x), jnp.zeros_like(x), jnp.zeros_like(x))
+    def accumulate(carry, terms):
+        active, musp, musn, sphip, schip, sphin, schin = carry
+        phi_k, chi_k = terms
+        d1, d2, d3, d4 = phi_k/musp, chi_k/musp, phi_k/musn, chi_k/musn
+        sphip=jnp.where(active,sphip+d1,sphip); schip=jnp.where(active,schip+d2,schip)
+        sphin=jnp.where(active,sphin+d3,sphin); schin=jnp.where(active,schin+d4,schin)
+        error=jnp.maximum.reduce(jnp.stack((jnp.abs(d1/sphip),jnp.abs(d2/schip),jnp.abs(d3/sphin),jnp.abs(d4/schin))))
+        return (active & (error>eps), -musp*mu2, musn*mu2, sphip, schip, sphin, schin), None
+    result, _ = lax.scan(accumulate, initial, (phi, chi))
+    sphip, schip, sphin, schin = result[3:]
+    xargu=x*x*0.25+a
+    facu=xargu**0.25
+    ffa=jnp.exp(a*jnp.log(x*0.5+jnp.sqrt(xargu))+x*0.5*jnp.sqrt(xargu)-a*0.5)
+    u=sphip/(facu*jnp.sqrt(2.0))/ffa
+    # Source coefficient series for the exponentially small U contribution to V.
+    gk=(1.0,.41666666666666666667e-1,0,            -.97463348765432098765e-2,0,.12318482904510826965e-1,            0,-.37822933917705539682e-1,0,.21514326767209896474,            0,-1.9630003732872175294,0,26.256830962378916652,0,            -484.19061617504532506,0,11773.948564802034554,0,            -365037.92569092371983,0,14054558.808383655048,0,            -657894020.31009296820,0,36795321248.737494263)
+    wk=(1.0,-.17361111111111111111e-2,.81219457304526748971e-3,            -.11215312855682914598e-2,.33920312789254653178e-2,            -.18817620620360951108e-1,.16870892343666095644,            -2.2330644165264046334,40.925670821571152909,            -991.44221631790969480,30664.092693023833555,            -1178670.6504836921080,55108658.068376820265)
+    mu2=mu*mu; mu4=mu2*mu2
+    def coefficient_series(coefficients, ratio):
+        def accumulate(carry, coefficient):
+            power, value = carry
+            return (power*ratio, value+coefficient/power), None
+        return lax.scan(accumulate, (jnp.ones_like(x), jnp.zeros_like(x)), jnp.asarray(coefficients))[0][1]
+    gmus = coefficient_series(gk, mu2)
+    smus = coefficient_series(wk, mu4)
+    dl=-2.0*a*(t*jnp.sqrt(t*t+1.0)+jnp.log(t+jnp.sqrt(t*t+1.0)))
+    dnew=jnp.exp(dl)*jnp.sqrt(2.0*jnp.pi)*smus/(gmus*gmus)
+    v=(jnp.sin(jnp.pi*a)*dnew*sphip/(jnp.sqrt(2.0)*jnp.pi)+sphin/jnp.sqrt(jnp.pi))/facu*ffa
+    return u,v
 
 
-# D_v argument bound: the KK PDF-integral dispatch only SELECTS the parabolic-cylinder forms when
-# |s_c| <= parab_cyl_max_input (=49); beyond that the const-PDF approximation is used. Clamping the
-# (unused) extreme argument keeps every selected/tested case exact while preventing the large-negative-z
-# series overflow (->nan) from poisoning the autodiff graph (a differentiability guard, not a contrivance).
-_DV_ARG_MAX = 50.0
+def _uv_expax(a, x, eps):
+    aph=a+0.5; amh=a-0.5
+    x2=x*x
+    one=jnp.ones_like(x)
+    # Scaled coefficient recurrence avoids overflowing factorial intermediates.
+    initial=(one,one,one,one,one,one,one,one,jnp.ones_like(x,bool))
+    def body(carry,k):
+        ac,bc,acd,bcd,y1,y2,y1p,y2p,active=carry
+        l=2.0*k; aphl=aph+l; amhl=amh-l
+        acd=-amhl*(amh+l-1.0)*ac/(l*x2)
+        ac=-(aphl-2.0)*(aphl-1.0)*ac/(l*x2)
+        bc=(amhl+2.0)*(amhl+1.0)*bc/(l*x2)
+        bcd=jnp.where(jnp.abs(aph-l)<2.2250738585072014e-305,0.0,aphl/jnp.where(aph==l,1.0,aph-l)*bc)
+        y1=y1+ac; y2=y2+bc; y1p=y1p+acd; y2p=y2p+bcd
+        err=jnp.maximum.reduce(jnp.stack((jnp.abs(ac/y1),jnp.abs(bc/y2),jnp.abs(acd/y1p),jnp.abs(bcd/y2p))))
+        new=(ac,bc,acd,bcd,y1,y2,y1p,y2p,active & (err>eps))
+        return tuple(jnp.where(active,n,c) for n,c in zip(new,carry)),None
+    out,_=lax.scan(body,initial,jnp.arange(1,100))
+    phiax=jnp.exp(0.25*x*x+a*jnp.log(x))
+    return out[4]/(jnp.sqrt(x)*phiax), jnp.sqrt(2.0)/(jnp.sqrt(jnp.pi)*jnp.sqrt(x))*phiax*out[5]
 
 
-def _dvc(order, arg):
-    """Clamped parabolic-cylinder D_v: dv_parabolic_cylinder(order, clip(arg, ±_DV_ARG_MAX))."""
-    return dv_parabolic_cylinder(order, jnp.clip(arg, -_DV_ARG_MAX, _DV_ARG_MAX))
+def _u_recur(a,x,eps):
+    a1=a-jnp.trunc(a)+21.0
+    u1,_=_uv_elementary(a1,x,eps)
+    u2,_=_uv_elementary(a1+1.0,x,eps)
+    # KK a is in [0.5, 5.5]; source downward recurrence stops at a.
+    def body(carry,k):
+        u1,u2=carry
+        a3=a1-1.0-k
+        u=x*u1+(a3+1.5)*u2
+        active=a3>=a-0.01
+        return (jnp.where(active,u,u1),jnp.where(active,u1,u2)),None
+    out,_=lax.scan(body,(u1,u2),jnp.arange(22))
+    return out[0]
+
+
+@jax.jit
+def dv_parabolic_cylinder(v,z):
+    z=jnp.asarray(z,dtype=jnp.float64)
+    a=-v-0.5
+    eps=1.e-15 if l_high_accuracy_parab_cyl_fnc else 1.e-4
+    x=jnp.abs(z)
+    # Clamp unselected branches so their intermediates remain finite.
+    xs=jnp.minimum(x,12.0)
+    us,vs=_uv_series(a,xs,eps)
+    ur=_u_recur(a,xs,eps)
+    ue,ve=_uv_elementary(a,jnp.maximum(x,10.0),eps)
+    ux,vx=_uv_expax(a,jnp.maximum(x,12.0),eps)
+    f1=-0.23*x*x+1.2*x+18.72
+    use_series=(x<12.0)&(a<f1)
+    direct_series=(x<0.1857815261497950467)|((x<3.0)&(a<3.75/jnp.maximum(x,1.e-30)-1.25))
+    use_expax=(x>=12.0)&(a<2.5*x-30.0)&(a<150.0)
+    u=jnp.where(use_series,jnp.where(direct_series,us,ur),jnp.where(use_expax,ux,ue))
+    vv=jnp.where(use_series,vs,jnp.where(use_expax,vx,ve))
+    return jnp.where(z<=0.0,vv/((1.0/jnp.pi)*_gamma_real(-v))-jnp.sin(jnp.pi*a)*u,u)
+
+
+def _dvc(order,arg):
+    return dv_parabolic_cylinder(order,jnp.clip(arg,-50.0,50.0))

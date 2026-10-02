@@ -1,11 +1,18 @@
-import jax.numpy as jnp
 """KK upscaled second-moment microphysics covariances — JAX port of KK_upscaled_covariances.F90.
 
 These give the covariances of the KK process tendencies (auto/accr/evap) with rt/thl/w that become the
 SECOND-MOMENT microphysics source terms wprtp_mc/wpthlp_mc/rtp2_mc/thlp2_mc/rtpthlp_mc (the Iter158-localized
 gap that keeps KK from being bit-faithful). They compose the validated `trivar_NNL_covar_eq` covariance
 integral (PDF_integrals_covar.py) with the already-ported `bivar_NL_mean_eq` mean integral. Differentiable.
+
+The driver batches Dv evaluations through covariance_dv.py; internal ``dv``
+arguments pass those values down to the integrals. Omitting them retains local
+evaluation for standalone callers. The driver's public interface is unchanged.
 """
+
+import jax.numpy as jnp
+
+from clubb_jax.src.Microphys.KK_microphys.covariance_dv import batch_covariance_dv
 
 # The covar-integral primitives the *_covar_eq routines compose (mirroring the Fortran
 # KK_upscaled_covariances USE PDF_integrals_covar relationship; the _eq routines moved here iter 171):
@@ -35,35 +42,39 @@ from clubb_jax.src.Microphys.KK_microphys.parameters_KK import (
 
 def _covar_x_evap_comp(mu_eta, mu_chi, mu_rr, mu_Nr, mu_rr_n, mu_Nr_n, sigma_eta, sigma_chi, sigma_rr, sigma_Nr,
                        sigma_rr_n, sigma_Nr_n, corr_eta_chi, corr_eta_rr_n, corr_eta_Nr_n, corr_chi_rr_n,
-                       corr_chi_Nr_n, corr_rr_Nr_n, xm, mu_x, kk_tndcy, kk_coef, eta_tol, c, precip_frac, s):
+                       corr_chi_Nr_n, corr_rr_Nr_n, xm, mu_x, kk_tndcy, kk_coef, eta_tol, c, precip_frac, s, *,
+                       dv=None):
     """Per-PDF-component Cov(x, KK_evap) for x=r_t (s=+1) / thl (s=-1) — same x'=(1/(2c))(eta'∓chi') form as
     auto/accr but the 4-var subsaturated quadrivar covariance + trivar_NLL (chi^α r_r^β N_r^γ) means."""
     a, bb, gg = KK_EVAP_SUPERSAT_EXP, KK_EVAP_RR_EXP, KK_EVAP_NR_EXP
     quad = quadrivar_NNLL_covar_eq(mu_eta, mu_chi, mu_rr, mu_Nr, mu_rr_n, mu_Nr_n, sigma_eta, sigma_chi, sigma_rr,
                                    sigma_Nr, sigma_rr_n, sigma_Nr_n, corr_eta_chi, corr_eta_rr_n, corr_eta_Nr_n,
                                    corr_chi_rr_n, corr_chi_Nr_n, corr_rr_Nr_n, mu_eta, kk_tndcy, kk_coef,
-                                   eta_tol, RR_TOL, NR_TOL, a, bb, gg)
+                                   eta_tol, RR_TOL, NR_TOL, a, bb, gg, dv=None if dv is None else dv.covar)
     m_a1 = trivar_NLL_mean_eq(mu_chi, mu_rr, mu_Nr, mu_rr_n, mu_Nr_n, sigma_chi, sigma_rr, sigma_Nr, sigma_rr_n,
-                              sigma_Nr_n, corr_chi_rr_n, corr_chi_Nr_n, corr_rr_Nr_n, a + 1.0, bb, gg)
+                              sigma_Nr_n, corr_chi_rr_n, corr_chi_Nr_n, corr_rr_Nr_n, a + 1.0, bb, gg,
+                              dv=None if dv is None else dv.mean[1])
     m_a = trivar_NLL_mean_eq(mu_chi, mu_rr, mu_Nr, mu_rr_n, mu_Nr_n, sigma_chi, sigma_rr, sigma_Nr, sigma_rr_n,
-                             sigma_Nr_n, corr_chi_rr_n, corr_chi_Nr_n, corr_rr_Nr_n, a, bb, gg)
+                             sigma_Nr_n, corr_chi_rr_n, corr_chi_Nr_n, corr_rr_Nr_n, a, bb, gg,
+                             dv=None if dv is None else dv.mean[0])
     return kk_coef * precip_frac * ((1.0 / (2.0 * c)) * (quad + s * m_a1)
                                     + (mu_x - xm - s * mu_chi / (2.0 * c)) * m_a)
 
 
 def _covar_x_comp(mu_eta, mu_chi, mu_y, mu_y_n, sigma_eta, sigma_chi, sigma_y, sigma_y_n,
                   corr_eta_chi, corr_eta_y_n, corr_chi_y_n, xm, mu_x, kk_tndcy, kk_coef,
-                  eta_tol, y_tol, c, alpha, beta, precip_frac, s):
+                  eta_tol, y_tol, c, alpha, beta, precip_frac, s, *, dv=None):
     """Per-PDF-component contribution to Cov(x, KK_<process>) for x = r_t (s=+1) or thl (s=-1), via the ADG1
     transform x' = (1/(2 c))(eta' ∓ chi'). Auto (y=N_cn, precip_frac=1) and accr (y=r_r, ×precip_frac) share
     this form. KK_upscaled_covariances.F90:covar_{rt,thl}_KK_{auto,accr}."""
     tri = trivar_NNL_covar_eq(mu_eta, mu_chi, mu_y, mu_y_n, sigma_eta, sigma_chi, sigma_y,
                               sigma_y_n, corr_eta_chi, corr_eta_y_n, corr_chi_y_n,
-                              mu_eta, kk_tndcy, kk_coef, eta_tol, y_tol, alpha, beta)
+                              mu_eta, kk_tndcy, kk_coef, eta_tol, y_tol, alpha, beta,
+                              dv=None if dv is None else dv.covar)
     biv_a1 = bivar_NL_mean_eq(mu_chi, mu_y, mu_y_n, sigma_chi, sigma_y, sigma_y_n,
-                              corr_chi_y_n, y_tol, alpha + 1.0, beta)
+                              corr_chi_y_n, y_tol, alpha + 1.0, beta, dv=None if dv is None else dv.mean[1])
     biv_a = bivar_NL_mean_eq(mu_chi, mu_y, mu_y_n, sigma_chi, sigma_y, sigma_y_n,
-                             corr_chi_y_n, y_tol, alpha, beta)
+                             corr_chi_y_n, y_tol, alpha, beta, dv=None if dv is None else dv.mean[0])
     return kk_coef * precip_frac * ((1.0 / (2.0 * c)) * (tri + s * biv_a1)
                                     + (mu_x - xm - s * mu_chi / (2.0 * c)) * biv_a)
 
@@ -72,15 +83,17 @@ def covar_rt_KK_auto(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2,
                      sigma_eta_1, sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2,
                      sigma_Ncn_1_n, sigma_Ncn_2_n, corr_eta_chi_1, corr_eta_chi_2, corr_eta_Ncn_1_n,
                      corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, rtm, mu_rt_1, mu_rt_2,
-                     KK_auto_tndcy, KK_auto_coef, eta_tol, crt1, crt2, mixt_frac):
+                     KK_auto_tndcy, KK_auto_coef, eta_tol, crt1, crt2, mixt_frac, *, dv=None):
     """Covariance of r_t with the KK autoconversion tendency. KK_upscaled_covariances.F90:covar_rt_KK_auto."""
     a, b = KK_AUTO_RC_EXP, KK_AUTO_NC_EXP
     c1 = _covar_x_comp(mu_eta_1, mu_chi_1, mu_Ncn_1, mu_Ncn_1_n, sigma_eta_1, sigma_chi_1, sigma_Ncn_1,
                        sigma_Ncn_1_n, corr_eta_chi_1, corr_eta_Ncn_1_n, corr_chi_Ncn_1_n, rtm, mu_rt_1,
-                       KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, crt1, a, b, 1.0, 1.0)
+                       KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, crt1, a, b, 1.0, 1.0,
+                       dv=None if dv is None else dv[0])
     c2 = _covar_x_comp(mu_eta_2, mu_chi_2, mu_Ncn_2, mu_Ncn_2_n, sigma_eta_2, sigma_chi_2, sigma_Ncn_2,
                        sigma_Ncn_2_n, corr_eta_chi_2, corr_eta_Ncn_2_n, corr_chi_Ncn_2_n, rtm, mu_rt_2,
-                       KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, crt2, a, b, 1.0, 1.0)
+                       KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, crt2, a, b, 1.0, 1.0,
+                       dv=None if dv is None else dv[1])
     return mixt_frac * c1 + (1.0 - mixt_frac) * c2
 
 
@@ -88,16 +101,19 @@ def covar_rt_KK_accr(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, m
                      sigma_eta_1, sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, sigma_rr_2,
                      sigma_rr_1_n, sigma_rr_2_n, corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n,
                      corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, rtm, mu_rt_1, mu_rt_2,
-                     KK_accr_tndcy, KK_accr_coef, eta_tol, crt1, crt2, mixt_frac, precip_frac_1, precip_frac_2):
+                     KK_accr_tndcy, KK_accr_coef, eta_tol, crt1, crt2, mixt_frac, precip_frac_1, precip_frac_2, *,
+                     dv=None):
     """Covariance of r_t with the KK accretion tendency (y=r_r, ×precip_frac). Same composition as auto.
     KK_upscaled_covariances.F90:covar_rt_KK_accr."""
     a, b = KK_ACCR_RC_EXP, KK_ACCR_RR_EXP
     c1 = _covar_x_comp(mu_eta_1, mu_chi_1, mu_rr_1, mu_rr_1_n, sigma_eta_1, sigma_chi_1, sigma_rr_1,
                        sigma_rr_1_n, corr_eta_chi_1, corr_eta_rr_1_n, corr_chi_rr_1_n, rtm, mu_rt_1,
-                       KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, crt1, a, b, precip_frac_1, 1.0)
+                       KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, crt1, a, b, precip_frac_1, 1.0,
+                       dv=None if dv is None else dv[0])
     c2 = _covar_x_comp(mu_eta_2, mu_chi_2, mu_rr_2, mu_rr_2_n, sigma_eta_2, sigma_chi_2, sigma_rr_2,
                        sigma_rr_2_n, corr_eta_chi_2, corr_eta_rr_2_n, corr_chi_rr_2_n, rtm, mu_rt_2,
-                       KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, crt2, a, b, precip_frac_2, 1.0)
+                       KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, crt2, a, b, precip_frac_2, 1.0,
+                       dv=None if dv is None else dv[1])
     return mixt_frac * c1 + (1.0 - mixt_frac) * c2
 
 
@@ -105,16 +121,18 @@ def covar_thl_KK_auto(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2
                       sigma_eta_1, sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2,
                       sigma_Ncn_1_n, sigma_Ncn_2_n, corr_eta_chi_1, corr_eta_chi_2, corr_eta_Ncn_1_n,
                       corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, thlm, mu_thl_1, mu_thl_2,
-                      KK_auto_tndcy, KK_auto_coef, eta_tol, cthl1, cthl2, mixt_frac):
+                      KK_auto_tndcy, KK_auto_coef, eta_tol, cthl1, cthl2, mixt_frac, *, dv=None):
     """Covariance of thl with the KK autoconversion tendency (thl' = (eta'-chi')/(2 c_thl), so s=-1).
     KK_upscaled_covariances.F90:covar_thl_KK_auto."""
     a, b = KK_AUTO_RC_EXP, KK_AUTO_NC_EXP
     c1 = _covar_x_comp(mu_eta_1, mu_chi_1, mu_Ncn_1, mu_Ncn_1_n, sigma_eta_1, sigma_chi_1, sigma_Ncn_1,
                        sigma_Ncn_1_n, corr_eta_chi_1, corr_eta_Ncn_1_n, corr_chi_Ncn_1_n, thlm, mu_thl_1,
-                       KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, cthl1, a, b, 1.0, -1.0)
+                       KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, cthl1, a, b, 1.0, -1.0,
+                       dv=None if dv is None else dv[0])
     c2 = _covar_x_comp(mu_eta_2, mu_chi_2, mu_Ncn_2, mu_Ncn_2_n, sigma_eta_2, sigma_chi_2, sigma_Ncn_2,
                        sigma_Ncn_2_n, corr_eta_chi_2, corr_eta_Ncn_2_n, corr_chi_Ncn_2_n, thlm, mu_thl_2,
-                       KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, cthl2, a, b, 1.0, -1.0)
+                       KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, cthl2, a, b, 1.0, -1.0,
+                       dv=None if dv is None else dv[1])
     return mixt_frac * c1 + (1.0 - mixt_frac) * c2
 
 
@@ -122,16 +140,19 @@ def covar_thl_KK_accr(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, 
                       sigma_eta_1, sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, sigma_rr_2,
                       sigma_rr_1_n, sigma_rr_2_n, corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n,
                       corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, thlm, mu_thl_1, mu_thl_2,
-                      KK_accr_tndcy, KK_accr_coef, eta_tol, cthl1, cthl2, mixt_frac, precip_frac_1, precip_frac_2):
+                      KK_accr_tndcy, KK_accr_coef, eta_tol, cthl1, cthl2, mixt_frac, precip_frac_1, precip_frac_2, *,
+                      dv=None):
     """Covariance of thl with the KK accretion tendency (s=-1, y=r_r, ×precip_frac).
     KK_upscaled_covariances.F90:covar_thl_KK_accr."""
     a, b = KK_ACCR_RC_EXP, KK_ACCR_RR_EXP
     c1 = _covar_x_comp(mu_eta_1, mu_chi_1, mu_rr_1, mu_rr_1_n, sigma_eta_1, sigma_chi_1, sigma_rr_1,
                        sigma_rr_1_n, corr_eta_chi_1, corr_eta_rr_1_n, corr_chi_rr_1_n, thlm, mu_thl_1,
-                       KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, cthl1, a, b, precip_frac_1, -1.0)
+                       KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, cthl1, a, b, precip_frac_1, -1.0,
+                       dv=None if dv is None else dv[0])
     c2 = _covar_x_comp(mu_eta_2, mu_chi_2, mu_rr_2, mu_rr_2_n, sigma_eta_2, sigma_chi_2, sigma_rr_2,
                        sigma_rr_2_n, corr_eta_chi_2, corr_eta_rr_2_n, corr_chi_rr_2_n, thlm, mu_thl_2,
-                       KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, cthl2, a, b, precip_frac_2, -1.0)
+                       KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, cthl2, a, b, precip_frac_2, -1.0,
+                       dv=None if dv is None else dv[1])
     return mixt_frac * c1 + (1.0 - mixt_frac) * c2
 
 
@@ -139,16 +160,16 @@ def covar_x_KK_auto(mu_x_1, mu_x_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, mu_N
                     sigma_x_1, sigma_x_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2,
                     sigma_Ncn_1_n, sigma_Ncn_2_n, corr_x_chi_1, corr_x_chi_2, corr_x_Ncn_1_n,
                     corr_x_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, x_mean, KK_auto_tndcy,
-                    KK_auto_coef, x_tol, mixt_frac):
+                    KK_auto_coef, x_tol, mixt_frac, *, dv=None):
     """Covariance of x (=w) with the KK autoconversion tendency — x is a direct PDF variable, so this is the
     plain KK_coef·<mixt blend of trivar_NNL_covar_eq(x, chi, N_cn)>. KK_upscaled_covariances.F90:covar_x_KK_auto."""
     a, b = KK_AUTO_RC_EXP, KK_AUTO_NC_EXP
     t1 = trivar_NNL_covar_eq(mu_x_1, mu_chi_1, mu_Ncn_1, mu_Ncn_1_n, sigma_x_1, sigma_chi_1, sigma_Ncn_1,
                              sigma_Ncn_1_n, corr_x_chi_1, corr_x_Ncn_1_n, corr_chi_Ncn_1_n, x_mean,
-                             KK_auto_tndcy, KK_auto_coef, x_tol, NC_TOL, a, b)
+                             KK_auto_tndcy, KK_auto_coef, x_tol, NC_TOL, a, b, dv=None if dv is None else dv[0].covar)
     t2 = trivar_NNL_covar_eq(mu_x_2, mu_chi_2, mu_Ncn_2, mu_Ncn_2_n, sigma_x_2, sigma_chi_2, sigma_Ncn_2,
                              sigma_Ncn_2_n, corr_x_chi_2, corr_x_Ncn_2_n, corr_chi_Ncn_2_n, x_mean,
-                             KK_auto_tndcy, KK_auto_coef, x_tol, NC_TOL, a, b)
+                             KK_auto_tndcy, KK_auto_coef, x_tol, NC_TOL, a, b, dv=None if dv is None else dv[1].covar)
     return KK_auto_coef * (mixt_frac * t1 + (1.0 - mixt_frac) * t2)
 
 
@@ -156,17 +177,17 @@ def covar_x_KK_accr(mu_x_1, mu_x_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_rr_
                     sigma_x_1, sigma_x_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, sigma_rr_2,
                     sigma_rr_1_n, sigma_rr_2_n, corr_x_chi_1, corr_x_chi_2, corr_x_rr_1_n,
                     corr_x_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, x_mean, KK_accr_tndcy,
-                    KK_accr_coef, x_tol, mixt_frac, precip_frac_1, precip_frac_2):
+                    KK_accr_coef, x_tol, mixt_frac, precip_frac_1, precip_frac_2, *, dv=None):
     """Covariance of x (=w) with the KK accretion tendency. Unlike auto, accretion has the
     out-of-precipitation correction `−(1−precip_frac)·(mu_x−x_mean)·KK_accr_tndcy` per component.
     KK_upscaled_covariances.F90:covar_x_KK_accr."""
     a, b = KK_ACCR_RC_EXP, KK_ACCR_RR_EXP
     t1 = trivar_NNL_covar_eq(mu_x_1, mu_chi_1, mu_rr_1, mu_rr_1_n, sigma_x_1, sigma_chi_1, sigma_rr_1,
                              sigma_rr_1_n, corr_x_chi_1, corr_x_rr_1_n, corr_chi_rr_1_n, x_mean,
-                             KK_accr_tndcy, KK_accr_coef, x_tol, RR_TOL, a, b)
+                             KK_accr_tndcy, KK_accr_coef, x_tol, RR_TOL, a, b, dv=None if dv is None else dv[0].covar)
     t2 = trivar_NNL_covar_eq(mu_x_2, mu_chi_2, mu_rr_2, mu_rr_2_n, sigma_x_2, sigma_chi_2, sigma_rr_2,
                              sigma_rr_2_n, corr_x_chi_2, corr_x_rr_2_n, corr_chi_rr_2_n, x_mean,
-                             KK_accr_tndcy, KK_accr_coef, x_tol, RR_TOL, a, b)
+                             KK_accr_tndcy, KK_accr_coef, x_tol, RR_TOL, a, b, dv=None if dv is None else dv[1].covar)
     comp1 = KK_accr_coef * precip_frac_1 * t1 - (1.0 - precip_frac_1) * (mu_x_1 - x_mean) * KK_accr_tndcy
     comp2 = KK_accr_coef * precip_frac_2 * t2 - (1.0 - precip_frac_2) * (mu_x_2 - x_mean) * KK_accr_tndcy
     return mixt_frac * comp1 + (1.0 - mixt_frac) * comp2
@@ -179,16 +200,18 @@ def _covar_x_KK_evap(xm, mu_x_1, mu_x_2, c1_, c2_, s, *,
                      sigma_Nr_1_n, sigma_Nr_2_n, corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n, corr_eta_rr_2_n,
                      corr_eta_Nr_1_n, corr_eta_Nr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, corr_chi_Nr_1_n,
                      corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, KK_evap_tndcy, KK_evap_coef, eta_tol,
-                     mixt_frac, precip_frac_1, precip_frac_2):
+                     mixt_frac, precip_frac_1, precip_frac_2, dv=None):
     """Shared rt/thl evaporation covariance (s=+1 for r_t, s=-1 for thl)."""
     d1 = _covar_x_evap_comp(mu_eta_1, mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, mu_Nr_1_n, sigma_eta_1, sigma_chi_1,
                             sigma_rr_1, sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, corr_eta_chi_1, corr_eta_rr_1_n,
                             corr_eta_Nr_1_n, corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, xm, mu_x_1,
-                            KK_evap_tndcy, KK_evap_coef, eta_tol, c1_, precip_frac_1, s)
+                            KK_evap_tndcy, KK_evap_coef, eta_tol, c1_, precip_frac_1, s,
+                            dv=None if dv is None else dv[0])
     d2 = _covar_x_evap_comp(mu_eta_2, mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, mu_Nr_2_n, sigma_eta_2, sigma_chi_2,
                             sigma_rr_2, sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, corr_eta_chi_2, corr_eta_rr_2_n,
                             corr_eta_Nr_2_n, corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, xm, mu_x_2,
-                            KK_evap_tndcy, KK_evap_coef, eta_tol, c2_, precip_frac_2, s)
+                            KK_evap_tndcy, KK_evap_coef, eta_tol, c2_, precip_frac_2, s,
+                            dv=None if dv is None else dv[1])
     return mixt_frac * d1 + (1.0 - mixt_frac) * d2
 
 
@@ -209,18 +232,20 @@ def covar_x_KK_evap(mu_x_1, mu_x_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_
                     corr_x_chi_1, corr_x_chi_2, corr_x_rr_1_n, corr_x_rr_2_n, corr_x_Nr_1_n, corr_x_Nr_2_n,
                     corr_chi_rr_1_n, corr_chi_rr_2_n, corr_chi_Nr_1_n, corr_chi_Nr_2_n, corr_rr_Nr_1_n,
                     corr_rr_Nr_2_n, x_mean, KK_evap_tndcy, KK_evap_coef, x_tol, mixt_frac, precip_frac_1,
-                    precip_frac_2):
+                    precip_frac_2, *, dv=None):
     """Cov(x=w, KK evaporation tendency) — direct quadrivar + the out-of-precip correction (like accr).
     KK_upscaled_covariances.F90:covar_x_KK_evap."""
     a, b, g = KK_EVAP_SUPERSAT_EXP, KK_EVAP_RR_EXP, KK_EVAP_NR_EXP
     q1 = quadrivar_NNLL_covar_eq(mu_x_1, mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, mu_Nr_1_n, sigma_x_1, sigma_chi_1,
                                  sigma_rr_1, sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, corr_x_chi_1, corr_x_rr_1_n,
                                  corr_x_Nr_1_n, corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, x_mean,
-                                 KK_evap_tndcy, KK_evap_coef, x_tol, RR_TOL, NR_TOL, a, b, g)
+                                 KK_evap_tndcy, KK_evap_coef, x_tol, RR_TOL, NR_TOL, a, b, g,
+                                 dv=None if dv is None else dv[0].covar)
     q2 = quadrivar_NNLL_covar_eq(mu_x_2, mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, mu_Nr_2_n, sigma_x_2, sigma_chi_2,
                                  sigma_rr_2, sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, corr_x_chi_2, corr_x_rr_2_n,
                                  corr_x_Nr_2_n, corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, x_mean,
-                                 KK_evap_tndcy, KK_evap_coef, x_tol, RR_TOL, NR_TOL, a, b, g)
+                                 KK_evap_tndcy, KK_evap_coef, x_tol, RR_TOL, NR_TOL, a, b, g,
+                                 dv=None if dv is None else dv[1].covar)
     comp1 = KK_evap_coef * precip_frac_1 * q1 - (1.0 - precip_frac_1) * (mu_x_1 - x_mean) * KK_evap_tndcy
     comp2 = KK_evap_coef * precip_frac_2 * q2 - (1.0 - precip_frac_2) * (mu_x_2 - x_mean) * KK_evap_tndcy
     return mixt_frac * comp1 + (1.0 - mixt_frac) * comp2
@@ -244,41 +269,49 @@ def KK_upscaled_covar_driver(
         mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, crt1, crt2, cthl1, cthl2):
     """Assemble the 5 second-moment microphysics tendencies (wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc,
     rtpthlp_mc) from the 9 KK covariances. Faithful port of KK_upscaled_covariances.F90:KK_upscaled_covar_driver.
-    Returns (wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc)."""
+    Returns the five tendencies followed by w/rt/thl evaporation, autoconversion,
+    and accretion covariances for direct interface statistics."""
+    # JAX-only batching stays below the Fortran-shaped microphysics interface.
+    # Covariance and mean-integral requests share values across w, rt, and thl.
+    auto_dv, accr_dv, evap_dv = batch_covariance_dv(
+        (mu_chi_1, mu_chi_2), (sigma_chi_1, sigma_chi_2),
+        (sigma_Ncn_1_n, sigma_Ncn_2_n), (corr_chi_Ncn_1_n, corr_chi_Ncn_2_n),
+        (sigma_rr_1_n, sigma_rr_2_n), (corr_chi_rr_1_n, corr_chi_rr_2_n),
+        (sigma_Nr_1_n, sigma_Nr_2_n), (corr_chi_Nr_1_n, corr_chi_Nr_2_n))
     # auto covariances (y = N_cn)
     a_w = covar_x_KK_auto(mu_w_1, mu_w_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n,
                           sigma_w_1, sigma_w_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2,
                           sigma_Ncn_1_n, sigma_Ncn_2_n, corr_w_chi_1, corr_w_chi_2, corr_w_Ncn_1_n,
                           corr_w_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, w_mean, KK_auto_tndcy,
-                          KK_auto_coef, _W_TOL, mixt_frac)
+                          KK_auto_coef, _W_TOL, mixt_frac, dv=auto_dv)
     a_rt = covar_rt_KK_auto(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n,
                             sigma_eta_1, sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2,
                             sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_eta_1, corr_chi_eta_2, corr_eta_Ncn_1_n,
                             corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, rtm, mu_rt_1, mu_rt_2,
-                            KK_auto_tndcy, KK_auto_coef, _ETA_TOL, crt1, crt2, mixt_frac)
+                            KK_auto_tndcy, KK_auto_coef, _ETA_TOL, crt1, crt2, mixt_frac, dv=auto_dv)
     a_thl = covar_thl_KK_auto(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n,
                               sigma_eta_1, sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2,
                               sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_eta_1, corr_chi_eta_2, corr_eta_Ncn_1_n,
                               corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, thlm, mu_thl_1, mu_thl_2,
-                              KK_auto_tndcy, KK_auto_coef, _ETA_TOL, cthl1, cthl2, mixt_frac)
+                              KK_auto_tndcy, KK_auto_coef, _ETA_TOL, cthl1, cthl2, mixt_frac, dv=auto_dv)
     # accretion covariances (y = r_r, ×precip_frac)
     c_w = covar_x_KK_accr(mu_w_1, mu_w_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_rr_1_n, mu_rr_2_n,
                           sigma_w_1, sigma_w_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, sigma_rr_2, sigma_rr_1_n,
                           sigma_rr_2_n, corr_w_chi_1, corr_w_chi_2, corr_w_rr_1_n, corr_w_rr_2_n,
                           corr_chi_rr_1_n, corr_chi_rr_2_n, w_mean, KK_accr_tndcy, KK_accr_coef, _W_TOL,
-                          mixt_frac, precip_frac_1, precip_frac_2)
+                          mixt_frac, precip_frac_1, precip_frac_2, dv=accr_dv)
     c_rt = covar_rt_KK_accr(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_rr_1_n, mu_rr_2_n,
                             sigma_eta_1, sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, sigma_rr_2,
                             sigma_rr_1_n, sigma_rr_2_n, corr_chi_eta_1, corr_chi_eta_2, corr_eta_rr_1_n,
                             corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, rtm, mu_rt_1, mu_rt_2,
                             KK_accr_tndcy, KK_accr_coef, _ETA_TOL, crt1, crt2, mixt_frac, precip_frac_1,
-                            precip_frac_2)
+                            precip_frac_2, dv=accr_dv)
     c_thl = covar_thl_KK_accr(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_rr_1_n, mu_rr_2_n,
                               sigma_eta_1, sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, sigma_rr_2,
                               sigma_rr_1_n, sigma_rr_2_n, corr_chi_eta_1, corr_chi_eta_2, corr_eta_rr_1_n,
                               corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, thlm, mu_thl_1, mu_thl_2,
                               KK_accr_tndcy, KK_accr_coef, _ETA_TOL, cthl1, cthl2, mixt_frac, precip_frac_1,
-                              precip_frac_2)
+                              precip_frac_2, dv=accr_dv)
     # evaporation covariances (4-var subsaturated, ×precip_frac)
     _evk = dict(mu_eta_1=mu_eta_1, mu_eta_2=mu_eta_2, mu_chi_1=mu_chi_1, mu_chi_2=mu_chi_2, mu_rr_1=mu_rr_1,
                 mu_rr_2=mu_rr_2, mu_Nr_1=mu_Nr_1, mu_Nr_2=mu_Nr_2, mu_rr_1_n=mu_rr_1_n, mu_rr_2_n=mu_rr_2_n,
@@ -291,7 +324,7 @@ def KK_upscaled_covar_driver(
                 corr_chi_rr_2_n=corr_chi_rr_2_n, corr_chi_Nr_1_n=corr_chi_Nr_1_n, corr_chi_Nr_2_n=corr_chi_Nr_2_n,
                 corr_rr_Nr_1_n=corr_rr_Nr_1_n, corr_rr_Nr_2_n=corr_rr_Nr_2_n, KK_evap_tndcy=KK_evap_tndcy,
                 KK_evap_coef=KK_evap_coef, eta_tol=_ETA_TOL, mixt_frac=mixt_frac, precip_frac_1=precip_frac_1,
-                precip_frac_2=precip_frac_2)
+                precip_frac_2=precip_frac_2, dv=evap_dv)
     e_rt = covar_rt_KK_evap(rtm, mu_rt_1, mu_rt_2, crt1, crt2, **_evk)
     e_thl = covar_thl_KK_evap(thlm, mu_thl_1, mu_thl_2, cthl1, cthl2, **_evk)
     _evkx = {k: v for k, v in _evk.items()
@@ -312,14 +345,15 @@ def KK_upscaled_covar_driver(
     rtp2_mc = -2.0 * rt_tot
     thlp2_mc = 2.0 * L * thl_tot
     rtpthlp_mc = L * rt_tot - thl_tot
-    return wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc
+    return (wprtp_mc, wpthlp_mc, rtp2_mc, thlp2_mc, rtpthlp_mc,
+            e_w, e_rt, e_thl, a_w, a_rt, a_thl, c_w, c_rt, c_thl)
 
 
 def quadrivar_NNLL_covar_eq(mu_x_i, mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr_i_n,
                             sigma_x_i, sigma_chi_i, sigma_rr_i, sigma_Nr_i, sigma_rr_i_n, sigma_Nr_i_n,
                             corr_x_chi_i, corr_x_rr_i_n, corr_x_Nr_i_n, corr_chi_rr_i_n, corr_chi_Nr_i_n,
                             corr_rr_Nr_i_n, x_mean, mc_tndcy_mean, mc_coef, x_tol, rr_tol, Nr_tol,
-                            alpha_exp, beta_exp, gamma_exp):
+                            alpha_exp, beta_exp, gamma_exp, *, dv=None):
     """Dispatch wrapper for the quadrivariate covariance Cov_i(x, chi^α r_r^β N_r^γ) — x=w|eta, chi, r_r, N_r —
     used by the KK EVAPORATION covariances. Selects the right of the base + 11 variants by which σ≈0
     (vectorised per-level), exploiting the (x3=r_r,β)↔(x4=N_r,γ) symmetry (an x4-const branch reuses the
@@ -350,20 +384,28 @@ def quadrivar_NNLL_covar_eq(mu_x_i, mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr
     v_all = quadrivar_NNLL_covar_const_all(mu_x1, mu_x2, mu_x3, mu_x4, x1m, x2a, a, b, g)
     v123 = quadrivar_NNLL_covar_cst_x1x2x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sg4n, x1m, x2a, a, b, g)
     v123s = quadrivar_NNLL_covar_cst_x1x2x3(mu_x1, mu_x2, mu_x4, mu_x3_n, sg3n, x1m, x2a, a, g, b)
-    v134 = quadrivar_NNLL_covar_cst_x1x3x4(mu_x1, mu_x2, mu_x3, mu_x4, s2g, x1m, x2a, a, b, g)
+    v134 = quadrivar_NNLL_covar_cst_x1x3x4(mu_x1, mu_x2, mu_x3, mu_x4, s2g, x1m, x2a, a, b, g,
+        dv=None if dv is None else dv["const_yz"])
     v234 = quadrivar_NNLL_covar_cst_x2x3x4(mu_x1, mu_x2, mu_x3, mu_x4, x1m, x2a, a, b, g)
     v12 = quadrivar_NNLL_covar_const_x1x2(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sg3n, sg4n, r34n, x1m, x2a, a, b, g)
-    v13 = quadrivar_NNLL_covar_const_x1x3(mu_x1, mu_x2, mu_x3, mu_x4_n, s2g, sg4n, r24n, x1m, x2a, a, b, g)
-    v13s = quadrivar_NNLL_covar_const_x1x3(mu_x1, mu_x2, mu_x4, mu_x3_n, s2g, sg3n, r23n, x1m, x2a, a, g, b)
+    v13 = quadrivar_NNLL_covar_const_x1x3(mu_x1, mu_x2, mu_x3, mu_x4_n, s2g, sg4n, r24n, x1m, x2a, a, b, g,
+        dv=None if dv is None else dv["const_y"])
+    v13s = quadrivar_NNLL_covar_const_x1x3(mu_x1, mu_x2, mu_x4, mu_x3_n, s2g, sg3n, r23n, x1m, x2a, a, g, b,
+        dv=None if dv is None else dv["const_z"])
     v23 = quadrivar_NNLL_covar_const_x2x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sg1, sg4n, r14n, x1m, x2a, a, b, g)
     v23s = quadrivar_NNLL_covar_const_x2x3(mu_x1, mu_x2, mu_x4, mu_x3_n, sg1, sg3n, r13n, x1m, x2a, a, g, b)
-    v34 = quadrivar_NNLL_covar_const_x3x4(mu_x1, mu_x2, mu_x3, mu_x4, sg1, s2g, r12, x1m, x2a, a, b, g)
-    v_x1 = quadrivar_NNLL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, mu_x4_n, s2g, sg3n, sg4n, r23n, r24n, r34n, x1m, x2a, a, b, g)
+    v34 = quadrivar_NNLL_covar_const_x3x4(mu_x1, mu_x2, mu_x3, mu_x4, sg1, s2g, r12, x1m, x2a, a, b, g,
+        dv=None if dv is None else dv["const_yz"])
+    v_x1 = quadrivar_NNLL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, mu_x4_n, s2g, sg3n, sg4n, r23n, r24n, r34n, x1m, x2a, a, b, g,
+        dv=None if dv is None else dv["full"])
     v_x2 = quadrivar_NNLL_covar_const_x2(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sg1, sg3n, sg4n, r13n, r14n, r34n, x1m, x2a, a, b, g)
-    v_x3 = quadrivar_NNLL_covar_const_x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sg1, s2g, sg4n, r12, r14n, r24n, x1m, x2a, a, b, g)
-    v_x3s = quadrivar_NNLL_covar_const_x3(mu_x1, mu_x2, mu_x4, mu_x3_n, sg1, s2g, sg3n, r12, r13n, r23n, x1m, x2a, a, g, b)
+    v_x3 = quadrivar_NNLL_covar_const_x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sg1, s2g, sg4n, r12, r14n, r24n, x1m, x2a, a, b, g,
+        dv=None if dv is None else dv["const_y"])
+    v_x3s = quadrivar_NNLL_covar_const_x3(mu_x1, mu_x2, mu_x4, mu_x3_n, sg1, s2g, sg3n, r12, r13n, r23n, x1m, x2a, a, g, b,
+        dv=None if dv is None else dv["const_z"])
     v_base = quadrivar_NNLL_covar(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sg1, s2g, sg3n, sg4n,
-                                  r12, r13n, r14n, r23n, r24n, r34n, x1m, x2a, a, b, g)
+                                  r12, r13n, r14n, r23n, r24n, r34n, x1m, x2a, a, b, g,
+                                  dv=None if dv is None else dv["full"])
 
     out = v_base
     out = jnp.where(c4, v_x3s, out)
@@ -385,7 +427,7 @@ def quadrivar_NNLL_covar_eq(mu_x_i, mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr
 
 def trivar_NNL_covar_eq(mu_x_i, mu_chi_i, mu_y_i, mu_y_i_n, sigma_x_i, sigma_chi_i,
                         sigma_y_i, sigma_y_i_n, corr_x_chi_i, corr_x_y_i_n, corr_chi_y_i_n,
-                        x_mean, mc_tndcy_mean, mc_coef, x_tol, y_tol, alpha_exp, beta_exp):
+                        x_mean, mc_tndcy_mean, mc_coef, x_tol, y_tol, alpha_exp, beta_exp, *, dv=None):
     """Dispatch wrapper for the trivariate covariance Cov_i(x, chi^α y^β) — x=w|eta, chi, y=Ncn|rr.
     Maps the component moments to the integral inputs and selects the right form by which σ≈0
     (vectorised: per-level masks via jnp.where). Faithful port of
@@ -408,13 +450,17 @@ def trivar_NNL_covar_eq(mu_x_i, mu_chi_i, mu_y_i, mu_y_i_n, sigma_x_i, sigma_chi
     c3 = sigma_x3 <= y_tol
 
     v_x1x2 = trivar_NNL_covar_const_x1x2(mu_x1, mu_x2, mu_x3_n, sigma_x3_n, x1m, x2a, alpha_exp, beta_exp)
-    v_x1x3 = trivar_NNL_covar_const_x1x3(mu_x1, mu_x2, mu_x3, s2g, x1m, x2a, alpha_exp, beta_exp)
+    v_x1x3 = trivar_NNL_covar_const_x1x3(mu_x1, mu_x2, mu_x3, s2g, x1m, x2a, alpha_exp, beta_exp,
+        dv=None if dv is None else dv["const_y"])
     v_x2x3 = trivar_NNL_covar_const_x2x3(mu_x1, mu_x2, mu_x3, x1m, x2a, alpha_exp, beta_exp)
-    v_x1 = trivar_NNL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, s2g, sigma_x3_n, rho_x2x3_n, x1m, x2a, alpha_exp, beta_exp)
+    v_x1 = trivar_NNL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, s2g, sigma_x3_n, rho_x2x3_n, x1m, x2a, alpha_exp, beta_exp,
+        dv=None if dv is None else dv["full"])
     v_x2 = trivar_NNL_covar_const_x2(mu_x1, mu_x2, mu_x3_n, sigma_x1, sigma_x3_n, rho_x1x3_n, x1m, x2a, alpha_exp, beta_exp)
-    v_x3 = trivar_NNL_covar_const_x3(mu_x1, mu_x2, mu_x3, sigma_x1, s2g, rho_x1x2, x1m, x2a, alpha_exp, beta_exp)
+    v_x3 = trivar_NNL_covar_const_x3(mu_x1, mu_x2, mu_x3, sigma_x1, s2g, rho_x1x2, x1m, x2a, alpha_exp, beta_exp,
+        dv=None if dv is None else dv["const_y"])
     v_base = trivar_NNL_covar(mu_x1, mu_x2, mu_x3_n, sigma_x1, s2g, sigma_x3_n,
-                              rho_x1x2, rho_x1x3_n, rho_x2x3_n, x1m, x2a, alpha_exp, beta_exp)
+                              rho_x1x2, rho_x1x3_n, rho_x2x3_n, x1m, x2a, alpha_exp, beta_exp,
+                              dv=None if dv is None else dv["full"])
 
     out = v_base
     out = jnp.where(c3, v_x3, out)

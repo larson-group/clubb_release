@@ -52,17 +52,17 @@ from clubb_jax.src.Microphys.KK_microphys.parameters_KK import (
     KK_evap_Supersat_exp as KK_EVAP_SUPERSAT_EXP, KK_evap_rr_exp as KK_EVAP_RR_EXP,
     KK_evap_Nr_exp as KK_EVAP_NR_EXP, KK_mvr_rr_exp as KK_MVR_RR_EXP, KK_mvr_Nr_exp as KK_MVR_NR_EXP,
 )
-# KK_ACCR_COEF/KK_MVR_COEF live in their Fortran home KK_microphys_module (KK_tendency_coefs, F90:1185/1188).
-from clubb_jax.src.Microphys.KK_microphys_module import KK_ACCR_COEF, KK_MVR_COEF
+# Fixed coefficients used by the draft core are kept inside its own directory.
+from clubb_jax.src.Microphys.KK_microphys.parameters_KK import KK_ACCR_COEF, KK_MVR_COEF
 # Nr_tol = rr_tol / ((4/3) pi rho_lw mvr_rain_max^3). constants_clubb.F90:306  (rho_lw/mvr_rain_max imported above)
 NR_TOL = RR_TOL / ((4.0 / 3.0) * jnp.pi * _RHO_LW * _MVR_RAIN_MAX ** 3)  # ~1.9099e-7
-# kk_auto_coef lives in its Fortran-home Microphys/KK_microphys_module.py (computed inline at
+# Autoconversion coefficients live in KK_microphys_module.KK_tendency_coefs (source:
 # KK_microphys_module.F90:1182), not here — KK_upscaled_means.F90 only takes KK_auto_coef as an input arg.
 
 
 def bivar_NL_mean_eq(mu_chi_i, mu_y_i, mu_y_i_n, sigma_chi_i,
                      sigma_y_i, sigma_y_i_n, corr_chi_y_i_n,
-                     y_tol, alpha_exp, beta_exp):
+                     y_tol, alpha_exp, beta_exp, *, dv=None):
     """Per-component < chi^alpha y^beta >_i with the 4-way variance dispatch.
 
     KK_upscaled_means.F90:864. y = N_cn (auto) or r_r (accr). Selects:
@@ -73,6 +73,9 @@ def bivar_NL_mean_eq(mu_chi_i, mu_y_i, mu_y_i_n, sigma_chi_i,
     Implemented branch-free (all forms computed, selected with jnp.where) so it
     vmaps/jits over a grid; divisions in the varying form use a clamped sigma_x1
     so the unused (const) branch never poisons values/gradients with inf/nan.
+
+    ``dv`` optionally supplies the covariance driver's precomputed mean values
+    for the full and constant-y variants; mean-tendency callers omit it.
     """
     mu_x1 = mu_chi_i
     mu_x2 = jnp.where(beta_exp >= 0.0, mu_y_i, jnp.maximum(mu_y_i, y_tol))
@@ -92,8 +95,10 @@ def bivar_NL_mean_eq(mu_chi_i, mu_y_i, mu_y_i_n, sigma_chi_i,
 
     f_all = bivar_NL_mean_const_all(mu_x1, mu_x2, alpha_exp, beta_exp)
     f_x1 = bivar_NL_mean_const_x1(mu_x1, mu_x2_n, sigma_x2_n, alpha_exp, beta_exp)
-    f_x2 = bivar_NL_mean_const_x2(mu_x1, mu_x2, sig1_safe, alpha_exp, beta_exp)
-    f_gen = bivar_NL_mean(mu_x1, mu_x2_n, sig1_safe, sigma_x2_n, rho, alpha_exp, beta_exp)
+    f_x2 = bivar_NL_mean_const_x2(mu_x1, mu_x2, sig1_safe, alpha_exp, beta_exp,
+        dv=None if dv is None else dv["const_y"])
+    f_gen = bivar_NL_mean(mu_x1, mu_x2_n, sig1_safe, sigma_x2_n, rho, alpha_exp, beta_exp,
+        dv=None if dv is None else dv["full"])
 
     # Mirror the Fortran if/elseif/elseif/else ladder.
     return jnp.where(x1_const & x2_const, f_all,
@@ -108,7 +113,7 @@ def KK_auto_upscaled_mean(mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2,
                           KK_auto_coef_val, mixt_frac):
     """Mean upscaled KK autoconversion tendency. KK_upscaled_means.F90:289.
 
-    KK_auto_coef_val is KK_auto_coef (a function of rho; see kk_auto_coef)."""
+    KK_auto_coef_val is the density-dependent coefficient from KK_tendency_coefs."""
     alpha = KK_AUTO_RC_EXP
     beta = KK_AUTO_NC_EXP
     comp1 = bivar_NL_mean_eq(mu_chi_1, mu_Ncn_1, mu_Ncn_1_n, sigma_chi_1,
@@ -146,13 +151,16 @@ def KK_accr_upscaled_mean(mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2,
 def trivar_NLL_mean_eq(mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr_i_n,
                        sigma_chi_i, sigma_rr_i, sigma_Nr_i, sigma_rr_i_n,
                        sigma_Nr_i_n, corr_chi_rr_i_n, corr_chi_Nr_i_n,
-                       corr_rr_Nr_i_n, alpha_exp, beta_exp, gamma_exp):
+                       corr_rr_Nr_i_n, alpha_exp, beta_exp, gamma_exp, *, dv=None):
     """Per-component < chi^alpha r_r^beta N_r^gamma >_i with the 8-way variance dispatch.
 
     KK_upscaled_means.F90:586. x1=chi, x2=r_r, x3=N_r. Selects one of 6 trivariate
     forms (const_x1x2 and const_x2 are reused with swapped (x2,x3) args for the
     chi+Nr and Nr-only cases). Branch-free via jnp.where; divisions use a clamped
-    sigma_x1 so the const-x1 branches never poison values/gradients."""
+    sigma_x1 so the const-x1 branches never poison values/gradients.
+
+    ``dv`` optionally supplies the covariance driver's precomputed mean values
+    for full, constant-y, constant-z, and constant-yz variants."""
     mu_x1 = mu_chi_i
     mu_x2 = jnp.where(beta_exp >= 0.0, mu_rr_i, jnp.maximum(mu_rr_i, RR_TOL))
     mu_x3 = jnp.where(gamma_exp >= 0.0, mu_Nr_i, jnp.maximum(mu_Nr_i, NR_TOL))
@@ -175,15 +183,15 @@ def trivar_NLL_mean_eq(mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr_i_n,
     f_x1x3 = trivar_NLL_mean_const_x1x2(mu_x1, mu_x3, mu_x2_n, sigma_x2_n,
                                         alpha_exp, gamma_exp, beta_exp)
     f_x2x3 = trivar_NLL_mean_const_x2x3(mu_x1, mu_x2, mu_x3, sig1_safe,
-                                        alpha_exp, beta_exp, gamma_exp)
+                                        alpha_exp, beta_exp, gamma_exp, dv=None if dv is None else dv["const_yz"])
     f_x1 = trivar_NLL_mean_const_x1(mu_x1, mu_x2_n, mu_x3_n, sigma_x2_n, sigma_x3_n,
                                     rho23, alpha_exp, beta_exp, gamma_exp)
     f_x2 = trivar_NLL_mean_const_x2(mu_x1, mu_x2, mu_x3_n, sig1_safe, sigma_x3_n,
-                                    rho13, alpha_exp, beta_exp, gamma_exp)
+                                    rho13, alpha_exp, beta_exp, gamma_exp, dv=None if dv is None else dv["const_y"])
     f_x3 = trivar_NLL_mean_const_x2(mu_x1, mu_x3, mu_x2_n, sig1_safe, sigma_x2_n,
-                                    rho12, alpha_exp, gamma_exp, beta_exp)
+                                    rho12, alpha_exp, gamma_exp, beta_exp, dv=None if dv is None else dv["const_z"])
     f_gen = trivar_NLL_mean(mu_x1, mu_x2_n, mu_x3_n, sig1_safe, sigma_x2_n, sigma_x3_n,
-                            rho12, rho13, rho23, alpha_exp, beta_exp, gamma_exp)
+                            rho12, rho13, rho23, alpha_exp, beta_exp, gamma_exp, dv=None if dv is None else dv["full"])
 
     # Mirror the Fortran if/elseif ladder (top-priority condition first).
     return jnp.where(x1_const & x2_const & x3_const, f_all,

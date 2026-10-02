@@ -24,6 +24,7 @@ SUPPORTED_SOURCE_ROUTINE_ORDER = {
     "atex.py": ["calc_forcings", "atex_tndcy", "atex_sfclyr"],
     "atex_long.py": ["calc_forcings", "atex_long_tndcy", "atex_long_sfclyr"],
     "bomex.py": ["bomex_tndcy", "bomex_sfclyr"],
+    "clex9_oct14.py": ["clex9_oct14_read_t_dependent"],
     "cloud_feedback.py": ["cloud_feedback_sfclyr"],
     "cobra.py": ["cobra_sfclyr"],
     "diag_ustar_module.py": ["diag_ustar"],

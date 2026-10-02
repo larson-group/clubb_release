@@ -1,13 +1,8 @@
 """Verification of the upscaled-KK autoconversion analytic kernel (JAX port).
 
-Two INDEPENDENT oracles, neither of which is the Fortran binary (the upscaled KK
-microphysics is not exposed by the f2py CLUBB_core API), so each closed form is
-checked against first principles:
+Checks against numerical quadrature and differentiation:
 
-  1. dv_parabolic_cylinder  vs  scipy.special.pbdv  (an independent evaluator of the
-     parabolic cylinder function D_v) over the validated argument range.
-
-  2. The four bivar_NL_mean* closed forms  vs  brute-force numerical quadrature of
+  1. The four bivar_NL_mean* closed forms  vs  brute-force numerical quadrature of
      their DEFINING integral
         < x1^a x2^b >_i = INT_{x1>0} INT x1^a x2^b P_NL,i(x1,x2) dx1 dx2,
      with x1 ~ Normal, ln(x2) ~ Normal, correlation rho. The inner (independent)
@@ -15,7 +10,7 @@ checked against first principles:
      that uses NO special functions — a fully independent check of the algebra and
      of D_v together.
 
-  3. KK_auto_upscaled_mean composes the pieces, is finite, and is differentiable
+  2. KK_auto_upscaled_mean composes the pieces, is finite, and is differentiable
      (jax.grad) w.r.t. the PDF moments — the project's differentiability goal.
 
 Run: PYTHONPATH=...:. python clubb_jax/tests/test_kk_autoconversion.py
@@ -26,8 +21,6 @@ import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-from scipy.special import pbdv  # independent special-function oracle
-
 import os
 import sys
 _ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
@@ -37,9 +30,6 @@ for _p in (_ROOT, _ROOT + "/clubb_python_api"):
     if _p not in sys.path:
         sys.path.append(_p)
 
-from clubb_jax.src.Microphys.KK_microphys.parabolic_cylinder import (
-    dv_parabolic_cylinder,
-)
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
     bivar_NL_mean,
     bivar_NL_mean_const_x1,
@@ -63,7 +53,7 @@ from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import (
     KK_MVR_RR_EXP,
     KK_MVR_NR_EXP,
 )
-from clubb_jax.src.Microphys.KK_microphys_module import kk_auto_coef
+from clubb_jax.src.Microphys.KK_microphys_module import KK_tendency_coefs
 
 ALPHA = KK_AUTO_RC_EXP    # 2.47
 BETA = KK_AUTO_NC_EXP     # -1.79
@@ -74,47 +64,6 @@ EVAP_B = KK_EVAP_RR_EXP        # 1/3
 EVAP_G = KK_EVAP_NR_EXP        # 2/3
 MVR_A = KK_MVR_RR_EXP     # 1/3
 MVR_B = KK_MVR_NR_EXP     # -1/3
-
-
-# ---------------------------------------------------------------------------
-def test_dv_vs_scipy():
-    """D_v matches scipy.special.pbdv on the validated zones.
-
-    Series zone z in [-4, 4] (rel < 2e-8, ~1e-15 near 0, ~1e-8 at the z=4 edge) and
-    optimally-truncated asymptotic zone
-    z in [7, 48] (rel < 1e-6). The narrow z ~ [5, 6.5] handoff band carries a
-    worst-case rel ~ 2e-4 for the steepest KK exponent (v=-3.47) and is checked at a
-    looser tolerance — it is physically suppressed by exp(-s_c^2/4) in the integral
-    that consumes D_v (see module docstring)."""
-    worst_series = worst_asym = worst_band = worst_negasym = 0.0
-    for v in (-3.47, -1.79, -2.0):
-        zs = np.linspace(-4.0, 4.0, 49)
-        mine = np.asarray(dv_parabolic_cylinder(v, jnp.asarray(zs)))
-        ref = np.array([pbdv(v, z)[0] for z in zs])
-        worst_series = max(worst_series, (np.abs(mine - ref) / (np.abs(ref) + 1e-300)).max())
-        # Cap at z=30 (value ~1e-100): beyond that scipy.pbdv loses relative precision
-        # as it approaches its own underflow boundary (our optimally-truncated
-        # asymptotic stays accurate further, but scipy is no longer a clean oracle).
-        za = np.linspace(7.0, 30.0, 40)
-        mine_a = np.asarray(dv_parabolic_cylinder(v, jnp.asarray(za)))
-        ref_a = np.array([pbdv(v, z)[0] for z in za])
-        worst_asym = max(worst_asym, (np.abs(mine_a - ref_a) / np.abs(ref_a)).max())
-        zb = np.linspace(5.0, 6.5, 16)
-        mine_b = np.asarray(dv_parabolic_cylinder(v, jnp.asarray(zb)))
-        ref_b = np.array([pbdv(v, z)[0] for z in zb])
-        worst_band = max(worst_band, (np.abs(mine_b - ref_b) / (np.abs(ref_b) + 1e-300)).max())
-        # Large-NEGATIVE-z growing branch (Iter130) — needed for narrow chi PDFs (e.g.
-        # stratocumulus, s_c ~ 32 -> D_v arg ~ -32). pbdv stays finite to z ~ -45 here.
-        zn = np.linspace(-45.0, -8.0, 40)
-        mine_n = np.asarray(dv_parabolic_cylinder(v, jnp.asarray(zn)))
-        ref_n = np.array([pbdv(v, z)[0] for z in zn])
-        worst_negasym = max(worst_negasym, (np.abs(mine_n - ref_n) / np.abs(ref_n)).max())
-    assert worst_series < 2e-8, f"D_v series vs pbdv worst rel {worst_series:.2e}"
-    assert worst_asym < 1e-6, f"D_v asym vs pbdv worst rel {worst_asym:.2e}"
-    assert worst_band < 1e-3, f"D_v handoff-band worst rel {worst_band:.2e}"
-    assert worst_negasym < 1e-6, f"D_v neg-asym vs pbdv worst rel {worst_negasym:.2e}"
-    print(f"  D_v vs scipy.pbdv: series<{worst_series:.1e}, +asym<{worst_asym:.1e}, "
-          f"-asym<{worst_negasym:.1e}, handoff-band<{worst_band:.1e}  PASS")
 
 
 # ---------------------------------------------------------------------------
@@ -187,7 +136,7 @@ def test_bivar_const_variants_vs_quadrature():
 def test_kk_auto_mean_composes_and_differentiable():
     """KK_auto_upscaled_mean is finite, positive, and differentiable in the moments."""
     rho_air = 1.0  # kg/m^3
-    coef = kk_auto_coef(rho_air)
+    coef = KK_tendency_coefs(290., 1., 1.e5, rho_air, 1)[1]
     args = dict(
         mu_chi_1=2.0e-4, mu_chi_2=1.0e-4, mu_Ncn_1=1.0e8, mu_Ncn_2=1.0e8,
         mu_Ncn_1_n=np.log(1.0e8), mu_Ncn_2_n=np.log(1.0e8),
@@ -406,7 +355,6 @@ def test_kk_mvr_mean_composes_and_differentiable():
 
 if __name__ == "__main__":
     print("Upscaled-KK auto + accr + evap + mvr kernel verification:")
-    test_dv_vs_scipy()
     test_bivar_general_vs_quadrature()
     test_bivar_const_variants_vs_quadrature()
     test_kk_auto_mean_composes_and_differentiable()

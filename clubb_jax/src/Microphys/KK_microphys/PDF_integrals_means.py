@@ -20,6 +20,8 @@ References (per the Fortran): Larson & Griffin 2013 (QJRMS, Eqs 33-44); Griffin 
 The only transcendental in the general/const_x2 forms is the parabolic cylinder function
 D_v, supplied by parabolic_cylinder.dv_parabolic_cylinder.
 """
+import math
+
 import jax.numpy as jnp
 
 from clubb_jax.src.Microphys.KK_microphys.parabolic_cylinder import (
@@ -27,11 +29,13 @@ from clubb_jax.src.Microphys.KK_microphys.parabolic_cylinder import (
     _dvc,          # clamped parabolic-cylinder D_v (its home, next to dv_parabolic_cylinder)
 )
 
-_INV_SQRT_2PI = 1.0 / jnp.sqrt(2.0 * jnp.pi)
+# This module can first be imported while tracing the scheme interface. Keep
+# module constants as Python scalars so a tracer cannot escape into global state.
+_INV_SQRT_2PI = 1.0 / math.sqrt(2.0 * math.pi)
 
 
 def bivar_NL_mean(mu_x1, mu_x2_n, sigma_x1, sigma_x2_n,
-                  rho_x1x2_n, alpha_exp, beta_exp):
+                  rho_x1x2_n, alpha_exp, beta_exp, *, dv=None):
     """General NL bivariate mean — both x1 and x2 vary. PDF_integrals_means.F90:481.
 
     bivar_NL_mean = (1/sqrt(2 pi)) sigma_x1^alpha
@@ -40,12 +44,13 @@ def bivar_NL_mean(mu_x1, mu_x2_n, sigma_x1, sigma_x2_n,
       s_c = mu_x1/sigma_x1 + rho_x1x2_n sigma_x2_n beta.
     """
     s_c = (mu_x1 / sigma_x1) + rho_x1x2_n * sigma_x2_n * beta_exp
+    dv = _dvc(-(alpha_exp + 1.0), -s_c) if dv is None else dv
     return (_INV_SQRT_2PI * sigma_x1 ** alpha_exp
             * jnp.exp(mu_x2_n * beta_exp
                       + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2
                       - 0.25 * s_c ** 2)
             * _gamma_real(alpha_exp + 1.0)
-            * _dvc(-(alpha_exp + 1.0), -s_c))
+            * dv)
 
 
 def bivar_NL_mean_const_x1(mu_x1, mu_x2_n, sigma_x2_n, alpha_exp, beta_exp):
@@ -61,16 +66,17 @@ def bivar_NL_mean_const_x1(mu_x1, mu_x2_n, sigma_x2_n, alpha_exp, beta_exp):
     return jnp.where(mu_x1 >= 0.0, val, 0.0)
 
 
-def bivar_NL_mean_const_x2(mu_x1, mu_x2, sigma_x1, alpha_exp, beta_exp):
+def bivar_NL_mean_const_x2(mu_x1, mu_x2, sigma_x1, alpha_exp, beta_exp, *, dv=None):
     """x2 constant (sigma_x2 -> 0). PDF_integrals_means.F90:633.
 
     = (1/sqrt(2 pi)) sigma_x1^alpha mu_x2^beta exp( -1/4 mu_x1^2/sigma_x1^2 )
       * Gamma(alpha+1) * D_{-(alpha+1)}( -mu_x1/sigma_x1 ).
     """
+    dv = _dvc(-(alpha_exp + 1.0), -(mu_x1 / sigma_x1)) if dv is None else dv
     return (_INV_SQRT_2PI * sigma_x1 ** alpha_exp * mu_x2 ** beta_exp
             * jnp.exp(-0.25 * (mu_x1 ** 2 / sigma_x1 ** 2))
             * _gamma_real(alpha_exp + 1.0)
-            * _dvc(-(alpha_exp + 1.0), -(mu_x1 / sigma_x1)))
+            * dv)
 
 
 def bivar_NL_mean_const_all(mu_x1, mu_x2, alpha_exp, beta_exp):
@@ -116,11 +122,12 @@ def _pos_pow(base, exp):
 
 def trivar_NLL_mean(mu_x1, mu_x2_n, mu_x3_n, sigma_x1, sigma_x2_n, sigma_x3_n,
                     rho_x1x2_n, rho_x1x3_n, rho_x2x3_n,
-                    alpha_exp, beta_exp, gamma_exp):
+                    alpha_exp, beta_exp, gamma_exp, *, dv=None):
     """General NLL trivariate mean — all three vary. PDF_integrals_means.F90:26."""
     s_cc = ((mu_x1 / sigma_x1)
             + rho_x1x2_n * sigma_x2_n * beta_exp
             + rho_x1x3_n * sigma_x3_n * gamma_exp)
+    dv = _dvc(-(alpha_exp + 1.0), s_cc) if dv is None else dv
     return (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
             * jnp.exp(mu_x2_n * beta_exp + mu_x3_n * gamma_exp)
             * jnp.exp(0.5 * ((1.0 - rho_x1x2_n ** 2) * sigma_x2_n ** 2 * beta_exp ** 2
@@ -130,7 +137,7 @@ def trivar_NLL_mean(mu_x1, mu_x2_n, mu_x3_n, sigma_x1, sigma_x2_n, sigma_x3_n,
             * jnp.exp(0.25 * s_cc ** 2 - (mu_x1 / sigma_x1) * s_cc
                       + 0.5 * (mu_x1 ** 2 / sigma_x1 ** 2))
             * _gamma_real(alpha_exp + 1.0)
-            * _dvc(-(alpha_exp + 1.0), s_cc))
+            * dv)
 
 
 def trivar_NLL_mean_const_x1(mu_x1, mu_x2_n, mu_x3_n, sigma_x2_n, sigma_x3_n,
@@ -145,16 +152,17 @@ def trivar_NLL_mean_const_x1(mu_x1, mu_x2_n, mu_x3_n, sigma_x2_n, sigma_x3_n,
 
 
 def trivar_NLL_mean_const_x2(mu_x1, mu_x2, mu_x3_n, sigma_x1, sigma_x3_n,
-                             rho_x1x3_n, alpha_exp, beta_exp, gamma_exp):
+                             rho_x1x3_n, alpha_exp, beta_exp, gamma_exp, *, dv=None):
     """x2 (r_r) constant (sigma_x2->0). PDF_integrals_means.F90:200."""
     s_cc = (mu_x1 / sigma_x1) + rho_x1x3_n * sigma_x3_n * gamma_exp
+    dv = _dvc(-(alpha_exp + 1.0), s_cc) if dv is None else dv
     return (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
             * _pos_pow(mu_x2, beta_exp)
             * jnp.exp(mu_x3_n * gamma_exp
                       + 0.5 * sigma_x3_n ** 2 * gamma_exp ** 2
                       - 0.25 * s_cc ** 2)
             * _gamma_real(alpha_exp + 1.0)
-            * _dvc(-(alpha_exp + 1.0), s_cc))
+            * dv)
 
 
 def trivar_NLL_mean_const_x1x2(mu_x1, mu_x2, mu_x3_n, sigma_x3_n,
@@ -166,13 +174,14 @@ def trivar_NLL_mean_const_x1x2(mu_x1, mu_x2, mu_x3_n, sigma_x3_n,
 
 
 def trivar_NLL_mean_const_x2x3(mu_x1, mu_x2, mu_x3, sigma_x1,
-                               alpha_exp, beta_exp, gamma_exp):
+                               alpha_exp, beta_exp, gamma_exp, *, dv=None):
     """x2 and x3 constant. PDF_integrals_means.F90:349."""
+    dv = _dvc(-(alpha_exp + 1.0), (mu_x1 / sigma_x1)) if dv is None else dv
     return (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
             * _pos_pow(mu_x2, beta_exp) * _pos_pow(mu_x3, gamma_exp)
             * jnp.exp(-0.25 * (mu_x1 ** 2 / sigma_x1 ** 2))
             * _gamma_real(alpha_exp + 1.0)
-            * _dvc(-(alpha_exp + 1.0), (mu_x1 / sigma_x1)))
+            * dv)
 
 
 def trivar_NLL_mean_const_all(mu_x1, mu_x2, mu_x3, alpha_exp, beta_exp, gamma_exp):

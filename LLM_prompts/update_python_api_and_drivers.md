@@ -94,18 +94,18 @@ Do the work in this order:
      ```bash
      ./tests/run_python_vs_fortran_cases.py --cases bomex --jobs 1
      ./tests/run_python_vs_fortran_cases.py --cases atex --jobs 1
-     ./tests/run_jax_vs_fortran_cases.py --cases bomex --jobs 1
-     ./tests/run_jax_vs_fortran_cases.py --cases atex --jobs 1
+     ./tests/run_jax_vs_fortran_cases.py -cases bomex -jobs 1
+     ./tests/run_jax_vs_fortran_cases.py -cases atex -jobs 1
      ```
 
-   - `--jobs 1` makes logs easier to inspect and avoids multiprocessing-related noise.
+   - `-jobs 1` makes JAX comparison logs easier to inspect; the Python comparison script still uses `--jobs 1`.
 
 8. Final success criterion: run the full comparison suites.
    - The work is complete only when these pass, or any remaining differences are understood, documented, and explicitly accepted:
 
      ```bash
      ./tests/run_python_vs_fortran_cases.py --jobs 1
-     ./tests/run_jax_vs_fortran_cases.py --jobs 1
+     ./tests/run_jax_vs_fortran_cases.py -jobs 1
      ```
 
 Debugging techniques and common failure modes:
@@ -138,4 +138,4 @@ Expected final state:
 - `python -m pytest clubb_python_api/tests` passes.
 - Short `run_scm.py` Python-vs-Fortran bindiffs pass for representative cases.
 - `./tests/run_python_vs_fortran_cases.py --jobs 1` passes.
-- `./tests/run_jax_vs_fortran_cases.py --jobs 1` passes.
+- `./tests/run_jax_vs_fortran_cases.py -jobs 1` passes.

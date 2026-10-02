@@ -101,13 +101,21 @@ Examples:
 
 - `python3 run_scripts/run_bindiff_all.py -strict output_a output_b`
   Also fails unless every variable has a counterpart with the same shape in
-  the paired file.
+  the paired file. Normally these are warnings to prevent metadata changes
+  in the netcdf or added/removed variables from counting as differences. If
+  every variable has a shape/mismatch issue, the test will fail with or without
+  the -strict flag.
 
 - `python3 run_scripts/run_bindiff_all.py -case bomex -t 1e-12 -pt 1e-12 output_a output_b`
   Compares only `bomex` with strict absolute and percent thresholds.
 
 - `python3 run_scripts/run_bindiff_all.py -f replace -v 2 output_a output_b`
   Writes per-case diff logs under `output/bindiffs`, replacing older logs.
+
+- `python3 run_scripts/run_bindiff_all.py --result-json comparison.json output_a output_b`
+  Writes a compact machine-readable report with input and log paths, case and
+  file status, variable names grouped by exclusive comparison outcome, and
+  the first failing saved record. This is mainly for usage in other scripts.
 
 - `python3 run_scripts/run_bindiff_all.py --flag-sets old_output new_output`
   Treats each immediate child directory as a flag-set output directory and

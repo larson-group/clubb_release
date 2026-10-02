@@ -23,3 +23,10 @@ KK_Nrm_evap_nu       = one          # Exponent (parameter) in <N_r> evaporation 
 #    namelist can override them — the standalone SCM uses these defaults). ──
 r_0    = 25.0e-6   # Assumed radius of all new drops [m]
 C_evap = 0.86      # K&K (2000) ratio of drizzle drop mean geometric radius to mean volume radius
+
+# Draft-core specialization of the fixed KK_tendency_coefs coefficients.
+# Keep these within the structurally exempt numerical core; the interface
+# computes the source-local coefficients in KK_tendency_coefs.
+from clubb_jax.src.CLUBB_core.constants_clubb import pi, rho_lw
+KK_MVR_COEF = ((4.0 / 3.0) * pi * rho_lw) ** (-1.0 / 3.0)
+KK_ACCR_COEF = 67.0

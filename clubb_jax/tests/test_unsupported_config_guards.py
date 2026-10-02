@@ -36,8 +36,8 @@ def test_baseline_and_supported_radiation_schemes_pass():
 @pytest.mark.parametrize(
     ("cfg", "overrides", "message"),
     [
-        ({}, {"microphys_scheme": "morrison"}, "microphys_scheme"),
-        ({"l_cloud_sed": True}, {}, "l_cloud_sed"),
+        ({}, {"microphys_scheme": "coamps"}, "microphys_scheme"),
+        ({"l_gfdl_activation": True}, {}, "l_gfdl_activation"),
         ({}, {"rad_scheme": "bugsrad"}, "rad_scheme"),
         ({}, {"l_calc_thlp2_rad": True}, "l_calc_thlp2_rad"),
         ({"wp2_sponge_damp_settings%l_sponge_damping": True}, {}, "Sponge damping"),
@@ -61,3 +61,9 @@ def test_invalid_solar_date_uses_the_source_calendar_failure():
             "simplified",
             Path("."),
         )
+
+
+def test_supported_microphysics_and_cloud_sedimentation_pass_initial_gate():
+    for scheme in ('khairoutdinov_kogan', 'morrison'):
+        _check(microphys_scheme=scheme)
+    _check({'l_cloud_sed': True})
