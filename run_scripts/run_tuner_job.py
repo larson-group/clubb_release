@@ -867,4 +867,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    from utilities.setup_python_venv import ensure_python_venv
+
+    # Follow-up case runs inherit this interpreter through sys.executable.
+    ensure_python_venv()
     sys.exit(main())

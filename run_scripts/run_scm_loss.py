@@ -278,8 +278,8 @@ def main():
 
 
 if __name__ == "__main__":
-    if "-python" in sys.argv[1:]:
-        from utilities.setup_python_venv import ensure_python_venv
+    from utilities.setup_python_venv import ensure_python_venv
 
-        ensure_python_venv()
+    # Fortran runs also use NumPy when processing the loss output.
+    ensure_python_venv()
     main()
