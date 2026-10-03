@@ -11,14 +11,15 @@ pipeline {
         '''
       }
     }
+    // compile.py creates this venv; use it for NumPy-dependent loss processing on every worker.
     stage('Loss Driver Test') {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-          sh '''python tests/run_loss_metrics_test.py'''
+          sh '''.venv-python/bin/python tests/run_loss_metrics_test.py'''
           sh '''
             # Allow the large Fortran automatic arrays used by these cases.
             ulimit -s 8388608
-            python run_scripts/run_scm_loss.py \
+            .venv-python/bin/python run_scripts/run_scm_loss.py \
               -driver_test \
               -out_dir output/new_tuner_test/loss_driver_fortran \
               -cases bomex \
@@ -27,7 +28,7 @@ pipeline {
           sh '''
             # Allow the large Fortran automatic arrays used by these cases.
             ulimit -s 8388608
-            python run_scripts/run_scm_loss.py \
+            .venv-python/bin/python run_scripts/run_scm_loss.py \
               -python \
               -driver_test \
               -out_dir output/new_tuner_test/loss_driver_python \
@@ -43,7 +44,7 @@ pipeline {
           sh '''
             # Allow the large Fortran automatic arrays used by these cases.
             ulimit -s 8388608
-            python run_scripts/run_tuner_job.py \
+            .venv-python/bin/python run_scripts/run_tuner_job.py \
               -cases bomex \
               -fields cloud_frac \
               -params C8:0.2:0.8 \
@@ -62,7 +63,7 @@ pipeline {
           sh '''
             # Allow the large Fortran automatic arrays used by these cases.
             ulimit -s 8388608
-            python run_scripts/run_tuner_job.py \
+            .venv-python/bin/python run_scripts/run_tuner_job.py \
               -cases arm:68400:72000:3600 bomex:7200:18000:2700 \
               -fields cloud_frac rcm \
               -params C8:0.2:0.8 C11:0.1:1.0 \
@@ -87,7 +88,7 @@ pipeline {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''
-            python tests/analyze_tuner_sample_history.py \
+            .venv-python/bin/python tests/analyze_tuner_sample_history.py \
               output/tuner/new_tuner_test \
               -metric scaled_rmse \
               -min_samples 2 \
