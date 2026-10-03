@@ -696,6 +696,8 @@ contains
 
     if ( stats%l_netcdf_output ) then
 
+      ! NetCDF has process-wide state, so all threads use the same I/O lock.
+!$omp critical(clubb_netcdf)
       if ( stats%l_different_output_grid ) then
 
         ! Outputting with a different grid, using "output_zt" and "output_zm" for the netcdf
@@ -712,6 +714,7 @@ contains
                                 clubb_params=clubb_params, param_names=param_names, &
                                 rad_zt=rad_zt, rad_zm=rad_zm )
       end if
+!$omp end critical(clubb_netcdf)
 
       if ( ierr /= 0 ) then
         write( fstderr,* ) err_info%err_header_global
@@ -798,7 +801,9 @@ contains
     stats%time_index = 0
 
     if ( stats%ncid >= 0 ) then
+!$omp critical(clubb_netcdf)
       ret_code = nf90_close( stats%ncid )
+!$omp end critical(clubb_netcdf)
       if ( ret_code /= NF90_NOERR ) then
         write( fstderr,* ) err_info%err_header_global
         write( fstderr,* ) "stats finalize: netcdf close failed"
@@ -2332,8 +2337,10 @@ contains
     if ( stats%l_netcdf_output ) then
       ! Write time coordinate
       time_buf(1) = time_value
+!$omp critical(clubb_netcdf)
       ret_code = nf90_put_var( stats%ncid, stats%time_varid, time_buf, &
                            start=(/ stats%time_index /), count=(/ 1 /) )
+!$omp end critical(clubb_netcdf)
       step_offset = nint( real( real( time_value, kind = time_precision ) - stats%tstart, &
                                 kind = core_rknd ) / real( stats%dt_main, kind = core_rknd ) )
       window_start_step = ( ( step_offset - 1 ) / stats%stats_nout ) * stats%stats_nout
@@ -2341,8 +2348,10 @@ contains
                           * stats%dt_main
       time_bnds_buf(1,1) = real( window_start_time, kind = core_rknd )
       time_bnds_buf(2,1) = time_value
+!$omp critical(clubb_netcdf)
       ret_code = nf90_put_var( stats%ncid, stats%time_bnds_varid, time_bnds_buf, &
                                start=(/ 1, stats%time_index /), count=(/ 2, 1 /) )
+!$omp end critical(clubb_netcdf)
     end if
 
     ! Loop through all variables
@@ -2366,9 +2375,11 @@ contains
 
         if ( stats%l_netcdf_output ) then
           ! netcdf write
+!$omp critical(clubb_netcdf)
           ret_code = nf90_put_var( stats%ncid, stats%vars(i)%varid, stats%vars(i)%buffer(:,1), &
                               start=(/ col_start, stats%time_index /), &
                               count=(/ stats%ncol_batch, 1 /) )
+!$omp end critical(clubb_netcdf)
         end if
       else
 
@@ -2386,6 +2397,7 @@ contains
 
           if ( stats%l_netcdf_output ) then
             ! netcdf write
+!$omp critical(clubb_netcdf)
             ret_code = nf90_put_var( &
                 stats%ncid, stats%vars(i)%varid, &
                 remap_vals_to_target( stats%ncol_batch, &
@@ -2399,15 +2411,18 @@ contains
                                       stats%grid%grid_remap_method, ( grid_id == GRID_ZT ) ), &
                 start=(/ col_start, 1, stats%time_index /), &
                 count=(/ stats%ncol_batch, stats%vars(i)%out_nz, 1 /) )
+!$omp end critical(clubb_netcdf)
           end if
         else
 
           if ( stats%l_netcdf_output ) then
             ! netcdf write
+!$omp critical(clubb_netcdf)
             ret_code = nf90_put_var( stats%ncid, stats%vars(i)%varid, &
                                 stats%vars(i)%buffer, &
                                 start=(/ col_start, 1, stats%time_index /), &
                                 count=(/ stats%ncol_batch, stats%vars(i)%out_nz, 1 /) )
+!$omp end critical(clubb_netcdf)
           end if
 
         end if
@@ -2633,6 +2648,8 @@ contains
       return
     end if
 
+    ! SILHS output shares the same NetCDF lock as the regular statistics.
+!$omp critical(clubb_netcdf)
     ret_code = nf90_redef( stats%ncid )
 
     ret_code = nf90_def_dim( stats%ncid, "lh_sample_number", num_samples, stats%lh_2d%sample_dimid )
@@ -2693,6 +2710,7 @@ contains
 
     ! Write
     ret_code = nf90_put_var( stats%ncid, stats%lh_2d%lh_zt_varid, zt_vals )
+!$omp end critical(clubb_netcdf)
 
     stats%lh_2d%is_initialized = .true.
 
@@ -2736,10 +2754,12 @@ contains
     t = stats%time_index + 1
     do v = 1, stats%lh_2d%n_nl_vars
 
+!$omp critical(clubb_netcdf)
       ret_code = nf90_put_var( stats%ncid, stats%lh_2d%nl_varids(v), samples(:,:,:,v:v), &
                            start = (/ 1, 1, 1, t /), &
                            count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
                                       stats%lh_2d%nzt, 1 /) )
+!$omp end critical(clubb_netcdf)
 
       if ( ret_code /= NF90_NOERR ) then
         write( fstderr,* ) err_info%err_header_global
@@ -2807,10 +2827,12 @@ contains
     do v = 1, dp2
 
       ! Write
+!$omp critical(clubb_netcdf)
       ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(v), uniform_vals(:,:,:,v:v), &
                            start = (/ 1, 1, 1, t /), &
                            count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
                                       stats%lh_2d%nzt, 1 /) )
+!$omp end critical(clubb_netcdf)
       
       if ( ret_code /= NF90_NOERR ) then
         write( fstderr,* ) err_info%err_header_global
@@ -2822,11 +2844,13 @@ contains
     end do
 
     ! Write
+!$omp critical(clubb_netcdf)
     ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(dp2+1), &
                          spread( real( mixture_comp, kind=core_rknd ), dim = 4, ncopies = 1 ), &
                          start = (/ 1, 1, 1, t /), &
                          count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
                                     stats%lh_2d%nzt, 1 /) )
+!$omp end critical(clubb_netcdf)
 
     if ( ret_code /= NF90_NOERR ) then
       write( fstderr,* ) err_info%err_header_global
@@ -2836,11 +2860,13 @@ contains
     end if
 
     ! Write
+!$omp critical(clubb_netcdf)
     ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(dp2+2), &
                          spread( sample_weights, dim = 4, ncopies = 1 ), &
                          start = (/ 1, 1, 1, t /), &
                          count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
                                     stats%lh_2d%nzt, 1 /) )
+!$omp end critical(clubb_netcdf)
 
     if ( ret_code /= NF90_NOERR ) then
       write( fstderr,* ) err_info%err_header_global
