@@ -121,7 +121,12 @@ def get_cli_args():
         ),
     )
 
+    # Recognize the value so the optional case argument cannot consume it.
+    parser.add_argument("-override", action="append", metavar="ASSIGNMENTS|JSON",
+                        help="Forward assignments or JSON to create_case_namelist.")
     args, run_scm_extra_args = parser.parse_known_args()
+    for value in args.override or []:
+        run_scm_extra_args.extend(["-override", value])
     args.run_scm_extra_args = run_scm_extra_args
 
     subset_flags_count = sum([

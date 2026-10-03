@@ -1,18 +1,22 @@
 pipeline {
-
   agent any
-
   stages {
-    stage('Run test_monoflux_limiter_GPU.py') {
+    stage('Compile') {
       steps {
-        // Serialize GPU cases on this worker; other nodes may run concurrently.
-        lock( "GPU_${env.NODE_NAME}" ) {
-          sh '''
-            source /etc/profile.d/larson-group.sh
-            module load nvhpc netcdf-fortran
-            python tests/test_monoflux_limiter_GPU.py
-          '''
-        }
+        sh '''
+          source /etc/profile.d/larson-group.sh
+          module load gcc netcdf-fortran
+          ./compile.py -debug -openmp
+        '''
+      }
+    }
+    stage('Run the Thread Test Script') {
+      steps {
+        sh '''
+          # Allow the large Fortran automatic arrays used by these cases.
+          ulimit -s 8388608
+          tests/run_thread_test.py
+        '''
       }
     }
   }
@@ -20,7 +24,7 @@ pipeline {
     failure {
       script {
         // Only the production job sends failure mail.
-        if ( "${env.JOB_NAME}" ==	"clubb_monoflux_CPU_vs_GPU_diff" ) {
+        if ( "${env.JOB_NAME}" == "clubb_openmp" ) {
           emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
         }
       }

@@ -1,0 +1,52 @@
+// Keep full-duration case runs separate from the compiler/CTest smoke matrix.
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+  agent none
+  options { disableConcurrentBuilds() }
+
+  stages {
+    // Each compiler owns its checkout, build, and case output files.
+    stage('Full model runs') {
+      parallel {
+        stage('All standard cases: gfortran debug') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                ./compile.py -debug
+                ulimit -s 8388608
+                run_scripts/run_scm_all.py -nproc 8
+              '''
+            }
+          }
+        }
+        stage('All standard cases: nvfortran debug') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                ./compile.py -debug
+                ulimit -s 8388608
+                run_scripts/run_scm_all.py -nproc 8
+              '''
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only the production job sends failure mail.
+        if (env.JOB_NAME == 'clubb_basic_full_run') {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

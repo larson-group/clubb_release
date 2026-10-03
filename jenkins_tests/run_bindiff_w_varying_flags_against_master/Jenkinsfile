@@ -9,19 +9,21 @@ pipeline {
   stages {
     stage('Bindiff Varying Flags Against Master') {
       steps {
-        sh '''source /etc/profile.d/larson-group.sh
-              module load gcc netcdf-fortran
+        sh '''
+          source /etc/profile.d/larson-group.sh
+          module load gcc netcdf-fortran
 
-              TEST_BRANCH="${BRANCH:-${GIT_BRANCH#origin/}}"
-              TEST_BRANCH="${TEST_BRANCH:-${GIT_BRANCH##*/}}"
+          TEST_BRANCH="${BRANCH:-${GIT_BRANCH#origin/}}"
+          TEST_BRANCH="${TEST_BRANCH:-${GIT_BRANCH##*/}}"
 
-              python3 tests/run_bindiff_w_flags.py \
-                --overwrite-existing \
-                --compile-arg=-debug \
-                -b master,${TEST_BRANCH} \
-                -d "${WORKSPACE}/bindiff_against_master" \
-                -f input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
-                -max_iters 360'''
+          python3 tests/run_bindiff_w_flags.py \
+            --overwrite-existing \
+            --compile-arg=-debug \
+            -b master,${TEST_BRANCH} \
+            -d "${WORKSPACE}/bindiff_against_master" \
+            -f input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
+            -max_iters 360
+        '''
       }
     }
   }

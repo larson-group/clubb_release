@@ -1,0 +1,110 @@
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''
+          source /etc/profile.d/larson-group.sh
+          module load gcc netcdf-fortran
+          ./compile.py -debug -python
+        '''
+      }
+    }
+    stage('Loss Driver Test') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''python tests/run_loss_metrics_test.py'''
+          sh '''
+            # Allow the large Fortran automatic arrays used by these cases.
+            ulimit -s 8388608
+            python run_scripts/run_scm_loss.py \
+              -driver_test \
+              -out_dir output/new_tuner_test/loss_driver_fortran \
+              -cases bomex \
+              -fields cloud_frac,rcm
+          '''
+          sh '''
+            # Allow the large Fortran automatic arrays used by these cases.
+            ulimit -s 8388608
+            python run_scripts/run_scm_loss.py \
+              -python \
+              -driver_test \
+              -out_dir output/new_tuner_test/loss_driver_python \
+              -cases bomex \
+              -fields cloud_frac,rcm
+          '''
+        }
+      }
+    }
+    stage('Simple Tuner Command') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            # Allow the large Fortran automatic arrays used by these cases.
+            ulimit -s 8388608
+            python run_scripts/run_tuner_job.py \
+              -cases bomex \
+              -fields cloud_frac \
+              -params C8:0.2:0.8 \
+              -max_workers 4 \
+              -output_root output/tuner/new_tuner_test/simple \
+              -run_top complete \
+              -run_out_dir output/new_tuner_test/simple
+          '''
+          script { env.SIMPLE_TUNER_READY = 'true' }
+        }
+      }
+    }
+    stage('Complex Tuner Command') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            # Allow the large Fortran automatic arrays used by these cases.
+            ulimit -s 8388608
+            python run_scripts/run_tuner_job.py \
+              -cases arm:68400:72000:3600 bomex:7200:18000:2700 \
+              -fields cloud_frac rcm \
+              -params C8:0.2:0.8 C11:0.1:1.0 \
+              -strategy resolve:0.9 \
+              -batch_size 4 \
+              -max_workers 2 \
+              -seed 1 \
+              -loss_mode centered_rmse_bias \
+              -aggregation_mode mean_max \
+              -poll_interval 1 \
+              -output_root output/tuner/new_tuner_test/complex \
+              -run_top both \
+              -top_n 1 \
+              -run_out_dir output/new_tuner_test/complex
+          '''
+          script { env.COMPLEX_TUNER_READY = 'true' }
+        }
+      }
+    }
+    stage('Sample History Analyzer') {
+      when { expression { env.SIMPLE_TUNER_READY == 'true' && env.COMPLEX_TUNER_READY == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            python tests/analyze_tuner_sample_history.py \
+              output/tuner/new_tuner_test \
+              -metric scaled_rmse \
+              -min_samples 2 \
+              --require_param_variation
+          '''
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only the production job sends failure mail.
+        if ( "${env.JOB_NAME}" == "clubb_tuner" ) {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

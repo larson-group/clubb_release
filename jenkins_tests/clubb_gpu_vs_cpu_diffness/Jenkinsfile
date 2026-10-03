@@ -1,0 +1,143 @@
+// GPU SILHS requires straight Monte Carlo sampling in both comparison runs.
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+
+  // Carson has the newer GPU required by the OpenMP offload configuration.
+  agent { label 'carson' }
+
+  stages {
+    stage('Modify Config Flags') {
+      // Remove CUDA-only definitions so CPU and GPU variants share the comparison setup.
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''sed -i "s:set(GPU_DEFINITIONS CLUBB_GPU CUDA):set(GPU_DEFINITIONS CLUBB_GPU):g" cmake/toolchains/linux_x86_64_nvhpc.cmake'''
+          sh '''utilities/create_multi_col_params.py -n 32 -mode dup_tweak'''
+          script { env.GPU_CONFIG_READY = 'true' }
+        }
+      }
+    }
+    stage('Compile CPU') {
+      when { expression { env.GPU_CONFIG_READY == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load nvhpc netcdf-fortran
+            ./compile.py
+          '''
+          script { env.CPU_COMPILED = 'true' }
+        }
+      }
+    }
+    stage('Run CPU') {
+      when { expression { env.CPU_COMPILED == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''rm -rf output; mkdir output'''
+          sh '''
+            # Allow the large Fortran automatic arrays used by these cases.
+            ulimit -s 8388608
+            run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -override l_lh_straight_mc=.true. arm
+            run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 500 -override l_lh_straight_mc=.true. cobra
+            run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 10 -override l_lh_straight_mc=.true. rico_silhs
+            rm -rf cpu_output; mv output cpu_output; mkdir output
+          '''
+          script { env.CPU_READY = 'true' }
+        }
+      }
+    }
+    stage('Compile GPU_ACC') {
+      when { expression { env.GPU_CONFIG_READY == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load nvhpc netcdf-fortran
+            ./compile.py -gpu openacc
+          '''
+          script { env.ACC_COMPILED = 'true' }
+        }
+      }
+    }
+    stage('Run GPU_ACC') {
+      when { expression { env.ACC_COMPILED == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''rm -rf output; mkdir output'''
+          // Serialize GPU cases on this worker; other nodes may run concurrently.
+          lock( "GPU_${env.NODE_NAME}" ) {
+            sh '''
+              # Allow the large Fortran automatic arrays used by these cases.
+              ulimit -s 8388608
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -override l_lh_straight_mc=.true. arm
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 500 -override l_lh_straight_mc=.true. cobra
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 10 -override l_lh_straight_mc=.true. rico_silhs
+              rm -rf acc_output; mv output acc_output; mkdir output
+            '''
+          }
+          script { env.ACC_READY = 'true' }
+        }
+      }
+    }
+    stage('Compile GPU_OMP') {
+      when { expression { env.GPU_CONFIG_READY == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load nvhpc netcdf-fortran
+            utilities/convert_acc_to_omp.bash
+            ./compile.py -gpu openmp
+          '''
+          script { env.OMP_COMPILED = 'true' }
+        }
+      }
+    }
+    stage('Run GPU_OMP') {
+      when { expression { env.OMP_COMPILED == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''rm -rf output; mkdir output'''
+          // Serialize GPU cases on this worker; other nodes may run concurrently.
+          lock( "GPU_${env.NODE_NAME}" ) {
+            sh '''
+              # Allow the large Fortran automatic arrays used by these cases.
+              ulimit -s 8388608
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -override l_lh_straight_mc=.true. arm
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 500 -override l_lh_straight_mc=.true. cobra
+              run_scripts/run_scm.py -params clubb_params_multi_col.in -stats input/stats/multi_col_stats.in -debug 0 -max_iters 10 -override l_lh_straight_mc=.true. rico_silhs
+              rm -rf omp_output; mv output omp_output; mkdir output
+            '''
+          }
+          script { env.OMP_READY = 'true' }
+        }
+      }
+    }
+    stage('Compare CPU vs ACC') {
+      when { expression { env.CPU_READY == 'true' && env.ACC_READY == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''run_scripts/run_bindiff_all.py -v 2 -t 1e-6 -s cpu_output acc_output'''
+        }
+      }
+    }
+    stage('Compare CPU vs OMP') {
+      when { expression { env.CPU_READY == 'true' && env.OMP_READY == 'true' } }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''run_scripts/run_bindiff_all.py -v 2 -t 1e-6 -s cpu_output omp_output'''
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only the production job sends failure mail.
+        if ( "${env.JOB_NAME}" == "clubb_gpu_vs_cpu_diffness" ) {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

@@ -5,13 +5,13 @@
 The Jenkins jobs under `jenkins_tests/` are mostly standalone declarative pipelines with:
 
 - one or more `sh` steps that run compile/test commands
-- an optional `cleanWs(...)` call in `post { always { ... } }`
+- workspace reset by the Jenkins SCM wipe-and-reclone configuration
 - a `post { failure { ... } }` email hook using `emailext`
 
 Two patterns matter for this design:
 
 1. The jobs are not using a shared Jenkins library today, so any new behavior either needs to be added to each Jenkinsfile or routed through a common external script.
-2. Some jobs clean the workspace in `always`, which means any failure-analysis hook that depends on workspace artifacts must run before cleanup or must copy artifacts to a persistent location first.
+2. Workspace artifacts survive completion and are reset by the next SCM checkout; failure-analysis hooks can inspect them after the test.
 
 The BFB jobs are also special: they already delegate execution to an external wrapper:
 
@@ -122,7 +122,6 @@ post {
   cleanup {
     script {
       if ( "${env.JOB_NAME}" == "clubb_gfortran_build" ) {
-        cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
       }
     }
   }
@@ -131,7 +130,6 @@ post {
 
 Two implementation notes:
 
-- move `cleanWs(...)` to `cleanup` or another later hook so the report still has access to workspace artifacts
 - the report step should be best-effort and should never hide the original build failure
 
 ### Better medium-term integration
@@ -505,7 +503,6 @@ If the goal is to get value quickly, implement exactly this first:
    - `clubb_gfortran_build`
    - `clubb_python_test`
    - `clubb_BFB_e3sm_flags_gfortran_test`
-3. Move any `cleanWs(...)` that would remove evidence before the report runs.
 4. Archive `llm_artifacts/**`.
 5. Keep the existing email notification.
 

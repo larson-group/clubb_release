@@ -210,7 +210,7 @@ class PyPlotGen:
 
         if self.multithreaded:
             freeze_support()  # Required for multithreading
-            n_processors = multiprocessing.cpu_count()
+            n_processors = min(multiprocessing.cpu_count(), max(1, len(all_enabled_cases)))
             with Pool(processes=n_processors,initializer=tpc_init,initargs=(total_progress_counter, )) as pool:
                 cases_plotted_bools = pool.map(self.__plotCase__, all_enabled_cases)
         else:

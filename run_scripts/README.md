@@ -47,6 +47,16 @@ Examples:
 
 Runs a predefined set of SCM cases by launching `run_scm.py` in parallel.
 Unknown extra arguments are forwarded to each `run_scm.py` call.
+`-override` accepts assignments (`C2=2.0`), inline JSON (`'{"C2": 2.0}'`), or a
+JSON filename. JSON may contain shared settings or case-specific objects, such
+as `{"mc3e": {"time_final": 1944000.0}}`; cases absent from that mapping are
+unchanged. A case-mapping JSON may also contain an `"all"` object whose settings
+apply first to every case; named-case settings override those defaults. For
+example, `{"all": {"dt_main": 60}, "bomex": {"dt_main": 30}}` sets a shared
+60-second timestep and a 30-second timestep for BOMEX. The batch runner forwards
+the value through `run_scm.py`, and
+`create_case_namelist.py` selects and applies settings to the generated namelist.
+Repeat `-override` to combine inputs in order; later values win.
 
 Examples:
 
@@ -66,6 +76,10 @@ Examples:
 
 Runs one case or a case set multiple times while applying flag sets from a JSON
 file. Each flag set is written to its own output subdirectory.
+It forwards `-override` in the same formats as `run_scm_all.py`. The selected
+flag set is supplied first, followed by forwarded overrides; the namelist
+generator resolves them in order. For example, `-override grid_overrides.json`
+adds case-specific settings while retaining the selected flag set.
 
 Examples:
 

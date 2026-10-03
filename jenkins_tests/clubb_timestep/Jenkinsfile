@@ -1,0 +1,53 @@
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+  agent none
+  options { disableConcurrentBuilds() }
+
+  stages {
+    // Each branch owns its executor, checkout, build, and output files.
+    stage('Independent workflows') {
+      parallel {
+        stage('Large timestep test') {
+          agent any
+          steps {
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py
+            '''
+
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''tests/run_timestep_tests.py'''
+            }
+          }
+        }
+        stage('Run timestep convergence test') {
+          agent any
+          steps {
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py
+            '''
+
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''python tests/run_clubb_conv_test.py'''
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+
+        // Only the production job sends failure mail.
+
+        if (env.JOB_NAME == 'clubb_timestep') {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

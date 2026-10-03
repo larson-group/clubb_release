@@ -1,0 +1,101 @@
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+
+  agent none
+  options { disableConcurrentBuilds() }
+
+  stages {
+    // Each branch owns its executor, checkout, build, and output files.
+    stage('Independent workflows') {
+      parallel {
+        stage('Compile gfortran') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                ./compile.py -run_tests
+              '''
+            }
+          }
+        }
+        stage('Compile gfortran: openmp+debug') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                ./compile.py -debug -openmp -run_tests
+              '''
+            }
+          }
+        }
+        stage('Compile ifx') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load intel netcdf-fortran
+                ./compile.py -run_tests
+              '''
+            }
+          }
+        }
+        stage('Compile ifx: single precision') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load intel netcdf-fortran
+                ./compile.py -precision single -run_tests
+              '''
+            }
+          }
+        }
+        stage('Compile nvfortran') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                ./compile.py -run_tests
+              '''
+            }
+          }
+        }
+        stage('Compile nvfortran: openacc') {
+          agent any
+          // CTest must also run GPU executables one at a time.
+          environment { CTEST_PARALLEL_LEVEL = '1' }
+          steps {
+            // Serialize GPU cases on this worker; other nodes may run concurrently.
+            lock("GPU_${env.NODE_NAME}") {
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load nvhpc netcdf-fortran
+                  ./compile.py -gpu openacc -run_tests
+                '''
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only the production job sends failure mail.
+        if ( "${env.JOB_NAME}" == "clubb_cmake" ) {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

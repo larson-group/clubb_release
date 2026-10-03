@@ -1,0 +1,70 @@
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''
+          source /etc/profile.d/larson-group.sh
+          module load gcc netcdf-fortran
+          ./compile.py -debug -python
+        '''
+      }
+    }
+    stage('Run F2PY pytests') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            bash clubb_python_api/run_pytests.sh -v
+          '''
+        }
+      }
+    }
+    stage('Run fast Python unit tests') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            bash tests/run_pytests.sh -unit
+          '''
+        }
+      }
+    }
+    stage('Run settings-validation parity') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            python3 tests/run_clubb_settings_validation_test.py
+          '''
+        }
+      }
+    }
+    stage('Run Python vs Fortran cases') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            ulimit -s 8388608
+            python3 tests/run_python_vs_fortran_cases.py -j 4
+          '''
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only the production job sends failure mail.
+        if ( "${env.JOB_NAME}" == "clubb_python" ) {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

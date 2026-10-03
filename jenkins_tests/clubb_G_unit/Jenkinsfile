@@ -1,0 +1,61 @@
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+  agent none
+  options { disableConcurrentBuilds() }
+
+  stages {
+    // Each branch owns its executor, checkout, build, and output files.
+    stage('Independent workflows') {
+      parallel {
+        stage('Run standard G-unit tests') {
+          agent any
+          steps {
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              python compile.py -debug
+            '''
+
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                python tests/run_G_unit_tests.py
+              '''
+            }
+          }
+        }
+        stage('Run reverse-grid G-unit test') {
+          agent any
+          steps {
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              python compile.py -debug
+            '''
+
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                python tests/run_G_unit_tests.py --rev_direction_grid_test
+              '''
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+
+        // Only the production job sends failure mail.
+
+        if (env.JOB_NAME == 'clubb_G_unit') {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

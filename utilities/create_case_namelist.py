@@ -14,7 +14,9 @@ output/CASE.in, but callers can choose another directory with -out_dir.
 
 Common options choose alternate input fragments, generate a multicolumn
 parameter file, change dt_main/dt_rad/time_final, set the stats output window,
-select a grid file, or apply raw key=value namelist overrides.
+select a grid file, or apply key=value or JSON namelist overrides. JSON may
+contain shared settings or a mapping from case names to their settings. An
+"all" object supplies defaults that each named case may override.
 
 Most runs reach this code indirectly:
 
@@ -48,6 +50,7 @@ windows should be assembled.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -234,15 +237,58 @@ def normalize_override_string(override_string):
     return value
 
 
-def override_value(override_string, clubb_in_text):
+def resolve_override_pairs(override, case_name=None):
+    """Resolve assignments or JSON settings for the current case."""
+    # Repeated -override arguments are applied in order, including mixed formats.
+    if isinstance(override, (list, tuple)):
+        return [pair for value in override for pair in resolve_override_pairs(value, case_name)]
+    value = normalize_override_string(override)
+    if value.startswith(("{", "[")):
+        settings = json.loads(value)
+    elif "=" not in value and (value.endswith(".json") or os.path.isfile(value)):
+        with open(value, encoding="utf-8") as stream:
+            settings = json.load(stream)
+    else:
+        return parse_override_pairs(value)
+
+    if not isinstance(settings, dict):
+        raise ValueError("Override JSON must be an object of settings or case-specific objects")
+    if any(isinstance(item, dict) for item in settings.values()):
+        if not all(isinstance(item, dict) for item in settings.values()):
+            raise ValueError("Override JSON cannot mix global settings and case-specific objects")
+        known_cases = {path.name.removesuffix("_model.in")
+                       for path in Path(CLUBB_ROOT, "input/case_setups").glob("*_model.in")}
+        unknown = settings.keys() - known_cases - {"all"}
+        if unknown:
+            raise ValueError("Unknown case(s) in override JSON: " + ", ".join(sorted(unknown)))
+        if case_name is None and settings.keys() - {"all"}:
+            raise ValueError("A case name is required for case-specific override JSON")
+        groups = settings.values()
+    else:
+        groups = [settings]
+    # Validate the whole profile so a bad entry cannot silently pass on another case.
+    for group in groups:
+        for key, item in group.items():
+            if not isinstance(key, str) or not key.strip() or "=" in key or "," in key:
+                raise ValueError(f"Invalid override key: {key!r}")
+            if item is None or isinstance(item, (dict, list)):
+                raise ValueError(f"Override {key} must have a scalar value")
+    if any(isinstance(item, dict) for item in settings.values()):
+        # Case-specific settings take precedence over shared defaults.
+        settings = {**settings.get("all", {}), **settings.get(case_name, {})}
+    return [(key, ".true." if item is True else ".false." if item is False else str(item))
+            for key, item in settings.items()]
+
+
+def override_value(override_string, clubb_in_text, case_name=None):
     """
-    Apply overrides from -override KEY1=val1,KEY2=val2,... to the aggregate text.
+    Apply assignment strings or case-selected JSON overrides to the aggregate text.
     Values may also be comma-separated column lists, e.g. C8=0.8,0.7,C11=1.0,1.1.
 
     Bare keys replace an existing assignment. Use NAMELIST.KEY=value to replace
     or add a key within a specific namelist.
     """
-    for key, val in parse_override_pairs(normalize_override_string(override_string)):
+    for key, val in resolve_override_pairs(override_string, case_name):
         if "." in key:
             namelist, setting = key.split(".", 1)
             if not namelist or not setting or "." in setting:
@@ -371,7 +417,7 @@ def apply_namelist_overrides(args, clubb_in: str, model_file: str, output_dir: s
             clubb_in = set_model_value(clubb_in, "time_final", str(new_time_final))
 
     if args.override:
-        clubb_in = override_value(args.override, clubb_in)
+        clubb_in = override_value(args.override, clubb_in, args.case_name)
 
     return set_stats_output_dir(clubb_in, output_dir)
 
@@ -410,7 +456,7 @@ def create_case_namelist_file(
     tout: int | None = None,
     stats_tstart: float | None = None,
     stats_tend: float | None = None,
-    override: str | None = None,
+    override: str | list[str] | None = None,
 ) -> Path:
     """Create the aggregate case namelist used by normal CLUBB runs."""
     output_dir_abs = os.path.abspath(os.fspath(output_dir) if output_dir else DEFAULT_OUTPUT_DIR)
@@ -667,7 +713,7 @@ def create_loss_case_namelist(
     batch_size: int | None = None,
     duplicate_params_for_batch: bool = False,
     disable_stats_storage: bool = False,
-    override: str | None = None,
+    override: str | list[str] | None = None,
     verbose: bool = False,
 ) -> tuple[Path, list[str], dict]:
     """Create the aggregate namelist consumed by the in-memory loss driver."""
@@ -766,7 +812,7 @@ def create_loss_case_namelist(
         clubb_in = set_stats_string(clubb_in, "stats_output_filename", f"{case_name}_stats.nc")
     clubb_in = prune_clubb_stats_namelist(clubb_in, selected_fields)
     if override:
-        clubb_in = override_value(override, clubb_in)
+        clubb_in = override_value(override, clubb_in, case_name)
     clubb_in = set_stats_output_dir(clubb_in, str(output_path))
 
     aggregate_path.write_text(clubb_in, encoding="utf-8")
@@ -820,9 +866,10 @@ def main():
     parser.add_argument("-stats_tend", metavar="[SECONDS]", type=float,
         help="Stats output window end time (s). Default from model file or driver.")
     parser.add_argument(
-        "-override",
-        help=("Comma-separated key=value pairs. Bare keys replace existing values; "
-              "use namelist.key=value to add a key, e.g. C2=2.0,model_setting.dt_main=1.0."),
+        "-override", action="append", metavar="ASSIGNMENTS|JSON",
+        help=("Comma-separated key=value pairs, inline JSON, or a JSON file. JSON maps "
+              'settings to values, or case names to settings; "all" supplies shared defaults. Repeat to apply in order; '
+              "later values win. Use namelist.key to add a key."),
     )
     parser.add_argument("case_name", help="Name of the case to aggregate")
     args = parser.parse_args()
@@ -850,7 +897,7 @@ def main():
             stats_tend=args.stats_tend,
             override=args.override,
         )
-    except RuntimeError as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         sys.exit(str(exc))
 
     print(clubb_input_namelist)

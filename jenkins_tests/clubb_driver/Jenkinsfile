@@ -1,0 +1,63 @@
+// GPU SILHS requires straight Monte Carlo sampling in both comparison runs.
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+
+  agent none
+  options { disableConcurrentBuilds() }
+
+  stages {
+    // Each branch owns its executor, checkout, build, and output files.
+    stage('Independent workflows') {
+      parallel {
+        stage('standard cases + multi_col with ifx') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load intel netcdf-fortran
+                ./compile.py
+                ulimit -s 8388608
+                run_scripts/run_scm_all.py -nproc 4 -multicol 4 -max_iters 500 -out_dir driver_test/standalone_ifx
+                run_scripts/run_scm_all.py -nproc 4 -multicol 4 -max_iters 500 -out_dir driver_test/driver_ifx -driver_test
+                run_scripts/run_bindiff_all.py output/driver_test/standalone_ifx output/driver_test/driver_ifx
+              '''
+            }
+          }
+        }
+        stage('min_cases + multi_col with nvhpc + openacc') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                ./compile.py -gpu openacc
+              '''
+              // Serialize GPU cases on this worker; other nodes may run concurrently.
+              lock( "GPU_${env.NODE_NAME}" ) {
+                sh '''
+                  # Allow the large Fortran automatic arrays used by these cases.
+                  ulimit -s 8388608
+                  run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
+                  run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
+                '''
+              }
+              sh '''run_scripts/run_bindiff_all.py output/driver_test/standalone_nvhpc output/driver_test/driver_nvhpc'''
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only the production job sends failure mail.
+        if ( "${env.JOB_NAME}" == "clubb_driver" ) {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

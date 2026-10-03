@@ -1,0 +1,139 @@
+// Grid comparisons disable mean-field sponge damping; core flags shorten MC3E.
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+  agent none
+  options { disableConcurrentBuilds() }
+
+  stages {
+    // Each branch owns its executor, checkout, build, and output files.
+    stage('Independent workflows') {
+      parallel {
+        stage('Run core-flag grid tests') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              script {
+                // Enable the internal flipped-grid checks before compiling.
+                sh '''sed -i 's:l_test_grid_generalization.*:l_test_grid_generalization = .true.:g' src/CLUBB_core/model_flags.F90'''
+                sh '''sed -i 's:l_force_descending_solves.*:l_force_descending_solves = .true.:g' src/CLUBB_core/model_flags.F90'''
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load intel netcdf-fortran
+                  ./compile.py -debug
+                '''
+                sh '''
+                  python3 run_scripts/run_clubb_w_varying_flags.py \
+                    -nproc 8 \
+                    -f input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
+                    -override '{
+                      "all": {
+                        "thlm_sponge_damp_settings%l_sponge_damping": false,
+                        "rtm_sponge_damp_settings%l_sponge_damping": false
+                      },
+                      "mc3e": {
+                        "time_final": 1944000.0
+                      }
+                    }'
+                '''
+              }
+            }
+          }
+        }
+        stage('Run host-flag grid tests') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              script {
+                sh '''sed -i 's:l_test_grid_generalization.*:l_test_grid_generalization = .true.:g' src/CLUBB_core/model_flags.F90'''
+                sh '''sed -i 's:l_force_descending_solves.*:l_force_descending_solves = .true.:g' src/CLUBB_core/model_flags.F90'''
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load intel netcdf-fortran
+                  ./compile.py -debug
+                '''
+                sh '''
+                  python3 run_scripts/run_clubb_w_varying_flags.py \
+                    -nproc 8 \
+                    -f input/flag_sets/run_bindiff_w_flags_config_host_flags.json \
+                    -override '{
+                      "all": {
+                        "thlm_sponge_damp_settings%l_sponge_damping": false,
+                        "rtm_sponge_damp_settings%l_sponge_damping": false
+                      }
+                    }'
+                '''
+              }
+            }
+          }
+        }
+        stage('Run LAPACK grid tests') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              script {
+                sh '''sed -i 's:l_test_grid_generalization.*:l_test_grid_generalization = .true.:g' src/CLUBB_core/model_flags.F90'''
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load intel netcdf-fortran
+                  ./compile.py -debug
+                '''
+                sh '''
+                  python3 run_scripts/run_scm_all.py \
+                    -nproc 8 \
+                    -stats none \
+                    -max_iters 100 \
+                    -override penta_solve_method=1,tridiag_solve_method=1 \
+                    -override '{
+                      "all": {
+                        "thlm_sponge_damp_settings%l_sponge_damping": false,
+                        "rtm_sponge_damp_settings%l_sponge_damping": false
+                      }
+                    }'
+                '''
+              }
+            }
+          }
+        }
+        stage('Run custom LU grid tests') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              script {
+                sh '''sed -i 's:l_test_grid_generalization.*:l_test_grid_generalization = .true.:g' src/CLUBB_core/model_flags.F90'''
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load intel netcdf-fortran
+                  ./compile.py -debug
+                '''
+                sh '''
+                  python3 run_scripts/run_scm_all.py \
+                    -nproc 8 \
+                    -stats none \
+                    -max_iters 100 \
+                    -override '{
+                      "all": {
+                        "thlm_sponge_damp_settings%l_sponge_damping": false,
+                        "rtm_sponge_damp_settings%l_sponge_damping": false
+                      }
+                    }'
+                '''
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+
+        // Only the production job sends failure mail.
+
+        if (env.JOB_NAME == 'clubb_generalized_grid') {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

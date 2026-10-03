@@ -225,12 +225,16 @@ def create_case_namelist(args, output_dir):
         ("-tout", args.tout),
         ("-stats_tstart", args.stats_tstart),
         ("-stats_tend", args.stats_tend),
-        ("-override", args.override),
     )
     for opt, value in forwarded_opts:
         if value is not None:
             cmd.extend([opt, str(value)])
 
+    # Preserve repeated overrides for the namelist generator to resolve in order.
+    overrides = args.override if isinstance(args.override, list) else [args.override]
+    for value in overrides:
+        if value is not None:
+            cmd.extend(["-override", value])
     cmd.append(args.case_name)
 
     try:
@@ -331,11 +335,10 @@ def main():
         ))
 
     namelist_group.add_argument(
-        "-override", metavar="[NAMELIST.]KEY=VALUE",
-        help=("Override specific settings, multiple accepted via comma separated entries."
-              "`key=value` will be used to replace the matching setting, can fail if no match."
-              "`namelist.key=value` will replace or add the setting if not found."
-        ))
+        "-override", action="append", metavar="ASSIGNMENTS|JSON",
+        help=("Assignments, inline JSON, or a JSON file, forwarded to create_case_namelist. "
+              "JSON may map settings to values or cases to settings. Repeat to apply in order; "
+              "later values win. Use namelist.key to add a key."))
 
     parser.add_argument("case_name", help="Name of the case to run")
     normalized_argv, jax_options, jax_occurrences = extract_jax_options(sys.argv[1:])

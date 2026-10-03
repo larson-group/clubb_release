@@ -1,0 +1,70 @@
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+  agent none
+  options { disableConcurrentBuilds() }
+  stages {
+    // Each branch owns its executor, checkout, build, and output files.
+    stage('Independent workflows') {
+      parallel {
+        stage('Stats and loss: bomex') {
+          agent any
+          steps {
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug
+            '''
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python tests/run_stats_output_consistency.py bomex'
+            }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python tests/run_loss_output_consistency.py bomex'
+            }
+          }
+        }
+        stage('Stats and loss: atex') {
+          agent any
+          steps {
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug
+            '''
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python tests/run_stats_output_consistency.py atex'
+            }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python tests/run_loss_output_consistency.py atex'
+            }
+          }
+        }
+        stage('Stats and loss: wangara') {
+          agent any
+          steps {
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              ./compile.py -debug
+            '''
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python tests/run_stats_output_consistency.py wangara'
+            }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh 'python tests/run_loss_output_consistency.py wangara'
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only the production job sends failure mail.
+        if ( "${env.JOB_NAME}" == "clubb_stats_output_consistency" ) {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

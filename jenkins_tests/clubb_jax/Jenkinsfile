@@ -1,0 +1,63 @@
+// Record independent failures while allowing manual aborts to stop the pipeline.
+pipeline {
+  // Keep memory-heavy CPU JAX case workers on Carson; stages remain sequential.
+  agent { label 'carson' }
+  environment { CLUBB_JAX_ACCELERATOR = 'cpu' }
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''
+          source /etc/profile.d/larson-group.sh
+          module load gcc netcdf-fortran
+          ./compile.py -debug
+        '''
+      }
+    }
+    stage('Expected failure test') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            ulimit -s 8388608
+            python3 tests/run_jax_comparison_mutation_test.py
+          '''
+        }
+      }
+    }
+    stage('Jax vs Fortran: standard stats') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            ulimit -s 8388608
+            ./tests/run_jax_vs_fortran_cases.py -j 8
+          '''
+        }
+      }
+    }
+    stage('Run Jax Python vs Fortran cases w varying flags') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            ulimit -s 8388608
+            python3 tests/run_jax_vs_fortran_cases.py -debug 0 -max_iters 5 -j 8 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json
+          ''' // Bound the varying-flag sweep to five timesteps per case.
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        // Only the production job sends failure mail.
+        if ( "${env.JOB_NAME}" == "clubb_jax" ) {
+          emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        }
+      }
+    }
+  }
+}

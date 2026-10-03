@@ -107,10 +107,9 @@ module generalized_grid_test
   !
   ! 1) Check which flagset number or numbers fail. The flag changes
   !    associated with each flagset can be found in input/flag_sets:
-  !    run_bindiff_w_flags_config_core_flags.json (for the test
-  !    clubb_generalized_vertical_grid_test) or
-  !    run_bindiff_w_flags_config_host_flags.json (for the test
-  !    clubb_generalized_vert_grid_host_flags). Note that the test script
+  !    run_bindiff_w_flags_config_core_flags.json (core-flag workflow) or
+  !    run_bindiff_w_flags_config_host_flags.json (host-flag workflow) in
+  !    clubb_branch_generalized_grid. Note that the test script
   !    automatically runs the unaltered default flag set as the final flagset.
   !    (The .json file might list 17 flagsets, and then the default
   !    configuration is run as flagset 18.)
@@ -124,15 +123,14 @@ module generalized_grid_test
   !    a) Setting l_test_grid_generalization to true in the file
   !       src/CLUBB_core/model_flags.F90; and
   !
-  !    b) Compiling using the compiler script linux_x86_64_gfortran_debug.bash,
-  !       which uses -O0 compiler optimization and debug settings, with the
-  !       command (when run from the compile directory):
-  !       ./compile.bash -c config/linux_x86_64_gfortran_debug.bash.
+  !    b) Loading the gcc and netcdf-fortran environment, then compiling
+  !       with debug settings from the repository root:
+  !       ./compile.py -debug.
   !
   !    Further modifications that you might want or need to make
   !    (especially when running one of the CGILS cases) can be found by
   !    following the steps listed in the Jenkins test recipe in
-  !    jenkins_tests/clubb_generalized_vertical_grid_test/Jenkinsfile.
+  !    jenkins_tests/clubb_generalized_grid/Jenkinsfile.
   !
   ! 4) Locally, use run_scm.py -override to match the flag settings found in
   !    the guilty flag set. Then, run CLUBB for the single case that you chose

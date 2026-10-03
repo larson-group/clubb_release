@@ -1,21 +1,12 @@
 pipeline {
-
   agent any
-
   stages {
-    stage('Update sys_admin Repo') {
+    stage('Run test_fatal_error_handling') {
       steps {
-        // Refresh the shared BFB harness before selecting this test configuration.
-        sh '''git -C /home/pub/jenkins_BFB_test_configs/sys_admin pull'''
-      }
-    }
-    stage('Run Python Test') {
-      steps {
-        // The shared sys_admin wrapper owns the BFB configuration and comparison.
         sh '''
           source /etc/profile.d/larson-group.sh
           module load gcc netcdf-fortran
-          python3 /home/pub/jenkins_BFB_test_configs/sys_admin/python_nightly_test_suite/run_test.py -c /home/pub/jenkins_BFB_test_configs/clubb_BFB_gfortran_test_config
+          python tests/test_fatal_error_handling.py
         '''
       }
     }
@@ -24,7 +15,7 @@ pipeline {
     failure {
       script {
         // Only the production job sends failure mail.
-        if ( "${env.JOB_NAME}" ==	"clubb_BFB_gfortran_test" ) {
+        if ( "${env.JOB_NAME}" ==	"clubb_error_handling" ) {
           emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
         }
       }
