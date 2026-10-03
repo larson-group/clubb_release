@@ -1,0 +1,172 @@
+commit ec38f6a3b0805ee6ac8db48d845ddee0e7d11ac3
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Oct 2 21:29:27 2026 -0500
+
+    Initialize the project Python environment in loss and tuner runners
+
+commit 31c332794e716ac7d086ac96c5ae10ce56f55fba
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Oct 2 21:24:01 2026 -0500
+
+    Run Jenkins tuner commands with the project Python environment
+
+commit 01b5fa7cb4bdd981c17405c3d67992080c4b2ca9
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Oct 2 20:58:16 2026 -0500
+
+    Jenkins test cleanup (#1371)
+    
+    * Consolidate and simplify CLUBB branch Jenkins jobs
+    
+    * Parallelize Jenkins workflows and preserve live job scripts
+    
+    * Remove archive metadata from Jenkins scripts
+    
+    * Let pyplotgen choose its own case worker count
+    
+    * Remove retired historical Jenkins tests
+    
+    * Remove superseded standalone Jenkins workflows
+    
+    * Remove completed Jenkins migration records
+    
+    * Resolve JSON overrides in the existing namelist generator
+    
+    * Inline grid overrides with shared defaults and indent Jenkins scripts
+    
+    * Preserve full-case debug coverage in combined Jenkins tests
+    
+    * Separate full-case debug runs from Jenkins compiler matrix
+
+commit 70c5581b0784cb1117c9a4c0acc1d39be5c9e15c
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Oct 1 22:59:35 2026 -0500
+
+    Adding Microhpysics to JAX (#1362)
+    
+    * Enable JAX microphysics with Fortran-shaped interfaces
+    
+    Connect KK and Morrison cores through microphysics initialization, PDF preparation, transport, sedimentation, statistics, and delayed feedback. Retain explicit guards and dummy interfaces for unsupported features.
+    
+    Add DYCOMS2 RF02 DS to the JAX-versus-Fortran harness at 240 timesteps. The four-column CPU double comparison passes at the existing 1e-7 threshold. Morrison validation remains limited to synthetic interface checks.
+    
+    * Add RICO and LBA KK microphysics comparisons
+    
+    Configure per-case timestep limits, timesteps and namelist overrides in the
+    JAX-versus-Fortran harness. Add RICO at 380 steps of 60 seconds and the LBA
+    warm-rain KK variant for its full 360-step, six-hour duration.
+    
+    Match Fortran multicolumn hydrometeor hole-filling grid metrics, keep lazy
+    KK module constants outside JAX tracing, resolve LBA radiation tables from
+    the configured forcing path, and use the source LBA surface-flux pi constant.
+    Update the existing surface-flux expectation and document coverage.
+    
+    Validation: serial live comparisons pass for RICO 380, DYCOMS2 RF02 DS 240,
+    and LBA 360 at the unchanged 1e-7 thresholds with four columns and standard
+    statistics. All LBA prefixes and its comparison against release O2 pass.
+    Focused checks: 72 RICO/integration checks and 51 LBA/radiation checks pass.
+    
+    * Replace draft JAX Morrison core with source-transcribed physics
+    
+    Restore Morrison process assembly, sedimentation, corrections and diagnostics
+    with source float32 state and native arithmetic. Consolidate the implementation
+    in module_mp_graupel.py, align public routine boundaries with Fortran, and remove
+    unused draft helpers and their tests. Fix column snow integration and conversion
+    of accumulated fallout to precipitation rates.
+    
+    Add the lba_morrison strict startup case (60 steps at the unchanged 1e-7 threshold)
+    and isolate named variants' output directories. Update support documentation.
+    
+    Validation: fresh serial LBA Morrison strict comparison passes; 42 focused
+    physics/interface checks pass. A separate six-hour, eight-column replay matches
+    all 25 pre-cleanup NetCDF variables exactly. Active ice/graupel validation remains
+    outstanding. Experimental ensemble tooling and investigation files are excluded.
+    
+    * Little script/readme cleanup
+    
+    * Little fixes for morrison code and adding morrison cases to jax_vs_fortran test, but with a short number of iterations since morrison is hard to compare (mainly because it's in single precision and that seems to hugely amplify floating-point error to be larger than our correctness tolerance that our test uses).
+    
+    * Batching KK parabolic cylinder calls - this results in far less memory consumed because it's a big function and was called hundreds of times each timestep, and that consumes lots of memory because the jit step inlines each of those calls. Batching them allows us to compute them all in pretty much the same place with far less inlining. Also improving the jax_vs_fortran scripts handling of multiple processes - now it exits out correctly when using ctrl-c
+    
+    * Little fix to prevent divergence in some fields with kk microphysics.
+    
+    * Simplify JAX comparison CLI and reporting
+    
+    * Adding a test, run_jax_comparison_mutation_test.py, that injects little code errors into the jax and runs the jax_vs_fortran script to ensure it fails.
+    
+    * Little formatting changes
+    
+    * Improving comment
+    
+    * Update to the json return option from the runbindiff - clearer explaination and more functionality, making other scripts make use of it too
+    
+    * Improving readme a bit
+    
+    * Improving the jax_vs_fortran failure test by adding a case that tests what happens when a stat value is output by one file but not the other
+
+commit d7b8c3fb8977ea0824c0b8f3aa52a5346c3c92d3
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Oct 1 18:26:13 2026 -0500
+
+    Fail bindiff on shape mismatches; optionally reject extra variables (#1370)
+    
+    * Add opt-in strict NetCDF structure checks to bindiff
+    
+    * Fail bindiff comparisons on any shape mismatch
+    
+    * Trim strict bindiff PR scope
+    
+    * Clarify strict bindiff variable matching
+    
+    * Making shape mismatches only a warning by default again - this is in case someone wants to change how metadata is stored in the netcdf. For example,  new parameter is added to clubb_params, now the netcdf storage for clubb_params is 1 element bigger and the python will detect the sizes are not comparable (shape error) - we don't want this to cause this bindiff script to fail.
+
+commit 09639f38d1373114e73ae7fd501310bd7e8f744f
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Sep 30 14:03:07 2026 -0500
+
+    Rename derived-parameter routine across CLUBB interfaces
+
+commit b9b446daeae9d0f9adb793b75429898922efac3e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Sep 30 13:28:51 2026 -0500
+
+    Making README a README.md
+
+commit f5f8f9cb615e396a1a9913fe3b9470c63df93595
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Sep 30 13:27:34 2026 -0500
+
+    Update selected install with command-line builds (#1369)
+
+commit fbd75c66dc7e14c9dbca7e418c37a679d3de47d3
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Sep 30 13:08:22 2026 -0500
+
+    Venv improvement (#1367)
+    
+    * Unify Python environment setup with uv
+    
+    Add optional shared Python/F2PY setup and automatic Dash dependency installation. Keep JAX independent, preserve ordinary system-Python use, and update compile selection behavior for CLI and Dash.
+    
+    * Harden shared Python environment and F2PY runtime selection
+    
+    * Bootstrap shared Python environment from entry points
+    
+    * Move install alias behavior to symlink branch
+
+commit 89be3d5fd401ed3393a0a251b98752e552010ab9
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Mon Sep 28 11:56:59 2026 -0500
+
+    Restart clubb 2d arr slicing fix (#1366)
+    
+    * Fixed 2d arr passing into restart_clubb subroutine which expects a 1d arr
+    
+    This only affects behaviour upon clubb restarts. Because restarts are more of a debug feature and disabled in all current "..._model.in"
+    files I don't see the necessity to mark with bit changing.
+    
+    * Added multicol support to restart tests script
+    
+    Forwarding any extra cli options to the run_scm.py script which run_restart.py calls. E.g. -multicol
+    
+    * Changed the bomex jenkins restart test to run with multicol. Changed the jenkins test name
