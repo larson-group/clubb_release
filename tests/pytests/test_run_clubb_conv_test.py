@@ -24,7 +24,7 @@ def test_user_override_is_merged_with_convergence_overrides(monkeypatch):
     )
 
     command = commands[0]
-    assert command[command.index("-out_dir") + 1] == str(run_clubb_conv_test.OUTPUT_DIR)
+    assert command[command.index("-output_dir") + 1] == str(run_clubb_conv_test.OUTPUT_DIR)
     assert command.count("-override") == 1
     override = command[command.index("-override") + 1]
     assert override.startswith("l_diag_Lscale_from_tau=.true.,")
@@ -36,7 +36,7 @@ def test_override_is_consumed_by_convergence_cli(monkeypatch):
     monkeypatch.setattr(
         run_clubb_conv_test.sys,
         "argv",
-        ["run_clubb_conv_test.py", "-p", "-override", "l_diag_Lscale_from_tau=.true."],
+        ["run_clubb_conv_test.py", "-plot_result", "-override", "l_diag_Lscale_from_tau=.true."],
     )
 
     args, forwarded = run_clubb_conv_test.parse_args()

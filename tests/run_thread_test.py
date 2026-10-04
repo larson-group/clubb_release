@@ -156,9 +156,10 @@ def run_parallel(clubb_thread_test: Path, run_env):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run CLUBB thread-safety regression test.")
+    parser = argparse.ArgumentParser(description="Run CLUBB thread-safety regression test.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
-        "--threads",
+        '-threads', dest='threads',
         type=int,
         default=int(THREAD_COUNT),
         help="OMP thread count to use (default: 8).",
@@ -201,7 +202,7 @@ def main():
     bindiff_cmd = [
         sys.executable,
         str(BINDIFF_SCRIPT),
-        "-v",
+        "-verbose",
         "0",
         str(SERIAL),
         str(PARALLEL),

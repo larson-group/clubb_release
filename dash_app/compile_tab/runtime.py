@@ -421,7 +421,7 @@ def build_compile_argv(options):
         argv.extend(["-toolchain", toolchain])
     install = (options.get("install") or "").strip()
     if install:
-        argv.extend(["-install", install])
+        argv.extend(["-install_dir", install])
     argv.extend(_bool_flag(options, "debug", "-debug"))
     argv.extend(_bool_flag(options, "run_tests", "-run_tests"))
     argv.extend(_bool_flag(options, "python", "-python"))

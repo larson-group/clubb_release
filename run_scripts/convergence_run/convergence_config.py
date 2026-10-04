@@ -45,7 +45,8 @@ if ('quartz' in os.uname().nodename):
   print('########################################################')
 
 # parse command line arguments
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
 parser.add_argument('case',
   help='name of case to run', choices=('rico', 'bomex', 'wangara', 'dycoms2_rf02_nd', 'dycoms2_rf01'))
 parser.add_argument ('-dt', metavar='seconds',
@@ -55,46 +56,46 @@ parser.add_argument('-dto', metavar='seconds', dest='dt_output',
 parser.add_argument('-dz', metavar='meters',
   help='use a uniform grid with specified dz')
 parser.add_argument('-Tsfc', dest='Tsfc', action='store_true',
-  help='note that the Tscf in the sounding file has been modified (user must have modified file)')
+  help='Record that you already modified Tsfc in the sounding file; this option does not change it.')
 parser.add_argument('-ti', metavar='seconds', dest='tinitial',
-  help='time (in seconds) to simulate')
+  help='Initial simulation time in seconds.')
 parser.add_argument('-tf', metavar='seconds', dest='tfinal',
-  help='time (in seconds) to simulate')
+  help='Final simulation time in seconds.')
 parser.add_argument('-ref', metavar='num', dest='refine',
   help='use a stretched grid with specified number of refinement')
-parser.add_argument('-output-name',dest='output_name',
+parser.add_argument('-output_name',dest='output_name',
   help='use user specified naming convention instead of one generated from other flags')
-parser.add_argument('-micro-off', dest='turn_off_microphysics', action='store_true',
+parser.add_argument('-micro_off', dest='turn_off_microphysics', action='store_true',
   help='turn off microphysics instead of using default case setups')
-parser.add_argument('-rad-off', dest='turn_off_radiation', action='store_true',
+parser.add_argument('-rad_off', dest='turn_off_radiation', action='store_true',
   help='turn off radiation scheme instead of using default case setup')
-parser.add_argument('-binary-out', dest='default_format', action='store_true',
+parser.add_argument('-binary_out', dest='default_format', action='store_true',
   help='use output format in default case setup (binary) instead of netcdf')
-parser.add_argument('-new-bc', dest='modified_bc', action='store_true',
+parser.add_argument('-new_bc', dest='modified_bc', action='store_true',
   help='use boundary condition at fixed height instead of method in default case setup (space dependent)')
-parser.add_argument('-new-ic', dest='modified_ic', action='store_true',
+parser.add_argument('-new_ic', dest='modified_ic', action='store_true',
   help='use smoothed initial condition instead of method in default case setup (linear interpolation)')
-parser.add_argument('-fix-fc', dest='fixed_forcing', action='store_true',
-  help='use non-time-dependent forcing instead of method in default case setup (time-dependent)')
-parser.add_argument('-splat-off', dest='turn_off_splat', action='store_true',
-  help='use nonzero spatting terms in default case setup instead of setting them to zero') 
-parser.add_argument('-standard-aterms', dest='standard_aterms', action='store_true',
+parser.add_argument('-fix_fc', dest='fixed_forcing', action='store_true',
+  help='Ignore prescribed forcings for this convergence run.')
+parser.add_argument('-splat_off', dest='turn_off_splat', action='store_true',
+  help='Disable splatting by setting C_wp2_splat to zero.')
+parser.add_argument('-standard_aterms', dest='standard_aterms', action='store_true',
   help='use aterms in default case setup instead of keeping them in the derivative')
-parser.add_argument('-smooth-tau', dest='smoothed_tau', action='store_true',
-  help='use formula of tau (for wpxp) in default case setup without smoothed Heavidise function')
-parser.add_argument('-lin-diff', dest='linear_diffusion', action='store_true',
-  help='use nonlinear diffusion in default case setup instead of linear diffusion')
-parser.add_argument('-new-lim', dest='modified_BVF_Ri_limiter', action='store_true',
+parser.add_argument('-smooth_tau', dest='smoothed_tau', action='store_true',
+  help='Use a smoothed Heaviside function in the wpxp timescale.')
+parser.add_argument('-lin_diff', dest='linear_diffusion', action='store_true',
+  help='Use linear diffusion by disabling the nonlinear diffusion coefficients.')
+parser.add_argument('-new_lim', dest='modified_BVF_Ri_limiter', action='store_true',
   help='use modified limiters on BVF and Ri instead of default case setup')
-parser.add_argument('-new-wp3cl', dest='modified_wp3_clip', action='store_true',
+parser.add_argument('-new_wp3cl', dest='modified_wp3_clip', action='store_true',
   help='use modified skewness clippings on wp3 instead of default case setup') 
 parser.add_argument('-godwp3', metavar='name', dest='godunov_wp3',
   help='use specified Godunov-like scheme instead of central difference (for wp3 equation)')
 parser.add_argument('-godxpyp', metavar='name', dest='godunov_xpyp',
   help='use specified Godunov-like scheme instead of central difference (for xpyp equation)')
-parser.add_argument('-skip-check', action='store_true',
+parser.add_argument('-skip_check', dest='skip_check', action='store_true',
   help='skip the pause in the script that allows user to inspect configuration changes')
-parser.add_argument('-warm-init', dest='restart_run', action='store_true',
+parser.add_argument('-warm_init', dest='restart_run', action='store_true',
   help='do restart run instead of cold initialization using an existing simulation')
 
 # create dictionary of parameters to change (remove None and False vals)

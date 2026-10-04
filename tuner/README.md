@@ -12,9 +12,9 @@ parameter sets, and records ranked results.
   It builds a Dash-style tuning request from compact flags, launches
   `tuner.tune_clubb`, prints live status, handles Ctrl-C graceful stop, and can
   optionally run the top result afterward.  Example:
-  `python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -params C8:0.2:0.8 -strategy random:8`.
+  `python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -param_ranges C8:0.2:0.8 -strategy random:8`.
   Case specs may include Dash-style timing as `case:t_start:t_end:t_interval`.
-- `python -m tuner.tune_clubb --job-dir <dir>` runs one tuning job from a job
+- `python -m tuner.tune_clubb -job_dir <dir>` runs one tuning job from a job
   directory. This is the entry point used by the Dash tuning tab.
 - `python -m tuner.clubb_loss_driver <namelist>` runs the Python front end for
   the reusable Fortran loss driver once.
@@ -33,7 +33,7 @@ The normal Dash tuning path is:
 1. `dash_app/tune_tab/runtime.py` creates a unique job directory under
    `output/tuner/`.
 2. Dash writes `request.json`, `control.json`, and an initial `status.json`.
-3. Dash starts `python -m tuner.tune_clubb --job-dir <dir>` as a subprocess and
+3. Dash starts `python -m tuner.tune_clubb -job_dir <dir>` as a subprocess and
    logs stdout/stderr to `worker.log`.
 4. `tuner.tune_clubb` validates the request with `tuner.request.load_request`.
 5. `tuner.tuning_scheduler.run_scheduler` starts one worker process per case for
@@ -73,7 +73,7 @@ files.
 Dash and `run_tuner_job.py` create jobs with a controller keepalive lease in
 `control.json`. The controller renews that heartbeat while polling; if it stops
 renewing for 300 seconds, the scheduler treats the expired lease like a graceful
-stop request. Direct `python -m tuner.tune_clubb --job-dir ...` runs are not
+stop request. Direct `python -m tuner.tune_clubb -job_dir ...` runs are not
 leased unless their `control.json` explicitly enables keepalive.
 
 ## Request Shape
@@ -108,18 +108,18 @@ the benchmark converter.
 
 ## Presets and linked command-line ranges
 
-`run_scripts/run_tuner_job.py --list-presets` lists the checked-in experiment
+`run_scripts/run_tuner_job.py -list_presets` lists the checked-in experiment
 presets.  A preset supplies its normal cases, fields, parameter coordinates, and required
-override; explicitly supplied `-cases`, `-fields`, or `-params` replace that
+override; explicitly supplied `-cases`, `-fields`, or `-param_ranges` replace that
 piece.  For example:
 
 ```text
-python run_scripts/run_tuner_job.py --preset wpxp -strategy random:2000
+python run_scripts/run_tuner_job.py -preset wpxp -strategy random:2000
 ```
 
 Use `PARAM:MIN:MAX` for an ordinary range and
 `PARAM=PARAM:MIN:MAX` for an equality-constrained linked range, for example
-`-params C6rt=C6thl:0:4`.  The sampler treats it as one coordinate while the
+`-param_ranges C6rt=C6thl:0:4`.  The sampler treats it as one coordinate while the
 saved result and generated top-result namelist retain both physical names.
 Dash exposes the same request shape as either an ordinary row or a visibly
 bracketed locked group with one shared range.

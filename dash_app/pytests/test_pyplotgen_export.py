@@ -53,9 +53,9 @@ def test_runtime_uses_fixed_unique_output(tmp_path, monkeypatch):
         pyplotgen_runtime.sys.executable,
         "-u",
         str(pyplotgen_runtime.PYPLOTGEN_SCRIPT),
-        "-l",
+        "-les",
     ]
-    assert captured["command"][4:7] == ["-c", str(input_a), str(input_b)]
+    assert captured["command"][4:7] == ["-clubb", str(input_a), str(input_b)]
     assert captured["kwargs"]["start_new_session"] is True
     assert captured["kwargs"]["env"]["PYTHONUNBUFFERED"] == "1"
     pyplotgen_runtime.release_pyplotgen(_process)

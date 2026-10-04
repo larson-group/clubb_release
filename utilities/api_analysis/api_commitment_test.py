@@ -18,7 +18,7 @@ Next, it recursively searches through given folders for files with lines includi
 If found, the script exits with a nonzero exit code and prints the offending file.
 
 Usage:
-  python api_commitment_test.py [-h] [-cpu] clubbSrcDir searchDir [--exclude-dir EXCLUDEDIR [EXCLUDEDIR ...]]
+  python api_commitment_test.py [-h] [-cpu] clubbSrcDir searchDir [-exclude_dir EXCLUDEDIR [EXCLUDEDIR ...]]
 
   For cpu readable output, use the -cpu flag
 """
@@ -207,11 +207,12 @@ def main(clubbSrcDirectory, searchObjs, excludedDirectories, cpuMode):
 
 if __name__ == "__main__":
     # parse the command line arguments
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter, add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument('clubbSrcDir', help="clubb source directory", nargs=1)
     parser.add_argument('searchObjs', help="directory or file to search in", nargs='*')
     parser.add_argument('-cpu', help="print cpu readable output", dest='cpuMode', required=False, action='store_true')
-    parser.add_argument('--exclude-dir', help="list of directories to exclude", dest='excludeDir', required=False,
+    parser.add_argument('-exclude_dir', help="list of directories to exclude", dest='excludeDir', required=False,
                         nargs='+', default=[])
 
     args = parser.parse_args(sys.argv[1:])

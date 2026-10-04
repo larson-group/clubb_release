@@ -20,7 +20,7 @@ Examples:
   Runs the `bomex` case with the default compiled executable and default output
   directory.
 
-- `python3 run_scripts/run_scm.py -out_dir bomex_short -max_iters 10 bomex`
+- `python3 run_scripts/run_scm.py -output_dir bomex_short -max_iters 10 bomex`
   Runs `bomex` for only 10 iterations and writes output under
   `output/bomex_short`.
 
@@ -63,13 +63,13 @@ Examples:
 - `python3 run_scripts/run_scm_all.py`
   Runs the standard maintained case list with the default process count.
 
-- `python3 run_scripts/run_scm_all.py -priority_cases -nproc 4`
+- `python3 run_scripts/run_scm_all.py -priority_cases -workers 4`
   Runs the priority case list using at most four concurrent workers.
 
 - `python3 run_scripts/run_scm_all.py -cases arm,bomex,atex -max_iters 5`
   Runs only `arm`, `bomex`, and `atex`, forwarding `-max_iters 5` to each case.
 
-- `python3 run_scripts/run_scm_all.py -short_cases -v`
+- `python3 run_scripts/run_scm_all.py -short_cases -show_output`
   Runs the short case list and prints each underlying `run_scm.py` log.
 
 ### `run_clubb_w_varying_flags.py`
@@ -87,13 +87,13 @@ Examples:
   Runs `bomex` once for the default flags and once for each default JSON flag
   set.
 
-- `python3 run_scripts/run_clubb_w_varying_flags.py --priority-cases -nproc 4`
+- `python3 run_scripts/run_clubb_w_varying_flags.py -priority_cases -workers 4`
   Runs the priority case list across all configured flag sets with four workers.
 
-- `python3 run_scripts/run_clubb_w_varying_flags.py -f input/flag_sets/run_bindiff_w_flags_config_host_flags.json --min-cases`
+- `python3 run_scripts/run_clubb_w_varying_flags.py -flag_config_file input/flag_sets/run_bindiff_w_flags_config_host_flags.json -min_cases`
   Runs the minimal case list using the host-flag JSON config.
 
-- `python3 run_scripts/run_clubb_w_varying_flags.py --skip-default-flags --max-iters 10 bomex`
+- `python3 run_scripts/run_clubb_w_varying_flags.py -skip_default_flags -max_iters 10 bomex`
   Runs only the alternate flag sets for `bomex`, forwarding `-max_iters 10` to
   `run_scm.py`.
 
@@ -110,7 +110,7 @@ Examples:
 - `python3 run_scripts/run_bindiff_all.py output_a output_b`
   Compares every matching case in two output directories with default reporting.
 
-- `python3 run_scripts/run_bindiff_all.py -v 2 output_a output_b`
+- `python3 run_scripts/run_bindiff_all.py -verbose 2 output_a output_b`
   Prints detailed per-variable numerical differences.
 
 - `python3 run_scripts/run_bindiff_all.py -strict output_a output_b`
@@ -120,18 +120,18 @@ Examples:
   every variable has a shape/mismatch issue, the test will fail with or without
   the -strict flag.
 
-- `python3 run_scripts/run_bindiff_all.py -case bomex -t 1e-12 -pt 1e-12 output_a output_b`
+- `python3 run_scripts/run_bindiff_all.py -case bomex -threshold 1e-12 -percent_threshold 1e-12 output_a output_b`
   Compares only `bomex` with strict absolute and percent thresholds.
 
-- `python3 run_scripts/run_bindiff_all.py -f replace -v 2 output_a output_b`
+- `python3 run_scripts/run_bindiff_all.py -log_mode replace -verbose 2 output_a output_b`
   Writes per-case diff logs under `output/bindiffs`, replacing older logs.
 
-- `python3 run_scripts/run_bindiff_all.py --result-json comparison.json output_a output_b`
+- `python3 run_scripts/run_bindiff_all.py -result_json comparison.json output_a output_b`
   Writes a compact machine-readable report with input and log paths, case and
   file status, variable names grouped by exclusive comparison outcome, and
   the first failing saved record. This is mainly for usage in other scripts.
 
-- `python3 run_scripts/run_bindiff_all.py --flag-sets old_output new_output`
+- `python3 run_scripts/run_bindiff_all.py -flag_sets old_output new_output`
   Treats each immediate child directory as a flag-set output directory and
   compares matching flag sets.
 
@@ -139,7 +139,7 @@ Examples:
 
 Compiles CLUBB, runs selected cases, and plots those outputs with pyplotgen.
 Existing output directories for the selected run name are removed before the
-run unless `--dry-run` is used.
+run unless `-dry_run` is used.
 
 Examples:
 
@@ -147,15 +147,15 @@ Examples:
   Compiles CLUBB, runs the default case list, writes to `output/new`, and writes
   plots to `output/pyplots_new`.
 
-- `python3 run_scripts/run_clubb_and_pyplotgen.py --name smoke --cases bomex arm --max-iters 10`
+- `python3 run_scripts/run_clubb_and_pyplotgen.py -name smoke -cases bomex arm -max_iters 10`
   Runs and plots only `bomex` and `arm` for 10 iterations under
   `output/smoke` and `output/pyplots_smoke`.
 
-- `python3 run_scripts/run_clubb_and_pyplotgen.py --skip-compile --name trial --compare baseline`
+- `python3 run_scripts/run_clubb_and_pyplotgen.py -skip_compile -name trial -compare baseline`
   Uses the existing executable, writes a new `trial` output, and overlays the
   existing `output/baseline` data in the plots.
 
-- `python3 run_scripts/run_clubb_and_pyplotgen.py --dry-run --name check --cases bomex`
+- `python3 run_scripts/run_clubb_and_pyplotgen.py -dry_run -name check -cases bomex`
   Prints the compile, run, and plotting commands without creating output.
 
 ### `run_scm_loss.py`
@@ -191,13 +191,13 @@ Examples:
 - `python3 run_scripts/run_tuner.py`
   Runs the tuner for the default single-case setup.
 
-- `python3 run_scripts/run_tuner.py -i --run-case fire`
+- `python3 run_scripts/run_tuner.py -initial_output -run_case fire`
   Saves pre-tuning standalone output for `fire` before running the tuner.
 
-- `python3 run_scripts/run_tuner.py --run-type multiple --model-mult fire atex`
+- `python3 run_scripts/run_tuner.py -run_type multiple -model_mult fire atex`
   Sets up a multiple-case tuner run using `fire` and `atex`.
 
-- `python3 run_scripts/run_tuner.py -n --run-case fire`
+- `python3 run_scripts/run_tuner.py -nightly -run_case fire`
   Runs in nightly mode and copies tuner artifacts to `~/tuner_output`.
 
 ### `run_tuner_job.py`
@@ -208,17 +208,17 @@ can optionally run the top parameter sets afterward.
 
 Examples:
 
-- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -params C8:0.2:0.8`
+- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -param_ranges C8:0.2:0.8`
   Runs a small random tuner job for one case, one field, and one parameter.
 
-- `python3 run_scripts/run_tuner_job.py -cases arm:10800:21600:10800 bomex:7200:18000:2700 -fields cloud_frac rcm -params C8:0.2:0.8 C11:0.1:1.0 -strategy resolve:0.1`
+- `python3 run_scripts/run_tuner_job.py -cases arm:10800:21600:10800 bomex:7200:18000:2700 -fields cloud_frac rcm -param_ranges C8:0.2:0.8 C11:0.1:1.0 -strategy resolve:0.1`
   Tunes two cases with explicit time windows, two fields, two parameters, and a
   resolved grid strategy.
 
-- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -params C8:0.2:0.8 -dry_run`
+- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -param_ranges C8:0.2:0.8 -dry_run`
   Writes the job files but does not launch the tuner.
 
-- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -params C8:0.2:0.8 -run_top complete -top_n 3`
+- `python3 run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac -param_ranges C8:0.2:0.8 -run_top complete -top_n 3`
   Runs the tuner, then runs standalone CLUBB output for the top three complete
   parameter sets.
 
@@ -236,14 +236,14 @@ option set.
 
 Examples:
 
-- `(cd run_scripts && python3 convergence_run/convergence_config.py bomex -dt 60 -dz 20 -skip-check)`
+- `(cd run_scripts && python3 convergence_run/convergence_config.py bomex -dt 60 -dz 20 -skip_check)`
   Configures and runs a `bomex` convergence case with 60-second timesteps and a
   20 m uniform grid.
 
-- `(cd run_scripts && python3 convergence_run/convergence_config.py rico -dt 30 -ref 2 -rad-off -micro-off -skip-check)`
+- `(cd run_scripts && python3 convergence_run/convergence_config.py rico -dt 30 -ref 2 -rad_off -micro_off -skip_check)`
   Runs `rico` with a refined grid and radiation/microphysics disabled.
 
-- `(cd run_scripts && python3 convergence_run/convergence_config.py dycoms2_rf02_nd -dt 10 -ref 3 -new-ic -new-bc -skip-check)`
+- `(cd run_scripts && python3 convergence_run/convergence_config.py dycoms2_rf02_nd -dt 10 -ref 3 -new_ic -new_bc -skip_check)`
   Runs a DYCOMS-II RF02 ND convergence setup with modified initial and boundary
   conditions.
 
@@ -337,3 +337,25 @@ Example:
 
 - `(cd run_scripts/convergence_run && at now -f run_clubb_revall)`
   Submits the revised-all convergence workflow through `at`.
+
+## Shared command-line conventions
+
+Use single-dash options with underscores and `-h` or `-help` for help.
+CPU worker pools use `-workers`, defaulting to half the logical CPUs available
+through CPU affinity (at least one). GPU comparison runs remain serial.
+`-threads` controls OpenMP threads; `-process_counts` selects a benchmark sweep.
+Pyplotgen chooses its own pool size; `-serial` disables that pool.
+
+Use `-params_file` for model parameters, `-silhs_params_file` for SILHS parameters,
+and `-param_ranges` for tuner search ranges. `-batch_size` controls model column
+batching, including parameter samples represented by columns in tuner workers.
+`-multicol NUM` selects count-based generation; `-multicol C8/0.2:0.8/4` selects
+an explicit grid. The standalone generator also preserves advanced `-mode`
+settings; `-mode hypergrid` interprets NUM as points per parameter dimension.
+
+Output locations use `-output_dir`, `-output_root`, or `-output_file`.
+Tuner destinations are `-output_job_dir` and `-output_run_dir`; its internal
+scheduler's `-job_dir` selects an existing job. Relative-path resolution follows
+each script's documented behavior. Case lists accept commas and spaces.
+Model options pass through wrappers to the SCM runner; namelist definitions and
+JSON `-override` resolution are shared in `create_case_namelist.py`.

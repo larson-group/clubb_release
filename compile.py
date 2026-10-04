@@ -352,10 +352,11 @@ def run_ctests(logfile):
 
 def main():
 
-    parser = argparse.ArgumentParser(description="Compile CLUBB with CMake")
+    parser = argparse.ArgumentParser(description="Compile CLUBB with CMake", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     
     # Core build options
-    parser.add_argument("-install", metavar="DIR", help="Install directory for latest executables")
+    parser.add_argument('-install_dir', dest='install', metavar="DIR", help="Install directory for latest executables")
     parser.add_argument("-toolchain", metavar="FILE", help="Path to CMake toolchain file")
     parser.add_argument("-gpu", choices=["none", "openacc", "openmp"], default="none", 
                         help="GPU option for build")

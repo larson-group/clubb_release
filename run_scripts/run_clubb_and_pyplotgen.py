@@ -37,32 +37,35 @@ CASES = [
 DEFAULT_RUN_NAME = "new"
 
 # Plotting options for pyplotgen (see postprocessing/pyplotgen/README.md)
-PYPLOTGEN_BASE_OPTIONS = ["--plot-budgets", "-l"]
+PYPLOTGEN_BASE_OPTIONS = ["-plot_budgets", "-les"]
 
 # Code begins ------------------------------------------------------
 
 
 def get_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run selected CLUBB cases and plot the output with pyplotgen."
+        description="Run selected CLUBB cases and plot the output with pyplotgen.",
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
-        "--cases",
+        '-cases', dest='cases',
         nargs="+",
         default=CASES,
         help="Case names to run and plot. Defaults to the case list in this script.",
     )
     parser.add_argument(
-        "--name",
+        '-name', dest='name',
         default=DEFAULT_RUN_NAME,
         help="Run name. Writes CLUBB output to output/NAME and plots to output/pyplots_NAME.",
     )
     parser.add_argument(
-        "--output-root",
+        '-output_root', dest='output_root',
         help="Directory containing CLUBB output subdirectories. Default: repo output/.",
+        metavar='DIR',
     )
     parser.add_argument(
-        "--compare",
+        '-compare', dest='compare',
         action="append",
         default=[],
         help=(
@@ -71,26 +74,30 @@ def get_cli_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--skip-compile",
+        '-skip_compile', dest='skip_compile',
         action="store_true",
         help="Skip the compile step and use the existing CLUBB executable.",
     )
     parser.add_argument(
-        "--max-iters",
+        '-max_iters', dest='max_iters',
         type=int,
         help="Forward -max_iters to run_scm.py for each case.",
     )
     parser.add_argument(
-        "--enable-plot-multithreading",
+        '-parallel_plots', dest='enable_plot_multithreading',
         action="store_true",
         help="Allow pyplotgen to use multiprocessing. Disabled by default for predictable wrapper behavior.",
     )
     parser.add_argument(
-        "--dry-run",
+        '-dry_run', dest='dry_run',
         action="store_true",
         help="Print the commands that would run without creating output.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.cases = [case.strip() for value in args.cases for case in value.split(",") if case.strip()]
+    if not args.cases:
+        parser.error("-cases requires at least one case")
+    return args
 
 
 def format_command(command: list[str | Path]) -> str:
@@ -172,7 +179,7 @@ def main() -> int:
             run_scm_command: list[str | Path] = [
                 sys.executable,
                 scriptPath / "run_scm.py",
-                "-out_dir",
+                "-output_dir",
                 run_output_path,
             ]
             if args.max_iters is not None:
@@ -192,9 +199,9 @@ def main() -> int:
         print("\nCreating plots using pyplotgen . . .\n", flush=True)
         pyplotgen = clubb_root / "postprocessing" / "pyplotgen" / "pyplotgen.py"
         plot_inputs = [*resolve_compare_output_dirs(output_root, args.compare), run_output_path]
-        pyplotgen_options = [*PYPLOTGEN_BASE_OPTIONS, "--cases", *cases, "-c"]
+        pyplotgen_options = [*PYPLOTGEN_BASE_OPTIONS, "-cases", *cases, "-clubb"]
         if not args.enable_plot_multithreading:
-            pyplotgen_options.insert(0, "--disable-multithreading")
+            pyplotgen_options.insert(0, "-serial")
 
         pyplotgen_env = os.environ.copy()
         mpl_config_dir = output_root / ".matplotlib"
@@ -203,7 +210,7 @@ def main() -> int:
         pyplotgen_env.setdefault("MPLCONFIGDIR", str(mpl_config_dir))
 
         run_checked(
-            [sys.executable, pyplotgen, *pyplotgen_options, *plot_inputs, "-o", pyplots_output_path],
+            [sys.executable, pyplotgen, *pyplotgen_options, *plot_inputs, "-output_dir", pyplots_output_path],
             env=pyplotgen_env,
             dry_run=args.dry_run,
         )
@@ -214,7 +221,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    if "--dry-run" not in sys.argv[1:]:
+    if "-dry_run" not in sys.argv[1:]:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
         from utilities.setup_python_venv import ensure_python_venv
 

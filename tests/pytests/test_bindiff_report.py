@@ -156,7 +156,7 @@ def test_cli_writes_json_for_invalid_inputs(tmp_path, problem):
     right = tmp_path / "missing" if problem == "missing_input_directory" else left
     report_path = tmp_path / "result.json"
     run = subprocess.run(
-        [sys.executable, str(BINDIFF), "--result-json", str(report_path), str(left), str(right)],
+        [sys.executable, str(BINDIFF), "-result_json", str(report_path), str(left), str(right)],
         capture_output=True, text=True,
     )
     assert run.returncode == 2
@@ -185,8 +185,8 @@ def test_first_failing_prefix_is_not_first_pointwise_difference(tmp_path):
 
     report = tmp_path / "result.json"
     run = subprocess.run(
-        [sys.executable, str(BINDIFF), "-v", "0", "-case", "case", "-t", "1e-6",
-         "-pt", "1e-7", "--result-json", str(report), str(left), str(right)],
+        [sys.executable, str(BINDIFF), "-verbose", "0", "-case", "case", "-threshold", "1e-6",
+         "-percent_threshold", "1e-7", "-result_json", str(report), str(left), str(right)],
         capture_output=True, text=True,
     )
 

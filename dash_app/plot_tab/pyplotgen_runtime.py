@@ -64,7 +64,7 @@ def start_pyplotgen(output_dirs: list[str]) -> tuple[dict[str, Any], subprocess.
     matplotlib_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / f"{run_id}.log"
     html_path = output_dir / "index.html"
-    command = [sys.executable, "-u", str(PYPLOTGEN_SCRIPT), "-l", "-c", *selected, "-o", str(output_dir)]
+    command = [sys.executable, "-u", str(PYPLOTGEN_SCRIPT), "-les", "-clubb", *selected, "-output_dir", str(output_dir)]
 
     log_handle = log_path.open("wb")
     try:

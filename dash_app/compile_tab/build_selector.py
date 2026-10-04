@@ -33,7 +33,7 @@ def inspect_jax_runtime_profiles(repo_root: Path = REPO_ROOT, *, jax_gpu="", jax
         error = "JAX runtime inspection returned invalid metadata."
         try:
             result = subprocess.run(
-                [str(wrapper), f"--profile={profile}", "--info=json"],
+                [str(wrapper), f"-profile={profile}", "-info=json"],
                 cwd=repo_root,
                 env=jax_device_env({"implementation": "jax", "jax_profile": profile,
                                     "jax_xla_prealloc": jax_xla_prealloc if profile == "gpu" else None,

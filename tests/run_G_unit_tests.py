@@ -72,15 +72,17 @@ def write_namelist(flags_dict):
 
 def build_arg_parser():
     parser = argparse.ArgumentParser(
-        description="Run CLUBB G_unit_tests with selectable subsets of tests."
+        description="Run CLUBB G_unit_tests with selectable subsets of tests.",
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
 
-    parser.add_argument("--all", action="store_true", help="Enable all tests")
+    parser.add_argument('-all', dest='all', action="store_true", help="Enable all tests")
 
     # Add individual test flags
     for flag in TEST_OPTIONS:
         parser.add_argument(
-            f"--{flag}",
+            f"-{flag}",
             action="store_true",
             help=f"Enable only {flag.replace('_',' ')}"
         )
@@ -101,7 +103,7 @@ def main():
     )
 
     if args.all:
-        # --all → force everything on
+        # -all → force everything on
         final_flags = {k: True for k in DEFAULT_FLAGS}
 
     elif specific_flags_used:

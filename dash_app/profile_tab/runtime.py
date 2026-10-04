@@ -151,7 +151,7 @@ def normalize_profile_settings(settings: dict[str, Any]) -> dict[str, Any]:
     except ValueError as exc:
         raise ValueError(f"additional run_scm.py arguments are invalid: {exc}") from exc
     managed = (
-        "-multicol", "--multicol", "-batch_size", "--batch_size", "-out_dir", "--out_dir",
+        "-multicol", "--multicol", "-batch_size", "--batch_size", "-output_dir", "--out_dir",
         "-python", "--python", "-jax", "--jax", "-exe", "--exe", "-install_dir", "--install_dir",
     )
     for token in extra_args:
@@ -190,7 +190,7 @@ def profile_command(settings: dict[str, Any]) -> list[str]:
         "-u",
         str(TIME_CLUBB),
         normalized["case_name"],
-        "-processes",
+        "-process_counts",
         ",".join(str(value) for value in normalized["processes"]),
         "-batch_sizes",
         ",".join(str(value) for value in normalized["columns"]),
@@ -198,7 +198,7 @@ def profile_command(settings: dict[str, Any]) -> list[str]:
         str(normalized["warmups"]),
         "-repeats",
         str(normalized["repetitions"]),
-        "-output",
+        "-output_root",
         normalized["output"],
         "-name",
         normalized["name"],

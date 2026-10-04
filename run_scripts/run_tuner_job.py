@@ -9,7 +9,7 @@ more parameter ranges:
     python run_scripts/run_tuner_job.py \
       -cases bomex \
       -fields cloud_frac \
-      -params C8:0.2:0.8
+      -param_ranges C8:0.2:0.8
 
 Cases can be plain names, fixed windows, or split windows:
 
@@ -38,7 +38,7 @@ that describe the job:
 
 The actual work is done by the scheduler launched as:
 
-    python -m tuner.tune_clubb --job-dir <job_dir>
+    python -m tuner.tune_clubb -job_dir <job_dir>
 
 While the scheduler runs, this wrapper polls status.json/results.json, prints a
 compact status line, and renews the keepalive in control.json. If the wrapper or
@@ -235,11 +235,11 @@ def build_request(args: argparse.Namespace) -> dict:
     field_values = _split_values(args.fields)
     param_values = _split_values(args.params)
     if not args.preset and not case_values:
-        raise argparse.ArgumentTypeError("-cases must include at least one case unless --preset is used")
+        raise argparse.ArgumentTypeError("-cases must include at least one case unless -preset is used")
     if not args.preset and not field_values:
-        raise argparse.ArgumentTypeError("-fields must include at least one field unless --preset is used")
+        raise argparse.ArgumentTypeError("-fields must include at least one field unless -preset is used")
     if not args.preset and not param_values:
-        raise argparse.ArgumentTypeError("-params must include at least one PARAM:MIN:MAX range unless --preset is used")
+        raise argparse.ArgumentTypeError("-param_ranges must include at least one PARAM:MIN:MAX range unless -preset is used")
 
     case_configs = [parse_case_spec(spec) for spec in case_values]
     selected_fields = field_values
@@ -648,7 +648,7 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
         command = [
             sys.executable,
             str(RUN_SCM_LOSS),
-            "-out_dir",
+            "-output_dir",
             str(output_dirs["window"]),
             "-config",
             config,
@@ -656,7 +656,7 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
             ",".join(fields),
             "-cases",
             ",".join(cases),
-            "-params",
+            "-params_file",
             str(params_path),
             "-case_config_file",
             str(request_path),
@@ -668,11 +668,11 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
             command = [
                 sys.executable,
                 str(RUN_SCM),
-                "-out_dir",
+                "-output_dir",
                 str(output_dirs["complete"]),
                 "-config",
                 config,
-                "-params",
+                "-params_file",
                 str(params_path),
                 str(case_name),
             ]
@@ -726,26 +726,28 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  python run_scripts/run_tuner_job.py --preset wpxp -strategy random:8\n"
+            "  python run_scripts/run_tuner_job.py -preset wpxp -strategy random:8\n"
             "  python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac "
-            "-params C8:0.2:0.8 -strategy random:8\n"
+            "-param_ranges C8:0.2:0.8 -strategy random:8\n"
             "  python run_scripts/run_tuner_job.py -cases arm:10800:21600:10800 bomex:7200:18000:2700 "
-            "-fields cloud_frac rcm -params C8:0.2:0.8 C11:0.1:1.0 -strategy resolve:0.1\n"
+            "-fields cloud_frac rcm -param_ranges C8:0.2:0.8 C11:0.1:1.0 -strategy resolve:0.1\n"
             "  python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac "
-            "-params C8:0.2:0.8 -strategy simann:2000:1.0:1e-12\n"
+            "-param_ranges C8:0.2:0.8 -strategy simann:2000:1.0:1e-12\n"
             "  python run_scripts/run_tuner_job.py -cases bomex -fields cloud_frac "
-            "-params C8:0.2:0.8 -strategy adam:100:0.01:0.05:2\n"
+            "-param_ranges C8:0.2:0.8 -strategy adam:100:0.01:0.05:2\n"
         ),
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
         "-cases",
         nargs="+",
         help="Case specs: CASE, CASE:T_START:T_END, or CASE:T_START:T_END:T_INTERVAL.",
     )
     parser.add_argument("-fields", nargs="+", help="CLUBB-facing fields, comma-separated or space-separated.")
-    parser.add_argument("-params", nargs="+", help="Ranges as PARAM:MIN:MAX or linked PARAM=PARAM:MIN:MAX.")
-    parser.add_argument("--preset", help="Named tuner preset; explicit -cases/-fields/-params override its pieces.")
-    parser.add_argument("--list-presets", action="store_true", help="List available Tune presets and exit.")
+    parser.add_argument('-param_ranges', dest='params', nargs="+", help="Ranges as PARAM:MIN:MAX or linked PARAM=PARAM:MIN:MAX.", metavar='RANGE')
+    parser.add_argument('-preset', dest='preset', help="Named tuner preset; explicit -cases/-fields/-param_ranges override its pieces.")
+    parser.add_argument('-list_presets', dest='list_presets', action="store_true", help="List available Tune presets and exit.")
     parser.add_argument(
         "-config",
         default=None,
@@ -761,12 +763,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "adam:MAX_UPDATES:LEARNING_RATE:PERTURBATION:SPSA_PAIRS. Default: random:8."
         ),
     )
-    parser.add_argument("-batch_size", type=int, default=8, help="Parameter batch size. Default: 8.")
+    parser.add_argument("-batch_size", type=int, default=8, help="Parameter samples per CLUBB column batch. Default: 8.")
     parser.add_argument(
-        "-max_workers",
+        '-workers', dest='max_workers',
         type=int,
         default=DEFAULT_MAX_WORKERS,
-        help=f"Maximum concurrent case workers. Default: {DEFAULT_MAX_WORKERS}.",
+        help=f"Maximum active case evaluations (default: half the available logical CPUs, {DEFAULT_MAX_WORKERS}).",
+        metavar='N',
     )
     parser.add_argument("-seed", type=int, help="Optional random seed.")
     parser.add_argument("-loss_mode", default=DEFAULT_LOSS_MODE, help=f"Loss mode. Default: {DEFAULT_LOSS_MODE}.")
@@ -789,8 +792,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="overall",
         help="Pool time-window samples globally or aggregate each case before averaging. Default: overall.",
     )
-    parser.add_argument("-job_dir", help="Exact job directory to create. Must be empty if it exists.")
-    parser.add_argument("-output_root", default=str(OUTPUT_TUNER_DIR), help="Root for generated job directories.")
+    parser.add_argument('-output_job_dir', dest='job_dir', help="Exact job directory to create. Must be empty if it exists.", metavar='DIR')
+    parser.add_argument("-output_root", default=str(OUTPUT_TUNER_DIR), help="Root for generated job directories.", metavar='DIR')
     parser.add_argument("-poll_interval", type=float, default=1.0, help="Seconds between status polls. Default: 1.")
     parser.add_argument(
         "-run_top",
@@ -799,14 +802,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="What to do with top results after the tuner exits. Default: ask.",
     )
     parser.add_argument("-top_n", type=int, default=1, help="Number of top parameter sets to run. Default: 1.")
-    parser.add_argument("-run_out_dir", default=str(CLUBB_OUTPUT_DIR), help="Output directory for post-tuning runs.")
+    parser.add_argument('-output_run_dir', dest='run_out_dir', default=str(CLUBB_OUTPUT_DIR), help="Output directory for post-tuning runs.", metavar='DIR')
     parser.add_argument("-dry_run", action="store_true", help="Write request/control/status files and exit without launching.")
     args = parser.parse_args(argv)
 
     if args.batch_size < 1:
         parser.error("-batch_size must be >= 1")
     if args.max_workers < 1:
-        parser.error("-max_workers must be >= 1")
+        parser.error("-workers must be >= 1")
     if args.top_n < 1:
         parser.error("-top_n must be >= 1")
     if args.poll_interval <= 0.0:

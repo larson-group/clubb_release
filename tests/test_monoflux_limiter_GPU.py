@@ -196,13 +196,13 @@ try:
     create_multicol_cmd = [
         sys.executable,
         str(MULTICOL_SCRIPT),
-        "-n",
+        "-multicol",
         "16",                    # use 16 columns
         "-mode",
         "dup_tweak",             # duplicate and tweak initial param values
-        "-param_file",
+        "-params_file",
         str(PARAMS_FILE),        # location of param file
-        "-out_file",
+        "-output_file",
         str(MULTICOL_PARAMS),    # define output file name
     ]
     rc, _ = run_command(create_multicol_cmd, cwd=RUN_SCRIPTS)
@@ -238,7 +238,7 @@ try:
         "0",
         "-max_iters",
         CASE_MAX_ITERS,
-        "-params",
+        "-params_file",
         str(MULTICOL_PARAMS),
         "-stats",
         "none",

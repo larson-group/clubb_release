@@ -42,10 +42,10 @@ Overrides from a flag set work the same way for both kinds.
 
 ## How flags get to the model
 
-1. `run_scripts/run_clubb_w_varying_flags.py -f <file>.json` (or `tests/run_jax_vs_fortran_cases.py -flag_config_file <file>.json`)
+1. `run_scripts/run_clubb_w_varying_flags.py -flag_config_file <file>.json` (or `tests/run_jax_vs_fortran_cases.py -flag_config_file <file>.json`)
    reads the JSON with `utilities/flag_sets.py`.
    An unmodified `default` run is always added by the JAX comparison harness.
-   The varying-flags runner can omit it with `--skip-default-flags`; `default`
+   The varying-flags runner can omit it with `-skip_default_flags`; `default`
    cannot be used as a custom flag set name.
    Each flag set becomes one `-override` string, e.g. `l_diffuse_rtm_and_thlm=.true.,saturation_formula=2`.
 2. For every (flag set, case) pair it calls `run_scripts/run_scm.py -override ... <case>`, writing to `output/<flag_set_name>/`.

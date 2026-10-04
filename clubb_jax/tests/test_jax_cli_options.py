@@ -29,7 +29,7 @@ def test_scm_main_passes_opaque_options_to_case_launch(value, case_first, tmp_pa
 
     monkeypatch.setattr(run_scm, "run_case", launch)
     assert run_scm.main() == 0
-    assert captured[0][1:] == ([] if value is None else [f"--options={value}"])
+    assert captured[0][1:] == ([] if value is None else [f"-options={value}"])
 
 
 @pytest.mark.parametrize("value", [None, "", "cpu", "gpu,xla_prealloc",
@@ -43,7 +43,7 @@ def test_runner_forwards_value_verbatim_without_interpreting_it(value, tmp_path,
     command, _, _ = run_scm.choose_run_command(SimpleNamespace(
         exe=None, python=False, jax=True, jax_options=value, gdb=False,
     ))
-    assert command == [str(wrapper)] + ([] if value is None else [f"--options={value}"])
+    assert command == [str(wrapper)] + ([] if value is None else [f"-options={value}"])
 
 
 @pytest.mark.parametrize("value", ["", "tpu", "gpu,", "gpu,typo", "cpu,xla_prealloc",
@@ -54,7 +54,7 @@ def test_bad_options_are_rejected_by_wrapper_before_setup(value, tmp_path):
     wrapper = Path(__file__).resolve().parents[2] / "clubb_jax" / "run_jax.py"
     env = os.environ | {"CLUBB_JAX_VENV": str(tmp_path / "venv"),
                         "CLUBB_JAX_TOOLS_DIR": str(tmp_path / "tools")}
-    result = subprocess.run([str(wrapper), f"--options={value}", "--init_env"],
+    result = subprocess.run([str(wrapper), f"-options={value}", "-init_env"],
                             env=env, capture_output=True, text=True, timeout=10)
     assert result.returncode != 0
     assert "ERROR:" in result.stderr
@@ -63,13 +63,13 @@ def test_bad_options_are_rejected_by_wrapper_before_setup(value, tmp_path):
 
 
 @pytest.mark.parametrize("options", [
-    ["--options=cpu", "--profile=gpu"],
-    ["--options=cpu", "--options=gpu"],
-    ["--options=gpu,xla_prealloc", "--xla-prealloc"],
+    ["-options=cpu", "-profile=gpu"],
+    ["-options=cpu", "-options=gpu"],
+    ["-options=gpu,xla_prealloc", "-xla_prealloc"],
 ])
 def test_wrapper_rejects_conflicting_or_duplicate_settings(options):
     wrapper = Path(__file__).resolve().parents[2] / "clubb_jax" / "run_jax.py"
-    result = subprocess.run([str(wrapper), *options, "--info=json"],
+    result = subprocess.run([str(wrapper), *options, "-info=json"],
                             capture_output=True, text=True, timeout=10)
     assert result.returncode != 0
     assert "ERROR:" in result.stderr
@@ -77,7 +77,7 @@ def test_wrapper_rejects_conflicting_or_duplicate_settings(options):
 
 def test_wrapper_rejects_preallocation_on_cpu():
     wrapper = Path(__file__).resolve().parents[2] / "clubb_jax" / "run_jax.py"
-    result = subprocess.run([str(wrapper), "--profile=cpu", "--xla-prealloc", "--info=json"],
+    result = subprocess.run([str(wrapper), "-profile=cpu", "-xla_prealloc", "-info=json"],
                             capture_output=True, text=True, timeout=10)
     assert result.returncode != 0
     assert "CUDA-only" in result.stderr
@@ -89,7 +89,7 @@ def test_wrapper_rejects_preallocation_on_cpu():
 )
 def test_gpu_profile_resolves_to_the_host_native_backend(system, expected, monkeypatch):
     monkeypatch.setattr(run_jax.platform, "system", lambda: system)
-    values, driver_args = run_jax.parse_launcher_args(["--profile=gpu", "arm.in"])
+    values, driver_args = run_jax.parse_launcher_args(["-profile=gpu", "arm.in"])
 
     accelerator, profile = run_jax.resolve_accelerator(values)
 
@@ -181,7 +181,7 @@ def test_environment_setup_uses_launcher_paths_and_restarts_once(
     monkeypatch.setattr(run_jax.subprocess, "run", initialize)
     monkeypatch.setattr(run_jax.os, "execve", lambda *args: launched.append(args))
     run_jax.ensure_environment()
-    assert setup == [[str(run_jax.SCRIPT_DIR / "run_jax.py"), "--init_env"]]
+    assert setup == [[str(run_jax.SCRIPT_DIR / "run_jax.py"), "-init_env"]]
     default = {"cpu": ".venv-jax", "cuda13": ".venv-jax-cuda13", "metal": ".venv-jax-metal"}
     python = str(tmp_path / (custom_venv or default[accelerator]) / "bin/python")
     assert launched[0][:2] == (python, [python, *sys.argv])

@@ -102,7 +102,7 @@ def apply_preset(request: dict, preset_name: str | None = None) -> dict:
     """Return a request baseline populated by a preset.
 
     Existing, explicitly supplied keys take precedence.  This lets the CLI use
-    a preset alone or modify only ``-params``/``-cases``/``-fields``.
+    a preset alone or modify only ``-param_ranges``/``-cases``/``-fields``.
     """
     request = dict(request or {})
     name = str(preset_name or request.get("preset") or "").strip()

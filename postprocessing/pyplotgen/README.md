@@ -4,19 +4,19 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 
 ## Example Run Commands
 
-To plot clubb output located in `/home/USERNAME/clubb_issue_834/output/default_run` 
-and save the generated plots in `/home/USERNAME/clubb/output/pyplots_default_run`, 
+To plot clubb output located in `/home/USERNAME/clubb_issue_834/output/default_run`
+and save the generated plots in `/home/USERNAME/clubb/output/pyplots_default_run`,
 go to the directory where pyplotgen reside (usually postprocessing/pyplotgen), and run this command:
 
-`python3 ./pyplotgen.py -c /home/USERNAME/clubb_issue_834/output/default_run -o /home/USERNAME/clubb/output/pyplots_default_run`
+`python3 ./pyplotgen.py -clubb /home/USERNAME/clubb_issue_834/output/default_run -output_dir /home/USERNAME/clubb/output/pyplots_default_run`
 
 If, in addition, you'd like to overplot LES lines and also separately plot CLUBB budgets, run this command:
 
-`python3 ./pyplotgen.py --plot-budgets -l -c /home/USERNAME/clubb_issue_834/output/default_run -o /home/USERNAME/clubb/output/pyplots_default_run`
+`python3 ./pyplotgen.py -plot_budgets -les -clubb /home/USERNAME/clubb_issue_834/output/default_run -output_dir /home/USERNAME/clubb/output/pyplots_default_run`
 
 If you'd like to overplot two CLUBB cases that have been output to two different subdirectories, dir1 and dir2, then just list both:
 
-`python3 ./pyplotgen.py`<br/> 
+`python3 ./pyplotgen.py`<br/>
 `-c /home/USERNAME/clubb_issue_834/output/dir1 /home/USERNAME/clubb_issue_834/output/dir2` <br/>
 `-o /home/USERNAME/clubb/output/pyplots_default_run`
 
@@ -25,57 +25,63 @@ To view the plots, use a web browser to view index.html in the plots directory.
 `firefox ~/plots/index.html`
 
 Alternatively, one can use the command "pwd" in order to find the directory path
-to the index.html file.  Then go to a web browser URL bar, type "file://" then the path, 
-and then "/index.html". 
+to the index.html file.  Then go to a web browser URL bar, type "file://" then the path,
+and then "/index.html".
 
 ### Make sure filenames match
 
 In order to correctly plot output, Pyplotgen needs to find the files it is looking for.  As shown in the example run commands above, the user specifies the path to the netcdf files containing the data to be plotted.  However the user must also ensure that the files in that directory are properly named so that pyplotgen can open them.  For example, if the user wants to plot BOMEX data from the SAM model, the pyplotgen command might look like this:
 
-`python3 ./pyplotgen.py --cases bomex -s /path/to/sam/output/ -o ./sam_plots`
+`python3 ./pyplotgen.py -cases bomex -sam /path/to/sam/output/ -output_dir ./sam_plots`
 
-But, in the /path/to/sam/output/ directory, pyplotgen will look for a file named BOMEX_SAM_CLUBB.nc. This is because by default, in config/Case_definitions.py in the case definition block for BOMEX, the SAM file is given as 
+But, in the /path/to/sam/output/ directory, pyplotgen will look for a file named BOMEX_SAM_CLUBB.nc. This is because by default, in config/Case_definitions.py in the case definition block for BOMEX, the SAM file is given as
 
-         `'sam_file': {'sam': sam_output_root + "/BOMEX_SAM_CLUBB.nc"}` 
+         `'sam_file': {'sam': sam_output_root + "/BOMEX_SAM_CLUBB.nc"}`
 
 The user can either change this line of code to match their file name (probably preferred), or they can change their file name to match config/Case_definitions.py.
 
 
 ## Valid options
 
-| *Option Flag* | *Description* |
+Use single-dash options with underscores. `-h` or `-help` shows accepted values.
+
+| Option | Purpose |
 | --- | --- |
-| -r --replace | Overwrite the output folder if it already exists |
-| -c --clubb [FOLDER PATHNAME(S)] | Adds lines from CLUBB model output to plot. To plot lines in the specified folder for a given case, update the `'clubb_file': None,` parameter in the case's definition (`config/Case_Definitions.py`)for the desired case to contain the location of the clubb file. | 
-| --cam [FOLDER PATHNAME(S)] | Adds lines from CAM model output to plot. The filenames in the folder must either match the intended casename, e.g. `bomex.nc` (using the lowercase version of the casename as defined in the `Case_definitions.py` file), or else you must rewrite the `'cam_file': None,` parameter for the desired case to contain the location of the cam file.| 
-| -e --e3sm [FOLDER PATHNAME(S)] | Adds lines from E3SM model output to plot. The filenames in the folder must either match the casename intended to run it, e.g. `bomex.nc` (using the lowercase version of the casename as defined in the `Case_definitions.py` file), or rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the e3sm file.| 
-| -s --sam [FOLDER PATHNAME(S)] | Adds lines from SAM model output to plot. To plot lines in the specified folder for a given case, update the `'sam_file': None,` parameter in the case's definition (`config/Case_Definitions.py`)for the desired case to contain the location of the SAM file. For example, adding SAM output for the ARM case may look like `'sam_file': sam_output_root+ "/GCSSARM_96x96x110_67m_40m_1s.nc",`| 
-| -w --wrf [FOLDER PATHNAME(S)] | Adds lines from WRF model output to plot. To plot lines in the specified folder for a given case, update the `'wrf_file': None,` parameter in the case's definition (`config/Case_Definitions.py`)for the desired case to contain the location of the WRF file.| 
-| -g --plot-golaz-best | Plots clubb r408 'best ever' plots |
-| -l --les | Overplot LES output data. The nc files for les output can be overwritten by changing the directory listed for a given case inside the `Case_Definitions.py` file. |
-| -d --plot-hoc-2005 | Plots HOC benchmark output |
-| -a --all-best | Identical to -lgd. Adds golaz best, les, and hoc benchmark output to the plots |
-| --thin | Plot lines with a thin width |
-| -b --plot-budgets | Includes budget panels in output |
-| --lumped-buoy-budgets | Lump together wpxp_bp and wpxp_pr3 terms in CLUBB's budgets |
-| --background_rcm | Show a height-based "contour" plot of time-averaged rcm behind CLUBB profiles |
-| -t --time-height-plots | Instead of time-averaged profiles, create contour plots from 2d data |
-| --diff [FOLDER PATHNAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
-| --no-legends | Panels are drawn without a line legend |
-| -o --output | Manually specify an output folder. If not specified, will automatically output to `pyplotgen/output` |
-| --show-alphabetic-id | Adds an alphanumeric ID to each plot on a perc-case basis (e.g. the first plot will be labeled "a")
-| --nightly | Apply special parameters only relevant when running as part of a nightly test. This is currently limited to disabling case output if not all models have data for a given case. E.g. this prevents wrf plots from including cases that only have clubb plots and no wrf plots. Do not plot this with clubb-only plots, just plot clubb normally for clubb nightly tests.
-| --disable-multithreading | Turns off multithreading support. Useful for debugging as it ensures text is printed sequentially. |
-| --hq --high-quality | Outputs higher resolution images. The dpi used for hi resolution images can be customized in Style_definitions.py |
-| --svg | Output images to .svg lossless format instead of .png |
-| --eps | Output images to .eps format instead of .png |
-| --pdf | This will generate a pdf from pyplotgen's output. Note that --svg and --eps are not compatible with this option |
-| --pdf-filesize-limit [NUMERICAL VALUE IN MB] | This parameter will run --pdf multiple times, with each iteration lowering pyplotgens output image quality until the resulting pdf fits within the given file size in MB. Note: --pdf is required for this parameter to do anything. |
-| --plot-subcolumns | This adds subcolumn (silhs) to the pyplotgen output. Currently only CLUBB subcolumns are supported. |
-| --cases | A set of case name(s) to be ran. Cases not listed here will not be ran. The casename specified must match the 'name' parameter of the case's definition Case_definitions.py. E.g. --cases bomex arm wangara |
-| --movies [OPTIONAL TYPE] | Creates animated plots of all standard variables except type_timeseries.  Basic usage is e.g. --movies=mp4. If no argument (like 'mp4') is given, it defaults to mp4.  Can be used with --plot_budgets, --plot-subcolumns, and other 2D data like --les. Cannot be used with --pdf, --time-height-plots, or --eps or --svg. Currently .mp4 and .avi are supported, but .mp4 is probably more compatible with most web browsers. To adjust the frame rate, change the FRAMES_PER_SECOND variable in config/Style_definitions.py. |  
-| --priority-variables | Outputs a small subset of interesting variables (including budgets for these variables if used with the -b option).  The subset can be modified by going into a VariableGroup file in the [config folder](https://github.com/larson-group/clubb_release/tree/master/postprocessing/pyplotgen/config) and editing the Priority property.  Useful for cutting down time for generating movies (animations). |
-| --sam-style-budgets | Outputs CLUBB budgets similar to SAM budgets, i.e. by gathering terms so that they can be viewed in comparison to SAM budgets.  Must be used with the -b or --plot-budgets option. |
+| `-h / -help` | Show this help and exit. |
+| `-replace` | If the output folder already exists, replace it with the new one. |
+| `-les` | Plot LES dependent_data for comparison. |
+| `-e3sm` | Plot E3SM dependent_data for comparison. |
+| `-plot_golaz_best` | Plot Chris Golaz Best Ever dependent_data for comparison. |
+| `-plot_hoc_2005` | Plot !HOC 12/17/2015 dependent_data for comparison. |
+| `-all_best` | Same as -lgd. |
+| `-zip` | Output dependent_data into a compressed zip file. |
+| `-show_alphabetic_id` | Add an identifying character to the top right of a panel. |
+| `-thin` | Plot using thin solid lines. |
+| `-no_legends` | Plot without legend boxes defining the line types. |
+| `-plot_budgets` | Plot all defined budgets of moments. |
+| `-lumped_buoy_budgets` | Lump together wpxp_bp and wpxp_pr3 terms in CLUBB's budgets. |
+| `-background_rcm` | Show a height-based 'contour' plot of time-averaged rcm behind CLUBB profiles. |
+| `-plot_subcolumns` | Plot all defined subcolumns. |
+| `-time_height_plots` | Instead of averaged profiles, create contour plots from 2d data. |
+| `-movies` | Instead of averaged profiles, plot animations of time steps. |
+| `-bu_morr` | For morrison microphysics: breaks microphysical source terms into component processes. |
+| `-benchmark_only` | Prevents autoplotting of clubb's default output folder when no input folders are specified. |
+| `-diff` | Plot the difference between two clubb folders. |
+| `-clubb` | Input folder(s) containing clubb netcdf data. |
+| `-sam` | Input folder(s) containing sam netcdf data. |
+| `-cam` | Input folder(s) containing cam netcdf data. |
+| `-wrf` | Input folder(s) containing wrf netcdf data. |
+| `-output_dir` | Name of folder to create and store plots into. |
+| `-nightly` | Apply special parameters only relevant when running as part of a nightly test. |
+| `-serial` | Generate plots serially instead of using the process pool. |
+| `-high_quality` | Outputs higher resolution images. |
+| `-svg` | Outputs images to a lossless vector-graphics format .svg  instead of a rasterized image like png.This argument is not compatible with -eps or -pdf. |
+| `-eps` | Outputs images to Encapsulated PostScript eps instead of a rasterized image like png. |
+| `-pdf` | In addition to pyplotgen's regular output, this also generates a pdf file from the plots.html output. |
+| `-pdf_filesize_limit` | Adjust pdf filesize so that it is no larger than the given size in MB. |
+| `-cases` | A set of case name(s) to be ran. |
+| `-priority_variables` | Plot only variables with the 'priority' key. |
+| `-sam_style_budgets` | Lump together certain CLUBB budget terms so that the relevant CLUBB budgets look comparable to SAM's budgets. |
 
 ## Python dependencies
 Run `pyplotgen.py` normally. It uses uv to prepare the shared CLUBB Python
@@ -85,19 +91,19 @@ needed.
 ## Creating movies (i.e., animations)
 PyPlotGen can create animations of CLUBB variable profiles, including budgets and SILHS subcolumns.  Currently the code is capable of outputting .mp4 and .avi files although .mp4 is probably preferred due to greater compatibility with web browsers which is how output is typically viewed.  The python package OpenCV is required for making movies, although pyplotgen can still be used for creating figures without OpenCV and will not complain if OpenCV is not present.  Having FFmpeg (a free software not associated with python) installed on your computer, while not a requirement, helps greatly because it will make .mp4 files compatible with a wider range of browers including Firefox and Chrome.  The movie frame rate is set in config/Style_definitions.py under FRAMES_PER_SECOND.
 
-_How to reduce the time taken to generate animations_:  Animations can take considerable time to generate, with the main factor being the number of time steps you wish to use---for example, in config/Case_definitions.py, BOMEX will by default be trimmed to 180 time steps in length, which means for each animation panel (and there will be dozens of panels at a minimum, possibly many more if budgets, etc. are included), 180 images will need to be processed.  This is time consuming but feasible.  The ARM_97 case by default, includes over 1000 images per animation---this would take hours of processing time, even with multithreading.  Another consideration is that an .html page that contains a lot of movies (meaning many cases---ARM,BOMEX,etc.---being plotted together) can take a long time to load.  
+_How to reduce the time taken to generate animations_:  Animations can take considerable time to generate, with the main factor being the number of time steps you wish to use---for example, in config/Case_definitions.py, BOMEX will by default be trimmed to 180 time steps in length, which means for each animation panel (and there will be dozens of panels at a minimum, possibly many more if budgets, etc. are included), 180 images will need to be processed.  This is time consuming but feasible.  The ARM_97 case by default, includes over 1000 images per animation---this would take hours of processing time, even with multiprocessing.  Another consideration is that an .html page that contains a lot of movies (meaning many cases---ARM,BOMEX,etc.---being plotted together) can take a long time to load.
 
-One way of reducing the amount of output or the time it takes to generate movies is to reduce the number of variables plotted.  To do so, use the --priority-variables option in conjunction with --movies, see above.  Another way is to create one case of movies at a time rather than submit a huge job with many CLUBB cases.
+One way of reducing the amount of output or the time it takes to generate movies is to reduce the number of variables plotted.  To do so, use the -priority_variables option in conjunction with -movies, see above.  Another way is to create one case of movies at a time rather than submit a huge job with many CLUBB cases.
 
 # Advanced Usage
 ## Reference Documentation for Developers
 Reference documentation is available in the `pyplotgen/docs/html` folder. Open `pyplotgen/docs/html/index.html` in a web browser for easy viewing. More information is available in the `pyplotgen/docs/README.md` file.
 
 ## Running subsets of cases (obsolete)
-_Note: This process has become obsolete. While this is still possible, it is better to use the `--cases` command line parameter
-described above._ 
+_Note: This process has become obsolete. While this is still possible, it is better to use the `-cases` command line parameter
+described above._
 
-If someone wants to run only a few cases, reguardless of how many datasets were outputted to a folder, they can do so by editing the last line of the `pyplotgen/config/Case_definitions.py` file such that it defines `ALL_CASES` to contain only the cases they wish to plot.  
+If someone wants to run only a few cases, reguardless of how many datasets were outputted to a folder, they can do so by editing the last line of the `pyplotgen/config/Case_definitions.py` file such that it defines `ALL_CASES` to contain only the cases they wish to plot.
 This is what the bottom of `Case_definitions.py` normally looks like:
 ~~~~python
 # DO NOT EDIT THIS LIST UNLESS YOU ARE ADDING A NEW CASE. NEVER REMOVE CASES FROM THIS LIST. You may define a subset of cases at the end of this file.
@@ -154,17 +160,17 @@ There are a few aspects to making a plot publish ready.
 3. Cleaning legend labels
 
 ### 1. Changing color pallet
-In the `config/Style_definitions.py` file there are two relavent variables: `COLOR_ROTATION` and `STYLE_ROTATION`. 
+In the `config/Style_definitions.py` file there are two relavent variables: `COLOR_ROTATION` and `STYLE_ROTATION`.
 There are suggested presets available for use defined in comments. Only 1 set of definitions should be active at a given
-time. All others should be commented out. For publication, it is suggested to use the print-safe definitions. Using a set 
+time. All others should be commented out. For publication, it is suggested to use the print-safe definitions. Using a set
 of color/style's is as easy as uncommenting the desired set and commenting out all others.
 
 ### 2. Using Math Text Formatting
-Matplotlib (the plotting engine used in the background of pyplotgen) allows for LaTeX style math text formatting. 
-Pyplotgen allows for titles and dependent axis labels to be overriden. To create a custom title/axis label, simply 
-include a 'title' or 'axis_title' parameter in the variables definition. Additionally, these custom titles can utilize 
+Matplotlib (the plotting engine used in the background of pyplotgen) allows for LaTeX style math text formatting.
+Pyplotgen allows for titles and dependent axis labels to be overriden. To create a custom title/axis label, simply
+include a 'title' or 'axis_title' parameter in the variables definition. Additionally, these custom titles can utilize
 TeX style formatting. To do so, the math text must be wrapped in $'s, then matplotlib math text formatting can be used.
-For more information on matplotlib's text formatting, see here: https://matplotlib.org/1.3.1/users/mathtext.html  
+For more information on matplotlib's text formatting, see here: https://matplotlib.org/1.3.1/users/mathtext.html
 Note that super/subscript text by default only incorporates 1 character. To script multiple characters, wrap it in {}'s.
 Example:
 ~~~~python
@@ -185,8 +191,8 @@ Example:
 },
 ~~~~
 ### 3. Cleaning legend labels
-Changing the text on a legend label for non-budget plots is easy. To do so, simply change the foldername of the data being imported. Note 
-that underscores (`_`) will be replaced with spaces automatically. This is done to make the legends more readable, as it 
+Changing the text on a legend label for non-budget plots is easy. To do so, simply change the foldername of the data being imported. Note
+that underscores (`_`) will be replaced with spaces automatically. This is done to make the legends more readable, as it
 allows python to know how to split up new lines for longer legend labels.
 
 To change the legend labels on a budget plot, you will need to modify the legend labels in the appropriate VariableGroup file, such as VariableGroupBaseBudgets.py or VariableGroupBaseBudgetsSamStyle.py.
@@ -198,7 +204,7 @@ Each variable is included within a _VariableGroup_,and each variable group is in
 #### Valid dict keys/options:
 
 | Parameter | Description |
-| --- | --- |  
+| --- | --- |
 | *[model_name]* | A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp', self.backupCalcFunction]. This list is to include the variable name for any models that Pyplotgen is plotting. Items in this list will be evaluated from left to right. This parameter can accept functional references to calculating functions. See below on `calc functions`. |
 | `calc functions`| (optional) A functional reference to a method that calculates a model's variable. This is given as the name of the function *without* the () after the name. To specify a calc function for a given variable and model, add it to the model's list of names.  |
 | *[model-name]_conv_factor* | (optional) Numeric value to scale a model's variable by. E.g. `'clubb_conv_factor': 1/1000`, or `'clubb_conv_factor': 100`|
@@ -256,9 +262,9 @@ A lot of the time the only parameter that is needed will be the list of aliases 
 In the unfortunate event that a variable is exported in most cases except Case X Y Z, there are a few options available for handling this issue. The easy (and dirty) method of resolving this is to simply blacklist the variable and not plot it at all for that case. To do so, simply add the variable's name to the `blacklisted_vars` list for that case. For example, to blacklist `thlm` from the Wangara case, the blacklist would go from `'blacklisted_vars': []` to `'blacklisted_vars': ['thlm']`. If the missing variable should be plotted for the given case, then you must create a model_calc function (please see below). If neither option is applicable, the data array for the missing variable will be filled with zeros by default and a warning is written to the console.
 
 #### Creating a new calculated function (for calculated variables)
-Creating a new calculator function is relatively simple, but must be done correctly. 
+Creating a new calculator function is relatively simple, but must be done correctly.
 
-Steps:  
+Steps:
 1. Create a function following the naming scheme and method signature. This function should be created in the same `VariableGroup<Group Name>.py` file as the variable that's being handled.
 ~~~~python
     def get<VariableName><Model>Calc(self, dataset_override = None)
@@ -268,8 +274,8 @@ Steps:
     def getWpthlpSamCalc(self, dataset_override = None):
         """
 
-        :param self: 
-        :param dataset_override: 
+        :param self:
+        :param dataset_override:
         """
         dependent_data
         # code
@@ -294,9 +300,9 @@ Here is the full example:
     def getWpthlpSamCalc(self, dataset_override = None):
         """
 
-        :param self: 
-        :param dataset_override: 
-        :return: 
+        :param self:
+        :param dataset_override:
+        :return:
         """
         dependent_data
         tlflux = self.getVarForCalculations(['TLFLUX'], self.sam_file)
@@ -306,18 +312,18 @@ Here is the full example:
         return wpthlp, z
 ~~~~
 
-Once this method is created, simply add this function to the variable's entry in the self.variable_definitions list at the top of the file. 
+Once this method is created, simply add this function to the variable's entry in the self.variable_definitions list at the top of the file.
 Example:
 ~~~~python
-            {'var_names': { 
+            {'var_names': {
                             'clubb': ['thlm'],
                             'sam': [self.getWpthlpSamCalc],
                              ...
-                          } 
+                          }
             },
 ~~~~
-**Note**: do NOT include () when giving the functions name, here we are using functional programming to pass the method itself as a parameter, not a call to the method, so we must not use the ().  
- 
+**Note**: do NOT include () when giving the functions name, here we are using functional programming to pass the method itself as a parameter, not a call to the method, so we must not use the ().
+
 The variable data will now be calculated by the new function.
 
 ## Adding new Cases
@@ -385,17 +391,17 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
 Please maintain the list's alphabetical ordering for ease of use.
 
 ## Plotting SAM-exclusive VariableGroups
-The VariableGroups `VariableGroupSamBudgets`, `VariableGroupSamProfiles` and `VariableGroupSamMultilineProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter).  
-Pyplotgen will automatically generate the `VariableGroupSamBudgets` plots when using the `--plot-budgets` flag with SAM input.  
-To generate the SAM profile plots, add the VariableGroups to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups.  
+The VariableGroups `VariableGroupSamBudgets`, `VariableGroupSamProfiles` and `VariableGroupSamMultilineProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter).
+Pyplotgen will automatically generate the `VariableGroupSamBudgets` plots when using the `-plot_budgets` flag with SAM input.
+To generate the SAM profile plots, add the VariableGroups to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups.
 These specific VariableGroups will only work with SAM input!
 
-With the '-s' option multiple SAM input folders containing NetCDF files can be specified.  
-To plot SAM data for a specific case the name of the input NetCDF file needs to be the same as the string given under the key `sam_file` in the same case defintion.  
+With the '-s' option multiple SAM input folders containing NetCDF files can be specified.
+To plot SAM data for a specific case the name of the input NetCDF file needs to be the same as the string given under the key `sam_file` in the same case defintion.
 Example for a modified case definition for BOMEX:
 ~~~~python
 BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
-         
+
          'blacklisted_vars': [],
          'sam_file': "bomex.nc", # Specify SAM NetCDF file here!
          'coamps_file': None,
@@ -411,14 +417,14 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
 ~~~~
 Example command line call for SAM-only plots with two input folders:
 ```bash
-python3 ./pyplotgen.py -s first/path/to/SAM/folder second/path/to/SAM/folder
+python3 ./pyplotgen.py -sam first/path/to/SAM/folder second/path/to/SAM/folder
 ```
 
 ## Running pyplotgen on a Windows system
 The easiest way to run pyplotgen on Windows at the moment is to install a Linux shell emulator.
-This will take care of most problems concerning interoperability.  
-Running pyplotgen on Windows was tested using Git Bash which is part of the git installation for windows and can be found [here](https://git-scm.com/).  
-Using Git Bash one can simply follow the same procedure as for regular Linux bash to run pyplotgen.  
+This will take care of most problems concerning interoperability.
+Running pyplotgen on Windows was tested using Git Bash which is part of the git installation for windows and can be found [here](https://git-scm.com/).
+Using Git Bash one can simply follow the same procedure as for regular Linux bash to run pyplotgen.
 Paths can be specified using either the Windows (C:\User\testuser\...) or the Unix format (/home/testuser/...).
 
 # Pyplotgen code convention

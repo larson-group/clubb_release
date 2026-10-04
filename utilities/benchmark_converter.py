@@ -1299,7 +1299,7 @@ def detect_source_type(path: str | Path) -> str:
         return "sam"
     if coamps_score > sam_score:
         return "coamps"
-    raise ValueError("Could not auto-detect LES source type; pass --source sam or --source coamps")
+    raise ValueError("Could not auto-detect LES source type; pass -source sam or -source coamps")
 
 
 def _create_coord(out_ds: Dataset, name: str, values: np.ndarray, units: str) -> None:
@@ -1393,13 +1393,14 @@ def convert_benchmark_file(
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Convert a SAM/COAMPS benchmark file to CLUBB-facing field names.")
+    parser = argparse.ArgumentParser(description="Convert a SAM/COAMPS benchmark file to CLUBB-facing field names.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument("input", nargs="?", help="Input SAM or COAMPS benchmark NetCDF file.")
     parser.add_argument("output", nargs="?", help="Output normalized benchmark NetCDF file.")
-    parser.add_argument("--source", choices=("auto", "sam", "coamps"), default="auto", help="Input LES source type.")
-    parser.add_argument("--fields", nargs="+", help="Optional CLUBB field names to convert. Defaults to all supported fields.")
-    parser.add_argument("--no-clobber", action="store_true", help="Fail if the output file already exists.")
-    parser.add_argument("--list-fields", action="store_true", help="Print supported normalized field names and exit.")
+    parser.add_argument('-source', dest='source', choices=("auto", "sam", "coamps"), default="auto", help="Input LES source type.")
+    parser.add_argument('-fields', dest='fields', nargs="+", help="Optional CLUBB field names to convert. Defaults to all supported fields.")
+    parser.add_argument('-no_clobber', dest='no_clobber', action="store_true", help="Fail if the output file already exists.")
+    parser.add_argument('-list_fields', dest='list_fields', action="store_true", help="Print supported normalized field names and exit.")
     return parser.parse_args(argv)
 
 
@@ -1410,7 +1411,7 @@ def main(argv: list[str] | None = None) -> int:
             print(field_name)
         return 0
     if not args.input or not args.output:
-        raise SystemExit("input and output are required unless --list-fields is used")
+        raise SystemExit("input and output are required unless -list_fields is used")
     status = convert_benchmark_file(
         args.input,
         args.output,

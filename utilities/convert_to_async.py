@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -23,7 +24,10 @@ DIRECTORIES_TO_CONVERT = [
 
 FORTRAN_FILE_PATTERN = "*.F90"
 
-DEFAULT_WORKERS = 12
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tuner.system_defaults import default_max_workers as default_workers
+
+DEFAULT_WORKERS = default_workers()
 ASYNC_CLAUSE = "async(1)"
 WAIT_CLAUSE = "wait"
 
@@ -31,6 +35,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 ACC_DIRECTIVE_RE = re.compile(r"^\s*!\$acc\b", re.IGNORECASE)
 ASYNC_1_RE = re.compile(r"(?i)(?<![\w])async\s*\(\s*1\s*\)(?![\w])")
 WAIT_RE = re.compile(r"(?i)(?<![\w])wait(?:\s*\([^)]*\))?(?![\w])")
+
 
 
 def read_file(file_path: Path) -> list[str]:
@@ -274,17 +279,20 @@ def parse_args() -> argparse.Namespace:
     """Define the small CLI used by Jenkins and local conversion checks."""
     parser = argparse.ArgumentParser(
         description="Add async/wait clauses to configured OpenACC Fortran files.",
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
         "paths",
         nargs="*",
         help="Optional files or directories to convert instead of DIRECTORIES_TO_CONVERT.",
     )
     parser.add_argument(
-        "-nproc",
+        '-workers', dest='nproc',
         type=int,
         default=DEFAULT_WORKERS,
         help=f"Number of files to process in parallel. Default: {DEFAULT_WORKERS}.",
+        metavar='N',
     )
     return parser.parse_args()
 

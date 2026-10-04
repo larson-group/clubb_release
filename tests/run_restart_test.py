@@ -123,16 +123,18 @@ def main() -> int:
             "e.g. run_restart_test.py bomex -multicol 4 (case_name must come first).\n"
             "Caveats:\n"
             "  -override    is replaced by the test's own restart override.\n"
-            "  -out_dir, -tout, -stats, etc. change the output location or contents,\n"
+            "  -output_dir, -tout, -stats, etc. change the output location or contents,\n"
             "               so the test may not find or compare the results."
         ),
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument("case_name", help="Case name (e.g., bomex, rico_silhs)")
     parser.add_argument(
-        "-v", "--var", default="thlm", help="Variable name to compare (default: thlm)"
+        '-var', dest='var', default="thlm", help="Variable name to compare (default: thlm)"
     )
     parser.add_argument(
-        "--keep_artifacts",
+        '-keep_artifacts', dest='keep_artifacts',
         action="store_true",
         help="Keep output/<case>* and restart/ files after the test finishes.",
     )

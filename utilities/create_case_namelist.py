@@ -10,7 +10,7 @@ script combines those fragments into one generated namelist:
     python utilities/create_case_namelist.py [options] CASE
 
 The command prints the generated file path. By default that file is
-output/CASE.in, but callers can choose another directory with -out_dir.
+output/CASE.in, but callers can choose another directory with -output_dir.
 
 Common options choose alternate input fragments, generate a multicolumn
 parameter file, change dt_main/dt_rad/time_final, set the stats output window,
@@ -163,14 +163,14 @@ def convert_to_multi_col(
 
     if out_file is None:
         out_file = os.path.join(output_dir, f"{case_name}_multicol_params.in")
-    cmd = [sys.executable, MULTI_COL_PARAMS_SCRIPT, "-param_file", params_file, "-out_file", out_file]
+    cmd = [sys.executable, MULTI_COL_PARAMS_SCRIPT, "-params_file", params_file, "-output_file", out_file]
 
     try:
         ngrdcol = int(multicol_spec)
     except ValueError:
-        cmd.extend(["-hr", multicol_spec])
+        cmd.extend(["-multicol", multicol_spec])
     else:
-        cmd.extend(["-mode", integer_mode, "-n", str(ngrdcol)])
+        cmd.extend(["-mode", integer_mode, "-multicol", str(ngrdcol)])
 
     if batch_size is not None:
         cmd.extend(["-batch_size", str(batch_size)])
@@ -495,9 +495,9 @@ def create_case_namelist_file(
             batch_size=batch_size,
         )
 
-    _require_existing_file("-params", params_file)
+    _require_existing_file("-params_file", params_file)
     _require_existing_file("-flags", flags_file)
-    _require_existing_file("-silhs_params", silhs_params_file)
+    _require_existing_file("-silhs_params_file", silhs_params_file)
     if not disable_stats:
         _require_existing_file("-stats", stats_file)
 
@@ -819,27 +819,27 @@ def create_loss_case_namelist(
     return aggregate_path, selected_fields, case_defaults
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Create an aggregated CLUBB case namelist.")
+def add_namelist_arguments(parser):
+    """Declare model settings once; configuration and override resolution stays here."""
     parser.add_argument("-config", metavar="[NAME|DIR]",
         help=("Tunable config name under input/parameter_and_flag_configs, or a directory containing "
               "tunable_parameters.in, configurable_model_flags.in, and silhs_parameters.in. "
               "Defaults to default."))
-    parser.add_argument("-params", metavar="[FILE]",
-        help="Define the tunable parameters. Used to override params file defined by --config")
+    parser.add_argument('-params_file', dest='params', metavar="[FILE]",
+        help="Parameter file; overrides the tunable_parameters.in selected by -config.")
     parser.add_argument("-flags", metavar="[FILE]",
-        help="Model flags file. Used to override flags file defined by --config")
-    parser.add_argument("-silhs_params", metavar="[FILE]",
-        help="SILHS parameters file. Used to override silhs_params file defined by --config")
+        help="Model flags file. Used to override flags file selected by -config")
+    parser.add_argument('-silhs_params_file', dest='silhs_params', metavar="[FILE]",
+        help="SILHS parameters file. Used to override silhs_params file selected by -config")
     parser.add_argument("-stats", metavar="[FILE]",
         help=("Stats file defining fields to output.\n"
               "Default: input/stats/standard_stats.in.\n"
               "Use 'none' to disable stats output."))
-    parser.add_argument("-out_dir", metavar="[DIR]",
-        help="Output directory for the aggregated namelist.\nDefault: output")
+    parser.add_argument('-output_dir', dest='out_dir', metavar="[DIR]",
+        help="Output directory for the generated namelist and run results. Relative paths are rooted under output/ unless they already start with output/; absolute paths are used directly. Default: output")
     parser.add_argument("-multicol", metavar="[NUM|SPEC]", type=validate_multicol,
         help=("Generate a multi-column parameter file. "
-              "Use an integer for dup_tweak mode, e.g. -multicol 4, or an hr spec like "
+              "Use an integer for dup_tweak mode, e.g. -multicol 4, or a parameter-grid spec like "
               "-multicol C8/0.2:0.8/4"))
     parser.add_argument("-batch_size", metavar="[NUM]", type=int,
         help=("Runtime batch size written to &multicol_def. "
@@ -871,6 +871,54 @@ def main():
               'settings to values, or case names to settings; "all" supplies shared defaults. Repeat to apply in order; '
               "later values win. Use namelist.key to add a key."),
     )
+
+
+def parse_forwarded_args(parser, argv=None):
+    """Keep model option values away from a wrapper's optional positional case."""
+    model = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    add_namelist_arguments(model)
+    actions = dict(model._option_string_actions)
+    # Backend controls belong to run_scm, not the namelist generator.
+    for name in ("-exe", "-install_dir"):
+        actions[name] = model.add_argument(name)
+    for name in ("-driver_test", "-python", "-jax", "-gdb"):
+        actions[name] = model.add_argument(name, action="store_true")
+    own, forwarded = [], []
+    tokens = list(sys.argv[1:] if argv is None else argv)
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "--":
+            forwarded.extend(tokens[index + 1:])
+            break
+        option = token.split("=", 1)[0]
+        action = parser._option_string_actions.get(option)
+        target = own
+        if action is None and option in actions:
+            action, target = actions[option], forwarded
+        elif action is None and token.startswith("-"):
+            parser.error(f"unrecognized argument: {token}")
+        target.append(token)
+        index += 1
+        if action is None or action.nargs == 0 or "=" in token:
+            continue
+        if action.nargs in ("+", "*"):
+            while index < len(tokens) and not tokens[index].startswith("-"):
+                target.append(tokens[index])
+                index += 1
+        else:
+            count = action.nargs if isinstance(action.nargs, int) else 1
+            if index + count > len(tokens):
+                parser.error(f"{option} requires a value")
+            target.extend(tokens[index:index + count])
+            index += count
+    return parser.parse_args(own), forwarded
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Create an aggregated CLUBB case namelist.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    add_namelist_arguments(parser)
     parser.add_argument("case_name", help="Name of the case to aggregate")
     args = parser.parse_args()
 

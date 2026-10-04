@@ -51,12 +51,23 @@ SHORT_CASES = [
 ]
 
 
-def positive_int(value):
-    """Argparse type checker for strictly positive integers."""
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tuner.system_defaults import default_max_workers as default_workers
+from utilities.create_case_namelist import parse_forwarded_args
+
+
+def positive_int(value: str) -> int:
     parsed = int(value)
     if parsed < 1:
         raise argparse.ArgumentTypeError("must be >= 1")
     return parsed
+
+
+def split_values(values) -> list[str]:
+    """Normalize space-separated and comma-separated CLI lists."""
+    if isinstance(values, str):
+        values = [values]
+    return [part.strip() for value in values or [] for part in value.split(",") if part.strip()]
 
 
 def parse_cases(value):
@@ -107,28 +118,36 @@ def main():
     #=================== Argument parsing ===================
 
     parser = argparse.ArgumentParser(
-        description="Simplified CLUBB SCM runner (no nightly mode, predefined case lists)"
+        description="Run selected CLUBB cases concurrently; defaults to the 31 standard cases.",
+        add_help=False, allow_abbrev=False
     )
-    parser.add_argument("-all", action="store_true", help="Run ALL cases, even unmaintained ones")
-    parser.add_argument("-short_cases", action="store_true", help="Run short cases only")
-    parser.add_argument("-priority_cases", action="store_true", help="Run priority cases only")
-    parser.add_argument("-min_cases", action="store_true", help="Run minimal case set")
-    parser.add_argument(
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("-all", action="store_true", help="Run ALL cases, even unmaintained ones")
+    selection.add_argument("-short_cases", action="store_true", help="Run short cases only")
+    selection.add_argument("-priority_cases", action="store_true", help="Run priority cases only")
+    selection.add_argument("-min_cases", action="store_true", help="Run minimal case set")
+    selection.add_argument(
         "-cases",
-        type=parse_cases,
-        metavar="CASE1,CASE2,...",
-        help="Run an explicit comma-separated case list (for example: arm,bomex,atex)",
+        nargs="+",
+        metavar="CASE",
+        help="Case names separated by spaces or commas.",
     )
     parser.add_argument(
-        "-nproc",
+        '-workers', dest='nproc',
         type=positive_int,
-        default=8,
+        default=default_workers(),
         metavar="N",
-        help="Number of processes to use (default: 8)",
+        help="Maximum concurrent cases (default: half the available logical CPUs).",
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="Show output from each run_scm.py call")
+    parser.add_argument('-show_output', dest='verbose', action="store_true", help="Show output from each run_scm.py call")
 
-    args, extra_opts = parser.parse_known_args()
+    args, extra_opts = parse_forwarded_args(parser)
+    if args.cases:
+        try:
+            args.cases = parse_cases(",".join(split_values(args.cases)))
+        except argparse.ArgumentTypeError as exc:
+            parser.error(str(exc))
 
     #=================== Determine case list ===================
 

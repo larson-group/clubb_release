@@ -31,17 +31,17 @@ File format compatibility:
 
 Usage:
   python run_bindiff_all.py <dir1> <dir2> [options]
-  python run_bindiff_all.py --flag-sets <output_root1> <output_root2> [options]
+  python run_bindiff_all.py -flag_sets <output_root1> <output_root2> [options]
 
   Options:
-    -v {0,1,2}    Verbosity (0=summary, 1=per-file, 2=full diff tables)
-    -t THRESHOLD   Min avg absolute diff to report a variable
-    -pt THRESHOLD  Min avg absolute percent diff to report a variable
-    -s             Scale diffs by average field magnitude
+    -verbose {0,1,2}    Verbosity (0=summary, 1=per-file, 2=full diff tables)
+    -threshold THRESHOLD   Min avg absolute diff to report a variable
+    -percent_threshold THRESHOLD  Min avg absolute percent diff to report a variable
+    -scale             Scale diffs by average field magnitude
     -case CASE     Compare only the named case (e.g. 'bomex')
     -strict        Also fail on missing variables or mismatched shapes
-    --result-json PATH  Write machine-readable comparison diagnostics
-    -f {skip,replace,enumerate}  Write per-case diff logs to output/bindiffs/
+    -result_json PATH  Write machine-readable comparison diagnostics
+    -log_mode {skip,replace,enumerate}  Write per-case diff logs to output/bindiffs/
 """
 
 import argparse
@@ -109,8 +109,9 @@ COLUMN_DIM_NAMES = {"ngrdcol", "col", "column", "columns"}
 def main():
 
     # Set up and parse command line arguments
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-f", "--fileout", action="store", choices=["skip", "replace", "enumerate"], default=None,
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    parser.add_argument('-log_mode', dest='fileout', action="store", choices=["skip", "replace", "enumerate"], default=None,
                         help="Output a table of diffs into a text file, with one output file per each pair of diffed netcdf files.\n"+
                         "The text files will be named '<input_file>-diff_out' and will be stored in a subfolder of CLUBB's output folder.\n"+
                         "The choices for this option are:"+
@@ -118,21 +119,21 @@ def main():
                         "\n2. 'enumerate': If a diff log file for a case already exists\n\t\tthe new file will be created with an increasing numerical postfix."+
                         "\n3. 'skip': If a diff log file for a case already exists the creation of the log file will be skipped."+
                         "\n4. 'replace': If a diff log file for a case already exists the old file will be replaced with a new log file.")
-    parser.add_argument("-v", "--verbose", action="store", type=int, default=1, help="Choose level of verbosity for outputs, i.e. what is printed to console.\n"+
+    parser.add_argument('-verbose', dest='verbose', action="store", type=int, default=1, help="Choose level of verbosity for outputs, i.e. what is printed to console.\n"+
                         "0: Output just a summary.\n"+
                         "1: Default. Add summarized results for each file.\n"+
                         "2: Add tables with detailed numerical differences in common variables for each file.")
-    parser.add_argument("-t", "--threshold", dest="threshold", type=float, action="store", help="(float) Define the maximum absolute difference for an individual variable to be treated as different.")
-    parser.add_argument("-pt", "--percent_thresh", dest="percent_thresh", type=float, action="store", help="(float) Define the maximum average absolute percent difference for an individual variable to be treated as different.")
-    parser.add_argument("-s", "--scale", action="store_true", help="Scale absolute differences by the average field value.")
-    parser.add_argument("-case", "--case", action="store", default=None, help="Compare only the specified case name (e.g. 'bomex'). When omitted, all cases found in both directories are compared.")
+    parser.add_argument('-threshold', dest="threshold", type=float, action="store", help="(float) Define the maximum absolute difference for an individual variable to be treated as different.")
+    parser.add_argument('-percent_threshold', dest="percent_thresh", type=float, action="store", help="(float) Define the maximum average absolute percent difference for an individual variable to be treated as different.")
+    parser.add_argument('-scale', dest='scale', action="store_true", help="Scale absolute differences by the average field value.")
+    parser.add_argument('-case', dest='case', action="store", default=None, help="Compare only the specified case name (e.g. 'bomex'). When omitted, all cases found in both directories are compared.")
     parser.add_argument("-strict", action="store_true", help="Also fail when a paired NetCDF file has missing variables or mismatched variable shapes.")
-    parser.add_argument("--flag-sets", action="store_true", help="Treat each immediate child directory as one flag-set output directory and compare matching flag sets.")
-    parser.add_argument("--result-json", help="Write machine-readable comparison diagnostics to a JSON file for analysis by other scripts.")
+    parser.add_argument('-flag_sets', dest='flag_sets', action="store_true", help="Treat each immediate child directory as one flag-set output directory and compare matching flag sets.")
+    parser.add_argument('-result_json', dest='result_json', help="Write machine-readable comparison diagnostics to a JSON file for analysis by other scripts.")
     parser.add_argument("dirs", nargs=2, help="Need 2 clubb output directories containing netCDF files with the same name to diff. Usage: python run_bindiff_all.py dir_path1 dir_path2")
     args = parser.parse_args()
     if args.flag_sets and args.result_json:
-        parser.error("--result-json is only supported for per-case comparisons")
+        parser.error("-result_json is only supported for per-case comparisons")
 
     # Check if folders exist
     paths_exist = os.path.exists(args.dirs[0]) and os.path.exists(args.dirs[1])
@@ -553,8 +554,8 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, verbose, thresh, percent_t
     #
     # Parameters:
     #   dir1, dir2: Paths to folders containing netCDF files we want to compare
-    #   save_to_file: Value of the --outfile command line argument
-    #   verbose: Value of the --verbose command line argument, level of verbosity
+    #   save_to_file: Value of the -output_file command line argument
+    #   verbose: Value of the -verbose command line argument, level of verbosity
     #   thresh: Detection threshold for differences in a variable
     #   case_filter: If set, only compare this specific case name
     #####################################################################################

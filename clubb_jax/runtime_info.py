@@ -642,7 +642,7 @@ def format_human(info: dict[str, object]) -> str:
 
 
 def main() -> None:
-    if len(sys.argv) == 3 and sys.argv[1] == "--resolve-visible-devices":
+    if len(sys.argv) == 3 and sys.argv[1] == "-resolve_visible_devices":
         try:
             print(resolve_visible_devices(sys.argv[2]))
         except ValueError as exc:
@@ -650,16 +650,17 @@ def main() -> None:
             raise SystemExit(1) from exc
         return
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--profile", choices=("cpu", "gpu"), required=True)
-    parser.add_argument("--accelerator", required=True)
-    parser.add_argument("--requirements", type=Path, required=True)
-    parser.add_argument("--venv", type=Path, required=True)
-    parser.add_argument("--required-jax", required=True)
-    parser.add_argument("--python-version")
-    parser.add_argument("--format", choices=("human", "json"), default="human")
+    parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    parser.add_argument('-profile', dest='profile', choices=("cpu", "gpu"), required=True)
+    parser.add_argument('-accelerator', dest='accelerator', required=True)
+    parser.add_argument('-requirements', dest='requirements', type=Path, required=True)
+    parser.add_argument('-venv', dest='venv', type=Path, required=True)
+    parser.add_argument('-required_jax', dest='required_jax', required=True)
+    parser.add_argument('-python_version', dest='python_version')
+    parser.add_argument('-format', dest='format', choices=("human", "json"), default="human")
     parser.add_argument(
-        "--require-selectable",
+        '-require_selectable', dest='require_selectable',
         action="store_true",
         help="exit unsuccessfully when the selected runtime cannot run on this host",
     )

@@ -9,7 +9,7 @@ pipeline {
           source /etc/profile.d/larson-group.sh
           module load gcc netcdf-fortran
           ulimit -s 8388608
-          python3 tests/check_mirrored_multi_col_output.py -n 3 -nproc 2
+          python3 tests/check_mirrored_multi_col_output.py -multicol 3 -workers 2
         '''
       }
     }

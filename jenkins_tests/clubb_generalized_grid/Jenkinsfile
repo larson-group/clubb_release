@@ -23,8 +23,8 @@ pipeline {
                 '''
                 sh '''
                   python3 run_scripts/run_clubb_w_varying_flags.py \
-                    -nproc 8 \
-                    -f input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
+                    -workers 8 \
+                    -flag_config_file input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
                     -override '{
                       "all": {
                         "thlm_sponge_damp_settings%l_sponge_damping": false,
@@ -53,8 +53,8 @@ pipeline {
                 '''
                 sh '''
                   python3 run_scripts/run_clubb_w_varying_flags.py \
-                    -nproc 8 \
-                    -f input/flag_sets/run_bindiff_w_flags_config_host_flags.json \
+                    -workers 8 \
+                    -flag_config_file input/flag_sets/run_bindiff_w_flags_config_host_flags.json \
                     -override '{
                       "all": {
                         "thlm_sponge_damp_settings%l_sponge_damping": false,
@@ -79,7 +79,7 @@ pipeline {
                 '''
                 sh '''
                   python3 run_scripts/run_scm_all.py \
-                    -nproc 8 \
+                    -workers 8 \
                     -stats none \
                     -max_iters 100 \
                     -override penta_solve_method=1,tridiag_solve_method=1 \
@@ -107,7 +107,7 @@ pipeline {
                 '''
                 sh '''
                   python3 run_scripts/run_scm_all.py \
-                    -nproc 8 \
+                    -workers 8 \
                     -stats none \
                     -max_iters 100 \
                     -override '{

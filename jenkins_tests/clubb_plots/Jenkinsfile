@@ -30,11 +30,11 @@ pipeline {
                   '''
                   // Load the compiler and matching NetCDF runtime from the shared module setup.
                   sh '''
-                    run_scripts/run_scm_all.py -nproc 4
+                    run_scripts/run_scm_all.py -workers 4
                     mv output cpu_${commit}; mkdir output
                   '''
                   sh 'scp -r carson:/home/pub/web_plots/clubb_ifort_plots/master/cur_out .'
-                  sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c cpu_* cur_out/cpu_* -o ${commit}_vs_master_$(cat cur_out/commit)'
+                  sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb cpu_* cur_out/cpu_* -output_dir ${commit}_vs_master_$(cat cur_out/commit)'
                   sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_ifort_plots/${branch_name}'"
                   sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_ifort_plots/${branch_name}"
                   sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_ifort_plots/'"
@@ -63,7 +63,7 @@ pipeline {
                     ./compile.py
                   '''
                   sh '''
-                    run_scripts/run_scm_all.py -nproc 4 -priority_cases -override l_lh_straight_mc=.true.
+                    run_scripts/run_scm_all.py -workers 4 -priority_cases -override l_lh_straight_mc=.true.
                     mv output cpu_${commit}; mkdir output
                   '''
                   sh '''
@@ -74,12 +74,12 @@ pipeline {
                   // Serialize GPU cases on this worker; other nodes may run concurrently.
                   lock( "GPU_${env.NODE_NAME}" ) {
                     sh '''
-                      run_scripts/run_scm_all.py -nproc 1 -priority_cases -override l_lh_straight_mc=.true.
+                      run_scripts/run_scm_all.py -workers 1 -priority_cases -override l_lh_straight_mc=.true.
                       mv output gpu_${commit}; mkdir output
                     '''
                   }
                   sh 'scp -r carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/master/cur_out .'
-                  sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c cpu_* cur_out/cpu_* gpu_* cur_out/gpu_* -o ${commit}_vs_master_$(cat cur_out/commit)'
+                  sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb cpu_* cur_out/cpu_* gpu_* cur_out/gpu_* -output_dir ${commit}_vs_master_$(cat cur_out/commit)'
                   sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}'"
                   sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}"
                   sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_nvhpc_gpu_plots/'"
@@ -107,15 +107,15 @@ pipeline {
                     module load intel netcdf-fortran
                     ./compile.py
                   '''
-                  sh '''run_scripts/run_scm_all.py -nproc 4 -priority_cases -out_dir solver_compare/lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
-                  sh '''run_scripts/run_scm_all.py -nproc 4 -priority_cases -out_dir solver_compare/custom_lu_output'''
+                  sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
+                  sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/custom_lu_output'''
                   // BiCGSTAB keeps the default tridiagonal LU solver; known failing cases are excluded below.
                   catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS', catchInterruptions: false) {
-                    sh '''run_scripts/run_scm_all.py -nproc 4 -priority_cases -out_dir solver_compare/bicgstab_output -override penta_solve_method=3'''
+                    sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/bicgstab_output -override penta_solve_method=3'''
                   }
                   sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf02_ds_*'''
                   sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf01_*'''
-                  sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c output/solver_compare/lapack_output output/solver_compare/custom_lu_output output/solver_compare/bicgstab_output -o output/${commit}_solver'
+                  sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb output/solver_compare/lapack_output output/solver_compare/custom_lu_output output/solver_compare/bicgstab_output -output_dir output/${commit}_solver'
                   sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_solver_plots/${branch_name}'"
                   sh "scp -r output/${commit}_solver carson:/home/pub/web_plots/clubb_solver_plots/${branch_name}"
                   sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_solver_plots/'"

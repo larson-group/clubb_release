@@ -75,7 +75,7 @@ if(${ENABLE_TESTS})
         set(RUN_COMMAND
             "${CMAKE_COMMAND} -E make_directory ${TEST_OUT_DIR}/${TEST_NAME} && \
             ${Python_EXECUTABLE} ${CLUBB_ROOT}/run_scripts/run_scm.py \
-            -install_dir ${CMAKE_INSTALL_PREFIX} -out_dir ${TEST_OUT_DIR}/${TEST_NAME} ${ARGN}"
+            -install_dir ${CMAKE_INSTALL_PREFIX} -output_dir ${TEST_OUT_DIR}/${TEST_NAME} ${ARGN}"
         )
 
         add_test(NAME ${TEST_NAME}

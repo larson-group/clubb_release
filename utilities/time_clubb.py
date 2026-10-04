@@ -5,10 +5,10 @@ Timing options are parsed here.  Every other option is forwarded verbatim to
 ``run_scripts/run_scm.py`` so executable, configuration, and namelist choices
 stay under the existing runner's control.  For example::
 
-    utilities/time_clubb.py arm -processes 1,4 -batch_sizes 1,8 \
+    utilities/time_clubb.py arm -process_counts 1,4 -batch_sizes 1,8 \
         -max_iters 20 -config my_config -override C2=1.2
 
-``-multicol``, ``-batch_size``, and ``-out_dir`` are reserved because this
+``-multicol``, ``-batch_size``, and ``-output_dir`` are reserved because this
 utility assigns them independently to every child process.  Each invocation
 writes one compact, self-contained profile directory.
 """
@@ -199,47 +199,43 @@ def build_argument_parser() -> argparse.ArgumentParser:
             "Unrecognized arguments are passed to run_scm.py."
         ),
         allow_abbrev=False,
+        add_help=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument("case_name", help="SCM case name; place it before forwarded options")
     parser.add_argument(
-        "-processes",
-        "--processes",
+        '-process_counts', dest='processes',
         type=parse_positive_int_list,
         default=(1,),
         metavar="N[,N...]",
         help="Concurrent CLUBB process counts (default: 1)",
     )
     parser.add_argument(
-        "-batch_sizes",
-        "--batch-sizes",
-        "-columns",
-        "--columns",
+        '-batch_sizes',
         dest="batch_sizes",
         type=parse_positive_int_list,
         default=(1,),
         metavar="N[,N...]",
         help="CLUBB runtime batch size assigned to each process (default: 1)",
     )
-    parser.add_argument("-warmups", "--warmups", type=nonnegative_int, default=1)
-    parser.add_argument("-repeats", "--repeats", dest="repetitions", type=positive_int, default=3)
+    parser.add_argument('-warmups', dest='warmups', type=nonnegative_int, default=1)
+    parser.add_argument('-repeats', dest="repetitions", type=positive_int, default=3)
     parser.add_argument(
-        "-output",
-        "--output",
+        '-output_root', dest='output',
         type=Path,
         default=REPO_ROOT / "output" / "timing",
         help="Directory in which compact profile folders are stored (default: output/timing)",
+        metavar='DIR',
     )
-    parser.add_argument("-name", "--name", default=None, help="Benchmark label (default: case name)")
+    parser.add_argument('-name', dest='name', default=None, help="Benchmark label (default: case name)")
     parser.add_argument(
-        "-overwrite",
-        "--overwrite",
+        '-overwrite', dest='overwrite',
         action="store_true",
         help="Replace the existing compact profile with the same normalized name",
     )
-    parser.add_argument("-timeout", "--timeout", type=positive_float, default=None, metavar="SECONDS")
+    parser.add_argument('-timeout', dest='timeout', type=positive_float, default=None, metavar="SECONDS")
     parser.add_argument(
-        "-continue_on_error",
-        "--continue-on-error",
+        '-continue_on_error', dest='continue_on_error',
         action="store_true",
         help="Continue the sweep after a failed or timed-out process group",
     )
@@ -267,7 +263,7 @@ def validate_passthrough(arguments: Sequence[str], parser: argparse.ArgumentPars
 
     managed_options = (
         "-multicol", "--multicol", "-batch_size", "--batch_size",
-        "-out_dir", "--out_dir",
+        "-output_dir", "--out_dir",
     )
     for option in managed_options:
         if _option_occurrences(forwarded, (option,)):
@@ -286,7 +282,7 @@ def validate_passthrough(arguments: Sequence[str], parser: argparse.ArgumentPars
         if debug_level < 0:
             parser.error("negative -debug values disable timers and cannot be benchmarked")
 
-    if not _option_occurrences(forwarded, ("-stats", "--stats")):
+    if not _option_occurrences(forwarded, ("-stats",)):
         forwarded.extend(("-stats", "none"))
     if not debug_values:
         forwarded.extend(("-debug", "0"))
@@ -299,7 +295,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> tuple[BenchmarkOptions
     # ``argparse`` treats ``-batch_size`` as a prefix of ``-batch_sizes`` even
     # with long-option abbreviation disabled, so reject managed child options
     # before parsing the benchmark's own options.
-    for option in ("-multicol", "--multicol", "-batch_size", "--batch_size", "-out_dir", "--out_dir"):
+    for option in ("-multicol", "--multicol", "-batch_size", "--batch_size", "-output_dir", "--out_dir"):
         if _option_occurrences(arguments, (option,)):
             parser.error(f"{option} is managed by time_clubb.py and may not be forwarded")
     namespace, passthrough = parser.parse_known_args(arguments)
@@ -527,7 +523,7 @@ def run_process_group(
                 str(batch_size),
                 "-batch_size",
                 str(batch_size),
-                "-out_dir",
+                "-output_dir",
                 str(process_dir),
             ]
             try:

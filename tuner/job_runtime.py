@@ -212,7 +212,7 @@ class TunerJob:
         log_handle = open(self.log_path, "a" if resume else "w", encoding="utf-8")
         try:
             self.proc = subprocess.Popen(
-                [sys.executable, "-m", "tuner.tune_clubb", "--job-dir", str(self.job_dir)],
+                [sys.executable, "-m", "tuner.tune_clubb", "-job_dir", str(self.job_dir)],
                 cwd=str(REPO_ROOT),
                 env=tuner_worker_env(),
                 stdout=log_handle,

@@ -142,24 +142,24 @@ def parse_hypergrid_range_spec(spec_text):
         parts = item.split("/")
         if len(parts) != 3:
             raise ValueError(
-                f"Invalid -hr entry '{item}'. Expected PARAM/MIN:MAX/NPOINTS."
+                f"Invalid -multicol entry '{item}'. Expected PARAM/MIN:MAX/NPOINTS."
             )
         coordinate_name = parts[0].strip()
         targets = tuple(name.strip() for name in coordinate_name.split("="))
         if not coordinate_name or not targets or any(not name for name in targets):
-            raise ValueError(f"Invalid -hr entry '{item}': missing parameter name.")
+            raise ValueError(f"Invalid -multicol entry '{item}': missing parameter name.")
         try:
             min_text, max_text = parts[1].split(":", 1)
         except ValueError as exc:
             raise ValueError(
-                f"Invalid -hr entry '{item}'. Range must look like MIN:MAX."
+                f"Invalid -multicol entry '{item}'. Range must look like MIN:MAX."
             ) from exc
         min_value = _parse_float(min_text.strip())
         max_value = _parse_float(max_text.strip())
         npoints = int(parts[2].strip())
         if npoints < 1:
             raise ValueError(
-                f"Invalid -hr entry '{item}'. NPOINTS must be >= 1."
+                f"Invalid -multicol entry '{item}'. NPOINTS must be >= 1."
             )
         specs.append(
             {
@@ -171,7 +171,7 @@ def parse_hypergrid_range_spec(spec_text):
             }
         )
     if not specs:
-        raise ValueError("The -hr specification did not contain any parameter ranges.")
+        raise ValueError("The -multicol specification did not contain any parameter ranges.")
     return specs
 
 
@@ -225,18 +225,21 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Set up argument parser
-    parser = argparse.ArgumentParser(description="Process CLUBB parameters.")
+    parser = argparse.ArgumentParser(description="Process CLUBB parameters.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
 
-    parser.add_argument( "-n", type=int, help="Number of grid columns (ngrdcol)")
+    parser.add_argument("-multicol", required=True, metavar="NUM|SPEC",
+                        help="Column count or PARAM/MIN:MAX/NPOINTS parameter grid.")
 
     tunable_parameters_default_path = os.path.join(script_dir, "../input/parameter_and_flag_configs/default/tunable_parameters.in")
-    parser.add_argument( "-param_file", type=str, help="Path to the CLUBB parameters file",
-                         default = str(tunable_parameters_default_path) )
+    parser.add_argument( '-params_file', dest='param_file', type=str, help="Path to the CLUBB parameters file",
+                         default = str(tunable_parameters_default_path) , metavar='FILE')
 
-    parser.add_argument( "-out_file", type=str, help="Output namelist file",
-                         default = "clubb_params_multi_col.in" )
+    parser.add_argument( '-output_file', dest='out_file', type=str, help="Output namelist file",
+                         default = "clubb_params_multi_col.in" , metavar='FILE')
 
-    parser.add_argument( "-mode", type=str, help="Parameter generation mode" )
+    parser.add_argument( "-mode", type=str, choices=("duplicate", "dup_tweak", "hypergrid"),
+                         help="Count mode (default: dup_tweak); hypergrid interprets NUM as points per axis." )
 
     parser.add_argument(
         "-batch_size",
@@ -256,36 +259,37 @@ if __name__ == "__main__":
         help="Comma-separated list of tweaks (e.g., C1,C2,C3)"
     )
 
-    parser.add_argument(
-        "-hr",
-        type=str,
-        help="Custom hypergrid spec: PARAM/MIN:MAX/NPOINTS,PARAM/MIN:MAX/NPOINTS,...",
-    )
 
     # Parse the arguments
     args = parser.parse_args()
 
     # Assign parsed arguments to variables
-    ngrdcol                 = args.n
+    ngrdcol                 = None
     clubb_params_file       = args.param_file
     output_file_name        = args.out_file
     param_creation_mode     = args.mode or "dup_tweak"
     mirror                  = args.mirror == "true"
     batch_size              = args.batch_size
-    hr_mode_requested       = args.hr is not None
+    try:
+        ngrdcol = int(args.multicol)
+    except ValueError:
+        hr_mode_requested = True
+    else:
+        hr_mode_requested = False
 
-    if hr_mode_requested and any(arg == "-mode" for arg in sys.argv[1:]):
-        sys.exit("Do not specify -mode when using -hr.")
+    if hr_mode_requested and any(arg.split("=", 1)[0] == "-mode" for arg in sys.argv[1:]):
+        sys.exit("Do not specify -mode when using -multicol.")
 
     if hr_mode_requested:
         try:
-            hr_specs = parse_hypergrid_range_spec(args.hr)
+            hr_specs = parse_hypergrid_range_spec(args.multicol)
         except ValueError as exc:
             sys.exit(str(exc))
     else:
         hr_specs = None
-        if ngrdcol is None or ngrdcol < 1:
-            sys.exit("-n (ngrdcol) must be >= 1 unless -hr is used.")
+        ngrdcol = int(args.multicol)
+        if ngrdcol < 1:
+            sys.exit("-multicol column count must be >= 1.")
 
     if batch_size is not None and batch_size < 1:
         sys.exit("-batch_size must be >= 1")
@@ -312,7 +316,7 @@ if __name__ == "__main__":
 
         print("Creating a custom hypergrid of parameters")
         print(f" - Initial values file: '{clubb_params_file}'")
-        print(f" - Spec: {args.hr}")
+        print(f" - Spec: {args.multicol}")
 
         try:
             clubb_params, ngrdcol = custom_hypergrid(parsed_params, hr_specs)

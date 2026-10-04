@@ -17,11 +17,11 @@ pipeline {
           TEST_BRANCH="${TEST_BRANCH:-${GIT_BRANCH##*/}}"
 
           python3 tests/run_bindiff_w_flags.py \
-            --overwrite-existing \
-            --compile-arg=-debug \
-            -b master,${TEST_BRANCH} \
-            -d "${WORKSPACE}/bindiff_against_master" \
-            -f input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
+            -overwrite_existing \
+            -compile_arg=-debug \
+            -branches master,${TEST_BRANCH} \
+            -output_root "${WORKSPACE}/bindiff_against_master" \
+            -flag_config_file input/flag_sets/run_bindiff_w_flags_config_core_flags.json \
             -max_iters 360
         '''
       }

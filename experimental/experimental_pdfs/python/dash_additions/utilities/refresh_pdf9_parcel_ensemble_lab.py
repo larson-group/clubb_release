@@ -40,7 +40,7 @@ def refresh(*, run_cases: bool = True) -> None:
                     sys.executable,
                     "-u",
                     "run_scripts/run_scm.py",
-                    "-out_dir",
+                    "-output_dir",
                     str(output_dir),
                     "-stats",
                     str(STATS_FILE),

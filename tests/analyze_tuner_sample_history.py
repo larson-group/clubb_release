@@ -494,9 +494,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Examples:\n"
             "  python tests/analyze_tuner_sample_history.py output/tuner/job\n"
             "  python tests/analyze_tuner_sample_history.py output/tuner/new_tuner_test "
-            "-metric all -modes 5 -top 10 -min_samples 8 --require_param_variation\n"
+            "-metric all -modes 5 -top 10 -min_samples 8 -require_param_variation\n"
         ),
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
         "path",
         help="Tuner job directory, parent output directory, or one sample_history_*.npz file.",
@@ -510,7 +512,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("-top", type=int, default=5, help="Top observations/params per mode. Default: 5.")
     parser.add_argument("-min_samples", type=int, default=1, help="Minimum sample rows required. Default: 1.")
     parser.add_argument(
-        "--require_param_variation",
+        '-require_param_variation', dest='require_param_variation',
         action="store_true",
         help="Fail if every tuned parameter column is constant across the sample history.",
     )

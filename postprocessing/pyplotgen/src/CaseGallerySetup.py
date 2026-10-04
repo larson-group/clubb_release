@@ -207,12 +207,12 @@ class CaseGallerySetup:
 
     def __generateDiffPanels__(self):
         """
-        If self.diff_datasets is true (i.e. --diff passed in via command line) then this will generate panels that
+        If self.diff_datasets is true (i.e. -diff passed in via command line) then this will generate panels that
         represents the difference of two input folders.
 
         :return: None. Operates in-place
         """
-        # Convert panels to difference panels if user passed in --diff <<folder>>
+        # Convert panels to difference panels if user passed in -diff <<folder>>
         if self.diff_datasets is not None:
             # Loop over the VariableGroup classes listed in the 'var_groups' entry
             # for this case in config/Case_definitions.py and create an instance of each of the listed VariableGroups
@@ -415,7 +415,7 @@ class CaseGallerySetup:
 
     def __getNextAlphabeticID__(self):
         """
-        When --show-alphabetic-id is passed in as a run parameter, pyplotgen will add an alphabetic label to each
+        When -show_alphabetic_id is passed in as a run parameter, pyplotgen will add an alphabetic label to each
         plot. These labels are a 1 or 2d rotation through the alphabet (automatically converts to 2d if more than 26
         labels are needed). E.g. this method will return 'a' the first time, 'b' the second time, 'aa' the 27th time,
         'ab' the 28th time, and etc. This function returns the next label as a string, and keeps track of each call

@@ -40,14 +40,15 @@ file_template[int] = '{comment}{pname:>30s} = {pval:4d}\n'
 
 
 
-parser = argparse.ArgumentParser(description="Parse tunable_parameters for parameter-value pairs")
+parser = argparse.ArgumentParser(description="Parse tunable_parameters for parameter-value pairs", add_help=False, allow_abbrev=False)
+parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
 
 parser.add_argument('infiles', nargs='+', help='tunable_parameters.in file you want to parse')
-parser.add_argument('-o', '--outfile', action='store', help='output file to write the parsed information into')
-parser.add_argument('-f', '--format', action='store_true', help='For each input file, create a new tunable_parameters.in file that strips away superfluous content and forces a unified formatting.'+
+parser.add_argument('-output_file', dest='outfile', action='store', help='output file to write the parsed information into', metavar='FILE')
+parser.add_argument('-format', dest='format', action='store_true', help='For each input file, create a new tunable_parameters.in file that strips away superfluous content and forces a unified formatting.'+
                     'The new file will be in the same folder as the corresponding input file and be marked by the postfix "-std".')
-parser.add_argument('-b', '--bare', action='store_true', help='Reduced output only listing the differences between the given files.')
-parser.add_argument('-c', '--commented', action='store', choices=['col', 'sym', 'skip'], default='skip', help='Include commented out paramters in output. If the choice is "skip" (default) the commented out parameters will not be listed. Otherwise, they will be included and either noted in an additional column "commented" or as a symbol "!" in the value column.')
+parser.add_argument('-bare', dest='bare', action='store_true', help='Reduced output only listing the differences between the given files.')
+parser.add_argument('-commented', dest='commented', action='store', choices=['col', 'sym', 'skip'], default='skip', help='Include commented out paramters in output. If the choice is "skip" (default) the commented out parameters will not be listed. Otherwise, they will be included and either noted in an additional column "commented" or as a symbol "!" in the value column.')
 
 args = parser.parse_args()
 

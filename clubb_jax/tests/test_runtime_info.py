@@ -72,11 +72,23 @@ def test_gpu_query_retries_without_compute_capability(monkeypatch):
         )
     )
     monkeypatch.setattr(runtime_info.shutil, "which", lambda _name: "/usr/bin/nvidia-smi")
-    monkeypatch.setattr(runtime_info.subprocess, "run", lambda *_args, **_kwargs: next(responses))
+    commands = []
+
+    def query(command, **_kwargs):
+        commands.append(command)
+        return next(responses)
+
+    monkeypatch.setattr(runtime_info.subprocess, "run", query)
 
     gpus, error = runtime_info._query_nvidia_gpus()
 
     assert error == ""
+    assert len(commands) == 2
+    assert all(command[0] == "/usr/bin/nvidia-smi"
+               and command[2] == "--format=csv,noheader,nounits"
+               for command in commands)
+    assert "compute_cap" in commands[0][1]
+    assert "compute_cap" not in commands[1][1]
     assert gpus == [
         {
             "index": "0",
@@ -217,7 +229,7 @@ def test_gpu_preflight_fails_before_creating_an_environment(tmp_path):
     environment.pop("CUDA_VISIBLE_DEVICES", None)
 
     result = subprocess.run(
-        [str(wrapper), "--accelerator=cuda13", "--init_env"],
+        [str(wrapper), "-accelerator=cuda13", "-init_env"],
         capture_output=True,
         text=True,
         env=environment,
@@ -257,13 +269,13 @@ def test_gpu_wrapper_resolves_physical_index_even_when_pci_order_differs(tmp_pat
     environment.pop("XLA_PYTHON_CLIENT_PREALLOCATE", None)
     if inherited is not None:
         environment["XLA_PYTHON_CLIENT_PREALLOCATE"] = inherited
-    options = ["--accelerator=cuda13"] + (["--xla-prealloc"] if flag else [])
+    options = ["-accelerator=cuda13"] + (["-xla_prealloc"] if flag else [])
     environment.pop('CLUBB_JAX_REQUESTED_CUDA_VISIBLE_DEVICES', None)
     if device_order:
         environment['CUDA_DEVICE_ORDER'] = device_order
 
     result = subprocess.run(
-        [str(wrapper), *options, "--info=json"],
+        [str(wrapper), *options, "-info=json"],
         capture_output=True,
         text=True,
         env=environment,
@@ -289,7 +301,7 @@ def test_gpu_wrapper_resolves_physical_index_even_when_pci_order_differs(tmp_pat
     uv.chmod(0o755)
     environment['CLUBB_JAX_TOOLS_DIR'] = str(tools_dir)
     result = subprocess.run(
-        [str(wrapper), *options, '--init_env'],
+        [str(wrapper), *options, '-init_env'],
         capture_output=True, text=True, env=environment, timeout=10,
     )
     assert result.returncode == 73

@@ -3,7 +3,7 @@
 
 Example:
   python utilities/split_stats_to_legacy.py \
-    --input output/rico_silhs_stats.nc
+    -input output/rico_silhs_stats.nc
 
 Default output location is ./output, with legacy-style filenames, e.g.:
   output/rico_silhs_zt.nc
@@ -69,31 +69,34 @@ LEGACY_LH_ZT_NAMES = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Split one *_stats.nc file into legacy-style stats files."
+        description="Split one *_stats.nc file into legacy-style stats files.",
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
-        "--input",
+        '-input', dest='input',
         required=True,
         help="Input stats file (e.g. output/rico_silhs_stats.nc)",
     )
     parser.add_argument(
-        "--output-dir",
+        '-output_dir', dest='output_dir',
         default="output",
         help="Output directory (default: output)",
+        metavar='DIR',
     )
     parser.add_argument(
-        "--prefix",
+        '-prefix', dest='prefix',
         default="",
         help="Output file prefix (default: input stem with '_stats' removed)",
     )
     parser.add_argument(
-        "--col-index",
+        '-col_index', dest='col_index',
         type=int,
         default=0,
         help="Column index to extract from the stats col dimension (default: 0)",
     )
     parser.add_argument(
-        "--overwrite",
+        '-overwrite', dest='overwrite',
         action="store_true",
         help="Overwrite existing output files",
     )
@@ -182,7 +185,7 @@ def init_legacy_file(
     overwrite: bool,
 ) -> Dataset:
     if out_path.exists() and not overwrite:
-        raise FileExistsError(f"{out_path} already exists (use --overwrite to replace)")
+        raise FileExistsError(f"{out_path} already exists (use -overwrite to replace)")
 
     ds = Dataset(out_path, "w", format="NETCDF4_CLASSIC")
     copy_global_attrs(src, ds)
@@ -221,7 +224,7 @@ def init_lh_2d_file(
     overwrite: bool,
 ) -> Dataset:
     if out_path.exists() and not overwrite:
-        raise FileExistsError(f"{out_path} already exists (use --overwrite to replace)")
+        raise FileExistsError(f"{out_path} already exists (use -overwrite to replace)")
 
     ds = Dataset(out_path, "w", format="NETCDF4_CLASSIC")
     copy_global_attrs(src, ds)

@@ -216,7 +216,7 @@ def build_case_command(case_name, stats_name, cli_options=None, config_name=None
     cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg, "-config", config_value]
     cli_options = cli_options or {}
     append_launch_target(cmd, cli_options)
-    for flag, key in (("-multicol", "multicol"), ("-batch_size", "batch_size"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
+    for flag, key in (("-multicol", "multicol"), ("-batch_size", "batch_size"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-output_dir", "out_dir")):
         value = clean_cli_option(cli_options.get(key))
         if value:
             cmd.extend([flag, value])
@@ -253,16 +253,16 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None, confi
     cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg, "-config", config_value]
     cli_options = cli_options or {}
     append_launch_target(cmd, cli_options)
-    for flag, key in (("-multicol", "multicol"), ("-batch_size", "batch_size"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-out_dir", "out_dir")):
+    for flag, key in (("-multicol", "multicol"), ("-batch_size", "batch_size"), ("-max_iters", "max_iters"), ("-debug", "debug"), ("-dt_main", "dt_main"), ("-dt_rad", "dt_rad"), ("-tout", "tout"), ("-output_dir", "out_dir")):
         value = clean_cli_option(cli_options.get(key))
         if value:
             cmd.extend([flag, value])
     if params_path:
-        cmd.extend(["-params", params_path])
+        cmd.extend(["-params_file", params_path])
     if flags_path:
         cmd.extend(["-flags", flags_path])
     if silhs_path:
-        cmd.extend(["-silhs_params", silhs_path])
+        cmd.extend(["-silhs_params_file", silhs_path])
     cmd.extend(extra_cli_args(cli_options))
     cmd.append(case_name)
 

@@ -10,11 +10,11 @@ This script:
 
 Modes:
   - Single-case mode:
-        ./run_clubb_flags.py rico
+        ./run_clubb_w_varying_flags.py rico
     → runs run_scm.py rico for each flag configuration.
 
   - Multi-case mode (no case name):
-        ./run_clubb_flags.py --short-cases
+        ./run_clubb_w_varying_flags.py -short_cases
     → runs run_scm.py once per (case, flag set) pair for the selected case list.
 """
 
@@ -26,7 +26,11 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from run_scm_all import (
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from run_scripts.run_scm_all import (
     ALL_CASES,
     MIN_CASES,
     PRIORITY_CASES,
@@ -35,16 +39,12 @@ from run_scm_all import (
     positive_int,
 )
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-    # Make sure utilities folder can be found. We could omit this and run python3 -m run_scripts.run_clubb_w_varying_flags.
-    # But this has become the python scripts convention :/
-
 from utilities.flag_sets import build_override_arg, get_flag_sets, read_flag_settings  # noqa: E402
 
-DEFAULT_MAX_WORKERS = 8
+from tuner.system_defaults import default_max_workers as default_workers
+from utilities.create_case_namelist import parse_forwarded_args
+
+DEFAULT_MAX_WORKERS = default_workers()
 DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_flags_config_core_flags.json"
 
 
@@ -53,11 +53,14 @@ DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_fl
 # ------------------------------------------------------------------------------
 
 
+
 def get_cli_args():
     """Parse wrapper arguments and validate single-case vs multi-case mode."""
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter
+        formatter_class=argparse.RawTextHelpFormatter,
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
 
     parser.add_argument(
         "case_name",
@@ -66,52 +69,38 @@ def get_cli_args():
         help=(
             "Name of the CLUBB case to run (optional).\n"
             "If omitted, you may specify at most one of:\n"
-            "  --all, --short-cases, --priority-cases, --min-cases."
+            "  -all, -short_cases, -priority_cases, -min_cases."
         )
     )
 
     parser.add_argument(
-        "--all",
+        '-all', dest='all',
         action="store_true",
         default=False,
         help="Run all cases (multi-case mode).",
     )
     parser.add_argument(
-        "--short-cases", action="store_true", default=False,
+        '-short_cases', dest='short_cases', action="store_true", default=False,
         help="Run short cases only (multi-case mode)."
     )
     parser.add_argument(
-        "--priority-cases", action="store_true", default=False,
+        '-priority_cases', dest='priority_cases', action="store_true", default=False,
         help="Run priority cases only (multi-case mode)."
     )
     parser.add_argument(
-        "--min-cases", action="store_true", default=False,
+        '-min_cases', dest='min_cases', action="store_true", default=False,
         help="Run minimal set of cases (multi-case mode)."
     )
     parser.add_argument(
-        "--skip-default-flags", action="store_true", default=False,
+        '-skip_default_flags', dest='skip_default_flags', action="store_true", default=False,
         help="Do not run the default flag configuration."
     )
     parser.add_argument(
-        "-f", "--flag-config-file", type=str, default=str(DEFAULT_FLAG_CONFIG_FILE),
+        '-flag_config_file', dest='flag_config_file', type=str, default=str(DEFAULT_FLAG_CONFIG_FILE),
         help="JSON file describing alternate flag settings."
     )
     parser.add_argument(
-        "--max-iters", "-max_iters",
-        dest="max_iters",
-        type=int,
-        default=None,
-        help="Maximum number of iterations to pass to run_scm.py.",
-    )
-    parser.add_argument(
-        "--tout", "-tout",
-        dest="tout",
-        type=int,
-        default=None,
-        help="Stats output interval in seconds to pass to run_scm.py.",
-    )
-    parser.add_argument(
-        "--nproc", "-nproc",
+        '-workers',
         dest="nproc",
         type=positive_int,
         default=DEFAULT_MAX_WORKERS,
@@ -119,12 +108,13 @@ def get_cli_args():
             "Maximum number of concurrent run_scm.py workers "
             f"(default: {DEFAULT_MAX_WORKERS})."
         ),
+        metavar='N',
     )
 
     # Recognize the value so the optional case argument cannot consume it.
     parser.add_argument("-override", action="append", metavar="ASSIGNMENTS|JSON",
                         help="Forward assignments or JSON to create_case_namelist.")
-    args, run_scm_extra_args = parser.parse_known_args()
+    args, run_scm_extra_args = parse_forwarded_args(parser)
     for value in args.override or []:
         run_scm_extra_args.extend(["-override", value])
     args.run_scm_extra_args = run_scm_extra_args
@@ -139,12 +129,12 @@ def get_cli_args():
     if args.case_name is None:
         if subset_flags_count > 1:
             print("\nError: only one of the following may be specified:\n"
-                  "  --all, --short-cases, --priority-cases, --min-cases\n")
+                  "  -all, -short_cases, -priority_cases, -min_cases\n")
             sys.exit(1)
     else:
         if subset_flags_count > 0:
             print("\nError: When providing a case_name, you may not also use "
-                  "--all, --short-cases, --priority-cases, or --min-cases.\n")
+                  "-all, -short_cases, -priority_cases, or -min_cases.\n")
             sys.exit(1)
 
     return args
@@ -184,15 +174,9 @@ def build_tasks(root, flag_sets, run_cases, args):
         for case_name in run_cases:
             cmd = [
                 run_scm_script,
-                "-out_dir", out_dir,
+                "-output_dir", out_dir,
                 "-debug", "0",
             ]
-
-            if args.tout is not None:
-                cmd += ["-tout", str(args.tout)]
-
-            if args.max_iters is not None:
-                cmd += ["-max_iters", str(args.max_iters)]
 
             if override_arg is not None:
                 cmd += ["-override", override_arg]

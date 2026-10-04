@@ -12,7 +12,7 @@ pipeline {
     }
     stage('Run') {
       steps {
-        sh '''run_scripts/run_scm_all.py -nproc 4'''
+        sh '''run_scripts/run_scm_all.py -workers 4'''
       }
     }
   }

@@ -1,4 +1,4 @@
-"""System-dependent defaults for tuner front ends."""
+"""CPU availability and worker defaults shared by scripts and tuner front ends."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import os
 
 
 def available_logical_cpu_count() -> int:
-    """Return the logical CPUs available to this process."""
+    """Count logical CPUs available to this process, respecting CPU affinity."""
     try:
         return max(1, len(os.sched_getaffinity(0)))
     except (AttributeError, OSError):
@@ -14,5 +14,5 @@ def available_logical_cpu_count() -> int:
 
 
 def default_max_workers() -> int:
-    """Return a conservative physical-core worker default."""
+    """Use half the available logical CPUs, rounded down, with at least one worker."""
     return max(1, available_logical_cpu_count() // 2)

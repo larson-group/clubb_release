@@ -310,7 +310,7 @@ def build_run_command(args: argparse.Namespace, spec: RunSpec) -> list[str]:
         RUN_SCM,
         "-stats",
         os.path.abspath(args.stats),
-        "-out_dir",
+        "-output_dir",
         spec.output_dir,
         "-multicol",
         args.multicol,
@@ -322,9 +322,9 @@ def build_run_command(args: argparse.Namespace, spec: RunSpec) -> list[str]:
 
     forwarded_paths = (
         ("-config", args.config),
-        ("-params", args.params),
+        ("-params_file", args.params),
         ("-flags", args.flags),
-        ("-silhs_params", args.silhs_params),
+        ("-silhs_params_file", args.silhs_params),
         ("-exe", args.exe),
     )
     for opt, value in forwarded_paths:
@@ -894,8 +894,10 @@ def parse_args() -> argparse.Namespace:
         description=(
             "Run one CLUBB case several ways and verify unified stats output is "
             "consistent across batch sizes and stats_tout averaging intervals."
-        )
+        ),
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
         "case_name",
         nargs="?",
@@ -903,9 +905,10 @@ def parse_args() -> argparse.Namespace:
         help=f"Case name to run. Default: {DEFAULT_CASE}",
     )
     parser.add_argument(
-        "-out_root",
+        '-output_root', dest='out_root',
         default=DEFAULT_OUT_ROOT,
         help="Top-level output directory. Default: output/stats_output_consistency",
+        metavar='DIR',
     )
     parser.add_argument(
         "-stats",
@@ -956,11 +959,12 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("-config", help="Optional config name or directory forwarded to run_scm.py")
-    parser.add_argument("-params", help="Optional params file forwarded to run_scm.py")
+    parser.add_argument('-params_file', dest='params', help="Optional params file forwarded to run_scm.py", metavar='FILE')
     parser.add_argument("-flags", help="Optional model flags file forwarded to run_scm.py")
     parser.add_argument(
-        "-silhs_params",
+        '-silhs_params_file', dest='silhs_params',
         help="Optional SILHS params file forwarded to run_scm.py",
+        metavar='FILE',
     )
     parser.add_argument("-exe", help="Optional CLUBB executable forwarded to run_scm.py")
     parser.add_argument("-debug", type=int, help="Optional debug level forwarded to run_scm.py")

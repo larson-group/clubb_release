@@ -102,7 +102,7 @@ do
         fi
         echo "Running with $num_samples samples, iteration $iseed"
         python3 $CLUBB_DIR/run_scripts/run_scm.py $STATS_CMD_STRING \
-            -out_dir $OUTPUT_DIR/silhs_"$num_samples"_"$iseed" $CASE_NAME &>/dev/null
+            -output_dir $OUTPUT_DIR/silhs_"$num_samples"_"$iseed" $CASE_NAME &>/dev/null
         if [[ ! $? -eq 0 ]]
         then
             >&2 echo 'A run failed!'

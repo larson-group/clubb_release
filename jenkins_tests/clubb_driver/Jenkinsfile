@@ -18,8 +18,8 @@ pipeline {
                 module load intel netcdf-fortran
                 ./compile.py
                 ulimit -s 8388608
-                run_scripts/run_scm_all.py -nproc 4 -multicol 4 -max_iters 500 -out_dir driver_test/standalone_ifx
-                run_scripts/run_scm_all.py -nproc 4 -multicol 4 -max_iters 500 -out_dir driver_test/driver_ifx -driver_test
+                run_scripts/run_scm_all.py -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/standalone_ifx
+                run_scripts/run_scm_all.py -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/driver_ifx -driver_test
                 run_scripts/run_bindiff_all.py output/driver_test/standalone_ifx output/driver_test/driver_ifx
               '''
             }
@@ -39,8 +39,8 @@ pipeline {
                 sh '''
                   # Allow the large Fortran automatic arrays used by these cases.
                   ulimit -s 8388608
-                  run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
-                  run_scripts/run_scm_all.py -nproc 1 -min_cases -multicol 8 -max_iters 200 -out_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
+                  run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
+                  run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
                 '''
               }
               sh '''run_scripts/run_bindiff_all.py output/driver_test/standalone_nvhpc output/driver_test/driver_nvhpc'''

@@ -54,17 +54,17 @@ def test_runner_detects_first_column_state_leak(tmp_path, monkeypatch, capsys, d
         if Path(command[1]).name == 'create_multi_col_params.py':
             return actual_run(command, **kwargs)
         commands.append(command)
-        params = read_params(command[command.index('-params') + 1])
+        params = read_params(command[command.index('-params_file') + 1])
         values = params['C8'].copy()
         if defect:
             values += params['C8'][0]  # Accidental dependency on the first column.
-        out = Path(command[command.index('-out_dir') + 1])
+        out = Path(command[command.index('-output_dir') + 1])
         out.mkdir()
         write_stats(out / 'rico_stats.nc', values)
         return SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(mirror.subprocess, 'run', run)
-    assert mirror.main(['-case', 'rico', '-n', '4', '-out_dir', str(tmp_path),
+    assert mirror.main(['-case', 'rico', '-multicol', '4', '-output_root', str(tmp_path),
                         '-override', 'microphys_scheme="morrison"', *separator, '-debug', '1']) == int(defect)
     assert len(commands) == 2
     for command in commands:
@@ -78,7 +78,7 @@ def test_runner_detects_first_column_state_leak(tmp_path, monkeypatch, capsys, d
               '[3/4] CBA run', '[4/4] Comparison']
     assert [output.index(stage) for stage in stages] == sorted(output.index(stage) for stage in stages)
     assert output.count('Cases: rico') == 2
-    assert 'Grid: -hr C8/0.2:0.8/4' in output
+    assert 'Grid: -multicol C8/0.2:0.8/4' in output
     assert 'C8 = [0.2, 0.4, 0.6, 0.8]' in output
     assert 'C8 = [0.8, 0.6, 0.4, 0.2]' in output
     assert f"{'FAIL' if defect else 'PASS'} rico" in output
@@ -87,7 +87,7 @@ def test_runner_detects_first_column_state_leak(tmp_path, monkeypatch, capsys, d
     assert ('run_bindiff_all.py' in output) == defect
     if defect:
         command = shlex.split(output.splitlines()[-1])
-        assert command[-2:] == ['-v', '2']
+        assert command[-2:] == ['-verbose', '2']
         assert Path(command[1]).name == 'run_bindiff_all.py'
         with netCDF4.Dataset(Path(command[3]) / 'rico_stats.nc') as aligned:
             np.testing.assert_allclose(aligned['rtm'][0], [.2+.8, .4+.8, .6+.8, .8+.8])
@@ -173,10 +173,10 @@ def test_failed_run_does_not_compare_stale_output(tmp_path, monkeypatch):
     monkeypatch.setattr(mirror.subprocess, 'run', run)
     monkeypatch.setattr(mirror, 'compare_directories', lambda *a: pytest.fail('compared after a failed run'))
     for _ in range(2):
-        assert mirror.main(['-cases', 'rico,bomex', '-out_dir', str(tmp_path)]) == 1
+        assert mirror.main(['-cases', 'rico,bomex', '-output_root', str(tmp_path), '-workers', '2']) == 1
     assert len(commands) == 2
     assert commands[0][commands[0].index('-cases') + 1] == 'rico,bomex'
-    assert commands[0][commands[0].index('-nproc') + 1] == '2'
+    assert commands[0][commands[0].index('-workers') + 1] == '2'
     assert len(list(tmp_path.glob('run_*'))) == 2
 
 
@@ -203,14 +203,14 @@ def test_saved_output_comparison_and_tolerance(tmp_path):
     assert mirror.main([str(a), str(b)]) == 0
     write_stats(b / 'rico_stats.nc', [3, 2, 1.0001])
     assert mirror.main([str(a), str(b)]) == 1
-    assert mirror.main(['-t', '0.001', str(a), str(b)]) == 0
+    assert mirror.main(['-tolerance', '0.001', str(a), str(b)]) == 0
     write_stats(b / 'extra_stats.nc', [3, 2, 1])
     assert mirror.main([str(a), str(b)]) == 1
 
 
 @pytest.mark.parametrize('args', [
-    ['-n', '1'], ['-hr', 'C8/1:1/3'], ['-hr', 'C8/0:1/1'],
-    ['-hr', 'C8/0:nan/3'], ['-t', 'nan'], ['-nproc', '0'],
+    ['-multicol', '1'], ['-multicol', 'C8/1:1/3'], ['-multicol', 'C8/0:1/1'],
+    ['-multicol', 'C8/0:nan/3'], ['-tolerance', 'nan'], ['-workers', '0'],
     ['-case', 'rico', '--', '-multicol', '5'],
     ['a', 'b', '-case', 'rico'],
 ])
@@ -222,15 +222,15 @@ def test_invalid_configuration_is_rejected(args):
 
 @pytest.mark.parametrize('argv,expected', [
     (['-case', 'rico', '-debug', '1'], ['-debug', '1']),
-    (['-debug', '1', '-case', 'rico', '-tout', '60', '-n', '4', '-nzmax', '128'],
+    (['-debug', '1', '-case', 'rico', '-tout', '60', '-multicol', '4', '-nzmax', '128'],
      ['-debug', '1', '-tout', '60', '-nzmax', '128']),
     (['-exe', '/tmp/model with spaces', '-case', 'rico'], ['-exe', '/tmp/model with spaces']),
     (['-exe=/tmp/model', '-python'], ['-exe=/tmp/model', '-python']),
     (['-stats_tstart', '-1', '-stats_tend', '120', '-case', 'rico'],
      ['-stats_tstart', '-1', '-stats_tend', '120']),
     (['-case', 'rico', '-debug=1', '--', '-tout', '60'], ['-debug=1', '-tout', '60']),
-    (['-n3', '-t1e-8', '-debug', '1'], ['-debug', '1']),
-    (['-case', 'rico', '--', '-v'], ['-v']),
+    (['-multicol=3', '-tolerance=1e-8', '-debug', '1'], ['-debug', '1']),
+    (['-case', 'rico', '--', '-verbose'], ['-verbose']),
 ])
 def test_run_options_are_forwarded_without_consuming_values_as_directories(argv, expected):
     args, forwarded = mirror.parse_args(argv)
@@ -242,6 +242,11 @@ def test_run_options_are_forwarded_without_consuming_values_as_directories(argv,
 @pytest.mark.parametrize('option', ['-multicol=5', '-batch_size=2', '-all', '-min_cases',
                                    '-short_cases', '-priority_cases'])
 def test_forwarding_cannot_override_mirror_setup(separator, option):
+    if option == '-multicol=5' and not separator:
+        args, forwarded = mirror.parse_args(['-case', 'rico', option])
+        assert args.spec == 'C8/0.2:0.8/5'
+        assert not forwarded
+        return
     with pytest.raises(SystemExit) as error:
         mirror.parse_args(['-case', 'rico', *separator, option])
     assert error.value.code == 2
@@ -294,7 +299,7 @@ def test_build_failure_never_uses_stale_executable(tmp_path, monkeypatch, capsys
         return SimpleNamespace(returncode=9 if len(calls) == failure_phase + 1 else 0)
 
     monkeypatch.setattr(mirror.subprocess, 'run', run)
-    assert mirror.main(['-case', 'rico', '-out_dir', str(tmp_path)]) == 1
+    assert mirror.main(['-case', 'rico', '-output_root', str(tmp_path)]) == 1
     assert len(calls) == failure_phase + 1
     assert 'diagnostic from cmake' in capsys.readouterr().err
 
@@ -341,3 +346,9 @@ def test_incremental_build_reuses_objects_and_picks_up_source_changes(tmp_path, 
         f.write('target_compile_definitions(clubb_standalone PRIVATE CONFIG_CHANGED)\n')
     mirror.build_test_executable(log)
     assert subprocess.check_output([str(exe)], text=True).strip() == 'configured'
+
+
+def test_mirror_rejects_empty_explicit_case_list():
+    with pytest.raises(SystemExit) as error:
+        mirror.parse_args(["-cases", ","])
+    assert error.value.code == 2

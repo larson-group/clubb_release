@@ -149,7 +149,7 @@ class PyPlotGen:
 
         self.output_folder = clean_path(self.output_folder)
 
-        # If --replace flag was set, delete old output folder
+        # If -replace flag was set, delete old output folder
         if self.replace_images:
             subprocess.run(['rm', '-rf', self.output_folder + '/'])
             # TODO: Use for Windows
@@ -209,7 +209,7 @@ class PyPlotGen:
         initializeProgress(self.image_extension, self.animation)
 
         if self.multithreaded:
-            freeze_support()  # Required for multithreading
+            freeze_support()  # Required for multiprocessing
             n_processors = min(multiprocessing.cpu_count(), max(1, len(all_enabled_cases)))
             with Pool(processes=n_processors,initializer=tpc_init,initargs=(total_progress_counter, )) as pool:
                 cases_plotted_bools = pool.map(self.__plotCase__, all_enabled_cases)
@@ -228,7 +228,7 @@ class PyPlotGen:
 
             logToFileAndConsole(
                 "Error:  No cases were plotted.  Please confirm your input folder path,\n"
-                "(i.e. following --sam, --clubb, --e3sm, --wrf, --cam), and confirm that\n"
+                "(i.e. following -sam, -clubb, -e3sm, -wrf, -cam), and confirm that\n"
                 "your netcdf filename matches the expected filename given in\n"
                 "config/Case_definitions.py (see the 'Make sure filenames match' section\n"
                 "of the pyplotgen README for more info).  Also confirm that the CASES_TO_PLOT\n"
@@ -255,8 +255,8 @@ class PyPlotGen:
 
     def __printToPDF__(self):
         """
-        If --pdf was specified, this prints a pdf. Otherwise, this does nothing.
-        If --pdf and --pdf-filesize-limit were specified, this will loop over the run() method, reducing image size on
+        If -pdf was specified, this prints a pdf. Otherwise, this does nothing.
+        If -pdf and -pdf_filesize_limit were specified, this will loop over the run() method, reducing image size on
         each loop, until a pdf is output less than or equal to the specified target pdf filesize.
 
         :return: None
@@ -630,66 +630,67 @@ def __processArguments__():
 
     :return: A PyPlotGen object containing the parameters as given from the commandline.
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.",
+    parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    parser.add_argument('-replace', dest='replace', help="If the output folder already exists, replace it with the new one.",
                         action="store_true")
-    parser.add_argument("-l", "--les", help="Plot LES dependent_data for comparison.", action="store_true")
-    parser.add_argument("-e", "--e3sm",
+    parser.add_argument('-les', dest='les', help="Plot LES dependent_data for comparison.", action="store_true")
+    parser.add_argument('-e3sm', dest='e3sm',
                         help="Plot E3SM dependent_data for comparison. Pass a folder in with this option. This "
                              "folder must contain the e3sm nc files in the root directory, "
                              "where each filename is the name of the clubb case to plot it with. E.g. "
                              "name a file dycoms2_rfo2_ds.nc to plot it with that clubb case.",
                         action="store",
                         default=[], nargs='+')
-    parser.add_argument("-g", "--plot-golaz-best", help="Plot Chris Golaz Best Ever dependent_data for comparison.",
+    parser.add_argument('-plot_golaz_best', dest='plot_golaz_best', help="Plot Chris Golaz Best Ever dependent_data for comparison.",
                         action="store_true")
-    parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 dependent_data for comparison.",
+    parser.add_argument('-plot_hoc_2005', dest='plot_hoc_2005', help="Plot !HOC 12/17/2015 dependent_data for comparison.",
                         action="store_true")
-    parser.add_argument("-a", "--all-best",
+    parser.add_argument('-all_best', dest='all_best',
                         help="Same as -lgd. Plots LES, Golaz Best Ever, and HOC 2005 dependent_data for comparison.",
                         action="store_true")
-    parser.add_argument("-z", "--zip", help="Output dependent_data into a compressed zip file.", action="store_true")
-    parser.add_argument("--show-alphabetic-id", help="Add an identifying character to the top right of a panel.",
+    parser.add_argument('-zip', dest='zip', help="Output dependent_data into a compressed zip file.", action="store_true")
+    parser.add_argument('-show_alphabetic_id', dest='show_alphabetic_id', help="Add an identifying character to the top right of a panel.",
                         action="store_true")
-    parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
-    parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
-    parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments.",
+    parser.add_argument('-thin', dest='thin', help="Plot using thin solid lines.", action="store_true")
+    parser.add_argument('-no_legends', dest='no_legends', help="Plot without legend boxes defining the line types.", action="store_true")
+    parser.add_argument('-plot_budgets', dest='plot_budgets', help="Plot all defined budgets of moments.",
                         action="store_true")
-    parser.add_argument("--lumped-buoy-budgets", help="Lump together wpxp_bp and wpxp_pr3 terms in CLUBB's budgets.",
+    parser.add_argument('-lumped_buoy_budgets', dest='lumped_buoy_budgets', help="Lump together wpxp_bp and wpxp_pr3 terms in CLUBB's budgets.",
                         action="store_true")
-    parser.add_argument("--background-rcm", help="Show a height-based 'contour' plot of time-averaged rcm behind CLUBB profiles.",
+    parser.add_argument('-background_rcm', dest='background_rcm', help="Show a height-based 'contour' plot of time-averaged rcm behind CLUBB profiles.",
                         action="store_true")
-    parser.add_argument("--plot-subcolumns", help="Plot all defined subcolumns.",
+    parser.add_argument('-plot_subcolumns', dest='plot_subcolumns', help="Plot all defined subcolumns.",
                         action="store_true")
-    parser.add_argument("-t", "--time-height-plots",
+    parser.add_argument('-time_height_plots', dest='time_height_plots',
                         help="Instead of averaged profiles, create contour plots from 2d data." +
                              " Cannot be used with -m.",
                         action="store_true")
-    parser.add_argument("-m", "--movies",
+    parser.add_argument('-movies', dest='movies',
                         help="Instead of averaged profiles, plot animations of time steps. Cannot be used with -t, " +
-                             "--pdf, --eps, or --svg. FRAMES_PER_SECOND can be adjusted in " +
+                             "-pdf, -eps, or -svg. FRAMES_PER_SECOND can be adjusted in " +
                              "config/Style_definitions.py.",
                         action="store", nargs='?', const='mp4', choices=['mp4','avi'])
-    parser.add_argument("--bu-morr",
+    parser.add_argument('-bu_morr', dest='bu_morr',
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
-    parser.add_argument("--benchmark-only",
+    parser.add_argument('-benchmark_only', dest='benchmark_only',
                         help="Prevents autoplotting of clubb's default output folder when no input folders are "
                              "specified. This results in only plotting the benchmark output, though this "
                              "output doesn't guarantee all text fields or plots are filled.",
                         action="store_true")
-    parser.add_argument("--diff", help="Plot the difference between two clubb folders", action="store")
-    parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf data.", action="store",
+    parser.add_argument('-diff', dest='diff', help="Plot the difference between two clubb folders", action="store")
+    parser.add_argument('-clubb', dest='clubb', help="Input folder(s) containing clubb netcdf data.", action="store",
                         default=[], nargs='+')
-    parser.add_argument("-s", "--sam", help="Input folder(s) containing sam netcdf data.", action="store",
+    parser.add_argument('-sam', dest='sam', help="Input folder(s) containing sam netcdf data.", action="store",
                         default=[], nargs='+')
-    parser.add_argument("--cam", help="Input folder(s) containing cam netcdf data.", action="store",
+    parser.add_argument('-cam', dest='cam', help="Input folder(s) containing cam netcdf data.", action="store",
                         default=[], nargs='+')
-    parser.add_argument("-w", "--wrf", help="Input folder(s) containing wrf netcdf data.", action="store",
+    parser.add_argument('-wrf', dest='wrf', help="Input folder(s) containing wrf netcdf data.", action="store",
                         default=[], nargs='+')
-    parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store",
-                        default="./output")
-    parser.add_argument("--nightly", help="Apply special parameters only relevant when running as part of a nightly "
+    parser.add_argument('-output_dir', dest='output', help="Name of folder to create and store plots into.", action="store",
+                        default="./output", metavar='DIR')
+    parser.add_argument('-nightly', dest='nightly', help="Apply special parameters only relevant when running as part of a nightly "
                                           "test. "
                                           "This is currently limited to disabling case output if not all models have"
                                           "data for a given case. E.g. this prevents wrf plots from including cases "
@@ -697,46 +698,46 @@ def __processArguments__():
                                           "only have clubb plots and no wrf plots. Do not plot this with clubb-only "
                                           "plots, just plot clubb normally for clubb nightly tests.",
                         action="store_true")
-    parser.add_argument("--disable-multithreading", help="This forces pyplotgen to run on a single thread. This isn't "
-                                                         "recommended, but if you're having issues with multithreading "
-                                                         "or want text output to appear sequentially and don't care"
-                                                         "about performance, use this option.",
-                        action="store_true")
-    parser.add_argument("--high-quality", "--hq",
+    parser.add_argument('-serial', dest='disable_multithreading', help="Generate plots serially instead of using the process pool.", action="store_true")
+    parser.add_argument('-high_quality', dest='high_quality',
                         help="Outputs higher resolution images. The dpi used for hi resolution images"
                              " can be customized in Style_definitions.py",
                         action="store_true")
-    parser.add_argument("--svg",
+    parser.add_argument('-svg', dest='svg',
                         help="Outputs images to a lossless vector-graphics format .svg  instead of a rasterized image "
-                             "like png.This argument is not compatible with --eps or --pdf. "
+                             "like png.This argument is not compatible with -eps or -pdf. "
                              "Note that some browsers may have difficulty displaying this format.",
                         action="store_true")
-    parser.add_argument("--eps",
+    parser.add_argument('-eps', dest='eps',
                         help="Outputs images to Encapsulated PostScript eps instead of a rasterized image "
-                             "like png. This argument is not compatible with --svg or --pdf. "
+                             "like png. This argument is not compatible with -svg or -pdf. "
                              "Note that some browsers may have difficulty displaying this format.",
                         action="store_true")
-    parser.add_argument("--pdf",
+    parser.add_argument('-pdf', dest='pdf',
                         help="In addition to pyplotgen's regular output, this also generates a pdf file from the "
                              "plots.html output. Note that this argument depends on wkhtmltopdf. To install wkhtmltopdf"
                              " please visit this page: "
                              "https://github.com/JazzCore/python-pdfkit/wiki/Installing-wkhtmltopdf",
                         action="store_true")
-    parser.add_argument("--pdf-filesize-limit", help="Adjust pdf filesize so that it is no larger than the given size "
-                                                     "in MB. Note that this argument only works if --pdf is also "
+    parser.add_argument('-pdf_filesize_limit', dest='pdf_filesize_limit', help="Adjust pdf filesize so that it is no larger than the given size "
+                                                     "in MB. Note that this argument only works if -pdf is also "
                                                      "specified",
                         action="store", type=int)
-    parser.add_argument("--cases", help="A set of case name(s) to be ran. Cases not listed here will not be ran. The "
+    parser.add_argument('-cases', dest='cases', help="Case names separated by spaces or commas. Only these cases are plotted. Each "
                                         "casename specified must match the 'name' parameter of the case's definition "
-                                        "Case_definitions.py. E.g. --cases bomex arm wangara",
+                                        "Case_definitions.py. E.g. -cases bomex arm wangara",
                         action="store",
                         default=[], nargs='+')
-    parser.add_argument("--priority-variables", help="Plot only variables with the 'priority' key.",
+    parser.add_argument('-priority_variables', dest='priority_variables', help="Plot only variables with the 'priority' key.",
                         action="store_true")
-    parser.add_argument("--sam-style-budgets", help="Lump together certain CLUBB budget terms so that the relevant "
+    parser.add_argument('-sam_style_budgets', dest='sam_style_budgets', help="Lump together certain CLUBB budget terms so that the relevant "
                                                     "CLUBB budgets look comparable to SAM's budgets.",
                         action="store_true")
     args = parser.parse_args()
+    if args.cases:
+        args.cases = [case.strip() for value in args.cases for case in value.split(",") if case.strip()]
+        if not args.cases:
+            parser.error("-cases must contain at least one case name")
 
     if args.zip:
         logToFileAndConsole("Zip flag detected, but that feature is not yet implemented")
@@ -768,7 +769,7 @@ def __processArguments__():
 
     image_extension = ".png"
     if args.movies is not None and (args.svg or args.eps):
-       raise RuntimeError("The --movies option currently only works with .png images.  Please remove --eps or --svg "
+       raise RuntimeError("The -movies option currently only works with .png images.  Please remove -eps or -svg "
                           "in order to generate animated plots.")
     if args.svg:
         image_extension = ".svg"
@@ -776,26 +777,26 @@ def __processArguments__():
         image_extension = ".eps"
 
     if args.eps and args.svg:
-        raise RuntimeError("The --svg and --eps options are not compatible with one another. Please select either --eps "
-                           "or --svg but not both.")
+        raise RuntimeError("The -svg and -eps options are not compatible with one another. Please select either -eps "
+                           "or -svg but not both.")
 
     if (args.eps or args.svg) and args.pdf:
         raise RuntimeError("SVG and EPS are not supported alongside the pdf parameter. This is due to a limitation of "
-                           "the FPDF engine used. Please remove either the --svg or --eps option (whichever was used) or "
-                           "remove the --pdf option. Note that you can create --svg/--eps output if desired, and then "
+                           "the FPDF engine used. Please remove either the -svg or -eps option (whichever was used) or "
+                           "remove the -pdf option. Note that you can create -svg/-eps output if desired, and then "
                            "rerun pyplotgen without that option to produce pdf output.")
 
     if args.high_quality:
         Style_definitions.IMG_OUTPUT_DPI = Style_definitions.HQ_DPI
 
     if args.time_height_plots and args.movies is not None:
-        raise ValueError('Error: Command line parameter -t and -m cannot be used in conjunction.')
+        raise ValueError('Error: Command line parameters -time_height_plots and -movies cannot be used in conjunction.')
 
     if args.pdf and args.movies is not None:
-        raise ValueError('Error: Command line parameters --pdf and --movies cannot be used in conjunction.')
+        raise ValueError('Error: Command line parameters -pdf and -movies cannot be used in conjunction.')
 
     if args.time_height_plots and args.plot_budgets:
-        raise ValueError('Error: Command line parameters --time-height-plots and -b (--plot-budgets) cannot '
+        raise ValueError('Error: Command line parameters -time_height_plots and -plot_budgets cannot '
                          'be used in conjunction.')
 
     if len(args.cases) > 0:

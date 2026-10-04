@@ -32,7 +32,7 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            ./tests/run_jax_vs_fortran_cases.py -j 8
+            ./tests/run_jax_vs_fortran_cases.py -workers 8
           '''
         }
       }
@@ -44,7 +44,7 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            python3 tests/run_jax_vs_fortran_cases.py -debug 0 -max_iters 5 -j 8 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json
+            python3 tests/run_jax_vs_fortran_cases.py -debug 0 -max_iters 5 -workers 8 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json
           ''' // Bound the varying-flag sweep to five timesteps per case.
         }
       }

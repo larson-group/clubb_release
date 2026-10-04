@@ -1,5 +1,7 @@
 """The JAX/Fortran harness forwards one model option set to both drivers."""
 
+import os
+import subprocess
 import sys
 
 import pytest
@@ -9,7 +11,7 @@ from tests import run_jax_vs_fortran_cases as harness
 
 def test_single_dash_options_forward_without_a_separator(monkeypatch):
     monkeypatch.setattr(sys, "argv", [
-        "run_jax_vs_fortran_cases.py", "-cases", "rico", "-jobs", "2",
+        "run_jax_vs_fortran_cases.py", "-cases", "rico", "-workers", "2",
         "-max_iters", "3", "-dt_main", "60", "-stats", "input/stats/standard_stats.in",
     ])
     args = harness.parse_args()
@@ -20,7 +22,7 @@ def test_single_dash_options_forward_without_a_separator(monkeypatch):
     ]
 
 
-@pytest.mark.parametrize("option", ["-out_dir", "-jax", "-override"])
+@pytest.mark.parametrize("option", ["-output_dir", "-jax", "-override"])
 def test_comparison_owned_model_options_are_rejected(monkeypatch, option):
     monkeypatch.setattr(sys, "argv", ["run_jax_vs_fortran_cases.py", "-cases", "rico", option, "value"])
     with pytest.raises(SystemExit) as exc:
@@ -62,3 +64,25 @@ def test_both_runs_receive_the_same_forwarded_options(tmp_path):
     assert task.run_scm_args == fortran[start:start + len(task.run_scm_args)]
     assert "-jax" in jax and "-jax" not in fortran
     assert jax[-1] == fortran[-1] == "rico"
+
+
+def test_comparison_rejects_empty_explicit_case_list():
+    with pytest.raises(SystemExit) as error:
+        harness.parse_args(["-cases", ","])
+    assert error.value.code == 2
+
+
+def test_mutation_snapshot_can_start_comparison_without_checkout_imports(tmp_path):
+    from tests import run_jax_comparison_mutation_test as mutation_test
+
+    snapshot = tmp_path / "snapshot"
+    mutation_test.make_snapshot(snapshot)
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    result = subprocess.run(
+        [sys.executable, str(snapshot / mutation_test.HARNESS), "-help"],
+        cwd=snapshot, env=environment, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "-workers" in result.stdout

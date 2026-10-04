@@ -768,8 +768,9 @@ def format_target_label(files):
     return "multiple directories"
 
 def main():
-    parser = argparse.ArgumentParser(description="CLUBB Standards Check (Python version)")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Print verbose messages during checks")
+    parser = argparse.ArgumentParser(description="CLUBB Standards Check (Python version)", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    parser.add_argument('-verbose', dest='verbose', action="store_true", help="Print verbose messages during checks")
     parser.add_argument("files", nargs="+", help="Fortran source file(s) to check")
     args = parser.parse_args()
     verbose = args.verbose

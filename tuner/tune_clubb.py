@@ -27,8 +27,9 @@ from tuner.tuning_scheduler import run_scheduler
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse the standalone tuner CLI."""
-    parser = argparse.ArgumentParser(description="Run one CLUBB tuning job from a job directory.")
-    parser.add_argument("--job-dir", required=True, help="Job directory containing request/control/status/results files.")
+    parser = argparse.ArgumentParser(description="Run one CLUBB tuning job from a job directory.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    parser.add_argument('-job_dir', dest='job_dir', required=True, help="Job directory containing request/control/status/results files.")
     return parser.parse_args(argv)
 
 

@@ -68,7 +68,7 @@ def option(name):
 
 
 case_name = sys.argv[1]
-output_dir = Path(option("-out_dir"))
+output_dir = Path(option("-output_dir"))
 columns = int(option("-multicol"))
 output_dir.mkdir(parents=True, exist_ok=True)
 print(f" - using executable: {sys.executable}")
@@ -200,11 +200,11 @@ def test_parse_arguments_forwards_run_scm_options_and_adds_defaults(tmp_path, mo
     options, forwarded = parse_arguments(
         [
             "arm",
-            "-processes",
+            "-process_counts",
             "2,4",
-            "-columns",
+            "-batch_sizes",
             "8,16",
-            "-output",
+            "-output_root",
             "results",
             "-overwrite",
             "-config",
@@ -234,7 +234,7 @@ def test_parse_arguments_forwards_run_scm_options_and_adds_defaults(tmp_path, mo
     ]
 
 
-@pytest.mark.parametrize("option", ["-multicol", "-batch_size", "-out_dir"])
+@pytest.mark.parametrize("option", ["-multicol", "-batch_size", "-output_dir"])
 def test_parse_arguments_rejects_managed_run_scm_options(option):
     with pytest.raises(SystemExit):
         parse_arguments(["arm", option, "2"])

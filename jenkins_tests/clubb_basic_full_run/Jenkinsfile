@@ -17,7 +17,7 @@ pipeline {
                 module load gcc netcdf-fortran
                 ./compile.py -debug
                 ulimit -s 8388608
-                run_scripts/run_scm_all.py -nproc 8
+                run_scripts/run_scm_all.py -workers 8
               '''
             }
           }
@@ -31,7 +31,7 @@ pipeline {
                 module load nvhpc netcdf-fortran
                 ./compile.py -debug
                 ulimit -s 8388608
-                run_scripts/run_scm_all.py -nproc 8
+                run_scripts/run_scm_all.py -workers 8
               '''
             }
           }

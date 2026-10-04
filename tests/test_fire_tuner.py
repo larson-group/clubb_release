@@ -32,7 +32,8 @@ def write_fire_stats(path: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Configure and run FIRE tuning.")
+    parser = argparse.ArgumentParser(description="Configure and run FIRE tuning.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
         "clubb_source",
         nargs="?",
@@ -96,11 +97,11 @@ def main() -> int:
         [
             sys.executable,
             str(run_tuner_path),
-            "--run-type",
+            "-run_type",
             "single",
-            "--run-case",
+            "-run_case",
             "fire",
-            "--stats-tune",
+            "-stats_tune",
             str(fire_stats_path),
         ],
         cwd=str(clubb_source),

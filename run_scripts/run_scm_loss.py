@@ -139,23 +139,24 @@ def run_loss_case(args, case_name, fields, output_dir, run_cmd, run_cwd, run_env
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the in-memory CLUBB loss driver.")
+    parser = argparse.ArgumentParser(description="Run the in-memory CLUBB loss driver.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument("-config", metavar="[NAME|DIR]",
         help=("Tunable config name under input/parameter_and_flag_configs, or a directory containing "
               "tunable_parameters.in, configurable_model_flags.in, and silhs_parameters.in. "
               "Defaults to default."))
-    parser.add_argument("-params", metavar="[FILE]",
-        help="Define the tunable parameters. Used to override params file defined by --config")
+    parser.add_argument('-params_file', dest='params', metavar="[FILE]",
+        help="Define the tunable parameters. Used to override params file selected by -config")
     parser.add_argument("-flags", metavar="[FILE]",
-        help="Model flags file. Used to override flags file defined by --config")
-    parser.add_argument("-out_dir", metavar="[DIR]",
+        help="Model flags file. Used to override flags file selected by -config")
+    parser.add_argument('-output_dir', dest='out_dir', metavar="[DIR]",
         help=(
             "Output directory for generated namelists, logs, and stats. Bare names are "
             "rooted under output/; defaults to output."
         ))
     parser.add_argument("-multicol", metavar="[NUM|SPEC]", type=validate_multicol,
         help=("Generate a multi-column parameter file. "
-              "Use an integer for dup_tweak mode, e.g. -multicol 4, or an hr spec like "
+              "Use an integer for dup_tweak mode, e.g. -multicol 4, or a parameter-grid spec like "
               "-multicol C8/0.2:0.8/4"))
     parser.add_argument("-batch_size", metavar="[NUM]", type=int,
         help=(
@@ -178,16 +179,16 @@ def main():
         help="Run the Python loss-driver front-end instead of the compiled executable.",
     )
     parser.add_argument(
-        "-override",
+        "-override", action="append", metavar="ASSIGNMENTS|JSON",
         help=(
-            "Comma-separated key=value overrides. Values may be column lists when used "
-            "with -multicol, e.g. -override C8=0.8,0.7,C11=1.0,1.1"
+            "Assignments, inline JSON, or a JSON file, with all/case settings. "
+            "Repeat to apply in order; later values win."
         ),
     )
     parser.add_argument(
         "-cases",
         nargs="+",
-        help="Comma-separated case names to run, e.g. -cases atex,arm",
+        help="Case names separated by spaces or commas, e.g. -cases atex arm.",
     )
     parser.add_argument(
         "-fields",

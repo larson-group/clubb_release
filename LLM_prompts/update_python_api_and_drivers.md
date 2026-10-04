@@ -81,9 +81,9 @@ Do the work in this order:
    - Start with `bomex` or `atex` and a small iteration count:
 
      ```bash
-     python run_scripts/run_scm.py -max_iters 5 -out_dir /tmp/clubb_bomex_fortran bomex
-     python run_scripts/run_scm.py -max_iters 5 -python -out_dir /tmp/clubb_bomex_python bomex
-     python run_scripts/run_bindiff_all.py -v 2 -case bomex -t 1e-12 -pt 1e-12 /tmp/clubb_bomex_python /tmp/clubb_bomex_fortran
+     python run_scripts/run_scm.py -max_iters 5 -output_dir /tmp/clubb_bomex_fortran bomex
+     python run_scripts/run_scm.py -max_iters 5 -python -output_dir /tmp/clubb_bomex_python bomex
+     python run_scripts/run_bindiff_all.py -verbose 2 -case bomex -threshold 1e-12 -percent_threshold 1e-12 /tmp/clubb_bomex_python /tmp/clubb_bomex_fortran
      ```
 
    - Keep the iteration count low while debugging so the first diverging field and timestep are easier to isolate.
@@ -92,20 +92,20 @@ Do the work in this order:
    - Use serial jobs first:
 
      ```bash
-     ./tests/run_python_vs_fortran_cases.py --cases bomex --jobs 1
-     ./tests/run_python_vs_fortran_cases.py --cases atex --jobs 1
-     ./tests/run_jax_vs_fortran_cases.py -cases bomex -jobs 1
-     ./tests/run_jax_vs_fortran_cases.py -cases atex -jobs 1
+     ./tests/run_python_vs_fortran_cases.py -cases bomex -workers 1
+     ./tests/run_python_vs_fortran_cases.py -cases atex -workers 1
+     ./tests/run_jax_vs_fortran_cases.py -cases bomex -workers 1
+     ./tests/run_jax_vs_fortran_cases.py -cases atex -workers 1
      ```
 
-   - `-jobs 1` makes JAX comparison logs easier to inspect; the Python comparison script still uses `--jobs 1`.
+   - `-workers 1` makes JAX comparison logs easier to inspect; the Python comparison script still uses `-workers 1`.
 
 8. Final success criterion: run the full comparison suites.
    - The work is complete only when these pass, or any remaining differences are understood, documented, and explicitly accepted:
 
      ```bash
-     ./tests/run_python_vs_fortran_cases.py --jobs 1
-     ./tests/run_jax_vs_fortran_cases.py -jobs 1
+     ./tests/run_python_vs_fortran_cases.py -workers 1
+     ./tests/run_jax_vs_fortran_cases.py -workers 1
      ```
 
 Debugging techniques and common failure modes:
@@ -137,5 +137,5 @@ Expected final state:
 - `./compile.py -python` succeeds.
 - `python -m pytest clubb_python_api/tests` passes.
 - Short `run_scm.py` Python-vs-Fortran bindiffs pass for representative cases.
-- `./tests/run_python_vs_fortran_cases.py --jobs 1` passes.
-- `./tests/run_jax_vs_fortran_cases.py -jobs 1` passes.
+- `./tests/run_python_vs_fortran_cases.py -workers 1` passes.
+- `./tests/run_jax_vs_fortran_cases.py -workers 1` passes.

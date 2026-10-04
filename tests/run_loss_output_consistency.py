@@ -162,11 +162,11 @@ def build_shared_multicol_params(args: argparse.Namespace, out_root: str) -> str
     cmd = [
         sys.executable,
         CREATE_MULTI_COL_PARAMS,
-        "-param_file",
+        "-params_file",
         params_file,
-        "-out_file",
+        "-output_file",
         shared_params,
-        "-hr",
+        "-multicol",
         HR_SPEC,
         "-batch_size",
         str(NUM_COLS),
@@ -227,11 +227,11 @@ def normal_run_command(
         sys.executable,
         RUN_SCM,
         *common_forwarded_options(args),
-        "-params",
+        "-params_file",
         shared_params,
         "-stats",
         DEFAULT_STATS_FILE,
-        "-out_dir",
+        "-output_dir",
         output_dir,
         "-tout",
         str(int(window_length)),
@@ -256,9 +256,9 @@ def loss_run_command(
         sys.executable,
         RUN_SCM_LOSS,
         *common_forwarded_options(args),
-        "-params",
+        "-params_file",
         shared_params,
-        "-out_dir",
+        "-output_dir",
         output_dir,
         "-fields",
         ",".join(fields),
@@ -750,25 +750,29 @@ def parse_args() -> argparse.Namespace:
         description=(
             "Run normal CLUBB and the loss driver for one case, then verify the "
             "loss-driver stats output and printed metrics are consistent."
-        )
+        ),
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument("case_name", help="Case name, e.g. arm or bomex")
     parser.add_argument(
-        "-out_root",
+        '-output_root', dest='out_root',
         default=DEFAULT_OUT_ROOT,
         help="Top-level output directory. Default: output/loss_output_consistency",
+        metavar='DIR',
     )
     parser.add_argument(
         "-config",
         help=(
             "Optional config name or directory forwarded to run_scm.py/run_scm_loss.py. "
             "Its tunable_parameters.in seeds the shared multicol params unless "
-            "-params is also supplied."
+            "-params_file is also supplied."
         ),
     )
     parser.add_argument(
-        "-params",
+        '-params_file', dest='params',
         help="Optional scalar tunable parameters file used to seed the shared params.",
+        metavar='FILE',
     )
     parser.add_argument(
         "-flags",

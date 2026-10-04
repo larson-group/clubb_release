@@ -38,7 +38,7 @@ pipeline {
               sh '''
                 source /etc/profile.d/larson-group.sh
                 module load gcc netcdf-fortran
-                python tests/run_G_unit_tests.py --rev_direction_grid_test
+                python tests/run_G_unit_tests.py -rev_direction_grid_test
               '''
             }
           }

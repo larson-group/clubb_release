@@ -18,7 +18,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from utilities.setup_python_venv import ensure_python_venv
 
-    ensure_python_venv("plot" if {"-p", "--plot-result"} & set(sys.argv[1:]) else "python")
+    ensure_python_venv("plot" if {"-p", "-plot_result"} & set(sys.argv[1:]) else "python")
 
 import netCDF4
 import numpy as np
@@ -33,20 +33,20 @@ RESTART_DIR = REPO_ROOT / "restart"
 
 
 def parse_args() -> tuple[argparse.Namespace, list[str]]:
-    parser = argparse.ArgumentParser(description="Run CLUBB timestep convergence test.")
+    parser = argparse.ArgumentParser(description="Run CLUBB timestep convergence test.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
-        "-p",
-        "--plot-result",
+        '-plot_result', dest='plot_result',
         action="store_true",
         help="Generate convergence and final-profile comparison plots in output/.",
     )
     parser.add_argument(
-        "--case",
+        '-case', dest='case',
         default="bomex",
         help="Case name to run (default: bomex).",
     )
     parser.add_argument(
-        "--var",
+        '-var', dest='var',
         default="rcm",
         help="Variable to test from <case>_stats.nc (default: rcm).",
     )
@@ -119,7 +119,7 @@ def run_scm(
         sys.executable,
         str(RUN_SCM_PY),
         *run_scm_args,
-        "-out_dir",
+        "-output_dir",
         str(OUTPUT_DIR),
         "-dt_main",
         str(dt),

@@ -91,7 +91,7 @@ MOVIE_XAXIS_SCALE_FACTOR = 0.05 # THIS VALUE SHOULD BE << 1
 FRAMES_PER_SECOND = 10 # FOR ANIMATIONS
 
 # Image output configuration
-HQ_DPI = 100 # This value overwrites the default IMG_OUTPUT_DPI when --high-quality is passed in via command line
+HQ_DPI = 100 # This value overwrites the default IMG_OUTPUT_DPI when -high_quality is passed in via command line
 IMG_OUTPUT_DPI = 45 # Recommended default value: 45
 FIGSIZE = (10,6) # The x,y proportions (in inches) to pass into matplotlib. It's not recommended to change this.
 

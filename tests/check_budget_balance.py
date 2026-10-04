@@ -37,8 +37,10 @@ def run_cmd(cmd, *, cwd=None, env=None):
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Run SCM cases and then run postprocessing/check_budgets_balance/checkBudget.py."
+        description="Run SCM cases and then run postprocessing/check_budgets_balance/checkBudget.py.",
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
         "clubb_source",
         nargs="?",

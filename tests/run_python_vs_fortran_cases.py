@@ -45,6 +45,11 @@ SUMMARY_FILENAME = "case_compare_summary.json"
 FINAL_BINDIFF_LOG_FILENAME = "final_bindiff.log"
 HR_SPEC = "C8/0.2:0.8/4" # used to run multicol mode by varying C8
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tuner.system_defaults import default_max_workers as default_workers
+from utilities.create_case_namelist import parse_forwarded_args
+from run_scripts.run_scm_all import positive_int, split_values
+
 @dataclass
 class CaseResult:
     case: str
@@ -96,6 +101,7 @@ def _run_case(
     py_out: Path,
     f90_out: Path,
     results_root: Path,
+    run_scm_args: tuple[str, ...] = (),
 ) -> CaseResult:
     run_scm = repo_root / "run_scripts" / "run_scm.py"
     run_bindiff = repo_root / "run_scripts" / "run_bindiff_all.py"
@@ -110,8 +116,9 @@ def _run_case(
     if max_iters is not None:
         common_args += ["-max_iters", str(max_iters)]
 
-    py_cmd = [sys.executable, *common_args, "-python", "-out_dir", str(py_out), case]
-    f90_cmd = [sys.executable, *common_args, "-out_dir", str(f90_out), case]
+    common_args.extend(run_scm_args)
+    py_cmd = [sys.executable, *common_args, "-python", "-output_dir", str(py_out), case]
+    f90_cmd = [sys.executable, *common_args, "-output_dir", str(f90_out), case]
 
     py_log = results_root / f"{case}_run_python.log"
     f90_log = results_root / f"{case}_run_fortran.log"
@@ -157,11 +164,11 @@ def _run_case(
     diff_cmd = [
         sys.executable,
         str(run_bindiff),
-        "-v", "2",
+        "-verbose", "2",
         "-case", case,
-        "-t", str(bindiff_threshold),
-        "-pt", str(bindiff_threshold),
-        "--result-json", str(diff_report),
+        "-threshold", str(bindiff_threshold),
+        "-percent_threshold", str(bindiff_threshold),
+        "-result_json", str(diff_report),
         str(py_out),
         str(f90_out),
     ]
@@ -195,6 +202,7 @@ def _worker(task: tuple) -> CaseResult:
         py_output_root,
         f90_output_root,
         results_root,
+        run_scm_args,
     ) = task
 
     return _run_case(
@@ -206,59 +214,74 @@ def _worker(task: tuple) -> CaseResult:
         py_out=Path(py_output_root),
         f90_out=Path(f90_output_root),
         results_root=Path(results_root),
+        run_scm_args=run_scm_args,
     )
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run SCM cases with both Fortran and Python drivers, then compare "
             "outputs using run_bindiff_all.py."
-        )
+        ),
+        add_help=False, allow_abbrev=False
+    )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    parser.add_argument(
+        '-workers', dest='jobs',
+        type=positive_int,
+        default=default_workers(),
+        help="Maximum concurrent case pairs (default: half the available logical CPUs).",
+        metavar='N',
     )
     parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=8,
-        help=f"Number of parallel case workers.",
-    )
-    parser.add_argument(
-        "--stats",
+        '-stats', dest='stats',
         default="input/stats/all_stats.in",
         help="Stats file passed to run_scm.py.",
     )
     parser.add_argument(
-        "--max-iters",
+        '-max_iters', dest='max_iters',
         type=int,
         default=None,
         help="Override max_iters for all cases (default: use per-case values from DEFAULT_CASES).",
     )
     parser.add_argument(
-        "--bindiff-verbose",
+        '-bindiff_verbose', dest='bindiff_verbose',
         type=int,
         default=2,
         choices=[0, 1, 2],
         help="Verbosity level for the final combined run_bindiff_all.py run.",
     )
     parser.add_argument(
-        "--bindiff-threshold",
+        '-bindiff_threshold', dest='bindiff_threshold',
         type=float,
         default=1.0e-7,
-        help="Difference threshold passed to run_bindiff_all.py via -t.",
+        help="Difference threshold passed to run_bindiff_all.py via -threshold.",
     )
     parser.add_argument(
-        "--keep-existing",
+        '-keep_existing', dest='keep_existing',
         action="store_true",
         help="Do not delete existing output dirs before rerun.",
     )
     parser.add_argument(
-        "--cases",
+        '-cases', dest='cases',
         nargs="+",
         default=None,
         help="Case names to run (default is the curated no-micro/no-BUGS/no-sponge/no-SILHS set).",
     )
-    return parser.parse_args()
+    args, forwarded = parse_forwarded_args(parser, argv)
+    reserved = {"-jax", "-python", "-exe", "-driver_test", "-gdb",
+                "-output_dir", "-multicol", "-override", "-install_dir"}
+    for argument in forwarded:
+        if argument.split("=", 1)[0] in reserved:
+            parser.error(f"{argument} is controlled by the comparison harness")
+    if args.max_iters is not None and args.max_iters < 1:
+        parser.error("-max_iters must be positive")
+    args.cases = split_values(args.cases) if args.cases is not None else None
+    if args.cases == []:
+        parser.error("-cases must contain at least one case name")
+    args.run_scm_args = tuple(forwarded)
+    return args
 
 
 def main() -> int:
@@ -303,6 +326,7 @@ def main() -> int:
             str(py_output_root),
             str(f90_output_root),
             str(results_root),
+            args.run_scm_args,
         )
         for case in cases
     ]
@@ -359,10 +383,10 @@ def main() -> int:
     final_diff_cmd = [
         sys.executable,
         str(run_bindiff),
-        "-v", str(args.bindiff_verbose),
-        "-t", str(args.bindiff_threshold),
-        "-pt", str(args.bindiff_threshold),
-        "--result-json", str(final_bindiff_report),
+        "-verbose", str(args.bindiff_verbose),
+        "-threshold", str(args.bindiff_threshold),
+        "-percent_threshold", str(args.bindiff_threshold),
+        "-result_json", str(final_bindiff_report),
         str(py_output_root),
         str(f90_output_root),
     ]

@@ -145,7 +145,7 @@ python api_commitment_test.py -cpu CLUBB_core CLUBB_core > $clubbCoreTxt
 echo ""
 
 echo "###Testing SAM's API Commitment###"
-python api_commitment_test.py -cpu CLUBB_core $samDir --exclude-dir CLUBB SILHS > $samTxt
+python api_commitment_test.py -cpu CLUBB_core $samDir -exclude_dir CLUBB SILHS > $samTxt
 # $? is a builtin bash variable storing the exit code of the last command
 # Here, this is the same value that is passed to sys.exit() within the api_commitment_test.py script
 samExit=$?
@@ -154,7 +154,7 @@ cat $samTxt
 echo ""
 
 echo "###Testing CAM's API Commitment###"
-python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir spcam cime clubb silhs > $camTxt
+python api_commitment_test.py -cpu CLUBB_core $camDir -exclude_dir spcam cime clubb silhs > $camTxt
 # $? is a builtin bash variable storing the exit code of the last command
 # Here, this is the same value that is passed to sys.exit() within the api_commitment_test.py script
 camExit=$?
@@ -163,7 +163,7 @@ cat $camTxt
 echo ""
 
 echo "###Testing WRF's API Commitment###"
-python api_commitment_test.py -cpu CLUBB_core $wrfDir/WRF --exclude-dir clubb silhs > $wrfTxt
+python api_commitment_test.py -cpu CLUBB_core $wrfDir/WRF -exclude_dir clubb silhs > $wrfTxt
 # $? is a builtin bash variable storing the exit code of the last command
 # Here, this is the same value that is passed to sys.exit() within the api_commitment_test.py script
 wrfExit=$?

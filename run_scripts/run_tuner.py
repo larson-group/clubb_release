@@ -96,11 +96,11 @@ def run_case_with_run_scm(
     cmd = [
         sys.executable,
         str(RUN_SCM),
-        "-params",
+        "-params_file",
         str(params_file),
         "-flags",
         str(flags_file),
-        "-silhs_params",
+        "-silhs_params_file",
         str(silhs_params_file),
         "-stats",
         str(stats_file),
@@ -142,29 +142,30 @@ def copy_nightly_artifacts(log_path: Path) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run CLUBB tuner with Python tooling.")
-    parser.add_argument("-i", "--initial-output", action="store_true", help="Save pre-tuning outputs.")
-    parser.add_argument("-n", "--nightly", action="store_true", help="Enable nightly mode behavior.")
+    parser = argparse.ArgumentParser(description="Run CLUBB tuner with Python tooling.", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    parser.add_argument('-initial_output', dest='initial_output', action="store_true", help="Save pre-tuning outputs.")
+    parser.add_argument('-nightly', dest='nightly', action="store_true", help="Enable nightly mode behavior.")
     parser.add_argument(
-        "--run-type",
+        '-run_type', dest='run_type',
         choices=("single", "multiple"),
         default="single",
         help="Tuning run type.",
     )
-    parser.add_argument("--run-case", default="fire", help="Case name used for tuner input selection.")
+    parser.add_argument('-run_case', dest='run_case', default="fire", help="Case name used for tuner input selection.")
     parser.add_argument(
-        "--model-mult",
+        '-model_mult', dest='model_mult',
         nargs="+",
         default=["fire", "atex"],
         help="Case names for multiple-case tuning.",
     )
     parser.add_argument(
-        "--stats-tune",
+        '-stats_tune', dest='stats_tune',
         default=str(STATS_DIR / "tuning_stats.in"),
         help="Stats file used in *_hoc.in for tuner.",
     )
     parser.add_argument(
-        "--stats-opt",
+        '-stats_opt', dest='stats_opt',
         default=str(STATS_DIR / "standard_stats.in"),
         help="Stats file used for standalone output runs.",
     )
@@ -201,7 +202,7 @@ def main() -> int:
 
     cases_for_runs = [args.run_case] if args.run_type == "single" else args.model_mult
     if args.run_type == "multiple" and not args.model_mult:
-        print("No cases specified for --model-mult")
+        print("No cases specified for -model_mult")
         return 1
 
     model_files: dict[str, Path] = {}

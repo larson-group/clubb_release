@@ -158,7 +158,8 @@ def ensure_python_venv(profile: str = "python") -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument("profile", nargs="?", choices=("python", "dash", "plot"), default="python")
     args = parser.parse_args()
     prepare_environment(args.profile)

@@ -14,22 +14,22 @@
 # Runs: generate parameters once, then reverse their arrays exactly to avoid
 # resampling roundoff. Retain parameters, build/params/forward/reverse logs and
 # forward/reverse output in a fresh run_* under output/column_mirror_test (or
-# -out_dir). Stop on build/run failure and report the log. Two positional output
+# -output_root). Stop on build/run failure and report the log. Two positional output
 # directories select comparison only, without building or running the model.
 #
 # Comparison: require matching, nonempty *_stats.nc sets with >=2 columns.
 # Compare numeric time/col fields after reversal; require matching names,
 # dimensions, shapes and masks. Reject unmasked NaN/Inf and files without valid
 # data; skip fully masked fields. Each column pair's mean absolute difference
-# must be <= -t/--tol (default 0); diagnostics also report maximum differences.
-# Print stages, cases, parameter order and per-case PASS/FAIL; -v lists fields.
+# must be <= -tolerance (default 0); diagnostics also report maximum differences.
+# Print stages, cases, parameter order and per-case PASS/FAIL; -verbose lists fields.
 # Failures return nonzero. Long parameter lists are abbreviated on screen.
 #
 # Debugging: failures save differences/comparison.log and aligned copies of
 # failed CBA files in differences/reverse_aligned (temporary storage when
 # comparing saved output). Copies reverse col-dependent data and parameters,
 # preserving raw values/masks and leaving the col coordinate and originals
-# unchanged. The printed run_bindiff_all.py -v 2 command uses these copies;
+# unchanged. The printed run_bindiff_all.py -verbose 2 command uses these copies;
 # comparison.log also covers invalid/missing data that bindiff cannot diagnose.
 # Diagnostic indices refer to concatenated ABC CBA: col0 vs col5 compares A to A.
 # Check incorrect column indexing or state carried between columns; bugs in
@@ -62,11 +62,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 BUILD_DIR = REPO_ROOT / "build" / "column_mirror"
 sys.path.insert(0, str(REPO_ROOT))
 
-from utilities.create_case_namelist import resolve_tunable_config_dir
+from utilities.create_case_namelist import resolve_tunable_config_dir, parse_forwarded_args
 from utilities.create_multi_col_params import parse_hypergrid_range_spec
 from utilities.output_paths import resolve_output_dir
-from run_scripts.run_scm_all import STANDARD_CASES
+from run_scripts.run_scm_all import STANDARD_CASES, positive_int, split_values
 
+
+from tuner.system_defaults import default_max_workers as default_workers
 
 def _is_numeric_netcdf_var(var):
     return np.issubdtype(var.dtype, np.number)
@@ -201,7 +203,7 @@ def report_differences(forward_directory, reverse_directory, failed_names, detai
         print("  Inspect differences (CBA copies aligned to ABC):", flush=True)
         print("  " + shlex.join([
             sys.executable, str(REPO_ROOT / "run_scripts/run_bindiff_all.py"),
-            str(forward_directory.resolve()), str(aligned.resolve()), "-v", "2",
+            str(forward_directory.resolve()), str(aligned.resolve()), "-verbose", "2",
         ]), flush=True)
 
 
@@ -249,7 +251,7 @@ def generate_parameter_files(run_dir, spec, base_params):
     with log_path.open("w") as log:
         result = subprocess.run([
             sys.executable, str(REPO_ROOT / "utilities/create_multi_col_params.py"),
-            "-hr", spec, "-param_file", str(base_params), "-out_file", str(forward),
+            "-multicol", spec, "-params_file", str(base_params), "-output_file", str(forward),
         ], stdout=log, stderr=subprocess.STDOUT)
     if result.returncode:
         raise RuntimeError(f"Parameter generation failed; see {log_path}")
@@ -296,73 +298,52 @@ def parse_args(argv=None):
         description="Build and run a column-order independence test, or compare two saved output directories.",
         epilog="The default gfortran build is refreshed incrementally. Extra run_scm.py options are forwarded (-- is optional); -exe PATH skips compilation.",
         allow_abbrev=False,
+        add_help=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument("directories", nargs="*", metavar="DIRECTORY",
                         help="Two saved output directories to compare without running the model")
     cases = parser.add_mutually_exclusive_group()
     cases.add_argument("-case", help="Run one case (default: run_scm_all.py standard case set)")
-    cases.add_argument("-cases", help="Comma-separated case list, passed to run_scm_all.py")
-    columns = parser.add_mutually_exclusive_group()
-    columns.add_argument("-n", type=int, help="Number of columns with C8 evenly spaced from 0.2 to 0.8 (default: 3)")
-    columns.add_argument("-hr", help="Parameter range specification accepted by create_multi_col_params.py")
-    parser.add_argument("-params", help="Base single-column parameter file (default: from -config)")
+    cases.add_argument("-cases", nargs="+", help="Case names separated by spaces or commas.")
+    parser.add_argument("-multicol", default="3", metavar="NUM|SPEC",
+                        help="Column count for C8 in 0.2:0.8, or an explicit parameter grid (default: 3).")
+    parser.add_argument('-params_file', dest='params', help="Base single-column parameter file (default: from -config)", metavar='FILE')
     parser.add_argument("-config", help="Tunable configuration name or directory (default: default)")
-    parser.add_argument("-out_dir", default="column_mirror_test",
-                        help="Output parent; a fresh run directory is retained inside it")
-    parser.add_argument("-nproc", type=int, default=2, help="Concurrent cases for a case list (default: 2)")
+    parser.add_argument('-output_root', dest='out_dir', default="column_mirror_test",
+                        help="Output parent; a fresh run directory is retained inside it", metavar='DIR')
+    parser.add_argument('-workers', dest='nproc', type=positive_int, default=default_workers(), help="Concurrent cases for a case list (default: half the available logical CPUs)", metavar='N')
     parser.add_argument("-max_iters", type=int, default=200, help="Timesteps per run (default: 200)")
     parser.add_argument("-override", help="Namelist overrides for both runs; straight SILHS sampling is always enabled")
-    parser.add_argument("-t", "--tol", type=float, default=0.0,
+    parser.add_argument('-tolerance', dest='tol', type=float, default=0.0,
                         help="Average absolute difference tolerance (default: 0)")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Print every checked variable")
-    # Partition before parsing: parse_known_args would mistake -tout for -t,
-    # -nzmax for -n, and forwarded option values for positional directories.
-    test_args, extra = [], []
-    index = 0
-    while index < len(argv):
-        token = argv[index]
-        option = token.split("=", 1)[0]
-        action = parser._option_string_actions.get(option)
-        # Preserve argparse's compact numeric forms, e.g. -n3 and -t1e-8.
-        compact = False
-        if action is None and token[:2] in {"-n", "-t"} and len(token) > 2:
-            candidate = parser._option_string_actions[token[:2]]
-            try:
-                candidate.type(token[2:])
-            except ValueError:
-                pass
-            else:
-                action, compact = candidate, True
-        if action is not None:
-            test_args.append(token)
-            if action.nargs != 0 and "=" not in token and not compact and index + 1 < len(argv):
-                index += 1
-                test_args.append(argv[index])
-        elif token.startswith("-"):
-            extra.append(token)
-            while index + 1 < len(argv) and not argv[index + 1].startswith("-"):
-                index += 1
-                extra.append(argv[index])
-        else:
-            test_args.append(token)
-        index += 1
+    parser.add_argument('-verbose', dest='verbose', action="store_true", help="Print every checked variable")
+    args, extra = parse_forwarded_args(parser, argv)
     forwarded = extra + forwarded
-    args = parser.parse_args(test_args)
+    if args.cases is not None:
+        args.cases = ",".join(split_values(args.cases))
+        if not args.cases:
+            parser.error("-cases must contain at least one case name")
     if not np.isfinite(args.tol) or args.tol < 0:
         parser.error("tolerance must be finite and nonnegative")
     if args.directories:
         if len(args.directories) != 2:
             parser.error("provide two saved directories, or use -case to run a case")
-        comparison_options = {"-t", "--tol", "-v", "--verbose"}
+        comparison_options = {"-tolerance", "-verbose"}
         if forwarded or any(token.startswith("-") and token.split("=", 1)[0] not in comparison_options
                             for token in argv):
-            parser.error("saved-directory comparison accepts only -t and -v")
+            parser.error("saved-directory comparison accepts only -tolerance and -verbose")
         return args, forwarded
-    if args.n is not None and args.n < 2:
-        parser.error("-n must be at least 2")
     if args.nproc < 1 or args.max_iters < 1:
-        parser.error("-nproc and -max_iters must be positive")
-    args.spec = args.hr or f"C8/0.2:0.8/{args.n or 3}"
+        parser.error("-workers and -max_iters must be positive")
+    try:
+        count = int(args.multicol)
+    except ValueError:
+        args.spec = args.multicol
+    else:
+        if count < 2:
+            parser.error("-multicol must generate at least two columns")
+        args.spec = f"C8/0.2:0.8/{count}"
     try:
         specs = parse_hypergrid_range_spec(args.spec)
     except ValueError as exc:
@@ -371,8 +352,8 @@ def parse_args(argv=None):
         parser.error("parameter range endpoints must be finite")
     if not any(s["npoints"] > 1 and s["min"] != s["max"] for s in specs):
         parser.error("the test needs at least two distinct parameter columns")
-    reserved = {"-params", "-config", "-out_dir", "-multicol", "-batch_size", "-override",
-                "-max_iters", "-nproc", "-cases", "-all", "-min_cases", "-short_cases", "-priority_cases"}
+    reserved = {"-params_file", "-config", "-output_dir", "-multicol", "-batch_size", "-override",
+                "-max_iters", "-workers", "-cases", "-all", "-min_cases", "-short_cases", "-priority_cases"}
     if any(token.split("=", 1)[0] in reserved for token in forwarded):
         parser.error("parameter generation, output paths, overrides, and case selection must use test-runner options before --")
     return args, forwarded
@@ -445,16 +426,16 @@ def run_test(args, forwarded):
         print(f"[{stage}/4] {label} run", flush=True)
         print(textwrap.fill("Cases: " + ", ".join(case.strip() for case in cases),
                             width=100, initial_indent="  ", subsequent_indent="    "), flush=True)
-        print(f"  Grid: -hr {args.spec}" + (" (columns reversed)" if order == "reverse" else ""), flush=True)
+        print(f"  Grid: -multicol {args.spec}" + (" (columns reversed)" if order == "reverse" else ""), flush=True)
         print_run_parameters(param_file, args.spec)
         command = [sys.executable, str(REPO_ROOT / "run_scripts" / script), *forwarded,
-                   "-config", str(config_dir), "-params", str(param_file),
-                   "-out_dir", str(run_dir / order), "-max_iters", str(args.max_iters),
+                   "-config", str(config_dir), "-params_file", str(param_file),
+                   "-output_dir", str(run_dir / order), "-max_iters", str(args.max_iters),
                    "-override", override]
         if args.case:
             command.append(args.case)
         else:
-            command += ["-nproc", str(args.nproc)]
+            command += ["-workers", str(args.nproc)]
             if args.cases:
                 command += ["-cases", args.cases]
         log_path = run_dir / f"{order}.log"

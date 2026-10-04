@@ -121,7 +121,8 @@ def main(clubbCoreDir, clubbStandaloneTxtFile, clubbCoreTxtFile, samTxtFile, cam
 
 if __name__ == "__main__":
     # parse the command line arguments
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter, add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument('clubbCoreDir', help="CLUBB_core directory")
     parser.add_argument('clubbStandaloneTxtFile', help="Text file output for CLUBB api_commitment_test")
     parser.add_argument('clubbCoreTxtFile', help="Text file output for CLUBB_core api_commitment_test")

@@ -36,22 +36,22 @@ def fail(message: str) -> None:
 
 
 def usage() -> str:
-    return """Usage: clubb_jax/run_jax.py [--profile=cpu|gpu] [namelist-path] [driver-args...]
-       clubb_jax/run_jax.py [--profile=cpu|gpu] --init_env
-       clubb_jax/run_jax.py [--profile=cpu|gpu] --info[=json]
+    return """Usage: clubb_jax/run_jax.py [-profile=cpu|gpu] [namelist-path] [driver-args...]
+       clubb_jax/run_jax.py [-profile=cpu|gpu] -init_env
+       clubb_jax/run_jax.py [-profile=cpu|gpu] -info[=json]
 
 Creates or updates the JAX environment, then runs the CLUBB-JAX standalone.
 Missing copies of uv and a supported Python are downloaded automatically.
 
 Options:
-  --options=VALUE        Parse the value forwarded by run_scm.py -jax=VALUE:
+  -options=VALUE        Parse the value forwarded by run_scm.py -jax=VALUE:
                          cpu or gpu, optionally followed by ,xla_prealloc
-  --profile=cpu|gpu      Select CPU or the host-native GPU backend
-  --accelerator=VALUE    Select an explicit backend: cpu, cuda13, or metal
-  --xla-prealloc         Enable CUDA memory preallocation (CUDA only)
-  --init_env             Prepare the environment without running a case
-  --info[=json]          Inspect hardware and runtime readiness without setup
-  --launcher-help        Show this help
+  -profile=cpu|gpu      Select CPU or the host-native GPU backend
+  -accelerator=VALUE    Select an explicit backend: cpu, cuda13, or metal
+  -xla_prealloc         Enable CUDA memory preallocation (CUDA only)
+  -init_env             Prepare the environment without running a case
+  -info[=json]          Inspect hardware and runtime readiness without setup
+  -launcher_help        Show this help
 
 Environment:
   CLUBB_JAX_ACCELERATOR  Backend used when no option is given: cpu, cuda13, metal
@@ -64,7 +64,7 @@ Environment:
 
 def _split_options(value: str) -> tuple[str, bool]:
     if not value:
-        fail("--options requires a profile; supported profiles are cpu and gpu")
+        fail("-options requires a profile; supported profiles are cpu and gpu")
     if "\n" in value or "\r" in value:
         fail("JAX options must be on one line")
     pieces = value.split(",")
@@ -96,11 +96,11 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
     index = 0
     while index < len(argv):
         token = argv[index]
-        if token.startswith("--options="):
+        if token.startswith("-options="):
             if options_seen:
-                fail("--options may be specified only once")
+                fail("-options may be specified only once")
             if values["profile"] is not None or values["accelerator"] is not None:
-                fail("--options cannot be combined with --profile or --accelerator")
+                fail("-options cannot be combined with -profile or -accelerator")
             options_seen = True
             profile, attached_prealloc = _split_options(token.split("=", 1)[1])
             values["profile"] = profile
@@ -109,47 +109,47 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
                     fail("xla_prealloc may be specified only once")
                 values["xla_prealloc"] = True
                 prealloc_seen = True
-        elif token.startswith("--profile="):
+        elif token.startswith("-profile="):
             if options_seen or values["profile"] is not None:
-                fail("--profile may be specified only once and cannot follow --options")
+                fail("-profile may be specified only once and cannot follow -options")
             if values["accelerator"] is not None:
-                fail("--profile and --accelerator cannot be combined")
+                fail("-profile and -accelerator cannot be combined")
             profile = token.split("=", 1)[1]
             if not profile:
-                fail("--profile requires cpu or gpu")
+                fail("-profile requires cpu or gpu")
             values["profile"] = profile.lower()
-        elif token.startswith("--accelerator="):
+        elif token.startswith("-accelerator="):
             if options_seen or values["profile"] is not None:
-                fail("--accelerator cannot be combined with --options or --profile")
+                fail("-accelerator cannot be combined with -options or -profile")
             if values["accelerator"] is not None:
-                fail("--accelerator may be specified only once")
+                fail("-accelerator may be specified only once")
             accelerator = token.split("=", 1)[1]
             if not accelerator:
-                fail("--accelerator requires cpu, cuda13, or metal")
+                fail("-accelerator requires cpu, cuda13, or metal")
             values["accelerator"] = accelerator.lower()
-        elif token == "--xla-prealloc":
+        elif token == "-xla_prealloc":
             if prealloc_seen:
                 fail("xla_prealloc may be specified only once")
             values["xla_prealloc"] = True
             prealloc_seen = True
-        elif token == "--init_env":
+        elif token == "-init_env":
             if values["init_env"]:
-                fail("--init_env may be specified only once")
+                fail("-init_env may be specified only once")
             values["init_env"] = True
-        elif token in ("--info", "--info=json"):
+        elif token in ("-info", "-info=json"):
             if values["info_format"] is not None:
-                fail("--info may be specified only once")
+                fail("-info may be specified only once")
             values["info_format"] = "json" if token.endswith("=json") else "human"
-        elif token.startswith("--info="):
-            fail("--info supports only the optional '=json' format")
-        elif token == "--launcher-help":
+        elif token.startswith("-info="):
+            fail("-info supports only the optional '=json' format")
+        elif token == "-launcher_help":
             values["help"] = True
         else:
             break
         index += 1
 
     if values["init_env"] and values["info_format"] is not None:
-        fail("--init_env and --info cannot be used together")
+        fail("-init_env and -info cannot be used together")
     return values, list(argv[index:])
 
 
@@ -320,23 +320,23 @@ def _run_inspection(
     command = [
         str(info_python),
         str(RUNTIME_INFO),
-        "--profile",
+        "-profile",
         profile,
-        "--accelerator",
+        "-accelerator",
         accelerator,
-        "--requirements",
+        "-requirements",
         str(requirements),
-        "--venv",
+        "-venv",
         str(venv),
-        "--required-jax",
+        "-required_jax",
         required_jax,
-        "--python-version",
+        "-python_version",
         planned_python,
-        "--format",
+        "-format",
         info_format,
     ]
     if require_selectable:
-        command.append("--require-selectable")
+        command.append("-require_selectable")
     return subprocess.run(command, env=env).returncode
 
 
@@ -348,7 +348,7 @@ def _normalize_cuda_visibility(env: dict[str, str], venv: Path) -> None:
         [
             str(info_python),
             str(RUNTIME_INFO),
-            "--resolve-visible-devices",
+            "-resolve_visible_devices",
             env["CUDA_VISIBLE_DEVICES"],
         ],
         env=env,
@@ -490,7 +490,7 @@ def ensure_environment() -> None:
     marker = "_CLUBB_JAX_ENVIRONMENT_PYTHON"
     if os.environ.get(marker) == sys.executable:
         return
-    result = subprocess.run([str(SCRIPT_DIR / "run_jax.py"), "--init_env"])
+    result = subprocess.run([str(SCRIPT_DIR / "run_jax.py"), "-init_env"])
     if result.returncode:
         raise SystemExit(result.returncode)
 
@@ -526,7 +526,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     env["JAX_PLATFORMS"] = jax_platform
     xla_prealloc = bool(values["xla_prealloc"])
     if xla_prealloc and accelerator != "cuda13":
-        fail("--xla-prealloc is a CUDA-only option")
+        fail("-xla_prealloc is a CUDA-only option")
     if accelerator == "cuda13":
         env["XLA_PYTHON_CLIENT_PREALLOCATE"] = (
             "true" if xla_prealloc else env.get("XLA_PYTHON_CLIENT_PREALLOCATE", "false")

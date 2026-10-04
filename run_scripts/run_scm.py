@@ -14,7 +14,7 @@ CLUBB_ROOT = os.path.join(RUN_SCRIPTS, "..")
 if CLUBB_ROOT not in sys.path:
     sys.path.insert(0, CLUBB_ROOT)
 
-from utilities.create_case_namelist import validate_multicol  # noqa: E402
+from utilities.create_case_namelist import add_namelist_arguments  # noqa: E402
 from utilities.output_paths import resolve_output_dir  # noqa: E402
 
 CREATE_CASE_NAMELIST = os.path.join(CLUBB_ROOT, "utilities", "create_case_namelist.py")
@@ -171,7 +171,7 @@ def choose_run_command(args):
         if args.jax_options is not None:
             # Keep profile/modifier parsing in the launcher so CLI and Dash
             # share its validation and environment setup rules.
-            run_cmd.append(f"--options={args.jax_options}")
+            run_cmd.append(f"-options={args.jax_options}")
     else:
         install_dir, install_source = choose_install_dir(args)
         show_install_dir = True
@@ -205,13 +205,13 @@ def create_case_namelist(args, output_dir):
     if not os.path.isfile(CREATE_CASE_NAMELIST):
         sys.exit(f"{CREATE_CASE_NAMELIST} not found")
 
-    cmd = [sys.executable, CREATE_CASE_NAMELIST, "-out_dir", output_dir]
+    cmd = [sys.executable, CREATE_CASE_NAMELIST, "-output_dir", output_dir]
 
     forwarded_opts = (
         ("-config", args.config),
-        ("-params", args.params),
+        ("-params_file", args.params),
         ("-flags", args.flags),
-        ("-silhs_params", args.silhs_params),
+        ("-silhs_params_file", args.silhs_params),
         ("-stats", args.stats),
         ("-multicol", args.multicol),
         ("-batch_size", args.batch_size),
@@ -247,39 +247,12 @@ def create_case_namelist(args, output_dir):
 
 def main():
 
-    parser = argparse.ArgumentParser(description="Run the standalone CLUBB model")
+    parser = argparse.ArgumentParser(description="Run the standalone CLUBB model", add_help=False, allow_abbrev=False)
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
 
     run_group = parser.add_argument_group("Run options handled by run_scm.py")
-    namelist_group = parser.add_argument_group("Namelist options passed to create_case_namelist.py")
-
-    namelist_group.add_argument("-config", metavar="[NAME|DIR]",
-        help=("Tunable config name under input/parameter_and_flag_configs, or a directory containing:\n"
-              "  tunable_parameters.in\n"
-              "  configurable_model_flags.in\n"
-              "  silhs_parameters.in\n"
-              "Defaults to default if not given."))
-
-    namelist_group.add_argument("-params", metavar="[FILE]",
-        help=("Define the tunable parameters.\n"
-              "Used to override params file defined by --config"))
-    namelist_group.add_argument("-flags", metavar="[FILE]",
-        help=("Model flags file.\n"
-              "Used to override flags file defined by --config"))
-    namelist_group.add_argument("-silhs_params", metavar="[FILE]",
-        help=("SILHS parameters file.\n"
-              "Used to override silhs_params file defined by --config"))
-
-    namelist_group.add_argument("-zt_grid", metavar="[FILE]",
-        help="Specify a zt grid file from input/grid.\nDefault: unused")
-    namelist_group.add_argument("-zm_grid", metavar="[FILE]",
-        help="Specify a zm grid file from input/grid.\nDefault: unused")
-    namelist_group.add_argument("-nzmax", metavar="[NUM]", type=int,
-        help="Max number of levels (required if specifying a zt/zm grid)")
-
-    namelist_group.add_argument("-stats", metavar="[FILE]",
-        help=("Stats file defining fields to output.\n"
-              "Default: input/stats/standard_stats.in.\n"
-              "Use 'none' to disable stats output."))
+    namelist_group = parser.add_argument_group("Model settings passed to create_case_namelist.py")
+    add_namelist_arguments(namelist_group)
 
     run_group.add_argument("-exe", metavar="[EXECUTABLE]",
         help="CLUBB executable to use. Overrides -install_dir and selected/latest install dirs.")
@@ -295,50 +268,13 @@ def main():
 
     run_group.add_argument("-jax", action="store_true",
         help=("Run through the JAX wrapper. An optional attached -jax=VALUE is "
-              "forwarded unchanged; see clubb_jax/run_jax.py --launcher-help."))
+              "forwarded unchanged; see clubb_jax/run_jax.py -launcher_help."))
 
     run_group.add_argument(
         "-gdb",
         action="store_true",
         help="Launch the selected compiled executable with gdb."
     )
-
-    run_group.add_argument("-out_dir", metavar="[DIR]",
-        help=(
-            "Output directory for results. Bare names are rooted under output/ "
-            "(e.g. -out_dir test1 writes output/test1). Existing files with the "
-            "same names are overwritten. Default: output"
-        ))
-
-    namelist_group.add_argument("-debug", metavar="[NUM]",
-        help="Debug level (0–3) that controls CLUBB's runtime checks (0 is no checks).\nDefault specified in model file.")
-    namelist_group.add_argument("-max_iters", metavar="[NUM]", type=int,
-        help="Maximum number of iterations")
-    namelist_group.add_argument("-dt_main", metavar="[SECONDS]", type=int,
-        help="Main timestep (s).\nDefault from model file.")
-    namelist_group.add_argument("-dt_rad", metavar="[SECONDS]", type=int,
-        help="Radiation timestep (s).\nDefault from model file.")
-    namelist_group.add_argument("-tout", metavar="[SECONDS]", type=int,
-        help="Stats output interval (s). Use 0 to disable.\nDefault from model file.")
-    namelist_group.add_argument("-stats_tstart", metavar="[SECONDS]", type=float,
-        help="Stats output window start time (s). Default from model file or driver.")
-    namelist_group.add_argument("-stats_tend", metavar="[SECONDS]", type=float,
-        help="Stats output window end time (s). Default from model file or driver.")
-    namelist_group.add_argument("-multicol", metavar="[NUM|SPEC]", type=validate_multicol,
-        help=("Generate a multi-column parameter file. "
-              "Use an integer for dup_tweak mode, e.g. -multicol 4, or an hr spec like "
-              "-multicol C8/0.2:0.8/4"))
-    namelist_group.add_argument("-batch_size", metavar="[NUM]", type=int,
-        help=(
-            "Runtime batch size written to &multicol_def. Requires -multicol. "
-            "Values larger than ngrdcol are clipped to ngrdcol."
-        ))
-
-    namelist_group.add_argument(
-        "-override", action="append", metavar="ASSIGNMENTS|JSON",
-        help=("Assignments, inline JSON, or a JSON file, forwarded to create_case_namelist. "
-              "JSON may map settings to values or cases to settings. Repeat to apply in order; "
-              "later values win. Use namelist.key to add a key."))
 
     parser.add_argument("case_name", help="Name of the case to run")
     normalized_argv, jax_options, jax_occurrences = extract_jax_options(sys.argv[1:])
@@ -355,7 +291,7 @@ def main():
     if args.zt_grid and args.zm_grid:
         sys.exit("\n\033[91mERROR: Cannot specify both a ZT grid and a ZM grid\033[0m")
     if args.nzmax and not (args.zt_grid or args.zm_grid):
-        print("\n\033[93mWARNING: Specifying --nzmax will have no effect without specifying a --zm_grid or --zt_grid\033[0m")
+        print("\n\033[93mWARNING: Specifying -nzmax will have no effect without specifying a -zm_grid or -zt_grid\033[0m")
     if args.batch_size is not None and args.multicol is None:
         parser.error("-batch_size requires -multicol.")
     if (args.stats_tstart is None) != (args.stats_tend is None):

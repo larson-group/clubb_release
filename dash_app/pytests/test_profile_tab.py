@@ -183,7 +183,7 @@ def test_profile_command_covers_timer_and_forwarded_run_settings(tmp_path):
 
     assert command[2].endswith("utilities/time_clubb.py")
     assert command[3] == "arm"
-    assert command[command.index("-processes") + 1] == "1,4"
+    assert command[command.index("-process_counts") + 1] == "1,4"
     assert command[command.index("-batch_sizes") + 1] == "2,8"
     assert command[command.index("-config") + 1] == "default"
     assert command[command.index("-override") + 1] == "C2=2.0"

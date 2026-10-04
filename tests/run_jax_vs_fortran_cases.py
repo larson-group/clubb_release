@@ -28,6 +28,10 @@ from clubb_jax.run_jax import ensure_environment  # noqa: E402
 from utilities.flag_sets import build_override_arg, format_override_value, get_flag_sets, read_flag_settings  # noqa: E402
 
 
+from tuner.system_defaults import default_max_workers as default_workers
+from utilities.create_case_namelist import parse_forwarded_args
+from run_scripts.run_scm_all import positive_int, split_values
+
 @dataclass(frozen=True)
 class CaseConfig:
     """Case, step limit, optional main timestep, and namelist overrides.
@@ -97,7 +101,7 @@ DEFAULT_CASES = (
 RESULTS_DIRNAME = Path("output") / "tests" / "jax_driver_test_results"
 JAX_OUTPUT_DIRNAME = "jax_output"
 FORTRAN_OUTPUT_DIRNAME = "fortran_output"
-# Run logs are kept out of both output roots: run_bindiff_all.py --flag-sets treats
+# Run logs are kept out of both output roots: run_bindiff_all.py -flag_sets treats
 # every immediate child directory of a root as a flag set to compare.
 LOGS_DIRNAME = "logs"
 SUMMARY_FILENAME = "case_compare_summary.json"
@@ -331,7 +335,7 @@ class TaskCtx:
     @property
     def output_group(self) -> str:
         # Variants share the native case's namelist and NetCDF filenames. Give
-        # them separate immediate directories, also understood by --flag-sets.
+        # them separate immediate directories, also understood by -flag_sets.
         suffix = f"__{self.config.case}" if self.config.input_case else ""
         return self.flag_data.dir_name + suffix
 
@@ -358,8 +362,8 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
     jax_run_out_dir.mkdir(parents=True, exist_ok=True)
     f90_run_out_dir.mkdir(parents=True, exist_ok=True)
 
-    jax_cmd = [sys.executable, *common_args, "-jax", "-out_dir", str(jax_run_out_dir)]
-    f90_cmd = [sys.executable, *common_args, "-out_dir", str(f90_run_out_dir)]
+    jax_cmd = [sys.executable, *common_args, "-jax", "-output_dir", str(jax_run_out_dir)]
+    f90_cmd = [sys.executable, *common_args, "-output_dir", str(f90_run_out_dir)]
 
     # Explicit flag-set overrides take precedence over the curated case setup.
     overrides = {**(task.config.overrides or {}), **(task.flag_data.flag_dict or {})}
@@ -423,12 +427,12 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
     diff_cmd = [
         sys.executable,
         str(run_bindiff),
-        "-v", "2",
+        "-verbose", "2",
         "-strict",
         "-case", task.config.source_case,
-        "-t", str(task.bindiff_threshold),
-        "-pt", str(task.bindiff_percent_threshold),
-        "--result-json", str(diff_report),
+        "-threshold", str(task.bindiff_threshold),
+        "-percent_threshold", str(task.bindiff_percent_threshold),
+        "-result_json", str(diff_report),
         str(jax_run_out_dir),
         str(f90_run_out_dir),
     ]
@@ -478,7 +482,7 @@ def _forwarded_value(arguments: list[str], option: str) -> str | None:
     return value
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run SCM cases with both the JAX driver and Fortran standalone, "
@@ -486,9 +490,11 @@ def parse_args() -> argparse.Namespace:
             "run_scm.py options are forwarded to both runs."
         ),
         allow_abbrev=False,
+        add_help=False
     )
-    parser.add_argument("-j", "-jobs", dest="jobs", type=int, default=1,
-                        help="Number of concurrent case pairs (default: 1; each JAX compilation can use several GiB).")
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
+    parser.add_argument('-workers', dest="jobs", type=positive_int, default=default_workers(),
+                        help="Number of concurrent case pairs (default: half the available logical CPUs; each JAX compilation can use several GiB).", metavar='N')
     parser.add_argument(
         "-bindiff_verbose", type=int, default=2, choices=[0, 1, 2],
         help="Verbosity level for the final combined run_bindiff_all.py run.",
@@ -509,12 +515,15 @@ def parse_args() -> argparse.Namespace:
         "-flag_config_file", type=str, default=None,
         help="JSON file describing alternate flag settings.",
     )
-    args, forwarded = parser.parse_known_args()
+    args, forwarded = parse_forwarded_args(parser, argv)
+    args.cases = split_values(args.cases) if args.cases is not None else None
+    if args.cases == []:
+        parser.error("-cases must contain at least one case name")
     if args.jobs <= 0:
-        parser.error("-jobs must be positive")
+        parser.error("-workers must be positive")
     # These options belong to the comparison, not to either individual model.
     reserved = {"-jax", "-python", "-exe", "-driver_test", "-gdb",
-                "-out_dir", "-multicol", "-override", "-install_dir"}
+                "-output_dir", "-multicol", "-override", "-install_dir"}
     for argument in forwarded:
         option = argument.split("=", 1)[0]
         if option.startswith("--"):
@@ -541,7 +550,7 @@ def main() -> int:
     if accelerator in {"cuda13", "metal"} and args.jobs != 1:
         print(
             "WARNING: GPU comparison currently runs one case process at a time to avoid "
-            "multiple JAX workers contending for the same device; forcing -j 1."
+            "multiple JAX workers contending for the same device; forcing -workers 1."
         )
         args.jobs = 1
 
@@ -724,17 +733,17 @@ def _run_comparisons(args, supervisor) -> int:
 
     # Per-case comparisons enforce each case's tolerances. This additional audit
     # uses the loosest selected percentage threshold so allowed Morrison differences
-    # do not fail it; it cannot override any per-case failure. --flag-sets also
+    # do not fail it; it cannot override any per-case failure. -flag_sets also
     # detects output directories/files present on only one side.
     final_bindiff_log = results_root / FINAL_BINDIFF_LOG_FILENAME
     final_diff_cmd = [
         sys.executable,
         str(run_bindiff),
-        "--flag-sets",
+        "-flag_sets",
         "-strict",
-        "-v", str(args.bindiff_verbose),
-        "-t", str(tasks[0].bindiff_threshold),
-        "-pt", str(max(task.bindiff_percent_threshold for task in tasks)),
+        "-verbose", str(args.bindiff_verbose),
+        "-threshold", str(tasks[0].bindiff_threshold),
+        "-percent_threshold", str(max(task.bindiff_percent_threshold for task in tasks)),
         str(jax_output_root),
         str(f90_output_root),
     ]

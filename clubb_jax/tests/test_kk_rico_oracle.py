@@ -20,7 +20,7 @@ Validation (Iter113-114):
                     differs — a dispatch-edge case, not a rate-math error.
 
 Requires a Fortran rico run's stats:
-  python run_scripts/run_scm.py rico -legacy -max_iters 10 -out_dir output/rico_fort
+  python run_scripts/run_scm.py rico -legacy -max_iters 10 -output_dir output/rico_fort
 The test skips (does not fail) if the stats file is absent.
 """
 import os

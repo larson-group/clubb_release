@@ -126,7 +126,8 @@ def make_snapshot(destination: Path) -> None:
     """Copy current source (including local edits), never hard-link mutable files."""
     destination.mkdir()
     ignore = shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache")
-    for name in ("clubb_jax", "run_scripts", "utilities"):
+    # The comparison and batch runner share worker defaults from tuner.
+    for name in ("clubb_jax", "run_scripts", "utilities", "tuner"):
         shutil.copytree(ROOT / name, destination / name, ignore=ignore)
     # Master now bootstraps shared Python tools as well as JAX. Resolve that
     # helper in the real checkout so it finds its requirements and reuses one
@@ -143,7 +144,7 @@ def make_snapshot(destination: Path) -> None:
 
 def run_comparison(snapshot: Path, timeout: float) -> int:
     command = [sys.executable, str(snapshot / HARNESS),
-               "-cases", CASE, "-jobs", "1", "-max_iters", str(TIMESTEPS_TO_RUN),
+               "-cases", CASE, "-workers", "1", "-max_iters", str(TIMESTEPS_TO_RUN),
                "-dt_main", "60", "-stats", "input/stats/multi_col_stats.in"]
     (snapshot / "command.json").write_text(json.dumps(command, indent=2) + "\n")
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
@@ -390,8 +391,8 @@ def print_summary(report: dict, output: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, add_help=False)
     parser.add_argument("-h", "-help", action="help", help="Show this help message and exit.")
-    parser.add_argument("-output-dir", type=Path,
-                        help="New directory for source copies, logs and outputs (must not exist).")
+    parser.add_argument('-output_dir', dest='output_dir', type=Path,
+                        help="New directory for source copies, logs and outputs (must not exist).", metavar='DIR')
     parser.add_argument("-timeout", type=float, default=300,
                         help="Maximum seconds per comparison, including compilation (default: 300).")
     parser.add_argument("-mutations", nargs="+", choices=[m.name for m in MUTATIONS],

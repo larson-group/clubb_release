@@ -172,7 +172,7 @@ example, this runs two shortened cases in parallel with faster model settings:
 
 ```bash
 ./tests/run_jax_vs_fortran_cases.py \
-  -cases arm bomex -jobs 2 \
+  -cases arm bomex -workers 2 \
   -stats input/stats/multi_col_stats.in -debug 0 -max_iters 120
 ```
 
@@ -205,8 +205,8 @@ on Python 3.12 or newer; Python 3.11 is supported with JAX/JAXLIB 0.10.0.
 The launcher handles the default environment automatically:
 
 ```bash
-./clubb_jax/run_jax.py --init_env
-./clubb_jax/run_jax.py --profile=gpu --init_env
+./clubb_jax/run_jax.py -init_env
+./clubb_jax/run_jax.py -profile=gpu -init_env
 ```
 
 It performs the following steps:
@@ -229,7 +229,7 @@ The managed locations and interpreter can be overridden:
 PYTHON=python3.12 \
 CLUBB_JAX_VENV=/path/to/clubb-jax-venv \
 CLUBB_JAX_TOOLS_DIR=/path/to/clubb-jax-tools \
-  ./clubb_jax/run_jax.py --init_env
+  ./clubb_jax/run_jax.py -init_env
 ```
 
 ### Inspect Runtime Support
@@ -238,8 +238,8 @@ The launcher can inspect the selected profile without creating an environment,
 installing packages, or initializing JAX:
 
 ```bash
-./clubb_jax/run_jax.py --profile=cpu --info
-./clubb_jax/run_jax.py --profile=gpu --info
+./clubb_jax/run_jax.py -profile=cpu -info
+./clubb_jax/run_jax.py -profile=gpu -info
 ```
 
 The report shows the detected devices, Python and JAX versions, environment
@@ -250,7 +250,7 @@ GPU memory; the run itself reports the devices JAX actually uses.
 For machine-readable output:
 
 ```bash
-./clubb_jax/run_jax.py --profile=gpu --info=json
+./clubb_jax/run_jax.py -profile=gpu -info=json
 ```
 
 The CUDA 13 profile checks for an NVIDIA driver version of at least 580 and
@@ -305,7 +305,7 @@ all exposed GPUs must meet the CUDA requirements.
 Without `xla_prealloc`, the launcher respects an existing
 `XLA_PYTHON_CLIENT_PREALLOCATE` setting and otherwise defaults to `false`.
 The modifier overrides that variable to `true`. Direct launcher users can pass
-`--profile=gpu --xla-prealloc`.
+`-profile=gpu -xla_prealloc`.
 
 Preallocation can reduce allocation overhead and fragmentation when a run
 has the GPU to itself. Leaving it disabled lowers the initial memory footprint,

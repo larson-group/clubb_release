@@ -98,7 +98,7 @@ def test_rebuild_command_preserves_discovered_tuning_flag():
     assert "-no_update_selected" in argv
     assert "-tuning" in argv
     assert "-gptl" in argv
-    assert "-install" in argv
+    assert "-install_dir" in argv
 
 
 def test_rebuild_command_drops_mismatched_install_prefix():
@@ -121,7 +121,7 @@ def test_rebuild_command_drops_mismatched_install_prefix():
 
     argv = runtime.build_compile_argv(options)
 
-    assert "-install" not in argv
+    assert "-install_dir" not in argv
     assert "-tuning" not in argv
     assert "-gptl" in argv
 

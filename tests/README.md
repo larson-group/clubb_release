@@ -54,10 +54,10 @@ individual results. The script generates distinct parameter columns, runs
 the same case in forward and reverse order, and compares matching columns.
 
 ```sh
-python3 tests/check_mirrored_multi_col_output.py -case rico -n 3
+python3 tests/check_mirrored_multi_col_output.py -case rico -multicol 3
 ```
 
-`-n 3` varies `C8` evenly from 0.2 to 0.8:
+`-multicol 3` varies `C8` evenly from 0.2 to 0.8:
 
 | Run | First column | Second column | Third column |
 | --- | --- | --- | --- |
@@ -67,15 +67,15 @@ python3 tests/check_mirrored_multi_col_output.py -case rico -n 3
 Column A must match A across runs, and likewise for B and C; the three columns should
 differ from each other. This exposes accidental dependencies on column order,
 such as reading column `1` instead of `i`, or carrying temporary values
-between columns. Any bug that could cause information from one column to 
-infect other columns should cause this test to fail, because changing 
-the column order should change which column is the infectious one. 
+between columns. Any bug that could cause information from one column to
+infect other columns should cause this test to fail, because changing
+the column order should change which column is the infectious one.
 
-Use `-hr PARAM/MIN:MAX/NPOINTS` for custom parameter ranges. Multiple ranges
+Use `-multicol PARAM/MIN:MAX/NPOINTS` for custom parameter ranges. Multiple ranges
 form a grid; this example generates six columns, then reverses their order:
 
 ```sh
-python3 tests/check_mirrored_multi_col_output.py -case rico -hr 'C8/0.2:0.8/3,C11/0.2:0.8/2'
+python3 tests/check_mirrored_multi_col_output.py -case rico -multicol 'C8/0.2:0.8/3,C11/0.2:0.8/2'
 ```
 
 The runner automatically configures and builds a dedicated gfortran CPU
@@ -85,9 +85,9 @@ usual CLUBB build dependencies available; no manual toolchain edits are needed.
 
 Omit `-case` to run the standard case set, or select several with
 `-cases rico,rico_silhs,mc3e`. Defaults are three columns, 200 timesteps
-(`-max_iters`), and two concurrent cases (`-nproc`). Use `-config` / `-params`
+(`-max_iters`), and half the available logical CPUs for concurrent cases (`-workers`). Use `-config` / `-params_file`
 for alternate base parameters. Additional `run_scm.py` options are forwarded,
-for example `-debug 1`; the `--` separator is optional. See `--help` for options and
+for example `-debug 1`; the `--` separator is optional. See `-help` for options and
 the [script header](check_mirrored_multi_col_output.py) for build and diagnostic
 details.
 
@@ -101,13 +101,13 @@ Examples:
 - `python3 tests/run_G_unit_tests.py`
   Runs the built-in default G-unit test set.
 
-- `python3 tests/run_G_unit_tests.py --all`
+- `python3 tests/run_G_unit_tests.py -all`
   Enables every G-unit test flag.
 
-- `python3 tests/run_G_unit_tests.py --KK_unit_tests`
+- `python3 tests/run_G_unit_tests.py -KK_unit_tests`
   Runs only the KK unit tests.
 
-- `python3 tests/run_G_unit_tests.py --smooth_heaviside_test --smooth_min_max_test`
+- `python3 tests/run_G_unit_tests.py -smooth_heaviside_test -smooth_min_max_test`
   Runs only the selected smooth-function tests.
 
 ### `run_benchmark_converter_test.py`
@@ -124,22 +124,22 @@ Example:
 
 Clones two or more git refs, compiles each clone, runs
 `run_scripts/run_clubb_w_varying_flags.py` in each clone, and compares the
-resulting output trees with `run_scripts/run_bindiff_all.py --flag-sets`.
+resulting output trees with `run_scripts/run_bindiff_all.py -flag_sets`.
 
 Examples:
 
-- `python3 tests/run_bindiff_w_flags.py -b master,my_branch -d /tmp/clubb_bindiff`
+- `python3 tests/run_bindiff_w_flags.py -branches master,my_branch -d /tmp/clubb_bindiff`
   Compares `master` and `my_branch` using the default core flag set.
 
-- `python3 tests/run_bindiff_w_flags.py --overwrite-existing -b master,my_branch -d /tmp/clubb_bindiff -max_iters 360`
+- `python3 tests/run_bindiff_w_flags.py -overwrite_existing -branches master,my_branch -d /tmp/clubb_bindiff -max_iters 360`
   Recreates existing clone directories without prompting and forwards
   `-max_iters 360` to the case runs.
 
-- `python3 tests/run_bindiff_w_flags.py -b master,my_branch -f input/flag_sets/run_bindiff_w_flags_config_example.json --priority-cases -nproc 4`
+- `python3 tests/run_bindiff_w_flags.py -branches master,my_branch -flag_config_file input/flag_sets/run_bindiff_w_flags_config_example.json -priority_cases -workers 4`
   Uses an explicit flag config and forwards case-selection and worker-count
   options to `run_clubb_w_varying_flags.py`.
 
-- `python3 tests/run_bindiff_w_flags.py -b old_ref,new_ref --no-compile --skip-default-flags`
+- `python3 tests/run_bindiff_w_flags.py -branches old_ref,new_ref -no_compile -skip_default_flags`
   Reuses existing builds and compares only alternate flag sets.
 
 ### `run_jax_comparison_mutation_test.py`
@@ -182,7 +182,7 @@ build/install that executable first. The normal JAX launcher prepares its
 environment. Five JAX compilations are needed even though the runs are short.
 Source copies, commands, NetCDF files, logs and `mutation_test_summary.json`
 are retained in a new `output/tests/jax_comparison_mutation_*` directory.
-`-output-dir PATH` selects a new destination; `-timeout SECONDS` adjusts the
+`-output_dir PATH` selects a new destination; `-timeout SECONDS` adjusts the
 300-second limit per comparison. `-mutations parameter_handling first_column`
 runs only those mutations, sharing one control. Working source and normal
 comparison outputs are preserved. These are representative numerical and
@@ -199,10 +199,10 @@ Examples:
 - `python3 tests/run_clubb_conv_test.py`
   Runs the default BOMEX convergence check for `rcm`.
 
-- `python3 tests/run_clubb_conv_test.py --case rico --var cloud_frac`
+- `python3 tests/run_clubb_conv_test.py -case rico -var cloud_frac`
   Checks convergence of `cloud_frac` for `rico`.
 
-- `python3 tests/run_clubb_conv_test.py -p --case bomex --var rcm`
+- `python3 tests/run_clubb_conv_test.py -plot_result -case bomex -var rcm`
   Runs the check and writes a convergence plot plus final-profile comparisons
   for every timestep under `output/`.
 
@@ -227,7 +227,7 @@ included for every run. Results are written as
       final_bindiff.log
 
 so the two output roots can be compared directly with
-`run_bindiff_all.py --flag-sets`, which is what the final combined diff does.
+`run_bindiff_all.py -flag_sets`, which is what the final combined diff does.
 
 `DEFAULT_CASES` in the script defines the case list and any per-case overrides.
 Pass `run_scm.py` options such as `-max_iters`, `-dt_main`, `-stats`, and
@@ -238,7 +238,7 @@ case/flag overrides.
 
 Examples:
 
-- `python3 tests/run_jax_vs_fortran_cases.py -cases bomex -jobs 1`
+- `python3 tests/run_jax_vs_fortran_cases.py -cases bomex -workers 1`
   Runs a single serial JAX-vs-Fortran comparison for easier debugging.
 
 - `python3 tests/run_jax_vs_fortran_cases.py -cases bomex atex -max_iters 3`
@@ -264,7 +264,7 @@ Examples:
 - `python3 tests/run_loss_output_consistency.py arm -fields cloud_frac rcm`
   Checks selected fields for `arm`.
 
-- `python3 tests/run_loss_output_consistency.py bomex -out_root output/loss_check`
+- `python3 tests/run_loss_output_consistency.py bomex -output_root output/loss_check`
   Writes all generated output under a custom root directory.
 
 - `python3 tests/run_loss_output_consistency.py bomex -config default`
@@ -277,16 +277,16 @@ standalone driver, then compares outputs with `run_bindiff_all.py`.
 
 Examples:
 
-- `python3 tests/run_python_vs_fortran_cases.py --cases bomex --jobs 1`
+- `python3 tests/run_python_vs_fortran_cases.py -cases bomex -workers 1`
   Runs one serial Python-vs-Fortran comparison for debugging.
 
-- `python3 tests/run_python_vs_fortran_cases.py --cases bomex atex --max-iters 3`
+- `python3 tests/run_python_vs_fortran_cases.py -cases bomex atex -max_iters 3`
   Runs two cases with a short iteration limit.
 
-- `python3 tests/run_python_vs_fortran_cases.py --bindiff-verbose 2 --bindiff-threshold 1e-12`
+- `python3 tests/run_python_vs_fortran_cases.py -bindiff_verbose 2 -bindiff_threshold 1e-12`
   Runs the default case set with detailed strict bindiff output.
 
-- `python3 tests/run_python_vs_fortran_cases.py --keep-existing`
+- `python3 tests/run_python_vs_fortran_cases.py -keep_existing`
   Reuses existing comparison output directories.
 
 ### `run_restart_test.py`
@@ -299,10 +299,10 @@ Examples:
 - `python3 tests/run_restart_test.py bomex`
   Runs the restart test for `bomex`, comparing `thlm`.
 
-- `python3 tests/run_restart_test.py rico_silhs -v rcm`
+- `python3 tests/run_restart_test.py rico_silhs -var rcm`
   Runs the restart test for `rico_silhs`, comparing `rcm`.
 
-- `python3 tests/run_restart_test.py bomex --keep_artifacts`
+- `python3 tests/run_restart_test.py bomex -keep_artifacts`
   Keeps generated `output/` and `restart/` files after the test.
 
 ### `run_silhs_test.py`
@@ -315,13 +315,13 @@ Examples:
 - `python3 tests/run_silhs_test.py`
   Runs the default SILHS convergence check.
 
-- `python3 tests/run_silhs_test.py --case rico_silhs --n-small 8 --n-large 1000`
+- `python3 tests/run_silhs_test.py -case rico_silhs -n_small 8 -n_large 1000`
   Runs an explicit case and sample-count pair.
 
-- `python3 tests/run_silhs_test.py --stats input/stats/all_stats.in --verbose`
+- `python3 tests/run_silhs_test.py -stats input/stats/all_stats.in -show_output`
   Uses an explicit stats file and prints the underlying `run_scm.py` output.
 
-- `python3 tests/run_silhs_test.py --keep-outputs`
+- `python3 tests/run_silhs_test.py -keep_outputs`
   Leaves the small and large output directories in place for inspection.
 
 ### `run_stats_output_consistency.py`
@@ -357,7 +357,7 @@ Examples:
 - `python3 tests/run_thread_test.py`
   Runs with the default OpenMP thread count.
 
-- `python3 tests/run_thread_test.py --threads 4`
+- `python3 tests/run_thread_test.py -threads 4`
   Runs with four OpenMP threads.
 
 ### `run_timestep_tests.py`
@@ -405,3 +405,7 @@ Example:
 
 - `python3 tests/test_monoflux_limiter_GPU.py`
   Runs the full GPU PCAST regression test.
+
+Branch bindiff accepts the current option names and translates them for cloned
+revisions that still expose the older interfaces. This preserves comparisons
+against master and older refs without retaining old aliases in current scripts.

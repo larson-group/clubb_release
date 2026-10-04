@@ -33,37 +33,39 @@ DEFAULT_STATS_FILE = REPO_ROOT / "input" / "stats" / "all_stats.in"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run SILHS convergence test (Python port of run_silhs_test.bash)."
+        description="Run SILHS convergence test (Python port of run_silhs_test.bash).",
+        add_help=False, allow_abbrev=False
     )
+    parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument(
-        "--case",
+        '-case', dest='case',
         default="rico",
         help="Case name to run (default: rico).",
     )
     parser.add_argument(
-        "--n-small",
+        '-n_small', dest='n_small',
         type=int,
         default=8,
         help="Small number of SILHS samples (default: 8).",
     )
     parser.add_argument(
-        "--n-large",
+        '-n_large', dest='n_large',
         type=int,
         default=1000,
         help="Large number of SILHS samples (default: 1000).",
     )
     parser.add_argument(
-        "--keep-outputs",
+        '-keep_outputs', dest='keep_outputs',
         action="store_true",
         help="Keep output/small and output/large on exit.",
     )
     parser.add_argument(
-        "--stats",
+        '-stats', dest='stats',
         default=str(DEFAULT_STATS_FILE),
         help="Stats file passed to run_scm.py (default: input/stats/all_stats.in).",
     )
     parser.add_argument(
-        "--verbose",
+        '-show_output', dest='verbose',
         action="store_true",
         help="Show run_scm.py output while running.",
     )
