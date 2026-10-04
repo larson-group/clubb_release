@@ -4,6 +4,17 @@ The broad goal is to make the Python API, Python driver, and JAX driver structur
 
 Do not automatically apply this prompt after every Fortran change that might affect Python. If you are doing other Fortran work and notice that argument lists for cross-module public routines have changed, remind the user that the Python API and Python/JAX drivers may need follow-up updates, then ask whether they want that fix-up done now. Apply this prompt only when the user has asked for Python API/driver work, has agreed to the follow-up, or the current task explicitly includes keeping Python wrappers and drivers in sync.
 
+Use [numerical diagnosis](numerical_regression_workflow.md) for comparison
+failures and [the JAX workflow](jax_porting_workflow.md) for JAX-owned ports.
+Executable dependency setup belongs in the existing script bootstrap/launcher,
+not a caller-specific hard-coded venv. For model-parameter bounds/flag changes,
+update the canonical validator and existing Python mirror together as documented
+in `utilities/README.md`.
+
+The steps below describe the full API/driver task. Apply only the files and
+validation level included in the current request; a focused repair does not
+automatically authorize both drivers or the full suites.
+
 Do the work in this order:
 
 1. Inspect the recent Fortran changes in `src/CLUBB_core`.
@@ -53,6 +64,10 @@ Do the work in this order:
    - After sourcing an environment setup file, check whether `module` or `ml` is available, then load the closest available compiler and NetCDF Fortran modules. On some systems the module names may include versions, for example `gcc/13.1.0` instead of `gcc`.
    - If modules are not used on the current machine, inspect the repo's existing build documentation or compiler config files and use the local equivalent environment.
    - Fix compile errors before moving on.
+   - If interpreter-version compatibility is in scope, check dependencies in
+     that exact interpreter and exercise a runtime path after compiling. A
+     missing package is not proof of an unsupported Python version, and a
+     successful build alone does not establish runtime compatibility.
 
 4. Run the Python API tests.
    - Use:
@@ -65,7 +80,7 @@ Do the work in this order:
 
 5. Update the Python and JAX drivers.
    - Update `clubb_python_driver/advance_clubb_core.py`.
-   - Mirror equivalent changes in `clubb_jax/src/CLUBB_core/advance_clubb_core.py`.
+   - Mirror equivalent changes in `clubb_jax/src/CLUBB_core/advance_clubb_core_module.py`.
    - Use the Python and JAX driver paths as validation tools:
 
      ```text
@@ -73,8 +88,10 @@ Do the work in this order:
      clubb_jax/src/advance_clubb_to_end.py
      ```
 
-   - The JAX driver should have one `advance_clubb_core(state)` path that calls
-     `clubb_jax/src/CLUBB_core/advance_clubb_core.py`; do not keep a swappable
+   - Preserve the current `_advance_clubb_core(state)` driver adapter calling
+     the JAX-owned `advance_clubb_core(...)` in
+     `clubb_jax/src/CLUBB_core/advance_clubb_core_module.py`. Do not replace its
+     source-shaped core signature with a state-only wrapper or keep a swappable
      `clubb_api.advance_clubb_core` fallback in the JAX timestep driver.
 
 6. Run small SCM smoke comparisons before running the full suites.
@@ -100,7 +117,7 @@ Do the work in this order:
 
    - `-workers 1` makes JAX comparison logs easier to inspect; the Python comparison script still uses `-workers 1`.
 
-8. Final success criterion: run the full comparison suites.
+8. For a full API/driver update, final success criterion: run the full comparison suites.
    - The work is complete only when these pass, or any remaining differences are understood, documented, and explicitly accepted:
 
      ```bash
@@ -126,13 +143,16 @@ Debugging techniques and common failure modes:
 
 - If a Fortran stats call moved inside a helper, make sure the Python path either calls the helper that performs the stats update or performs an equivalent update at the same logical time.
 
-- If the Python driver and JAX driver share the same structure, fix both together. Do not leave the JAX driver stale after fixing the Python driver.
+- If both drivers are in scope and share the same structure, fix them together.
+  Otherwise report the remaining driver follow-up instead of silently expanding
+  the task. JAX core ports retain their own current source-shaped interfaces.
 
 - Use NetCDF field comparisons with tight thresholds after each small fix. This keeps the first changed field and earliest changed timestep visible.
 
-- Treat `bomex` and `atex` as smoke tests only. They are useful early checks, but they are not the final target.
+- Treat `bomex` and `atex` as smoke tests for a full update. They do not establish
+  full-suite parity; a focused task can explicitly accept that limited coverage.
 
-Expected final state:
+Expected final state for the full API/driver task:
 
 - `./compile.py -python` succeeds.
 - `python -m pytest clubb_python_api/tests` passes.

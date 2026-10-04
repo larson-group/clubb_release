@@ -1,3 +1,40 @@
+# Faithful Fortran ports
+
+Use this workflow for a source-faithful port, re-port, or structural audit. For
+JAX driver/kernel work, also read [the JAX workflow](jax_porting_workflow.md).
+The detailed standards below remain the contract; this entry section makes
+completion observable.
+
+## Before implementation
+
+Read the complete canonical source in scope. Record a compact source outline:
+routines in order; signatures and intent/optional groups; branch coverage;
+call order; comments/dividers; stats, clipping, and error behavior. Use it while
+editing and in the final audit. A wrapper around the original routine does not
+complete a requested port.
+
+## Before calling the port complete
+
+Compare every changed target file against the source, even after numerical
+tests pass. Check routine/file inventory and order, definitions and call-site
+argument order/grouping, preserved comments/dividers and readable spacing,
+calculations, non-default branches, diagnostics/stats, and state ownership.
+Classify every target-only helper or adaptation and remove convenience drift.
+Document any retained mismatch at its exact code boundary with the reason and
+follow-up needed. An explanatory note does not make an omitted feature complete.
+
+Report structural review and numerical verification separately: source/target
+paths and revision, reviewed routines/branches, justified deviations, commands,
+cases, effective settings, and remaining failures or untested behavior. Existing
+structure tests are useful guards; re-read source blocks they do not cover.
+Resolve defects in the authorized scope before returning a completion claim.
+
+The user's explicit task-specific exceptions win. For example, an approved
+numerical-core rewrite does not waive source matching for its public interface.
+Do not turn one relaxed port into a permanent relaxation of other ports.
+
+## Detailed standards
+
 Port underlying Fortran code to another language while preserving the Fortran
 file's structure, ordering, names, comments, routine boundaries, and behavioral
 surface.

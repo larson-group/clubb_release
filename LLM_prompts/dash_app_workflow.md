@@ -30,7 +30,8 @@ provenance data.  After publishing, open the exact report through the active
 dashboard using its `reports/open_report` semantic operation.
 
 Do not force Dash on a purely conceptual question, a narrow source-code edit
-with no useful interactive view, or a task the dashboard does not expose.  Say
+with no useful interactive view, or a task the dashboard does not expose. A request to run a named Jenkins job
+belongs to the [Jenkins workflow](jenkins_workflow.md). Say
 briefly why the normal local workflow is necessary in those cases.
 
 ## 2. Discover before connecting or starting
@@ -45,7 +46,7 @@ that a browser view is open.
 Use the available local Dash connection capability (normally
 `connect_to_dashboard`) to verify the matching broker and then
 `get_server_info` / `list_cases` to learn the documented local service.  Use
-purpose-specific MCP operations (`submit_compile`, `submit_scm_run`,
+purpose-specific MCP operations (`submit_compile`, `submit_scm_run`, `submit_scm_batch`,
 `submit_tune`, `create_profile_artifact`, status/log/artifact reads, and
 `cancel_job`) for scientific work.  Keep the same `request_id` when retrying a
 mutation.  `inspect_dashboard` / `invoke_dashboard` are deprecated
@@ -80,29 +81,22 @@ opened later.  If the user permits a launch, use the repository launcher
 (`./launch_dashboard.sh`) rather than recreating its environment or starting
 an ad-hoc server.
 
-## 3. Connect honestly and choose the right interaction mode
+## 3. Connect through the current broker
 
-Once one dashboard is confirmed, connect and announce the result in the Dash
-conversation only after the connection succeeds.
+Read the current `dash_app/README.md` and `dash_app/DEVELOPMENT.md` connection
+sections when connection/lifecycle details matter. There is no persistent agent
+session, chat drawer, presence list or bridge process. Do not recreate or wait
+for those retired facilities. Report connection/work status in the current
+conversation.
 
-There are two distinct modes.  Never imply that one provides the other.
-
-1. **Turn-scoped MCP connection.** It can connect, inspect the dashboard,
-   invoke semantic operations, and reply to the drawer during the current
-   agent turn.  It does *not* keep the agent alive after the turn ends or
-   receive future drawer messages automatically.
-2. **Persistent bridge plus host adapter.** It polls the drawer (default
-   0.35 s), heartbeats the connection, and hands new user messages to the
-   active agent conversation.  Use it only when the current agent host really
-   supplies a compatible active-conversation adapter and the agent can keep
-   that bridge alive.  Confirm that capability first.  If it is unavailable,
-   say so plainly and use the turn-scoped connection; do not pretend a
-   connection badge means immediate future replies will occur.
-
-The broker survives ordinary Dash source reloads and owns compile/run/Tune
-workers.  A dashboard reload is therefore not a reason to start duplicate
-work or reconnect a second broker.  If the broker itself was intentionally
-changed, follow the documented broker restart procedure only when appropriate.
+The broker owns a stable loopback Streamable HTTP MCP endpoint for this checkout.
+Use the available purpose-specific MCP adapter, or the endpoint shown in the
+dashboard's **MCP connection** utility. Never copy its bearer credential into a
+worklog, report or commit. The agent connection is transient; the broker owns
+Compile/Run/Tune/artifact workers and recovery across adapter/Dash reloads.
+Ending an agent turn is not proof that broker-owned work stopped, and a live
+broker is not proof that a browser rendered an artifact. Inspect durable job
+state through the typed service and the matching browser for visible results.
 
 ## 4. Operate semantically and make work visible
 
@@ -126,6 +120,31 @@ will make the selected native tab, controls, log, or artifact visible.
 - After work completes, open the requested plot, tab, or report and reply with
   the outcome plus any important limitation.  The dashboard UI action is part
   of completion, not an optional afterthought.
+
+For multi-case SCM work, use `submit_scm_batch` and the shared Run service.
+Follow the README's current output contract: one flat, public, plot-discoverable
+`output/mcp_runs/<batch-id>/` group by default, with `<case>_stats.nc` directly
+inside it. Keep private manifests in their existing store. Do not invent a
+second output hierarchy or put long-lived scientific results in ephemeral
+agent staging. Distinguish the CLI `-output_dir` convention from the current
+structured MCP schema; use the schema's actual field names.
+
+A successful handoff/request is not proof of a visible plot. Inspect the active
+browser's selected tab, figure and relevant settings before saying it was
+shown; rapid updates may replace an earlier requested view. If browser checks
+are unavailable, report scientific job/artifact completion separately from
+unconfirmed presentation. Avoid launching another job to repair a view. Resolve conflicting status from
+the current job/request ID, durable state and fresh logs before calling work
+hung or complete; an old record or quiet browser is insufficient evidence.
+
+For Dash code changes, keep model/job behavior in the existing UI-neutral
+services and shared utilities documented in `dash_app/DEVELOPMENT.md`. Browser
+callbacks and MCP adapters should call the same owner, not grow separate logic.
+Store user intent and clear stale derived/override state when its selection
+changes. Preserve current cancellation/admission semantics in the broker/JobStore
+rather than adding a UI-only runner or another public manifest. When changing
+profiling/polling, check the actual live graphs as well as retained compact
+timing data and failure logs; status updates alone do not establish a live view.
 
 ## 5. Reports: publish atomically, then show them
 
@@ -159,7 +178,8 @@ Keep the user oriented without narrating every low-level request.  Say which
 dashboard was selected, what is about to run, and where the result is visible.
 For a potentially expensive compile, long SCM run, or tuning job, confirm that
 the requested scope matches the visible settings before starting it.  Do not
-claim that a plot or report was opened unless its semantic operation succeeded.
+claim that a plot or report was displayed until its handoff succeeded and the
+matching browser view was confirmed.
 
 When Dash cannot satisfy a request, inspect its declared capabilities once,
 state the gap, and then use the least-surprising local alternative only under

@@ -25,7 +25,7 @@ If the host's vendored CLUBB/SILHS source also needs synchronization, report tha
 11. For each repository, create a branch named `agent/<short-description>` from the freshly fetched `origin/<target>` branch. Stage only the intended files and commit with a concise message.
 12. Before opening a PR, run `git diff --name-status origin/<target>...HEAD` and verify the exact file list, then confirm the PR base is the same remote target branch. Do not open the PR if the list contains an unexpected file or if the base advanced; fetch and rebase the work branch first.
 13. Open a draft pull request targeting the exact fetched target branch. The PR body should state:
-   - the CLUBB change being synchronized;
+   - the CLUBB interface change being accommodated;
    - the host-side files and interfaces updated;
    - behavior preserved or intentionally changed;
    - validation performed and any limitations.

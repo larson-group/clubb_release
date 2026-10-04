@@ -1,133 +1,49 @@
-# LLM Prompt Shortcuts
+# LLM prompt shortcuts
 
-Use this file as a repo-local index of reusable prompts.
+Choose the matching workflow from the current request and conversation. Read
+that workflow before substantial work; use only the applicable parts and state
+material exclusions. Selection does not authorize edits, broader validation,
+external writes, a goal or a token budget. Ask only when an unresolved choice
+changes the outcome. Explicit user instructions take priority.
 
-When a user request appears to match one of these shortcuts:
+| Request | Guidance |
+| --- | --- |
+| **Update Host Models After CLUBB Changes**: a host-consumed Fortran/C API signature, semantics, public type/constant, generated wrapper, flag or configuration changed. | [Host compatibility](update_host_models_after_clubb_changes.md) |
+| **Fix Python API**: repair F2PY/wrappers, update Python drivers after Fortran changes, make Python/JAX drivers match Fortran, or repair `run_python_vs_fortran_cases.py` / `run_jax_vs_fortran_cases.py`. | [API and drivers](update_python_api_and_drivers.md) |
+| **Port Underlying Fortran**: port, re-port, audit or “similarize” a target file; align routines, calls, comments, argument lists; remove target-only helpers/aliases/optionals/reordered logic. | [Faithful port](port_underlying_fortran_to_other_languages.md) |
+| **JAXize CLUBB Core File**: translate `src/CLUBB_core` into `clubb_jax/src`, replace a `clubb_api` call, wire `advance_clubb_core_module.py`, or continue a file port such as `advance_xm_wpxp`. | [JAX workflow](jax_porting_workflow.md), with the faithful-port standards |
+| **Format Fortran Routines**: format interfaces/calls, extract a helper, document arguments/local variables, or apply routine formatting. | [Fortran formatting](fortran_routine_formatting.md) |
+| **Refactor Column Loops**: move computation/column loops into routines, change multi-column interfaces or stats dimensions. | [Column refactor](fortran_column_refactor.md), with routine formatting |
+| **Change Script Arguments**: options, forwarding, worker defaults, multicolumn settings, or Jenkins/documentation callers. | [CLI workflow](script_cli_conventions.md) |
+| **Diagnose Numerical Comparisons**: JAX/Fortran, compiler, BFB or multi-column mismatches; distinguish regression, roundoff and untested behavior. | [Numerical diagnosis](numerical_regression_workflow.md) |
+| **Use or Change Jenkins Tests**: launch named jobs, inspect failures/hangs, audit coverage, combine/remove/rename jobs or edit pipelines. | [Jenkins workflow](jenkins_workflow.md) |
+| **Work Through CLUBB Dash**: connect/use/open/control Dash; compile/run, show profiles/contours/plots/console, tune, navigate pages, or create/update/view an investigation report. | [Dash workflow](dash_app_workflow.md) |
 
-1. Read the linked prompt.
-2. Confirm that the prompt's goal and constraints match the user's current request.
-3. If it matches, use it as task guidance.
-4. If it only partially matches, use the relevant parts and state what does not apply.
+## Scope boundaries
 
-## Shortcuts
+- Host compatibility is host-owned work. Never modify, copy, synchronize,
+  reformat or include vendored CLUBB/SILHS source in a host PR. Source sync is
+  separate. Dash/MCP and Python-only changes do not trigger host work unless
+  the host directly consumes that interface. Without provided host repos,
+  audit/report exact host call-site changes; do not implicitly clone/edit them.
+- API/driver work may target the Python API, Python driver, JAX driver or a
+  combination. Distinguish compile/focused/smoke validation from a full suite.
+- A faithful port uses current Fortran as authority. An explicitly requested
+  idiomatic rewrite or relaxed numerical core is a different scope; it does
+  not relax unrelated interfaces. Determine whether the request is discussion,
+  an audit or edits, and whether it covers one file or multiple mirrors.
+- For JAX work, the JAX workflow is primary and the faithful-port standards
+  supply source matching. Existing/external JAX files are secondary references;
+  reading this index does not create a file-level goal or require cloning.
+- Fortran formatting may be formatting only, a behavior-preserving refactor,
+  or a wider caller/wrapper update. Column refactors must distinguish BFB work
+  from separately authorized behavioral fixes.
+- CLI spelling applies to CLUBB commands, not external flags or structured APIs.
+- Dash needs one unambiguous live browser view and matching broker. Read its
+  discovery/permission/fallback rules; do not silently start a replacement or
+  guess between instances. A named Jenkins request uses Jenkins.
 
-### Update Host Models After CLUBB Changes
-
-Use when a CLUBB change affects a host-consumed Fortran/C API or interface: an exported `_api` routine's signature or semantics, public types/constants, generated wrappers, or host-facing flags/configuration. This workflow is for host-owned compatibility changes only. Never modify, copy, synchronize, reformat, or otherwise include vendored CLUBB/SILHS source in a host-model PR; source synchronization is a separate process. Do not use this shortcut for Dash/MCP changes or Python-only wrapper changes unless the host model directly consumes the changed interface. If host repositories are not provided, audit the branch and report the exact host-owned call-site change needed; do not clone or edit external repositories implicitly.
-
-Prompt:
-
-- `LLM_prompts/update_host_models_after_clubb_changes.md`
-
-### Fix Python API
-
-Likely use when the user asks for things like:
-
-- fix the Python API
-- update the Python driver after Fortran changes
-- make Python/JAX drivers match Fortran
-- repair f2py wrappers after refactors
-- get `run_python_vs_fortran_cases.py` passing
-- get `run_jax_vs_fortran_cases.py` passing
-
-Prompt:
-
-- `LLM_prompts/update_python_api_and_drivers.md`
-
-Before using, confirm whether the user wants:
-
-- Python API only
-- Python driver only
-- JAX driver too
-- full comparison suite passing
-- just compile/tests/smoke tests
-
-### Port Underlying Fortran
-
-Likely use when the user asks for things like:
-
-- port underlying Fortran to another language
-- re-port a stale Python, JAX, or other file from Fortran
-- make a ported file match the underlying Fortran source file
-- similarize a target-language port against the Fortran source
-- remove target-only helpers, aliases, optionals, or reordered logic
-- make routine calls, comments, or argument lists match the Fortran file
-
-Prompt:
-
-- `LLM_prompts/port_underlying_fortran_to_other_languages.md`
-
-Before using, confirm whether the user wants:
-
-- investigation only, or source edits now
-- one target file only, or all language mirrors
-- exact structural matching, or an idiomatic target-language rewrite
-- validation only, focused tests, or full comparison suites
-
-For `src/CLUBB_core` to `clubb_jax/src` work, use the JAX-specific shortcut
-below as the primary plan and use this Fortran-port prompt only as supplemental
-guidance for preserving source-file faithfulness.
-
-### JAXize CLUBB Core File
-
-Likely use when the user asks for things like:
-
-- JAX-ize a CLUBB_core file
-- port another CLUBB_core routine into `clubb_jax/src`
-- replace a `clubb_api` call in the JAX timestep path
-- wire a JAX port into `advance_clubb_core.py`
-- continue the same process used for `advance_xm_wpxp`
-
-Prompt:
-
-- `clubb_jax/CLUBB_CORE_JAX_FILE_GOAL_TEMPLATE.md`
-
-Before using, confirm whether the user wants:
-
-- a new file-level goal or only discussion
-- to start from the current repo file, the Fortran file, external CLUBB-JAX,
-  or a combination
-- focused validation or the full JAX-vs-Fortran suite
-
-### Format Fortran Routines
-
-Likely use when the user asks for things like:
-
-- format a new Fortran subroutine
-- clean up a routine interface
-- extract a helper routine in CLUBB core
-- make call-site formatting match a routine definition
-- apply CLUBB routine formatting rules
-- document routine arguments and local variables
-
-Prompt:
-
-- `LLM_prompts/fortran_routine_formatting.md`
-
-Before using, confirm whether the user wants:
-
-- formatting-only changes
-- behavior-preserving refactor plus formatting
-- full call-site and wrapper updates
-- source code edits now, or only a review/checklist
-
-### Work Through CLUBB Dash
-
-Likely use when the user asks to:
-
-- connect to, attach to, use, open, or control the Dash dashboard
-- compile, run a case, inspect output, make or save plots, navigate a tab, or
-  configure/launch/inspect a tuning job
-- investigate a result, especially when the dashboard can show the relevant
-  profiles, contours, run console, Tune settings, or activity log
-- create, update, or view a static investigation report
-
-Prompt:
-
-- `LLM_prompts/dash_app_workflow.md`
-
-Before using, determine whether there is one unambiguous open dashboard with a
-live browser view.  Do not silently start another dashboard when none is open,
-and do not guess between multiple instances.  Read the prompt before taking
-dashboard actions; it defines the required connection, persistence, report,
-and fallback behavior.
+[Maintaining guidance](README.md) describes how to record approved lessons
+without duplicating requirements. Optional repo skills `clubb-jax-port` and
+`clubb-script-cli` point to the same canonical workflows; they aid discovery
+for agents with skill support, while this index supports other agents.
