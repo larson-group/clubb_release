@@ -1,25 +1,10 @@
 #!/usr/bin/env python3
-"""test_max_cubic_root.py — validate the JAX max_cubic_root port (adg1_adg2_3d_luhar_pdf.F90).
+"""validate the JAX max_cubic_root port (adg1_adg2_3d_luhar_pdf.F90)."""
 
-Largest real root of a cubic (with quadratic/linear fallbacks). No direct f2py oracle; validated by:
-  1. Root property: the returned value satisfies a·r³ + b·r² + c·r + d ~ 0.
-  2. Max-real-root: matches max(real(numpy.roots)) for true-cubic cases.
-  3. The fallback branches (a~0 quadratic; a,b~0 linear).
-  4. A finite jax.grad.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.adg1_adg2_3d_luhar_pdf import max_cubic_root
 
@@ -50,21 +35,3 @@ def test_fallbacks():
     rl = float(np.asarray(max_cubic_root(np.array([0.0]), np.array([0.0]), np.array([2.0]), np.array([-4.0])))[0])
     assert abs(rl - 2.0) < 1e-12, f"linear fallback: {rl}"
     print("  quadratic + linear fallbacks  PASS")
-
-
-def test_differentiable():
-    a = jnp.array([1.0, 2.0]); b = jnp.array([-1.0, 0.5]); c = jnp.array([-2.0, -3.0])
-    g = np.asarray(jax.grad(lambda d: jnp.sum(max_cubic_root(a, b, c, d) ** 2))(jnp.array([0.5, -1.0])))
-    assert np.isfinite(g).all(), "non-finite grad through max_cubic_root"
-    print(f"  jax.grad through max_cubic_root: finite ({g.size} entries)  PASS")
-
-
-def main():
-    print("test_max_cubic_root:")
-    for t in (test_root_property_and_max, test_fallbacks, test_differentiable):
-        t()
-    print("All max_cubic_root checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

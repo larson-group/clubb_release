@@ -10,14 +10,7 @@ implicitly by those cases. Pinned here vs an independent top-down transcription 
 
 Pure-Python (the F90 loop is the oracle), so it never SKIPs. (iter 504)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -47,13 +40,3 @@ def test_liq_water_path():
         assert float(np.max(np.abs(j[:, -1]))) == 0.0, "top boundary LWP must be 0"
         assert np.all(np.diff(j, axis=1) <= 1e-30), "LWP must be non-increasing upward"
     print("  liq_water_path == F90 top-down transcription (rev-cumsum, top=0, monotone)  PASS")
-
-
-def main():
-    print("test_liq_water_path:")
-    test_liq_water_path()
-    print("All liq_water_path checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

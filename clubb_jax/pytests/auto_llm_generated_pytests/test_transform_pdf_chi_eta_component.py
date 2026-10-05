@@ -13,15 +13,8 @@ It feeds the cloud-fraction closure but was validated only end-to-end. This pins
 Monte-Carlo: draw (rt', thl') from the bivariate normal, form χ'/η' by the same linear maps, and compare the empirical
 Var(χ'), Var(η'), Cov(χ',η') to σ_χ², σ_η², covar_χη. + the corr_chi_eta quotient and a finite grad. (iter 565)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -79,18 +72,6 @@ def test_corr_quotient_and_grad():
     g = jax.grad(lambda rt: transform_pdf_chi_eta_component(_TL, _RSATL, rt, _EXNER, _VTHL, _VRT, _CORR)[0])(_RT)
     assert np.isfinite(float(g)), "non-finite grad of chi wrt rt"
     print("  corr_chi_eta = covar/(σ_χ·σ_η) ∈ [−1,1]; finite grad  PASS")
-
-
-def main():
-    print("test_transform_pdf_chi_eta_component:")
-    test_deterministic_coefficients()
-    test_variance_combination_monte_carlo()
-    test_corr_quotient_and_grad()
-    print("All transform_pdf_chi_eta_component checks PASSED")
-
-
-if __name__ == "__main__":
-    main()
 
 
 def test_zero_component_variances_have_finite_derivatives():

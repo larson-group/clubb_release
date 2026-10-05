@@ -11,14 +11,7 @@ representative function (`covar_rt_KK_auto`) across mixt_frac and asserts exact 
 component covariances is correctly wired (a swapped/miscoefficiented combination breaks it). + finite grad.
 Oracle-independent; never SKIPs. (iter 558)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -62,14 +55,3 @@ def test_grad_finite():
     assert expected != 0.0
     np.testing.assert_allclose(g, expected, rtol=1e-12)
     print("  mixture gradient matches its independently sampled slope  PASS")
-
-
-def main():
-    print("test_covar_KK_mixt_frac_linearity:")
-    test_exact_mixt_frac_linearity()
-    test_grad_finite()
-    print("All covar_*_KK_* mixt_frac-weighting checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

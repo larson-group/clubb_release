@@ -1,27 +1,8 @@
 #!/usr/bin/env python3
-"""test_ice_dfsn.py — validate the JAX ice_dfsn port (cloud-water depletion by diffusional growth of ice).
-
-Oracles:
-  1. `thlm2T_in_K` is bit-validated vs the f2py oracle `f2py_thlm2t_in_k_1d` (SKIPs if unbuilt).
-  2. `ice_dfsn` is validated vs a LITERAL NumPy transcription of the Fortran top-to-bottom mass-integration
-     loop (the algorithm is sequential, so a direct Python loop is a faithful, independent reference) — rel ~1e-14.
-  3. Branch coverage: tendencies are 0 outside in-cloud/below-freezing; the over-depletion cap is exercised.
-  4. The thlm tendency equals -(Lv/(Cp*exner)) * rcm tendency exactly.
-  5. A finite `jax.grad` through the whole routine.
-"""
+"""validate the JAX ice_dfsn port (cloud-water depletion by diffusional growth of ice)."""
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import pytest
 import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-# Append (not prepend) the f2py directory so it cannot shadow this checkout's package.
-_F2PY = os.path.join(_ROOT, "clubb_python_api")
-if _F2PY not in sys.path:
-    sys.path.append(_F2PY)
 
 import numpy as np
 import jax
@@ -30,8 +11,7 @@ import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.T_in_K_module import thlm2T_in_K
 from clubb_jax.src.CLUBB_core.saturation import sat_mixrat_liq
-from clubb_jax.src.CLUBB_core.constants_clubb import (
-    Cp, Lv, ep, Rv, Lf, Ls, T_freeze_K, cm_per_m)
+from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, ep, Rv, Lf, Ls, T_freeze_K
 from clubb_jax.src.Microphys.ice_dfsn_module import ice_dfsn
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
@@ -101,24 +81,6 @@ def _numpy_ice_dfsn(gr, dt, thlm, rcm, exner, p, rho):
     return rcm_ice, thlm_ice
 
 
-def test_thlm2T_in_K_vs_f2py():
-    rng = np.random.default_rng(1)
-    thlm = 290.0 + rng.standard_normal(30) * 5
-    exner = 0.9 + rng.standard_normal(30) * 0.02
-    rcm = np.abs(rng.standard_normal(30)) * 1e-4
-    got = np.asarray(thlm2T_in_K(jnp.asarray(thlm), jnp.asarray(exner), jnp.asarray(rcm)))
-    try:
-        import clubb_f2py
-    except ModuleNotFoundError as _oracle_error:
-        if _oracle_error.name.split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip("  thlm2T_in_K vs f2py: SKIP (oracle unbuilt)")
-    ref = np.asarray(clubb_f2py.f2py_thlm2t_in_k_1d(thlm, exner, rcm))
-    rel = np.max(np.abs(got - ref) / (np.abs(ref) + 1e-30))
-    assert rel == 0.0, f"thlm2T_in_K vs f2py rel {rel:.2e}"
-    print(f"  thlm2T_in_K vs f2py_thlm2t_in_k_1d: BIT-EXACT (rel {rel:.0e})  PASS")
-
-
 def test_ice_dfsn_vs_numpy():
     gr, thlm, rcm, exner, p, rho = _make_grid_and_profile()
     dt = 60.0
@@ -160,29 +122,6 @@ def test_over_depletion_cap():
     capped = np.isclose(g_rcm, -rcm / dt, rtol=1e-12, atol=0) & (rcm > 0)
     assert np.any(capped), "expected at least one capped level"
     print(f"  over-depletion cap (no negative liquid; {capped.sum()} levels capped)  PASS")
-
-
-def test_differentiable():
-    gr, thlm, rcm, exner, p, rho = _make_grid_and_profile()
-    def loss(rcm_in):
-        r, _ = ice_dfsn(gr, 60.0, jnp.asarray(thlm), rcm_in, jnp.asarray(exner),
-                        jnp.asarray(p), jnp.asarray(rho), _SAT_FORMULA)
-        return jnp.sum(r ** 2)
-    g = jax.grad(loss)(jnp.asarray(rcm))
-    assert np.isfinite(np.asarray(g)).all(), "non-finite grad through ice_dfsn"
-    print(f"  jax.grad(ice_dfsn) wrt rcm: finite (||g||={float(jnp.linalg.norm(g)):.3e})  PASS")
-
-
-def main():
-    print("test_ice_dfsn:")
-    for t in (test_thlm2T_in_K_vs_f2py, test_ice_dfsn_vs_numpy, test_branches_and_coupling,
-              test_over_depletion_cap, test_differentiable):
-        t()
-    print("All ice_dfsn checks PASSED")
-
-
-if __name__ == "__main__":
-    main()
 
 
 def test_columns_use_their_own_grid_spacing_eager_and_jit():

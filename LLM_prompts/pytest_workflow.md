@@ -66,6 +66,13 @@ inside the test is not production coverage. Source-contract checks can protect
 public fields/calls/porting requirements, but do not substitute for numerical
 checks or the full faithful-port audit.
 
+JAX pytests must remain independent of `clubb_python_api`, `clubb_python` and
+F2PY, including reference oracles and runner preloads. Use analytic/NumPy
+references or supported JAX contracts; shared higher-level comparisons use the
+Fortran executable. Reading Fortran source text for a public schema is fine.
+Numerical comparisons must assert the expected shape before comparing values
+so accidental scalar broadcasting cannot pass as a full-array reference.
+
 Avoid assertions that only restate constants, count incidental callbacks,
 freeze cosmetic labels/layout numbers, or check that another test exists.
 Testing a numerical validator with a representative fault is valuable when it

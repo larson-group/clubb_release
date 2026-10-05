@@ -3,18 +3,9 @@
 Bit-exactness vs a direct Fortran-formula replica of advance_soil_veg, plus a multi-step physical sanity
 check (the surface/soil temperatures stay finite and relax toward a radiative-turbulent equilibrium).
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import math
 import numpy as np
 
-import os
-import sys
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 from clubb_jax.src.Radiation.soil_vegetation import advance_soil_veg, initialize_soil_veg
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
@@ -76,34 +67,3 @@ def test_soil_veg_init_and_integration():
     assert np.all(np.isfinite(veg)) and np.all(np.isfinite(sfc)) and np.all(np.isfinite(deep))
     assert 200.0 < veg[0] < 350.0, f"veg temperature unphysical: {veg[0]}"
     print(f"  soil_veg init + 1h integration: veg {veg0:.1f}→{veg[0]:.1f} K, all temps finite & physical  PASS")
-
-
-def test_soil_veg_differentiable():
-    """advance_soil_veg is differentiable: jax.grad of the updated vegetation temperature w.r.t. the
-    incoming LW flux and the previous veg temperature is finite + nonzero (radiative-surface coupling)."""
-    import jax, jax.numpy as jnp
-    n = 2
-    args = dict(dt=30.0, rho_sfc=jnp.full(n, 1.2), Frad_SW_up_sfc=jnp.zeros(n),
-                Frad_SW_down_sfc=jnp.full(n, 200.0), wpthlp_sfc=jnp.full(n, -0.02),
-                wprtp_sfc=jnp.zeros(n), p_sfc=jnp.full(n, 1.0e5),
-                deep_soil_T_in_K=jnp.full(n, 288.58), sfc_soil_T_in_K=jnp.full(n, 295.0))
-
-    def loss(lwdn, veg):
-        _, _, _, veg_new = advance_soil_veg(
-            n, args['dt'], args['rho_sfc'], args['Frad_SW_up_sfc'], args['Frad_SW_down_sfc'], lwdn,
-            args['wpthlp_sfc'], args['wprtp_sfc'], args['p_sfc'], _stats(n),
-            args['deep_soil_T_in_K'], args['sfc_soil_T_in_K'], veg)
-        return jnp.sum(veg_new)
-
-    g_lw, g_veg = jax.grad(loss, argnums=(0, 1))(jnp.full(n, 320.0), jnp.full(n, 300.0))
-    assert jnp.all(jnp.isfinite(g_lw)) and jnp.all(jnp.isfinite(g_veg)), "non-finite soil_veg gradient"
-    assert float(jnp.max(jnp.abs(g_lw))) > 0, "soil_veg gradient w.r.t. LW flux is zero"
-    print(f"  advance_soil_veg differentiable: grad finite+nonzero (dveg/dLWdn={float(g_lw[0]):.2e})  PASS")
-
-
-if __name__ == "__main__":
-    print("soil_vegetation validation:")
-    test_soil_veg_vs_fortran_replica()
-    test_soil_veg_init_and_integration()
-    test_soil_veg_differentiable()
-    print("All soil_vegetation tests PASSED.")

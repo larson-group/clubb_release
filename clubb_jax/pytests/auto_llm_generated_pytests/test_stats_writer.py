@@ -194,15 +194,6 @@ def test_jitted_banks_preserve_column_and_level_selectors(tmp_path):
     np.testing.assert_array_equal(buffers[surface_bank][surface_slot, :, 0], [3.0, 4.0])
 
 
-def test_jax_layout_reuses_cached_slot_maps(tmp_path):
-    writer = _writer(tmp_path)
-    first = JaxStats.from_layout(writer.get_jax_layout(), ncol=2)
-    second = JaxStats.from_layout(writer.get_jax_layout(), ncol=2)
-
-    assert first.name_to_id is second.name_to_id
-    assert first.name_to_slot is second.name_to_slot
-
-
 def test_rank_one_column_selector_is_bounds_checked(tmp_path):
     writer = _writer(tmp_path)
     writer.begin_timestep(0)

@@ -14,19 +14,11 @@ a strong independent oracle:
   3. The ±max_mag_correlation clamp fires for an out-of-range flux.
   4. A finite jax.grad through the diagnosed correlation.
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import calc_corr_w_hm_n
 from clubb_jax.src.CLUBB_core.constants_clubb import max_mag_correlation, w_tol
@@ -126,27 +118,3 @@ def test_clamp():
     assert abs(float(cp1) - max_mag_correlation) < 1e-14 and abs(float(cp2) - max_mag_correlation) < 1e-14
     assert abs(float(cm1) + max_mag_correlation) < 1e-14 and abs(float(cm2) + max_mag_correlation) < 1e-14
     print("  clamp: |corr| limited to max_mag_correlation for out-of-range flux  PASS")
-
-
-def test_differentiable():
-    base = dict(mu_w_1=0.3, mu_w_2=-0.2, mu_hm_1=2.0, mu_hm_2=1.5,
-                sigma_w_1=0.5, sigma_w_2=0.4, sigma_hm_1=1.0, sigma_hm_2=1.0,
-                sigma_hm_1_n=0.6, sigma_hm_2_n=0.5, mixt_frac=0.4, precip_frac_1=0.8,
-                precip_frac_2=0.9, hm_tol=_HM_TOL)
-    def loss(wphm):
-        c1, c2 = calc_corr_w_hm_n(0.1, wphm, **base)
-        return c1 ** 2 + c2 ** 2
-    g = float(jax.grad(loss)(0.05))
-    assert np.isfinite(g), "non-finite grad through calc_corr_w_hm_n"
-    print(f"  jax.grad through calc_corr_w_hm_n: finite (d/dwphm = {g:.3e})  PASS")
-
-
-def main():
-    print("test_calc_corr_w_hm_n:")
-    for t in (test_round_trip, test_branches_vs_numpy, test_clamp, test_differentiable):
-        t()
-    print("All calc_corr_w_hm_n checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

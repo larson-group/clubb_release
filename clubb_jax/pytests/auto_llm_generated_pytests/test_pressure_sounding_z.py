@@ -12,12 +12,8 @@ thermodynamics, so CGILS/cloud_feedback cases can interpolate onto the height gr
 """
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -26,7 +22,7 @@ import jax.numpy as jnp
 
 from clubb_jax.src.Input_fields.sounding import read_sounding, convert_pressure_sounding_to_z
 from clubb_jax.src.Input_fields.hydrostatic_module import inverse_hydrostatic, calc_ref_z_linear_thvm
-from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, p0, kappa, ep2
+from clubb_jax.src.CLUBB_core.constants_clubb import p0, kappa, ep2
 
 _CGILS = _ROOT + "/input/case_setups/cgils_s11_sounding.in"
 _P_SFC, _ZM_INIT, _SAT = 1.02078e5, 0.0, 3   # cgils p_sfc≈sfc value; flatau saturation formula = 3
@@ -104,14 +100,3 @@ def test_hydrostatic_roundtrip():
     w = np.max(np.abs(np.diff(z) - np.diff(ref_z)))
     assert w < 1e-9, f"z increments inconsistent with the forward log-mean integral: {w:.2e}"
     print(f"  hydrostatic round-trip (Δz vs forward integral): worst {w:.2e} m  PASS")
-
-
-def main():
-    print("test_pressure_sounding_z:")
-    for t in (test_real_cgils_sounding, test_temperature_branch_independent, test_hydrostatic_roundtrip):
-        t()
-    print("All convert_pressure_sounding_to_z checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

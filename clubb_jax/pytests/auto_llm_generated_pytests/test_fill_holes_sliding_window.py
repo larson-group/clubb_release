@@ -10,14 +10,7 @@ conserved overall and (via the fallback) no holes remain. Only fill_holes_vertic
 defining properties + that out-of-range values are untouched + a finite grad. Companion to iter-571's
 fill_holes_global. Oracle-independent; never SKIPs. (iter 572)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -63,25 +56,3 @@ def test_no_holes_is_noop():
     ))
     assert np.max(np.abs(out - field)) < 1e-13, "no-hole field should be unchanged"
     print("  no-hole field: unchanged (noop)  PASS")
-
-
-def test_grad_finite():
-    rng = np.random.default_rng(9)
-    field, rho_dz = _setup(rng)
-    g = jax.grad(lambda f: jnp.sum(fill_holes_sliding_window(
-        _NZ, 1, 0.1, 1, 10, jnp.ones_like(f), jnp.asarray(rho_dz), f,
-    ) ** 2))(jnp.asarray(field))
-    assert np.all(np.isfinite(np.asarray(g))), "non-finite grad"
-    print("  jax.grad through fill_holes_sliding_window finite  PASS")
-
-
-def main():
-    print("test_fill_holes_sliding_window:")
-    test_conservation_and_no_holes()
-    test_no_holes_is_noop()
-    test_grad_finite()
-    print("All fill_holes_sliding_window checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

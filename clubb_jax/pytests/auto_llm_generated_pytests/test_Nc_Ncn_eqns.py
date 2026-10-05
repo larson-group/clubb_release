@@ -1,59 +1,12 @@
-"""Verification of Nc_Ncn_eqns.py — cloud-nuclei-concentration mean <Ncn> (Ncnm).
-
-Nc_in_cloud_to_Ncnm IS exposed by the f2py API, so it is verified BIT-TO-BIT against
-f2py_nc_in_cloud_to_ncnm over a random sweep covering both branches (constant Ncn -> simple
-fallback; varying Ncn -> the erfc PDF integral). Real Rico output checks live in
-clubb_jax/tests/run_rico_microphysics_oracle_test.py.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import pytest
-import os
+"""Verification of Nc_Ncn_eqns.py — cloud-nuclei-concentration mean <Ncn> (Ncnm)."""
 import numpy as np
 import jax
 
 jax.config.update("jax_enable_x64", True)
 
-import os
-import sys
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
-from clubb_jax.src.CLUBB_core.Nc_Ncn_eqns import (
-    Nc_in_cloud_to_Ncnm, bivar_NL_chi_Ncn_mean, Ncnm_to_Ncm, Ncnm_to_Nc_in_cloud)
+from clubb_jax.src.CLUBB_core.Nc_Ncn_eqns import bivar_NL_chi_Ncn_mean, Ncnm_to_Ncm, Ncnm_to_Nc_in_cloud
 from scipy.special import erfc as _erfc
-
-
-
-def test_Ncnm_bit_to_bit_vs_f2py():
-    """Nc_in_cloud_to_Ncnm matches the Fortran f2py oracle over a random sweep."""
-    try:
-        import clubb_f2py as f
-    except ModuleNotFoundError as _oracle_error:
-        if _oracle_error.name.split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip("  Ncnm vs f2py: SKIP (clubb_f2py not built)")
-    rng = np.random.default_rng(0)
-    worst = 0.0
-    for _ in range(3000):
-        mu1, mu2 = rng.uniform(-1e-3, 1e-3), rng.uniform(-1e-3, 1e-3)
-        s1 = rng.choice([0.0, rng.uniform(0, 5e-4)])      # exercise sigma_chi=0 branch
-        s2 = rng.choice([0.0, rng.uniform(0, 5e-4)])
-        mf, ncl = rng.uniform(0.01, 0.99), rng.uniform(1e6, 3e8)
-        cf1, cf2 = rng.uniform(0, 1), rng.uniform(0, 1)
-        cnp2 = rng.choice([0.0, rng.uniform(0, 2.0)])     # exercise const-Ncn vs varying
-        ccc = rng.choice([0.0, rng.uniform(-0.9, 0.9)])
-        fo = float(f.f2py_nc_in_cloud_to_ncnm(mu1, mu2, s1, s2, mf, ncl, cf1, cf2, cnp2, ccc))
-        jo = float(Nc_in_cloud_to_Ncnm(mu1, mu2, s1, s2, mf, ncl, cf1, cf2, cnp2, ccc))
-        worst = max(worst, abs(jo - fo) / (abs(fo) + 1e-300))
-    # Machine-level (residual is the JAX-vs-Fortran erfc implementation difference).
-    assert worst < 1e-12, f"Ncnm vs f2py worst rel {worst:.2e}"
-    print(f"  Nc_in_cloud_to_Ncnm vs f2py: 3000 cases, worst rel {worst:.1e}  PASS")
-
-
 
 
 # ── Forward direction (Ncn → Nc): independent NumPy transcription of the Fortran branch logic ──
@@ -102,10 +55,3 @@ def test_forward_vs_numpy_reference():
     assert worst_b < 1e-12 and worst_m < 1e-12 and worst_c < 1e-12, (worst_b, worst_m, worst_c)
     print(f"  forward vs NumPy ref: 4000 cases, worst rel bivar={worst_b:.1e} Ncm={worst_m:.1e} "
           f"Nc_in_cloud={worst_c:.1e}  PASS")
-
-
-if __name__ == "__main__":
-    print("Nc_Ncn_eqns (<Ncn> mean) verification:")
-    test_Ncnm_bit_to_bit_vs_f2py()
-    test_forward_vs_numpy_reference()
-    print("All Nc_Ncn_eqns tests PASSED.")

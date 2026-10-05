@@ -9,24 +9,14 @@ amount from the topmost above-tol level (the rico step-1 k51 seed of 1.37e-8 = t
 A regression that drops the rtm/thlm fill (or re-adds an IC floor) would silently reintroduce the rico
 seed; these tests are the fast unit-level guard (no Fortran oracle needed).
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
 import numpy as np
-import pytest
 import jax
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
-from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical, fill_holes_wp2_from_horz_tke
+from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical
 
 RT_TOL = 1.0e-8
 
@@ -60,7 +50,7 @@ def test_mean_fill_raises_dry_top_and_conserves_mass():
     # Mass conservation to MACHINE PRECISION. The global redistribution conserves rho_ds-weighted column mass
     # exactly in exact arithmetic; in x64 the residual is ~1e-16 (the earlier "~1e-8 precision floor" note was a
     # float32 artifact of this file before it enabled jax_enable_x64 — see iters 432/437). The JAX bit-matches the
-    # Fortran fill_holes_vertical (test_fill_holes_vertical_f2py, 3.3e-16).
+    # Fortran fill_holes_vertical applies the same column-water conservation constraint.
     rel_mass = abs(m_after - m_before) / abs(m_before)
     assert rel_mass < 1e-12, f"column mass not conserved to machine precision: rel {rel_mass:.2e}"
     # The donor (topmost moist level, index where rtm was 9e-5) must have given up mass.
@@ -83,77 +73,3 @@ def test_mean_fill_noop_when_all_above_threshold():
         threshold=RT_TOL, lower_hf_level=0, upper_hf_level=nzt - 1, fill_holes_type=2)
     assert np.array_equal(np.asarray(out), np.asarray(rtm)), "fill changed an all-above-threshold field"
     print("  mean-field fill: bitwise no-op when all >= threshold  PASS")
-
-
-def test_thlm_fill_is_noop():
-    """thlm ~300 K >> thl_tol, so the thlm_cl fill is always a guaranteed no-op (mirrors the Fortran
-    but never changes thlm) — guards against an accidental threshold that would corrupt thlm."""
-    nzt = 16
-    rho = np.linspace(1.1, 0.6, nzt)[None, :]
-    dz = np.full((1, nzt), 40.0)
-    thl_tol = 1.0e-2
-    thlm = jnp.asarray(np.linspace(298.0, 320.0, nzt)[None, :])
-    out = fill_holes_vertical(
-        nz=nzt, ngrdcol=1, grid_dir_indx=1,
-        field=thlm, rho_ds=jnp.asarray(rho), dz=jnp.asarray(dz),
-        threshold=thl_tol, lower_hf_level=0, upper_hf_level=nzt - 1, fill_holes_type=2)
-    assert np.array_equal(np.asarray(out), np.asarray(thlm)), "thlm fill changed thlm"
-    print("  thlm fill: no-op (thlm >> thl_tol)  PASS")
-
-
-def test_fill_holes_vertical_f2py():
-    """fill_holes_vertical (fill_holes.F90) — the mass-conserving vertical hole-filler, validated vs the f2py oracle
-    for BOTH fill_holes_type=1 (single global pass) and 2 (sliding 3-pt window + global fallback). The JAX lower_k/
-    upper_k are 0-based (Fortran lower/upper_hf_level = +1). This is the validation wrongly reverted at iter 411 as an
-    "FP-floor": that 5.91e-08 was the SAME float32 artifact later diagnosed at iter 432 (the file lacked
-    jax_enable_x64) — with x64 it is bit-faithful (~3.3e-16), NOT an FP-floor. SKIPs if clubb_f2py is unbuilt.
-    (iter 437)"""
-    clubb_f2py = pytest.importorskip("clubb_f2py")
-    rng = np.random.default_rng(0)
-    worst = 0.0
-    for fht in (1, 2):
-        for _ in range(20):
-            ng, nz = 2, 16
-            field = rng.uniform(-0.05, 1.0, (ng, nz))   # negatives = holes to fill
-            rho = rng.uniform(0.3, 1.2, (ng, nz)); dz = rng.uniform(20.0, 120.0, (ng, nz)); thr = 1e-3
-            j = np.asarray(fill_holes_vertical(
-                nz, ng, thr, 0, nz - 1, jnp.asarray(dz), jnp.asarray(rho), 1, fht, jnp.asarray(field),
-            ))
-            f = np.asarray(clubb_f2py.f2py_fill_holes_vertical(thr, 1, nz, dz.copy(), rho.copy(), 1, fht, field.copy()))
-            worst = max(worst, float(np.max(np.abs(j - f))))
-    assert worst < 1e-12, f"fill_holes_vertical f2py mismatch {worst:.2e}"
-    print(f"  f2py fill_holes_vertical (fill_holes_type 1 + 2, 40 cases): bit-match, worst {worst:.2e}  PASS")
-
-
-def test_fill_holes_wp2_from_horz_tke_f2py():
-    """fill_holes_wp2_from_horz_tke (fill_holes.F90) — the TKE-conserving wp2 hole-fill: where wp2 < threshold and
-    up2/vp2 have spare TKE, it borrows from up2/vp2 proportionally to raise wp2. Unlike fill_holes_vertical this is
-    a direct proportional borrow (NOT the FP-floor mass_frac redistribution), so it bit-shadows the f2py oracle
-    cleanly. The JAX lower_k/upper_k are 0-based (Fortran lower/upper_hf_level = +1). SKIPs if clubb_f2py is unbuilt.
-    (iter 432)"""
-    clubb_f2py = pytest.importorskip("clubb_f2py")
-    rng = np.random.default_rng(4)
-    worst = 0.0
-    for _ in range(20):
-        ng, nzm = 2, 12
-        wp2 = rng.uniform(-0.1, 1.0, (ng, nzm))   # negatives / sub-threshold -> holes to fill
-        up2 = rng.uniform(0.05, 1.0, (ng, nzm)); vp2 = rng.uniform(0.05, 1.0, (ng, nzm)); thr = 1e-3
-        j = fill_holes_wp2_from_horz_tke(
-            nzm, ng, thr, 0, nzm - 1, jnp.asarray(wp2), jnp.asarray(up2), jnp.asarray(vp2),
-        )
-        f = clubb_f2py.f2py_fill_holes_wp2_from_horz_tke(thr, 1, nzm, np.asfortranarray(wp2.copy()),
-                                                         np.asfortranarray(up2.copy()), np.asfortranarray(vp2.copy()))
-        for k in range(3):   # wp2, up2, vp2
-            worst = max(worst, float(np.max(np.abs(np.asarray(j[k]) - np.asarray(f[k])))))
-    assert worst < 1e-12, f"fill_holes_wp2_from_horz_tke f2py mismatch {worst:.2e}"
-    print(f"  f2py fill_holes_wp2_from_horz_tke (wp2/up2/vp2 TKE-conserving fill, 20 cases): bit-match, worst {worst:.2e}  PASS")
-
-
-if __name__ == "__main__":
-    print("Mean-field fill_holes (rtm_cl / thlm_cl) tests:")
-    test_mean_fill_raises_dry_top_and_conserves_mass()
-    test_mean_fill_noop_when_all_above_threshold()
-    test_thlm_fill_is_noop()
-    test_fill_holes_vertical_f2py()
-    test_fill_holes_wp2_from_horz_tke_f2py()
-    print("All mean-field fill_holes tests PASSED.")

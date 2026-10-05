@@ -12,15 +12,8 @@ with the x3 mean passed as the deterministic value exp(μ_x3_n). This pins all t
 trivariate covariance const-variant coverage (const_x1/x2/x1x2 via MM, 576; const_x3/x1x3/x2x3 via this limit, 577).
 Oracle-independent; never SKIPs. (iter 577)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -57,13 +50,3 @@ def test_const_x3_x1x3_x2x3_limits():
     assert w3 < 1e-7 and w13 < 1e-7 and w23 < 1e-7, f"limits: x3 {w3:.1e}, x1x3 {w13:.1e}, x2x3 {w23:.1e}"
     print(f"  const_x3==general, const_x1x3==const_x1, const_x2x3==const_x2 at σ_x3→0 "
           f"(worst {max(w3, w13, w23):.1e})  PASS")
-
-
-def main():
-    print("test_NNL_covar_const_limits:")
-    test_const_x3_x1x3_x2x3_limits()
-    print("All trivar covar const-limit checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

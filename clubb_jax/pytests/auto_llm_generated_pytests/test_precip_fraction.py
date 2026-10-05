@@ -1,31 +1,12 @@
 """Focused synthetic precipitation fraction assertion contracts; real Rico checks live in tests/."""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
 import numpy as np
 import jax
-import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-import os
-import sys
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 from clubb_jax.pytests.microphysics_test_inputs import precip_fraction_from_fields
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
-from clubb_jax.src.CLUBB_core.precipitation_fraction import precip_fraction, precip_frac_assert_check
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
-from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-
-
-
-
-
+from clubb_jax.src.CLUBB_core.precipitation_fraction import precip_frac_assert_check
 
 
 def test_precip_frac_assert_check():
@@ -46,9 +27,3 @@ def test_precip_frac_assert_check():
     bad2 = np.array(pf1[0]); bad2[3] += 0.5        # breaks the mixt_frac-weighted consistency
     assert precip_frac_assert_check(hydromet[0], hmtol, mf[0], pf[0], bad2, pf2[0], float(pftol[0])) is False
     print("  precip_frac_assert_check: valid PASS / precip_frac>1 + inconsistent FAIL  PASS")
-
-
-if __name__ == "__main__":
-    print("precip_fraction end-to-end vs Fortran rico oracle:")
-    test_precip_frac_assert_check()
-    print("Done.")

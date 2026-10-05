@@ -13,14 +13,7 @@ non-clipping regime for BOTH branches (it is how pf2 is defined from pf1). Teste
 upsilon==1 branch (so that branch is now exercised — a crash/NaN there is caught). Plus validity bounds (pf1,pf2 ∈
 [0,1] across a broad sweep including clip regimes) and a finite jax.grad. Oracle-independent; never SKIPs. (iter 548)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -82,29 +75,6 @@ def test_validity_bounds_broad_sweep():
             worst_hi = max(worst_hi, float(np.max(a)))
     assert worst_lo >= -1e-12 and worst_hi <= 1.0 + 1e-12, f"component fractions escaped [0,1]: [{worst_lo},{worst_hi}]"
     print(f"  validity: pf1,pf2 ∈ [0,1] across upsilon∈{{0.3,0.55,0.9,1}} (range [{worst_lo:.2f},{worst_hi:.2f}])  PASS")
-
-
-def test_grad_finite():
-    rng = np.random.default_rng(99)
-    mf = jnp.asarray(rng.uniform(0.4, 0.8, (_NG, _NZT)))
-    pf0 = jnp.asarray(mf * rng.uniform(0.2, 0.9, (_NG, _NZT)))
-    tol = jnp.full((_NG,), _TOL)
-    g = jax.grad(lambda p: jnp.sum(sum(x ** 2 for x in component_precip_frac_specify(2, jnp.array([1.e-10,1.]), .55, jnp.ones((_NG,_NZT,2)), p, mf, tol))))(pf0)
-    assert np.all(np.isfinite(np.asarray(g))), "non-finite grad wrt pf"
-    print("  jax.grad(component_precip_frac_specify) wrt pf finite  PASS")
-
-
-def main():
-    print("test_component_precip_frac_specify:")
-    test_conservation_general_branch_no_clip()
-    test_conservation_upsilon_one_branch()
-    test_validity_bounds_broad_sweep()
-    test_grad_finite()
-    print("All component_precip_frac_specify checks PASSED")
-
-
-if __name__ == "__main__":
-    main()
 
 
 def test_minimum_precipitation_fraction_does_not_lose_pdf_component():

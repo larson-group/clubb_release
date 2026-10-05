@@ -94,7 +94,7 @@ run_jax() {
     local reports="${CLUBB_PYTEST_OUTPUT_DIR:-$REPO_ROOT/output/tests/pytests/jax}"
     [[ "$reports" == /* ]] || reports="$REPO_ROOT/$reports"
     local path relative report result failures=0 selected=0 executed=0
-    # A native Fortran stop or retained runtime state must not contaminate another module.
+    # Isolate module-level flags and JIT caches between independently selected modules.
     trap 'exit 130' INT
     trap 'exit 143' TERM
     while IFS= read -r path; do
@@ -107,8 +107,7 @@ run_jax() {
         rm -f "$report"
         selected=$((selected + 1))
         echo "JAX pytest module: $relative"
-        # The API runner preloads the selected extension before pytest changes sys.path.
-        if CLUBB_PYTHON="$python_bin" bash clubb_python_api/run_pytests.sh "$path" \
+        if "$python_bin" -m pytest "$path" \
             --capture=sys --junitxml="$report" \
             ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}; then
             executed=$((executed + 1))
@@ -120,7 +119,7 @@ run_jax() {
                 *)
                     echo "JAX pytest module failed: $relative (exit $result)" >&2
                     failures=$((failures + 1))
-                    # A native exit cannot finalize pytest's report; record a harness error explicitly.
+                    # Record a process error if pytest exits before finalizing its report.
                     if [[ ! -s "$report" ]]; then
                         "$python_bin" - "$report" "$relative" "$result" <<'PY_REPORT'
 from pathlib import Path

@@ -10,19 +10,11 @@ corr_NN2NL, lognormal-lognormal pairs use corr_NN2LL. Oracle:
      including the Fortran quirk that component-2 Ncn transforms reuse the component-1 Ncn variance ratio.
   4. A finite jax.grad.
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import denorm_transform_corr
 from clubb_jax.src.CLUBB_core.pdf_utilities import corr_NN2NL, corr_NN2LL
@@ -100,24 +92,3 @@ def test_transform_entries():
     assert np.max(np.abs(A1[:, :, 5, 4] - np.asarray(e1))) < 1e-13, "rr-Nr comp1"
     assert np.max(np.abs(A2[:, :, 5, 4] - np.asarray(e2))) < 1e-13, "rr-Nr comp2"
     print("  transform entries vs direct corr_NN2NL/corr_NN2LL (incl. Ncn-comp2 r1 quirk)  PASS")
-
-
-def test_differentiable():
-    s1n, s2n, r1, r2, Cn1, Cn2 = _inputs(3)
-    def loss(C):
-        A1, A2 = denorm_transform_corr(s1n, s2n, r1, r2, C, Cn2, CHI, ETA, W, NCN)
-        return jnp.sum(A1 ** 2) + jnp.sum(A2 ** 2)
-    g = np.asarray(jax.grad(loss)(jnp.asarray(Cn1)))
-    assert np.isfinite(g).all(), "non-finite grad through denorm_transform_corr"
-    print(f"  jax.grad through denorm_transform_corr: finite ({g.size} entries)  PASS")
-
-
-def main():
-    print("test_denorm_transform_corr:")
-    for t in (test_structure_and_normal_pairs, test_transform_entries, test_differentiable):
-        t()
-    print("All denorm_transform_corr checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

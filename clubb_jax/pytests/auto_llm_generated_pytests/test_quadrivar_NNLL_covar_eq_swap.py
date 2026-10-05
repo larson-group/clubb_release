@@ -10,14 +10,7 @@ focuses on the swap branches (+ a non-swap contrast and the base/all-const sanit
 the documented primitive with the (possibly swapped) args. A wrong-swap bug — easy to introduce, hard to catch
 end-to-end — is now caught directly. Oracle-independent; never SKIPs. (iter 554)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -87,15 +80,3 @@ def test_all_const():
     _close(_eq(0.0, 0.0, 0.0, 0.0),
            float(quadrivar_NNLL_covar_const_all(_MUX, _MUCHI, _MURR, _MUNR, _XM, _X2A, _A, _B, _G)), "const_all")
     print("  all σ≤tol -> const_all  PASS")
-
-
-def main():
-    print("test_quadrivar_NNLL_covar_eq_swap:")
-    for t in (test_base_all_vary, test_c3_const_x3_NONswap, test_c4_const_x3_SWAPPED,
-              test_c1c2c4_cst_x1x2x3_SWAPPED, test_all_const):
-        t()
-    print("All quadrivar_NNLL_covar_eq swap-dispatch checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

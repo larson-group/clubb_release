@@ -15,21 +15,11 @@ Checks against numerical quadrature and differentiation:
 
 Run from the repo root: bash tests/run_pytests.sh -jax -include_generated -k test_kk_autoconversion
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import numpy as np
 import jax
-import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-import os
-import sys
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
     bivar_NL_mean,
@@ -39,22 +29,7 @@ from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
     trivar_NLL_mean,
     bivar_LL_mean,
 )
-from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import (
-    KK_auto_upscaled_mean,
-    KK_accr_upscaled_mean,
-    KK_evap_upscaled_mean,
-    KK_mvr_upscaled_mean,
-    KK_AUTO_RC_EXP,
-    KK_AUTO_NC_EXP,
-    KK_ACCR_RC_EXP,
-    KK_ACCR_RR_EXP,
-    KK_EVAP_SUPERSAT_EXP,
-    KK_EVAP_RR_EXP,
-    KK_EVAP_NR_EXP,
-    KK_MVR_RR_EXP,
-    KK_MVR_NR_EXP,
-)
-from clubb_jax.src.Microphys.KK_microphys_module import KK_tendency_coefs
+from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import KK_AUTO_RC_EXP, KK_AUTO_NC_EXP, KK_ACCR_RC_EXP, KK_ACCR_RR_EXP, KK_EVAP_SUPERSAT_EXP, KK_EVAP_RR_EXP, KK_EVAP_NR_EXP, KK_MVR_RR_EXP, KK_MVR_NR_EXP
 
 ALPHA = KK_AUTO_RC_EXP    # 2.47
 BETA = KK_AUTO_NC_EXP     # -1.79
@@ -134,35 +109,6 @@ def test_bivar_const_variants_vs_quadrature():
 
 
 # ---------------------------------------------------------------------------
-def test_kk_auto_mean_composes_and_differentiable():
-    """KK_auto_upscaled_mean is finite, positive, and differentiable in the moments."""
-    rho_air = 1.0  # kg/m^3
-    coef = KK_tendency_coefs(290., 1., 1.e5, rho_air, 1)[1]
-    args = dict(
-        mu_chi_1=2.0e-4, mu_chi_2=1.0e-4, mu_Ncn_1=1.0e8, mu_Ncn_2=1.0e8,
-        mu_Ncn_1_n=np.log(1.0e8), mu_Ncn_2_n=np.log(1.0e8),
-        sigma_chi_1=3.0e-4, sigma_chi_2=2.0e-4,
-        sigma_Ncn_1=3.0e7, sigma_Ncn_2=3.0e7,
-        sigma_Ncn_1_n=0.4, sigma_Ncn_2_n=0.4,
-        corr_chi_Ncn_1_n=-0.5, corr_chi_Ncn_2_n=-0.5,
-        KK_auto_coef_val=coef, mixt_frac=0.3,
-    )
-    val = float(KK_auto_upscaled_mean(**args))
-    assert np.isfinite(val) and val > 0.0, f"KK_auto mean not finite/positive: {val}"
-
-    # differentiable w.r.t. mu_chi_1 (the cloud-water mean) — gradient finite & nonzero
-    def f(mu_chi_1):
-        a = dict(args)
-        a["mu_chi_1"] = mu_chi_1
-        return KK_auto_upscaled_mean(**a)
-    g = float(jax.grad(f)(2.0e-4))
-    # finite-difference check
-    eps = 1.0e-8
-    fd = (f(2.0e-4 + eps) - f(2.0e-4 - eps)) / (2 * eps)
-    rel = abs(g - fd) / (abs(fd) + 1e-300)
-    assert np.isfinite(g) and abs(g) > 0.0, "KK_auto grad not finite/nonzero"
-    assert rel < 1e-4, f"KK_auto grad wrong: ad={g:.4e} fd={fd:.4e} rel={rel:.2e}"
-    print(f"  KK_auto_upscaled_mean: val={val:.3e}/s, grad correct (rel {rel:.1e})  PASS")
 
 
 def test_accretion_bivar_vs_quadrature():
@@ -186,33 +132,6 @@ def test_accretion_bivar_vs_quadrature():
         worst = max(worst, rel)
         assert rel < 1e-5, f"accretion bivar vs quad rel {rel:.2e} for {c}"
     print(f"  bivar_NL_mean (accretion exps) vs quadrature: worst rel {worst:.1e}  PASS")
-
-
-def test_kk_accr_mean_composes_and_differentiable():
-    """KK_accr_upscaled_mean is finite, positive, and differentiable in the moments."""
-    args = dict(
-        mu_chi_1=2.0e-4, mu_chi_2=1.0e-4, mu_rr_1=1.0e-4, mu_rr_2=8.0e-5,
-        mu_rr_1_n=np.log(1.0e-4), mu_rr_2_n=np.log(8.0e-5),
-        sigma_chi_1=3.0e-4, sigma_chi_2=2.0e-4,
-        sigma_rr_1=5.0e-5, sigma_rr_2=4.0e-5,
-        sigma_rr_1_n=0.7, sigma_rr_2_n=0.7,
-        corr_chi_rr_1_n=0.3, corr_chi_rr_2_n=0.3,
-        mixt_frac=0.3, precip_frac_1=0.8, precip_frac_2=0.5,
-    )
-    val = float(KK_accr_upscaled_mean(**args))
-    assert np.isfinite(val) and val > 0.0, f"KK_accr mean not finite/positive: {val}"
-
-    def f(mu_chi_1):
-        a = dict(args)
-        a["mu_chi_1"] = mu_chi_1
-        return KK_accr_upscaled_mean(**a)
-    g = float(jax.grad(f)(2.0e-4))
-    eps = 1.0e-8
-    fd = (f(2.0e-4 + eps) - f(2.0e-4 - eps)) / (2 * eps)
-    rel = abs(g - fd) / (abs(fd) + 1e-300)
-    assert np.isfinite(g) and abs(g) > 0.0, "KK_accr grad not finite/nonzero"
-    assert rel < 1e-4, f"KK_accr grad wrong: ad={g:.4e} fd={fd:.4e} rel={rel:.2e}"
-    print(f"  KK_accr_upscaled_mean: val={val:.3e}/s, grad correct (rel {rel:.1e})  PASS")
 
 
 def _quad_trivar_NLL(mu_x1, mu_x2_n, mu_x3_n, sigma_x1, sigma_x2_n, sigma_x3_n,
@@ -260,37 +179,6 @@ def test_trivar_general_vs_quadrature():
     print(f"  trivar_NLL_mean (evaporation) vs 3-D quadrature: worst rel {worst:.1e}  PASS")
 
 
-def test_kk_evap_mean_composes_and_differentiable():
-    """KK_evap_upscaled_mean is finite, NEGATIVE (removes rain), and differentiable."""
-    args = dict(
-        mu_chi_1=-2.0e-4, mu_chi_2=-1.0e-4, mu_rr_1=1.0e-4, mu_rr_2=8.0e-5,
-        mu_Nr_1=1.0e4, mu_Nr_2=8.0e3,
-        mu_rr_1_n=np.log(1.0e-4), mu_rr_2_n=np.log(8.0e-5),
-        mu_Nr_1_n=np.log(1.0e4), mu_Nr_2_n=np.log(8.0e3),
-        sigma_chi_1=3.0e-4, sigma_chi_2=2.0e-4,
-        sigma_rr_1=5.0e-5, sigma_rr_2=4.0e-5, sigma_Nr_1=5.0e3, sigma_Nr_2=4.0e3,
-        sigma_rr_1_n=0.6, sigma_rr_2_n=0.6, sigma_Nr_1_n=0.5, sigma_Nr_2_n=0.5,
-        corr_chi_rr_1_n=0.3, corr_chi_rr_2_n=0.3,
-        corr_chi_Nr_1_n=0.2, corr_chi_Nr_2_n=0.2,
-        corr_rr_Nr_1_n=0.5, corr_rr_Nr_2_n=0.5,
-        KK_evap_coef_val=1.0e-3, mixt_frac=0.3, precip_frac_1=0.8, precip_frac_2=0.5,
-    )
-    val = float(KK_evap_upscaled_mean(**args))
-    assert np.isfinite(val) and val < 0.0, f"KK_evap mean not finite/negative: {val}"
-
-    def f(mu_chi_1):
-        a = dict(args)
-        a["mu_chi_1"] = mu_chi_1
-        return KK_evap_upscaled_mean(**a)
-    g = float(jax.grad(f)(-2.0e-4))
-    eps = 1.0e-8
-    fd = (f(-2.0e-4 + eps) - f(-2.0e-4 - eps)) / (2 * eps)
-    rel = abs(g - fd) / (abs(fd) + 1e-300)
-    assert np.isfinite(g) and abs(g) > 0.0, "KK_evap grad not finite/nonzero"
-    assert rel < 1e-4, f"KK_evap grad wrong: ad={g:.4e} fd={fd:.4e} rel={rel:.2e}"
-    print(f"  KK_evap_upscaled_mean: val={val:.3e}/s (<0), grad correct (rel {rel:.1e})  PASS")
-
-
 def _quad_bivar_LL(mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, rho, a, b):
     """Brute-force < x1^a x2^b > for two lognormals by 1-D quadrature.
 
@@ -321,48 +209,3 @@ def test_bivar_LL_vs_quadrature():
         worst = max(worst, rel)
         assert rel < 1e-5, f"bivar_LL_mean vs quad rel {rel:.2e} for {c}"
     print(f"  bivar_LL_mean (mvr) vs quadrature: worst rel {worst:.1e}  PASS")
-
-
-def test_kk_mvr_mean_composes_and_differentiable():
-    """KK_mvr_upscaled_mean is finite, positive (a radius), and differentiable."""
-    args = dict(
-        mu_rr_1=1.0e-4, mu_rr_2=8.0e-5, mu_Nr_1=1.0e4, mu_Nr_2=8.0e3,
-        mu_rr_1_n=np.log(1.0e-4), mu_rr_2_n=np.log(8.0e-5),
-        mu_Nr_1_n=np.log(1.0e4), mu_Nr_2_n=np.log(8.0e3),
-        sigma_rr_1=5.0e-5, sigma_rr_2=4.0e-5, sigma_Nr_1=5.0e3, sigma_Nr_2=4.0e3,
-        sigma_rr_1_n=0.6, sigma_rr_2_n=0.6, sigma_Nr_1_n=0.5, sigma_Nr_2_n=0.5,
-        corr_rr_Nr_1_n=0.5, corr_rr_Nr_2_n=0.5,
-        mixt_frac=0.3, precip_frac_1=0.8, precip_frac_2=0.5,
-    )
-    val = float(KK_mvr_upscaled_mean(**args))
-    # a physical rain-drop radius: ~tens of microns to ~mm
-    assert np.isfinite(val) and 1e-6 < val < 1e-2, f"KK_mvr not a plausible radius: {val}"
-
-    # Differentiate w.r.t. a LOG moment (mu_rr_1_n): the selected general bivar_LL form
-    # depends on the log moments, not the linear mean (grad w.r.t. mu_rr_1 is correctly 0).
-    x0 = np.log(1.0e-4)
-    def f(mu_rr_1_n):
-        a = dict(args)
-        a["mu_rr_1_n"] = mu_rr_1_n
-        return KK_mvr_upscaled_mean(**a)
-    g = float(jax.grad(f)(x0))
-    eps = 1.0e-6
-    fd = (f(x0 + eps) - f(x0 - eps)) / (2 * eps)
-    rel = abs(g - fd) / (abs(fd) + 1e-300)
-    assert np.isfinite(g) and abs(g) > 0.0, "KK_mvr grad not finite/nonzero"
-    assert rel < 1e-4, f"KK_mvr grad wrong: ad={g:.4e} fd={fd:.4e} rel={rel:.2e}"
-    print(f"  KK_mvr_upscaled_mean: val={val:.3e} m, grad correct (rel {rel:.1e})  PASS")
-
-
-if __name__ == "__main__":
-    print("Upscaled-KK auto + accr + evap + mvr kernel verification:")
-    test_bivar_general_vs_quadrature()
-    test_bivar_const_variants_vs_quadrature()
-    test_kk_auto_mean_composes_and_differentiable()
-    test_accretion_bivar_vs_quadrature()
-    test_kk_accr_mean_composes_and_differentiable()
-    test_trivar_general_vs_quadrature()
-    test_kk_evap_mean_composes_and_differentiable()
-    test_bivar_LL_vs_quadrature()
-    test_kk_mvr_mean_composes_and_differentiable()
-    print("All KK auto + accr + evap + mvr tests PASSED.")

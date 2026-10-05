@@ -1,6 +1,5 @@
 """Regression checks for the inlined CLUBB stats lifecycle."""
 
-from pathlib import Path
 
 from clubb_jax.src import advance_clubb_to_end as driver
 
@@ -78,24 +77,3 @@ def test_stats_timestamp_uses_end_of_current_model_step(monkeypatch):
     assert dict(updates)["rtm_mc"] == 0.0
     assert state["Ncm"] == 0.5
     assert state["_jax_stats"] is stats
-
-
-def test_inlined_driver_helpers_stay_absent():
-    removed_helpers = (
-        "_begin_timestep_stats",
-        "_end_timestep_stats",
-        "_calculate_thvm",
-        "_calculate_thlp2_rad",
-        "_cloud_drop_sed",
-    )
-
-    assert all(not hasattr(driver, name) for name in removed_helpers)
-
-
-def test_driver_uses_canonical_microphysics_interfaces():
-    source = Path(driver.__file__).read_text(encoding="utf-8")
-    for routine in ('pdf_hydromet_microphys_prep', 'calc_microphys_scheme_tendcies',
-                    'advance_microphys', 'cloud_drop_sed'):
-        assert routine in source
-    assert 'kk_microphys_step' not in source
-    assert 'morrison_microphys_step' not in source

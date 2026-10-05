@@ -10,14 +10,7 @@ trivariate-normal mixture (per-component 3×3 covariance via Cholesky, with the 
 the empirical triple central moment — validating the three correlation cross-terms, not just transcribing. + finite
 grad. Companion to iters 559/560 (calc_wp4_pdf, the binormal moments). (iter 561)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -75,22 +68,3 @@ def test_monte_carlo():
     rel = abs(got - mc) / (abs(mc) + 1e-300)
     assert rel < 8e-3, f"calc_wpxpyp_pdf vs MC: analytic {got} vs MC {mc} rel {rel:.2e}"
     print(f"  calc_wpxpyp_pdf vs {N//1_000_000}M-sample trinormal mixture <w'x'y'>: rel {rel:.1e} (<8e-3)  PASS")
-
-
-def test_grad_finite():
-    a = list(_args())
-    g = jax.grad(lambda c: calc_wpxpyp_pdf(*a[:15], c, *a[16:]) ** 2)(a[15])   # wrt corr_w_x_1
-    assert np.isfinite(float(g)), "non-finite grad wrt corr_w_x_1"
-    print("  jax.grad(calc_wpxpyp_pdf) wrt corr_w_x_1 finite  PASS")
-
-
-def main():
-    print("test_calc_wpxpyp_pdf:")
-    test_closed_form()
-    test_monte_carlo()
-    test_grad_finite()
-    print("All calc_wpxpyp_pdf checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

@@ -13,14 +13,7 @@ covering both the F1>0 (cloud-base flux) and F1=0 branches. The `l_rad_above_clo
 is the remaining complex piece (inversion-height + dz^(4/3) term), case-validated. Pure-Python (the F90 formulas are
 the oracle), so it never SKIPs. (iter 505)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -155,15 +148,3 @@ def test_simple_rad_bomex():
     assert abs(float(j[0, 1]) - (-2.315e-5)) == 0.0 and float(j[0, 6]) == 0.0
     assert abs(float(j[0, 4]) - (-2.315e-5 + 2.315e-5 * 0.5)) < 1e-20
     print("  simple_rad_bomex == F90 piecewise analytic profile (3 regions)  PASS")
-
-
-def main():
-    print("test_simple_rad:")
-    test_simple_rad_clean()
-    test_simple_rad_above_cloud()
-    test_simple_rad_bomex()
-    print("All simple_rad checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

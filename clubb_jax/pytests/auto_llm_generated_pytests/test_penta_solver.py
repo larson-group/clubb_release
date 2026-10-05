@@ -1,26 +1,10 @@
-"""Unit tests for JAX penta-diagonal LU solver.
-
-Tests penta_lu_solve_jax against:
-  1. Shape check
-  2. Known 5x5 hand-constructed case
-  3. numpy.linalg.solve reference on random penta-diagonal systems
-  4. Multiple columns (each solved independently)
-  5. Fortran penta_lu_solve reference via clubb_python_api
-
-Run:
-    Run from the repo root: bash tests/run_pytests.sh -jax -include_generated -k test_penta_solver
-"""
+"""Compare pentadiagonal solves with NumPy for full and diagonal systems."""
 from __future__ import annotations
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import pytest
 
-import sys
-import os
 
 import numpy as np
 
-sys.path.insert(0, str(_REPO_ROOT))
-sys.path.insert(0, str(_REPO_ROOT / "clubb_python_api"))
 
 try:
     import jax
@@ -30,13 +14,6 @@ try:
 except ImportError:
     HAS_JAX = False
 
-try:
-    from clubb_python.clubb_api import penta_lu_solve as fort_penta_lu_solve
-    HAS_FORTRAN = True
-except ModuleNotFoundError as exc:
-    if exc.name.split(".")[0] not in {"clubb_f2py", "clubb_python"}:
-        raise
-    HAS_FORTRAN = False
 
 from clubb_jax.src.CLUBB_core.penta_lu_solver import penta_lu_solve
 
@@ -69,60 +46,9 @@ def _make_lhs(s2, s1, d, sb1, sb2):
 
 # ──────────────────────────────────────────────────────────────────────────────
 
-def test_shape():
-    """Output shape is (ngrdcol, ndim)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP")
-    ndim, ngrdcol = 8, 3
-    lhs = jnp.zeros((5, ngrdcol, ndim)).at[2].set(jnp.ones((ngrdcol, ndim)))
-    rhs = jnp.ones((ngrdcol, ndim))
-    soln = penta_lu_solve_jax(lhs, rhs)
-    assert soln.shape == (ngrdcol, ndim), f"Wrong shape: {soln.shape}"
-    print(f"  shape = {soln.shape}  PASS")
 
-
-def test_diagonal():
-    """Pure-diagonal LHS: soln[i] = rhs[i] / diag[i]."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP")
-    ndim = 8
-    rng = np.random.default_rng(42)
-    d = rng.uniform(1.0, 3.0, ndim)
-    b = rng.uniform(-5.0, 5.0, ndim)
-    lhs = _make_lhs(np.zeros(ndim), np.zeros(ndim), d, np.zeros(ndim), np.zeros(ndim))
-    rhs = jnp.array(b[None, :], dtype=jnp.float64)
-    soln = np.asarray(penta_lu_solve_jax(lhs, rhs))[0]
-    expected = b / d
-    err = np.max(np.abs(soln - expected))
-    print(f"  diagonal max_err = {err:.3e}  {'PASS' if err < 1e-14 else 'FAIL'}")
-    assert err < 1e-14, f"diagonal mismatch: {err}"
-
-
-def test_known_5x5():
-    """5x5 tridiagonal-like system (zero 2nd off-diagonals), verified against numpy."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP")
-    ndim = 5
-    # Simple diagonally dominant tridiagonal embedded in penta storage
-    d   = np.array([4., 4., 4., 4., 4.])
-    s1  = np.array([-1., -1., -1., -1., 0.])
-    s2  = np.zeros(ndim)
-    sb1 = np.array([0., -1., -1., -1., -1.])
-    sb2 = np.zeros(ndim)
-    b   = np.array([1., 0., 0., 0., 1.])
-
-    A = _dense_penta(s2, s1, d, sb1, sb2)
-    expected = np.linalg.solve(A, b)
-
-    lhs = _make_lhs(s2, s1, d, sb1, sb2)
-    rhs = jnp.array(b[None, :], dtype=jnp.float64)
-    soln = np.asarray(penta_lu_solve_jax(lhs, rhs))[0]
-    err = np.max(np.abs(soln - expected))
-    print(f"  5x5 max_err = {err:.3e}  {'PASS' if err < 1e-13 else 'FAIL'}")
-    assert err < 1e-13, f"5x5 mismatch: {err}"
-
-
-def test_full_penta_vs_numpy_single_col():
+@pytest.mark.parametrize('diagonal_only', [False, True])
+def test_full_penta_vs_numpy_single_col(diagonal_only):
     """Random full penta-diagonal system vs numpy.linalg.solve."""
     if not HAS_JAX:
         pytest.skip("  SKIP")
@@ -139,6 +65,8 @@ def test_full_penta_vs_numpy_single_col():
     s1[-1] = 0.0
     sb1[0] = 0.0
     sb2[0] = sb2[1] = 0.0
+    if diagonal_only:
+        s2 = s1 = sb1 = sb2 = np.zeros(ndim)
     b = rng.uniform(-10., 10., ndim)
 
     A = _dense_penta(s2, s1, d, sb1, sb2)
@@ -146,7 +74,9 @@ def test_full_penta_vs_numpy_single_col():
 
     lhs = _make_lhs(s2, s1, d, sb1, sb2)
     rhs = jnp.array(b[None, :], dtype=jnp.float64)
-    soln = np.asarray(penta_lu_solve_jax(lhs, rhs))[0]
+    result = np.asarray(penta_lu_solve_jax(lhs, rhs))
+    assert result.shape == rhs.shape
+    soln = result[0]
     err = np.max(np.abs(soln - expected))
     print(f"  single-col vs numpy max_err = {err:.3e}  {'PASS' if err < 1e-12 else 'FAIL'}")
     assert err < 1e-12, f"single-col mismatch: {err}"
@@ -183,81 +113,10 @@ def test_multi_col_vs_numpy():
     ], axis=0)   # (5, ngrdcol, ndim)
     rhs = jnp.array(b, dtype=jnp.float64)
     soln = np.asarray(penta_lu_solve_jax(lhs, rhs))
+    assert soln.shape == rhs.shape
     err = np.max(np.abs(soln - expected))
     print(f"  multi-col vs numpy max_err = {err:.3e}  {'PASS' if err < 1e-12 else 'FAIL'}")
     assert err < 1e-12, f"multi-col mismatch: {err}"
 
 
-def test_vs_fortran_single_rhs():
-    """JAX penta solver matches Fortran penta_lu_solve bit-for-bit."""
-    if not (HAS_JAX and HAS_FORTRAN):
-        pytest.skip("  SKIP (no Fortran API)")
-
-    rng = np.random.default_rng(1234)
-    ndim = 20
-    ngrdcol = 2
-    s2  = rng.uniform(-1., -0.05, (ngrdcol, ndim)).astype(np.float64)
-    s1  = rng.uniform(-1., -0.05, (ngrdcol, ndim)).astype(np.float64)
-    sb1 = rng.uniform(-1., -0.05, (ngrdcol, ndim)).astype(np.float64)
-    sb2 = rng.uniform(-1., -0.05, (ngrdcol, ndim)).astype(np.float64)
-    d   = (np.abs(s2) + np.abs(s1) + np.abs(sb1) + np.abs(sb2) + 2.0).astype(np.float64)
-    s2[:, -1] = s2[:, -2] = 0.0
-    s1[:, -1] = 0.0
-    sb1[:, 0] = 0.0
-    sb2[:, 0] = sb2[:, 1] = 0.0
-    b = rng.uniform(-5., 5., (ngrdcol, ndim)).astype(np.float64)
-
-    # Fortran call: penta_lu_solve(ndim, ngrdcol, lhs, rhs)
-    # lhs must be (-2:2, ngrdcol, ndim) → Python (5, ngrdcol, ndim)
-    lhs_fort = np.stack([s2, s1, d, sb1, sb2], axis=0).copy()  # (5, ngrdcol, ndim)
-    soln_fort = np.asarray(fort_penta_lu_solve(ndim, ngrdcol, lhs_fort, b.copy()))
-
-    # JAX call
-    lhs_jax = jnp.array(np.stack([s2, s1, d, sb1, sb2], axis=0), dtype=jnp.float64)
-    rhs_jax = jnp.array(b, dtype=jnp.float64)
-    soln_jax = np.asarray(penta_lu_solve_jax(lhs_jax, rhs_jax))
-
-    err = np.max(np.abs(soln_jax - soln_fort))
-    print(f"  vs Fortran max_err = {err:.3e}  {'PASS' if err < 1e-14 else 'FAIL'}")
-    assert err < 1e-14, f"Fortran mismatch: {err}"
-
-
 # ──────────────────────────────────────────────────────────────────────────────
-
-if __name__ == '__main__':
-    print("=" * 60)
-    print("CLUBB JAX penta-diagonal solver unit tests")
-    print("=" * 60)
-
-    if not HAS_JAX:
-        print("ERROR: JAX not available.")
-        sys.exit(1)
-
-    tests = [
-        test_shape,
-        test_diagonal,
-        test_known_5x5,
-        test_full_penta_vs_numpy_single_col,
-        test_multi_col_vs_numpy,
-        test_vs_fortran_single_rhs,
-    ]
-
-    passed = failed = 0
-    for t in tests:
-        print(f"\n{t.__name__}:")
-        try:
-            t()
-            passed += 1
-        except AssertionError as e:
-            print(f"  FAIL: {e}")
-            failed += 1
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            print(f"  ERROR: {type(e).__name__}: {e}")
-            failed += 1
-
-    print("\n" + "=" * 60)
-    print(f"Results: {passed}/{passed+failed} passed, {failed} failed")
-    print("=" * 60)
-    sys.exit(0 if failed == 0 else 1)

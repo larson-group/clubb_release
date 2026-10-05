@@ -18,19 +18,10 @@ each regime) was never pinned in isolation. This drives each of the 4 regimes an
 EXACTLY the corresponding primitive called with the documented args (so a mis-wired branch / wrong-arg bug is caught
 directly). Oracle-independent; never SKIPs. (iter 549)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
-import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import bivar_NL_mean_eq, CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
@@ -93,17 +84,3 @@ def test_parab_cyl_overflow_forces_const_x1():
     ref = float(bivar_NL_mean_const_x1(mu_chi, mu_y_n, sig_y_n, _ALPHA, _BETA))
     assert abs(got - ref) <= 1e-12 * (abs(ref) + 1e-300), f"|s_c|>49 didn't force const_x1: {got} vs {ref}"
     print("  |s_c|>49 (parab-cyl overflow guard) -> bivar_NL_mean_const_x1  PASS")
-
-
-def main():
-    print("test_bivar_NL_mean_eq:")
-    test_both_vary_selects_general()
-    test_x1_const_selects_const_x1()
-    test_x2_const_selects_const_x2()
-    test_both_const_selects_const_all()
-    test_parab_cyl_overflow_forces_const_x1()
-    print("All bivar_NL_mean_eq dispatch checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

@@ -9,14 +9,7 @@ something is already wrong (so passing cases never trip them), and were the last
 directions — clean input leaves err_code unchanged; a bad value sets CLUBB_FATAL_ERROR — so a regression that silently
 disables the guard is caught. Pure-Python; never SKIPs. (iter 573)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
@@ -46,14 +39,3 @@ def test_check_nan():
         check_nan(np.array([1.0, 2.0, bad]), "y", "loc", ec)
         assert ec[0] == CLUBB_FATAL_ERROR, f"non-finite {bad} not flagged"
     print("  check_nan: finite→unchanged, NaN/±Inf→CLUBB_FATAL_ERROR  PASS")
-
-
-def main():
-    print("test_numerical_check_setters:")
-    test_check_negative()
-    test_check_nan()
-    print("All check_nan/check_negative checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

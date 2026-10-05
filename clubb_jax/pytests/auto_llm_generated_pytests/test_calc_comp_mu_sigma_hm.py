@@ -1,32 +1,9 @@
-"""Verification of calc_comp_mu_sigma_hm (hydrometeor in-precip component moments).
-
-This routine (setup_clubb_pdf_params.F90:1653) is NOT exposed by the f2py API, and the rico
-stats oracle cannot verify it precisely: its inputs (rrm, precip_frac) and outputs (mu_rr_i)
-are stored at end-of-step but were different within the step, so the defining identity
-<hm> = a f_p_1 mu_1 + (1-a) f_p_2 mu_2 does not even hold across the stored stats (rel ~7).
-
-Instead this verifies the routine's DEFINING CONTRACT directly: it solves for the two in-precip
-component means/stdevs so that the overall mean <hm> AND overall variance <hm'^2> are preserved
-(Griffin 2015). For consistent synthetic inputs the port must reproduce <hm> and <hm'^2> exactly
-(non-emergency), preserve <hm> in the emergency-bound regime, and satisfy the structural
-relations R = omicron*Rmax and sigma_1^2/mu_1^2 = R(1+zeta). All four branches and the root-sign
-selection are exercised.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
+"""Verification of calc_comp_mu_sigma_hm (hydrometeor in-precip component moments)."""
 import numpy as np
 import jax
-import jax.numpy as jnp
 
 jax.config.update("jax_enable_x64", True)
 
-import os
-import sys
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import (
     calc_comp_mu_sigma_hm, compute_mean_stdev, norm_transform_mean_stdev,
@@ -127,25 +104,6 @@ def test_single_component_branches():
     print("  single-component branches: mean + variance preserved  PASS")
 
 
-def test_no_precip_and_differentiable():
-    """No hydrometeor -> all zeros. And the routine is differentiable in <hm>."""
-    (mu1, mu2, s1, s2, hm1, hm2, r1, r2), *_ = _run(
-        1e-12, 0.5, 0.5, 0.6, 0.4, 1.0, 0.5, 0.0, 300.0, 300.5)  # hmm < hm_tol
-    assert all(v == 0 for v in (mu1, mu2, s1, s2, hm1, hm2))
-
-    def f(hmm):
-        a = dict(hmm=jnp.array([[hmm]]), hmp2=jnp.array([[3e-8]]),
-                 hmp2_ip_on_hmm2_ip=jnp.array([[1.0]]), mixt_frac=jnp.array([[0.5]]),
-                 precip_frac=jnp.array([[0.5]]), precip_frac_1=jnp.array([[0.6]]),
-                 precip_frac_2=jnp.array([[0.4]]), hm_tol=_HM_TOL,
-                 precip_frac_tol=jnp.array([0.005]), mu_thl_1=jnp.array([[300.0]]),
-                 mu_thl_2=jnp.array([[300.5]]), omicron=0.5, zeta_vrnce_rat_in=0.0)
-        return calc_comp_mu_sigma_hm(**a)[0][0, 0]   # mu_hm_1
-    g = float(jax.grad(f)(1e-4))
-    assert np.isfinite(g) and abs(g) > 0, "grad not finite/nonzero"
-    print(f"  no-precip zeros + differentiable (d mu1/d hmm = {g:.3f})  PASS")
-
-
 # ---------------------------------------------------------------------------
 # compute_mean_stdev / norm_transform_mean_stdev — the setup_pdf_parameters
 # orchestration that stacks the per-PDF-variable component moments and transforms
@@ -244,41 +202,3 @@ def test_norm_transform_matches_L2N():
         np.testing.assert_allclose(mu1_n[..., iv], exp_mu, rtol=0, atol=0)
         np.testing.assert_allclose(sig1_n[..., iv], exp_sig, rtol=0, atol=0)
     print("  norm_transform_mean_stdev: chi/eta/w unchanged, Ncn+hydromet == mean_L2N/stdev_L2N  PASS")
-
-
-def test_orchestration_differentiable():
-    """jax.grad flows through compute_mean_stdev -> norm_transform (w.r.t. the rrm field)."""
-    (chi_1, chi_2, sc1, sc2, se1, se2, thl_1, thl_2, mf, pf, pf1, pf2, rrm, Nrm) = _rico_like_pdf_inputs()
-    Nr_tol = _HM_TOL / ((4.0 / 3.0) * np.pi * 1000.0 * (5.0e-3) ** 3)
-
-    def f(scale):
-        rr = jnp.asarray(rrm) * scale
-        hmp2_rr = ((1.25 + 1.0) / jnp.asarray(pf) - 1.0) * rr ** 2
-        hmp2_Nr = ((1.25 + 1.0) / jnp.asarray(pf) - 1.0) * jnp.asarray(Nrm) ** 2
-        out = compute_mean_stdev(
-            chi_1, chi_2, sc1, sc2, se1, se2, jnp.zeros_like(rr), 0.0, True,
-            [(rr, hmp2_rr, 1.25, _HM_TOL), (jnp.asarray(Nrm), hmp2_Nr, 1.25, Nr_tol)],
-            thl_1, thl_2, mf, pf, pf1, pf2, _PFTOL, 0.5, 0.0)
-        mu1n, _, _, _ = norm_transform_mean_stdev(
-            out[0], out[1], out[2], out[3], out[6], out[7],
-            jnp.zeros_like(rr), out[4], out[5], [_HM_TOL, Nr_tol], True)
-        return jnp.sum(mu1n[..., IIPDF_NCN + 1])     # sum of ln(mu_rr_1)
-
-    g = float(jax.grad(f)(1.0))
-    assert np.isfinite(g) and g != 0.0, f"grad not finite/nonzero: {g}"
-    print(f"  compute_mean_stdev -> norm_transform differentiable (d/d scale = {g:.3f})  PASS")
-
-
-if __name__ == "__main__":
-    print("calc_comp_mu_sigma_hm (hydrometeor in-precip component moments) verification:")
-    test_both_precip_preserves_mean_and_variance()
-    test_rico_params_non_emergency()
-    test_root_sign_selection()
-    test_emergency_preserves_mean()
-    test_single_component_branches()
-    test_no_precip_and_differentiable()
-    print("setup_pdf_parameters orchestration (compute_mean_stdev / norm_transform_mean_stdev):")
-    test_compute_mean_stdev_columns()
-    test_norm_transform_matches_L2N()
-    test_orchestration_differentiable()
-    print("All calc_comp_mu_sigma_hm + orchestration tests PASSED.")

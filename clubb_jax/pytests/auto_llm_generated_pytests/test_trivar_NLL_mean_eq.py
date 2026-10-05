@@ -10,19 +10,10 @@ wiring (incl. the swaps) was never pinned. This drives each of the 8 regimes and
 EXACTLY the corresponding primitive with the documented (possibly swapped) args — companion to iter-549's bivariate
 dispatch test; a mis-wired branch or wrong-swap bug is caught directly. Oracle-independent; never SKIPs. (iter 550)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
-import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import trivar_NLL_mean_eq, CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
@@ -98,15 +89,3 @@ def test_x3_const_uses_swapped_x2():
            float(trivar_NLL_mean_const_x2(_MU_CHI, _MU_NR, _MU_RR_N, max(0.3, CHI_TOL), _S_RR_N, _R12, _A, _G, _B)),
            "x3->const_x2 swapped")
     print("  Nr const -> const_x2 with (x2,x3)/(beta,gamma) SWAPPED, rho12  PASS")
-
-
-def main():
-    print("test_trivar_NLL_mean_eq:")
-    for t in (test_all_vary, test_all_const, test_x1x2_const, test_x1x3_const_uses_swapped_x1x2,
-              test_x2x3_const, test_x1_const, test_x2_const, test_x3_const_uses_swapped_x2):
-        t()
-    print("All trivar_NLL_mean_eq dispatch checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

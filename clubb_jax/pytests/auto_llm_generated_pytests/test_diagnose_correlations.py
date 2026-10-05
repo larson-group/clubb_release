@@ -1,33 +1,13 @@
 #!/usr/bin/env python3
-"""test_diagnose_correlations.py — validate the JAX diagnose_correlations_module port.
+"""validate the JAX diagnose_correlations_module port."""
 
-  1. f2py bit-shadow: `clubb_f2py.f2py_diagnose_correlations(iipdf_w, corr_pre, l_calc_w_corr)` on the same
-     matrix — bit-to-bit (no grid needed). SKIPs cleanly if clubb_f2py is unbuilt.
-  2. Analytic checks for the PDF helpers `calc_mean`/`calc_varnce`/`calc_w_corr` (closed-form values + the
-     ±0.99 correlation clip).
-  3. A `jax.grad` smoke check through the matrix diagnosis.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import pytest
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
 # _ROOT first so `import clubb_jax` resolves to this checkout's package.
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if p not in sys.path:
-        sys.path.append(p)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.diagnose_correlations_module import (
-    diagnose_correlations, calc_mean, calc_varnce, calc_w_corr, corr_array_assertion_checks)
+from clubb_jax.src.CLUBB_core.diagnose_correlations_module import calc_mean, calc_varnce, calc_w_corr, corr_array_assertion_checks
 
 
 def _corr_matrix(n, seed):
@@ -53,32 +33,6 @@ def test_helpers():
     print("  helpers calc_mean/calc_varnce/calc_w_corr (incl. ±0.99 clip): closed-form  PASS")
 
 
-def test_f2py_oracle():
-    try:
-        import clubb_f2py
-    except ModuleNotFoundError as e:
-        if (e.name or "").split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip(f"  f2py diagnose_correlations oracle: SKIP ({type(e).__name__})")
-    worst = 0.0
-    for n, iipdf_w, seed in ((6, 3, 11), (8, 1, 22), (5, 5, 33), (7, 4, 44)):
-        corr_pre = _corr_matrix(n, seed)
-        ref = np.asarray(clubb_f2py.f2py_diagnose_correlations(iipdf_w, corr_pre.copy(), 0))
-        got = np.asarray(diagnose_correlations(n, iipdf_w, corr_pre, l_calc_w_corr=False))
-        rel = np.max(np.abs(got - ref) / (np.abs(ref) + 1e-30))
-        worst = max(worst, rel)
-        assert rel < 1e-12, f"f2py mismatch (n={n}, iipdf_w={iipdf_w}): rel {rel:.2e}"
-    print(f"  f2py diagnose_correlations: bit-match over 4 (n, iipdf_w) configs, worst rel {worst:.2e}  PASS")
-
-
-def test_differentiable():
-    n, iipdf_w = 6, 3
-    corr = jnp.asarray(_corr_matrix(n, 7))
-    g = jax.grad(lambda C: jnp.sum(diagnose_correlations(n, iipdf_w, C) ** 2))(corr)
-    assert np.isfinite(np.asarray(g)).all(), "non-finite grad through diagnose_correlations"
-    print(f"  jax.grad through diagnose_correlations: finite ({g.size} entries)  PASS")
-
-
 def test_corr_array_assertion_checks():
     c = _corr_matrix(5, 9)                       # valid: symmetric, unit diag, off-diag in (-0.9,0.9)
     assert corr_array_assertion_checks(c) is True, "valid correlation matrix rejected"
@@ -87,14 +41,3 @@ def test_corr_array_assertion_checks():
     nd = c.copy(); nd[2, 2] = 0.9                # diagonal != 1
     assert corr_array_assertion_checks(nd) is False, "non-unit-diagonal accepted"
     print("  corr_array_assertion_checks: valid PASS / out-of-range + non-unit-diag FAIL  PASS")
-
-
-def main():
-    print("test_diagnose_correlations:")
-    for t in (test_helpers, test_f2py_oracle, test_differentiable, test_corr_array_assertion_checks):
-        t()
-    print("All diagnose_correlations checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

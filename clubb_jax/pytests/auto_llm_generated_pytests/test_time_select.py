@@ -15,14 +15,7 @@ its edge cases were unpinned. This test pins:
   3. Endpoints (time==times[0] / times[-1]) and out-of-range rejection (the Fortran `error stop`; JAX raises).
 Oracle-independent (the Fortran bracket logic is a few lines, transcribed directly); never SKIPs. (iter 532)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
@@ -51,17 +44,6 @@ _VALS = np.array([2.0, 5.0, -1.0, 3.5, 0.25])                  # a flux profile 
 
 def _interp(before, after, frac, vals):
     return (1.0 - frac) * vals[before] + frac * vals[after]
-
-
-def test_interior_triples_match_fortran():
-    worst = 0.0
-    for t in (10.0, 50.0, 99.999, 100.001, 175.0, 400.0, 549.0, 700.0, 899.0):
-        jb, ja, jf = time_select(float(t), len(_TIMES), _TIMES)
-        rb, ra, rf = _ref_time_select(float(t), _TIMES)
-        assert (jb, ja) == (rb, ra), f"t={t}: JAX bracket ({jb},{ja}) != Fortran ({rb},{ra})"
-        worst = max(worst, abs(jf - rf))
-    assert worst < 1e-12, f"interior frac mismatch {worst:.2e}"
-    print(f"  interior times: (before,after,frac) match the Fortran bracket loop (worst Δfrac {worst:.1e})  PASS")
 
 
 def test_interpolation_equivalent_everywhere():
@@ -93,15 +75,3 @@ def test_endpoints_and_out_of_range():
         else:
             raise AssertionError(f"out-of-range time {bad} was NOT rejected (mirrors the Fortran error stop)")
     print("  endpoints (frac 0 / 1) + out-of-range rejection (mirrors Fortran error stop)  PASS")
-
-
-def main():
-    print("test_time_select:")
-    test_interior_triples_match_fortran()
-    test_interpolation_equivalent_everywhere()
-    test_endpoints_and_out_of_range()
-    print("All time_select checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

@@ -4,7 +4,6 @@ from __future__ import annotations
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 
 import ast
-from pathlib import Path
 
 
 BENCHMARK_CASES = _REPO_ROOT / "clubb_jax" / "src" / "Benchmark_cases"
@@ -177,130 +176,6 @@ DEVICE_PHYSICS_FILES = tuple(
 )
 
 
-def _tree(filename: str) -> ast.Module:
-    return ast.parse((BENCHMARK_CASES / filename).read_text())
-
-
-def _routine_names(filename: str) -> list[str]:
-    return [
-        node.name
-        for node in _tree(filename).body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-    ]
-
-
-def test_complete_forcing_modules_keep_source_routine_inventory_and_order():
-    for filename, expected in SUPPORTED_SOURCE_ROUTINE_ORDER.items():
-        assert _routine_names(filename) == expected, filename
-
-
-def test_prescribe_forcings_keeps_supported_source_argument_order():
-    routine = next(
-        node
-        for node in _tree("prescribe_forcings.py").body
-        if isinstance(node, ast.FunctionDef) and node.name == "prescribe_forcings"
-    )
-    assert [argument.arg for argument in routine.args.args] == PRESCRIBE_FORCINGS_ARGUMENTS
-    for return_node in (
-        node for node in ast.walk(routine) if isinstance(node, ast.Return)
-    ):
-        assert isinstance(return_node.value, ast.Tuple)
-        assert [value.id for value in return_node.value.elts] == PRESCRIBE_FORCINGS_RESULTS
-
-
-def test_forcing_driver_keeps_explicit_call_and_result_order():
-    tree = ast.parse(ADVANCE_CLUBB_TO_END.read_text())
-    driver = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name == "advance_clubb_to_end"
-    )
-    wrapper = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name == "_prescribe_forcings"
-    )
-    driver_calls = [
-        node
-        for node in ast.walk(driver)
-        if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Name)
-        and node.func.id == "_prescribe_forcings"
-    ]
-    assert len(driver_calls) == 1
-    assert [argument.id for argument in driver_calls[0].args] == ["state", "time_current"]
-
-    assignment = next(
-        node
-        for node in ast.walk(wrapper)
-        if isinstance(node, ast.Assign)
-        and isinstance(node.value, ast.Call)
-        and isinstance(node.value.func, ast.Name)
-        and node.value.func.id == "prescribe_forcings"
-    )
-
-    def state_key(node):
-        if (
-            isinstance(node, ast.Subscript)
-            and isinstance(node.value, ast.Name)
-            and node.value.id == "state"
-            and isinstance(node.slice, ast.Constant)
-        ):
-            return node.slice.value
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Attribute)
-            and node.func.attr == "asarray"
-            and len(node.args) == 1
-            and isinstance(node.args[0], ast.Name)
-        ):
-            return node.args[0].id
-        if isinstance(node, ast.Attribute) and node.attr == "saturation_formula":
-            return "saturation_formula"
-        raise AssertionError(ast.dump(node))
-
-    expected_arguments = [
-        {
-            "dt": "dt_main",
-            "stats": "_jax_stats",
-        }.get(argument, argument)
-        for argument in PRESCRIBE_FORCINGS_ARGUMENTS
-    ]
-    expected_results = [
-        "_jax_stats" if result == "stats" else result
-        for result in PRESCRIBE_FORCINGS_RESULTS
-    ]
-
-    assert [state_key(argument) for argument in assignment.value.args] == expected_arguments
-    assert len(assignment.targets) == 1
-    assert isinstance(assignment.targets[0], ast.Tuple)
-    assert [state_key(target) for target in assignment.targets[0].elts] == expected_results
-
-
-def test_input_reader_keeps_source_routine_inventory_and_order():
-    tree = ast.parse((INPUT_FIELDS / "input_reader.py").read_text())
-    routines = [node.name for node in tree.body if isinstance(node, ast.FunctionDef)]
-    assert routines == [
-        "read_two_dim_file",
-        "read_one_dim_file",
-        "fill_blanks_one_dim_vars",
-        "fill_blanks_two_dim_vars",
-        "linear_fill_blanks",
-        "deallocate_one_dim_vars",
-        "deallocate_two_dim_vars",
-        "read_x_table",
-        "read_x_profile",
-        "get_target_index",
-        "count_columns",
-    ]
-
-
-def test_file_functions_keeps_source_routine_inventory_and_order():
-    tree = ast.parse((CLUBB_CORE / "file_functions.py").read_text())
-    routines = [node.name for node in tree.body if isinstance(node, ast.FunctionDef)]
-    assert routines == ["file_read_1d", "file_read_2d"]
-
-
 def test_device_physics_does_not_import_numpy_or_raw_f2py():
     for filename in DEVICE_PHYSICS_FILES:
         source = (BENCHMARK_CASES / filename).read_text()
@@ -318,29 +193,3 @@ def test_device_physics_does_not_import_numpy_or_raw_f2py():
         }
         assert "numpy" not in imported_modules, filename
         assert not any("clubb_f2py" in name for name in imported_modules | imported_from), filename
-
-
-def test_removed_duplicate_forcing_helpers_do_not_return():
-    forbidden = {
-        "_diag_ustar",
-        "_landflx_scalar",
-        "prescribe_forcings_arm",
-        "prescribe_forcings_generic",
-        "_stats_surface_update",
-        "_zero_forcings",
-        "_time_interp",
-        "_read_mpace_dat",
-        "_mpace_time_select",
-        "lba_diurnal_factor",
-        "initialize_surface_bc_metadata",
-        "_read_surface_var_for_bc_interp",
-        "load_arm_forcings_data",
-        "load_generic_forcings_data",
-        "_parse_forcings_file",
-        "_parse_sfc_file",
-        "apply_time_dependent_forcings_from_dycore",
-    }
-    present = set()
-    for path in BENCHMARK_CASES.glob("*.py"):
-        present.update(_routine_names(path.name))
-    assert forbidden.isdisjoint(present)

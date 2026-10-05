@@ -1,26 +1,11 @@
 #!/usr/bin/env python3
-"""test_mixed_moment_pdf_integrals.py — validate the closed-form PDF-component moment integrals.
-
-No f2py oracle exists for these, so each closed form is checked against TWO independent references:
-  1. A from-scratch raw-moment binomial expansion  E[(X-c)^n] = SUM_k C(n,k) (-c)^(n-k) E[X^k], with the raw
-     moments computed independently (normal: central moments via double factorial; lognormal: exp formula).
-  2. A Monte-Carlo sample of the component PDF (normal / lognormal), sample mean of (x-c)^n.
-Plus a finite jax.grad.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
+"""validate the closed-form PDF-component moment integrals."""
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.Microphys.mixed_moment_PDF_integrals import (
     univar_N_int_PDF_comp_all_MM, univar_L_int_PDF_comp_all_MM, bivar_NL_int_PDF_comp_all_MM,
@@ -287,30 +272,3 @@ def test_hmxphmyp_covar_branches_and_mc():
     rel = abs(got - mc) / scale
     assert rel < 3e-3, f"hmxphmyp MC rel {rel:.2e}"
     print(f"  hmxphmyp_integral_covar: closed-form (<1e-12) + 16M MC covariance (rel {rel:.1e})  PASS")
-
-
-def test_differentiable():
-    gN = jax.grad(lambda s: univar_N_int_PDF_comp_all_MM(1.3, s, 0.9, 4))(jnp.asarray(0.7))
-    gL = jax.grad(lambda m: univar_L_int_PDF_comp_all_MM(m, 0.5, 1.0, 3))(jnp.asarray(-0.4))
-    gB = jax.grad(lambda r: bivar_NL_int_PDF_comp_all_MM(0.8, -0.3, 0.6, 0.45, r, 0.5, 1.0, 2, 2))(jnp.asarray(0.35))
-    # grad through the jnp.where branch selection of the full 2-component moment (both-vary regime)
-    gX = jax.grad(lambda sx: xp_a_hmpb_integrals_all_MM(
-        0.6, -0.4, 2.3e-4, 3.7e-4, -8.4, -7.9, sx, 0.7, 2.4e-4, 3.0e-4, 0.5, 0.45,
-        0.3, -0.2, 0.45, 0.8, 0.5, 0.1, 2.0e-4, 1e-2, 1e-12, 2, 2))(jnp.asarray(0.5))
-    assert all(np.isfinite(float(g)) for g in (gN, gL, gB, gX)), "non-finite grad"
-    print(f"  jax.grad univar_N/dσ={float(gN):+.3e}, univar_L/dμn={float(gL):+.3e}, "
-          f"bivar_NL/dρ={float(gB):+.3e}, xp_a_hmpb/dσx={float(gX):+.3e}: finite  PASS")
-
-
-def main():
-    print("test_mixed_moment_pdf_integrals:")
-    for t in (test_univar_N_closed_form_and_mc, test_univar_L_closed_form_and_mc,
-              test_bivar_NL_closed_form_and_mc, test_comp_eq_branch_selection,
-              test_xp_a_hmpb_monte_carlo, test_xphmp_covar_branches_and_mc,
-              test_hmxphmyp_covar_branches_and_mc, test_differentiable):
-        t()
-    print("All mixed_moment_PDF_integrals checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

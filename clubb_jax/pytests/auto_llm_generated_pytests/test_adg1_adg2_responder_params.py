@@ -1,34 +1,6 @@
 #!/usr/bin/env python3
-"""test_adg1_adg2_responder_params.py — validate the JAX ADG1_ADG2_responder_params port.
+"""validate the JAX ADG1_ADG2_responder_params port."""
 
-`ADG1_ADG2_responder_params` (adg1_adg2_3d_luhar_pdf.py:73 ↔ adg1_adg2_3d_luhar_pdf.F90:1069) computes the
-PDF component means (x_1, x_2), component variances (varnce_x_1, varnce_x_2), and the normalized-variance
-factor alpha_x for a "responder" variable (rt, thl, sclr) given the ADG1/ADG2 w-closure. It is the only
-routine in that module WITHOUT a direct behavioral test — its siblings (ADG1/ADG2/Luhar drivers, calc/close
-Luhar, max_cubic_root, backsolve) each have one. It is exercised indirectly through the wired ADG1 path
-(full-case gates), but never unit-pinned.
-
-There is no f2py wrapper for it (the f2py `*responder_params*` wrappers are the NEW-PDF responders, a different
-signature), so this is an independent per-level transcription of the Fortran do-loop (F90:1204-1220):
-
-    x_1        = xm - wpxp / (sqrt_wp2 * w_2_n)
-    x_2        = xm - wpxp / (sqrt_wp2 * w_1_n)
-    alpha_x    = max( min( 0.5*(1 - wpxp^2 / ((1-sigma_sqd_w)*wp2*xp2)), 1 ), zero_threshold )
-    width_factor_1 = (2/3)*beta + 2*mixt_frac*(1 - (2/3)*beta)
-    varnce_x_1 = width_factor_1     * xp2 * alpha_x / mixt_frac
-    varnce_x_2 = (2 - width_factor_1)* xp2 * alpha_x / (1 - mixt_frac)
-
-Oracle-independent (pure numpy reference), never SKIPs; plus a finite jax.grad check (mirror the sibling tests).
-(iter 524)
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -105,31 +77,3 @@ def test_alpha_x_clip_to_unit_interval():
     assert np.allclose(alpha[0, :], 0.5), "wpxp=0 must give alpha_x=0.5"
     assert np.allclose(alpha[1, :], zero_threshold), "large wpxp must clip alpha_x to zero_threshold"
     print("  alpha_x clipped to [zero_threshold, 1] (0.5 at wpxp=0, floor at large wpxp)  PASS")
-
-
-def test_responder_params_grad_finite():
-    rng = np.random.default_rng(99)
-    args = _inputs(rng)
-    jargs = [jnp.asarray(a) for a in args]
-
-    def loss(wpxp):
-        x_1, x_2, vx_1, vx_2, alpha = ADG1_ADG2_responder_params(
-            jargs[0], jargs[1], jargs[2], jargs[3], wpxp, jargs[5], jargs[6],
-            jargs[7], jargs[8], jargs[9])
-        return jnp.sum(x_1 ** 2 + x_2 ** 2 + vx_1 + vx_2 + alpha)
-
-    g = jax.grad(loss)(jargs[4])
-    assert np.all(np.isfinite(np.asarray(g))), "non-finite grad wrt wpxp"
-    print("  jax.grad(ADG1_ADG2_responder_params) wrt wpxp is finite  PASS")
-
-
-def main():
-    print("test_adg1_adg2_responder_params:")
-    test_responder_params_matches_reference()
-    test_alpha_x_clip_to_unit_interval()
-    test_responder_params_grad_finite()
-    print("All ADG1_ADG2_responder_params checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

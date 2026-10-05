@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""test_hydromet_pdf_parameter.py — validate the hydromet-PDF parameter containers.
+"""validate the hydromet-PDF parameter containers."""
 
-This Fortran module is pure data-container init (no physics / no f2py oracle): the only "correct" behavior is
-all-zero fields with the right shapes and dims metadata. Tests assert exactly that, plus the zero round-trip.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
@@ -46,14 +35,3 @@ def test_precip_fracs_init_and_zero():
     assert cleaned.ngrdcol == ngrdcol and cleaned.nzt == nzt
     assert np.all(np.asarray(cleaned.precip_frac) == 0.0), "zero_precip_fracs failed to zero"
     print(f"  init_precip_fracs/zero_precip_fracs: shape ({ngrdcol},{nzt}), dims + zero round-trip OK  PASS")
-
-
-def main():
-    print("test_hydromet_pdf_parameter:")
-    for t in (test_hydromet_pdf_params_zero, test_precip_fracs_init_and_zero):
-        t()
-    print("All hydromet_pdf_parameter checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

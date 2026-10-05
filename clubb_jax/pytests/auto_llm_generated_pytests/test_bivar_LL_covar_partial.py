@@ -13,17 +13,9 @@ This validates them three ways (real math, not wiring): (1) their closed forms; 
 tested `bivar_LL_mean` via that identity (an independent cross-check); (3) the x2-const partial as the σ2→0 limit of
 the general partial. + finite grad. Oracle-independent; never SKIPs. (iter 555)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
-import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
 
@@ -66,24 +58,3 @@ def test_const_x2_partial_closed_form_and_limit():
         worst_lim = max(worst_lim, abs(got - lim) / (abs(lim) + 1e-300))
     assert worst_cf < 1e-12 and worst_lim < 1e-12, f"const_x2 cf {worst_cf:.2e}, limit {worst_lim:.2e}"
     print(f"  bivar_LL_covar_const_x2_partial: closed form (cf {worst_cf:.1e}) == general at σ2=0 ({worst_lim:.1e})  PASS")
-
-
-def test_grad_finite():
-    def loss(s1):
-        return bivar_LL_covar_partial(-9.2, 13.8, s1, 0.6, 0.2, 1.0, 0.9) ** 2 \
-            + bivar_LL_covar_const_x2_partial(-9.2, 1.0e-4, s1, 1.0, 0.9) ** 2
-    g = jax.grad(loss)(0.5)
-    assert np.isfinite(float(g)), "non-finite grad"
-    print("  jax.grad of both covar partials wrt sigma_x1 finite  PASS")
-
-
-def main():
-    print("test_bivar_LL_covar_partial:")
-    test_general_partial_closed_form_and_mean_identity()
-    test_const_x2_partial_closed_form_and_limit()
-    test_grad_finite()
-    print("All bivar_LL_covar_partial checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

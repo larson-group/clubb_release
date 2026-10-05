@@ -8,13 +8,7 @@ explicitly so a -1 query never matches a -1 (absent) metadata field.
 """
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
-import sys
 _ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 from clubb_jax.src.CLUBB_core.corr_varnce_module import HmMetadata
 from clubb_jax.src.CLUBB_core.index_mapping import (
@@ -91,12 +85,3 @@ def test_sclr_idx_fields_mirror_fortran_type():
     jax = list(SclrIdx._fields)
     assert fort and fort == jax, (f"SclrIdx fields diverge from sclr_idx_type:\n  Fortran {fort}\n  JAX     {jax}")
     print(f"  SclrIdx fields mirror sclr_idx_type exactly ({len(fort)} fields, same order)  PASS")
-
-
-if __name__ == "__main__":
-    print("index_mapping vs index_mapping.F90 logic:")
-    test_warm_rain_only_pdf()
-    test_absent_species_guard()
-    test_full_species()
-    test_sclr_idx_fields_mirror_fortran_type()
-    print("Done.")

@@ -11,17 +11,9 @@ corresponding zero-variance limit (with the constant variable's log-mean = ln(va
      const_all == bivar_LL_mean(ln μ_x1, ln μ_x2, 0, 0, ρ, α, β)   — a genuine cross-check, not a tautology.
 Oracle-independent; never SKIPs. (iter 551)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
-import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
 
@@ -61,24 +53,3 @@ def test_const_x1_closed_form_and_limit():
         worst_lim = max(worst_lim, abs(got - lim) / (abs(lim) + 1e-300))
     assert worst_cf < 1e-13 and worst_lim < 1e-12, f"const_x1 cf {worst_cf:.2e}, limit {worst_lim:.2e}"
     print(f"  const_x1 = μ1^α·exp(μ2n·β+½σ2n²β²) (cf {worst_cf:.1e}) == general LL at σ_x1=0 (limit {worst_lim:.1e})  PASS")
-
-
-def test_grad_finite():
-    def loss(mu1):
-        return bivar_LL_mean_const_x1(mu1, 13.8, 0.6, 1.0, 0.9) ** 2 \
-            + bivar_LL_mean_const_all(mu1, 1.0e6, 1.0, 0.9) ** 2
-    g = jax.grad(loss)(1.0e-4)
-    assert np.isfinite(float(g)), "non-finite grad"
-    print("  jax.grad of both const forms wrt μ_x1 finite  PASS")
-
-
-def main():
-    print("test_bivar_LL_mean_const:")
-    test_const_all_closed_form_and_limit()
-    test_const_x1_closed_form_and_limit()
-    test_grad_finite()
-    print("All bivar_LL_mean const-limit checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

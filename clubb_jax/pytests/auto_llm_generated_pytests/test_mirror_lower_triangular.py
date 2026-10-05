@@ -1,22 +1,6 @@
 #!/usr/bin/env python3
-"""test_mirror_lower_triangular.py — validate the JAX mirror_lower_triangular_matrix port (matrix_operations.F90).
+"""validate the JAX mirror_lower_triangular_matrix port (matrix_operations.F90)."""
 
-Mirrors a lower-triangular matrix's lower triangle onto the upper triangle to make it symmetric. Oracles:
-  1. f2py bit-shadow vs f2py_mirror_lower_triangular_matrix. SKIPs if clubb_f2py is unbuilt.
-  2. Symmetry + lower-triangle/diagonal preservation invariants, and a finite jax.grad.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import pytest
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if p not in sys.path:
-        sys.path.append(p)
 
 import numpy as np
 import jax
@@ -24,25 +8,6 @@ jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.matrix_operations import mirror_lower_triangular_matrix
-
-
-def test_f2py_oracle():
-    try:
-        import clubb_f2py
-    except ModuleNotFoundError as e:
-        if (e.name or "").split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip(f"  f2py mirror_lower_triangular_matrix oracle: SKIP ({type(e).__name__})")
-    rng = np.random.default_rng(9)
-    worst = 0.0
-    for nvars in (1, 2, 4, 7):
-        m = rng.uniform(-3, 3, (nvars, nvars))
-        # f2py mutates in-place AND returns; pass a fresh Fortran-ordered copy so the input array is untouched.
-        f = np.asarray(clubb_f2py.f2py_mirror_lower_triangular_matrix(np.asfortranarray(m.copy())))
-        g = np.asarray(mirror_lower_triangular_matrix(m))
-        worst = max(worst, np.max(np.abs(g - f)))
-    assert worst < 1e-15, f"mirror_lower_triangular_matrix f2py mismatch {worst:.2e}"
-    print(f"  f2py mirror_lower_triangular_matrix: bit-match (nvars 1,2,4,7), worst {worst:.2e}  PASS")
 
 
 def test_invariants():
@@ -67,14 +32,3 @@ def test_differentiable():
     expected = 4.0 * np.tril(np.asarray(m), -1) + 2.0 * np.diag(np.diag(np.asarray(m)))
     np.testing.assert_allclose(grad, expected, rtol=1e-14, atol=1e-15)
     print("  mirror gradient matches the analytic lower-triangle multiplicities  PASS")
-
-
-def main():
-    print("test_mirror_lower_triangular:")
-    for t in (test_f2py_oracle, test_invariants, test_differentiable):
-        t()
-    print("All mirror_lower_triangular_matrix checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

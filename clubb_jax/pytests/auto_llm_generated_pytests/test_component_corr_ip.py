@@ -1,23 +1,6 @@
 #!/usr/bin/env python3
-"""test_component_corr_ip.py — validate the JAX component_corr_*_ip ports.
+"""validate the JAX component_corr_*_ip ports."""
 
-These complete the in-precip PDF-component hydrometeor-correlation family in setup_clubb_pdf_params.F90:
-  * component_corr_w_hm_n_ip   (:2669) — w & ln(hm); pass-through if l_calc_w_corr else cloud/below by rc_i
-  * component_corr_x_hm_n_ip   (:2754) — x(=chi/eta) & ln(hm); cloud/below by rc_i
-  * component_corr_hmx_hmy_n_ip(:2823) — ln(hmx) & ln(hmy); cloud/below by rc_i
-  * component_corr_eta_hm_n_ip (:2892) — eta & ln(hm) estimated as corr_chi_eta * corr_chi_hm_n
-
-Oracle: literal NumPy transcription of each (rc_tol cloud/below selection, the l_calc_w_corr branch, and the
-product identity), over a grid that straddles rc_tol; plus a finite jax.grad through the eta-product estimate.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -126,15 +109,3 @@ def test_chi_eta():
     assert np.array_equal(np.asarray(l1), lr1) and np.array_equal(np.asarray(l2), lr2), "limit/clamp branch"
     assert np.max(np.abs(np.asarray(l1))) <= max_mag_correlation + 1e-15, "clamp failed"
     print("  component_corr_chi_eta: cloud/below + optional ±max_mag_correlation clamp  PASS")
-
-
-def main():
-    print("test_component_corr_ip:")
-    for t in (test_x_hm, test_hmx_hmy, test_w_hm_both_branches, test_eta_product_and_grad,
-              test_w_x, test_chi_eta):
-        t()
-    print("All component_corr_*_ip checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

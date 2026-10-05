@@ -12,12 +12,8 @@ affects all 12 CGILS/cloud_feedback cases and previously had only end-to-end val
 """
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
@@ -72,14 +68,3 @@ def test_theta_branch_exner_conversion():
     # level-1 exner uses p_sfc, not p[0]: verify it differs from the naive (p[0]/p0)**kappa when p_sfc != p[0]
     assert abs(ext['T_in_K'][0] - theta[0] * (p[0] / p0) ** kappa) > 0, "level-1 exner did not use p_sfc"
     print("  thm[K] branch: T_in_K = θ·exner with p_sfc level-1 exner  PASS")
-
-
-def main():
-    print("test_rad_extended_atmosphere:")
-    for t in (test_real_cgils_extended_atmosphere, test_theta_branch_exner_conversion):
-        t()
-    print("All radiation extended-atmosphere checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

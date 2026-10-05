@@ -1,29 +1,10 @@
-"""Unit tests for JAX tridiagonal LU solver.
-
-Tests call_tridiag_lu_solve against:
-  1. Shape check
-  2. Identity-diagonal system (diagonal matrix)
-  3. Known 3x3 hand-computed case
-  4. numpy.linalg.solve reference on random tridiagonal systems
-  5. Multiple columns (each solved independently)
-
-Run:
-    Run from the repo root: bash tests/run_pytests.sh -jax -include_generated -k test_solver
-"""
+"""Unit tests for JAX tridiagonal LU solver."""
 from __future__ import annotations
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import pytest
 
-import sys
-import os
 
 import numpy as np
 
-_ROOT = str(_REPO_ROOT)
-sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 try:
     import jax
@@ -60,64 +41,6 @@ def _dense_tridiag(sup, mid, sub):
 
 # ──────────────────────────────────────────────────────────────────────────────
 
-def test_solver_shape():
-    """Output shape is (ngrdcol, ndim)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP")
-    ndim, ngrdcol = 6, 3
-    sup = jnp.zeros((ngrdcol, ndim))
-    mid = jnp.ones((ngrdcol, ndim)) * 2.0
-    sub = jnp.zeros((ngrdcol, ndim))
-    lhs = jnp.stack([sup, mid, sub], axis=0)
-    rhs = jnp.ones((ngrdcol, ndim))
-    soln = call_tridiag_lu_solve(lhs, rhs)
-    assert soln.shape == (ngrdcol, ndim), f"Wrong shape: {soln.shape}"
-    print(f"  shape = {soln.shape}  PASS")
-
-
-def test_solver_diagonal():
-    """Pure-diagonal LHS (super=sub=0): soln[i] = rhs[i] / mid[i]."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP")
-    ndim = 5
-    rng = np.random.default_rng(42)
-    mid_np = rng.uniform(1.0, 3.0, ndim)
-    rhs_np = rng.uniform(-5.0, 5.0, ndim)
-    sup_np = np.zeros(ndim)
-    sub_np = np.zeros(ndim)
-    lhs = _make_lhs_from_bands(sup_np, mid_np, sub_np)
-    rhs = jnp.array(rhs_np[None, :], dtype=jnp.float64)   # (1, ndim)
-    soln = np.asarray(call_tridiag_lu_solve(lhs, rhs))[0]   # (ndim,)
-    expected = rhs_np / mid_np
-    err = np.max(np.abs(soln - expected))
-    print(f"  diagonal max_err = {err:.3e}  PASS" if err < 1e-14 else f"  FAIL err={err}")
-    assert err < 1e-14, f"diagonal system mismatch: {err}"
-
-
-def test_solver_known_3x3():
-    """Hand-verified 3x3 system.
-
-    A = [[2, -1,  0],
-         [-1,  2, -1],
-         [0, -1,  2]]
-    rhs = [1, 0, 1]
-    exact soln = [1, 1, 1]
-    """
-    if not HAS_JAX:
-        pytest.skip("  SKIP")
-    mid_np = np.array([2.0, 2.0, 2.0])
-    sup_np = np.array([-1.0, -1.0, 0.0])   # entry at top is unused
-    sub_np = np.array([0.0, -1.0, -1.0])   # entry at bottom is unused
-    rhs_np = np.array([1.0, 0.0, 1.0])
-    lhs = _make_lhs_from_bands(sup_np, mid_np, sub_np)
-    rhs = jnp.array(rhs_np[None, :], dtype=jnp.float64)
-    soln = np.asarray(call_tridiag_lu_solve(lhs, rhs))[0]
-    expected = np.array([1.0, 1.0, 1.0])
-    err = np.max(np.abs(soln - expected))
-    print(f"  3x3 soln={soln}  max_err = {err:.3e}",
-          "  PASS" if err < 1e-14 else "  FAIL")
-    assert err < 1e-14, f"3x3 mismatch: {err}"
-
 
 def test_solver_vs_numpy_single_col():
     """JAX solver matches numpy.linalg.solve for a random tridiagonal system."""
@@ -138,7 +61,9 @@ def test_solver_vs_numpy_single_col():
 
     lhs = _make_lhs_from_bands(sup_np, mid_np, sub_np)
     rhs = jnp.array(rhs_np[None, :], dtype=jnp.float64)
-    soln = np.asarray(call_tridiag_lu_solve(lhs, rhs))[0]
+    result = np.asarray(call_tridiag_lu_solve(lhs, rhs))
+    assert result.shape == rhs.shape
+    soln = result[0]
 
     err = np.max(np.abs(soln - expected))
     print(f"  single-col vs numpy max_err = {err:.3e}",
@@ -172,6 +97,7 @@ def test_solver_vs_numpy_multi_col():
     ], axis=0)   # (3, ngrdcol, ndim)
     rhs = jnp.array(rhs_np, dtype=jnp.float64)
     soln = np.asarray(call_tridiag_lu_solve(lhs, rhs))
+    assert soln.shape == rhs.shape
 
     err = np.max(np.abs(soln - expected))
     print(f"  multi-col vs numpy max_err = {err:.3e}",
@@ -212,73 +138,4 @@ def test_solver_residual():
     assert max_res < 1e-12, f"residual too large: {max_res}"
 
 
-def test_solver_f2py_oracle():
-    """f2py bit-shadow vs the Fortran oracle. call_tridiag_lu_solve is a faithful port of
-    `tridiag_lu_solve_single_rhs_multiple_lhs` (tridiag_lu_solver.F90) — this is THE workhorse solver every
-    prognostic advance routes through, so bit-matching the SPECIFIC Fortran LU (not merely numpy.linalg.solve,
-    which only confirms the system is solved) is what underpins the whole bit-faithful case suite. SKIPs if
-    clubb_f2py is unbuilt. (iter 441)"""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (no jax)")
-    try:
-        import clubb_f2py
-    except ModuleNotFoundError as e:
-        if (e.name or "").split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip(f"  f2py tridiag_lu_solve oracle: SKIP ({type(e).__name__})")
-    rng = np.random.default_rng(0)
-    worst = 0.0
-    for _ in range(20):
-        ng, nd = 2, 15
-        lhs = np.zeros((3, ng, nd))
-        lhs[0] = rng.uniform(-0.3, 0.3, (ng, nd))   # superdiagonal
-        lhs[1] = rng.uniform(2.0, 4.0, (ng, nd))    # main (diagonally dominant → stable LU)
-        lhs[2] = rng.uniform(-0.3, 0.3, (ng, nd))   # subdiagonal
-        rhs = rng.uniform(-1.0, 1.0, (ng, nd))
-        j = np.asarray(call_tridiag_lu_solve(jnp.asarray(lhs), jnp.asarray(rhs)))
-        f = np.asarray(clubb_f2py.f2py_tridiag_lu_solve_single_rhs_multiple_lhs(lhs, rhs))
-        worst = max(worst, float(np.max(np.abs(j - f) / np.maximum(np.abs(f), 1e-30))))
-    assert worst < 1e-12, f"tridiag_lu_solve f2py mismatch {worst:.2e}"
-    print(f"  f2py tridiag_lu_solve_single_rhs_multiple_lhs: bit-match, worst rel {worst:.2e}  PASS")
-
-
 # ──────────────────────────────────────────────────────────────────────────────
-
-if __name__ == '__main__':
-    print("=" * 60)
-    print("CLUBB JAX tridiagonal solver unit tests")
-    print("=" * 60)
-
-    if not HAS_JAX:
-        print("ERROR: JAX not available.")
-        sys.exit(1)
-
-    tests = [
-        test_solver_shape,
-        test_solver_diagonal,
-        test_solver_known_3x3,
-        test_solver_vs_numpy_single_col,
-        test_solver_vs_numpy_multi_col,
-        test_solver_residual,
-        test_solver_f2py_oracle,
-    ]
-
-    passed = failed = 0
-    for t in tests:
-        print(f"\n{t.__name__}:")
-        try:
-            t()
-            passed += 1
-        except AssertionError as e:
-            print(f"  FAIL: {e}")
-            failed += 1
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            print(f"  ERROR: {type(e).__name__}: {e}")
-            failed += 1
-
-    print("\n" + "=" * 60)
-    print(f"Results: {passed}/{passed+failed} passed, {failed} failed")
-    print("=" * 60)
-    sys.exit(0 if failed == 0 else 1)

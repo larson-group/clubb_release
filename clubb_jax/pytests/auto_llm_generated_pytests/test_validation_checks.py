@@ -1,28 +1,6 @@
 #!/usr/bin/env python3
-"""test_validation_checks.py — validate the ported CLUBB check routines.
+"""validate the ported CLUBB check routines."""
 
-Covers the in-scope NaN/validation check routines (corr_varnce_module.F90 / numerical_check.F90). Their f2py
-wrappers set err_code on `stored_err_info` and `return` (no error-stop, and the f2py does NOT expose err_code), so
-there is no observable f2py oracle — validation is by the Fortran source logic (behavioral) plus an f2py no-crash
-cross-check on the valid case.
-  assert_corr_symmetric: True iff symmetric within 1e-6 AND unit diagonal within eps (1e-10).
-  sfc_varnce_check:       True iff every surface variance/covariance is finite.
-  length_check:           True iff Lscale/Lscale_up/Lscale_down are all finite.
-  pdf_closure_check:      True iff every pdf_closure output AND pdf_params component is finite.
-  rad_check:              True iff every radiation input (incl. rvm=rtm-rcm) is non-negative.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import pytest
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if p not in sys.path:
-        sys.path.append(p)
 
 import numpy as np
 
@@ -49,23 +27,6 @@ def test_assert_corr_symmetric_behavior():
     nd = sym.copy(); nd[2, 2] = 0.9
     assert assert_corr_symmetric(nd) is False, "non-unit-diagonal matrix accepted"
     print("  assert_corr_symmetric: symmetric+unit-diag PASS / asym + non-unit-diag FAIL  PASS")
-
-
-def test_assert_corr_symmetric_f2py_nocrash():
-    try:
-        import clubb_f2py
-    except ModuleNotFoundError as e:
-        if (e.name or "").split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip(f"  f2py assert_corr_symmetric (no-crash valid case): SKIP ({type(e).__name__})")
-    n = 6
-    rng = np.random.default_rng(7)
-    lower = rng.uniform(-0.4, 0.4, (n, n))
-    sym = np.tril(lower, -1) + np.tril(lower, -1).T + np.eye(n)
-    # The f2py sets err_code on stored_err_info and returns (no error-stop). A valid matrix must not raise.
-    clubb_f2py.f2py_assert_corr_symmetric(np.asfortranarray(sym))
-    assert assert_corr_symmetric(sym) is True
-    print("  f2py assert_corr_symmetric: valid matrix runs without error + JAX agrees  PASS")
 
 
 def test_sfc_varnce_check_behavior():
@@ -130,17 +91,3 @@ def test_invalid_model_arrays_behavior():
     assert invalid_model_arrays(**ok, hydromet=hm, hydromet_list=['rrm', 'Nrm']) is True, "NaN hydromet not flagged"
     assert invalid_model_arrays(**ok, sclrm=np.ones((n, 1)), edsclrm=np.ones((n, 1))) is False
     print("  invalid_model_arrays: clean->False / Inf wp3 + NaN hydromet->True (inverse polarity)  PASS")
-
-
-def main():
-    print("test_validation_checks:")
-    for t in (test_assert_corr_symmetric_behavior, test_assert_corr_symmetric_f2py_nocrash,
-              test_sfc_varnce_check_behavior, test_length_check_behavior,
-              test_pdf_closure_check_behavior, test_rad_check_behavior,
-              test_invalid_model_arrays_behavior):
-        t()
-    print("All validation-check ports PASSED")
-
-
-if __name__ == "__main__":
-    main()

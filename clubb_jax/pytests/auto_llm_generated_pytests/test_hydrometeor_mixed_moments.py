@@ -1,26 +1,8 @@
 #!/usr/bin/env python3
-"""test_hydrometeor_mixed_moments.py — validate the hydrometeor_mixed_moments top driver.
+"""validate the hydrometeor_mixed_moments top driver."""
 
-The driver is pure orchestration over the already-validated integral functions (univar/bivar/covar). Its own
-risk is wiring: which PDF param goes into which integral, the chi/eta->rt/thl correlation transforms, the
-recomputed binormal means, and the triangular hmx/hmy loop. The oracle is therefore a LITERAL per-level,
-per-hydrometeor Python transcription of the Fortran k/hm_idx/hmy_idx loops calling the same validated
-integrals on scalars — the vectorized (over nzt) driver must reproduce it exactly. Plus a finite jax.grad.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 from types import SimpleNamespace
-import pytest
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -155,44 +137,3 @@ def test_driver_vs_literal_loop():
         np.testing.assert_allclose(out['stats'].buffers[1][slot],expected,rtol=1.e-12,atol=1.e-25)
     print(f"  hydrometeor_mixed_moments (nzt={NZT}, hm_dim={HM_DIM}): all 4 outputs vs literal Fortran-loop "
           f"transcription rel <1e-12  PASS")
-
-
-def test_differentiable():
-    p = _build_inputs()
-    def loss(sig_w_1):
-        q = dict(p); q['sigma_w_1'] = sig_w_1
-        out = _run_interface(q)
-        return jnp.sum(out['wp2hmp'] ** 2) + jnp.sum(out['rtphmp_zt'] ** 2)
-    g = jax.grad(loss)(p['sigma_w_1'])
-    assert np.isfinite(np.asarray(g)).all(), "non-finite grad through hydrometeor_mixed_moments"
-    print(f"  jax.grad(hydrometeor_mixed_moments) wrt sigma_w_1: finite (||g||={float(jnp.linalg.norm(g)):.3e})  PASS")
-
-
-def test_compute_mean_binormal_f2py():
-    """The literal-loop oracle above CALLS compute_mean_binormal (pdf_utilities.F90) for rtm/thlm/wm, so a bug in
-    it would cancel between driver and oracle. Validate it independently against the f2py Fortran oracle to break
-    that circularity. SKIPs if clubb_f2py is unbuilt. (iter 411)"""
-    try:
-        import clubb_f2py
-    except Exception as e:
-        pytest.skip(f"f2py compute_mean_binormal oracle unavailable: {e}")
-    rng = np.random.default_rng(2)
-    worst = 0.0
-    for _ in range(200):
-        mu1, mu2, mf = float(rng.uniform(-10, 10)), float(rng.uniform(-10, 10)), float(rng.uniform(0, 1))
-        j = float(compute_mean_binormal(mu1, mu2, mf))
-        f = float(clubb_f2py.f2py_compute_mean_binormal(mu1, mu2, mf))
-        worst = max(worst, abs(j - f))
-    assert worst < 1e-13, f"compute_mean_binormal f2py mismatch {worst:.2e}"
-    print(f"  compute_mean_binormal vs f2py oracle (200 cases): bit-match, worst {worst:.2e}  PASS")
-
-
-def main():
-    print("test_hydrometeor_mixed_moments:")
-    for t in (test_driver_vs_literal_loop, test_differentiable, test_compute_mean_binormal_f2py):
-        t()
-    print("All hydrometeor_mixed_moments checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

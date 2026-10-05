@@ -9,7 +9,7 @@ pipeline {
         sh '''
           source /etc/profile.d/larson-group.sh
           module load gcc netcdf-fortran
-          ./compile.py -debug -python
+          ./compile.py -debug
         '''
       }
     }
@@ -19,8 +19,6 @@ pipeline {
           sh '''
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
-            # Create JAX's environment with the same Python ABI as the compiled reference.
-            export PYTHON="$WORKSPACE/.venv-python/bin/python"
             bash tests/run_pytests.sh -jax -include_generated -v --durations=15
           '''
         }

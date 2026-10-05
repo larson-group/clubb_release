@@ -8,14 +8,7 @@ INIT logic of the Fortran-mirrored helpers `init_pdf_params` / `zero_pdf_params_
 (ngrdcol, nz), with the passive-scalar fields None when sclr_dim==0 and (ngrdcol, nz, sclr_dim) when > 0 (mirroring
 the Fortran `if (sclr_dim>0)` alloc). Pure-Python, never SKIPs. (iter 522)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
@@ -75,14 +68,3 @@ def test_implicit_coefs_terms_init():
     z2 = zero_pdf_implicit_coefs_terms_api(c2)
     assert z2.sclr_dim == 2 and np.asarray(z2.coef_wp4_implicit).shape == (_NG, _NZ)
     print("  init/zero_pdf_implicit_coefs_terms_api: zeroed @ (ngrdcol,nz); sclr fields None@0 / zero@>0  PASS")
-
-
-def main():
-    print("test_pdf_params_init:")
-    test_pdf_parameter_init()
-    test_implicit_coefs_terms_init()
-    print("All pdf_params init checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

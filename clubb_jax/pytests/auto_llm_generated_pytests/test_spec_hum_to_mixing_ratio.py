@@ -11,14 +11,7 @@ previously untested. Pinned vs the literal F90 formulas:
 
 Pure-Python (the F90 formulas are the oracle), so it never SKIPs. (iter 509)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -43,13 +36,3 @@ def test_conversions():
     identity = np.asarray(flux_spec_hum_to_mixing_ratio(3, np.zeros_like(wpqtp), wpqtp))
     assert float(np.max(np.abs(identity - wpqtp))) == 0.0, "r_t=0 must give identity"
     print("  flux_/force_spec_hum_to_mixing_ratio == F90 ((1+r_t)^2 Jacobian, exact)  PASS")
-
-
-def main():
-    print("test_spec_hum_to_mixing_ratio:")
-    test_conversions()
-    print("All spec_hum_to_mixing_ratio checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

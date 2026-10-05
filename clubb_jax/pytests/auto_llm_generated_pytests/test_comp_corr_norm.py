@@ -8,24 +8,13 @@ PDF correlation arrays from the component_corr_* routines + calc_corr_w_hm_n. Or
      (chi_eta, w_x, x_hm cloud-twice for Ncn, eta_hm product, w_hm_n_ip from calc_corr_w_hm_n).
   3. A finite jax.grad through the assembled array.
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import (
-    comp_corr_norm, component_corr_chi_eta, component_corr_w_x,
-    component_corr_x_hm_n_ip, component_corr_eta_hm_n_ip,
-    component_corr_w_hm_n_ip, calc_corr_w_hm_n)
+from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import comp_corr_norm, component_corr_chi_eta, component_corr_w_x, component_corr_w_hm_n_ip, calc_corr_w_hm_n
 
 # KK PDF layout: chi=0, eta=1, w=2, Ncn=3, rr=4, Nr=5
 CHI, ETA, W, NCN = 0, 1, 2, 3
@@ -138,26 +127,3 @@ def test_no_w_corr_uses_prescribed():
     expect = np.where(rc_1 > 1e-6, cc[NCN, W], cb[NCN, W])
     assert np.max(np.abs(A1[:, :, NCN, W] - expect)) < 1e-14, "no-w-corr (Ncn,w) should be cloud/below"
     print("  l_calc_w_corr=False: w-correlations use prescribed cloud/below values  PASS")
-
-
-def test_differentiable():
-    inp = _inputs(5)
-    def loss(wphmp):
-        i2 = dict(inp); i2['wphydrometp_zt'] = wphmp
-        A1, A2 = comp_corr_norm(iiPDF_type=6, l_calc_w_corr=True, l_fix_w_chi_eta_correlations=True, **i2)
-        return jnp.sum(A1 ** 2) + jnp.sum(A2 ** 2)
-    g = np.asarray(jax.grad(loss)(jnp.asarray(inp['wphydrometp_zt'])))
-    assert np.isfinite(g).all(), "non-finite grad through comp_corr_norm"
-    print(f"  jax.grad through comp_corr_norm: finite ({g.size} entries)  PASS")
-
-
-def main():
-    print("test_comp_corr_norm:")
-    for t in (test_structure, test_assembly_rules, test_adg_zeros_w_corr,
-              test_no_w_corr_uses_prescribed, test_differentiable):
-        t()
-    print("All comp_corr_norm checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

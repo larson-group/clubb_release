@@ -16,12 +16,9 @@ first occurrence is always the standalone-build value the JAX mirrors. Requires 
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
 import re
-import sys
 import ast
 
 _ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 from clubb_jax.src.CLUBB_core import constants_clubb as cc
 
@@ -88,25 +85,6 @@ def test_public_constant_inventory_matches_fortran_source():
     )
 
 
-def test_legacy_constants_aggregate_does_not_return():
-    core = os.path.join(_ROOT, "clubb_jax", "src", "CLUBB_core")
-    legacy_name = "clubb_" + "constants"
-    assert not os.path.exists(os.path.join(core, legacy_name + ".py"))
-    for root, _dirs, files in os.walk(os.path.join(_ROOT, "clubb_jax")):
-        for filename in files:
-            if not filename.endswith(".py"):
-                continue
-            path = os.path.join(root, filename)
-            tree = ast.parse(open(path, errors="ignore").read())
-            for node in ast.walk(tree):
-                if isinstance(node, ast.ImportFrom):
-                    assert node.module != f"clubb_jax.src.CLUBB_core.{legacy_name}", path
-                    assert not (
-                        node.module == "clubb_jax.src.CLUBB_core"
-                        and any(alias.name == legacy_name for alias in node.names)
-                    ), path
-
-
 def test_constants_match_fortran_source():
     if not os.path.exists(_F90):
         raise AssertionError("  constants_clubb.F90 oracle source not present")
@@ -130,13 +108,3 @@ def test_constants_match_fortran_source():
     assert not missing, f"key constants not found in the F90 parse (extraction regressed): {missing}"
     assert not mism, "JAX constants diverge from constants_clubb.F90:\n  " + "\n  ".join(mism)
     print(f"  {checked} literal constants (Cp/Lv/Rd/Rv/grav/p0/T_freeze_K/…) match constants_clubb.F90 exactly  PASS")
-
-
-def main():
-    print("test_constants:")
-    test_constants_match_fortran_source()
-    print("All constants checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

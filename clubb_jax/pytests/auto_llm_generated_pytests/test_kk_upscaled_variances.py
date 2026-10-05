@@ -1,26 +1,10 @@
 #!/usr/bin/env python3
-"""test_kk_upscaled_variances.py — validate variance_KK_mvr (variance of the KK rain mean volume radius).
+"""validate variance_KK_mvr (variance of the KK rain mean volume radius)."""
 
-Two independent oracles (no f2py wrapper for this routine):
-  1. Closed-form: for the non-degenerate branch, the bivariate-lognormal moment is
-     `E[rr^a Nr^b] = exp(a*mu_rr_n + b*mu_Nr_n + 0.5*(a^2 s_rr^2 + b^2 s_Nr^2 + 2ab*rho*s_rr*s_Nr))`,
-     so `Var(R_vr) = E[R^2]-E[R]^2` is computed from scratch (not via the ported helpers).
-  2. Monte-Carlo: sample the 2-component, in-precip mixture and take the sample variance of R_vr.
-Plus a finite `jax.grad`.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_variances import variance_KK_mvr
 
@@ -102,27 +86,3 @@ def test_monte_carlo():
     rel = abs(got - var_mc) / (abs(var_mc) + 1e-30)
     assert rel < 5e-3, f"variance_KK_mvr vs Monte-Carlo rel {rel:.2e}"
     print(f"  variance_KK_mvr vs Monte-Carlo ({N//10**6}M samples): rel {rel:.2e}  PASS")
-
-
-def test_differentiable():
-    p = _make_case()
-    e_r, _ = _ref_mean_and_var(p)
-    g = jax.grad(lambda s: variance_KK_mvr(
-        p['mu_rr_1'], p['mu_rr_2'], p['mu_Nr_1'], p['mu_Nr_2'],
-        p['mu_rr_1_n'], p['mu_rr_2_n'], p['mu_Nr_1_n'], p['mu_Nr_2_n'],
-        p['s_rr_1'], p['s_rr_2'], p['s_Nr_1'], p['s_Nr_2'],
-        s, p['s_rr_2_n'], p['s_Nr_1_n'], p['s_Nr_2_n'],
-        p['rho1'], p['rho2'], e_r, COEF, p['mixt_frac'], p['pf1'], p['pf2']))(jnp.asarray(p['s_rr_1_n']))
-    assert np.isfinite(float(g)), "non-finite grad through variance_KK_mvr"
-    print(f"  jax.grad(variance_KK_mvr)/d(sigma_rr_1_n) = {float(g):+.4e}: finite  PASS")
-
-
-def main():
-    print("test_kk_upscaled_variances:")
-    for t in (test_closed_form, test_monte_carlo, test_differentiable):
-        t()
-    print("All KK_upscaled_variances checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

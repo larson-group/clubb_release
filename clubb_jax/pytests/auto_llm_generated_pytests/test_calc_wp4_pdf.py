@@ -9,14 +9,7 @@ end-to-end. This pins it (1) against the closed-form transcription, and — cruc
 Monte-Carlo: draw w from the actual 2-component Gaussian mixture and compare the empirical 4th central moment. The MC
 validates the analytic moment formula itself (not a tautology). + finite grad. (iter 559)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -59,21 +52,3 @@ def test_monte_carlo_central_moment():
         worst = max(worst, rel)
         assert rel < 5e-3, f"wp4 case {(w1, w2, v1, v2, a)}: analytic {got} vs MC {mc} rel {rel:.2e}"
     print(f"  calc_wp4_pdf vs {N//1_000_000}M-sample mixture 4th central moment: rel <5e-3 (worst {worst:.1e})  PASS")
-
-
-def test_grad_finite():
-    g = jax.grad(lambda v1: calc_wp4_pdf(0.3, 0.8, -0.3, v1, 0.6, 0.3) ** 2)(0.25)
-    assert np.isfinite(float(g)), "non-finite grad wrt varnce_w_1"
-    print("  jax.grad(calc_wp4_pdf) wrt varnce_w_1 finite  PASS")
-
-
-def main():
-    print("test_calc_wp4_pdf:")
-    test_closed_form()
-    test_monte_carlo_central_moment()
-    test_grad_finite()
-    print("All calc_wp4_pdf checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

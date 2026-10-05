@@ -1,10 +1,5 @@
 """Splatting gradients at clipped frequencies and a zero tuning coefficient."""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 
-from pathlib import Path
-import sys
-
-sys.path.insert(0, str(_REPO_ROOT))
 
 import jax
 import jax.numpy as jnp

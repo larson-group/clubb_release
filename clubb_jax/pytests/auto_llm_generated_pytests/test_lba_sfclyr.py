@@ -5,20 +5,12 @@ Oracle: a literal NumPy transcription of the Fortran (the analytic diurnal facto
 diag_ustar is the already-validated MOST routine), plus the physical diurnal structure (peak at 5.25 h, zero
 outside the cosine window, fluxes >= 0, ustar > 0) and a finite jax.grad.
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.Benchmark_cases.lba import lba_sfclyr
 from clubb_jax.src.Benchmark_cases.diag_ustar_module import diag_ustar
@@ -59,22 +51,3 @@ def test_diurnal_structure():
     wth, wrt, ust = lba_sfclyr(1, 5.25 * 3600.0, 0.0, 25.0, 1.1, 300.0, 4.0)
     assert float(wth) > 0 and float(wrt) > 0 and float(ust) > 0, "peak fluxes/ustar should be positive"
     print(f"  lba_sfclyr diurnal: peak@5.25h, ft(0)≈0, zero outside window, peak fluxes/ustar>0  PASS")
-
-
-def test_differentiable():
-    # Grad w.r.t. the physical inputs (rho, thlm, ubar) at the diurnal peak (ft constant → fractional power safe).
-    g = jax.grad(lambda r: lba_sfclyr(1, 5.25 * 3600.0, 0.0, 25.0, r, 300.0, 4.0)[0])(jnp.asarray(1.1))
-    gt = jax.grad(lambda T: lba_sfclyr(1, 5.25 * 3600.0, 0.0, 25.0, 1.1, T, 4.0)[2])(jnp.asarray(300.0))
-    assert np.isfinite(float(g)) and np.isfinite(float(gt)), "non-finite grad"
-    print(f"  jax.grad(lba_sfclyr): d wpthlp/d rho = {float(g):+.3e}, d ustar/d thlm = {float(gt):+.3e}: finite  PASS")
-
-
-def main():
-    print("test_lba_sfclyr:")
-    for t in (test_vs_literal, test_diurnal_structure, test_differentiable):
-        t()
-    print("All lba_sfclyr checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

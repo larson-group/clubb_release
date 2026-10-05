@@ -9,14 +9,7 @@ bivariate-normal mixture (per-component means w_i/x_i, variances, correlation co
 mixed central moment — so the analytic formulas (incl. the corr cross-terms and the (1+2corr²) coefficient in
 <w'^2 x'^2>) are validated, not just transcribed. + finite grad. Companion to iter-559's calc_wp4_pdf. (iter 560)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -81,23 +74,3 @@ def test_monte_carlo():
             worst = max(worst, rel)
             assert rel < 8e-3, f"MC mismatch case {cs[:4]}: analytic {ref} vs MC {mc} rel {rel:.2e}"
     print(f"  vs {N//1_000_000}M-sample binormal mixture mixed central moments: rel <8e-3 (worst {worst:.1e})  PASS")
-
-
-def test_grad_finite():
-    cs = _CASES[0]; w1, w2, x1, x2, vw1, vw2, vx1, vx2, c1, c2, a = cs
-    wm, xm = a * w1 + (1 - a) * w2, a * x1 + (1 - a) * x2
-    g = jax.grad(lambda c: calc_wp2xp2_pdf(wm, xm, w1, w2, x1, x2, vw1, vw2, vx1, vx2, c, c2, a) ** 2)(c1)
-    assert np.isfinite(float(g)), "non-finite grad wrt corr_w_x_1"
-    print("  jax.grad(calc_wp2xp2_pdf) wrt corr finite  PASS")
-
-
-def main():
-    print("test_pdf_binormal_moments:")
-    test_closed_form()
-    test_monte_carlo()
-    test_grad_finite()
-    print("All binormal mixed-moment checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

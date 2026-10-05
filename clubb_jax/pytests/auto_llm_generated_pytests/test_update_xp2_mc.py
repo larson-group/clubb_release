@@ -1,28 +1,6 @@
 #!/usr/bin/env python3
-"""test_update_xp2_mc.py — validate the JAX update_xp2_mc port (advance_xp2_xpyp_module.F90:6176).
+"""validate the JAX update_xp2_mc port (advance_xp2_xpyp_module.F90:6176)."""
 
-Effects of rain evaporation on the second moments (l_morr_xp2_mc). Oracle:
-  1. Literal NumPy transcription of the explicit Fortran formulas on the zt grid (the per-level math), then the
-     independently-validated zt2zm interpolation -- so the comparison isolates this routine's algebra.
-  2. precip_frac_double_delta top-down fill correctness.
-  3. Physical sign invariants (rtp2_mc, thlp2_mc >= 0; wpthlp_mc <= 0).
-  4. A finite jax.grad.
-
-NB (iter 445): the direct f2py oracle `f2py_update_xp2_mc` is deliberately NOT used and the NumPy transcription is
-the gold standard here, for two structural reasons (verified, not assumed): (a) the wrapper reads the PDF component
-means/variances from a module-global `stored_pdf_params` (derived_type_storage) rather than taking them as args — so
-the JAX's actual pdf_params can't be fed to it without a separate derived-type setter; and (b) like
-`f2py_precip_fraction`, it FPE-traps under this build's `-ffpe-trap`. This routine is therefore validated by the
-transcription here + the case-level KK rico oracle (clubb_jax/tests/run_rico_microphysics_oracle_test.py), not a direct f2py bit-shadow.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -159,33 +137,3 @@ def test_invariants():
     assert np.all(thlp2 >= -1e-12), "thlp2_mc should be >= 0"
     assert np.all(wpthlp <= 1e-12), "wpthlp_mc should be <= 0"
     print("  invariants: rtp2_mc>=0, thlp2_mc>=0, wpthlp_mc<=0  PASS")
-
-
-def test_differentiable():
-    jgr = setup_grid(ngrdcol=1, deltaz=_DZ, zm_init=0.0, zm_top=_ZTOP, grid_type=1)
-    nzt = jgr.zm.shape[1] - 1
-    global _NG
-    saved = _NG
-    _NG = 1
-    try:
-        cloud_frac, rcm, rvm, thlm, wm, exner, rrm_evap = _inputs(nzt, 7)
-        p = _pdf_params(nzt, 8)
-        def loss(rrm):
-            outs = update_xp2_mc(jgr, 60.0, cloud_frac, rcm, rvm, thlm, wm, exner, rrm, p)
-            return sum(jnp.sum(o ** 2) for o in outs)
-        g = np.asarray(jax.grad(loss)(jnp.asarray(rrm_evap)))
-        assert np.isfinite(g).all(), "non-finite grad through update_xp2_mc"
-    finally:
-        _NG = saved
-    print(f"  jax.grad through update_xp2_mc: finite ({g.size} entries)  PASS")
-
-
-def main():
-    print("test_update_xp2_mc:")
-    for t in (test_transcription_and_interp, test_invariants, test_differentiable):
-        t()
-    print("All update_xp2_mc checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

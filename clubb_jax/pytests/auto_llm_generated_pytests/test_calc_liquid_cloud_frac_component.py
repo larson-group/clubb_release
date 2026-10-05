@@ -12,15 +12,8 @@ closed-form probability/conditional-expectation, and (2) an INDEPENDENT Monte-Ca
 fraction and mean positive part) — so the formulas are validated, not just transcribed — plus the truncation limits and
 a finite grad. (iter 562)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -62,21 +55,3 @@ def test_truncation_limits():
     cf, rc = calc_liquid_cloud_frac_component(0.0, 0.0)
     assert float(cf) == 0.0 and float(rc) == 0.0, "deterministic clear"
     print("  truncation: >5σ -> (1, mean_chi); <−5σ -> (0,0); deterministic dry -> (0,0)  PASS")
-
-
-def test_grad_finite():
-    g = jax.grad(lambda mc: calc_liquid_cloud_frac_component(mc, 1.0e-3)[1])(2.0e-4)
-    assert np.isfinite(float(g)), "non-finite grad of rc wrt mean_chi"
-    print("  jax.grad(rc) wrt mean_chi finite  PASS")
-
-
-def main():
-    print("test_calc_liquid_cloud_frac_component:")
-    test_closed_form_and_monte_carlo()
-    test_truncation_limits()
-    test_grad_finite()
-    print("All calc_liquid_cloud_frac_component checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

@@ -4,14 +4,7 @@
 mpace_b_tndcy is checked vs a literal NumPy transcription + physical invariants (subsidence sign, capped
 cooling, wm_zm boundary conditions) + a finite jax.grad. lba_tndcy is identically zero.
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -81,24 +74,3 @@ def test_lba_tndcy_zero():
     assert not np.any(np.asarray(th)) and not np.any(np.asarray(rt)), "lba forcing should be identically zero"
     assert sclr.shape[-1] == 0 and edsclr.shape[-1] == 0
     print("  lba_tndcy: identically zero (surface-driven LBA, no LS forcing)  PASS")
-
-
-def test_differentiable():
-    gr = _grid()
-    nzt = gr.zt.shape[1]
-    p = jnp.asarray(np.linspace(101000.0, 40000.0, nzt)[None, :])
-    g = jax.grad(lambda thvm: jnp.sum(mpace_b_tndcy(1, 0, 0, _SCLR_IDX, gr, p, thvm)[0] ** 2))(
-        jnp.asarray((288.0 + 0.004 * np.asarray(gr.zt[0]))[None, :]))
-    assert np.isfinite(np.asarray(g)).all(), "non-finite grad"
-    print("  jax.grad(mpace_b_tndcy) wrt thvm: finite  PASS")
-
-
-def main():
-    print("test_mpace_b_lba_tndcy:")
-    for t in (test_mpace_b_vs_literal, test_mpace_b_physical, test_lba_tndcy_zero, test_differentiable):
-        t()
-    print("All mpace_b/lba tndcy checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

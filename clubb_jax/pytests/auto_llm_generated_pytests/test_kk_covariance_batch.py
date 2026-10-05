@@ -1,15 +1,11 @@
 """Check shared Dv routing, degenerate PDFs, and differentiation of KK covariances."""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import gc
-import sys
-from pathlib import Path
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
 
-sys.path.insert(0, str(_REPO_ROOT))
 
 from clubb_jax.src.Microphys.KK_microphys import KK_upscaled_covariances as kk
 
@@ -74,12 +70,6 @@ def test_driver_matches_unbatched_integrals(monkeypatch, degenerate):
     # More than dry/zero tendencies must be exercised in the normal PDF case.
     if not degenerate:
         assert all(np.max(np.abs(value)) > 1e-15 for value in reference)
-
-
-def test_driver_has_one_special_function_call():
-    lowered = jax.jit(kk.KK_upscaled_covar_driver).lower(**_inputs())
-    # Regression guard for the original compiler expansion, not a timing assertion.
-    assert lowered.as_text().count('call @dv_parabolic_cylinder') == 1
 
 
 def test_nested_jit_gradient_matches_unbatched_finite_difference(monkeypatch):

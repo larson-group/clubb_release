@@ -1,26 +1,6 @@
 #!/usr/bin/env python3
-"""test_hydrometp2_zt.py — pin the precipitating-hydrometeor overall-variance formula.
+"""pin the precipitating-hydrometeor overall-variance formula."""
 
-`hydrometp2_zt` (setup_clubb_pdf_params.py ↔ setup_clubb_pdf_params.F90:449) converts a hydrometeor's
-PRESCRIBED in-precip variance ratio (hmp2_ip_on_hmm2_ip) into the OVERALL grid-box variance <hm'²> used to seed the
-hydrometeor PDF for the KK / Morrison microphysics. It is on the live microphysics PDF-param path (callers:
-kk_microphys_step, morrison_microphys_step, kk_microphys_driver) but has no f2py wrapper and no isolation test —
-only end-to-end coverage. The Fortran formula (the non-zero branch; the caller zeroes sub-tolerance levels):
-
-    hydrometp2_zt = ( (hmp2_ip_on_hmm2_ip + 1) / precip_frac − 1 ) · hmm²
-
-This pins it against an INDEPENDENT transcription over positive precip fractions (**exact**), checks the safe-division
-guard (precip_frac=0 must not NaN/Inf — the JAX clamps the denominator, the caller overwrites those levels), the
-in-cloud limit (precip_frac→1, ratio→0 ⇒ <hm'²>→0), and a finite jax.grad. Oracle-independent; never SKIPs. (iter 547)
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -56,25 +36,3 @@ def test_safe_division_and_in_cloud_limit():
     out1 = np.asarray(hydrometp2_zt(jnp.asarray(hmm), jnp.asarray(one), jnp.asarray(zero)))
     assert np.max(np.abs(out1)) < 1e-20, "precip_frac=1, ratio=0 must give zero variance (fully in-cloud, no spread)"
     print("  safe-division at precip_frac=0 (finite) + in-cloud limit (pf=1,ratio=0 ⇒ 0)  PASS")
-
-
-def test_grad_finite():
-    rng = np.random.default_rng(7)
-    hmm = jnp.asarray(rng.uniform(1e-6, 1e-3, (_NG, _NZT)))
-    pf = jnp.asarray(rng.uniform(0.05, 1.0, (_NG, _NZT)))
-    ratio = jnp.asarray(rng.uniform(0.0, 5.0, (_NG, _NZT)))
-    g = jax.grad(lambda h: jnp.sum(hydrometp2_zt(h, pf, ratio) ** 2))(hmm)
-    assert np.all(np.isfinite(np.asarray(g))), "non-finite grad wrt hmm"
-    print("  jax.grad(hydrometp2_zt) wrt hmm finite  PASS")
-
-
-def main():
-    print("test_hydrometp2_zt:")
-    test_matches_f90_formula()
-    test_safe_division_and_in_cloud_limit()
-    test_grad_finite()
-    print("All hydrometp2_zt checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

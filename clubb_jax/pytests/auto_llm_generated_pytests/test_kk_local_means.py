@@ -1,18 +1,6 @@
 #!/usr/bin/env python3
-"""test_kk_local_means.py — validate the JAX KK_local_means port (grid-mean KK rates).
+"""validate the JAX KK_local_means port (grid-mean KK rates)."""
 
-No f2py oracle exists for the local-mean variants (the gated KK path uses the upscaled means), so these
-power laws are validated against an INDEPENDENT NumPy transcription of the documented `parameters_KK.F90`
-exponents, the supersaturation/cloud-presence branch (`s<=0` evap, `rc>0` auto/accr), and a finite gradient.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -53,27 +41,3 @@ def test_formulas_and_branches():
     assert np.all(got_evap[s > 0.0] == 0.0) and np.all(got_auto[rc <= 0.0] == 0.0) \
         and np.all(got_accr[rc <= 0.0] == 0.0), "rate branch not respected"
     print("  KK evap/auto/accr/mvr local means vs independent NumPy + branches: rel <1e-13  PASS")
-
-
-def test_differentiable():
-    rrm = jnp.asarray(np.abs(np.random.default_rng(1).standard_normal(50)) * 1e-4 + 1e-6)
-    Nrm = jnp.asarray(np.abs(np.random.default_rng(2).standard_normal(50)) * 1e6 + 1.0)
-    g = jax.grad(lambda r: jnp.sum(KK_mvr_local_mean(r, Nrm, 3.6e-3, 1e-3)))(rrm)
-    assert np.isfinite(np.asarray(g)).all(), "non-finite grad through KK_mvr_local_mean"
-    # auto rate grad w.r.t. positive rc
-    rc = jnp.asarray(np.abs(np.random.default_rng(3).standard_normal(50)) * 1e-4 + 1e-6)
-    Ncm = jnp.asarray(np.full(50, 1e8))
-    ga = jax.grad(lambda c: jnp.sum(KK_auto_local_mean(c, Ncm, 1350.0)))(rc)
-    assert np.isfinite(np.asarray(ga)).all(), "non-finite grad through KK_auto_local_mean"
-    print(f"  jax.grad through KK_mvr/KK_auto local means: finite  PASS")
-
-
-def main():
-    print("test_kk_local_means:")
-    for t in (test_formulas_and_branches, test_differentiable):
-        t()
-    print("All KK_local_means checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

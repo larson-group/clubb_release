@@ -39,12 +39,12 @@ an installation in the Jenkins account's `$HOME/.local/bin`, prepared once
 outside the checkout. The pipeline does not download tools or require npm.
 `-api` requires a compatible build in `install/latest/python` (or
 `CLUBB_F2PY_DIR`). `-jax`
-prepares the CPU JAX environment and uses the selected compiled API for Fortran
-oracles; build the API and JAX environment with the same Python ABI. `-all`
+prepares the CPU JAX environment and runs independent NumPy/analytic and
+JAX contract checks. It requires no compiled Fortran library or Python API. `-all`
 runs unit, Dash, API and JAX in that order. Pytest options such as `-q`, `-k` and
 `--durations=10` are forwarded unchanged. JAX runs each module in a fresh
-process so native Fortran exits and retained runtime state cannot stop or
-contaminate the other modules. Its per-module XML reports are saved under
+process so module-level flags and JIT caches cannot contaminate other modules.
+Its per-module XML reports are saved under
 `output/tests/pytests/jax` (`CLUBB_PYTEST_OUTPUT_DIR` selects another location).
 Filters apply per module; a filter that selects nothing returns pytest's usual
 exit code 5.

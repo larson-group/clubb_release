@@ -11,16 +11,8 @@ never pinned. Companion to iter-549/550's mean dispatches: drives each regime an
 returns EXACTLY the corresponding primitive with the documented args, so a mis-wired branch / wrong-arg / wrong
 all-const-equivalence bug is caught directly. Oracle-independent; never SKIPs. (iter 553)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
-import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
 
@@ -103,15 +95,3 @@ def test_all_const_maps_to_x2x3():
     _close(_eq(0.0, 0.0, 0.0),
            float(trivar_NNL_covar_const_x2x3(_MU_X, _MU_CHI, _MU_Y, _X_MEAN, _X2A, _A, _B)), "all-const==x2x3")
     print("  all σ≤tol -> const_x2x3 (const_all equivalence)  PASS")
-
-
-def main():
-    print("test_trivar_NNL_covar_eq:")
-    for t in (test_all_vary_base, test_c3_const_x3, test_c2_const_x2, test_c1_const_x1,
-              test_c2c3_const_x2x3, test_c1c3_const_x1x3, test_c1c2_const_x1x2, test_all_const_maps_to_x2x3):
-        t()
-    print("All trivar_NNL_covar_eq dispatch checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

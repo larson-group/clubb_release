@@ -215,17 +215,19 @@ multiple processes do not contend for the same device.
 
 Focused checks live in `pytests/auto_llm_generated_pytests/` pending human
 review. The first testing stage of the CPU Jenkins job `clubb_jax` explicitly
-runs this provisional coverage with a compatible compiled Fortran reference.
+runs this provisional coverage in the JAX environment, without Python API or
+F2PY bindings. Independent analytic/NumPy references and focused runtime,
+conservation, derivative and error-path checks complement the separate
+Fortran executable comparisons.
 From the repo root:
 
 ```bash
-./compile.py -debug -python
-bash tests/run_pytests.sh -jax -include_generated -k compiles
+bash tests/run_pytests.sh -jax -include_generated --durations=15
 ```
 
 See [tests/README.md](../tests/README.md) for admission and Jenkins ownership.
 
-### Manual case checks
+### Manual component checks
 
 JAX-specific case checks live in this directory's `tests/` folder. Run them
 explicitly from the repository root; they prepare the JAX environment and are
@@ -235,7 +237,14 @@ separate from the focused Jenkins pytest stage.
 | --- | --- |
 | SILHS initialization, feedback modes and multicolumn sampling | `python3 clubb_jax/tests/run_silhs_driver_test.py` |
 | BOMEX/ATEX driver gradients, JVPs and finite differences | `python3 clubb_jax/tests/run_jax_timestep_gradient_test.py` |
+| Neutral/ARM initialization and timesteps with binding imports blocked | `python3 clubb_jax/tests/run_standalone_no_bindings_test.py` |
+| Morrison eager/JIT species interfaces and compiled fatal diagnostics | `python3 clubb_jax/tests/run_morrison_interface_test.py` |
+| Mixed-moment PDF integrals against large Monte Carlo samples | `python3 clubb_jax/tests/run_pdf_monte_carlo_test.py` |
 | Rico microphysics and precipitation against Fortran statistics | `python3 clubb_jax/tests/run_rico_microphysics_oracle_test.py -stats_file output/tests/rico_oracle/rico_stats.nc` |
+
+The Morrison and Monte Carlo checks can take several minutes. They retain the
+expensive validation removed from focused pytest; they are manual checks and
+are not added to the nightly Jenkins job.
 
 The Rico check requires fresh `all_stats` output from a ten-step Fortran Rico
 run; it does not generate the reference run. Missing input or a failed

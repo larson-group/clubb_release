@@ -14,14 +14,7 @@ they are case-active but were not directly unit-tested. Pinned here vs the liter
 
 Pure-Python (the F90 formulas are the oracle), so it never SKIPs. (iter 508)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -131,17 +124,3 @@ def test_shared_surface_flux_path_jits_and_stays_on_device():
     )
     assert all(isinstance(value, jax.Array) for value in values)
     assert all(bool(jnp.all(jnp.isfinite(value))) for value in values)
-
-
-def main():
-    print("test_sfc_flux:")
-    test_conversions_and_bulk_fluxes()
-    test_ubar_and_momentum()
-    test_ht_mostr_flux_interp()
-    test_set_scalar_surface_fluxes_updates_surface_arrays_only()
-    test_shared_surface_flux_path_jits_and_stays_on_device()
-    print("All sfc_flux checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

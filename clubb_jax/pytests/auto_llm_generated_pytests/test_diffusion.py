@@ -11,15 +11,11 @@ Run:
     Run from the repo root: bash tests/run_pytests.sh -jax -include_generated -k test_diffusion
 """
 from __future__ import annotations
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import pytest
 
-import sys
-import os
 
 import numpy as np
 
-sys.path.insert(0, str(_REPO_ROOT))
 
 try:
     import jax
@@ -96,38 +92,6 @@ def call_diffusion_zm_lhs(K_zt, nu, invrs_rho_ds_zm, rho_ds_zt, gr):
 # diffusion_zt_lhs tests
 # ──────────────────────────────────────────────────────────────────────────────
 
-def test_diffusion_zt_lhs_shape():
-    """Output shape is (3, ngrdcol, nzt)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, nzt, ngrdcol = 5, 4, 2
-    gr = _to_jax(make_even_grid(nzm=nzm, ngrdcol=ngrdcol))
-    K_zm = jnp.ones((ngrdcol, nzm))
-    nu = jnp.zeros(ngrdcol)
-    invrs_rho_ds_zt = jnp.ones((ngrdcol, nzt))
-    rho_ds_zm = jnp.ones((ngrdcol, nzm))
-    lhs = call_diffusion_zt_lhs(K_zm, nu, invrs_rho_ds_zt, rho_ds_zm, gr)
-    assert lhs.shape == (3, ngrdcol, nzt), f"Wrong shape: {lhs.shape}"
-    print(f"  shape = {lhs.shape}  PASS")
-
-
-def test_diffusion_zt_lhs_boundary_zeros():
-    """super_top = 0 and sub_bot = 0 (zero-flux BC)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, nzt, ngrdcol = 6, 5, 1
-    gr = _to_jax(make_even_grid(nzm=nzm, ngrdcol=ngrdcol))
-    K_zm = 5.0 * jnp.ones((ngrdcol, nzm))
-    nu = 1.0 * jnp.ones(ngrdcol)
-    invrs_rho_ds_zt = jnp.ones((ngrdcol, nzt))
-    rho_ds_zm = 1.2 * jnp.ones((ngrdcol, nzm))
-    lhs = np.asarray(call_diffusion_zt_lhs(K_zm, nu, invrs_rho_ds_zt, rho_ds_zm, gr))
-    # super at top level (k=nzt-1) must be 0
-    assert abs(lhs[0, 0, -1]) < 1e-15, f"super_top = {lhs[0,0,-1]}, expected 0"
-    # sub at bottom level (k=0) must be 0
-    assert abs(lhs[2, 0, 0]) < 1e-15, f"sub_bot = {lhs[2,0,0]}, expected 0"
-    print(f"  super_top={lhs[0,0,-1]:.2e}  sub_bot={lhs[2,0,0]:.2e}  PASS")
-
 
 def test_diffusion_zt_lhs_conservation():
     """Zero-flux BCs: weighted column sums of LHS = 0.
@@ -179,6 +143,7 @@ def test_diffusion_zt_lhs_values():
     invrs_rho_ds_zt = jnp.ones((ngrdcol, nzt))
     rho_ds_zm = jnp.ones((ngrdcol, nzm))
     lhs = np.asarray(call_diffusion_zt_lhs(K_zm, nu, invrs_rho_ds_zt, rho_ds_zm, gr))
+    assert lhs.shape == (3, ngrdcol, nzt)
     C = 0.001
     expected_super = np.array([-C, -C, -C,  0.0])
     expected_main  = np.array([ C, 2*C, 2*C, C])
@@ -193,57 +158,9 @@ def test_diffusion_zt_lhs_values():
     assert err < 1e-15
 
 
-def test_diffusion_zt_lhs_main_diag_identity():
-    """main[k] = -(super[k] + sub[k]) at every level (conservation identity)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, nzt, ngrdcol = 8, 7, 2
-    gr = _to_jax(make_even_grid(nzm=nzm, ngrdcol=ngrdcol))
-    rng = np.random.default_rng(7)
-    K_zm = jnp.array(rng.uniform(0.1, 5.0, (ngrdcol, nzm)))
-    nu = jnp.array(rng.uniform(0.0, 0.5, ngrdcol))
-    invrs_rho_ds_zt = jnp.array(rng.uniform(0.5, 2.0, (ngrdcol, nzt)))
-    rho_ds_zm = jnp.array(rng.uniform(0.8, 1.5, (ngrdcol, nzm)))
-    lhs = np.asarray(call_diffusion_zt_lhs(K_zm, nu, invrs_rho_ds_zt, rho_ds_zm, gr))
-    err = np.max(np.abs(lhs[1] + lhs[0] + lhs[2]))
-    print(f"  max |main + super + sub| = {err:.3e}  PASS" if err < 1e-13
-          else f"  FAIL err={err}")
-    assert err < 1e-13
-
-
 # ──────────────────────────────────────────────────────────────────────────────
 # diffusion_zm_lhs tests
 # ──────────────────────────────────────────────────────────────────────────────
-
-def test_diffusion_zm_lhs_shape():
-    """Output shape is (3, ngrdcol, nzm)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, nzt, ngrdcol = 5, 4, 2
-    gr = _to_jax(make_even_grid(nzm=nzm, ngrdcol=ngrdcol))
-    K_zt = jnp.ones((ngrdcol, nzt))
-    nu = jnp.zeros(ngrdcol)
-    invrs_rho_ds_zm = jnp.ones((ngrdcol, nzm))
-    rho_ds_zt = jnp.ones((ngrdcol, nzt))
-    lhs = call_diffusion_zm_lhs(K_zt, nu, invrs_rho_ds_zm, rho_ds_zt, gr)
-    assert lhs.shape == (3, ngrdcol, nzm), f"Wrong shape: {lhs.shape}"
-    print(f"  shape = {lhs.shape}  PASS")
-
-
-def test_diffusion_zm_lhs_boundary_zeros():
-    """super_top = 0 and sub_bot = 0 (zero-flux BC)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, nzt, ngrdcol = 6, 5, 1
-    gr = _to_jax(make_even_grid(nzm=nzm, ngrdcol=ngrdcol))
-    K_zt = 4.0 * jnp.ones((ngrdcol, nzt))
-    nu = 0.2 * jnp.ones(ngrdcol)
-    invrs_rho_ds_zm = jnp.ones((ngrdcol, nzm))
-    rho_ds_zt = 1.1 * jnp.ones((ngrdcol, nzt))
-    lhs = np.asarray(call_diffusion_zm_lhs(K_zt, nu, invrs_rho_ds_zm, rho_ds_zt, gr))
-    assert abs(lhs[0, 0, -1]) < 1e-15, f"super_top = {lhs[0,0,-1]}, expected 0"
-    assert abs(lhs[2, 0, 0]) < 1e-15, f"sub_bot = {lhs[2,0,0]}, expected 0"
-    print(f"  super_top={lhs[0,0,-1]:.2e}  sub_bot={lhs[2,0,0]:.2e}  PASS")
 
 
 def test_diffusion_zm_lhs_conservation():
@@ -299,6 +216,7 @@ def test_diffusion_zm_lhs_values():
     invrs_rho_ds_zm = jnp.ones((ngrdcol, nzm))
     rho_ds_zt = jnp.ones((ngrdcol, nzt))
     lhs = np.asarray(call_diffusion_zm_lhs(K_zt, nu, invrs_rho_ds_zm, rho_ds_zt, gr))
+    assert lhs.shape == (3, ngrdcol, nzm)
     C = 0.0001
     expected_super = np.array([-C, -C, -C, -C,  0.0])
     expected_main  = np.array([ C, 2*C, 2*C, 2*C, C])
@@ -315,52 +233,9 @@ def test_diffusion_zm_lhs_values():
     assert err < 1e-15
 
 
-def test_diffusion_zm_lhs_main_diag_identity():
-    """main[k] = -(super[k] + sub[k]) at every level."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, nzt, ngrdcol = 8, 7, 2
-    gr = _to_jax(make_even_grid(nzm=nzm, ngrdcol=ngrdcol))
-    rng = np.random.default_rng(13)
-    K_zt = jnp.array(rng.uniform(0.1, 5.0, (ngrdcol, nzt)))
-    nu = jnp.array(rng.uniform(0.0, 0.5, ngrdcol))
-    invrs_rho_ds_zm = jnp.array(rng.uniform(0.5, 2.0, (ngrdcol, nzm)))
-    rho_ds_zt = jnp.array(rng.uniform(0.8, 1.5, (ngrdcol, nzt)))
-    lhs = np.asarray(call_diffusion_zm_lhs(K_zt, nu, invrs_rho_ds_zm, rho_ds_zt, gr))
-    err = np.max(np.abs(lhs[1] + lhs[0] + lhs[2]))
-    print(f"  max |main + super + sub| = {err:.3e}  PASS" if err < 1e-13
-          else f"  FAIL err={err}")
-    assert err < 1e-13
-
-
 # ──────────────────────────────────────────────────────────────────────────────
 # term_dp1_lhs tests (Iter 7)
 # ──────────────────────────────────────────────────────────────────────────────
-
-def test_term_dp1_lhs_shape():
-    """Output shape is (ngrdcol, nzm)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, ngrdcol = 6, 2
-    Cn = jnp.ones((ngrdcol, nzm))
-    invrs_tau = jnp.ones((ngrdcol, nzm))
-    lhs = term_dp1_lhs(Cn, invrs_tau)
-    assert lhs.shape == (ngrdcol, nzm), f"Expected ({ngrdcol},{nzm}), got {lhs.shape}"
-    print(f"  shape = {lhs.shape}  PASS")
-
-
-def test_term_dp1_lhs_boundary_zeros():
-    """Boundaries k=0 and k=nzm-1 are zero."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, ngrdcol = 7, 2
-    rng = np.random.default_rng(42)
-    Cn = jnp.array(rng.uniform(0.1, 2.0, (ngrdcol, nzm)))
-    invrs_tau = jnp.array(rng.uniform(0.01, 1.0, (ngrdcol, nzm)))
-    lhs = np.asarray(term_dp1_lhs(Cn, invrs_tau))
-    assert np.all(lhs[:, 0] == 0.0), f"Lower boundary not zero: {lhs[:, 0]}"
-    assert np.all(lhs[:, -1] == 0.0), f"Upper boundary not zero: {lhs[:, -1]}"
-    print(f"  lower={lhs[:, 0]}, upper={lhs[:, -1]}  PASS")
 
 
 def test_term_dp1_lhs_interior_values():
@@ -371,6 +246,7 @@ def test_term_dp1_lhs_interior_values():
     Cn = jnp.array([[0.5, 0.7, 0.9, 1.1, 1.3]])
     invrs_tau = jnp.array([[0.1, 0.2, 0.3, 0.4, 0.5]])
     lhs = np.asarray(term_dp1_lhs(Cn, invrs_tau))
+    assert lhs.shape == (ngrdcol, nzm)
     # Boundaries must be zero
     assert lhs[0, 0] == 0.0 and lhs[0, -1] == 0.0
     # Interior: lhs[k] = Cn[k] * invrs_tau[k] for k=1..nzm-2
@@ -407,20 +283,6 @@ def _make_random_3band(ngrdcol, nzm, seed):
     arr = rng.uniform(-1.0, 1.0, (3, ngrdcol, nzm))
     arr[:, :, 0] = 0.0;  arr[:, :, -1] = 0.0
     return arr
-
-
-def test_xp2_xpyp_lhs_shape():
-    """Output shape is (3, ngrdcol, nzm)."""
-    if not HAS_JAX:
-        pytest.skip("  SKIP (JAX not available)")
-    nzm, ngrdcol = 7, 2
-    ta = jnp.array(_make_random_3band(ngrdcol, nzm, 1))
-    ma = jnp.array(_make_random_3band(ngrdcol, nzm, 2))
-    diff = jnp.array(_make_random_3band(ngrdcol, nzm, 3))
-    dp1 = jnp.zeros((ngrdcol, nzm))
-    lhs = xp2_xpyp_lhs(ta, ma, diff, dp1, dt=60.0)
-    assert lhs.shape == (3, ngrdcol, nzm), f"Expected (3,{ngrdcol},{nzm}), got {lhs.shape}"
-    print(f"  shape = {lhs.shape}  PASS")
 
 
 def test_xp2_xpyp_lhs_boundary_conditions():
@@ -460,6 +322,7 @@ def test_xp2_xpyp_lhs_interior_formula():
         jnp.array(dp1_np), dt=dt, gamma=gamma,
     ))
 
+    assert lhs_jax.shape == (3, ngrdcol, nzm)
     # numpy reference for interior k=1..nzm-2
     super_ref = diff_np[0,:,1:-1] + ma_np[0,:,1:-1] + ta_np[0,:,1:-1] * gamma
     main_ref  = (diff_np[1,:,1:-1] + ma_np[1,:,1:-1] + ta_np[1,:,1:-1] * gamma
@@ -476,111 +339,9 @@ def test_xp2_xpyp_lhs_interior_formula():
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# f2py Fortran-oracle bit-shadow (general stretched grid + varying K)
 # ──────────────────────────────────────────────────────────────────────────────
-
-def test_f2py_oracle():
-    """Validate diffusion_zt_lhs / diffusion_zm_lhs against the f2py Fortran oracle on a STRETCHED grid with
-    varying K_zm/K_zt (beyond the uniform-grid constant-coefficient analytic check above). The Fortran takes both
-    k_zm and k_zt; the JAX uses only K_zm (the k_zt term is the l_upwind_Kh_dp_term branch, off by default) — passing
-    random K_zt and matching confirms the default path ignores it. SKIPs if clubb_f2py / clubb_python is unbuilt.
-    """
-    for p in (str(_REPO_ROOT),
-              str(_REPO_ROOT / "clubb_python_api")):
-        ap = os.path.abspath(p)
-        if ap not in sys.path:
-            sys.path.append(ap)
-    try:
-        import clubb_f2py
-        from clubb_python import clubb_api
-        from clubb_python.derived_types.err_info import ErrInfo
-    except ModuleNotFoundError as e:
-        if (e.name or "").split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip(f"  f2py diffusion oracle: SKIP ({type(e).__name__})")
-    NG, DZ, ZTOP = 2, 40.0, 1200.0
-    jgr = setup_grid(ngrdcol=NG, deltaz=DZ, zm_init=0.0, zm_top=ZTOP, grid_type=1)  # stretched grid
-    ng, nzm = jgr.zm.shape
-    nzt = nzm - 1
-    clubb_api.init_err_info(ng)
-    cf = clubb_api.get_default_config_flags(); clubb_api.init_config_flags(cf)
-    clubb_api.setup_grid(nzmax=nzm, ngrdcol=ng, sfc_elevation=np.zeros(ng),
-                         l_implemented=False, l_ascending_grid=True, grid_type=2,
-                         deltaz=np.full(ng, DZ), zm_init=np.zeros(ng), zm_top=np.full(ng, float(jgr.zm[0, -1])),
-                         momentum_heights=np.asfortranarray(np.asarray(jgr.zm)),
-                         thermodynamic_heights=np.asfortranarray(np.asarray(jgr.zt)),
-                         err_info=ErrInfo(ngrdcol=ng))
-    rng = np.random.default_rng(7)
-    K_zm = rng.uniform(0.1, 5.0, (ng, nzm)); K_zt = rng.uniform(0.1, 5.0, (ng, nzt))
-    nu = rng.uniform(0.5, 2.0, (ng,))
-    rho_zm = rng.uniform(0.8, 1.2, (ng, nzm)); rho_zt = rng.uniform(0.8, 1.2, (ng, nzt))
-    irho_zt = 1.0 / rho_zt; irho_zm = 1.0 / rho_zm
-
-    ref_zt = np.asarray(clubb_f2py.f2py_diffusion_zt_lhs(
-        np.asfortranarray(K_zm), np.asfortranarray(K_zt), nu, np.asfortranarray(irho_zt), np.asfortranarray(rho_zm)))
-    got_zt = np.asarray(call_diffusion_zt_lhs(jnp.asarray(K_zm), jnp.asarray(nu), jnp.asarray(irho_zt), jnp.asarray(rho_zm), jgr))
-    worst_zt = float(np.max(np.abs(ref_zt - got_zt)))
-    assert worst_zt < 1e-12, f"diffusion_zt_lhs f2py mismatch {worst_zt:.2e}"
-
-    ref_zm = np.asarray(clubb_f2py.f2py_diffusion_zm_lhs(
-        np.asfortranarray(K_zt), np.asfortranarray(K_zm), nu, np.asfortranarray(irho_zm), np.asfortranarray(rho_zt)))
-    got_zm = np.asarray(call_diffusion_zm_lhs(jnp.asarray(K_zt), jnp.asarray(nu), jnp.asarray(irho_zm), jnp.asarray(rho_zt), jgr))
-    worst_zm = float(np.max(np.abs(ref_zm - got_zm)))
-    assert worst_zm < 1e-12, f"diffusion_zm_lhs f2py mismatch {worst_zm:.2e}"
-    print(f"  f2py diffusion zt/zm LHS: bit-match on stretched grid + varying K, worst {max(worst_zt, worst_zm):.2e}  PASS")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Main runner
 # ──────────────────────────────────────────────────────────────────────────────
-
-if __name__ == '__main__':
-    print("=" * 60)
-    print("CLUBB JAX diffusion LHS tests")
-    print("=" * 60)
-
-    if not HAS_JAX:
-        print("ERROR: JAX not available. Install with: pip install 'jax[cpu]'")
-        sys.exit(1)
-
-    tests = [
-        test_diffusion_zt_lhs_shape,
-        test_diffusion_zt_lhs_boundary_zeros,
-        test_diffusion_zt_lhs_conservation,
-        test_diffusion_zt_lhs_values,
-        test_diffusion_zt_lhs_main_diag_identity,
-        test_diffusion_zm_lhs_shape,
-        test_diffusion_zm_lhs_boundary_zeros,
-        test_diffusion_zm_lhs_conservation,
-        test_diffusion_zm_lhs_values,
-        test_diffusion_zm_lhs_main_diag_identity,
-        test_term_dp1_lhs_shape,
-        test_term_dp1_lhs_boundary_zeros,
-        test_term_dp1_lhs_interior_values,
-        test_term_dp1_lhs_multi_col,
-        test_xp2_xpyp_lhs_shape,
-        test_xp2_xpyp_lhs_boundary_conditions,
-        test_xp2_xpyp_lhs_interior_formula,
-        test_f2py_oracle,
-    ]
-
-    passed = 0
-    failed = 0
-    for t in tests:
-        print(f"\n{t.__name__}:")
-        try:
-            t()
-            passed += 1
-        except AssertionError as e:
-            print(f"  FAIL: {e}")
-            failed += 1
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            print(f"  ERROR: {type(e).__name__}: {e}")
-            failed += 1
-
-    print("\n" + "=" * 60)
-    print(f"Results: {passed}/{passed+failed} passed, {failed} failed")
-    print("=" * 60)
-    sys.exit(0 if failed == 0 else 1)

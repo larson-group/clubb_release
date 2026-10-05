@@ -12,14 +12,7 @@ parabolic-cylinder kernel; they differ ONLY in the trailing <Y>-subtraction term
 against the MC-tested kernel); (2) the <Y> dependence: `covar(<Y>) − covar(0) == −<Y>·(mu_x1−x1_mean)` (linear term).
 (iter 575)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -74,14 +67,3 @@ def test_quadrivar_covar_kernel_and_Ymean_term():
     assert worst_k < 1e-11, f"quadrivar covar kernel != MM(a=1,b=1) at <Y>=0: {worst_k:.2e}"
     assert worst_y < 1e-12, f"quadrivar covar <Y> term wrong: {worst_y:.2e}"
     print(f"  quadrivar_NNLL_covar: kernel==MM(1,1) at <Y>=0 (rel {worst_k:.1e}); <Y> term = −<Y>(μ_x1−x1m) ({worst_y:.1e})  PASS")
-
-
-def main():
-    print("test_NNL_covar_vs_MM:")
-    test_trivar_covar_kernel_and_Ymean_term()
-    test_quadrivar_covar_kernel_and_Ymean_term()
-    print("All NNL covar-vs-MM cross-checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

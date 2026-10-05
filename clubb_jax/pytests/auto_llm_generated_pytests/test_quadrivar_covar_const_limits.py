@@ -11,15 +11,8 @@ with x3/x4 means passed as exp(μ_x3_n)/exp(μ_x4_n). This pins those three over
 consts (const_x1/x2/x1x2 vs MM, iter 576; the swap-reused forms via the dispatch test, iter 554) are already covered.
 Oracle-independent; never SKIPs. (iter 578)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -62,13 +55,3 @@ def test_const_x3_x3x4_and_all():
     assert worst_all < 1e-15, f"const_all != −<Y>·(mu_x1−x1_mean): {worst_all:.2e}"
     print(f"  const_x3==general, const_x3x4==general at σ_x3/x4→0 (worst {max(w3,w34):.1e}); "
           f"const_all = −<Y>(μ_x1−x1m)  PASS")
-
-
-def main():
-    print("test_quadrivar_covar_const_limits:")
-    test_const_x3_x3x4_and_all()
-    print("All quadrivar covar const-limit checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

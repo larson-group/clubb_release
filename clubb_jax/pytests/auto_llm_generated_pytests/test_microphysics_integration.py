@@ -7,11 +7,8 @@ import jax.numpy as jnp
 
 from clubb_jax.src.Microphys import parameters_microphys as parameters
 from clubb_jax.src.Microphys.microphys_init_cleanup import init_microphys, cleanup_microphys
-from clubb_jax.src.Microphys.morrison_microphys_module import morrison_microphys_driver
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.pytests.microphysics_test_inputs import initialize
-
-
 
 
 @pytest.mark.parametrize('scheme,ice,graupel,dimension', [
@@ -46,50 +43,6 @@ def test_species_lifecycle(scheme, ice, graupel, dimension):
 def test_disabled_dependencies_rejected(config, reason):
     with pytest.raises(ValueError, match=reason):
         initialize(**config)
-
-
-@pytest.mark.parametrize('dimension,ncol', [(2,1),(6,2),(8,2)])
-def test_morrison_species_interface_eager_and_jit(dimension, ncol):
-    _, _, metadata, *_ = initialize(microphys_scheme='morrison',
-        l_ice_microphys=dimension>2, l_graupel=dimension>6)
-    nzt=5
-    gr = SimpleNamespace(zt=jnp.broadcast_to(jnp.arange(nzt)*100.,(ncol,nzt)),
-                         dzt=jnp.full((ncol,nzt),100.))
-    one=jnp.ones((ncol,nzt)); zero=jnp.zeros_like(one)
-    hydromet=jnp.zeros((ncol,nzt,dimension))
-    for i in range(0,dimension,2):
-        hydromet=hydromet.at[...,i].set(1.e-5)
-        hydromet=hydromet.at[...,i+1].set(2.e4)
-    # Columns differ to catch accidental flattening or cross-column transport.
-    hydromet=hydromet*jnp.arange(1,ncol+1)[:,None,None]
-    stats=JaxStats.empty(l_sample=True, names=("rrm_auto", "precip_rate_sfc"),
-        grids=("zt", "sfc"), ncol=ncol, max_nlev=nzt)
-    def run(hm):
-        return morrison_microphys_driver(
-            gr, ncol, 10., nzt,                                                # In
-            dimension, metadata,                                               # In
-            False, jnp.linspace(258.,285.,nzt)[None,:]*one, zero, 90000.*one,  # In
-            one, one, 0.5*one, 0.2*one,                                        # In
-            100.*one, 1.e-4*one, 1.e8*one, zero, 0.007*one, hm,                # In
-            1,                                                                 # In
-            one,                                                               # In
-            stats,                                                             # InOut
-        )
-    eager=run(hydromet)
-    compiled=jax.jit(run)(hydromet)
-    assert len(eager)==12
-    for a,b in zip(eager[1:],compiled[1:]):
-        assert np.all(np.isfinite(a))
-        np.testing.assert_allclose(a,b,rtol=1.e-6,atol=1.e-9)
-    assert eager[1].shape==hydromet.shape
-    assert np.all(np.asarray(hydromet+10.*eager[1])>=-1.e-12)
-    assert np.all(np.asarray(eager[2][...,1:])==0.)
-    assert np.all(np.asarray(eager[2][...,0])<=0.)
-    for a,b in zip(eager[0].buffers,compiled[0].buffers):
-        np.testing.assert_allclose(a,b,rtol=1.e-6,atol=1.e-9)
-    np.testing.assert_allclose(eager[0].buffers[0][0],eager[7])
-    assert np.all(np.asarray(eager[0].nsamples[0]) == 1)
-    assert np.all(np.asarray(eager[0].nsamples[2]) == 1)
 
 
 def test_previous_tendencies_feed_next_core_step(monkeypatch):

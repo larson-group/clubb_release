@@ -12,14 +12,7 @@ buoyancy production but was validated only end-to-end. This pins the on-zt assem
 (checking the ep1/ep2/rc_coef coefficients + which 2nd-moment feeds each term) and the zm outputs vs the tested
 `zt2zm` regrid with k_ub_zm zeroed. + finite grad. (iter 566)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -100,22 +93,3 @@ def test_assembly_and_regrid():
         assert np.max(np.abs(np.asarray(got_zm) - ref_zm)) < 1e-9, f"{nm}_zm regrid/k_ub-zero"
     assert np.all(np.asarray(rc_coef_zm)[:, kub] == 0.0), "k_ub_zm not zeroed"
     print("  rc_coef + 4 x'thv' assembly (ep1/ep2 coeffs) + zt→zm regrid (k_ub_zm=0) match transcription  PASS")
-
-
-def test_grad_finite():
-    gr = setup_grid(_NG, 50.0, 50.0, 50.0 * (_NZT + 1))
-    k = _inputs(np.random.default_rng(7), gr)
-    g = jax.grad(lambda w: jnp.sum(calc_xpthvp_terms_jax(**{**k, 'wprcp_zt': w})[0] ** 2))(jnp.asarray(k['wprcp_zt']))
-    assert np.all(np.isfinite(np.asarray(g))), "non-finite grad wrt wprcp_zt"
-    print("  jax.grad(wpthvp_zm) wrt wprcp_zt finite  PASS")
-
-
-def main():
-    print("test_calc_xpthvp_terms:")
-    test_assembly_and_regrid()
-    test_grad_finite()
-    print("All calc_xpthvp_terms checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

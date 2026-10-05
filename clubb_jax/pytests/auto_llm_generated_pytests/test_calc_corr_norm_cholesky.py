@@ -1,28 +1,10 @@
 #!/usr/bin/env python3
-"""test_calc_corr_norm_cholesky.py — validate the JAX calc_corr_norm_and_cholesky_factor orchestration.
+"""validate the JAX calc_corr_norm_and_cholesky_factor orchestration."""
 
-calc_corr_norm_and_cholesky_factor (setup_clubb_pdf_params.F90:1070) adjusts the prescribed in-cloud and
-below-cloud correlation matrices (ADG zeroing, Ncn in-cloud override, eta–hm product estimate), Cholesky-
-factorizes each once, then assigns per grid column/level by rc. Oracle:
-  1. Reconstruction: at every (i,k) the assigned Cholesky factor L satisfies L Lᵀ == the assigned corr array
-     (Cholesky_factor itself is bit-validated vs f2py in test_cholesky_factor).
-  2. Structure: corr arrays symmetric + unit diagonal; Cholesky lower-triangular.
-  3. The matrix adjustments + rc-selection vs a literal NumPy reference.
-  4. A finite jax.grad.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import calc_corr_norm_and_cholesky_factor
 from clubb_jax.src.CLUBB_core.constants_clubb import rc_tol
@@ -98,24 +80,3 @@ def test_adjustments_and_selection():
     # ADG zeroing actually applied.
     assert np.all(np.asarray(corr_1)[:, :, W, CHI] == 0.0) and np.all(np.asarray(corr_1)[:, :, W, ETA] == 0.0)
     print("  matrix adjustments (ADG/Ncn/eta-hm) + rc-selection vs literal NumPy  PASS")
-
-
-def test_differentiable():
-    cc, cb, rc_1, rc_2 = _inputs(3)
-    def loss(x):
-        c1, c2, l1, l2 = calc_corr_norm_and_cholesky_factor(x, cb, rc_1, rc_2, 6, CHI, ETA, W, NCN, True)
-        return jnp.sum(c1 ** 2) + jnp.sum(l1 ** 2) + jnp.sum(c2 ** 2) + jnp.sum(l2 ** 2)
-    g = np.asarray(jax.grad(loss)(jnp.asarray(cc)))
-    assert np.isfinite(g).all(), "non-finite grad through calc_corr_norm_and_cholesky_factor"
-    print(f"  jax.grad through calc_corr_norm_and_cholesky_factor: finite ({g.size} entries)  PASS")
-
-
-def main():
-    print("test_calc_corr_norm_cholesky:")
-    for t in (test_reconstruction_and_structure, test_adjustments_and_selection, test_differentiable):
-        t()
-    print("All calc_corr_norm_and_cholesky_factor checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

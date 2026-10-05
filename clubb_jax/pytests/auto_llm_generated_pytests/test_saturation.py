@@ -1,33 +1,18 @@
-"""Validate the JAX saturation port (saturation.py) against saturation.F90 logic.
-
-Focus: the `sat_vapor_press_liq` dispatcher (extracted iter 307) selects the correct
-leaf SVP approximation by `saturation_formula`, and `sat_mixrat_liq` is consistent with
-it. The leaf polynomials (Flatau/Bolton) are checked against well-known reference values
-near 0 degC; the dispatcher is checked bit-exact against the leaves it routes to. The
-analytic checks never SKIP; the f2py bit-shadow (test_sat_mixrat_f2py) SKIPs cleanly when
-clubb_f2py is unbuilt.
-"""
+"""Validate the JAX saturation port (saturation.py) against saturation.F90 logic."""
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import pytest
 import os
-import sys
+import pytest
 
-import numpy as np
 import jax
 
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 from clubb_jax.src.CLUBB_core.saturation import (
     sat_vapor_press_liq, sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton,
+    sat_vapor_press_liq_gfdl, SATURATION_GFDL,
     sat_mixrat_liq, sat_mixrat_ice, SATURATION_FLATAU, SATURATION_BOLTON,
 )
 
@@ -38,21 +23,15 @@ def test_dispatcher_matches_leaves():
     """sat_vapor_press_liq routes bit-exactly to the leaf chosen by saturation_formula."""
     T = jnp.linspace(220.0, 310.0, 64)
     for formula, leaf in ((SATURATION_FLATAU, sat_vapor_press_liq_flatau),
-                          (SATURATION_BOLTON, sat_vapor_press_liq_bolton)):
+                          (SATURATION_BOLTON, sat_vapor_press_liq_bolton),
+                          (SATURATION_GFDL, sat_vapor_press_liq_gfdl)):
         d = float(jnp.max(jnp.abs(sat_vapor_press_liq(T, formula) - leaf(T))))
         assert d == 0.0, f"formula {formula}: dispatcher != leaf ({d})"
-    # The documented not-target formulas (saturation.py: gfdl/lookup) must raise — pin the SPECIFIC
-    # constants_clubb codes (gfdl=2, lookup=4), not just a generic out-of-range value, so a future change
-    # that silently routes them somewhere is caught (mirrors saturation.F90's gfdl/lookup leaves being unported).
-    from clubb_jax.src.CLUBB_core.model_flags import saturation_gfdl, saturation_lookup
-    for bad in (saturation_gfdl, saturation_lookup, 999):
-        try:
+    from clubb_jax.src.CLUBB_core.model_flags import saturation_lookup
+    for bad in (saturation_lookup, 999):
+        with pytest.raises(ValueError):
             sat_vapor_press_liq(T, bad)
-        except ValueError:
-            pass
-        else:
-            raise AssertionError(f"unsupported saturation_formula={bad} should raise ValueError")
-    print("  dispatcher routes bit-exactly (flatau/bolton) + rejects gfdl/lookup/unknown formula  PASS")
+    print("  dispatcher matches Flatau/Bolton/GFDL and rejects lookup/unknown formulas  PASS")
 
 
 def test_svp_reference_values():
@@ -87,44 +66,10 @@ def test_sat_mixrat_liq_consistency_and_grad():
     print("  sat_mixrat_liq monotonic + ice<liq + grad finite  PASS")
 
 
-def test_sat_mixrat_f2py():
-    """Bit-shadow the saturation mixing ratios vs the f2py Fortran oracle. The single elementwise JAX
-    sat_mixrat_liq / sat_mixrat_ice cover both the Fortran rank-1 (_k) and rank-2 (_2D) generic-interface
-    procedures; validate the 2D form against f2py_sat_mixrat_liq_2d (both saturation_formula leaves) and
-    f2py_sat_mixrat_ice_2d. The leaf SVP polynomials match coefficient-for-coefficient, so this is bit-faithful
-    (the ice path's slightly larger residual is the polynomial evaluation order). SKIPs if clubb_f2py is unbuilt.
-    (iter 435)"""
-    try:
-        import clubb_f2py
-    except ModuleNotFoundError as e:
-        if (e.name or "").split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip(f"  f2py sat_mixrat oracle: SKIP ({type(e).__name__})")
-    rng = np.random.default_rng(0)
-    worst_liq = worst_ice = 0.0
-    for formula in (SATURATION_FLATAU, SATURATION_BOLTON):
-        for _ in range(15):
-            ng, nz = 2, 12
-            p = rng.uniform(2e4, 1.02e5, (ng, nz)); T = rng.uniform(220.0, 310.0, (ng, nz))
-            j = np.asarray(sat_mixrat_liq(jnp.asarray(p), jnp.asarray(T), formula))
-            f = np.asarray(clubb_f2py.f2py_sat_mixrat_liq_2d(p, T, formula))
-            worst_liq = max(worst_liq, float(np.max(np.abs(j - f) / np.maximum(np.abs(f), 1e-30))))
-    for _ in range(15):
-        ng, nz = 2, 12
-        p = rng.uniform(2e4, 1.02e5, (ng, nz)); T = rng.uniform(220.0, 273.0, (ng, nz))
-        j = np.asarray(sat_mixrat_ice(jnp.asarray(p), jnp.asarray(T)))
-        f = np.asarray(clubb_f2py.f2py_sat_mixrat_ice_2d(p, T, SATURATION_FLATAU))
-        worst_ice = max(worst_ice, float(np.max(np.abs(j - f) / np.maximum(np.abs(f), 1e-30))))
-    assert worst_liq < 1e-12, f"sat_mixrat_liq f2py rel mismatch {worst_liq:.2e}"
-    assert worst_ice < 1e-11, f"sat_mixrat_ice f2py rel mismatch {worst_ice:.2e}"
-    print(f"  f2py sat_mixrat_liq (flatau+bolton) + sat_mixrat_ice (30+15 cases): rel-match, "
-          f"liq {worst_liq:.1e} / ice {worst_ice:.1e}  PASS")
-
-
 def test_saturation_formula_enum_values():
     """The `saturation_<formula>` enum VALUES (BOLTON=1, FLATAU=3) select the SVP approximation, so a drifted value would
     silently use the wrong formula. Source-grounded: parses `saturation_<name> = <n>` straight from model_flags.F90 and
-    checks the two the JAX ports (BOLTON, FLATAU) match. (GFDL=2 / LOOKUP=4 are unported.) SKIPs if the F90 is absent.
+    checks the two the JAX ports (BOLTON, FLATAU) match. (LOOKUP=4 remains unsupported.) The Fortran source is required.
     (iter 471)"""
     import re
     f90 = os.path.join(_ROOT, "src", "CLUBB_core", "model_flags.F90")
@@ -144,13 +89,3 @@ def test_saturation_formula_enum_values():
         mism.append(f"FLATAU: JAX {SATURATION_FLATAU} vs Fortran {fort['flatau']}")
     assert not mism, "saturation enum value(s) diverge from model_flags.F90:\n  " + "\n  ".join(mism)
     print(f"  saturation enum values match model_flags.F90 (BOLTON={SATURATION_BOLTON}, FLATAU={SATURATION_FLATAU})  PASS")
-
-
-if __name__ == "__main__":
-    print("saturation.py vs saturation.F90 logic:")
-    test_dispatcher_matches_leaves()
-    test_svp_reference_values()
-    test_sat_mixrat_liq_consistency_and_grad()
-    test_sat_mixrat_f2py()
-    test_saturation_formula_enum_values()
-    print("Done.")

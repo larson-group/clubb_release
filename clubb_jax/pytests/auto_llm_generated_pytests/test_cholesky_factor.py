@@ -1,32 +1,10 @@
 #!/usr/bin/env python3
-"""test_cholesky_factor.py — validate the JAX matrix_operations.Cholesky_factor port.
+"""validate the JAX matrix_operations.Cholesky_factor port."""
 
-Oracles:
-  1. f2py bit-shadow: clubb_f2py.f2py_cholesky_factor on the same matrices — a_scaling, a_cholesky (lower
-     triangle), and l_scaled all match. SKIPs cleanly if clubb_f2py is unbuilt.
-  2. Reconstruction property (oracle-free): for a positive-definite input, L Lᵀ == a_input (no scaling case),
-     and the strict upper triangle of the returned matrix retains the input's upper values (LAPACK dpotrf
-     leaves it untouched).
-  3. The tau-on-diagonal fallback recovers a finite factor for a non-positive-definite input.
-  4. A finite jax.grad through the (positive-definite) factorization.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import pytest
-import os
-import sys
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if p not in sys.path:
-        sys.path.append(p)
 
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.matrix_operations import Cholesky_factor
 
@@ -57,30 +35,6 @@ def test_reconstruction():
     print("  reconstruction L Lᵀ = a, scaling=1 / l_scaled=False, upper preserved  PASS")
 
 
-def test_f2py_oracle():
-    try:
-        import clubb_f2py
-    except ModuleNotFoundError as e:
-        if (e.name or "").split(".")[0] not in {"clubb_f2py", "clubb_python", "netCDF4"}:
-            raise
-        pytest.skip(f"  f2py Cholesky_factor oracle: SKIP ({type(e).__name__})")
-    worst = 0.0
-    for n, seed in ((4, 11), (6, 22), (5, 33), (7, 44)):
-        a = _corr_matrix(n, seed)
-        f_scaling, f_chol, f_lscaled = clubb_f2py.f2py_cholesky_factor(a.copy())
-        j_scaling, j_chol, j_lscaled = Cholesky_factor(a)
-        j_chol = np.asarray(j_chol); j_scaling = np.asarray(j_scaling)
-        # Compare the lower triangle (incl. diagonal) + scaling + l_scaled.
-        il = np.tril_indices(n)
-        rel = np.max(np.abs(j_chol[il] - np.asarray(f_chol)[il]))
-        rel_s = np.max(np.abs(j_scaling - np.asarray(f_scaling)))
-        worst = max(worst, rel, rel_s)
-        assert rel < 1e-11, f"cholesky lower mismatch n={n}: {rel:.2e}"
-        assert rel_s < 1e-12, f"scaling mismatch n={n}: {rel_s:.2e}"
-        assert bool(j_lscaled) == bool(f_lscaled), f"l_scaled mismatch n={n}"
-    print(f"  f2py Cholesky_factor: bit-match (lower+scaling+l_scaled) over 4 sizes, worst {worst:.2e}  PASS")
-
-
 def test_non_pd_fallback():
     # A non-positive-definite symmetric matrix (negative eigenvalue) -> bare Cholesky yields NaN; the tau
     # fallback must recover a finite factor.
@@ -93,24 +47,3 @@ def test_non_pd_fallback():
     L = np.asarray(L)
     assert np.isfinite(L).all(), "tau fallback did not produce a finite factor"
     print("  tau-on-diagonal fallback: finite factor for a non-PD input  PASS")
-
-
-def test_differentiable():
-    a = jnp.asarray(_corr_matrix(5, 7))
-    def loss(x):
-        _, L, _ = Cholesky_factor(x)
-        return jnp.sum(jnp.tril(L) ** 2)
-    g = np.asarray(jax.grad(loss)(a))
-    assert np.isfinite(g).all(), "non-finite grad through Cholesky_factor"
-    print(f"  jax.grad through Cholesky_factor: finite ({g.size} entries)  PASS")
-
-
-def main():
-    print("test_cholesky_factor:")
-    for t in (test_reconstruction, test_f2py_oracle, test_non_pd_fallback, test_differentiable):
-        t()
-    print("All Cholesky_factor checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

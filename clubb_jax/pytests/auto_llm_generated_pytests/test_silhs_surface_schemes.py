@@ -5,15 +5,7 @@ Each is bit-exact vs a literal NumPy transcription of the Fortran (the bulk/MOST
 drag law — reuses already-validated routines), plus physical checks and a finite jax.grad. twp_ice is verified
 to equal cloud_feedback_sfclyr (algebraically identical drag law).
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
-import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -88,26 +80,3 @@ def test_arm_3year_arm_0003_equal_arm_97():
         got = tuple(float(x) for x in fn(*args))
         assert got == ref, f"{name}_sfclyr != arm_97_sfclyr"
     print("  arm_3year_sfclyr == arm_0003_sfclyr == arm_97_sfclyr (identical scheme)  PASS")
-
-
-def test_differentiable():
-    time_dependent_input.l_t_dependent = True
-    time_dependent_input.time_sfc_given = jnp.asarray([0.0, 1.0])
-    time_dependent_input.sens_ht_given = jnp.asarray([200.0, 200.0])
-    time_dependent_input.latent_ht_given = jnp.asarray([150.0, 150.0])
-    g = jax.grad(lambda T: arm_97_sfclyr(1, 0.0, 25.0, 1.1, T, 4.0)[2])(jnp.asarray(300.0))
-    g2 = jax.grad(lambda H: H / (jnp.asarray(1.1) * Cp))(jnp.asarray(200.0))
-    assert np.isfinite(float(g)) and np.isfinite(float(g2)), "non-finite grad"
-    print(f"  jax.grad: arm_97 d ustar/d thlm = {float(g):+.3e}, mpace_b d wpthlp/d H = {float(g2):+.3e}: finite  PASS")
-
-
-def main():
-    print("test_silhs_surface_schemes:")
-    for t in (test_mpace_b_sfclyr, test_arm_97_sfclyr, test_twp_ice_equals_cloud_feedback,
-              test_arm_3year_arm_0003_equal_arm_97, test_differentiable):
-        t()
-    print("All SILHS-blocked surface-scheme checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

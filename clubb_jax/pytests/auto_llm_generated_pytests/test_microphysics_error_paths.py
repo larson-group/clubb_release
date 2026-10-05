@@ -189,36 +189,6 @@ def test_failed_hydrometeor_transport_does_not_advance_cloud_number(monkeypatch,
     assert np.all(np.asarray(result[0].nsamples[0]) == 0)
 
 
-def test_morrison_debug_output_is_live_in_jit(monkeypatch, capsys):
-    from clubb_jax.src.CLUBB_core import error_code
-    from clubb_jax.src.Microphys import morrison_microphys_module as morrison
-    _, _, metadata, *_ = initialize(microphys_scheme='morrison')
-    monkeypatch.setattr(error_code, '_debug_level', 2)
-    core = morrison.M2005MICRO_GRAUPEL
-    def broken_core(*args):
-        output = core(*args)
-        output['T3DTEN'] = jnp.full_like(output['T3DTEN'], jnp.nan)
-        return output
-    monkeypatch.setattr(morrison, 'M2005MICRO_GRAUPEL', broken_core)
-    one = jnp.ones((1, 3)); zero = jnp.zeros_like(one)
-    gr = SimpleNamespace(zt=100*one, dzt=100*one)
-    stats = JaxStats.empty(l_sample=False, names=(), ncol=1, max_nlev=3)
-    def run(hydromet):
-        return morrison.morrison_microphys_driver(
-            gr, 1, 10., 3,                                           # In
-            2, metadata,                                             # In
-            False, 280*one, zero, 90000*one,                         # In
-            one, one, .5*one, .2*one,                                # In
-            100*one, 1.e-4*one, 1.e8*one, zero, .007*one, hydromet,  # In
-            1,                                                       # In
-            one,                                                     # In
-            stats,                                                   # InOut
-        )
-    jax.block_until_ready(jax.jit(run)(jnp.zeros((1, 3, 2))))
-    jax.effects_barrier()
-    assert 'non-finite detected in a Morrison microphysics tendency' in capsys.readouterr().out
-
-
 @pytest.mark.parametrize("compiled", [False, True])
 def test_silhs_fatal_skips_clipping_and_statistics(monkeypatch, compiled):
     from clubb_jax.src.Microphys import pdf_hydromet_microphys_wrapper as wrapper

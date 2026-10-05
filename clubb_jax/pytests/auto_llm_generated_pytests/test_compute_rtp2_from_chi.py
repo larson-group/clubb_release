@@ -1,26 +1,10 @@
-"""Validate setup_clubb_pdf_params.compute_rtp2_from_chi against a literal NumPy transcription
-of the Fortran (setup_clubb_pdf_params.F90:compute_rtp2_from_chi).
-
-The Fortran computes this only as the optional `rtp2_from_chi` stats diagnostic (so there is no f2py
-trajectory oracle for it), but it is a pure algebraic combination — the per-component rt variance
-implied by the chi/eta PDF, binormal-combined — so a transcription check is exact, and a jax.grad
-check confirms it stays differentiable.
-"""
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
+"""Validate setup_clubb_pdf_params.compute_rtp2_from_chi against a literal NumPy transcription."""
 import numpy as np
 import jax
 
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
-import os
-import sys
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import compute_rtp2_from_chi
 
@@ -62,10 +46,3 @@ def test_compute_rtp2_from_chi_grad():
     g = jax.grad(f)(5e-4)
     assert bool(jnp.isfinite(g)) and float(g) != 0.0, "grad must be finite + nonzero"
     print(f"  compute_rtp2_from_chi grad wrt sigma_chi_1: finite, nonzero ({float(g):.3e})  PASS")
-
-
-if __name__ == "__main__":
-    print("setup_clubb_pdf_params.compute_rtp2_from_chi vs Fortran transcription:")
-    test_compute_rtp2_from_chi_vs_reference()
-    test_compute_rtp2_from_chi_grad()
-    print("Done.")

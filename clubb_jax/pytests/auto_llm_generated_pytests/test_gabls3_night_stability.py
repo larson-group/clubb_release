@@ -14,15 +14,8 @@ gm1/gh1 are evaluated over the unstable regime x<0 where `landflx` calls them;
 fm1/fh1 preserve the source's explicit default-real `alog` evaluation before
 conversion back to CLUBB core precision. Oracle-independent; never SKIPs.
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 import math
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
@@ -118,17 +111,3 @@ def test_psi_h_stable():
     # the landflx combination psi_h(0.25,xlmo) − psi_h(h,xlmo) telescopes linearly in (0.25−h)
     assert abs((psi_h(0.25, 100.0) - psi_h(5.0, 100.0)) - (-5.0 * (0.25 - 5.0) / 100.0)) < 1e-14
     print("  psi_h = −5·x/xlmo (stable-case heat stability function)  PASS")
-
-
-def main():
-    print("test_gabls3_night_stability:")
-    test_gm1_gh1_unstable_regime()
-    test_fm1_fh1_formula()
-    test_landflx_stable_default_real_boundaries()
-    test_gh1_called_domain()
-    test_psi_h_stable()
-    print("All gabls3_night stability-function checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

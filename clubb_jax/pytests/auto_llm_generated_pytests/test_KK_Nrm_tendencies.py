@@ -9,14 +9,7 @@ This pins both against an INDEPENDENT transcription of the F90 (so the ρ_lw=100
 ν=1 reduction are checked directly), the safe-division guard (rr=0 → finite), the auto rate being exactly linear (one
 drop per unit mass), and a finite jax.grad. Oracle-independent; never SKIPs. (iter 557)
 """
-from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import os
-import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import jax
@@ -71,15 +64,3 @@ def test_grad_finite():
     np.testing.assert_allclose(g1, 2.0 * 1.0e-7 / _DROP_MASS**2, rtol=1e-13)
     np.testing.assert_allclose(g2, -2.0 * (-1e-7 * 1e5)**2 / 1.0e-4**3, rtol=1e-13)
     print("  N_r gradients match independent analytic derivatives  PASS")
-
-
-def main():
-    print("test_KK_Nrm_tendencies:")
-    test_auto_mean_drop_mass_constant()
-    test_evap_local_mean_formula_and_safe_div()
-    test_grad_finite()
-    print("All KK_Nrm tendency checks PASSED")
-
-
-if __name__ == "__main__":
-    main()

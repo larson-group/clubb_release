@@ -9,33 +9,11 @@ removed the dead bare pack_pdf_params/unpack_pdf_params + pack_implicit_coefs_* 
 Pure-Python (numpy + the derived-type module); never SKIPs.
 """
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
-import numpy as np
 
 import os
-import sys
 _ROOT = str(_REPO_ROOT)
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-for _p in (_ROOT, _ROOT + "/clubb_python_api"):
-    if _p not in sys.path:
-        sys.path.append(_p)
 
-from clubb_jax.src.CLUBB_core.pdf_params import (
-    pack_pdf_params_api, unpack_pdf_params_api, init_pdf_params, pdf_parameter, implicit_coefs_terms)
-
-
-def test_pack_unpack_api_roundtrip():
-    nz = 12
-    template = init_pdf_params(nz, 1)              # a valid 1-column pdf_parameter to fill
-    # distinct value in every (level, slot) so a mis-indexed pack/unpack would not round-trip
-    arr = np.arange(nz * 47, dtype=np.float64).reshape(nz, 47)
-    params = unpack_pdf_params_api(arr, nz, template)        # array -> pdf_parameter
-    arr2 = np.asarray(pack_pdf_params_api(params, nz))       # pdf_parameter -> array
-    # pack returns (nz, 47) for the single column
-    assert arr2.shape == arr.shape, f"pack shape {arr2.shape} != {arr.shape}"
-    max_abs = float(np.max(np.abs(arr2 - arr)))
-    assert max_abs == 0.0, f"pack(unpack(arr)) != arr — max abs diff {max_abs} (mis-indexed slot?)"
-    print(f"  pack/unpack_pdf_params_api round-trip exact over {nz}×47 slots (max diff 0.0)  PASS")
+from clubb_jax.src.CLUBB_core.pdf_params import pdf_parameter, implicit_coefs_terms
 
 
 _PDF_MODULE_F90 = os.path.join(_ROOT, "src", "CLUBB_core", "pdf_parameter_module.F90")
@@ -95,11 +73,3 @@ def test_implicit_coefs_terms_fields_mirror_fortran_type():
     — the implicit wp2/wpxp/xp2 closure coefs+terms the advance routines consume; same field-set/order requirement.
     (iter 476)"""
     _check_type_mirror("implicit_coefs_terms", implicit_coefs_terms, min_fields=20)
-
-
-if __name__ == "__main__":
-    print("test_pdf_params_pack_roundtrip:")
-    test_pack_unpack_api_roundtrip()
-    test_pdf_parameter_fields_mirror_fortran_type()
-    test_implicit_coefs_terms_fields_mirror_fortran_type()
-    print("Done.")
