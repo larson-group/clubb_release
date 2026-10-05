@@ -498,18 +498,27 @@ def create_case_namelist_file(
     _require_existing_file("-params_file", params_file)
     _require_existing_file("-flags", flags_file)
     _require_existing_file("-silhs_params_file", silhs_params_file)
+    stats_namelist = ""
     if not disable_stats:
-        _require_existing_file("-stats", stats_file)
+        if stats and not os.path.isfile(stats_file):
+            _ensure_repo_root_on_path()
+            from utilities.stats_json_to_namelist import stats_json_to_namelist
+
+            stats_namelist = stats_json_to_namelist(stats_arg)
+            stats_file = None
+        else:
+            _require_existing_file("-stats", stats_file)
 
     clubb_input_namelist = os.path.join(output_dir_abs, f"{case_name}.in")
     clubb_in = ""
     files_to_aggregate = [params_file, silhs_params_file, flags_file, model_file]
-    if not disable_stats:
+    if stats_file is not None:
         files_to_aggregate.append(stats_file)
     for filename in files_to_aggregate:
         with open(filename, encoding="utf-8") as src:
             clubb_in += strip_comments_and_remove_keys(src.read())
             clubb_in += "\n"
+    clubb_in += stats_namelist
 
     args = argparse.Namespace(
         case_name=case_name,
@@ -831,10 +840,13 @@ def add_namelist_arguments(parser):
         help="Model flags file. Used to override flags file selected by -config")
     parser.add_argument('-silhs_params_file', dest='silhs_params', metavar="[FILE]",
         help="SILHS parameters file. Used to override silhs_params file selected by -config")
-    parser.add_argument("-stats", metavar="[FILE]",
-        help=("Stats file defining fields to output.\n"
+    parser.add_argument("-stats", metavar="[GROUPS|FILE]",
+        help=("Stats categories from input/stats/stats.json, or an existing stats namelist file.\n"
+              "Join categories with ',' or '+', e.g. core,radiation or core+wp2_budgets.\n"
+              "Short names include all matching branches; paths such as standard/radiation select one subtree.\n"
+              "Use 'standard' for the JSON standard set, 'all' for every registered stat, or 'none' to disable stats.\n"
               "Default: input/stats/standard_stats.in.\n"
-              "Use 'none' to disable stats output."))
+              "Existing files take precedence over category names."))
     parser.add_argument('-output_dir', dest='out_dir', metavar="[DIR]",
         help="Output directory for the generated namelist and run results. Relative paths are rooted under output/ unless they already start with output/; absolute paths are used directly. Default: output")
     parser.add_argument("-multicol", metavar="[NUM|SPEC]", type=validate_multicol,

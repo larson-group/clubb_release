@@ -43,6 +43,17 @@ def test_run_config_persists_only_the_user_selection():
     assert getattr(rendered, "storage_type", "memory") == "memory"
 
 
+def test_stats_search_is_an_ephemeral_filter():
+    root = html.Div([
+        dcc.Input(id="run-stats-search", value="wp2"),
+        dcc.Store(id="run-selected-stats-file", data="core"),
+    ])
+    enable_workspace_persistence(root)
+    search, selection = root.children
+    assert getattr(search, "persistence", None) is None
+    assert selection.storage_type == "local"
+
+
 def test_mcp_endpoint_panel_exposes_manual_url_and_bearer_token():
     panel = mcp_endpoint_panel(
         {

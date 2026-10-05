@@ -3,7 +3,7 @@
 import ast
 import os
 
-from .state import CASE_DIR, RUN_SCM_ALL, STATS_DIR
+from .state import CASE_DIR, RUN_SCM_ALL
 
 
 def list_cases():
@@ -20,22 +20,6 @@ def list_cases():
 def load_available_cases():
     """Public wrapper for available run cases."""
     return list_cases()
-
-
-def list_stats_files():
-    """Return available stats namelist filenames from input/stats."""
-    files = []
-    if not os.path.isdir(STATS_DIR):
-        return files
-    for entry in os.listdir(STATS_DIR):
-        if entry.endswith(".in"):
-            files.append(entry)
-    return sorted(files)
-
-
-def load_stats_choices():
-    """Public wrapper for available stats-file choices."""
-    return list_stats_files()
 
 
 def load_case_groups(available_cases):

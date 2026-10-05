@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .namelist import write_temp_namelist
+from dash_app.shared.stats import stats_cli_argument
 from .state import (
     CUDA_MPS_LOG_DIR,
     CUDA_MPS_PIPE_DIR,
@@ -19,11 +20,9 @@ from .state import (
     MAX_RUN_PROCS,
     MPS_LOCK,
     MPS_STATE,
-    NO_STATS_NAME,
     REPO_ROOT,
     RUN_LOCK,
     RUN_PROCS,
-    STATS_DIR,
     set_child_stack_limit,
 )
 from dash_app.shared.tunable_configs import tunable_config_file
@@ -208,10 +207,7 @@ def append_launch_target(cmd, cli_options):
 def build_case_command(case_name, stats_name, cli_options=None, config_name=None):
     """Build the exact run_scm.py command shown in the UI copy button."""
     stats_value = str(stats_name).strip() if stats_name is not None else DEFAULT_STATS_NAME
-    if stats_value.lower() == NO_STATS_NAME:
-        stats_arg = NO_STATS_NAME
-    else:
-        stats_arg = os.path.join("input", "stats", stats_value)
+    stats_arg = stats_cli_argument(stats_value)
     config_value = clean_cli_option(config_name) or "default"
     cmd = [sys.executable, "-u", "run_scripts/run_scm.py", "-stats", stats_arg, "-config", config_value]
     cli_options = cli_options or {}
@@ -228,10 +224,7 @@ def build_case_command(case_name, stats_name, cli_options=None, config_name=None
 def start_case_process(case_name, stats_name, overrides, cli_options=None, config_name=None):
     """Launch one SCM case with temporary override files and return runtime metadata."""
     stats_value = str(stats_name).strip() if stats_name is not None else DEFAULT_STATS_NAME
-    if stats_value.lower() == NO_STATS_NAME:
-        stats_arg = NO_STATS_NAME
-    else:
-        stats_arg = os.path.join(STATS_DIR, stats_value)
+    stats_arg = stats_cli_argument(stats_value, absolute=True)
 
     config_value = clean_cli_option(config_name) or "default"
     params_path = write_temp_namelist(

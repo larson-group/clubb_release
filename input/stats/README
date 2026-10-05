@@ -1,5 +1,78 @@
 This directory contains files with statistics that can be output from CLUBB.
 
+Named stats selections (opt-in):
+
+stats.json is the hierarchical catalog. A category selects all the stats below
+it. Short names include every matching category, including both standard and
+non-standard branches; slash-separated paths select just one subtree.
+An individual variable is selected with var:NAME. Commas and '+' combine
+categories and variables, with duplicate stats emitted only once.
+
+Examples, from the repository root:
+
+  python run_scripts/run_scm.py bomex -stats core,radiation,silhs
+  python run_scripts/run_scm.py bomex -stats core+wp2_budgets
+  python run_scripts/run_scm.py bomex -stats standard/radiation
+  python run_scripts/run_scm.py bomex -stats var:rtm,var:wp2
+  python run_scripts/run_scm.py bomex -stats standard
+  python run_scripts/run_scm.py bomex -stats all
+  python run_scripts/run_scm.py bomex -stats none
+  python run_scripts/run_scm.py bomex -stats input/stats/fire_stats.in
+
+'radiation' selects 32 entries (10 standard and 22 BUGSrad); 'standard/radiation'
+selects only the 10 standard entries. An optional 'all/' prefix is accepted for
+paths. Category names
+match the JSON keys exactly, including case in names like Nrm_budgets.
+Selections do not implicitly add core or any other category.
+
+Existing namelist filenames still work and take precedence over category names.
+Omitting -stats still uses standard_stats.in; explicitly selecting 'standard'
+uses the revised JSON standard set. Existing stats files and test configurations
+have not been migrated. Scalar, hydrometeor and SILHS category templates retain
+their usual runtime expansion. Full SILHS subcolumn dumps are outside this
+registry catalog and are not enabled by these selections.
+
+To review the namelist without running CLUBB:
+
+  python utilities/create_case_namelist.py bomex -stats core,radiation -output_dir /tmp/stats_review
+  python utilities/stats_json_to_namelist.py standard/radiation
+  python utilities/stats_json_to_namelist.py core+kk -output_file /tmp/core_kk_stats.in
+  python utilities/stats_json_to_namelist.py -list
+
+The helper emits only &clubb_stats_nl (or nothing for 'none'). The case generator
+calls it directly and also disables stats output when -stats none is selected.
+No intermediate stats file is needed. The helper accepts -json_file FILE to inspect
+another catalog; model runs use this directory's stats.json.
+
+Dash Run tab:
+
+All, Standard and Core select the named JSON categories. Custom opens the
+checkbox tree with all branches initially collapsed. Expand categories to
+choose individual variables. Each single-line row shows name, units, grid
+(thermo, momentum or surface), and long description, with horizontal scrolling
+for long rows. Checkbox changes and previews run locally in the browser;
+category disclosures open and close without a server callback.
+Parent checkboxes select or clear all descendants and show a mixed state when
+only some descendants are selected. Cancel leaves the
+current run selection unchanged. Clear all followed by Use selection disables
+statistics. Reload the dashboard after editing the catalog hierarchy or
+changing a saved/legacy list outside the app.
+
+Saved & legacy lists keeps the existing .in registries available separately.
+Save stats config writes a new snapshot to input/stats/custom/NAME.in, which
+appears immediately in that list. Names use letters, numbers, underscores and
+hyphens; existing lists are never overwritten. These snapshots retain their
+exact definitions when the main catalog changes. The directory is created on
+first save and ignored by Git.
+Reuse one from the CLI with -stats input/stats/custom/NAME.in. Opening a saved
+or legacy list restores its exact variables in the tree, including partial
+categories. If a list contains names outside the catalog, the editor warns
+that applying the tree will omit those names.
+
+To save a category set from the CLI:
+
+  python utilities/stats_json_to_namelist.py core+standard/radiation -output_file input/stats/custom/core_radiation.in
+
 Important notes:
 
 Some variables are only non-zero when code options are enabled.  For example, 
@@ -19,4 +92,3 @@ condition number variables are:
 
 Some Fortran compilers don't deal well with comments in namelists.  Avoid 
 commenting out variable names within the stats namelist when possible.
-

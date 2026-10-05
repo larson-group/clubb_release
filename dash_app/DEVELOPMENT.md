@@ -50,7 +50,7 @@ be small and named by a real repeated contract; `shared/` is not a catch-all
 directory.
 
 Agent-owned execution is local-only. Public MCP requests use strict Pydantic
-models, typed overrides, checked-in stats choices, explicit physical time
+models, typed overrides, validated stats categories or local namelist choices, explicit physical time
 windows, and request-id idempotency. A typed MCP SCM batch writes scientific
 output by default to `output/mcp_runs/<batch-id>/<case>_stats.nc`; the broker
 owns that batch directory, while the JobStore is the canonical batch/child

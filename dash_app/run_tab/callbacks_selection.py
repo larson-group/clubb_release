@@ -10,29 +10,18 @@ def register_selection_callbacks(app, case_groups):
 
     @app.callback(
         Output({"type": "run-stats-button", "name": ALL}, "style"),
+        Output("run-stats-custom-open", "style"),
         Input("run-selected-stats-file", "data"),
         State({"type": "run-stats-button", "name": ALL}, "id"),
     )
     def update_stats_button_styles(selected_stats, ids):
         """Highlight the currently selected stats-file button."""
         if not ids:
-            return []
+            return [], stats_button_style(False)
         return [
             stats_button_style(button_id.get("name") == selected_stats)
             for button_id in ids
-        ]
-
-    @app.callback(
-        Output("run-selected-stats-file", "data", allow_duplicate=True),
-        Input({"type": "run-stats-button", "name": ALL}, "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def select_stats_file(_n_clicks):
-        """Persist the selected stats-file name from the clicked button."""
-        trigger_id = callback_context.triggered_id
-        if isinstance(trigger_id, dict):
-            return trigger_id.get("name", no_update)
-        return no_update
+        ], stats_button_style(selected_stats not in {"all", "standard", "core"})
 
     @app.callback(
         Output("run-selected-cases", "data", allow_duplicate=True),

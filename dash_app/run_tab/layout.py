@@ -4,8 +4,10 @@ from dash import dcc, html
 
 from dash_app.persistence import WORKSPACE_TOKEN
 from dash_app.compile_tab.build_selector import build_selector_trigger
+from dash_app.shared.components import styled_dropdown
 
 from .state import MAX_RUN_PROCS
+from .stats import build_stats_editor
 
 
 def field_style(changed, disabled=False):
@@ -124,16 +126,14 @@ def build_case_buttons(cases):
     ]
 
 
-def build_stats_buttons(stats_files, default_stats_name, no_stats_name):
-    """Render stats-file selection buttons, including the synthetic none option."""
+def build_stats_buttons(default_stats_name):
+    """Render category shortcuts and the custom-tree entry point."""
     buttons = [
-        html.Button(stats_name, id={"type": "run-stats-button", "name": stats_name}, n_clicks=0, className="run-stats-button", style=stats_button_style(stats_name == default_stats_name))
-        for stats_name in stats_files
+        html.Button(stats_name.capitalize(), id={"type": "run-stats-button", "name": stats_name}, n_clicks=0, className="run-stats-button", style=stats_button_style(stats_name == default_stats_name))
+        for stats_name in ("all", "standard", "core")
     ]
-    if no_stats_name not in stats_files:
-        buttons.append(
-            html.Button("none", id={"type": "run-stats-button", "name": no_stats_name}, n_clicks=0, className="run-stats-button", style=stats_button_style(no_stats_name == default_stats_name))
-        )
+    buttons.append(html.Button("Custom…", id="run-stats-custom-open", n_clicks=0, disabled=True,
+                               className="run-stats-button", style=stats_button_style(False)))
     return buttons
 
 
@@ -584,11 +584,18 @@ def build_left_header(case_groups, case_buttons, stats_buttons):
                     html.Div(
                         [
                             html.Div("Statistics", className="run-setup-section-title"),
-                            html.Div("Select the requested CLUBB statistics definition.", className="run-setup-section-note"),
+                            html.Div("Choose a category set or build your own.", className="run-setup-section-note"),
                         ],
                         className="run-setup-section-heading",
                     ),
                     html.Div(stats_buttons, className="run-stats-buttons"),
+                    html.Div(id="run-stats-summary", className="run-stats-summary", role="status"),
+                    html.Div(
+                        [html.Label("Saved & legacy lists", htmlFor="run-stats-list"),
+                         styled_dropdown(
+                             id="run-stats-list", options=[], value=None,
+                             placeholder="Choose a reusable custom list…", clearable=False)],
+                        className="run-stats-lists"),
                 ],
                 className="run-setup-section run-stats-section",
             ),
@@ -927,6 +934,7 @@ def build_layout(initial_data):
             dcc.Store(id="run-pending-request", data={}),
             dcc.Store(id="run-ui-render-signal"),
             build_output_overwrite_dialog(),
+            build_stats_editor(),
             html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell(initial_data["cases"])], className="run-left-pane"),
             html.Div(id="run-pane-divider", className="run-pane-divider"),
             # The settings pane intentionally grows with its controls.  It is

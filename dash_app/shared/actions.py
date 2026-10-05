@@ -131,7 +131,7 @@ from utilities.clubb_settings_validation import (
     is_independently_tunable,
     resolve_clubb_settings,
 )
-from dash_app.run_tab.discovery import list_stats_files
+from dash_app.shared.stats import load_stats_choices, stats_input_path, validate_stats_selection
 from dash_app.run_tab.state import NO_STATS_NAME
 from dash_app.shared.tunable_configs import canonical_tunable_parameter_name, tunable_config_file
 from dash_app.services import (
@@ -1081,11 +1081,7 @@ def _typed_override_text(values: dict[str, Any]) -> str:
 
 def _validated_stats_file(stats_file: str) -> str:
     value = str(stats_file or DEFAULT_STATS_NAME).strip()
-    if value == NO_STATS_NAME:
-        return value
-    if value not in set(list_stats_files()):
-        raise ValueError("stats_file must be one of the checked-in input/stats files or 'none'")
-    return value
+    return validate_stats_selection(value)
 
 
 def _active_scm_processes(*, exclude_job_id: str | None = None) -> set[tuple[str, str]]:
@@ -1322,7 +1318,7 @@ def _persist_submission(kind: str, request_id: str, payload: dict[str, Any]):
 def _run_common_manifest_inputs(stats_file: str, config: str) -> dict[str, Any]:
     """Checksum batch-wide SCM inputs once."""
     paths = {
-        "stats": None if stats_file == NO_STATS_NAME else REPO_ROOT / "input" / "stats" / stats_file,
+        "stats": stats_input_path(stats_file),
         "clubb_params": tunable_config_file(config, "tunable_parameters.in"),
         "model_flags": tunable_config_file(config, "configurable_model_flags.in"),
         "silhs_params": tunable_config_file(config, "silhs_parameters.in"),
@@ -2254,7 +2250,7 @@ def read_artifact_file(artifact_id: str, filename: str) -> bytes:
 def list_cases() -> dict[str, Any]:
     """List only checked-in SCM cases available to the public service."""
     cases = sorted(path.name.removesuffix("_model.in") for path in (REPO_ROOT / "input" / "case_setups").glob("*_model.in"))
-    return {"cases": cases, "stats_files": sorted([NO_STATS_NAME, *list_stats_files()])}
+    return {"cases": cases, "stats_files": [*load_stats_choices(), NO_STATS_NAME]}
 
 
 def list_tunable_parameters(config: str = "default") -> dict[str, Any]:

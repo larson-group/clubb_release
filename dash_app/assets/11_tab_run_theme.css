@@ -14,6 +14,76 @@
   display: none;
 }
 
+/* Category selection and reusable stats lists. */
+.run-stats-modal--hidden { display: none; }
+.run-stats-summary { font-size: 13px; font-weight: 650; color: #0284c7; }
+#app-root.theme-dark .run-stats-summary { color: #7dd3fc; }
+.run-stats-lists { display: grid; gap: 6px; max-width: 480px; }
+.run-stats-lists > label { font-size: 12px; opacity: .75; }
+.run-stats-editor-panel { width: min(1120px, 94vw); height: 90vh; max-height: 92vh; font-family: system-ui, sans-serif; }
+.run-stats-editor-note { font-size: 12px; line-height: 1.5; opacity: .7; }
+.run-stats-editor-body { display: grid; grid-template-columns: minmax(0, 1fr) 280px; min-height: 0; flex: 1; }
+.run-stats-tree-pane { display: flex; flex-direction: column; min-height: 0; }
+.run-stats-tree-heading { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 8px; font-size: 12px; font-weight: 700; }
+.run-stats-tree-heading button { border: 0; background: transparent; color: #0284c7; cursor: pointer; font: inherit; padding: 5px; }
+#app-root.theme-dark .run-stats-tree-heading button { color: #7dd3fc; }
+.run-stats-search { display: grid; gap: 6px; padding: 0 20px 14px; }
+.run-stats-search > label { font-size: 12px; font-weight: 650; }
+.run-stats-search-controls { display: flex; gap: 8px; }
+#app-root .run-stats-search input { flex: 1; min-width: 0; border: 1px solid #94a3b8; border-radius: 6px; padding: 9px 10px; background: transparent; color: inherit; font: inherit; font-size: 13px; }
+.run-stats-search button { border: 1px solid #94a3b8; border-radius: 6px; background: transparent; color: inherit; padding: 8px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+#run-stats-search-results { font-size: 12px; color: #0284c7; }
+#run-stats-search-results:empty { display: none; }
+#app-root.theme-dark #run-stats-search-results { color: #7dd3fc; }
+.run-stats-tree [hidden] { display: none !important; }
+.run-stats-tree { overflow: auto; padding: 0 18px 18px; min-height: 0; flex: 1; }
+.run-stats-node { padding: 3px 0; }
+.run-stats-node summary { display: flex; align-items: center; cursor: pointer; list-style: none; }
+.run-stats-node summary::-webkit-details-marker { display: none; }
+.run-stats-node summary::before { content: '›'; width: 18px; flex-shrink: 0; color: #64748b; font-size: 20px; }
+.run-stats-node[open] > summary::before { transform: rotate(90deg); }
+.run-stats-children { margin: 3px 0 3px 8px; padding-left: 18px; border-left: 1px solid #cbd5e1; }
+#app-root.theme-dark .run-stats-children { border-color: #334155; }
+.run-stats-check { flex: 1; min-width: 0; }
+.run-stats-check label { display: flex; align-items: center; gap: 9px; border-radius: 6px; padding: 7px 8px; cursor: pointer; font-size: 13px; }
+.run-stats-check label:hover { background: rgba(14,165,233,.08); }
+.run-stats-check input { width: 16px; height: 16px; accent-color: #0284c7; flex-shrink: 0; }
+.run-stats-node-label { display: flex; flex: 1; justify-content: space-between; align-items: center; gap: 12px; }
+.run-stats-variable-label { display: flex; align-items: baseline; gap: 12px; white-space: nowrap; }
+.run-stats-variable-name { min-width: 105px; font-size: 12px; font-weight: 650; }
+.run-stats-variable-units { min-width: 72px; font-size: 11px; opacity: .7; }
+.run-stats-variable-grid { min-width: 80px; font-size: 11px; color: #0284c7; }
+#app-root.theme-dark .run-stats-variable-grid { color: #7dd3fc; }
+.run-stats-variable-description { font-size: 12px; opacity: .75; }
+.run-stats-variables label { width: max-content; min-width: 100%; box-sizing: border-box; padding-block: 5px; }
+.run-stats-count { font-size: 11px; font-variant-numeric: tabular-nums; opacity: .65; }
+.run-stats-node > summary:has(input:indeterminate) .run-stats-check { color: #0284c7; }
+#app-root.theme-dark .run-stats-node > summary:has(input:indeterminate) .run-stats-check { color: #7dd3fc; }
+.run-stats-editor-side { display: flex; flex-direction: column; gap: 16px; padding: 20px; min-height: 0; overflow: auto; border-left: 1px solid #cbd5e1; background: rgba(148,163,184,.05); }
+#app-root.theme-dark .run-stats-editor-side { border-color: #334155; }
+.run-stats-preview-count { font-size: 20px; font-weight: 750; margin-bottom: 12px; }
+.run-stats-chips { display: flex; flex-wrap: wrap; gap: 5px; max-height: 20vh; overflow: auto; }
+.run-stats-chip { padding: 3px 7px; border-radius: 5px; background: rgba(14,165,233,.12); font-size: 11px; }
+.run-stats-save-form { display: grid; gap: 10px; padding-top: 16px; border-top: 1px solid rgba(148,163,184,.3); }
+.run-stats-save-form > label { font-weight: 700; font-size: 13px; }
+#app-root .run-stats-save-form input { width: 100%; box-sizing: border-box; border: 1px solid #94a3b8; border-radius: 6px; padding: 9px 10px; background: transparent; color: inherit; }
+.run-stats-save-form button { border: 1px solid #0284c7; border-radius: 6px; padding: 9px 10px; background: rgba(14,165,233,.1); color: inherit; font-weight: 650; cursor: pointer; }
+.run-stats-editor-footer { display: flex; flex: 0 0 auto; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 20px; border-top: 1px solid rgba(148,163,184,.3); }
+.run-stats-apply { border: 0; border-radius: 7px; background: #0284c7; color: white; padding: 10px 18px; font-weight: 700; cursor: pointer; }
+.run-stats-feedback-error { color: #dc2626; font-size: 12px; }
+.run-stats-feedback-success { color: #16a34a; font-size: 12px; }
+.run-stats-feedback-warning { color: #b45309; font-size: 12px; line-height: 1.5; margin-top: 14px; }
+#app-root.theme-dark .run-stats-feedback-error { color: #fca5a5; }
+#app-root.theme-dark .run-stats-feedback-success { color: #86efac; }
+#app-root.theme-dark .run-stats-feedback-warning { color: #fcd34d; }
+.run-stats-editor-panel button:focus-visible,
+.run-stats-editor-panel input:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+@media (max-width: 700px) {
+  .run-stats-editor-body { display: block; overflow: auto; }
+  .run-stats-tree { max-height: 35vh; }
+  .run-stats-editor-side { border-left: 0; border-top: 1px solid rgba(148,163,184,.3); }
+}
+
 /* Existing output decision */
 .run-overwrite-modal {
   position: fixed;

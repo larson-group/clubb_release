@@ -29,6 +29,42 @@ To run a case:
 4. Open **Plots** to view the output. You can also plot existing NetCDF files
    without compiling or running anything.
 
+### Choosing statistics
+
+The Run tab offers **All**, **Standard**, and **Core** from
+[`input/stats/stats.json`](../input/stats/stats.json). **Custom…** opens its
+checkbox tree, with all branches initially collapsed. Expand a category to
+choose individual variables. Each compact row shows the variable, units, grid
+(thermo, momentum or surface), and long name; long rows scroll horizontally.
+Selecting a parent
+includes every variable below it, and mixed parents show a dash. The tall,
+scrollable editor previews the selected registry definitions.
+Search refines the tree as you type, matching names, descriptions, units, grids
+and category paths (case insensitive; multiple words must all match). Matching
+branches open automatically. **Clear search** restores the previous expanded
+branches. Filtering preserves selections; category checkboxes still select the
+whole category, including hidden variables. Each popup opening starts with an
+empty search.
+Draft checkbox changes, previews and popup reopening run locally in the browser;
+opening and closing branches uses native disclosures. Apply and Save use the
+shared Python stats helpers.
+**Clear all**, then **Use selection**, disables statistics.
+
+**Saved & legacy lists** selects an existing namelist. In the custom editor,
+**Save stats config** writes a new snapshot to `input/stats/custom/<name>.in`
+and adds it to that list. These local snapshots are ignored by Git.
+Names may contain letters, numbers, underscores and
+hyphens; existing files are never overwritten. Snapshots retain their exact
+variables even if the catalog changes, and can also be passed to `-stats` on
+the command line. Reload the dashboard after editing the JSON hierarchy or
+changing a saved/legacy list outside the app.
+
+MCP `stats_file` accepts category expressions, individual `var:NAME` selectors
+(including qualified paths and comma/plus unions), `none`, or a relative
+saved/legacy list name. Its
+existing default remains `standard_stats.in`; the Run tab defaults to the
+named **Standard** category.
+
 ### Choosing CPU or GPU for JAX
 
 In the runtime chooser, select JAX and then the CPU or a compatible GPU tile.

@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from dash_app.shared.jax_device import GPU_UUID_PATTERN
+from dash_app.shared.stats import validate_stats_selection
 
 
 class StrictModel(BaseModel):
@@ -52,11 +53,7 @@ class ScmRunRequest(StrictModel):
     @field_validator("stats_file")
     @classmethod
     def _simple_stats_name(cls, value: str) -> str:
-        if value == "none":
-            return value
-        if "/" in value or "\\" in value or value in {"", ".", ".."}:
-            raise ValueError("stats_file must be a checked-in stats filename or 'none'")
-        return value
+        return validate_stats_selection(value)
 
 
 class ScmRunBatchRequest(StrictModel):
@@ -86,11 +83,7 @@ class ScmRunBatchRequest(StrictModel):
     @field_validator("stats_file")
     @classmethod
     def _simple_stats_name(cls, value: str) -> str:
-        if value == "none":
-            return value
-        if "/" in value or "\\" in value or value in {"", ".", ".."}:
-            raise ValueError("stats_file must be a checked-in stats filename or 'none'")
-        return value
+        return validate_stats_selection(value)
 
 
 class TuneCaseRequest(StrictModel):
