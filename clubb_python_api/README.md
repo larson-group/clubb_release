@@ -300,40 +300,32 @@ Fortran `intent(inout/out)` contract.
 
 ## Testing
 
-`run_pytests.sh` is the normal way to run the API test suite from the repo root.
-It does two small setup steps before calling `pytest`:
-
-- changes into `clubb_python_api/`
-- sets `PYTHONPATH` so the installed Python runtime, source-tree tests,
-  and repo-root code are importable during the test run
-
-The API tests use an existing F2PY build in `install/latest/python`; the test
-runner does not compile CLUBB. It runs pytest with the shared Python environment
-if one has been set up, or with `python3` otherwise. Build the F2PY interface
-with the same interpreter if no compatible build exists yet.
-
-The script is mainly a convenience entrypoint. It lets you run the suite from
-the repo root without having to remember the working directory and import-path
-setup each time.
-
-Run the full API pytest suite from the repo root:
+Use the repository pytest entry point to run API checks from the repo root:
 
 ```bash
-bash clubb_python_api/run_pytests.sh
+./compile.py -debug -python
+bash tests/run_pytests.sh -api -include_generated
 ```
 
+The API suite currently lives in `pytests/auto_llm_generated_pytests/`, pending
+human review. Default runs select admitted tests only; `-include_generated`
+includes provisional coverage without promoting it. See the
+[pytest suite guide](../tests/README.md#pytest-suites) for admission and CI ownership.
+
+The wrapper delegates to `clubb_python_api/run_pytests.sh`, which prepares the
+shared Python environment and import paths, preloads the selected F2PY
+extension, and runs pytest from the repo root. Compilation is separate. Build
+the API with the same Python ABI as the interpreter used for its tests.
+
 By default, the script tests `install/latest/python`. Set
-`CLUBB_F2PY_DIR=/path/to/install/python` to test another installed runtime.
+`CLUBB_F2PY_DIR=/path/to/install/python` to select another installed runtime.
+Ordinary pytest options, such as `-q` and `-v`, are forwarded unchanged.
 
-You can still pass ordinary pytest flags through the script. For example:
-
-- `bash clubb_python_api/run_pytests.sh -q` for quieter output
-- `bash clubb_python_api/run_pytests.sh -v` for more verbose output
-
-Run a single test file:
+The API-specific wrapper also accepts individual test targets:
 
 ```bash
-bash clubb_python_api/run_pytests.sh tests/test_udt_roundtrip.py -q
+bash clubb_python_api/run_pytests.sh -include_generated \
+  pytests/auto_llm_generated_pytests/test_udt_roundtrip.py -q
 ```
 
 The test suite covers a few different kinds of checks:

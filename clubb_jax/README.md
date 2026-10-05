@@ -123,10 +123,10 @@ can be differentiated.
 Run it from the repository root:
 
 ```bash
-.venv-jax/bin/python -m pytest -q clubb_jax/tests/test_full_timestep_grad.py
+python3 clubb_jax/tests/run_jax_timestep_gradient_test.py
 ```
 
-The [test](tests/test_full_timestep_grad.py) sets up the normal driver with:
+The [test](tests/run_jax_timestep_gradient_test.py) sets up the normal driver with:
 
 - `l_diag_Lscale_from_tau=.true.`: currently required for this reverse-mode
   test. The default parcel-based mixing-length loops are still unsupported.
@@ -187,12 +187,34 @@ multiple processes do not contend for the same device.
 
 ### Focused Python Tests
 
-After a JAX run has prepared the managed environment, focused tests can be run
-directly with pytest. For example:
+Focused checks live in `pytests/auto_llm_generated_pytests/` pending human
+review. The first testing stage of the CPU Jenkins job `clubb_jax` explicitly
+runs this provisional coverage with a compatible compiled Fortran reference.
+From the repo root:
 
 ```bash
-.venv-jax/bin/python -m pytest clubb_jax/tests/test_jit_compile.py
+./compile.py -debug -python
+bash tests/run_pytests.sh -jax -include_generated -k compiles
 ```
+
+See [tests/README.md](../tests/README.md) for admission and Jenkins ownership.
+
+### Manual case checks
+
+JAX-specific case checks live in this directory's `tests/` folder. Run them
+explicitly from the repository root; they prepare the JAX environment and are
+separate from the focused Jenkins pytest stage.
+
+| Check | Command |
+| --- | --- |
+| SILHS initialization, feedback modes and multicolumn sampling | `python3 clubb_jax/tests/run_silhs_driver_test.py` |
+| BOMEX/ATEX driver gradients, JVPs and finite differences | `python3 clubb_jax/tests/run_jax_timestep_gradient_test.py` |
+| Rico microphysics and precipitation against Fortran statistics | `python3 clubb_jax/tests/run_rico_microphysics_oracle_test.py -stats_file output/tests/rico_oracle/rico_stats.nc` |
+
+The Rico check requires fresh `all_stats` output from a ten-step Fortran Rico
+run; it does not generate the reference run. Missing input or a failed
+numerical assertion fails the check. The gradient check's settings and limits
+are described in [Differentiability](#differentiability-initial-test).
 
 ## Requirements And Environments
 

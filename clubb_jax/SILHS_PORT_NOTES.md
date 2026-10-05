@@ -268,13 +268,14 @@ sampled variance sources, following its Fortran dispatch branch.
 Re-run the SILHS checks from the repository root:
 
 ```bash
-.venv-jax/bin/python -m pytest -q \
-  clubb_jax/tests/test_silhs_sampling.py \
-  clubb_jax/tests/test_silhs_diagnostics.py \
-  clubb_jax/tests/test_silhs_fortran_oracle.py \
-  clubb_jax/tests/test_silhs_driver.py \
-  clubb_jax/tests/test_silhs_port_structure.py
+bash tests/run_pytests.sh -jax -include_generated -k silhs
+python3 clubb_jax/tests/run_silhs_driver_test.py
 ```
+
+The focused SILHS checks are provisional in `pytests/auto_llm_generated_pytests/`
+and run in the `clubb_jax` pytest stage. The real-case workflow above is a manual
+check. The Python unit stage can include the provisional SILHS command-forwarding
+checks with `INCLUDE_GENERATED_PYTESTS`.
 
 The ordinary comparison harness remains applicable to disabled-SILHS runs:
 `./tests/run_jax_vs_fortran_cases.py -cases bomex rico lba -max_iters 5 -workers 1`.

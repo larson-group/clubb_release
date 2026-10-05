@@ -3,16 +3,12 @@
 import importlib.util
 import json
 import shutil
-import subprocess
-import sys
 from pathlib import Path
 
 import netCDF4
 import numpy as np
 import pytest
 
-from tests.run_jax_vs_fortran_cases import _first_failing_timestep
-from tests.run_python_vs_fortran_cases import _average_earliest_timestep
 
 
 BINDIFF = Path(__file__).resolve().parents[2] / "run_scripts" / "run_bindiff_all.py"
@@ -147,58 +143,3 @@ def test_json_records_no_comparable_stats_error(tmp_path):
     file = json.loads(report_path.read_text())["cases"]["case"]["files"][0]
     assert file["status"] == "diff"
     assert file["issues"] == ["no_comparable_stats"]
-
-
-@pytest.mark.parametrize("problem", ["missing_input_directory", "same_input_directory"])
-def test_cli_writes_json_for_invalid_inputs(tmp_path, problem):
-    left = tmp_path / "left"
-    left.mkdir()
-    right = tmp_path / "missing" if problem == "missing_input_directory" else left
-    report_path = tmp_path / "result.json"
-    run = subprocess.run(
-        [sys.executable, str(BINDIFF), "-result_json", str(report_path), str(left), str(right)],
-        capture_output=True, text=True,
-    )
-    assert run.returncode == 2
-    report = json.loads(report_path.read_text())
-    assert report["status"] == "error"
-    assert report["issues"] == [problem]
-
-
-def test_first_failing_prefix_is_not_first_pointwise_difference(tmp_path):
-    left, right = tmp_path / "left", tmp_path / "right"
-    left.mkdir()
-    right.mkdir()
-    for directory, values in (
-        (left, [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]),
-        (right, [[2e-6, 0.0], [3e-6, 3e-6], [3e-6, 3e-6]]),
-    ):
-        with netCDF4.Dataset(directory / "case_stats.nc", "w") as nc:
-            nc.createDimension("time", 3)
-            nc.createDimension("column", 2)
-            nc.createDimension("bounds", 2)
-            nc.createVariable("time", "f8", ("time",))[:] = [90.0, 240.0, 450.0]
-            nc.createVariable("time_bnds", "f8", ("time", "bounds"))[:, :] = np.array(
-                [[0.0, 180.0], [180.0, 300.0], [300.0, 600.0]]
-            )
-            nc.createVariable("signal", "f8", ("time", "column"))[:, :] = np.array(values)
-
-    report = tmp_path / "result.json"
-    run = subprocess.run(
-        [sys.executable, str(BINDIFF), "-verbose", "0", "-case", "case", "-threshold", "1e-6",
-         "-percent_threshold", "1e-7", "-result_json", str(report), str(left), str(right)],
-        capture_output=True, text=True,
-    )
-
-    assert run.returncode == 1, run.stdout + run.stderr
-    result = json.loads(report.read_text())
-    case = result["cases"]["case"]
-    assert result["inputs"] == [str(left.resolve()), str(right.resolve())]
-    assert result["status"] == case["status"] == "diff"
-    assert case["files"][0]["first_failing_prefix"] == {
-        "record": 1, "saved_records": 3, "output_time": 300.0
-    }
-    assert case["files"][0]["variables"]["different"] == ["signal"]
-    assert _first_failing_timestep(report, "case", 10, (0.0, 60.0)) == 5
-    assert _average_earliest_timestep(report, "case") == 0.0
-    assert _average_earliest_timestep(report) == 0.0

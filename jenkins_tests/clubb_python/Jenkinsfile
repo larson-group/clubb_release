@@ -17,7 +17,9 @@ pipeline {
           sh '''
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
-            bash clubb_python_api/run_pytests.sh -v
+            # Keep the migrated API coverage active while its admission is reviewed.
+            bash clubb_python_api/run_pytests.sh -include_generated -v \
+              --junitxml="$WORKSPACE/output/tests/pytests/api.xml"
           '''
         }
       }
@@ -25,11 +27,14 @@ pipeline {
     stage('Run fast Python unit tests') {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-          sh '''
-            source /etc/profile.d/larson-group.sh
-            module load gcc netcdf-fortran
-            bash tests/run_pytests.sh -unit
-          '''
+          withEnv(["PYTEST_GENERATED_ARG=${params.INCLUDE_GENERATED_PYTESTS ? '-include_generated' : ''}"]) {
+            sh '''
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              bash tests/run_pytests.sh -unit $PYTEST_GENERATED_ARG \
+                --junitxml="$WORKSPACE/output/tests/pytests/unit.xml" --durations=10
+            '''
+          }
         }
       }
     }
@@ -58,6 +63,9 @@ pipeline {
     }
   }
   post {
+    always {
+      junit testResults: 'output/tests/pytests/*.xml', allowEmptyResults: true
+    }
     failure {
       script {
         // Only the production job sends failure mail.

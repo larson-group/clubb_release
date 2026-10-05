@@ -1,0 +1,24 @@
+// Run the focused Dash pytest suite.
+pipeline {
+  agent any
+  stages {
+    stage('Run Dash pytests') {
+      steps {
+        withEnv(["PYTEST_GENERATED_ARG=${params.INCLUDE_GENERATED_PYTESTS ? '-include_generated' : ''}"]) {
+          sh '''
+            # Use the Node runtime provisioned once for the Jenkins account on each worker.
+            export PATH="$HOME/.local/bin:$PATH"
+            node --version
+            bash tests/run_pytests.sh -dash $PYTEST_GENERATED_ARG \
+              --junitxml="$WORKSPACE/output/tests/pytests/dash.xml" --durations=10
+          '''
+        }
+      }
+    }
+  }
+  post {
+    always {
+      junit testResults: 'output/tests/pytests/*.xml', allowEmptyResults: true
+    }
+  }
+}

@@ -9,8 +9,21 @@ pipeline {
         sh '''
           source /etc/profile.d/larson-group.sh
           module load gcc netcdf-fortran
-          ./compile.py -debug
+          ./compile.py -debug -python
         '''
+      }
+    }
+    stage('Run JAX pytests') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            # Create JAX's environment with the same Python ABI as the compiled reference.
+            export PYTHON="$WORKSPACE/.venv-python/bin/python"
+            bash tests/run_pytests.sh -jax -include_generated -v --durations=15
+          '''
+        }
       }
     }
     stage('Expected failure test') {
@@ -51,6 +64,9 @@ pipeline {
     }
   }
   post {
+    always {
+      junit testResults: 'output/tests/pytests/jax/**/*.xml', allowEmptyResults: true
+    }
     failure {
       script {
         // Only the production job sends failure mail.

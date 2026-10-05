@@ -15,6 +15,11 @@ broader validation. Explicit user instructions take priority.
   descriptive options, `output_*`, and `-workers` for process concurrency with
   a half-logical-CPU default. Keep worker counts distinct from batch width and
   preserve external-tool flags and documented GPU/plotting exceptions.
+- Follow [pytest_workflow.md](LLM_prompts/pytest_workflow.md): fast specific
+  checks belong in `pytests/`; new agent coverage goes in
+  `auto_llm_generated_pytests/` pending human review. Real cases/full workflows
+  belong in their component's `tests/`; reserve root `tests/` for shared
+  workflows and keep Jenkins additions within the requested scope.
 - Reuse the existing utility/parser/state owner. Keep UI/runner adapters thin;
   justify a new abstraction by actual shared behavior. Remove obsolete paths
   in the authorized change instead of adding silent fallback/retry machinery.

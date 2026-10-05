@@ -4,7 +4,7 @@ numpy~=2.2
 meson
 ninja
 
-# Test dependencies used by clubb_python_api/tests/.
+# Test dependencies used by clubb_python_api/pytests/.
 pytest
 netCDF4
 # run_python_vs_fortran_cases.py invokes run_bindiff_all.py.

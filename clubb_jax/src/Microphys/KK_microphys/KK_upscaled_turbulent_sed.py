@@ -15,7 +15,7 @@ carries (alpha^2+2 alpha) instead of alpha^2 and the cross term (alpha+1) instea
 side reuses the same machinery with r_r<->N_r and the two exponents swapped.
 
 Verified bit-exact vs the rico oracle `rr_KK_mvr_covar_zt` / `Nr_KK_mvr_covar_zt` stats
-(tests/test_kk_rico_oracle.py). Exponents alpha=KK_mvr_rr_exp=1/3, beta=KK_mvr_Nr_exp=-1/3. All-jnp,
+(clubb_jax/tests/run_rico_microphysics_oracle_test.py). Exponents alpha=KK_mvr_rr_exp=1/3, beta=KK_mvr_Nr_exp=-1/3. All-jnp,
 differentiable.
 """
 import jax.numpy as jnp

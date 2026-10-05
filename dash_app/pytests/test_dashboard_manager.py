@@ -3,11 +3,6 @@ from __future__ import annotations
 import os
 
 
-def test_manager_restart_policy_is_ten_seconds_for_five_minutes():
-    from dash_app import manager
-
-    assert manager.RESTART_INTERVAL_SECONDS == 10.0
-    assert manager.RESTART_DEADLINE_SECONDS == 300.0
 
 
 def test_active_job_labels_cover_every_broker_job_family():

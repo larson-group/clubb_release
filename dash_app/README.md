@@ -389,8 +389,23 @@ Compile tab source-check log; plot-family help text is centralized in
 Run the Dash test suite with the dashboard environment:
 
 ```bash
-tests/run_pytests.sh -dash
+bash tests/run_pytests.sh -dash
 ```
+
+This includes the bounded MCP stdio protocol regression; it does not run SCM
+cases or launch the full dashboard workflow.
+
+For the manual parcel-trajectory comparison, supply fresh Fortran ARM
+`all_stats` output from 625 timesteps, including saved record 612:
+
+```bash
+python3 dash_app/tests/run_dash_mixing_length_test.py \
+  -stats_file output/tests/dash_arm/arm_stats.nc
+```
+
+The check compares the mixing-length profiles, parcel paths and figure data.
+It does not generate the reference run, and missing input or a failed numerical
+assertion fails the check. It is separate from the `clubb_dash` pytest job.
 
 See [DEVELOPMENT.md](./DEVELOPMENT.md) for UI conventions, service boundaries,
 and how runtime selections are recorded in jobs.

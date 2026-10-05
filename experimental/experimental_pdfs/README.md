@@ -11,7 +11,9 @@ PDF-8 is a separate, retained closure.
 
 Start with `doc/trivariate_transport_method_report.md` for the main overview.
 
-The `python/` directory keeps the related retired Dash labs, focused tests,
-diagnostic utilities, and PDF-10 report scripts. Generated figures, HTML, and
+The `python/` directory keeps the related retired Dash labs, diagnostic
+utilities, and PDF-10 report scripts. The obsolete Dash pytest copies were
+removed after their imports no longer matched the active app; their history
+remains in Git. Generated figures, HTML, and
 data are intentionally omitted; these scripts may depend on the old Dash/SAM
 environment.

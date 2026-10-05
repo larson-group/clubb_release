@@ -9,6 +9,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -1047,12 +1048,13 @@ def test_bounded_log_reader_uses_nested_leaderboard_runtime(tmp_path, monkeypatc
 def test_mcp_stdio_discovery_and_structured_error_round_trip():
     root = Path(__file__).resolve().parents[2]
     server_path = root / "dash_app" / "agent_integration" / "mcp_server.py"
+    diagnostics = tempfile.TemporaryFile(mode="w+t")
     process = subprocess.Popen(
         [sys.executable, str(server_path)],
         cwd=root,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=diagnostics,
         text=True,
         env={**os.environ, "PYTHONPATH": str(root) + os.pathsep + os.environ.get("PYTHONPATH", "")},
     )
@@ -1062,7 +1064,9 @@ def test_mcp_stdio_discovery_and_structured_error_round_trip():
         process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}) + "\n")
         process.stdin.flush()
         ready, _, _ = select.select([process.stdout], [], [], 5.0)
-        assert ready, f"MCP server did not answer {method}"
+        if not ready:
+            diagnostics.seek(0)
+            raise AssertionError(f"MCP server did not answer {method}: " + diagnostics.read()[-4000:])
         return json.loads(process.stdout.readline())
 
     try:
@@ -1114,7 +1118,12 @@ def test_mcp_stdio_discovery_and_structured_error_round_trip():
         assert any(item["uriTemplate"].startswith("clubb-artifact://") for item in templates)
     finally:
         process.terminate()
-        process.wait(timeout=5)
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+        diagnostics.close()
 
 
 def test_mcp_stdio_keeps_tool_prints_out_of_protocol_stdout(monkeypatch):

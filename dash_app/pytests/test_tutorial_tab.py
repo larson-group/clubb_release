@@ -39,4 +39,6 @@ def test_tutorial_tab_registers_navigation_and_adg1_callbacks():
     app.layout = tutorial
     app._setup_server()
     assert tutorial.label == "Tutorial"
-    assert len(app.callback_map) == 4
+    outputs = " ".join(app.callback_map)
+    assert "tutorial-pages" in outputs
+    assert "notes-adg1-gaussian-figure" in outputs

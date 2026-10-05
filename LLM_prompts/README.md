@@ -34,3 +34,7 @@ boundaries before observing the responses. Check actual edits and evidence,
 not just whether an agent says it followed the instructions. Record misses and
 limits; a toy evaluation is not proof of numerical correctness for a real port.
 Do not add a permanent benchmark framework for every wording edit.
+
+For a user-requested review of a recent session, use the
+[session retrospective](session_retrospective.md). For test-level decisions,
+provisional admission and CI ownership, use the [pytest workflow](pytest_workflow.md).

@@ -10,27 +10,83 @@ exercise.
 
 ## Pytest suites
 
-The repository-level pytest entry point is `tests/run_pytests.sh`.  It keeps fast
-unit tests separate from environment-specific test suites:
+Pytests are fast, specific checks. Actual SCM cases and full CLI/application
+workflows belong in their component's `tests/` folder; shared workflows live here.
+The [pytest workflow](../LLM_prompts/pytest_workflow.md) defines test quality,
+admission and review standards.
 
-- `tests/run_pytests.sh -unit` runs the safe default suite in `utilities/pytests/`
-  and `tuner/pytests/`.
-- `tests/run_pytests.sh -dash` prepares the shared `.venv-python` environment
-  with uv, then runs the Dash tests there.
-- `tests/run_pytests.sh -api` tests an existing compatible F2PY build in
-  `install/latest/python`. It prepares the shared Python environment if needed,
-  but does not compile CLUBB.
-- `tests/run_pytests.sh -all` runs all three suites in that order.
+Each suite has a `pytests/` directory with admitted modules in its parent and
+provisional agent-written modules in `auto_llm_generated_pytests/`. New agent
+coverage goes in that subdirectory. A human promotes useful coverage by moving
+or merging it into the parent and removing the provisional copy. Fixtures and
+shared input helpers stay with the suite owner. All existing API and JAX
+pytests are initially provisional; this classification does not discard them.
 
-Bare `python3 -m pytest` intentionally runs only the fast unit suite. SCM,
-GPU, and other expensive scripts below remain explicit test harnesses rather
-than accidental pytest collection.
+`tests/run_pytests.sh` is the intended pytest entry point. Run from the repository root:
 
-Python test scripts prepare and use the shared environment automatically.
-For F2PY tests, build the extension once with `./compile.py -python` first.
-The shared environment uses Python 3.12 or newer; uv downloads 3.12 when
-needed. `./launch_dashboard.sh` adds Dash packages automatically. JAX manages
-its own environments on first use.
+```sh
+bash tests/run_pytests.sh -unit
+bash tests/run_pytests.sh -dash
+./compile.py -debug -python
+bash tests/run_pytests.sh -api -include_generated
+bash tests/run_pytests.sh -jax -include_generated
+```
+
+`-unit` selects utilities, tuner and `tests/pytests` harness contracts. `-dash`
+prepares the shared Python environment with Dash dependencies. Its browser
+callback checks also use Node. Provide Node 22 on `PATH`; Jenkins workers use
+an installation in the Jenkins account's `$HOME/.local/bin`, prepared once
+outside the checkout. The pipeline does not download tools or require npm.
+`-api` requires a compatible build in `install/latest/python` (or
+`CLUBB_F2PY_DIR`). `-jax`
+prepares the CPU JAX environment and uses the selected compiled API for Fortran
+oracles; build the API and JAX environment with the same Python ABI. `-all`
+runs unit, Dash, API and JAX in that order. Pytest options such as `-q`, `-k` and
+`--durations=10` are forwarded unchanged. JAX runs each module in a fresh
+process so native Fortran exits and retained runtime state cannot stop or
+contaminate the other modules. Its per-module XML reports are saved under
+`output/tests/pytests/jax` (`CLUBB_PYTEST_OUTPUT_DIR` selects another location).
+Filters apply per module; a filter that selects nothing returns pytest's usual
+exit code 5.
+
+The wrappers exclude generated subdirectories by default; `-include_generated`
+opts in for a review run. They print an explicit "no tests executed" message
+for an empty admitted API/JAX suite; that is not a passing-test count.
+Suite selection and admission belong to these entry points. There is no root
+pytest configuration: bare `python -m pytest` uses pytest's own discovery and
+does not apply the wrappers' environment setup or generated-test exclusion.
+
+| Pytest owner | Jenkins production job | Provisional coverage |
+| --- | --- | --- |
+| `utilities/pytests`, `tuner/pytests`, `tests/pytests` | `clubb_python` unit stage | Set `INCLUDE_GENERATED_PYTESTS` for a review build |
+| `clubb_python_api/pytests` | `clubb_python` F2PY stage | Explicitly included during the initial migration |
+| `clubb_jax/pytests` | `clubb_jax` first testing stage | Explicitly included during the initial migration |
+| `dash_app/pytests` | `clubb_dash` | Set `INCLUDE_GENERATED_PYTESTS` for a review build |
+
+The legacy SensMatrix tests and their local configuration remain unchanged in
+`utilities/sens_matrix/`. They are outside this migration and are not selected
+by these Jenkins stages.
+
+The corresponding `clubb_branch_*` jobs use the same Jenkinsfiles and a `BRANCH`
+parameter. API/JAX's explicit provisional inclusion preserves the old API
+coverage and adds the previously unrun JAX suite while human review proceeds.
+CI execution never promotes a module. New maintained suites need a Jenkins
+owner; provisional additions need an explicit review route through that owner.
+
+The entry points prepare their owned Python environments automatically, except
+when `CLUBB_PYTHON` explicitly selects a prepared interpreter. Compilation is
+separate. Required CI dependencies/builds fail setup when missing; expected
+optional dependencies use real pytest skips rather than printing "SKIP" and
+returning. Runtime reports distinguish executed checks from skips.
+
+### Component-specific workflows
+
+Real-case checks live with their component: [JAX manual case checks](../clubb_jax/README.md#manual-case-checks),
+[Dash ARM comparison](../dash_app/README.md#development-and-tests), and the
+[API argument-contract audit](../clubb_python_api/tests/argument_list_enforcer/argument_contract_audit.py).
+Run these explicitly; they are separate from the focused pytest stages in Jenkins.
+The root `tests/` directory holds shared entry points, comparisons across
+implementations and general CLUBB regressions.
 
 ## Test Scripts
 

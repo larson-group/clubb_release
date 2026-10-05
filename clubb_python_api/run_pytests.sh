@@ -4,7 +4,7 @@
 #
 # Usage:
 #   bash clubb_python_api/run_pytests.sh
-#     Run the full suite under clubb_python_api/tests/.
+#     Run admitted tests under clubb_python_api/pytests/.
 #
 #   bash clubb_python_api/run_pytests.sh -q
 #     Run with quieter pytest output.
@@ -12,8 +12,8 @@
 #   bash clubb_python_api/run_pytests.sh -v
 #     Run with more verbose pytest output.
 #
-#   bash clubb_python_api/run_pytests.sh tests/test_python_port_api_coverage.py -v
-#     Run one specific test file with verbose output.
+#   bash clubb_python_api/run_pytests.sh -include_generated -v
+#     Include provisional agent-written tests without promoting them.
 #
 set -euo pipefail
 
@@ -33,6 +33,9 @@ if [[ "$PYTHON_BIN" == */* && "$PYTHON_BIN" != /* ]]; then
 fi
 
 F2PY_DIR="${CLUBB_F2PY_DIR:-$REPO_ROOT/install/latest/python}"
+if [[ "$F2PY_DIR" != /* ]]; then
+  F2PY_DIR="$REPO_ROOT/$F2PY_DIR"
+fi
 if [[ ! -d "$F2PY_DIR" ]]; then
   echo "Python runtime directory not found: $F2PY_DIR" >&2
   echo "Rebuild with ./compile.py -python, or set CLUBB_F2PY_DIR." >&2
@@ -54,27 +57,51 @@ if [[ ! -d "$F2PY_DIR/clubb_python" ]]; then
   exit 1
 fi
 
-cd "$SCRIPT_DIR"
+cd "$REPO_ROOT"
 export PYTHONPATH="$F2PY_DIR:$REPO_ROOT:$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
-PYTEST_ARGS=("$@")
+PYTEST_ARGS=()
 has_test_target=false
 for arg in "$@"; do
-  if [[ "$arg" == tests/* || "$arg" == ./tests/* ]]; then
+  if [[ "$arg" == -include_generated ]]; then
+    export CLUBB_PYTEST_INCLUDE_GENERATED=1
+    continue
+  fi
+  target="${arg%%::*}"
+  # Accept suite-relative targets while running file-reading checks from the repo root.
+  if [[ "$arg" != -* && ! -e "$target" && -e "$SCRIPT_DIR/$target" ]]; then
+    arg="$SCRIPT_DIR/$arg"
+    target="$SCRIPT_DIR/$target"
+  fi
+  PYTEST_ARGS+=("$arg")
+  if [[ "$arg" != -* && ( -f "$target" || -d "$target" ) ]]; then
     has_test_target=true
-    break
   fi
 done
 if [[ "$has_test_target" == false ]]; then
-  PYTEST_ARGS=(tests/ "${PYTEST_ARGS[@]}")
+  PYTEST_ARGS=("$SCRIPT_DIR/pytests/" ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"})
 fi
 
-# Load the selected extension before pytest adds this source directory to
-# sys.path. A stale in-tree clubb_f2py.so must not shadow F2PY_DIR.
+# Keep provisional checks out of suite discovery until explicitly requested.
+if [[ "${CLUBB_PYTEST_INCLUDE_GENERATED:-0}" != 1 ]]; then
+  PYTEST_ARGS+=(--ignore-glob='*/auto_llm_generated_pytests')
+fi
+
+# Load the selected extension before pytest can add source paths to sys.path.
 "$PYTHON_BIN" -c '
+import os
+from pathlib import Path
 import sys
 sys.path.insert(0, sys.argv[1])
 import netCDF4
 import clubb_f2py
 import pytest
+# An empty admitted suite is expected immediately after human-review migration.
+if Path(sys.argv[2]).resolve() == Path("clubb_python_api/pytests").resolve() and os.environ.get("CLUBB_PYTEST_INCLUDE_GENERATED") != "1":
+    admitted = [p for p in Path("clubb_python_api/pytests").rglob("*.py")
+                if "auto_llm_generated_pytests" not in p.parts
+                and (p.name.startswith("test_") or p.name.endswith("_test.py"))]
+    if not admitted:
+        print("No admitted API pytests; no tests executed. Use -include_generated for provisional coverage.")
+        raise SystemExit(0)
 raise SystemExit(pytest.main(sys.argv[2:]))
-' "$F2PY_DIR" "${PYTEST_ARGS[@]}"
+' "$F2PY_DIR" ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}

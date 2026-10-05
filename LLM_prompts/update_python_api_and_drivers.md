@@ -73,7 +73,7 @@ Do the work in this order:
    - Use:
 
      ```bash
-     python -m pytest clubb_python_api/tests
+     bash clubb_python_api/run_pytests.sh -include_generated
      ```
 
    - Some negative-path tests may print expected Fortran fatal-error text. Trust the pytest result, not just the log noise.
@@ -155,7 +155,7 @@ Debugging techniques and common failure modes:
 Expected final state for the full API/driver task:
 
 - `./compile.py -python` succeeds.
-- `python -m pytest clubb_python_api/tests` passes.
+- `bash clubb_python_api/run_pytests.sh -include_generated` passes.
 - Short `run_scm.py` Python-vs-Fortran bindiffs pass for representative cases.
 - `./tests/run_python_vs_fortran_cases.py -workers 1` passes.
 - `./tests/run_jax_vs_fortran_cases.py -workers 1` passes.

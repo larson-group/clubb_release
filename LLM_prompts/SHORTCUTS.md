@@ -17,6 +17,8 @@ changes the outcome. Explicit user instructions take priority.
 | **Change Script Arguments**: options, forwarding, worker defaults, multicolumn settings, or Jenkins/documentation callers. | [CLI workflow](script_cli_conventions.md) |
 | **Diagnose Numerical Comparisons**: JAX/Fortran, compiler, BFB or multi-column mismatches; distinguish regression, roundoff and untested behavior. | [Numerical diagnosis](numerical_regression_workflow.md) |
 | **Use or Change Jenkins Tests**: launch named jobs, inspect failures/hangs, audit coverage, combine/remove/rename jobs or edit pipelines. | [Jenkins workflow](jenkins_workflow.md) |
+| **Add or Review Pytests**: focused checks, generated-test admission, test pruning, or pytest CI coverage. | [Pytest workflow](pytest_workflow.md) |
+| **Learn From a Session**: review recent corrections/decisions and improve their AGENTS, skill, shortcut or documentation owner. | [Session retrospective](session_retrospective.md) |
 | **Work Through CLUBB Dash**: connect/use/open/control Dash; compile/run, show profiles/contours/plots/console, tune, navigate pages, or create/update/view an investigation report. | [Dash workflow](dash_app_workflow.md) |
 
 ## Scope boundaries
@@ -44,6 +46,7 @@ changes the outcome. Explicit user instructions take priority.
   guess between instances. A named Jenkins request uses Jenkins.
 
 [Maintaining guidance](README.md) describes how to record approved lessons
-without duplicating requirements. Optional repo skills `clubb-jax-port` and
-`clubb-script-cli` point to the same canonical workflows; they aid discovery
+without duplicating requirements. Optional repo skills `clubb-jax-port`,
+`clubb-script-cli`, `clubb-pytests` and `clubb-session-retrospective` point to the
+same canonical workflows; they aid discovery
 for agents with skill support, while this index supports other agents.
