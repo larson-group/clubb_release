@@ -129,7 +129,7 @@ def advance_clubb_to_end(state: dict, l_stdout: bool = True, max_steps: int | No
         _advance_microphysics(state, itime, time_current, l_rad_itime)
 
         _advance_radiation(state=state, time_current=time_current, l_rad_itime=l_rad_itime)
-        
+
         if clubb_at_least_debug_level(0) and state['err_info'].is_fatal():
             raise RuntimeError(
                 "Fatal error in radiation; "

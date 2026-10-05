@@ -174,19 +174,20 @@ microphysics, four C8 columns and standard statistics:
 | Case | Steps | Samples | Microphysics | Percentage tolerance |
 | --- | ---: | ---: | --- | ---: |
 | `rico_silhs` | 360 | 8 | Native local KK | 1e-7% |
-| `lba_kk_silhs` | 275 | 64 | Local warm-rain KK variant of LBA | 1e-7% |
-| `lba_silhs` | 240 | 64 | Native Morrison, ice/graupel enabled | 1e-3% |
+| `lba_kk_silhs` | 240 | 64 | Local warm-rain KK variant of LBA | 1e-7% |
+| `lba_silhs` | 74 | 64 | Native Morrison, ice/graupel enabled | 1e-3% |
 
 All cases retain the existing absolute tolerance of 1e-7; Morrison retains
-the existing float32 percentage policy. With the repeating cycle and matching
-inverse-normal coefficient precision, fresh RICO and LBA KK comparisons pass
-all 360 and 275 timesteps against both Debug/O0 and Release/O2 native builds.
-Morrison LBA passes all 240 steps against Release/O2, the normal native build
+the existing float32 percentage policy. Earlier validation with the repeating
+cycle and matching inverse-normal coefficient precision passed all 360 RICO
+and 275 LBA KK timesteps against both Debug/O0 and Release/O2 native builds.
+Morrison LBA passed all 240 steps against Release/O2, the normal native build
 configuration. Against Debug/O0 it first fails at saved prefix 78, with 17
 fields failing the full comparison. The native Debug and Release runs also
 exceed the same tolerance in 17 fields when compared directly without JAX;
-this case remains sensitive to compiler arithmetic. No tolerance or timestep
-limit was changed to accommodate the debug build.
+this case remains sensitive to compiler arithmetic. These results predate the
+current LBA limits of 240 KK and 74 Morrison timesteps listed above. Acceptance
+tolerances are unchanged.
 These are curated comparison durations, not full native-duration LBA runs.
 Native random-stream parity remains untested.
 
