@@ -82,7 +82,7 @@ more permissive, so use it only when a partial run is sufficient:
 
 ### GPU Running
 
-Use `-jax=gpu` to run on an NVIDIA GPU on Linux or an Apple Silicon GPU on macOS:
+Use `-jax=gpu` to run on an NVIDIA or AMD GPU on Linux or an Apple Silicon GPU on macOS:
 
 ```bash
 ./run_scripts/run_scm.py -jax=gpu -stats none -debug 0 arm
@@ -99,6 +99,32 @@ On NVIDIA systems, select a card using its index from `nvidia-smi`:
 ```bash
 CUDA_VISIBLE_DEVICES=1 ./run_scripts/run_scm.py -jax=gpu arm
 ```
+
+### AMD ROCm on Linux
+
+Run JAX on CPU or an AMD GPU. GPU runs require a complete ROCm 7.2.x HIP SDK
+(7.2.4 tested), Python 3.12–3.14, and access to `/dev/kfd` and `/dev/dri`.
+Set `ROCM_PATH` for a nonstandard installation. The launcher installs the
+matching JAX packages into `.venv-jax-rocm` on first use.
+
+```bash
+./run_scripts/run_scm.py -jax=cpu arm
+CLUBB_JAX_ACCELERATOR=rocm ./run_scripts/run_scm.py -jax=gpu arm
+./clubb_jax/run_jax.py -accelerator=rocm -info
+```
+
+Use `ROCR_VISIBLE_DEVICES` to select a GPU; `rocminfo` and `rocm-smi` inspect it.
+GPU runs retain double precision and do not silently fall back to CPU.
+
+Known issues:
+
+- Radeon 8060S (`gfx1151`) needs crash workarounds: the launcher disables
+  autotuning and command capture and uses native JAX Cholesky on the GPU.
+  These may reduce performance; explicit settings override the defaults.
+- Morrison's single-precision arithmetic can exceed JAX-versus-Fortran
+  comparison tolerances on AMD GPUs. No Morrison math workarounds are applied.
+- Large SILHS random permutations fail on `gfx1151` in the tested ROCm/JAX
+  runtime. Use CPU for SILHS until this GPU issue is resolved.
 
 CUDA memory preallocation is off by default unless enabled through the
 `XLA_PYTHON_CLIENT_PREALLOCATE` environment variable. This lets JAX allocate

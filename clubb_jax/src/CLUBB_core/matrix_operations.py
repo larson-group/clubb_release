@@ -10,7 +10,12 @@ because no JAX source currently calls them.  LAPACK ``poequ``/``laqsy``/``potrf`
 are represented with JAX/NumPy-equivalent algebra.  The tau-on-diagonal fallback
 only triggers on a concrete non-positive-definite input and is skipped under a
 JAX trace; the positive-definite path remains differentiable.
+With ``CLUBB_JAX_PORTABLE_CHOLESKY=1``, small PDF matrices use a native JAX
+Cholesky factorization instead of the vendor's batched solver kernel. Scaling,
+dtype, lower-triangle ownership, and the concrete diagonal-retry path are retained.
 """
+import os
+
 import jax
 import jax.numpy as jnp
 
@@ -43,6 +48,19 @@ def mirror_lower_triangular_matrix(matrix):
     #----- Begin Code -----
     lower = jnp.tril(m)
     return lower + jnp.tril(m, -1).T
+
+
+def _portable_cholesky(matrix):
+    matrix = (matrix + matrix.T) * 0.5
+    factor = jnp.zeros_like(matrix)
+    for column in range(matrix.shape[0]):
+        diagonal = jnp.sqrt(matrix[column, column] - jnp.sum(factor[column, :column] ** 2))
+        factor = factor.at[column, column].set(diagonal)
+        product = jnp.sum(factor[column + 1:, :column] * factor[column, :column], axis=-1)
+        entries = (matrix[column + 1:, column] - product) / diagonal
+        factor = factor.at[column + 1:, column].set(entries)
+    diagonal = jnp.diagonal(factor)
+    return jnp.where(jnp.any(jnp.isnan(diagonal) | (diagonal <= 0.0)), jnp.nan, factor)
 
 
 def Cholesky_factor(a_input):
@@ -87,8 +105,11 @@ def Cholesky_factor(a_input):
 
     def _factor(m):
         # Lapack Cholesky factorization, spotrf for single or dpotrf for double precision
-        L = jnp.linalg.cholesky(m)
-        return jnp.where(mask, L, m)
+        if os.environ.get("CLUBB_JAX_PORTABLE_CHOLESKY") == "1":
+            factor = _portable_cholesky(m)
+        else:
+            factor = jnp.linalg.cholesky(m)
+        return jnp.where(mask, factor, m)
 
     a_cholesky = _factor(a_work)
 

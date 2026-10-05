@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import fcntl
 import hashlib
+import json
 import os
-import platform
 import shutil
 import subprocess
 import sys
@@ -25,14 +25,12 @@ UV_VERSION = "0.11.32"
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 RUNTIME_INFO = SCRIPT_DIR / "runtime_info.py"
-
-
-class LauncherError(RuntimeError):
-    """A user-facing launcher configuration or setup error."""
-
-
-def fail(message: str) -> None:
-    raise LauncherError(message)
+if __package__:
+    from . import backends
+    from .backends.common import LauncherError, fail
+else:
+    import backends
+    from backends.common import LauncherError, fail
 
 
 def usage() -> str:
@@ -47,14 +45,14 @@ Options:
   -options=VALUE        Parse the value forwarded by run_scm.py -jax=VALUE:
                          cpu or gpu, optionally followed by ,xla_prealloc
   -profile=cpu|gpu      Select CPU or the host-native GPU backend
-  -accelerator=VALUE    Select an explicit backend: cpu, cuda13, or metal
+  -accelerator=VALUE    Select an explicit backend: cpu, cuda13, rocm, or metal
   -xla_prealloc         Enable CUDA memory preallocation (CUDA only)
   -init_env             Prepare the environment without running a case
   -info[=json]          Inspect hardware and runtime readiness without setup
   -launcher_help        Show this help
 
 Environment:
-  CLUBB_JAX_ACCELERATOR  Backend used when no option is given: cpu, cuda13, metal
+  CLUBB_JAX_ACCELERATOR  Backend used when no option is given: cpu, cuda13, rocm, metal
   CLUBB_JAX_VENV         Override the profile virtualenv path
   CLUBB_JAX_TOOLS_DIR    Managed uv/Python path (default: .clubb-jax-tools)
   PYTHON                 Python used when creating a new virtualenv
@@ -125,7 +123,7 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
                 fail("-accelerator may be specified only once")
             accelerator = token.split("=", 1)[1]
             if not accelerator:
-                fail("-accelerator requires cpu, cuda13, or metal")
+                fail("-accelerator requires cpu, cuda13, rocm, or metal")
             values["accelerator"] = accelerator.lower()
         elif token == "-xla_prealloc":
             if prealloc_seen:
@@ -153,10 +151,6 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
     return values, list(argv[index:])
 
 
-def _native_gpu_accelerator() -> str:
-    return "metal" if platform.system() == "Darwin" else "cuda13"
-
-
 def resolve_accelerator(values: dict[str, object]) -> tuple[str, str]:
     accelerator = values["accelerator"]
     profile = values["profile"]
@@ -164,27 +158,24 @@ def resolve_accelerator(values: dict[str, object]) -> tuple[str, str]:
         if profile == "cpu":
             accelerator = "cpu"
         elif profile == "gpu":
-            accelerator = _native_gpu_accelerator()
-        elif profile in {"cuda13", "metal"}:
+            accelerator = backends.native_gpu_accelerator()
+        elif profile in backends.BACKENDS:
             accelerator = profile
         else:
             fail(f"JAX profile must be 'cpu' or 'gpu'; got: {profile}")
     if accelerator is None:
         accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").strip().lower()
         if accelerator == "gpu":
-            accelerator = _native_gpu_accelerator()
-    if accelerator not in {"cpu", "cuda13", "metal"}:
-        fail(f"CLUBB_JAX_ACCELERATOR must be cpu, cuda13, or metal; got: {accelerator}")
-    resolved_profile = "cpu" if accelerator == "cpu" else "gpu"
+            accelerator = backends.native_gpu_accelerator()
+    if accelerator not in backends.BACKENDS:
+        fail(f"CLUBB_JAX_ACCELERATOR must be cpu, cuda13, rocm, or metal; got: {accelerator}")
+    resolved_profile = backends.get_backend(str(accelerator)).PROFILE
     return str(accelerator), resolved_profile
 
 
 def runtime_paths(accelerator: str) -> tuple[Path, Path, str]:
-    if accelerator == "cpu":
-        return SCRIPT_DIR / "requirements.txt", REPO_ROOT / ".venv-jax", "cpu"
-    if accelerator == "cuda13":
-        return SCRIPT_DIR / "requirements-cuda13.txt", REPO_ROOT / ".venv-jax-cuda13", "cuda"
-    return SCRIPT_DIR / "requirements-metal.txt", REPO_ROOT / ".venv-jax-metal", "METAL"
+    backend = backends.get_backend(accelerator)
+    return SCRIPT_DIR / backend.REQUIREMENTS, REPO_ROOT / backend.VENV, backend.PLATFORM
 
 
 def _python_version(executable: Path | str) -> tuple[int, int]:
@@ -213,16 +204,16 @@ def _python_is_compatible(executable: Path | str, accelerator: str) -> bool:
     if not _python_is_supported(executable):
         return False
     version = _python_version(executable)
-    return accelerator != "metal" or version < (3, 13)
+    backend = backends.get_backend(accelerator)
+    maximum = getattr(backend, "MAX_PYTHON", None)
+    return version >= backend.MIN_PYTHON and (maximum is None or version <= maximum)
 
 
 def _jax_version_for(executable: Path | str, accelerator: str) -> str:
-    if accelerator == "metal":
-        # jax-metal 0.1.1 is Apple's latest plugin and is qualified against
-        # the JAX 0.4.34 release line. Keep this runtime isolated from the
-        # newer CPU/CUDA environments.
-        return "0.4.34"
-    return "0.11.0" if _python_version(executable) >= (3, 12) else "0.10.0"
+    backend = backends.get_backend(accelerator)
+    if hasattr(backend, "JAX_VERSION"):
+        return backend.JAX_VERSION
+    return backend.jax_version(_python_version(executable))
 
 
 def _find_python(accelerator: str = "cpu") -> Path | None:
@@ -232,14 +223,10 @@ def _find_python(accelerator: str = "cpu") -> Path | None:
         if not found:
             fail(f"PYTHON does not exist: {explicit}")
         if not _python_is_compatible(found, accelerator):
-            requirement = "Python 3.11 or 3.12" if accelerator == "metal" else "Python 3.11+"
+            requirement = backends.get_backend(accelerator).PYTHON_REQUIREMENT
             fail(f"JAX {accelerator} requires {requirement}; selected: {explicit}")
         return Path(found)
-    names = (
-        ("python3.12", "python3.11")
-        if accelerator == "metal"
-        else ("python3.14", "python3.13", "python3.12", "python3.11", "python3", "python")
-    )
+    names = backends.get_backend(accelerator).PYTHON_NAMES
     for name in names:
         found = shutil.which(name)
         if found and _python_is_compatible(found, accelerator):
@@ -303,7 +290,11 @@ def _inspection_python(venv: Path, accelerator: str) -> tuple[Path, str, str]:
     else:
         # Match _prepare_environment's managed Python fallback.
         planned_python = "3.12"
-        required_jax = "0.4.34" if accelerator == "metal" else "0.11.0"
+        backend = backends.get_backend(accelerator)
+        required_jax = (
+            backend.JAX_VERSION if hasattr(backend, "JAX_VERSION")
+            else backend.jax_version((3, 12))
+        )
     return Path(sys.executable), planned_python, required_jax
 
 
@@ -340,43 +331,19 @@ def _run_inspection(
     return subprocess.run(command, env=env).returncode
 
 
-def _normalize_cuda_visibility(env: dict[str, str], venv: Path) -> None:
-    if "CUDA_VISIBLE_DEVICES" not in env:
-        return
-    info_python, _, _ = _inspection_python(venv, "cuda13")
-    result = subprocess.run(
-        [
-            str(info_python),
-            str(RUNTIME_INFO),
-            "-resolve_visible_devices",
-            env["CUDA_VISIBLE_DEVICES"],
-        ],
-        env=env,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        detail = result.stderr.strip() or "unknown selection error"
-        fail(f"Could not resolve CUDA_VISIBLE_DEVICES against nvidia-smi: {detail}")
-    env["CUDA_VISIBLE_DEVICES"] = result.stdout.strip()
-
-
 def _packages_are_ready(venv_python: Path, required_jax: str, accelerator: str) -> bool:
+    expected = backends.get_backend(accelerator).expected_packages(required_jax)
     script = """
 from importlib.metadata import version
+import json
 import sys
-assert version('jax') == sys.argv[1]
-assert version('jaxlib') == sys.argv[1]
+for package, required in json.loads(sys.argv[1]).items():
+    assert version(package) == required
 for package in ('netCDF4', 'pytest', 'tabulate'):
     version(package)
-if sys.argv[2] == 'cuda13':
-    assert version('jax-cuda13-plugin') == sys.argv[1]
-    assert version('jax-cuda13-pjrt') == sys.argv[1]
-elif sys.argv[2] == 'metal':
-    assert version('jax-metal') == '0.1.1'
 """
     result = subprocess.run(
-        [str(venv_python), "-c", script, required_jax, accelerator],
+        [str(venv_python), "-c", script, json.dumps(expected)],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -442,8 +409,13 @@ def _prepare_environment(
                 f"requirements from {requirements}",
                 flush=True,
             )
+            command = [str(uv), "pip", "install", "--python", str(venv_python), "-r", str(requirements)]
+            backend = backends.get_backend(accelerator)
+            install_arguments = getattr(backend, "install_arguments", None)
+            if install_arguments is not None:
+                command.extend(install_arguments(_python_version(venv_python), tools_dir))
             subprocess.run(
-                [str(uv), "pip", "install", "--python", str(venv_python), "-r", str(requirements)],
+                command,
                 env=env,
                 check=True,
             )
@@ -462,15 +434,12 @@ def _print_runtime_summary(venv_python: Path, accelerator: str) -> None:
 
 
 def _verify_backend(venv_python: Path, accelerator: str, env: dict[str, str]) -> None:
-    expected = {"cpu": "cpu", "cuda13": "gpu", "metal": "metal"}[accelerator]
+    backend = backends.get_backend(accelerator)
     script = """
 import jax, jaxlib, sys
 backend = jax.default_backend().lower()
 expected = sys.argv[1]
-if expected == 'metal':
-    ok = backend == 'metal' or any(str(d.platform).lower() == 'metal' for d in jax.devices())
-else:
-    ok = backend == expected
+""" + backend.VERIFY_SCRIPT + "\n" + """
 assert ok, f'requested {expected} but JAX initialized {backend}: {jax.devices()}'
 devices = jax.devices()
 labels = []
@@ -482,7 +451,7 @@ for device in devices:
 print(f'  JAX: {jax.__version__} (jaxlib {jaxlib.__version__})')
 print(f'  {"Device" if len(labels) == 1 else "Devices"}: {", ".join(labels)}')
 """
-    subprocess.run([str(venv_python), "-c", script, expected], env=env, check=True)
+    subprocess.run([str(venv_python), "-c", script, backend.EXPECTED_BACKEND], env=env, check=True)
 
 
 def ensure_environment() -> None:
@@ -524,33 +493,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     env["CLUBB_JAX_PROFILE"] = profile
     env["CLUBB_JAX_ACCELERATOR"] = accelerator
     env["JAX_PLATFORMS"] = jax_platform
+    backend = backends.get_backend(accelerator)
     xla_prealloc = bool(values["xla_prealloc"])
-    if xla_prealloc and accelerator != "cuda13":
+    if xla_prealloc and not getattr(backend, "SUPPORTS_PREALLOCATION", False):
         fail("-xla_prealloc is a CUDA-only option")
-    if accelerator == "cuda13":
-        env["XLA_PYTHON_CLIENT_PREALLOCATE"] = (
-            "true" if xla_prealloc else env.get("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
-        )
-        if not env.get("CUDA_DEVICE_ORDER"):
-            env["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-            env["CLUBB_JAX_CUDA_DEVICE_ORDER_SOURCE"] = "launcher default"
-        else:
-            env["CLUBB_JAX_CUDA_DEVICE_ORDER_SOURCE"] = "user setting"
-    elif accelerator == "metal":
-        env.setdefault("ENABLE_PJRT_COMPATIBILITY", "1")
-        # Apple's Metal plugin supports float32 but not float64. Users can
-        # still override this explicitly to diagnose future plugin releases.
-        env.setdefault("CLUBB_JAX_PRECISION", "single")
-        env.setdefault(
-            "PYTHONWARNINGS",
-            "ignore:Explicitly requested dtype:UserWarning",
-        )
+    configure_environment = getattr(backend, "configure_environment", None)
+    if configure_environment is not None:
+        configure_environment(env, tools_dir, xla_prealloc)
 
     info_format = values["info_format"]
     if info_format is not None:
         return _run_inspection(profile, accelerator, requirements, venv, str(info_format), env)
 
-    if accelerator != "cpu":
+    if backend.PROFILE == "gpu":
         if _run_inspection(
             profile,
             accelerator,
@@ -560,13 +515,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             env,
             require_selectable=True,
         ) != 0:
-            backend_name = "CUDA" if accelerator == "cuda13" else "Metal"
+            backend_name = backend.LABEL
             fail(
                 f"{accelerator} profile is unavailable; "
                 f"no {backend_name} environment was created"
             )
-    if accelerator == "cuda13":
-        _normalize_cuda_visibility(env, venv)
+    prepare_run = getattr(backend, "prepare_run", None)
+    if prepare_run is not None:
+        prepare_run(env)
 
     venv_python = _prepare_environment(accelerator, requirements, venv, tools_dir, env)
     _print_runtime_summary(venv_python, accelerator)

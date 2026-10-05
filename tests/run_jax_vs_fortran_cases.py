@@ -575,7 +575,7 @@ def main() -> int:
     args = parse_args()
     ensure_environment()
     accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").lower()
-    if accelerator in {"cuda13", "metal"} and args.jobs != 1:
+    if accelerator in {"cuda13", "rocm", "metal"} and args.jobs != 1:
         print(
             "WARNING: GPU comparison currently runs one case process at a time to avoid "
             "multiple JAX workers contending for the same device; forcing -workers 1."

@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from clubb_jax import run_jax
+from clubb_jax.backends import metal, rocm
 from run_scripts import run_scm
 
 
@@ -89,7 +90,8 @@ def test_wrapper_rejects_preallocation_on_cpu():
     [("Darwin", "metal"), ("Linux", "cuda13")],
 )
 def test_gpu_profile_resolves_to_the_host_native_backend(system, expected, monkeypatch):
-    monkeypatch.setattr(run_jax.platform, "system", lambda: system)
+    monkeypatch.setattr(metal.platform, "system", lambda: system)
+    monkeypatch.setattr(rocm, "has_gpu", lambda: False)
     values, driver_args = run_jax.parse_launcher_args(["-profile=gpu", "arm.in"])
 
     accelerator, profile = run_jax.resolve_accelerator(values)
@@ -158,7 +160,7 @@ def test_comparison_help_does_not_prepare_environment(tmp_path):
     assert not (tmp_path / "tools").exists()
 
 
-@pytest.mark.parametrize("accelerator", ["cpu", "cuda13", "metal"])
+@pytest.mark.parametrize("accelerator", ["cpu", "cuda13", "rocm", "metal"])
 @pytest.mark.parametrize("custom_venv", [None, "custom-runtime"])
 def test_environment_setup_uses_launcher_paths_and_restarts_once(
     accelerator, custom_venv, tmp_path, monkeypatch
@@ -183,7 +185,7 @@ def test_environment_setup_uses_launcher_paths_and_restarts_once(
     monkeypatch.setattr(run_jax.os, "execve", lambda *args: launched.append(args))
     run_jax.ensure_environment()
     assert setup == [[str(run_jax.SCRIPT_DIR / "run_jax.py"), "-init_env"]]
-    default = {"cpu": ".venv-jax", "cuda13": ".venv-jax-cuda13", "metal": ".venv-jax-metal"}
+    default = {"cpu": ".venv-jax", "cuda13": ".venv-jax-cuda13", "rocm": ".venv-jax-rocm", "metal": ".venv-jax-metal"}
     python = str(tmp_path / (custom_venv or default[accelerator]) / "bin/python")
     assert launched[0][:2] == (python, [python, *sys.argv])
     assert launched[0][2][marker] == python

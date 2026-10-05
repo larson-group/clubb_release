@@ -10,10 +10,11 @@ from pathlib import Path
 import pytest
 
 from clubb_jax import runtime_info
+from clubb_jax.backends import cpu, cuda, metal
 
 
 def test_cuda13_rejects_an_old_driver():
-    selectable, reason = runtime_info._gpu_compatibility(
+    selectable, reason = cuda.compatibility(
         [
             {
                 "name": "Test GPU",
@@ -30,7 +31,7 @@ def test_cuda13_rejects_an_old_driver():
 
 
 def test_cuda13_accepts_a_three_component_new_driver_version():
-    selectable, reason = runtime_info._gpu_compatibility(
+    selectable, reason = cuda.compatibility(
         [
             {
                 "name": "Test GPU",
@@ -46,7 +47,7 @@ def test_cuda13_accepts_a_three_component_new_driver_version():
 
 
 def test_cuda13_rejects_an_old_compute_capability():
-    selectable, reason = runtime_info._gpu_compatibility(
+    selectable, reason = cuda.compatibility(
         [
             {
                 "name": "Test GPU",
@@ -72,7 +73,7 @@ def test_gpu_query_retries_without_compute_capability(monkeypatch):
             ),
         )
     )
-    monkeypatch.setattr(runtime_info.shutil, "which", lambda _name: "/usr/bin/nvidia-smi")
+    monkeypatch.setattr(cuda.shutil, "which", lambda _name: "/usr/bin/nvidia-smi")
     commands = []
 
     def query(command, **_kwargs):
@@ -81,7 +82,7 @@ def test_gpu_query_retries_without_compute_capability(monkeypatch):
 
     monkeypatch.setattr(runtime_info.subprocess, "run", query)
 
-    gpus, error = runtime_info._query_nvidia_gpus()
+    gpus, error = cuda.query_gpus()
 
     assert error == ""
     assert len(commands) == 2
@@ -126,7 +127,7 @@ def test_gpu_report_labels_expected_device_without_claiming_backend_ready(monkey
             "pci_bus_id": "00000000:02:00.0",
         },
     ]
-    monkeypatch.setattr(runtime_info, '_query_nvidia_gpus', lambda: (gpus, ''))
+    monkeypatch.setattr(cuda, 'query_gpus', lambda: (gpus, ''))
     requirements = tmp_path / 'requirements.txt'
     requirements.touch()
     info = runtime_info.inspect_runtime(
@@ -148,8 +149,8 @@ def test_gpu_report_labels_expected_device_without_claiming_backend_ready(monkey
 
 def test_numeric_visible_device_resolves_to_its_nvidia_smi_uuid(monkeypatch):
     monkeypatch.setattr(
-        runtime_info,
-        "_query_nvidia_gpus",
+        cuda,
+        "query_gpus",
         lambda: (
             [
                 {"index": "0", "uuid": "GPU-test-a"},
@@ -159,16 +160,16 @@ def test_numeric_visible_device_resolves_to_its_nvidia_smi_uuid(monkeypatch):
         ),
     )
 
-    assert runtime_info.resolve_visible_devices("1,0") == "GPU-test-b,GPU-test-a"
-    assert runtime_info.resolve_visible_devices("GPU-test-b") == "GPU-test-b"
+    assert cuda.resolve_visible_devices("1,0") == "GPU-test-b,GPU-test-a"
+    assert cuda.resolve_visible_devices("GPU-test-b") == "GPU-test-b"
 
 
 def test_missing_environment_requires_setup_but_remains_selectable(tmp_path, monkeypatch):
     requirements = tmp_path / "requirements.txt"
     requirements.write_text("jax[cpu]==0.11.0\n", encoding="utf-8")
     monkeypatch.setattr(
-        runtime_info,
-        "_cpu_info",
+        cpu,
+        "hardware_info",
         lambda: {"model": "Test CPU", "logical_cpus": 8},
     )
 
@@ -192,8 +193,8 @@ def test_human_output_labels_planned_versions(tmp_path, monkeypatch):
     requirements = tmp_path / "requirements.txt"
     requirements.write_text("jax[cpu]==0.11.0\n", encoding="utf-8")
     monkeypatch.setattr(
-        runtime_info,
-        "_cpu_info",
+        cpu,
+        "hardware_info",
         lambda: {"model": "Test CPU", "logical_cpus": 8},
     )
     info = runtime_info.inspect_runtime(
@@ -324,11 +325,11 @@ def gpu_inventory():
 @pytest.mark.parametrize('selector', ['', '-1', '9', 'GPU-missing', 'GPU-test', '0,0', '1,,0'])
 def test_invalid_selection_is_rejected(gpu_inventory, selector):
     with pytest.raises(ValueError):
-        runtime_info.select_gpus(gpu_inventory, selector)
+        cuda.select_gpus(gpu_inventory, selector)
 
 
 def test_explicit_selection_preserves_order_and_expands_unique_prefix(gpu_inventory):
-    selection = runtime_info.select_gpus(gpu_inventory, 'GPU-test-b,0')
+    selection = cuda.select_gpus(gpu_inventory, 'GPU-test-b,0')
     assert [gpu['index'] for gpu in selection.devices] == ['1', '0']
     assert selection.resolved_devices == 'GPU-test-b,GPU-test-a'
 
@@ -336,7 +337,7 @@ def test_explicit_selection_preserves_order_and_expands_unique_prefix(gpu_invent
 @pytest.mark.parametrize(('selector', 'compatible'), [('0', False), ('1', True), ('1,0', False), ('', False)])
 def test_preflight_checks_exposed_gpus_only(monkeypatch, tmp_path, gpu_inventory, selector, compatible):
     monkeypatch.setenv('CUDA_VISIBLE_DEVICES', selector)
-    monkeypatch.setattr(runtime_info, '_query_nvidia_gpus', lambda: (gpu_inventory, ''))
+    monkeypatch.setattr(cuda, 'query_gpus', lambda: (gpu_inventory, ''))
     requirements = tmp_path / 'requirements.txt'
     requirements.touch()
     info = runtime_info.inspect_runtime('gpu', 'cuda13', requirements, tmp_path / 'venv', '0.11.0')
@@ -347,7 +348,7 @@ def test_preflight_checks_exposed_gpus_only(monkeypatch, tmp_path, gpu_inventory
 def test_fastest_first_without_selector_does_not_guess_default(monkeypatch, tmp_path, gpu_inventory):
     monkeypatch.delenv('CUDA_VISIBLE_DEVICES', raising=False)
     monkeypatch.setenv('CUDA_DEVICE_ORDER', 'FASTEST_FIRST')
-    monkeypatch.setattr(runtime_info, '_query_nvidia_gpus', lambda: (gpu_inventory, ''))
+    monkeypatch.setattr(cuda, 'query_gpus', lambda: (gpu_inventory, ''))
     requirements = tmp_path / 'requirements.txt'
     requirements.touch()
     info = runtime_info.inspect_runtime('gpu', 'cuda13', requirements, tmp_path / 'venv', '0.11.0')
@@ -357,11 +358,11 @@ def test_fastest_first_without_selector_does_not_guess_default(monkeypatch, tmp_
 
 
 def test_truncated_nvidia_row_returns_unavailable(monkeypatch):
-    monkeypatch.setattr(runtime_info.shutil, 'which', lambda _: '/test/nvidia-smi')
+    monkeypatch.setattr(cuda.shutil, 'which', lambda _: '/test/nvidia-smi')
     monkeypatch.setattr(runtime_info.subprocess, 'run', lambda *a, **kw: subprocess.CompletedProcess(
         [], 0, '0,GPU-test,Test GPU,610.10.01,8192,8.0\n', ''
     ))
-    gpus, error = runtime_info._query_nvidia_gpus()
+    gpus, error = cuda.query_gpus()
     assert not gpus
     assert error
 
@@ -388,7 +389,7 @@ def test_metal_query_accepts_gpu_family_capability(monkeypatch):
         ),
     )
 
-    gpus, error = runtime_info._query_metal_gpus()
+    gpus, error = metal.query_gpus()
 
     assert error == ""
     assert gpus[0]["name"] == "Apple M1 Max"
@@ -410,7 +411,7 @@ def test_metal_runtime_uses_plugin_requirements(monkeypatch, tmp_path):
         "metal_cores": 32,
         "backend": "metal",
     }
-    monkeypatch.setattr(runtime_info, "_query_metal_gpus", lambda: ([gpu], ""))
+    monkeypatch.setattr(metal, "query_gpus", lambda: ([gpu], ""))
     monkeypatch.setattr(runtime_info.platform, "mac_ver", lambda: ("26.6", ("", "", ""), ""))
 
     info = runtime_info.inspect_runtime(

@@ -73,6 +73,23 @@ the CMake system.
 
 ### Specifying the compiler
 
+#### Arch Linux and CachyOS dependencies
+
+Install the CPU Fortran build dependencies before compiling:
+
+```bash
+sudo pacman -S --needed gcc-fortran cmake ninja netcdf-fortran
+FC=gfortran ./compile.py -run_tests
+```
+
+An isolated compiler environment is also supported: set `FC` to its complete
+compiler path, add its build tools to `PATH`, and set `CMAKE_PREFIX_PATH` to
+the environment prefix containing NetCDF. Target-prefixed GNU compiler
+names such as `x86_64-conda-linux-gnu-gfortran` select the GNU toolchain, and
+an explicit `FC` is passed through to CMake. Keep compiler and NetCDF Fortran
+modules ABI-compatible. For AMD JAX GPU setup, see `clubb_jax/README.md`;
+the Fortran reference executable does not need a GPU build.
+
 The compile script (compile.py) attempts to detect a compiler from the environment variable "FC", 
 and tries to set the toolchain appropriately. If neither `FC` nor `LMOD_FAMILY_COMPILER` is set, it 
 will also try to find `gfortran` on `PATH` and use the corresponding default toolchain.

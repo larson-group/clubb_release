@@ -45,7 +45,10 @@ def canonical_compiler(name):
 
 def canonical_compiler_from_path(path):
     """Map a compiler executable path to its canonical toolchain name."""
-    return canonical_compiler(os.path.basename(path))
+    name = os.path.basename(path).lower()
+    if name.endswith("-gfortran"):
+        return "gcc"
+    return canonical_compiler(name)
 
 
 def update_install_aliases(install_dir, update_selected=True, install_root=None):
@@ -248,6 +251,9 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
         ])
     # --------------------------------
 
+
+    if os.environ.get("FC"):
+        cmake_cmd.append(f"-DCMAKE_Fortran_COMPILER={shutil.which(fc_env) or fc_env}")
 
     if shutil.which("ninja"):
         cmake_cmd += ["-G", "Ninja"]
