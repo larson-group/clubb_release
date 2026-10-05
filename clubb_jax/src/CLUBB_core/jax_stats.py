@@ -327,6 +327,20 @@ class JaxStats:
         )
         return self._new(buffers=buffers, nsamples=nsamples, issues=issues)
 
+    def average_subtimesteps(self, previous, num_subtimesteps):
+        """Finish source stats_update(sub_timestep_average=.true.) calls.
+
+        JAX adaptation: average only the sample-loop increments, preserving
+        earlier timestep/window statistics and counting one aggregate update.
+        """
+        buffers = tuple(
+            old + (new - old) / num_subtimesteps for old, new in zip(previous.buffers, self.buffers)
+        )
+        nsamples = tuple(
+            old + (new - old) // num_subtimesteps for old, new in zip(previous.nsamples, self.nsamples)
+        )
+        return self._new(buffers=buffers, nsamples=nsamples)
+
     def begin_budget(self, name: str, values, *, icol: int | None = None):
         """Mirror ``stats_begin_budget``."""
         clean_name = name.strip()

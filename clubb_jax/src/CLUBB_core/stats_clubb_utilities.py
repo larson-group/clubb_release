@@ -2,7 +2,7 @@
 
 Porting deviations:
 - ``stats_accumulate`` and ``stats_accumulate_hydromet_api`` are ported.
-  ``stats_accumulate_lh_tend`` remains absent because SILHS is disabled.
+  SILHS tendency diagnostics follow the source stats update order.
 - Fortran ``stats_type`` mutation through ``stats_update`` is represented by
   functional updates to the JAX stats state.
 - OpenACC host/device synchronization comments are omitted because JAX handles
@@ -436,16 +436,111 @@ def stats_accumulate(
 __all__ = ["stats_accumulate"]
 
 
-def stats_accumulate_hydromet_api(gr, ngrdcol, hydromet_dim, hm_metadata, hydromet, rho_ds_zt, stats):
-    """Compute hydrometeor statistics; columns are batched in JAX."""
-    for name, idx in [('rrm', hm_metadata.iirr), ('rsm', hm_metadata.iirs),
-                      ('rim', hm_metadata.iiri), ('rgm', hm_metadata.iirg),
-                      ('Nim', hm_metadata.iiNi), ('Nrm', hm_metadata.iiNr),
-                      ('Nsm', hm_metadata.iiNs), ('Ngm', hm_metadata.iiNg)]:
+def stats_accumulate_hydromet_api(
+    gr, ngrdcol, hydromet_dim,  # In
+    hm_metadata, hydromet,      # In
+    rho_ds_zt,                  # In
+    stats,                      # InOut
+):
+    """Compute hydrometeor statistics; columns are batched in JAX.
+
+    Arguments:
+        gr: Grid coordinates, interpolation weights and vertical metrics.
+        ngrdcol: Number of grid columns.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
+        hydromet: All hydrometeors except for rcm [units vary]
+        rho_ds_zt: Dry, static density (thermo. levs.) [kg/m^3]
+        stats: Immutable statistics state; return its updated value.
+    """
+    # Mean species profiles, omitting fields absent from the selected scheme.
+    for name, idx in [
+        ("rrm", hm_metadata.iirr),
+        ("rsm", hm_metadata.iirs),
+        ("rim", hm_metadata.iiri),
+        ("rgm", hm_metadata.iirg),
+        ("Nim", hm_metadata.iiNi),
+        ("Nrm", hm_metadata.iiNr),
+        ("Nsm", hm_metadata.iiNs),
+        ("Ngm", hm_metadata.iiNg),
+    ]:
         if idx >= 0:
             stats = stats.update(name, hydromet[..., idx])
-    for name, idx in [('swp', hm_metadata.iirs), ('iwp', hm_metadata.iiri), ('rwp', hm_metadata.iirr)]:
+
+    # Column snow/ice/rain water paths: integrate mixing ratio against dry
+    # static density and layer thickness, only for requested diagnostics.
+    for name, idx in [
+        ("swp", hm_metadata.iirs),
+        ("iwp", hm_metadata.iiri),
+        ("rwp", hm_metadata.iirr),
+    ]:
         if idx >= 0 and stats.var_on_stats_list(name):
-            xtmp = jnp.stack([vertical_integral(gr.nzt, rho_ds_zt[i], hydromet[i, :, idx], gr.dzt[i]) for i in range(gr.ngrdcol)])
+            xtmp = jnp.stack(
+                [
+                    vertical_integral(gr.nzt, rho_ds_zt[i], hydromet[i, :, idx], gr.dzt[i])
+                    for i in range(gr.ngrdcol)
+                ]
+            )
             stats = stats.update(name, xtmp)
+    return stats
+
+
+def stats_accumulate_lh_tend(
+    gr, ngrdcol, hydromet_dim, hm_metadata,  # In
+    lh_hydromet_mc, lh_Ncm_mc,               # In
+    lh_thlm_mc, lh_rvm_mc, lh_rcm_mc,        # In
+    lh_AKm, AKm, AKstd, AKstd_cld,           # In
+    lh_rcm_avg, AKm_rcm, AKm_rcc,            # In
+    stats,                                   # InOut
+):
+    """Sampled tendencies from stats_accumulate_lh_tend in the Fortran module.
+
+    Arguments:
+        gr: Grid coordinates, interpolation weights and vertical metrics.
+        ngrdcol: Number of grid columns.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
+        lh_hydromet_mc: Tendency of hydrometeors except for rvm/rcm [units vary]
+        lh_Ncm_mc: Tendency of cloud droplet concentration [num/kg/s]
+        lh_thlm_mc: Tendency of liquid potential temperature [kg/kg/s]
+        lh_rvm_mc: Tendency of vapor [kg/kg/s]
+        lh_rcm_mc: Tendency of cloud water [kg/kg/s]
+        lh_AKm: Kessler ac estimate [kg/kg/s]
+        AKm: Exact Kessler ac [kg/kg/s]
+        AKstd: St dev of exact Kessler ac [kg/kg/s]
+        AKstd_cld: Stdev of exact w/in cloud ac [kg/kg/s]
+        lh_rcm_avg: Monte Carlo rcm estimate [kg/kg]
+        AKm_rcm: Kessler ac based on rcm [kg/kg/s]
+        AKm_rcc: Kessler ac based on rcm/cloud_frac [kg/kg/s]
+        stats: Immutable statistics state; return its updated value.
+    """
+    # Accumulate mean sampled tendencies, followed by available hydrometeors
+    # and Kessler sampling/analytic diagnostics, in the source update order.
+    if stats.l_sample:
+        stats = stats.update("lh_thlm_mc", lh_thlm_mc)
+        stats = stats.update("lh_rcm_mc", lh_rcm_mc)
+        stats = stats.update("lh_rvm_mc", lh_rvm_mc)
+        stats = stats.update("lh_Ncm_mc", lh_Ncm_mc)
+        for name, index in (
+            ("rrm", hm_metadata.iirr),
+            ("rsm", hm_metadata.iirs),
+            ("rim", hm_metadata.iiri),
+            ("rgm", hm_metadata.iirg),
+            ("Nim", hm_metadata.iiNi),
+            ("Nrm", hm_metadata.iiNr),
+            ("Nsm", hm_metadata.iiNs),
+            ("Ngm", hm_metadata.iiNg),
+        ):
+            if index >= 0:
+                stats = stats.update("lh_" + name + "_mc", lh_hydromet_mc[..., index])
+        for name, value in (
+            ("AKm", AKm),
+            ("lh_AKm", lh_AKm),
+            ("lh_rcm_avg", lh_rcm_avg),
+            ("AKstd", AKstd),
+            ("AKstd_cld", AKstd_cld),
+            ("AKm_rcm", AKm_rcm),
+            ("AKm_rcc", AKm_rcc),
+        ):
+            stats = stats.update(name, value)
     return stats

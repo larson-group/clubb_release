@@ -54,8 +54,7 @@ class CaseConfig:
         return self.input_case or self.case
 
 
-# Curated JAX coverage, including supported microphysics. Unsupported driver
-# features (e.g. SILHS) remain excluded.
+# Curated JAX coverage, including supported microphysics.
 DEFAULT_CASES = (
     # --- Cases without microphysics ---
     # Turbulence, forcing and radiation coverage at the standard tolerances.
@@ -96,6 +95,35 @@ DEFAULT_CASES = (
     }),
     CaseConfig("clex9_oct14", 73, percent_threshold=1.0e-3),  # 13 active rain/ice steps.
     CaseConfig("nov11_altocu", 62, percent_threshold=1.0e-3),  # 2 active rain/ice steps.
+
+    # --- SILHS sampled KK microphysics ---
+    # Ordered strata and repeating/overlap inputs exercise interactive sampled
+    # physics without requiring matching native random generators. Independent
+    # importance/start-level randomness is disabled for this comparison mode.
+    CaseConfig("rico_silhs", 360, 60, overrides={
+        "configurable_silhs_flags_nl.l_lh_deterministic_test": True,
+        "configurable_silhs_flags_nl.l_lh_importance_sampling": False,
+        "configurable_silhs_flags_nl.l_random_k_lh_start": False,
+    }),
+    # Native LBA sounding and 64 samples; local warm-rain KK replaces Morrison.
+    CaseConfig("lba_kk_silhs", 240, 60, input_case="lba", overrides={
+        "microphysics_setting.microphys_scheme": '"khairoutdinov_kogan"',
+        "microphysics_setting.lh_microphys_type": '"interactive"',
+        "microphysics_setting.l_local_kk": True,
+        "microphysics_setting.l_ice_microphys": False,
+        "microphysics_setting.l_graupel": False,
+        "configurable_silhs_flags_nl.l_lh_deterministic_test": True,
+        "configurable_silhs_flags_nl.l_lh_importance_sampling": False,
+        "configurable_silhs_flags_nl.l_random_k_lh_start": False,
+    }),
+
+    # --- SILHS sampled Morrison microphysics ---
+    # Native LBA ice/graupel and 64 samples
+    CaseConfig("lba_silhs", 74, 60, input_case="lba", percent_threshold=1.0e-3, overrides={
+        "configurable_silhs_flags_nl.l_lh_deterministic_test": True,
+        "configurable_silhs_flags_nl.l_lh_importance_sampling": False,
+        "configurable_silhs_flags_nl.l_random_k_lh_start": False,
+    }),
 )
 
 RESULTS_DIRNAME = Path("output") / "tests" / "jax_driver_test_results"

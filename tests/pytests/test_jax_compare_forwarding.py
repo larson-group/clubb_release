@@ -30,7 +30,13 @@ def test_comparison_owned_model_options_are_rejected(monkeypatch, option):
     assert exc.value.code == 2
 
 
-def test_both_runs_receive_the_same_forwarded_options(tmp_path):
+@pytest.mark.parametrize("config", [
+    harness.CaseConfig("rico", max_iters=3, dt_main=60),
+    next(config for config in harness.DEFAULT_CASES if config.case == "rico_silhs"),
+    next(config for config in harness.DEFAULT_CASES if config.case == "lba_kk_silhs"),
+    next(config for config in harness.DEFAULT_CASES if config.case == "lba_silhs"),
+], ids=["ordinary", "deterministic_silhs", "deterministic_silhs_variant", "morrison_silhs"])
+def test_both_runs_receive_the_same_forwarded_options(tmp_path, config):
     commands = []
 
     class Supervisor:
@@ -44,12 +50,12 @@ def test_both_runs_receive_the_same_forwarded_options(tmp_path):
             return 0
 
     task = harness.TaskCtx(
-        config=harness.CaseConfig("rico", max_iters=3, dt_main=60),
+        config=config,
         flag_data=harness.FlagData("default", None),
         repo_root=tmp_path,
         run_scm_args=["-max_iters", "3", "-dt_main", "60", "-debug", "0"],
         bindiff_threshold=1e-7,
-        bindiff_percent_threshold=1e-7,
+        bindiff_percent_threshold=config.percent_threshold,
         run_output_root=tmp_path / "results",
         supervisor=Supervisor(),
     )
@@ -57,13 +63,21 @@ def test_both_runs_receive_the_same_forwarded_options(tmp_path):
     jax, fortran, bindiff = commands
     assert result.status == "match"
     assert "-strict" in bindiff
+    assert bindiff[bindiff.index("-percent_threshold") + 1] == str(config.percent_threshold)
     assert jax.count("-max_iters") == fortran.count("-max_iters") == 1
     assert jax.count("-dt_main") == fortran.count("-dt_main") == 1
     start = jax.index("-multicol") + 2
     assert task.run_scm_args == jax[start:start + len(task.run_scm_args)]
     assert task.run_scm_args == fortran[start:start + len(task.run_scm_args)]
     assert "-jax" in jax and "-jax" not in fortran
-    assert jax[-1] == fortran[-1] == "rico"
+    assert jax[-1] == fortran[-1] == config.source_case
+    if config.overrides:
+        override = jax[jax.index("-override") + 1]
+        assert override == fortran[fortran.index("-override") + 1]
+        assert "l_lh_deterministic_test=.true." in override
+        assert "l_lh_importance_sampling=.false." in override
+        assert "l_random_k_lh_start=.false." in override
+        assert config.case in {case.case for case in harness.DEFAULT_CASES}
 
 
 def test_comparison_rejects_empty_explicit_case_list():

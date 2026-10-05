@@ -12,8 +12,14 @@ from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 
 
 def initialize(**config):
-    return init_microphys(0, 'synthetic', config, None, 1000., 1000.,
-                          jnp.zeros((1, 1)), False, True, True)
+    return init_microphys(
+        0, 'synthetic', config, None,  # In
+        1000., 1000.,                  # In
+        jnp.zeros((1, 1)),             # In
+        False,                         # In
+        True,                          # InOut
+        True,                          # InOut
+    )
 
 
 @pytest.mark.parametrize('scheme,ice,graupel,dimension', [
@@ -33,14 +39,18 @@ def test_species_lifecycle(scheme, ice, graupel, dimension):
     assert parameters.l_hydromet_sed == ()
 
 
-@pytest.mark.parametrize('config,reason', [
-    ({'lh_microphys_type':'interactive'}, 'SILHS'),
-    ({'microphys_scheme':'coamps'}, 'Unsupported'),
-    ({'microphys_scheme':'simplified_ice'}, 'Unsupported'),
-    ({'l_gfdl_activation':True}, 'GFDL'),
-    ({'microphys_scheme':'morrison','l_cloud_sed':True}, 'sedimentation'),
-    ({'microphys_scheme':'khairoutdinov_kogan','l_predict_Nc':True}, 'l_predict_Nc'),
-    ({'l_morr_xp2_mc':True}, 'l_morr_xp2_mc')])
+@pytest.mark.parametrize(
+    "config,reason",
+    [
+        ({"lh_microphys_type": "interactive", "microphys_scheme": "none"}, "SILHS"),
+        ({"microphys_scheme": "coamps"}, "Unsupported"),
+        ({"microphys_scheme": "simplified_ice"}, "Unsupported"),
+        ({"l_gfdl_activation": True}, "GFDL"),
+        ({"microphys_scheme": "morrison", "l_cloud_sed": True}, "sedimentation"),
+        ({"microphys_scheme": "khairoutdinov_kogan", "l_predict_Nc": True}, "l_predict_Nc"),
+        ({"l_morr_xp2_mc": True}, "l_morr_xp2_mc"),
+    ],
+)
 def test_disabled_dependencies_rejected(config, reason):
     with pytest.raises(ValueError, match=reason):
         initialize(**config)
@@ -63,9 +73,16 @@ def test_morrison_species_interface_eager_and_jit(dimension, ncol):
     stats=JaxStats.empty(l_sample=True, names=("rrm_auto", "precip_rate_sfc"),
         grids=("zt", "sfc"), ncol=ncol, max_nlev=nzt)
     def run(hm):
-        return morrison_microphys_driver(gr, ncol, 10., nzt, dimension, metadata, False,
-            jnp.linspace(258.,285.,nzt)[None,:]*one, zero, 90000.*one, one, one, 0.5*one, 0.2*one, 100.*one,
-            1.e-4*one, 1.e8*one, zero, 0.007*one, hm, 1, one, stats)
+        return morrison_microphys_driver(
+            gr, ncol, 10., nzt,                                                # In
+            dimension, metadata,                                               # In
+            False, jnp.linspace(258.,285.,nzt)[None,:]*one, zero, 90000.*one,  # In
+            one, one, 0.5*one, 0.2*one,                                        # In
+            100.*one, 1.e-4*one, 1.e8*one, zero, 0.007*one, hm,                # In
+            1,                                                                 # In
+            one,                                                               # In
+            stats,                                                             # InOut
+        )
     eager=run(hydromet)
     compiled=jax.jit(run)(hydromet)
     assert len(eager)==12
@@ -146,8 +163,13 @@ def test_kk_adjustment_limits_depletion_and_conserves_water():
     nr=jnp.array([[1.e4,1.e3]]);dt=60.
     from clubb_jax.src.Microphys.KK_microphys.KK_Nrm_tendencies import KK_Nrm_auto_mean
     def run(rc):
-        return KK_microphys_adjust(dt,jnp.ones_like(rc),rc,rrm,nr,
-            -rrm,rc,rc,-nr,KK_Nrm_auto_mean(rc),True,True)
+        return KK_microphys_adjust(
+            dt, jnp.ones_like(rc), rc, rrm, nr,  # In
+            -rrm, rc,                            # In
+            rc, -nr,                             # In
+            KK_Nrm_auto_mean(rc), True,          # In
+            True,                                # In
+        )
     out=jax.jit(run)(rcm)
     rr_t,nr_t,rv_t,rc_t,th_t,_=out
     assert np.all(np.asarray(rcm+dt*rc_t)>=-1.e-18)
@@ -170,8 +192,9 @@ def test_scheme_startup_returns_zero_tendencies_before_start():
         wp3=jnp.ones((2,gr.nzt)), clubb_params=jnp.ones((2,nparams)))
     # Skewness is prepared even before startup, but PDF/core inputs stay unused.
     result=calc_microphys_scheme_tendcies(**args)
-    for tendency in result[2:-1]:assert np.all(np.asarray(tendency)==0.)
-    assert np.all(np.asarray(result[-1]) > 0.)
+    for tendency in result[2:-2]:assert np.all(np.asarray(tendency)==0.)
+    assert np.all(np.asarray(result[-2]) > 0.)
+    assert not np.any(np.asarray(result[-1]))
 
 
 @pytest.mark.parametrize('upwind',[False,True])
@@ -258,12 +281,25 @@ def test_local_kk_direct_statistics_and_core_contract(ncol):
     stats=JaxStats.empty(l_sample=True,names=('rrm_auto','rrm_evap','Nrm_auto'),
         ncol=ncol,max_nlev=gr.nzt)
     def run(hydromet):
-        return KK_local_microphys_driver(gr,ncol,10.,gr.nzt,2,metadata,False,
-            280.*one,zero,90000.*one,one,one,one,zero,100.*one,rcm,
-            1.e8*one,rcm,.007*one,hydromet,1,one,stats)
+        return KK_local_microphys_driver(
+            gr, ncol, 10., gr.nzt,                 # In
+            2, metadata,                           # In
+            False,                                 # In
+            280.*one, zero, 90000.*one, one, one,  # In
+            one, zero, 100.*one, rcm,              # In
+            1.e8*one, rcm, .007*one, hydromet,     # In
+            1, one,                                # In
+            stats,                                 # InOut
+        )
     eager=run(hm);compiled=jax.jit(run)(hm)
-    core=KK_local_microphys_core(gr,ncol,10.,gr.nzt,2,metadata,False,
-        280.*one,90000.*one,one,one,rcm,1.e8*one,rcm,hm,1)
+    core=KK_local_microphys_core(
+        gr, ncol, 10., gr.nzt,           # In
+        2, metadata,                     # In
+        False,                           # In
+        280.*one, 90000.*one, one, one,  # In
+        rcm, 1.e8*one, rcm, hm,          # In
+        1,                               # In
+    )
     for driver_field,core_field in zip(eager[1:],core[:11]):
         np.testing.assert_array_equal(driver_field,core_field)
     for a,b in zip(eager[1:],compiled[1:]):
@@ -272,3 +308,176 @@ def test_local_kk_direct_statistics_and_core_contract(ncol):
         np.testing.assert_array_equal(eager[0].buffers[0][slot],eager[diag])
     assert np.all(np.asarray(eager[0].nsamples[0])==1)
     np.testing.assert_allclose(jnp.sum(eager[1][...,0]+eager[4]+eager[5]),0.,atol=1.e-20)
+
+
+@pytest.mark.parametrize("mode", ["interactive", "non-interactive"])
+@pytest.mark.parametrize("compiled", [False, True])
+def test_morrison_silhs_feedback_boundary_and_velocity_statistics(monkeypatch, mode, compiled):
+    import inspect
+    from clubb_jax.src.CLUBB_core.grid_class import setup_grid
+    from clubb_jax.src.CLUBB_core.parameter_indices import nparams
+    from clubb_jax.src.Microphys import microphys_driver as driver
+    from clubb_jax.src.Microphys import lh_microphys_driver_module as sampled
+    from clubb_jax.src.Microphys import morrison_microphys_module as ordinary
+
+    _, pdf_dim, metadata, *_ = initialize(microphys_scheme="morrison", lh_microphys_type=mode)
+    gr = setup_grid(1, 100.0, 0.0, 500.0)
+    one = jnp.ones((1, gr.nzt))
+    zm = jnp.ones((1, gr.nzm))
+    hm = jnp.ones((1, gr.nzt, 2))
+    stats = JaxStats.empty(l_sample=True, names=("Vrr",), grids=("zm",), ncol=1, max_nlev=gr.nzm)
+
+    def sampled_tendencies(*args):
+        return (
+            args[-2], 3 * hm, 4 * hm, one, one, one, one,
+            *(zm,) * 5, *(one,) * 7, jnp.zeros(1, dtype=bool),
+        )
+
+    def mean_tendencies(*args):
+        return (args[-1], jnp.zeros_like(hm), 2 * hm, *(jnp.zeros_like(one),) * 9)
+
+    monkeypatch.setattr(sampled, "lh_microphys_driver", sampled_tendencies)
+    monkeypatch.setattr(ordinary, "morrison_microphys_driver", mean_tendencies)
+    args = {
+        name: None for name in inspect.signature(driver.calc_microphys_scheme_tendcies).parameters
+    }
+    args.update(
+        gr=gr,
+        ngrdcol=1,
+        dt=10.0,
+        time_current=0.0,
+        pdf_dim=pdf_dim,
+        hydromet_dim=2,
+        runtype="synthetic",
+        thlm=280 * one,
+        p_in_Pa=90000 * one,
+        exner=one,
+        rho=one,
+        rho_zm=zm,
+        rtm=0.01 * one,
+        rcm=0.001 * one,
+        cloud_frac=0.5 * one,
+        wm_zt=one,
+        wm_zm=zm,
+        wp2=zm,
+        wp3=one,
+        clubb_params=jnp.ones((1, nparams)),
+        hydromet=hm,
+        Nc_in_cloud=1.0e8 * one,
+        hm_metadata=metadata,
+        pdf_params=SimpleNamespace(mixt_frac=0.5 * one, chi_1=one, chi_2=one),
+        stats=stats,
+        Nccnm=one,
+    )
+
+    def run(q):
+        # Lightweight PDF doubles stay in the closure. Compile the body with
+        # jax.jit(run) below; standalone tests use the decorated entry point.
+        return driver.calc_microphys_scheme_tendcies.__wrapped__(
+            **{**args, "hydromet": q}
+        )
+
+    result = (jax.jit(run) if compiled else run)(hm)
+    np.testing.assert_array_equal(result[2], 3 * hm if mode == "interactive" else 0.0)
+    for tendency in result[10:15]:
+        np.testing.assert_array_equal(tendency, 1.0 if mode == "interactive" else 0.0)
+    # Both modes update the ordinary velocity statistic once, using the active
+    # sedimentation tendency. This catches a source update inside the wrong IF.
+    np.testing.assert_array_equal(result[0].buffers[1], 4.0 if mode == "interactive" else 2.0)
+    np.testing.assert_array_equal(result[0].nsamples[1], 1)
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_silhs_prescribed_probabilities_and_flags_reset_between_cases(nested):
+    from clubb_jax.src.SILHS import parameters_silhs
+
+    config = (
+        {"eight_cluster_presc_probs": {"cloud_precip_comp1": 0.35}}
+        if nested
+        else {"eight_cluster_presc_probs%cloud_precip_comp1": 0.35}
+    )
+    _, _, _, flags, decorr, _, _ = initialize(
+        microphys_scheme="khairoutdinov_kogan",
+        lh_microphys_type="interactive",
+        l_local_kk=True,
+        cluster_allocation_strategy=1,
+        l_lh_deterministic_test=True,
+        l_lh_importance_sampling=False,
+        vert_decorr_coef=0.2,
+        **config
+    )
+    assert flags.cluster_allocation_strategy == 1
+    assert flags.l_lh_deterministic_test
+    assert decorr == 0.2
+    assert parameters_silhs.eight_cluster_presc_probs.cloud_precip_comp1 == 0.35
+    _, _, _, defaults, decorr, _, _ = initialize(microphys_scheme="khairoutdinov_kogan")
+    assert defaults.cluster_allocation_strategy == 3
+    assert not defaults.l_lh_deterministic_test
+    assert decorr == 0.03
+    assert parameters_silhs.eight_cluster_presc_probs.cloud_precip_comp1 == 0.15
+
+
+@pytest.mark.parametrize("random_option", ["l_lh_importance_sampling", "l_random_k_lh_start"])
+def test_deterministic_silhs_rejects_independent_random_draws(random_option):
+    config = {"l_lh_importance_sampling": False, "l_random_k_lh_start": False}
+    config[random_option] = True
+    with pytest.raises(ValueError, match="importance sampling and random starts disabled"):
+        initialize(
+            microphys_scheme="khairoutdinov_kogan",
+            lh_microphys_type="interactive",
+            l_local_kk=True,
+            l_lh_deterministic_test=True,
+            **config
+        )
+
+
+@pytest.mark.parametrize("debug_level", [0, 1])
+@pytest.mark.parametrize("zeta", [0.0, 0.25])
+def test_initialization_appends_source_configuration_and_correlations(
+    monkeypatch, tmp_path, capsys, debug_level, zeta,
+):
+    from clubb_jax.src.CLUBB_core import error_code
+    from clubb_jax.src.CLUBB_core.parameter_indices import nparams, iomicron, izeta_vrnce_rat
+
+    monkeypatch.setattr(error_code, "_debug_level", debug_level)
+    case_info = tmp_path / "case_setup.txt"
+    case_info.write_text("Existing standalone settings\n")
+    clubb_params = jnp.zeros((1, nparams)).at[0, iomicron].set(0.2)
+    clubb_params = clubb_params.at[0, izeta_vrnce_rat].set(zeta)
+    config = {
+        "microphys_scheme": "khairoutdinov_kogan",
+        "lh_microphys_type": "interactive", "l_local_kk": True,
+        "lh_num_samples": 8, "l_lh_importance_sampling": False,
+        "l_lh_deterministic_test": True, "c_evap": 0.9,
+    }
+    init_microphys(
+        0, "rico_silhs", config, case_info,  # In
+        1000.0, 1000.0,                      # In
+        clubb_params,                        # In
+        False,                               # In
+        True,                                # InOut
+        True,                                # InOut
+    )
+    text = case_info.read_text()
+    output = capsys.readouterr().out
+    assert text.startswith("Existing standalone settings\n")
+    if debug_level == 0:
+        assert text == "Existing standalone settings\n"
+        assert output == ""
+    else:
+        assert text.index("&microphysics_setting") < text.index("&SILHS_setting")
+        assert "lh_microphys_type = interactive" in text
+        assert "lh_num_samples = 8" in text
+        assert "C_evap = 0.9" in text
+        assert "l_lh_deterministic_test = True" in text
+        assert "l_lh_importance_sampling = False" in text
+        assert text.count("hmp2_ip_on_hmm2_ip_slope%Ni =") == 2
+        for location in ("in cloud", "below cloud"):
+            label = f"Correlation array (approximate); {location}:"
+            assert (label in text) == (zeta == 0.0)
+            assert (label in output) == (zeta == 0.0)
+        if zeta == 0.0:
+            rows = text.split("Correlation array (approximate); in cloud:\n")[1].splitlines()[:6]
+            matrix = np.array([[float(value) for value in row.split()] for row in rows])
+            np.testing.assert_array_equal(np.diag(matrix), 1.0)
+            np.testing.assert_array_equal(matrix, matrix.T)

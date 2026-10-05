@@ -320,32 +320,38 @@ def precip_fraction(
 
 
 def component_precip_frac_weighted(
-    gr,
-    hydromet_dim,
-    l_frozen_hm,
-    hydromet_tol,
-    hydromet,
-    precip_frac,
-    cloud_frac_1,
-    cloud_frac_2,
-    ice_supersat_frac_1,
-    ice_supersat_frac_2,
-    mixt_frac,
-    precip_frac_tol,
+    gr, hydromet_dim,                # In
+    l_frozen_hm, hydromet_tol,       # In
+    hydromet, precip_frac,           # In
+    cloud_frac_1, cloud_frac_2,      # In
+    ice_supersat_frac_1,             # In
+    ice_supersat_frac_2, mixt_frac,  # In
+    precip_frac_tol,                 # In
 ):
-    """Set precipitation fraction in each component of the PDF.  The weighted 1st
-    PDF component precipitation fraction (weighted_pfrac_1) at a grid level is
-    calculated by the greatest value of mixt_frac * cloud_frac_1 at or above
-    the relevant grid level.  Likewise, the weighted 2nd PDF component
-    precipitation fraction (weighted_pfrac_2) at a grid level is calculated by
-    the greatest value of ( 1 - mixt_frac ) * cloud_frac_2 at or above the
-    relevant grid level.
+    """Set precipitation fraction in each component of the PDF.  The weighted 1st PDF component
+    precipitation fraction (weighted_pfrac_1) at a grid level is calculated by the greatest value of
+    mixt_frac * cloud_frac_1 at or above the relevant grid level.  Likewise, the weighted 2nd PDF
+    component precipitation fraction (weighted_pfrac_2) at a grid level is calculated by the
+    greatest value of ( 1 - mixt_frac ) * cloud_frac_2 at or above the relevant grid level.
 
-    The fraction weighted_pfrac_1 / ( weighted_pfrac_1 + weighted_pfrac_2 ) is
-    the weighted_pfrac_1 fraction.  Multiplying this fraction by overall
-    precipitation fraction and then dividing by mixt_frac produces the 1st PDF
-    component precipitation fraction (precip_frac_1).  Then, calculate the 2nd
-    PDF component precipitation fraction (precip_frac_2) accordingly.
+    The fraction weighted_pfrac_1 / ( weighted_pfrac_1 + weighted_pfrac_2 ) is the weighted_pfrac_1
+    fraction.  Multiplying this fraction by overall precipitation fraction and then dividing by
+    mixt_frac produces the 1st PDF component precipitation fraction (precip_frac_1).  Then,
+    calculate the 2nd PDF component precipitation fraction (precip_frac_2) accordingly.
+
+    Arguments:
+        gr: Grid coordinates, interpolation weights and vertical metrics.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        l_frozen_hm: if true, then the hydrometeor is frozen; otherwise liquid
+        hydromet_tol: Tolerance values for all hydrometeors [units vary]
+        hydromet: Mean of hydrometeor, hm (overall) [units vary]
+        precip_frac: Precipitation fraction (overall) [-]
+        cloud_frac_1: Cloud fraction (1st PDF component) [-]
+        cloud_frac_2: Cloud fraction (2nd PDF component) [-]
+        ice_supersat_frac_1: Ice supersaturation fraction (1st PDF comp.) [-]
+        ice_supersat_frac_2: Ice supersaturation fraction (2nd PDF comp.) [-]
+        mixt_frac: Mixture fraction [-]
+        precip_frac_tol: Minimum precip. frac. when hydromet. are present [-]
     """
     del hydromet_dim
 
@@ -427,9 +433,7 @@ def component_precip_frac_weighted(
         # precipitation fraction.  The 1st PDF component precipitation
         # fraction is then found by dividing the adjusted weighted 1st PDF
         # component precipitation fraction by mixture fraction.
-        weighted_pfrac_1
-        * (precip_frac / weighted_pfrac_sum_safe)
-        / mixt_frac_safe,
+        weighted_pfrac_1 * (precip_frac / weighted_pfrac_sum_safe) / mixt_frac_safe,
         # Usually, the sum of the weighted 1st PDF component precipitation
         # fraction and the 2nd PDF component precipitation fraction go to 0
         # when overall precipitation fraction goes to 0.  Since 1st PDF
@@ -456,9 +460,7 @@ def component_precip_frac_weighted(
         # of precip_frac_2 at level k will be negative.
         precip_frac_1_limit,
         jnp.where(
-            has_hydromet
-            & (precip_frac_1 > 0.0)
-            & (precip_frac_1 < precip_frac_tol_2d),
+            has_hydromet & (precip_frac_1 > 0.0) & (precip_frac_1 < precip_frac_tol_2d),
             # In a scenario where we find precipitation in the 1st PDF component
             # (it is allowed to have a value of 0 when all precipitation is found
             # in the 2nd PDF component) but it is tiny (less than tolerance
@@ -487,30 +489,27 @@ def component_precip_frac_weighted(
     precip_frac_2 = jnp.where(
         has_hydromet,
         jnp.maximum(
-            (precip_frac - mixt_frac * precip_frac_1)
-            / one_minus_mixt_frac_safe,
+            (precip_frac - mixt_frac * precip_frac_1) / one_minus_mixt_frac_safe,
             0.0,
         ),
         0.0,
     )
 
     # Special cases for precip_frac_2.
-    precip_frac_1_if_2_gt_1 = (
-        precip_frac - one_minus_mixt_frac
-    ) / mixt_frac_safe
-    precip_frac_2_if_1_gt_1 = (
-        precip_frac - mixt_frac
-    ) / one_minus_mixt_frac_safe
-    precip_frac_2_if_1_lt_tol = precip_frac_tol_2d * lax.optimization_barrier(jnp.where(
-        precip_frac == precip_frac_tol_2d, 1.0,
-        (precip_frac / precip_frac_tol_2d - mixt_frac) / one_minus_mixt_frac_safe
-    ))
+    precip_frac_1_if_2_gt_1 = (precip_frac - one_minus_mixt_frac) / mixt_frac_safe
+    precip_frac_2_if_1_gt_1 = (precip_frac - mixt_frac) / one_minus_mixt_frac_safe
+    precip_frac_2_if_1_lt_tol = precip_frac_tol_2d * lax.optimization_barrier(
+        jnp.where(
+            precip_frac == precip_frac_tol_2d,
+            1.0,
+            (precip_frac / precip_frac_tol_2d - mixt_frac) / one_minus_mixt_frac_safe,
+        )
+    )
     precip_frac_1_after_2_gt_1 = jnp.where(
         precip_frac_1_if_2_gt_1 > 1.0,
         1.0,
         jnp.where(
-            (precip_frac_1_if_2_gt_1 > 0.0)
-            & (precip_frac_1_if_2_gt_1 < precip_frac_tol_2d),
+            (precip_frac_1_if_2_gt_1 > 0.0) & (precip_frac_1_if_2_gt_1 < precip_frac_tol_2d),
             precip_frac_tol_2d,
             precip_frac_1_if_2_gt_1,
         ),
@@ -519,8 +518,7 @@ def component_precip_frac_weighted(
         precip_frac_1_if_2_gt_1 > 1.0,
         precip_frac_2_if_1_gt_1,
         jnp.where(
-            (precip_frac_1_if_2_gt_1 > 0.0)
-            & (precip_frac_1_if_2_gt_1 < precip_frac_tol_2d),
+            (precip_frac_1_if_2_gt_1 > 0.0) & (precip_frac_1_if_2_gt_1 < precip_frac_tol_2d),
             precip_frac_2_if_1_lt_tol,
             1.0,
         ),
@@ -533,8 +531,7 @@ def component_precip_frac_weighted(
         precip_frac_1_if_2_lt_tol > 1.0,
         1.0,
         jnp.where(
-            (precip_frac_1_if_2_lt_tol > 0.0)
-            & (precip_frac_1_if_2_lt_tol < precip_frac_tol_2d),
+            (precip_frac_1_if_2_lt_tol > 0.0) & (precip_frac_1_if_2_lt_tol < precip_frac_tol_2d),
             precip_frac_tol_2d,
             precip_frac_1_if_2_lt_tol,
         ),
@@ -543,8 +540,7 @@ def component_precip_frac_weighted(
         precip_frac_1_if_2_lt_tol > 1.0,
         precip_frac_2_if_1_gt_1,
         jnp.where(
-            (precip_frac_1_if_2_lt_tol > 0.0)
-            & (precip_frac_1_if_2_lt_tol < precip_frac_tol_2d),
+            (precip_frac_1_if_2_lt_tol > 0.0) & (precip_frac_1_if_2_lt_tol < precip_frac_tol_2d),
             precip_frac_2_if_1_lt_tol,
             precip_frac_tol_2d,
         ),
@@ -588,13 +584,10 @@ def component_precip_frac_weighted(
 
 
 def component_precip_frac_specify(
-    hydromet_dim,
-    hydromet_tol,
-    upsilon_precip_frac_rat,
-    hydromet,
-    precip_frac,
-    mixt_frac,
-    precip_frac_tol,
+    hydromet_dim, hydromet_tol,  # In
+    upsilon_precip_frac_rat,     # In
+    hydromet, precip_frac,       # In
+    mixt_frac, precip_frac_tol,  # In
 ):
     """Calculates the precipitation fraction in each PDF component.
 
@@ -602,28 +595,33 @@ def component_precip_frac_specify(
 
     f_p = mixt_frac * f_p(1) + ( 1 - mixt_frac ) * f_p(2);
 
-    where f_p is overall precipitation fraction, f_p(1) is precipitation
-    fraction in the 1st PDF component, f_p(2) is precipitation fraction in the
-    2nd PDF component, and mixt_frac is the mixture fraction.  Using this
-    method, a new specified parameter is introduced, upsilon, where:
+    where f_p is overall precipitation fraction, f_p(1) is precipitation fraction in the 1st PDF
+    component, f_p(2) is precipitation fraction in the 2nd PDF component, and mixt_frac is the
+    mixture fraction.  Using this method, a new specified parameter is introduced, upsilon, where:
 
     upsilon = mixt_frac * f_p(1) / f_p; and where 0 <= upsilon <= 1.
 
-    In other words, upsilon is the ratio of mixt_frac * f_p(1) to f_p.  Since
-    f_p and mixt_frac are calculated previously, and upsilon is specified,
-    f_p(1) can be calculated by:
+    In other words, upsilon is the ratio of mixt_frac * f_p(1) to f_p.  Since f_p and mixt_frac are
+    calculated previously, and upsilon is specified, f_p(1) can be calculated by:
 
     f_p(1) = upsilon * f_p / mixt_frac;
 
-    and has an upper limit of 1.  The value of f_p(2) can then be calculated
-    by:
+    and has an upper limit of 1.  The value of f_p(2) can then be calculated by:
 
     f_p(2) = ( f_p - mixt_frac * f_p(1) ) / ( 1 - mixt_frac );
 
-    and also has an upper limit of 1.  Precipitation is split between the two
-    PDF components according to upsilon.  Whenever hydrometeors are present,
-    each PDF component has a precipitation fraction of at least
-    precip_frac_tol, including when upsilon = 0 or upsilon = 1.
+    and also has an upper limit of 1.  Precipitation is split between the two PDF components
+    according to upsilon.  Whenever hydrometeors are present, each PDF component has a precipitation
+    fraction of at least precip_frac_tol, including when upsilon = 0 or upsilon = 1.
+
+    Arguments:
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hydromet_tol: Tolerance values for all hydrometeors [units vary]
+        upsilon_precip_frac_rat: ratio mixt_frac*precip_frac_1/precip_frac [-]
+        hydromet: Mean of hydrometeor, hm (overall) [units vary]
+        precip_frac: Precipitation fraction (overall) [-]
+        mixt_frac: Mixture fraction [-]
+        precip_frac_tol: Minimum precip. frac. when hydromet. are present [-]
     """
     del hydromet_dim
 
@@ -651,9 +649,7 @@ def component_precip_frac_specify(
     # must have a precipitation fraction that is at least
     # precip_frac_tol and that does not exceed 1.
     # Calculate precipitation fraction in the 1st PDF component.
-    precip_frac_1_general = (
-        upsilon_precip_frac_rat * precip_frac / mixt_frac_safe
-    )
+    precip_frac_1_general = upsilon_precip_frac_rat * precip_frac / mixt_frac_safe
     # Special cases for precip_frac_1
     precip_frac_1_general = jnp.where(
         precip_frac_1_general > 1.0,
@@ -670,21 +666,20 @@ def component_precip_frac_specify(
     ) / one_minus_mixt_frac_safe
 
     # Special case for precip_frac_2
-    precip_frac_1_if_2_gt_1 = (
-        precip_frac - one_minus_mixt_frac
-    ) / mixt_frac_safe
-    precip_frac_2_if_1_gt_1 = (
-        precip_frac - mixt_frac
-    ) / one_minus_mixt_frac_safe
+    precip_frac_1_if_2_gt_1 = (precip_frac - one_minus_mixt_frac) / mixt_frac_safe
+    precip_frac_2_if_1_gt_1 = (precip_frac - mixt_frac) / one_minus_mixt_frac_safe
     # Preserve the source's parenthesized ratio before multiplication. XLA
     # reassociation otherwise makes fp2 one ulp below the minimum when fp==tol,
     # changing calc_comp_mu_sigma_hm's strict two-component branch to one.
     # The exact ratio is 1 when fp==tol; spell out that identity for eager
     # reciprocal-based division too. This does not relax the physical threshold.
-    precip_frac_2_if_1_lt_tol = precip_frac_tol * lax.optimization_barrier(jnp.where(
-        precip_frac == precip_frac_tol, 1.0,
-        (precip_frac / precip_frac_tol - mixt_frac) / one_minus_mixt_frac_safe
-    ))
+    precip_frac_2_if_1_lt_tol = precip_frac_tol * lax.optimization_barrier(
+        jnp.where(
+            precip_frac == precip_frac_tol,
+            1.0,
+            (precip_frac / precip_frac_tol - mixt_frac) / one_minus_mixt_frac_safe,
+        )
+    )
     precip_frac_1_after_2_gt_1 = jnp.where(
         precip_frac_1_if_2_gt_1 > 1.0,
         1.0,

@@ -59,7 +59,8 @@ module parameters_silhs
         l_lh_instant_var_covar_src, &  ! Produce instantaneous var/covar tendencies
         l_lh_limit_weights,         &  ! Ensure weights stay under a given value
         l_lh_var_frac,              &  ! Prescribe variance fractions
-        l_lh_normalize_weights         ! Normalize weights to sum to num_samples
+        l_lh_normalize_weights,    &   ! Normalize weights to sum to num_samples
+        l_lh_deterministic_test         ! Ordered strata/repeating draws for repeatable testing
 
   end type silhs_config_flags_type
 
@@ -103,7 +104,8 @@ module parameters_silhs
                                                  l_lh_instant_var_covar_src, &
                                                  l_lh_limit_weights, &
                                                  l_lh_var_frac, &
-                                                 l_lh_normalize_weights )
+                                                 l_lh_normalize_weights, &
+                                                 l_lh_deterministic_test )
 
     ! Description:
     !   Sets all SILHS flags to a default setting.
@@ -137,8 +139,9 @@ module parameters_silhs
                                     !  discretization effects
       l_lh_limit_weights, &         ! Limit SILHS sample point weights for stability
       l_lh_var_frac, &              ! Prescribe variance fractions
-      l_lh_normalize_weights        ! Scale sample point weights to sum to num_samples
+      l_lh_normalize_weights, &     ! Scale sample point weights to sum to num_samples
                                     ! (the "ratio estimate")
+      l_lh_deterministic_test      ! Use deterministic sampling inputs for repeatable testing
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -162,6 +165,7 @@ module parameters_silhs
     l_lh_var_frac = .false.             ! Prescribe variance fractions
     l_lh_normalize_weights = .true.     ! Scale sample point weights to sum to num_samples
                                         ! (the "ratio estimate")
+    l_lh_deterministic_test = .false.   ! Deterministic sampling inputs for repeatable testing
 
     return
   end subroutine set_default_silhs_config_flags_api
@@ -180,6 +184,7 @@ module parameters_silhs
                                                      l_lh_limit_weights, &
                                                      l_lh_var_frac, &
                                                      l_lh_normalize_weights, &
+                                                     l_lh_deterministic_test, &
                                                      silhs_config_flags )
 
     ! Description:
@@ -214,8 +219,9 @@ module parameters_silhs
                                     !  discretization effects
       l_lh_limit_weights, &         ! Limit SILHS sample point weights for stability
       l_lh_var_frac, &              ! Prescribe variance fractions
-      l_lh_normalize_weights        ! Scale sample point weights to sum to num_samples
+      l_lh_normalize_weights, &     ! Scale sample point weights to sum to num_samples
                                     ! (the "ratio estimate")
+      l_lh_deterministic_test      ! Use deterministic sampling inputs for repeatable testing
 
     ! Output variables
     type(silhs_config_flags_type), intent(out) :: &
@@ -236,6 +242,7 @@ module parameters_silhs
     silhs_config_flags%l_lh_limit_weights          = l_lh_limit_weights
     silhs_config_flags%l_lh_var_frac               = l_lh_var_frac
     silhs_config_flags%l_lh_normalize_weights      = l_lh_normalize_weights
+    silhs_config_flags%l_lh_deterministic_test      = l_lh_deterministic_test
 
     return
   end subroutine initialize_silhs_config_flags_type_api
@@ -275,6 +282,7 @@ module parameters_silhs
     write(iunit,*) "l_lh_limit_weights = ", silhs_config_flags%l_lh_limit_weights
     write(iunit,*) "l_lh_var_frac = ", silhs_config_flags%l_lh_var_frac
     write(iunit,*) "l_lh_normalize_weights = ", silhs_config_flags%l_lh_normalize_weights
+    write(iunit,*) "l_lh_deterministic_test = ", silhs_config_flags%l_lh_deterministic_test
 
     return
   end subroutine print_silhs_config_flags_api

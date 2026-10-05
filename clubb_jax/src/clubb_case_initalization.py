@@ -321,13 +321,10 @@ def _check_unsupported_features(cfg: dict, flags, microphys_scheme: str,
 
     # --- SILHS / Latin Hypercube sampling ---
     lh_type = str(cfg.get('lh_microphys_type', 'disabled')).strip().lower()
-    if lh_type != "disabled":
-        errors.append(
-            f"lh_microphys_type = '{lh_type}' is not supported "
-            "(SILHS sampling is not implemented in the Python driver)."
-        )
+    if lh_type not in ('disabled', 'interactive', 'non-interactive'):
+        errors.append(f"Unknown lh_microphys_type = '{lh_type}'")
     if bool(cfg.get('l_silhs_rad', False)):
-        errors.append("l_silhs_rad = true is not supported (SILHS is not available).")
+        errors.append("l_silhs_rad = true is not supported (SILHS radiation is not ported).")
 
     # --- Restarts ---
     if bool(cfg.get('l_restart', False)):
@@ -673,14 +670,55 @@ def init_clubb_case(namelist_path: str) -> dict:
     cloud_frac = np.zeros((ngrdcol, nzt))
     Ncm = np.where(rcm > 0, Nc_in_cloud, Nc_in_cloud * cloud_frac_min)
 
+    # Resolve standalone output names once, before microphysics initialization
+    # appends its source configuration report to the case-info file.
+    repo_root = _repo_root()
+    stats_prefix = str(cfg.get('fname_prefix', '')).strip() or runtype
+    output_dir_raw = str(cfg.get("output_dir", "")).strip().strip("'\"")
+    if output_dir_raw:
+        output_dir_path = Path(output_dir_raw)
+        if not output_dir_path.is_absolute():
+            output_dir_path = (namelist_dir / output_dir_path).resolve()
+    else:
+        output_dir_path = repo_root / "output"
+    case_info_file = output_dir_path / f"{stats_prefix}_setup.txt"
+    if cfg['debug_level'] >= 1:
+        case_info_file.parent.mkdir(parents=True, exist_ok=True)
+        case_info_file.write_text("")
+
+    from clubb_jax.src.Microphys.microphys_init_cleanup import init_microphys
+    (
+        hydromet_dim, pdf_dim, hm_metadata, silhs_config_flags, vert_decorr_coef,
+        corr_array_n_cloud, corr_array_n_below,
+    ) = init_microphys(
+        0, runtype, cfg, case_info_file,      # In
+        1.0e6, 1.0e6,                        # In
+        clubb_params,                        # In
+        flags.l_diagnose_correlations,       # In
+        flags.l_const_Nc_in_cloud,           # InOut
+        flags.l_fix_w_chi_eta_correlations,  # InOut
+    )
+    from clubb_jax.src.Microphys import parameters_microphys
+    from clubb_jax.src.SILHS.latin_hypercube_arrays import LatinHypercubeArrays
+    num_samples = (
+        parameters_microphys.lh_num_samples
+        if parameters_microphys.lh_microphys_type != parameters_microphys.lh_microphys_disabled
+        else 0
+    )
+    # JAX adaptation of threadprivate SILHS storage: fixed-shape case-owned
+    # permutation arrays are carried through compiled sampling calls.
+    sampling_state = LatinHypercubeArrays(
+        jnp.zeros(
+            (
+                parameters_microphys.lh_num_samples * parameters_microphys.lh_sequence_length,
+                pdf_dim + 2,
+            ),
+            dtype=jnp.int32,
+        ),
+        jnp.array(0, dtype=jnp.int32),
+    )
     # Keep a padded trailing extent for zero-species arrays because JAX kernels
     # cannot index a physically empty axis. The logical *_dim values remain authoritative.
-    from clubb_jax.src.Microphys.microphys_init_cleanup import init_microphys
-    (hydromet_dim, pdf_dim, hm_metadata, silhs_config_flags, vert_decorr_coef,
-     corr_array_n_cloud, corr_array_n_below) = init_microphys(
-        0, runtype, cfg, None, 1.0e6, 1.0e6, clubb_params,
-        flags.l_diagnose_correlations, flags.l_const_Nc_in_cloud,
-        flags.l_fix_w_chi_eta_correlations)
     hm_dim_transport = max(hydromet_dim, 1)
     l_mix_rat_hm = hm_metadata.l_mix_rat_hm if hydromet_dim else np.zeros((hm_dim_transport,), dtype=bool)
     wphydrometp = np.zeros((ngrdcol, nzm, hm_dim_transport))
@@ -751,16 +789,7 @@ def init_clubb_case(namelist_path: str) -> dict:
 
     # ── 13. Initialize stats ────────────────────────────────────────────
     l_stats = bool(cfg['l_stats'])
-    repo_root = _repo_root()
     stats_registry_path = _resolve_stats_registry_path(namelist_path, cfg)
-    stats_prefix = str(cfg.get('fname_prefix', '')).strip() or runtype
-    output_dir_raw = str(cfg.get("output_dir", "")).strip().strip("'\"")
-    if output_dir_raw:
-        output_dir_path = Path(output_dir_raw)
-        if not output_dir_path.is_absolute():
-            output_dir_path = (namelist_dir / output_dir_path).resolve()
-    else:
-        output_dir_path = repo_root / "output"
     stats_output_path = output_dir_path / f"{stats_prefix}_stats.nc"
 
     stats_writer = None
@@ -793,6 +822,18 @@ def init_clubb_case(namelist_path: str) -> dict:
         )
         if not stats_writer.enabled:
             raise RuntimeError("stats_init completed but stats are not enabled")
+
+    if parameters_microphys.lh_microphys_type != parameters_microphys.lh_microphys_disabled:
+        from clubb_jax.src.SILHS.silhs_api_module import latin_hypercube_2D_output_api
+
+        # Setup 2D output of all subcolumns (if enabled). The source API also
+        # defines SILHS coordinates when both sample-output flags are false.
+        stats_writer, err_info = latin_hypercube_2D_output_api(
+            nzt, gr.zt[0, :], pdf_dim, num_samples, hm_metadata,  # In
+            stats_writer, err_info,                             # InOut
+        )
+        if err_info.is_fatal():
+            raise RuntimeError("Fatal error calling latin_hypercube_2D_output_api in init_clubb_case")
 
     # ── 14. Zero PDF params ─────────────────────────────────────────────
     pdf_params = init_pdf_params_py(nzt, ngrdcol)
@@ -924,6 +965,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         hydromet=np.zeros((ngrdcol, nzt, hydromet_dim)),
         hm_metadata=hm_metadata, pdf_dim=pdf_dim,
         silhs_config_flags=silhs_config_flags, vert_decorr_coef=vert_decorr_coef,
+        sampling_state=sampling_state,
         corr_array_n_cloud=corr_array_n_cloud, corr_array_n_below=corr_array_n_below,
         hydrometp2=jnp.zeros((ngrdcol, nzm, hydromet_dim)),
         K_hm=jnp.zeros((ngrdcol, nzm, hydromet_dim)),
@@ -933,11 +975,14 @@ def init_clubb_case(namelist_path: str) -> dict:
         wprtp_mc=jnp.zeros((ngrdcol, nzm)), wpthlp_mc=jnp.zeros((ngrdcol, nzm)),
         rtp2_mc=jnp.zeros((ngrdcol, nzm)), thlp2_mc=jnp.zeros((ngrdcol, nzm)),
         rtpthlp_mc=jnp.zeros((ngrdcol, nzm)),
-        X_nl_all_levs=np.zeros((ngrdcol, 0, nzt, 0)),
-        lh_rt_clipped=np.zeros((ngrdcol, 0, nzt)),
-        lh_thl_clipped=np.zeros((ngrdcol, 0, nzt)),
-        lh_rc_clipped=np.zeros((ngrdcol, 0, nzt)),
-        lh_sample_point_weights=np.zeros((ngrdcol, 0, nzt)),
+        X_nl_all_levs=np.zeros((ngrdcol, num_samples, nzt, pdf_dim)),
+        X_mixt_comp_all_levs=np.zeros((ngrdcol, num_samples, nzt), dtype=np.int32),
+        lh_rt_clipped=np.zeros((ngrdcol, num_samples, nzt)),
+        lh_thl_clipped=np.zeros((ngrdcol, num_samples, nzt)),
+        lh_rc_clipped=np.zeros((ngrdcol, num_samples, nzt)),
+        lh_rv_clipped=np.zeros((ngrdcol, num_samples, nzt)),
+        lh_Nc_clipped=np.zeros((ngrdcol, num_samples, nzt)),
+        lh_sample_point_weights=np.zeros((ngrdcol, num_samples, nzt)),
         # Scalars
         sclrm=sclrm, sclrp2=sclrp2, sclrp3=sclrp3,
         sclrprtp=sclrprtp, sclrpthlp=sclrpthlp, sclrpthvp=sclrpthvp,

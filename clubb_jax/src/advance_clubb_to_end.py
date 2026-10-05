@@ -5,7 +5,6 @@ applies forcings, adds radiation tendencies, calls the closure advance (advance_
 radiation, and accumulates stats. Split out from the previous monolithic Python driver file.
 """
 
-import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -130,6 +129,7 @@ def advance_clubb_to_end(state: dict, l_stdout: bool = True, max_steps: int | No
         _advance_microphysics(state, itime, time_current, l_rad_itime)
 
         _advance_radiation(state=state, time_current=time_current, l_rad_itime=l_rad_itime)
+        
         if clubb_at_least_debug_level(0) and state['err_info'].is_fatal():
             raise RuntimeError(
                 "Fatal error in radiation; "
@@ -484,87 +484,197 @@ from clubb_jax.src.Microphys.microphys_driver import calc_microphys_scheme_tendc
 from clubb_jax.src.Microphys.advance_microphys_module import advance_microphys
 from clubb_jax.src.Microphys.cloud_sed_module import cloud_drop_sed
 
-_pdf_hydromet_microphys_prep_jit = jax.jit(pdf_hydromet_microphys_prep,
-    static_argnames=('ngrdcol', 'pdf_dim', 'hydromet_dim', 'itime', 'clubb_config_flags', 'l_rad_itime'))
-_calc_microphys_scheme_tendcies_jit = jax.jit(calc_microphys_scheme_tendcies,
-    static_argnames=('ngrdcol', 'time_current', 'pdf_dim', 'hydromet_dim', 'runtype', 'saturation_formula',
-                     'l_lh_importance_sampling', 'l_lh_instant_var_covar_src'))
-_advance_microphys_jit = jax.jit(advance_microphys,
-    static_argnames=('ngrdcol', 'time_current', 'hydromet_dim', 'tridiag_solve_method', 'fill_holes_type', 'l_upwind_xm_ma'))
-
 
 def _advance_microphysics(state, itime, time_current, l_rad_itime):
-    gr = state['gr']
-    if state['microphys_scheme'] != 'none':
-        (state['_jax_stats'], state['err_info'], state['hydrometp2'],
-         state['mu_x_1_n'], state['mu_x_2_n'], state['sigma_x_1_n'], state['sigma_x_2_n'],
-         state['corr_array_1_n'], state['corr_array_2_n'], state['corr_cholesky_mtx_1'], state['corr_cholesky_mtx_2'],
-         state['precip_fracs'], state['rtphmp_zt'], state['thlphmp_zt'], state['wp2hmp'],
-         state['X_nl_all_levs'], state['X_mixt_comp_all_levs'], state['lh_sample_point_weights'],
-         state['lh_rt_clipped'], state['lh_thl_clipped'], state['lh_rc_clipped'],
-         state['lh_rv_clipped'], state['lh_Nc_clipped'], state['hydromet_pdf_params']) = _pdf_hydromet_microphys_prep_jit(
-            gr, gr.ngrdcol, state['pdf_dim'], state['hydromet_dim'],
-            0, state['vert_decorr_coef'], state['Nc_in_cloud'], state['cloud_frac'], state['ice_supersat_frac'],
-            state['rho_ds_zt'], state['Lscale'], state['Kh_zm'], state['hydromet'], state['wphydrometp'],
-            state['corr_array_n_cloud'], state['corr_array_n_below'], state['hm_metadata'], state['pdf_params'],
-            state['clubb_params'], state['flags'], state['silhs_config_flags'], False,
-            state['_jax_stats'], state['err_info'], state['precip_fracs'])
-        if state['err_info'].is_fatal():
-            raise RuntimeError('Fatal error after pdf_hydromet_microphys_prep; ' + _err_code_summary(state['err_info']))
+    """Apply the prepared microphysics interfaces and return their state updates.
+
+    Case initialization owns configuration, metadata and storage. This host boundary sequences PDF
+    preparation, scheme tendencies and transport, checking fatal status between the compiled
+    kernels.
+    """
+    gr = state["gr"]
+    if state["microphys_scheme"] != "none":
+        # Set PDF parameters/mixed moments, then generate and clip samples.
+        (
+            state["_jax_stats"],
+            state["err_info"],
+            state["hydrometp2"],
+            state["mu_x_1_n"],
+            state["mu_x_2_n"],
+            state["sigma_x_1_n"],
+            state["sigma_x_2_n"],
+            state["corr_array_1_n"],
+            state["corr_array_2_n"],
+            state["corr_cholesky_mtx_1"],
+            state["corr_cholesky_mtx_2"],
+            state["precip_fracs"],
+            state["rtphmp_zt"],
+            state["thlphmp_zt"],
+            state["wp2hmp"],
+            state["X_nl_all_levs"],
+            state["X_mixt_comp_all_levs"],
+            state["lh_sample_point_weights"],
+            state["lh_rt_clipped"],
+            state["lh_thl_clipped"],
+            state["lh_rc_clipped"],
+            state["lh_rv_clipped"],
+            state["lh_Nc_clipped"],
+            state["hydromet_pdf_params"],
+            state["sampling_state"],
+        ) = pdf_hydromet_microphys_prep(
+            gr, gr.ngrdcol, state["pdf_dim"], state["hydromet_dim"],                 # In
+            itime, state["vert_decorr_coef"],                                        # In
+            state["Nc_in_cloud"], state["cloud_frac"], state["ice_supersat_frac"],   # In
+            state["rho_ds_zt"], state["Lscale"], state["Kh_zm"], state["hydromet"],  # In
+            state["wphydrometp"],                                                    # In
+            state["corr_array_n_cloud"], state["corr_array_n_below"],                # In
+            state["hm_metadata"], state["pdf_params"], state["clubb_params"],        # In
+            state["flags"], state["silhs_config_flags"],                             # In
+            False,                                                                   # In
+            state["_jax_stats"],                                                     # InOut
+            state["err_info"],                                                       # InOut
+            state["precip_fracs"],                                                   # InOut
+            state["sampling_state"],                                                 # InOut
+        )
+        # Error check after pdf_hydromet_microphys_prep
+        if clubb_at_least_debug_level(0) and state["err_info"].is_fatal():
+            raise RuntimeError(
+                "Fatal error after pdf_hydromet_microphys_prep; "
+                + _err_code_summary(state["err_info"])
+            )
         # Startup gate is the only time-dependent microphysics branch: pass its
         # two static states so time progression does not recompile each step.
         from clubb_jax.src.Microphys import parameters_microphys
-        micro_time = parameters_microphys.microphys_start_time if time_current >= parameters_microphys.microphys_start_time else parameters_microphys.microphys_start_time - 1.0
-        (state['_jax_stats'], state['Nccnm'], state['hydromet_mc'], state['Ncm_mc'],
-         state['rcm_mc'], state['rvm_mc'], state['thlm_mc'], state['hydromet_vel_zt'],
-         state['hydromet_vel_covar_zt_impc'], state['hydromet_vel_covar_zt_expc'],
-         state['wprtp_mc'], state['wpthlp_mc'], state['rtp2_mc'], state['thlp2_mc'], state['rtpthlp_mc'], Skw_zm_smooth) = _calc_microphys_scheme_tendcies_jit(
-            gr, gr.ngrdcol, state['dt_main'], micro_time, state['pdf_dim'], state['hydromet_dim'], state['runtype'],
-            state['thlm'], state['p_in_Pa'], state['exner'], state['rho'], state['rho_zm'], state['rtm'],
-            state['rcm'], state['cloud_frac'], state['wm_zt'], state['wm_zm'], state['wp2'], state['wp3'], state['clubb_params'],
-            state['hydromet'], state['Nc_in_cloud'], state['hm_metadata'], state['pdf_params'],
-            state['hydromet_pdf_params'], state['precip_fracs'], state['X_nl_all_levs'],
-            state['X_mixt_comp_all_levs'], state['lh_sample_point_weights'],
-            state['mu_x_1_n'], state['mu_x_2_n'], state['sigma_x_1_n'], state['sigma_x_2_n'],
-            state['corr_array_1_n'], state['corr_array_2_n'], state['lh_rt_clipped'], state['lh_thl_clipped'],
-            state['lh_rc_clipped'], state['lh_rv_clipped'], state['lh_Nc_clipped'], False, False,
-            state['saturation_formula'], state['_jax_stats'], state['Nccnm'])
-        (state['_jax_stats'], state['hydromet'], state['hydromet_vel_zt'], state['hydrometp2'],
-         state['K_hm'], state['Ncm'], state['Nc_in_cloud'], state['rvm_mc'], state['thlm_mc'],
-         state['err_info'], state['wphydrometp'], state['wpNcp']) = _advance_microphys_jit(gr, gr.ngrdcol, state['dt_main'], micro_time, state['hydromet_dim'],
-            state['hm_metadata'], state['wm_zt'], state['wp2'], state['exner'], state['rho'],
-            state['rho_zm'], state['rcm'], state['cloud_frac'], state['Kh_zm'], Skw_zm_smooth,
-            state['rho_ds_zm'], state['rho_ds_zt'], state['invrs_rho_ds_zt'], state['hydromet_mc'], state['Ncm_mc'],
-            state['Lscale'], state['hydromet_vel_covar_zt_impc'], state['hydromet_vel_covar_zt_expc'], state['clubb_params'], state['nu_vert_res_dep'],
-            state['flags'].tridiag_solve_method, state['flags'].fill_holes_type, state['flags'].l_upwind_xm_ma, state['_jax_stats'], state['hydromet'],
-            state['hydromet_vel_zt'], state['hydrometp2'], state['K_hm'], state['Ncm'], state['Nc_in_cloud'],
-            state['rvm_mc'], state['thlm_mc'], state['err_info'])
-        if state['err_info'].is_fatal():
+
+        micro_time = (
+            parameters_microphys.microphys_start_time
+            if time_current >= parameters_microphys.microphys_start_time
+            else parameters_microphys.microphys_start_time - 1.0
+        )
+        (
+            state["_jax_stats"],
+            state["Nccnm"],
+            state["hydromet_mc"],
+            state["Ncm_mc"],
+            state["rcm_mc"],
+            state["rvm_mc"],
+            state["thlm_mc"],
+            state["hydromet_vel_zt"],
+            state["hydromet_vel_covar_zt_impc"],
+            state["hydromet_vel_covar_zt_expc"],
+            state["wprtp_mc"],
+            state["wpthlp_mc"],
+            state["rtp2_mc"],
+            state["thlp2_mc"],
+            state["rtpthlp_mc"],
+            Skw_zm_smooth,
+            l_microphys_error,
+        ) = calc_microphys_scheme_tendcies(
+            gr, gr.ngrdcol, state["dt_main"], micro_time,                                     # In
+            state["pdf_dim"], state["hydromet_dim"], state["runtype"],                        # In
+            state["thlm"], state["p_in_Pa"], state["exner"], state["rho"],                    # In
+            state["rho_zm"], state["rtm"],                                                    # In
+            state["rcm"], state["cloud_frac"], state["wm_zt"], state["wm_zm"], state["wp2"],  # In
+            state["wp3"],                                                                     # In
+            state["clubb_params"],                                                            # In
+            state["hydromet"], state["Nc_in_cloud"],                                          # In
+            state["hm_metadata"],                                                             # In
+            state["pdf_params"], state["hydromet_pdf_params"],                                # In
+            state["precip_fracs"],                                                            # In
+            state["X_nl_all_levs"], state["X_mixt_comp_all_levs"],                            # In
+            state["lh_sample_point_weights"],                                                 # In
+            state["mu_x_1_n"], state["mu_x_2_n"],                                             # In
+            state["sigma_x_1_n"], state["sigma_x_2_n"],                                       # In
+            state["corr_array_1_n"], state["corr_array_2_n"],                                 # In
+            state["lh_rt_clipped"], state["lh_thl_clipped"],                                  # In
+            state["lh_rc_clipped"], state["lh_rv_clipped"],                                   # In
+            state["lh_Nc_clipped"],                                                           # In
+            state["silhs_config_flags"].l_lh_importance_sampling,                             # In
+            state["silhs_config_flags"].l_lh_instant_var_covar_src,                           # In
+            state["saturation_formula"],                                                      # In
+            state["_jax_stats"],                                                              # InOut
+            state["Nccnm"],                                                                   # InOut
+        )
+        # Source diagnostic ERROR STOPs become per-column compiled status.
+        state["err_info"] = state["err_info"].set_fatal(l_microphys_error)
+        if clubb_at_least_debug_level(0) and state["err_info"].is_fatal():
+            raise RuntimeError(
+                "Fatal error in calc_microphys_scheme_tendcies: SILHS Kessler diagnostics"
+                + _err_code_summary(state["err_info"])
+            )
+        (
+            state["_jax_stats"],
+            state["hydromet"],
+            state["hydromet_vel_zt"],
+            state["hydrometp2"],
+            state["K_hm"],
+            state["Ncm"],
+            state["Nc_in_cloud"],
+            state["rvm_mc"],
+            state["thlm_mc"],
+            state["err_info"],
+            state["wphydrometp"],
+            state["wpNcp"],
+        ) = advance_microphys(
+            gr, gr.ngrdcol, state["dt_main"], micro_time,                        # In
+            state["hydromet_dim"], state["hm_metadata"],                         # In
+            state["wm_zt"], state["wp2"],                                        # In
+            state["exner"], state["rho"], state["rho_zm"], state["rcm"],         # In
+            state["cloud_frac"], state["Kh_zm"], Skw_zm_smooth,                  # In
+            state["rho_ds_zm"], state["rho_ds_zt"], state["invrs_rho_ds_zt"],    # In
+            state["hydromet_mc"], state["Ncm_mc"], state["Lscale"],              # In
+            state["hydromet_vel_covar_zt_impc"],                                 # In
+            state["hydromet_vel_covar_zt_expc"],                                 # In
+            state["clubb_params"], state["nu_vert_res_dep"],                     # In
+            state["flags"].tridiag_solve_method,                                 # In
+            state["flags"].fill_holes_type,                                      # In
+            state["flags"].l_upwind_xm_ma,                                       # In
+            state["_jax_stats"],                                                 # InOut
+            state["hydromet"], state["hydromet_vel_zt"], state["hydrometp2"],    # InOut
+            state["K_hm"], state["Ncm"], state["Nc_in_cloud"], state["rvm_mc"],  # InOut
+            state["thlm_mc"], state["err_info"],                                 # InOut
+        )
+        if clubb_at_least_debug_level(0) and state["err_info"].is_fatal():
             from clubb_jax.src.Microphys.advance_microphys_module import write_adv_micro_errors
-            write_adv_micro_errors(gr, gr.ngrdcol, state['dt_main'], time_current, state['hydromet_dim'],
-                state['wm_zt'], state['wp2'], state['exner'], state['rho'], state['rho_zm'],
-                state['rcm'], state['cloud_frac'], state['Kh_zm'], Skw_zm_smooth, state['rho_ds_zm'],
-                state['rho_ds_zt'], state['invrs_rho_ds_zt'], state['hydromet_mc'], state['Ncm_mc'], state['Lscale'],
-                state['hydromet_vel_covar_zt_impc'], state['hydromet_vel_covar_zt_expc'], state['clubb_params'], state['nu_vert_res_dep'], state['flags'].l_upwind_xm_ma,
-                state['hydromet'], state['hydromet_vel_zt'], state['hydrometp2'], state['K_hm'], state['Ncm'],
-                state['Nc_in_cloud'], state['rvm_mc'], state['thlm_mc'], state['wphydrometp'], state['wpNcp'],
-                state['err_info'])
-            raise RuntimeError('Fatal error in advance_microphys; ' + _err_code_summary(state['err_info']))
+
+            write_adv_micro_errors(
+                gr, gr.ngrdcol, state["dt_main"], time_current, state["hydromet_dim"],  # In
+                state["wm_zt"], state["wp2"],                                           # In
+                state["exner"], state["rho"], state["rho_zm"], state["rcm"],            # In
+                state["cloud_frac"], state["Kh_zm"], Skw_zm_smooth,                     # In
+                state["rho_ds_zm"], state["rho_ds_zt"],                                 # In
+                state["invrs_rho_ds_zt"],                                               # In
+                state["hydromet_mc"], state["Ncm_mc"], state["Lscale"],                 # In
+                state["hydromet_vel_covar_zt_impc"],                                    # In
+                state["hydromet_vel_covar_zt_expc"],                                    # In
+                state["clubb_params"], state["nu_vert_res_dep"],                        # In
+                state["flags"].l_upwind_xm_ma,                                          # In
+                state["hydromet"], state["hydromet_vel_zt"],                            # In
+                state["hydrometp2"], state["K_hm"], state["Ncm"],                       # In
+                state["Nc_in_cloud"], state["rvm_mc"], state["thlm_mc"],                # In
+                state["wphydrometp"], state["wpNcp"], state["err_info"],                # In
+            )
+            raise RuntimeError(
+                "Fatal error in advance_microphys; " + _err_code_summary(state["err_info"])
+            )
     else:
-        if state['l_cloud_sed']:
-            state['Ncm'] = state['Nc_in_cloud'] * state['cloud_frac']
-            state['_jax_stats'], state['rcm_mc'], state['thlm_mc'] = cloud_drop_sed(gr, gr.ngrdcol, state['rcm'], state['Ncm'], state['rho_zm'],
-            state['rho'], state['exner'], state['sigma_g'], state['_jax_stats'], jnp.zeros_like(state['rcm']),
-            jnp.zeros_like(state['rcm']))
-        state['Ncm'] = state['Nc_in_cloud'] * state['cloud_frac']
-        state['_jax_stats'] = state['_jax_stats'].update('Ncm', state['Ncm'])
-        state['_jax_stats'] = state['_jax_stats'].update('Nc_in_cloud', state['Nc_in_cloud'])
-    state['_jax_stats'] = state['_jax_stats'].update('rvm_mc', state['rvm_mc'])
-    state['_jax_stats'] = state['_jax_stats'].update('rcm_mc', state['rcm_mc'])
-    state['_jax_stats'] = state['_jax_stats'].update('rtm_mc', state['rvm_mc'] + state['rcm_mc'])
-    state['_jax_stats'] = state['_jax_stats'].update('thlm_mc', state['thlm_mc'])
-    state['_jax_stats'] = state['_jax_stats'].update('wprtp_mc', state['wprtp_mc'])
-    state['_jax_stats'] = state['_jax_stats'].update('wpthlp_mc', state['wpthlp_mc'])
-    state['_jax_stats'] = state['_jax_stats'].update('rtp2_mc', state['rtp2_mc'])
-    state['_jax_stats'] = state['_jax_stats'].update('thlp2_mc', state['thlp2_mc'])
-    state['_jax_stats'] = state['_jax_stats'].update('rtpthlp_mc', state['rtpthlp_mc'])
+        if state["l_cloud_sed"]:
+            state["Ncm"] = state["Nc_in_cloud"] * state["cloud_frac"]
+            state["_jax_stats"], state["rcm_mc"], state["thlm_mc"] = cloud_drop_sed(
+                gr, gr.ngrdcol, state["rcm"], state["Ncm"],                       # In
+                state["rho_zm"], state["rho"], state["exner"], state["sigma_g"],  # In
+                state["_jax_stats"], jnp.zeros_like(state["rcm"]),                # InOut
+                jnp.zeros_like(state["rcm"]),                                     # InOut
+            )
+        state["Ncm"] = state["Nc_in_cloud"] * state["cloud_frac"]
+        state["_jax_stats"] = state["_jax_stats"].update("Ncm", state["Ncm"])
+        state["_jax_stats"] = state["_jax_stats"].update("Nc_in_cloud", state["Nc_in_cloud"])
+    state["_jax_stats"] = state["_jax_stats"].update("rvm_mc", state["rvm_mc"])
+    state["_jax_stats"] = state["_jax_stats"].update("rcm_mc", state["rcm_mc"])
+    state["_jax_stats"] = state["_jax_stats"].update("rtm_mc", state["rvm_mc"] + state["rcm_mc"])
+    state["_jax_stats"] = state["_jax_stats"].update("thlm_mc", state["thlm_mc"])
+    state["_jax_stats"] = state["_jax_stats"].update("wprtp_mc", state["wprtp_mc"])
+    state["_jax_stats"] = state["_jax_stats"].update("wpthlp_mc", state["wpthlp_mc"])
+    state["_jax_stats"] = state["_jax_stats"].update("rtp2_mc", state["rtp2_mc"])
+    state["_jax_stats"] = state["_jax_stats"].update("thlp2_mc", state["thlp2_mc"])
+    state["_jax_stats"] = state["_jax_stats"].update("rtpthlp_mc", state["rtpthlp_mc"])

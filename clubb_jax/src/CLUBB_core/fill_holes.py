@@ -420,105 +420,263 @@ __all__ = [
 # Microphysics callers use batched columns; source vertical/species loops below
 # are expressed as array operations and static species loops.
 def hole_filling_hm_one_lev(num_hm_fill, hm_one_lev):
+    """Fill same-phase hydrometeor holes at one height, batched over columns/levels.
+
+    Arguments:
+        num_hm_fill: number of hydrometeors involved
+        hm_one_lev: Same-phase mixing ratios, with species on the last axis [kg/kg].
+    """
+
     from clubb_jax.src.CLUBB_core.constants_clubb import eps
+
+    # Total negative mass and available positive mass of the same phase.
+    # Do not mix liquid and frozen species here: heat would not be conserved.
     total_hole = jnp.sum(jnp.minimum(hm_one_lev, 0.0), axis=-1, keepdims=True)
     total_mass = jnp.sum(jnp.maximum(hm_one_lev, 0.0), axis=-1, keepdims=True)
+
+    # If positive mass is insufficient, partially fill the holes with all of it;
+    # otherwise eliminate holes and reduce the positive species proportionally.
     hm_one_lev_filled = jnp.where(
         jnp.abs(total_hole) > total_mass,
-        jnp.minimum(hm_one_lev, 0.0) * (1.0 + total_mass / jnp.where(total_hole != 0, total_hole, 1.0)),
-        jnp.maximum(hm_one_lev, 0.0) * (1.0 + total_hole / jnp.where(total_mass != 0, total_mass, 1.0)),
+        jnp.minimum(hm_one_lev, 0.0)
+        * (1.0 + total_mass / jnp.where(total_hole != 0, total_hole, 1.0)),
+        jnp.maximum(hm_one_lev, 0.0)
+        * (1.0 + total_hole / jnp.where(total_mass != 0, total_mass, 1.0)),
     )
+
+    # Leave the input unchanged if no material is available.
+    # TODO(port-mirror): source warning/conservation checks are not emitted
+    # by this batched kernel; restore them with ordered device diagnostics.
     return jnp.where(jnp.abs(total_mass) < eps, hm_one_lev, hm_one_lev_filled)
 
 
-def fill_holes_hydromet_api(nzt, hydromet_dim, hydromet, l_frozen_hm, l_mix_rat_hm):
+def fill_holes_hydromet_api(
+    nzt, hydromet_dim, hydromet,  # In
+    l_frozen_hm, l_mix_rat_hm,    # In
+):
+    """Fill frozen mixing-ratio holes using other frozen hydrometeors at each level.
+
+    Arguments:
+        nzt: Number of thermodynamic levels.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hydromet: Hydrometeor profiles with species on the last axis [units vary].
+        l_frozen_hm: if true, then the hydrometeor is frozen; otherwise liquid
+        l_mix_rat_hm: if true, then the quantity is a hydrometeor mixing ratio
+    """
+
+    # Restrict same-level redistribution to frozen mixing ratios. Liquid
+    # rain and all number concentrations bypass this phase-conserving step.
     frozen = jnp.asarray(l_frozen_hm) & jnp.asarray(l_mix_rat_hm)
     hydromet_frozen = jnp.where(frozen, hydromet, 0.0)
     hydromet_frozen_filled = hole_filling_hm_one_lev(hydromet_dim, hydromet_frozen)
     return jnp.where(frozen, hydromet_frozen_filled, hydromet)
 
 
-def fill_holes_wv(nzt, dt, exner, hydromet_name, rvm_mc, thlm_mc, hydromet):
+def fill_holes_wv(
+    nzt, dt, exner, hydromet_name,  # In
+    rvm_mc, thlm_mc, hydromet,      # InOut
+):
+    """Fill remaining mixing-ratio holes using water vapor and compensate latent heat.
+
+    Arguments:
+        nzt: Number of thermodynamic levels.
+        dt: Timestep [s]
+        exner: Exner function [-]
+        hydromet_name: Species name: rrm for liquid rain, or rim/rsm/rgm for frozen water.
+        rvm_mc: Water-vapor tendency, updated to compensate hole filling [kg/kg/s].
+        thlm_mc: Liquid-water potential-temperature tendency including latent heating [K/s].
+        hydromet: Hydrometeor array [units vary]
+    """
+
     from clubb_jax.src.CLUBB_core.constants_clubb import zero_threshold, Lv, Ls, Cp
+
+    # Transfer the remaining negative mixing ratio to water vapor and
+    # compensate latent heat using Lv for rain and Ls for frozen species.
     rvm_clip_tndcy = jnp.where(hydromet < zero_threshold, hydromet / dt, 0.0)
     rvm_mc = rvm_mc + rvm_clip_tndcy
-    if hydromet_name == 'rrm':
+    if hydromet_name == "rrm":
         thlm_mc = thlm_mc - rvm_clip_tndcy * (Lv / (Cp * exner))
-    elif hydromet_name in ('rim', 'rsm', 'rgm'):
+    elif hydromet_name in ("rim", "rsm", "rgm"):
         thlm_mc = thlm_mc - rvm_clip_tndcy * (Ls / (Cp * exner))
     else:
-        raise ValueError('Fatal error in microphys_driver: unknown hydrometeor')
+        raise ValueError("Fatal error in microphys_driver: unknown hydrometeor")
     hydromet = jnp.maximum(hydromet, zero_threshold)
     return rvm_mc, thlm_mc, hydromet
 
 
-def fill_holes_driver_api(gr, ngrdcol, nzt, dt, hydromet_dim, hm_metadata, l_fill_holes_hm,
-                         rho_ds_zt, exner, fill_holes_type, stats,
-                         thlm_mc, rvm_mc, hydromet):
+def fill_holes_driver_api(
+    gr, ngrdcol, nzt, dt, hydromet_dim,  # In
+    hm_metadata, l_fill_holes_hm,        # In
+    rho_ds_zt, exner, fill_holes_type,   # In
+    stats, thlm_mc, rvm_mc, hydromet,    # InOut
+):
+    """Fill hydrometeor holes, clip small amounts, and enforce concentration limits.
+
+    Arguments:
+        gr: Grid coordinates, interpolation weights and vertical metrics.
+        ngrdcol: Number of grid columns.
+        nzt: Number of thermodynamic levels.
+        dt: Timestep [s]
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
+        l_fill_holes_hm: Fill frozen mixing-ratio holes using other frozen species at the same
+            level.
+        rho_ds_zt: Dry, static density on thermo. levels [kg/m^3]
+        exner: Exner function [-]
+        fill_holes_type: Choice of vertical hole-filling algorithm.
+        stats: Immutable statistics state; return its updated value.
+        thlm_mc: Microphysics contributions to liquid potential temp [K/s]
+        rvm_mc: Microphysics contributions to vapor water [kg/kg/s]
+        hydromet: Mean of hydrometeor fields [units vary]
+    """
+
     from clubb_jax.src.CLUBB_core.constants_clubb import zero_threshold, Lv, Ls, Cp
+
     # Start statistics for same-phase and vertical hole filling.
     for i in range(hydromet_dim):
-        _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(i, hydromet_dim, hm_metadata.hydromet_list)
+        _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(
+            i, hydromet_dim, hm_metadata.hydromet_list
+        )
         stats = stats.begin_budget(name_hf, hydromet[..., i] / dt)
     if l_fill_holes_hm:
-        hydromet = fill_holes_hydromet_api(nzt, hydromet_dim, hydromet, hm_metadata.l_frozen_hm, hm_metadata.l_mix_rat_hm)
+        hydromet = fill_holes_hydromet_api(
+            nzt, hydromet_dim, hydromet,                        # In
+            hm_metadata.l_frozen_hm, hm_metadata.l_mix_rat_hm,  # In
+        )
     for i in range(hydromet_dim):
-        _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(i, hydromet_dim, hm_metadata.hydromet_list)
+        _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(
+            i, hydromet_dim, hm_metadata.hydromet_list
+        )
         hydromet_name = hm_metadata.hydromet_list[i]
-        if hydromet_name.startswith('r'):
+        if hydromet_name.startswith("r"):
             # Source calls each column with ngrdcol=1 but passes the full gr%dzt.
             # Its explicit-shape dz(1,nzt) dummy uses the first nzt elements in
             # Fortran storage order. Preserve that deliberately retained scalar
             # grid-metric mapping, including on a multicolumn grid.
             dz_scalar = gr.dzt.T.reshape(-1)[:nzt][None, :]
-            hydromet_filled = jax.vmap(lambda rho_col, hm_col: fill_holes_vertical(
-                nzt, 1, zero_threshold, 0, nzt - 1,
-                dz_scalar, rho_col[None, :], 1, fill_holes_type,
-                hm_col[None, :])[0])(rho_ds_zt, hydromet[..., i])
+            hydromet_filled = jax.vmap(
+                lambda rho_col, hm_col: fill_holes_vertical(
+                    nzt,
+                    1,
+                    zero_threshold,
+                    0,
+                    nzt - 1,
+                    dz_scalar,
+                    rho_col[None, :],
+                    1,
+                    fill_holes_type,
+                    hm_col[None, :],
+                )[0]
+            )(rho_ds_zt, hydromet[..., i])
             hydromet = hydromet.at[..., i].set(hydromet_filled)
         stats = stats.finalize_budget(name_hf, hydromet[..., i] / dt)
         stats = stats.begin_budget(name_wvhf, hydromet[..., i] / dt)
-        if hydromet_name.startswith('r'):
-            rvm_mc, thlm_mc, hydromet_filled = fill_holes_wv(nzt, dt, exner, hydromet_name, rvm_mc, thlm_mc, hydromet[..., i])
+        if hydromet_name.startswith("r"):
+            rvm_mc, thlm_mc, hydromet_filled = fill_holes_wv(
+                nzt, dt, exner, hydromet_name,      # In
+                rvm_mc, thlm_mc, hydromet[..., i],  # InOut
+            )
             hydromet = hydromet.at[..., i].set(hydromet_filled)
         stats = stats.finalize_budget(name_wvhf, hydromet[..., i] / dt)
-        if hydromet_name.startswith('r'):
+
+        # Remove sub-tolerance positive mixing ratios with the same vapor and
+        # latent-heat compensation, recording the clipping budget separately.
+        if hydromet_name.startswith("r"):
             stats = stats.begin_budget(name_cl, hydromet[..., i] / dt)
             hydromet = hydromet.at[..., i].set(jnp.maximum(hydromet[..., i], zero_threshold))
             small = hydromet[..., i] <= hm_metadata.hydromet_tol[i]
             rvm_mc = rvm_mc + jnp.where(small, hydromet[..., i] / dt, 0.0)
-            latent_heat = Lv if hydromet_name == 'rrm' else Ls
-            thlm_mc = thlm_mc - jnp.where(small, (latent_heat / (Cp * exner)) * (hydromet[..., i] / dt), 0.0)
+            latent_heat = Lv if hydromet_name == "rrm" else Ls
+            thlm_mc = thlm_mc - jnp.where(
+                small, (latent_heat / (Cp * exner)) * (hydromet[..., i] / dt), 0.0
+            )
             hydromet = hydromet.at[..., i].set(jnp.where(small, 0.0, hydromet[..., i]))
             stats = stats.finalize_budget(name_cl, hydromet[..., i] / dt)
+
+    # Enforce maximum particle radii through concentration minima. Mass fields
+    # remain unchanged; only number concentrations contribute to these budgets.
     hydromet_clipped = clip_hydromet_conc_mvr(nzt, hydromet_dim, hm_metadata, hydromet)
     for i in range(hydromet_dim):
-        if hm_metadata.hydromet_list[i].startswith('N'):
-            _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(i, hydromet_dim, hm_metadata.hydromet_list)
+        if hm_metadata.hydromet_list[i].startswith("N"):
+            _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(
+                i, hydromet_dim, hm_metadata.hydromet_list
+            )
             stats = stats.begin_budget(name_cl, hydromet[..., i] / dt)
             hydromet = hydromet.at[..., i].set(hydromet_clipped[..., i])
             stats = stats.finalize_budget(name_cl, hydromet[..., i] / dt)
     return stats, thlm_mc, rvm_mc, hydromet
 
 
-def clip_hydromet_conc_mvr(nzt, hydromet_dim, hm_metadata, hydromet):
+def clip_hydromet_conc_mvr(
+    nzt, hydromet_dim, hm_metadata,  # In
+    hydromet,                        # In
+):
+    """Increase number concentrations to keep mean volume radii below their maxima.
+
+    Mixing ratios remain unchanged. A species with no positive mixing ratio has zero concentration,
+    as in fill_holes.F90. Columns/levels are batched.
+
+    Arguments:
+        nzt: Number of thermodynamic levels.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hm_metadata: Species names, mixing-ratio indices and maximum-radius metadata.
+        hydromet: Mean hydrometeor profiles [kg/kg or num/kg].
+
+    Returns:
+        Hydrometeor profiles with clipped number concentrations.
+    """
     from clubb_jax.src.CLUBB_core.constants_clubb import pi, rho_lw, rho_ice
     from clubb_jax.src.CLUBB_core.index_mapping import Nx2rx_hm_idx, mvr_hm_max
+
+
+    # Preserve all mixing ratios; loop only over number concentrations.
     hydromet_clipped = hydromet
     for idx in range(hydromet_dim):
-        if hm_metadata.hydromet_list[idx].startswith('N'):
-            density = rho_lw if hm_metadata.hydromet_list[idx] == 'Nrm' else rho_ice
+        if hm_metadata.hydromet_list[idx].startswith("N"):
+            # N_min = r / ((4/3)*pi*rho_particle*r_max^3), using liquid
+            # density for rain and ice density for frozen species.
+            density = rho_lw if hm_metadata.hydromet_list[idx] == "Nrm" else rho_ice
             Nxm_min_coef = 1.0 / ((4.0 / 3.0) * pi * density * mvr_hm_max(idx, hm_metadata) ** 3)
+
+            # Raise number where mass is present, otherwise set it to zero.
             rx = hydromet[..., Nx2rx_hm_idx(idx, hm_metadata)]
-            hydromet_clipped = hydromet_clipped.at[..., idx].set(jnp.where(rx > 0.0, jnp.maximum(hydromet[..., idx], Nxm_min_coef * rx), 0.0))
+            hydromet_clipped = hydromet_clipped.at[..., idx].set(
+                jnp.where(rx > 0.0, jnp.maximum(hydromet[..., idx], Nxm_min_coef * rx), 0.0)
+            )
     return hydromet_clipped
 
 
 def setup_stats_names(ihm, hydromet_dim, hydromet_list):
+    """Return the species fall-speed limit and budget/hole-filling/clipping/statistics names.
+
+    Arguments:
+        ihm: Zero-based hydrometeor species index.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        hydromet_list: Initialized species names in hydrometeor array order.
+    """
+
+    # Negative speeds denote downward sedimentation. Ice uses the source
+    # 1.2 m/s limit, snow 2 m/s, and graupel 20 m/s. Cloud number shares the
+    # rain limit because Morrison has no separate cloud-water speed limit.
     name = hydromet_list[ihm]
-    max_velocity = {'rrm': -9.1, 'Nrm': -9.1, 'rim': -1.2, 'Nim': -1.2,
-                    'rsm': -2.0, 'Nsm': -2.0, 'rgm': -20.0, 'Ngm': -20.0, 'Ncm': -9.1}.get(name, 0.0)
+    max_velocity = {
+        "rrm": -9.1,
+        "Nrm": -9.1,
+        "rim": -1.2,
+        "Nim": -1.2,
+        "rsm": -2.0,
+        "Nsm": -2.0,
+        "rgm": -20.0,
+        "Ngm": -20.0,
+        "Ncm": -9.1,
+    }.get(name, 0.0)
     if not max_velocity:
-        return 0.0, '', '', '', '', ''
-    return (max_velocity, name + '_bt', name + '_hf' if name.startswith('r') else '',
-            name + '_wvhf' if name.startswith('r') else '', name + '_cl', name + '_mc')
+        return 0.0, "", "", "", "", ""
+    return (
+        max_velocity,
+        name + "_bt",
+        name + "_hf" if name.startswith("r") else "",
+        name + "_wvhf" if name.startswith("r") else "",
+        name + "_cl",
+        name + "_mc",
+    )

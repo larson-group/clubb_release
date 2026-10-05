@@ -88,30 +88,63 @@ IIPDF_NCN = 3
 # Precipitating hydrometeors follow Ncn in hydromet-array order (rr, Nr for KK).
 
 
-def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
-                             hydromet_dim,
-                             Nc_in_cloud, cloud_frac, Kh_zm,
-                             ice_supersat_frac, hydromet, wphydrometp,
-                             corr_array_n_cloud, corr_array_n_below,
-                             hm_metadata,
-                             pdf_params,
-                             clubb_params,
-                             iiPDF_type,
-                             l_use_precip_frac,
-                             l_diagnose_correlations,
-                             l_calc_w_corr,
-                             l_const_Nc_in_cloud,
-                             l_fix_w_chi_eta_correlations,
-                             err_info,
-                             precip_fracs,
-                             hydromet_pdf_params,
-                             stats):
+def setup_pdf_parameters_api(
+    gr, nzm, nzt, ngrdcol, pdf_dim,            # In
+    hydromet_dim,                              # In
+    Nc_in_cloud, cloud_frac, Kh_zm,            # In
+    ice_supersat_frac, hydromet, wphydrometp,  # In
+    corr_array_n_cloud, corr_array_n_below,    # In
+    hm_metadata,                               # In
+    pdf_params,                                # In
+    clubb_params,                              # In
+    iiPDF_type,                                # In
+    l_use_precip_frac,                         # In
+    l_diagnose_correlations,                   # In
+    l_calc_w_corr,                             # In
+    l_const_Nc_in_cloud,                       # In
+    l_fix_w_chi_eta_correlations,              # In
+    err_info,                                  # InOut
+    precip_fracs,                              # InOut
+    hydromet_pdf_params,                       # Out
+    stats,                                     # InOut
+):
     """Set up hydrometeor PDF parameters.
 
-    Fortran out arguments are returned in the same order after ``err_info``:
-    ``hydrometp2, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,
-    corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1,
+    Fortran out arguments are returned in the same order after ``err_info``: ``hydrometp2, mu_x_1_n,
+    mu_x_2_n, sigma_x_1_n, sigma_x_2_n, corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1,
     corr_cholesky_mtx_2, precip_fracs, hydromet_pdf_params, stats``.
+
+    Arguments:
+        gr: Grid coordinates, interpolation weights and vertical metrics.
+        nzm: Number of momentum levels.
+        nzt: Number of thermodynamic levels.
+        ngrdcol: Number of grid columns.
+        pdf_dim: Number of variables in the multivariate PDF.
+        hydromet_dim: Number of precipitating hydrometeor fields.
+        Nc_in_cloud: Mean (in-cloud) cloud droplet conc. [num/kg]
+        cloud_frac: Cloud fraction [-]
+        Kh_zm: Eddy diffusivity coef. on momentum levels [m^2/s]
+        ice_supersat_frac: Ice supersaturation fraction [-]
+        hydromet: Mean of hydrometeor, hm (overall) (t-levs.) [units]
+        wphydrometp: Covariance < w'h_m' > (momentum levels) [(m/s)units]
+        corr_array_n_cloud: Prescribed normal space corr. array in cloud [-]
+        corr_array_n_below: Prescribed normal space corr. array below cl. [-]
+        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
+        pdf_params: PDF parameters [units vary]
+        clubb_params: Column-dependent tunable CLUBB parameters.
+        iiPDF_type: Selected option for the two-component normal (double Gaussian) PDF type to
+            use for the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's
+            multivariate, two-component PDF.
+        l_use_precip_frac: Flag to use precipitation fraction in KK microphysics. The
+            precipitation fraction is automatically set to 1 when this flag is turned off.
+        l_diagnose_correlations: Diagnose correlations instead of using fixed ones
+        l_calc_w_corr: Calculate the correlations between w and the hydrometeors
+        l_const_Nc_in_cloud: Use a constant cloud droplet conc. within cloud (K&K)
+        l_fix_w_chi_eta_correlations: Use a fixed correlation for s and t Mellor(chi/eta)
+        err_info: Per-column error state; return any updated fatal status.
+        precip_fracs: Precipitation fractions [-]
+        hydromet_pdf_params: Hydrometeor PDF parameters [units vary]
+        stats: Immutable statistics state; return its updated value.
     """
     del precip_fracs
 
@@ -169,24 +202,14 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
             precip_frac_tol,
             stats,
         ) = precip_fraction(
-            gr,
-            nzt,
-            ngrdcol,
-            hydromet_dim,
-            hydromet,
-            cloud_frac,
-            pdf_params.cloud_frac_1,
-            hm_metadata.l_mix_rat_hm,
-            hm_metadata.l_frozen_hm,
-            hm_metadata.hydromet_tol,
-            pdf_params.cloud_frac_2,
-            ice_supersat_frac,
-            pdf_params.ice_supersat_frac_1,
-            pdf_params.ice_supersat_frac_2,
-            pdf_params.mixt_frac,
-            clubb_params,
-            err_info,
-            stats,
+            gr, nzt, ngrdcol, hydromet_dim,                                               # In
+            hydromet, cloud_frac, pdf_params.cloud_frac_1,                                # In
+            hm_metadata.l_mix_rat_hm, hm_metadata.l_frozen_hm, hm_metadata.hydromet_tol,  # In
+            pdf_params.cloud_frac_2, ice_supersat_frac,                                   # In
+            pdf_params.ice_supersat_frac_1, pdf_params.ice_supersat_frac_2,               # In
+            pdf_params.mixt_frac, clubb_params,                                           # In
+            err_info,                                                                     # InOut
+            stats,                                                                        # InOut
         )
         # JAX adaptation: preserve the fatal code from precip_fraction, but do
         # not return early inside the traced region.
@@ -230,16 +253,11 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
     )
 
     Ncnm = Nc_in_cloud_to_Ncnm(
-        pdf_params.chi_1,
-        pdf_params.chi_2,
-        pdf_params.stdev_chi_1,
-        pdf_params.stdev_chi_2,
-        pdf_params.mixt_frac,
-        Nc_in_cloud,
-        pdf_params.cloud_frac_1,
-        pdf_params.cloud_frac_2,
-        const_Ncnp2_on_Ncnm2,
-        const_corr_chi_Ncn,
+        pdf_params.chi_1, pdf_params.chi_2, pdf_params.stdev_chi_1,  # In
+        pdf_params.stdev_chi_2, pdf_params.mixt_frac, Nc_in_cloud,   # In
+        pdf_params.cloud_frac_1, pdf_params.cloud_frac_2,            # In
+        const_Ncnp2_on_Ncnm2,                                        # In
+        const_corr_chi_Ncn,                                          # In
     )
 
     # Calculate the overall variance of a precipitating hydrometeor (hm),
@@ -252,12 +270,8 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
     precip_frac_safe = jnp.where(precip_frac > 0.0, precip_frac, 1.0)
     hydrometp2_zt = jnp.where(
         hydromet >= hydromet_tol[None, None, :],
-        (
-            (hmp2_ip_on_hmm2_ip[None, None, :] + 1.0)
-            / precip_frac_safe[:, :, None]
-            - 1.0
-        )
-        * hydromet ** 2,
+        ((hmp2_ip_on_hmm2_ip[None, None, :] + 1.0) / precip_frac_safe[:, :, None] - 1.0)
+        * hydromet**2,
         0.0,
     )
 
@@ -272,7 +286,9 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
                 gr,
                 hydrometp2_zt[:, :, j],
                 zero_threshold,
-            ).at[:, gr.k_ub_zm].set(0.0)
+            )
+            .at[:, gr.k_ub_zm]
+            .set(0.0)
             for j in range(hydromet_dim)
         ],
         axis=-1,
@@ -290,19 +306,13 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
             pdf_params.mixt_frac,
         )
         wp2_zt = compute_variance_binormal(
-            wm_zt,
-            pdf_params.w_1,
-            pdf_params.w_2,
-            sigma_w_1,
-            sigma_w_2,
-            pdf_params.mixt_frac,
+            wm_zt, pdf_params.w_1, pdf_params.w_2,  # In
+            sigma_w_1, sigma_w_2,                   # In
+            pdf_params.mixt_frac,                   # In
         )
 
         wphydrometp_zt = jnp.stack(
-            [
-                zm2zt(nzm, nzt, ngrdcol, gr, wphydrometp[:, :, j])
-                for j in range(hydromet_dim)
-            ],
+            [zm2zt(nzm, nzt, ngrdcol, gr, wphydrometp[:, :, j]) for j in range(hydromet_dim)],
             axis=-1,
         )
         wphydrometp_zt = jnp.where(
@@ -314,12 +324,8 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
         clipped_wphydrometp_zt = []
         for j in range(hydromet_dim):
             wphydrometp_zt_j, _wphydrometp_chnge_j = clip_covar(
-                nzt,
-                ngrdcol,
-                clip_wphydrometp,
-                wp2_zt,
-                hydrometp2_zt[:, :, j],
-                wphydrometp_zt[:, :, j],
+                nzt, ngrdcol, clip_wphydrometp, wp2_zt, hydrometp2_zt[:, :, j],  # In
+                wphydrometp_zt[:, :, j],                                         # InOut
             )
             clipped_wphydrometp_zt.append(wphydrometp_zt_j)
         wphydrometp_zt = jnp.stack(clipped_wphydrometp_zt, axis=-1)
@@ -431,16 +437,14 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
         )
 
         corr_cloud = diagnose_correlations(
-            pdf_dim,
-            hm_metadata.iiPDF_w + 1,
-            corr_array_n_cloud,
-            l_calc_w_corr,
+            pdf_dim, hm_metadata.iiPDF_w + 1,  # In
+            corr_array_n_cloud,                # In
+            l_calc_w_corr,                     # In
         )
         corr_below = diagnose_correlations(
-            pdf_dim,
-            hm_metadata.iiPDF_w + 1,
-            corr_array_n_below,
-            l_calc_w_corr,
+            pdf_dim, hm_metadata.iiPDF_w + 1,  # In
+            corr_array_n_below,                # In
+            l_calc_w_corr,                     # In
         )
         corr_array_1_n = jnp.where(
             (rcm_pdf > rc_tol)[:, :, None, None],
@@ -497,9 +501,7 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
             # The correlation matrices can vary with vertical values. So we need to set the
             # correlation matrices up for each grid box, then find the Cholesky decomp for each
             # grid box individually. This is very computationally expensive.
-            pdf2hydromet = tuple(
-                pdf2hydromet_idx(j, hm_metadata) for j in range(pdf_dim)
-            )
+            pdf2hydromet = tuple(pdf2hydromet_idx(j, hm_metadata) for j in range(pdf_dim))
             pdf_params_corr = {
                 "corr_chi_eta_1": pdf_params.corr_chi_eta_1,
                 "corr_chi_eta_2": pdf_params.corr_chi_eta_2,
@@ -540,8 +542,8 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
             )
 
             def _cholesky(corr_array_n):
-                _corr_array_scaling, corr_cholesky_mtx, _l_corr_array_scaling = (
-                    Cholesky_factor(corr_array_n)
+                _corr_array_scaling, corr_cholesky_mtx, _l_corr_array_scaling = Cholesky_factor(
+                    corr_array_n
                 )
                 return jnp.tril(corr_cholesky_mtx)
 
@@ -561,33 +563,23 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
     if hydromet_pdf_params is not None:
         # Calculate the true correlations for each PDF component.
         corr_array_1, corr_array_2 = denorm_transform_corr(
-            sigma_x_1_n,
-            sigma_x_2_n,
-            sigma2_on_mu2_ip_1,
-            sigma2_on_mu2_ip_2,
-            corr_array_1_n,
-            corr_array_2_n,
-            hm_metadata.iiPDF_chi,
-            hm_metadata.iiPDF_eta,
-            hm_metadata.iiPDF_w,
-            hm_metadata.iiPDF_Ncn,
+            sigma_x_1_n, sigma_x_2_n,                # In
+            sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2,  # In
+            corr_array_1_n,                          # In
+            corr_array_2_n,                          # In
+            hm_metadata.iiPDF_chi,                   # In
+            hm_metadata.iiPDF_eta,                   # In
+            hm_metadata.iiPDF_w,                     # In
+            hm_metadata.iiPDF_Ncn,                   # In
         )
         # Pack the PDF parameters
         hydromet_pdf_params = pack_hydromet_pdf_params(
-            nzt,
-            ngrdcol,
-            hydromet_dim,
-            hm_metadata,
-            hm_1,
-            hm_2,
-            pdf_dim,
-            mu_x_1,
-            mu_x_2,
-            sigma_x_1,
-            sigma_x_2,
-            corr_array_1,
-            corr_array_2,
-            hydromet_pdf_params,
+            nzt, ngrdcol,                  # In
+            hydromet_dim, hm_metadata,     # In
+            hm_1, hm_2, pdf_dim, mu_x_1,   # In
+            mu_x_2, sigma_x_1, sigma_x_2,  # In
+            corr_array_1, corr_array_2,    # In
+            hydromet_pdf_params,           # Out
         )
     else:
         corr_array_1 = None
@@ -601,50 +593,33 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
 
         if corr_array_1 is not None and corr_array_2 is not None:
             stats = pdf_param_hm_stats(
-                nzt,
-                ngrdcol,
-                pdf_dim,
-                hydromet_dim,
-                hm_metadata,
-                hm_1,
-                hm_2,
-                mu_x_1,
-                mu_x_2,
-                sigma_x_1,
-                sigma_x_2,
-                corr_array_1,
-                corr_array_2,
-                stats,
+                nzt, ngrdcol, pdf_dim, hydromet_dim, hm_metadata,  # In
+                hm_1, hm_2,                                        # In
+                mu_x_1, mu_x_2,                                    # In
+                sigma_x_1, sigma_x_2,                              # In
+                corr_array_1, corr_array_2,                        # In
+                stats,                                             # InOut
             )
 
         # Statistics for normal space PDF parameters involving hydrometeors.
         stats = pdf_param_ln_hm_stats(
-            nzt,
-            ngrdcol,
-            pdf_dim,
-            hm_metadata,
-            mu_x_1_n,
-            mu_x_2_n,
-            sigma_x_1_n,
-            sigma_x_2_n,
-            corr_array_1_n,
-            corr_array_2_n,
-            stats,
+            nzt, ngrdcol, pdf_dim, hm_metadata,  # In
+            mu_x_1_n, mu_x_2_n,                  # In
+            sigma_x_1_n, sigma_x_2_n,            # In
+            corr_array_1_n,                      # In
+            corr_array_2_n,                      # In
+            stats,                               # InOut
         )
 
         if stats.var_on_stats_list("rtp2_from_chi"):
             rtp2_zt_from_chi = compute_rtp2_from_chi(
-                pdf_params.stdev_chi_1,
-                pdf_params.stdev_chi_2,
-                pdf_params.stdev_eta_1,
-                pdf_params.stdev_eta_2,
-                pdf_params.rt_1,
-                pdf_params.rt_2,
-                pdf_params.crt_1,
-                pdf_params.crt_2,
-                pdf_params.mixt_frac,
-                corr_array_1_n[:, :, hm_metadata.iiPDF_chi, hm_metadata.iiPDF_eta],
-                corr_array_2_n[:, :, hm_metadata.iiPDF_chi, hm_metadata.iiPDF_eta],
+                pdf_params.stdev_chi_1, pdf_params.stdev_chi_2,                      # In
+                pdf_params.stdev_eta_1, pdf_params.stdev_eta_2,                      # In
+                pdf_params.rt_1, pdf_params.rt_2,                                    # In
+                pdf_params.crt_1, pdf_params.crt_2,                                  # In
+                pdf_params.mixt_frac,                                                # In
+                corr_array_1_n[:, :, hm_metadata.iiPDF_chi, hm_metadata.iiPDF_eta],  # In
+                corr_array_2_n[:, :, hm_metadata.iiPDF_chi, hm_metadata.iiPDF_eta],  # In
             )
             rtp2_zm_from_chi = zt2zm(
                 nzm,
@@ -664,10 +639,15 @@ def setup_pdf_parameters_api(gr, nzm, nzt, ngrdcol, pdf_dim,
     if clubb_at_least_debug_level(2):
         # Preserve symmetry/unit-diagonal checks inside compiled physics.
         from clubb_jax.src.CLUBB_core.constants_clubb import eps
+
         bad_corr = jnp.zeros((ngrdcol,), dtype=bool)
         for corr_array_n in (corr_array_1_n, corr_array_2_n):
-            symmetric = jnp.all(jnp.abs(corr_array_n - jnp.swapaxes(corr_array_n, -1, -2)) <= 1.e-6, axis=(1, 2, 3))
-            unit_diagonal = jnp.all(jnp.abs(jnp.diagonal(corr_array_n, axis1=-2, axis2=-1) - 1.0) <= eps, axis=(1, 2))
+            symmetric = jnp.all(
+                jnp.abs(corr_array_n - jnp.swapaxes(corr_array_n, -1, -2)) <= 1.0e-6, axis=(1, 2, 3)
+            )
+            unit_diagonal = jnp.all(
+                jnp.abs(jnp.diagonal(corr_array_n, axis1=-2, axis2=-1) - 1.0) <= eps, axis=(1, 2)
+            )
             bad_corr = bad_corr | ~symmetric | ~unit_diagonal
         err_info = err_info.set_fatal(mask=bad_corr)
 

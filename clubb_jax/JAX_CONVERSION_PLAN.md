@@ -158,10 +158,10 @@ uses the F2PY stats API.
 - The root `run_scm.py -jax` path launches only the repository JAX virtualenv
   and does not select or add a compiled Fortran Python runtime.
 
-The active standalone driver still rejects SILHS, adaptive-grid, radiation-grid,
-and multi-batch configurations at its existing feature gates. The backend
-implements those stats interfaces for future callers, but enabling the related
-model subsystems remains separate driver work.
+The active standalone driver supports SILHS microphysics and its statistics
+through native JAX sampling; see [SILHS_PORT_NOTES.md](./SILHS_PORT_NOTES.md).
+SILHS radiation, adaptive-grid, radiation-grid, and multi-batch configurations
+retain their existing feature gates.
 
 ## Verification and Acceptance Criteria
 

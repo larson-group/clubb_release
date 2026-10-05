@@ -324,27 +324,29 @@ module latin_hypercube_driver_module
     end if ! clubb_at_least_debug_level_api 1
 
     ! Generate pool of random numbers
-    call generate_random_pool( nzt, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
-                               lh_seed, gr,                                         & ! Intent(in)
-                               rand_pool )                                            ! Intent(out)
+    call generate_random_pool( nzt, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! In
+                               lh_seed, gr,                                         & ! In
+                               silhs_config_flags%l_lh_deterministic_test,           & ! In
+                               rand_pool )                                            ! Out
 
     ! Generate all uniform samples, based on the rand pool
     call generate_all_uniform_samples( &
-           iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-           nzt, ngrdcol, k_lh_start, X_vert_corr, rand_pool,              & ! Intent(in)
-           hm_metadata%iiPDF_chi,                                     & ! Intent(in)
-           pdf_params%cloud_frac_1,                                      & ! Intent(in)
-           pdf_params%cloud_frac_2,                                      & ! Intent(in)
-           pdf_params%mixt_frac, precip_fracs,                           & ! Intent(in)
-           silhs_config_flags%cluster_allocation_strategy,               & ! Intent(in)
-           silhs_config_flags%l_lh_importance_sampling,                  & ! Intent(in)
-           silhs_config_flags%l_lh_straight_mc,                          & ! Intent(in)
-           silhs_config_flags%l_lh_clustered_sampling,                   & ! Intent(in)
-           silhs_config_flags%l_lh_limit_weights,                        & ! Intent(in)
-           silhs_config_flags%l_lh_var_frac,                             & ! Intent(in)
-           silhs_config_flags%l_lh_normalize_weights,                    & ! Intent(in)
-           l_calc_weights_all_levs_itime,                                & ! Intent(in)
-           X_u_all_levs, lh_sample_point_weights )                         ! Intent(out)
+           iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! In
+           nzt, ngrdcol, k_lh_start, X_vert_corr, rand_pool,              & ! In
+           hm_metadata%iiPDF_chi,                                     & ! In
+           pdf_params%cloud_frac_1,                                      & ! In
+           pdf_params%cloud_frac_2,                                      & ! In
+           pdf_params%mixt_frac, precip_fracs,                           & ! In
+           silhs_config_flags%cluster_allocation_strategy,               & ! In
+           silhs_config_flags%l_lh_importance_sampling,                  & ! In
+           silhs_config_flags%l_lh_straight_mc,                          & ! In
+           silhs_config_flags%l_lh_clustered_sampling,                   & ! In
+           silhs_config_flags%l_lh_limit_weights,                        & ! In
+           silhs_config_flags%l_lh_var_frac,                             & ! In
+           silhs_config_flags%l_lh_normalize_weights,                    & ! In
+           silhs_config_flags%l_lh_deterministic_test,                   & ! In
+           l_calc_weights_all_levs_itime,                                & ! In
+           X_u_all_levs, lh_sample_point_weights )                         ! Out
 
     !$acc parallel loop gang vector collapse(3) default(present)
     do k = 1, nzt
@@ -488,6 +490,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine generate_random_pool( nzt, ngrdcol, pdf_dim, num_samples, d_uniform_extra, &
                                    lh_seed, gr, &
+                                   l_lh_deterministic_test, &
                                    rand_pool )
   ! Description:
   !     This subroutine populates rand_pool with random numbers. There are
@@ -528,6 +531,12 @@ module latin_hypercube_driver_module
     
     implicit none 
     
+    ! ------------------- Local Constants -------------------
+
+    real(kind=core_rknd), parameter :: &
+      test_uniform_draws(4) = [0.125_core_rknd, 0.625_core_rknd, &
+                               0.375_core_rknd, 0.875_core_rknd]
+
     ! ------------------- Input Variables -------------------
     
     integer, intent(in) :: &
@@ -543,6 +552,9 @@ module latin_hypercube_driver_module
 
     type(grid), intent(in) :: &
       gr    ! Grid variable type
+
+    logical, intent(in) :: &
+      l_lh_deterministic_test ! Use a repeating overlap pool for repeatable testing
       
     ! ------------------- Output Variables -------------------
 
@@ -567,6 +579,31 @@ module latin_hypercube_driver_module
     integer :: k, p, i, sample ! Loop variables
       
     ! ---------------- Begin Code ----------------
+
+    if ( l_lh_deterministic_test ) then
+      ! Repeatable testing only; numerically acceptable sampling is not guaranteed.
+      ! Cycle through (0.125, 0.625, 0.375, 0.875), offset by the sum of
+      ! zero-based column, sample, level and variate indices modulo four.
+      ! For ngrdcol=4, the first three samples at the first level and variate
+      ! are (one row per sample, columns 1:4):
+      !   0.125  0.625  0.375  0.875
+      !   0.625  0.375  0.875  0.125
+      !   0.375  0.875  0.125  0.625
+      do p = 1, pdf_dim+d_uniform_extra
+        do k = 1, nzt
+          do sample = 1, num_samples
+            do i = 1, ngrdcol
+              rand_pool(i,sample,k,p) = &
+                test_uniform_draws(mod( (i-1) + (sample-1) + (k-1) + (p-1), 4 ) + 1)
+            end do
+          end do
+        end do
+      end do
+#ifdef CLUBB_GPU
+      !$acc update device( rand_pool )
+#endif
+      return
+    end if
     
 #if defined(CUDA) && defined(CLUBB_GPU)
 
@@ -643,6 +680,7 @@ module latin_hypercube_driver_module
                l_lh_limit_weights,                                           & ! Intent(in)
                l_lh_var_frac,                                                & ! Intent(in)
                l_lh_normalize_weights,                                       & ! Intent(in)
+               l_lh_deterministic_test,                                      & ! Intent(in)
                l_calc_weights_all_levs_itime,                                & ! Intent(in)
                X_u_all_levs, lh_sample_point_weights )                         ! Intent(out)
   ! Description:
@@ -722,6 +760,7 @@ module latin_hypercube_driver_module
       l_lh_limit_weights, &       ! Ensure weights stay under a given value
       l_lh_var_frac, &            ! Prescribe variance fractions
       l_lh_normalize_weights, &   ! Normalize weights to sum to num_samples
+      l_lh_deterministic_test, &  ! Ordered strata/repeating draws for repeatable testing
       l_calc_weights_all_levs_itime
 
     ! ------------------ Output Variables ------------------
@@ -780,9 +819,10 @@ module latin_hypercube_driver_module
       
         do i = 1, ngrdcol
           ! Generate a uniformly distributed Latin hypercube sample
-          call generate_uniform_lh_sample( iter, num_samples, sequence_length, & ! Intent(in)
-                                           pdf_dim+d_uniform_extra,            & ! Intent(in)
-                                           X_u_all_levs(i,:,k_lh_start(i),:) )   ! Intent(out)
+          call generate_uniform_lh_sample( iter, num_samples, sequence_length, & ! In
+                                           pdf_dim+d_uniform_extra,            & ! In
+                                           l_lh_deterministic_test,            & ! In
+                                           X_u_all_levs(i,:,k_lh_start(i),:) )   ! Out
                                 
           if ( l_lh_importance_sampling ) then
 
@@ -878,9 +918,10 @@ module latin_hypercube_driver_module
           do k = 1, nzt
 
             ! Generate a uniformly distributed Latin hypercube sample
-            call generate_uniform_lh_sample( iter, num_samples, sequence_length, & ! Intent(in)
-                                             pdf_dim+d_uniform_extra,            & ! Intent(in)
-                                             X_u_all_levs(i,:,k,:) )               ! Intent(out)
+            call generate_uniform_lh_sample( iter, num_samples, sequence_length, & ! In
+                                             pdf_dim+d_uniform_extra,            & ! In
+                                             l_lh_deterministic_test,            & ! In
+                                             X_u_all_levs(i,:,k,:) )               ! Out
 
             if ( l_lh_importance_sampling ) then
 

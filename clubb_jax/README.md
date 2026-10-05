@@ -19,6 +19,10 @@ and translated source lives under [`src/`](./src/):
   sedimentation and feedback to CLUBB. The strict comparison suite covers KK
   and short Morrison runs; atmospheric ice and graupel validation remains
   incomplete.
+- `src/SILHS/` contains native JAX Latin-hypercube sampling and its KK/Morrison
+  microphysics hookup. Interactive and non-interactive modes are enabled;
+  random-stream matching with Fortran is deferred. See
+  [`SILHS_PORT_NOTES.md`](./SILHS_PORT_NOTES.md) for configuration and validation.
 - `src/Radiation/BUGSrad/` remains disconnected from the supported standalone path.
 
 The detailed support boundary and conversion workflow are documented in

@@ -320,6 +320,7 @@ module microphys_init_cleanup
       l_lh_limit_weights, &
       l_lh_var_frac, &
       l_lh_normalize_weights, &
+      l_lh_deterministic_test, &
       l_corr_file_1_exist, &
       l_corr_file_2_exist
 
@@ -354,7 +355,7 @@ module microphys_init_cleanup
       l_lh_straight_mc, l_lh_clustered_sampling, &
       l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, &
       l_max_overlap_in_cloud, l_lh_instant_var_covar_src, l_lh_limit_weights, l_lh_var_frac, &
-      l_lh_normalize_weights
+      l_lh_normalize_weights, l_lh_deterministic_test
 
 
     ! ---- Begin Code ----
@@ -415,7 +416,8 @@ module microphys_init_cleanup
                                              l_lh_instant_var_covar_src, & ! Out
                                              l_lh_limit_weights, & ! Out
                                              l_lh_var_frac, & ! Out
-                                             l_lh_normalize_weights ) ! Out
+                                             l_lh_normalize_weights, & ! Out
+                                             l_lh_deterministic_test ) ! Out
 
     ! Read in SILHS parameters, if SILHS is enabled
     if ( trim( lh_microphys_type ) /= "disabled" ) then
@@ -427,6 +429,13 @@ module microphys_init_cleanup
       read(iunit, nml=configurable_silhs_flags_nl)
       close(unit=iunit)
     end if ! trim( lh_microphys_type ) /= "disabled"
+
+    ! These deterministic inputs do not replace the independent importance/start-level draws.
+    if ( trim( lh_microphys_type ) /= "disabled" .and. l_lh_deterministic_test ) then
+      if ( l_lh_importance_sampling .or. l_random_k_lh_start ) then
+        error stop "Deterministic SILHS testing requires importance sampling and random starts disabled"
+      end if
+    end if
 
     call initialize_silhs_config_flags_type_api( cluster_allocation_strategy, & ! In
                                                  l_lh_importance_sampling, & ! In
@@ -440,6 +449,7 @@ module microphys_init_cleanup
                                                  l_lh_limit_weights, & ! In
                                                  l_lh_var_frac, & ! In
                                                  l_lh_normalize_weights, & ! In
+                                                 l_lh_deterministic_test, & ! In
                                                  silhs_config_flags ) ! Out
 
     vert_decorr_coef_out = vert_decorr_coef

@@ -66,6 +66,7 @@ module generate_uniform_sample_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_uniform_lh_sample( iter, num_samples, sequence_length, n_vars, &
+                                         l_lh_deterministic_test, &
                                          X_u_one_lev )
 
   ! Description:
@@ -85,11 +86,15 @@ module generate_uniform_sample_module
       one_height_time_matrix  ! Variable
 
     use constants_clubb, only: &
-      fstderr    ! Constant
+      one, fstderr ! Constants
 
     implicit none
 
     ! Local Constants
+    real(kind=core_rknd), parameter :: &
+      test_uniform_draws(4) = [0.125_core_rknd, 0.625_core_rknd, &
+                               0.375_core_rknd, 0.875_core_rknd]
+
     logical, parameter :: &
       l_diagnostic_iter_check = .true.  ! Perform check to make sure SILHS is being called
                                         ! correctly
@@ -101,6 +106,9 @@ module generate_uniform_sample_module
       sequence_length, & ! `n_t' Num. random samples before sequence repeats
       n_vars             ! Number of uniform variables to generate
 
+    logical, intent(in) :: &
+      l_lh_deterministic_test ! Ordered strata and repeating draws for repeatable testing
+
     ! Output Variables
 
     real(kind=core_rknd), intent(out), dimension(num_samples,n_vars) :: &
@@ -109,7 +117,7 @@ module generate_uniform_sample_module
 
     ! Local Variables
 
-    integer :: j, k, nt_repeat, i_rmd
+    integer :: j, k, nt_repeat, i_rmd, i_draw
 
     ! ---- Begin Code ----
 
@@ -140,15 +148,36 @@ module generate_uniform_sample_module
     i_rmd = mod( iter-1, sequence_length )
 
     if ( i_rmd == 0 ) then
-      call permute_height_time( nt_repeat, n_vars, &          ! intent(in)
-                                one_height_time_matrix )      ! intent(out)
+      if ( l_lh_deterministic_test ) then
+        ! Repeatable testing only; numerically acceptable sampling is not guaranteed.
+        ! Use strata 0, ..., nt_repeat-1 for every variate. Refresh at the start
+        ! of each sequence and reuse the first num_samples rows between refreshes.
+        do k = 1, n_vars
+          do j = 1, nt_repeat
+            one_height_time_matrix(j,k) = j - 1
+          end do
+        end do
+      else
+        call permute_height_time( nt_repeat, n_vars, &          ! In
+                                  one_height_time_matrix )      ! Out
+      end if
     end if
     ! End Latin hypercube sample generation
 
     ! Choose values of sample using permuted vector and random number generator
     do j = 1,num_samples
       do k = 1,n_vars
-        X_u_one_lev(j,k) = choose_permuted_random( nt_repeat, one_height_time_matrix(j,k) )
+        if ( l_lh_deterministic_test ) then
+          ! Repeatable testing only; numerically acceptable sampling is not guaranteed.
+          ! Cycle through offsets (0.125, 0.625, 0.375, 0.875) using the sum of
+          ! zero-based sample, variate and timestep indices modulo four.
+          ! Each point is (stored stratum + offset)/nt_repeat.
+          i_draw = mod( (j-1) + (k-1) + (iter-1), 4 ) + 1
+          X_u_one_lev(j,k) = (one / real( nt_repeat, kind=core_rknd )) &
+            * (real( one_height_time_matrix(j,k), kind=core_rknd ) + test_uniform_draws(i_draw))
+        else
+          X_u_one_lev(j,k) = choose_permuted_random( nt_repeat, one_height_time_matrix(j,k) )
+        end if
       end do
     end do
 
