@@ -154,15 +154,13 @@ def _split_top_level_commas(text: str) -> list[str]:
 
         if char == "," and quote is None:
             token = "".join(buf).strip()
-            if token:
-                parts.append(token)
+            parts.append(token)
             buf = []
             continue
         buf.append(char)
 
     token = "".join(buf).strip()
-    if token:
-        parts.append(token)
+    parts.append(token)
     return parts
 
 
@@ -170,6 +168,10 @@ def _parse_scalar(text: str):
     """Convert a Fortran-style literal into a Python scalar."""
     token = text.strip()
     lower = token.lower()
+
+    # A null namelist entry leaves the corresponding initialized value unchanged.
+    if not token:
+        return None
 
     if lower in {".true.", "true"}:
         return True

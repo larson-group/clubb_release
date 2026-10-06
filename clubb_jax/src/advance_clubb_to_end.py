@@ -35,31 +35,48 @@ def _err_code_summary(err_info) -> str:
     return "; ".join(pieces)
 
 
-def advance_clubb_to_end(state: dict, l_stdout: bool = True, max_steps: int | None = None):
+def advance_clubb_to_end(
+    state: dict, l_stdout: bool = True, l_suppress_stats: bool = False,
+    itime_start: int | None = None, itime_end: int | None = None,
+    max_steps: int | None = None,
+):
     """Run the CLUBB time loop.
 
     For JAX differentiation, initialize with debug=-1 and stats disabled,
     and pass l_stdout=False. Set configuration before tracing the driver.
+    The source l_suppress_stats option disables sampling for this advance
+    without changing the initialized stats configuration. max_steps is the
+    existing JAX-only iteration cap; source optional arguments precede it.
     """
 
     dt_main = state['dt_main']
     dt_rad = state['dt_rad']
     time_initial = state['time_initial']
     ifinal = state['ifinal']
-    l_stats = state['l_stats']
+    # If l_suppress_stats is true, turn off stats, otherwise use the stats setting.
+    l_stats = state['l_stats'] and not l_suppress_stats
 
     rad_interval = int(dt_rad / dt_main)
-    n_steps = ifinal if max_steps is None else min(ifinal, max_steps)
 
-    for itime_idx in range(n_steps):
-        itime = itime_idx + 1
+    # Source optional bounds select successive loss windows without resetting
+    # the model. The state dictionary replaces Fortran's driver globals.
+    loop_iinit = state.get('iinit', 1)
+    loop_ifinal = ifinal
+    if itime_start is not None:
+        loop_iinit = itime_start
+    if itime_end is not None:
+        loop_ifinal = itime_end
+    if max_steps is not None:
+        loop_ifinal = min(loop_ifinal, loop_iinit + max_steps - 1)
+
+    for itime in range(loop_iinit, loop_ifinal + 1):
         time_current = time_initial + (itime - 1) * dt_main
 
         # ── Stats: begin timestep ───────────────────────────────────────
         # Begin stats collection and initialize JAX stats banks for core updates.
         if l_stats:
             stats_writer = state['stats_writer']
-            l_sample, l_last_sample = stats_writer.begin_timestep(itime_idx)
+            l_sample, l_last_sample = stats_writer.begin_timestep(itime - 1)
             jax_stats = state.get('_jax_stats')
             if jax_stats is None:
                 jax_stats = JaxStats.from_layout(
@@ -70,6 +87,22 @@ def advance_clubb_to_end(state: dict, l_stdout: bool = True, max_steps: int | No
                 l_sample=l_sample,
                 reset_accumulators=stats_writer.l_reset,
             )
+        elif state['l_stats']:
+            # Source suppression leaves the configured stats state intact.
+            # Keep its banks but disable updates, so a later unsuppressed window
+            # can resume sampling without losing the registry or accumulations.
+            jax_stats = state.get('_jax_stats')
+            if jax_stats is None:
+                jax_stats = JaxStats.from_layout(
+                    state['stats_writer'].get_jax_layout(),
+                    ncol=state['ngrdcol'],
+                )
+            state['_jax_stats'] = jax_stats.begin_timestep(
+                l_sample=False,
+                reset_accumulators=False,
+            )
+            l_sample = False
+            l_last_sample = False
         else:
             state['_jax_stats'] = JaxStats.empty(
                 l_sample=False,

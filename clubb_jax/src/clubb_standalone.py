@@ -13,6 +13,7 @@ import jax
 from clubb_jax.src.clubb_case_initalization import (
     clean_up_clubb,
     init_clubb_case,
+    set_case_initial_conditions,
 )
 from clubb_jax.src.advance_clubb_to_end import advance_clubb_to_end
 
@@ -41,8 +42,13 @@ def main():
 
     t0 = time.time()
     state = init_clubb_case(namelist_path)
-    advance_clubb_to_end(state, l_stdout=l_stdout)
-    clean_up_clubb(state)
+    try:
+        num_batches = state['total_param_sets'] // state['ngrdcol']
+        for batch_num in range(1, num_batches + 1):
+            set_case_initial_conditions(state, batch_num=batch_num)
+            advance_clubb_to_end(state, l_stdout=l_stdout)
+    finally:
+        clean_up_clubb(state)
     elapsed = time.time() - t0
 
     print(f"Completed {state['ifinal']} timesteps in {elapsed:.1f}s")

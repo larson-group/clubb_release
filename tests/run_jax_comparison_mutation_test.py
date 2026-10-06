@@ -66,8 +66,12 @@ PARAMETER_HANDLING = Mutation(
     name="parameter_handling",
     description="Load C8 as [0.2, 0.3, 0.4, 0.5] instead of [0.2, 0.4, 0.6, 0.8].",
     target=Path("clubb_jax/src/CLUBB_core/parameters_tunable.py"),
-    original="values[:, idx] = arr",
-    mutated='values[:, idx] = arr[0] + 0.5 * (arr - arr[0]) if key == "c8" else arr',
+    original="values[column, _NAME_TO_IDX[key]] = float(value)",
+    mutated=(
+        'values[column, _NAME_TO_IDX[key]] = '
+        'values[0, _NAME_TO_IDX[key]] + 0.5 * (float(value) - values[0, _NAME_TO_IDX[key]]) '
+        'if key == "c8" and column > 0 else float(value)'
+    ),
     field="wp3",
     later_columns_only=True,
     expected_c8=(0.2, 0.3, 0.4, 0.5),

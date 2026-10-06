@@ -172,6 +172,8 @@ def choose_run_command(args):
             # Keep profile/modifier parsing in the launcher so CLI and Dash
             # share its validation and environment setup rules.
             run_cmd.append(f"-options={args.jax_options}")
+        if getattr(args, 'driver_test', False):
+            run_cmd.append("-module=clubb_jax.src.clubb_driver_test")
     else:
         install_dir, install_source = choose_install_dir(args)
         show_install_dir = True
@@ -261,7 +263,7 @@ def main():
         help="Install directory containing CLUBB executables.\nDefault: install/selected if present, otherwise install/latest.")
 
     run_group.add_argument("-driver_test", action="store_true",
-        help="Runs the clubb_driver_test executable instead of clubb_standalone")
+        help="Run the driver lifecycle test instead of the standalone; combines with -jax")
 
     run_group.add_argument("-python", action="store_true",
         help="Run the Python standalone driver (python -m clubb_python_driver.clubb_standalone)")
@@ -283,9 +285,12 @@ def main():
         parser.error("-jax may be specified only once.")
     args.jax_options = jax_options
 
-    ndefined = sum(bool(x) for x in [args.exe, args.driver_test, args.python, args.jax])
-    if ndefined > 1:
-        parser.error("Only one of -exe, -driver_test, -python, or -jax may be specified.")
+    ndefined = sum(bool(x) for x in [args.exe, args.python, args.jax])
+    if ndefined > 1 or (args.driver_test and (args.exe or args.python)):
+        parser.error(
+            "Only one of -exe, -python, or -jax may be specified; "
+            "-driver_test selects the native or JAX test and cannot combine with -exe or -python."
+        )
     if args.gdb and (args.python or args.jax):
         parser.error("-gdb can only be used with compiled executables, not -python or -jax.")
     if args.zt_grid and args.zm_grid:

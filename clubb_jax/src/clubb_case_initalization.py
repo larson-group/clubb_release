@@ -3,6 +3,7 @@ import math
 from pathlib import Path
 
 import numpy as np
+import jax
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.config_flags import ConfigFlags
@@ -14,7 +15,10 @@ from clubb_jax.src.CLUBB_core.pdf_params import (
 )
 from clubb_jax.src.CLUBB_core.err_info import ErrInfo
 from clubb_jax.src.CLUBB_core.calc_pressure import calculate_thvm
-from clubb_jax.src.CLUBB_core.error_code import set_debug_level as set_jax_debug_level
+from clubb_jax.src.CLUBB_core.error_code import (
+    clubb_at_least_debug_level,
+    set_debug_level as set_jax_debug_level,
+)
 from clubb_jax.src.CLUBB_core.grid_class import zt2zm
 from clubb_jax.src.CLUBB_core.model_flags import get_default_config_flags
 from clubb_jax.src.CLUBB_core.numerical_check import check_clubb_settings
@@ -178,8 +182,14 @@ def run_clubb(namelist_path: str, l_stdout: bool = True):
     from clubb_jax.src.advance_clubb_to_end import advance_clubb_to_end
 
     state = init_clubb_case(namelist_path)
-    advance_clubb_to_end(state, l_stdout=l_stdout)
-    clean_up_clubb(state)
+    try:
+        num_batches = state['total_param_sets'] // state['ngrdcol']
+        for batch_num in range(1, num_batches + 1):
+            # Reset fields and select the corresponding parameter/output slice.
+            set_case_initial_conditions(state, batch_num=batch_num)
+            advance_clubb_to_end(state, l_stdout=l_stdout)
+    finally:
+        clean_up_clubb(state)
     return state
 
 
@@ -366,7 +376,18 @@ def init_clubb_case(namelist_path: str) -> dict:
     namelist_dir = Path(namelist_path).resolve().parent
 
     # Unpack key config values
-    ngrdcol = cfg['ngrdcol']
+    # Resolve total parameter count and runtime batch size before allocation.
+    total_param_sets = int(cfg['ngrdcol'])
+    batch_size = int(cfg.get('batch_size', -1))
+    if batch_size == -1:
+        batch_size = total_param_sets
+    if total_param_sets < 1:
+        raise ValueError('ngrdcol in &multicol_def must be >= 1')
+    if batch_size < 1 or batch_size > total_param_sets:
+        raise ValueError('batch_size in &multicol_def must lie between 1 and ngrdcol')
+    if total_param_sets % batch_size != 0:
+        raise ValueError('ngrdcol in &multicol_def must be evenly divisible by batch_size')
+    ngrdcol = batch_size
     nzmax = cfg['nzmax']
     grid_type = cfg['grid_type']
     dt_main = cfg['dt_main']
@@ -601,7 +622,8 @@ def init_clubb_case(namelist_path: str) -> dict:
     wm_zm[:, -1] = 0.0
 
     # ── 8. Initialize PDF and tunable parameters ────────────────────────
-    clubb_params = init_clubb_params(ngrdcol, filename=namelist_path)
+    clubb_params_all = init_clubb_params(total_param_sets, filename=namelist_path)
+    clubb_params = clubb_params_all[:ngrdcol]
     pdf_params = init_pdf_params_py(nzt, ngrdcol)
     pdf_params_zm = init_pdf_params_py(nzm, ngrdcol)   # NB: Fortran uses nzm for pdf_params_zm
     pdf_implicit_coefs_terms = init_pdf_implicit_coefs_terms_api(nzt, ngrdcol, sclr_dim)
@@ -622,13 +644,11 @@ def init_clubb_case(namelist_path: str) -> dict:
         iiedsclr_CO2=iiedsclr_co2,
     )
     nu_vert_res_dep, lmin, mixt_frac_max_mag = calc_derived_params(
-        gr=gr,
-        ngrdcol=ngrdcol,
-        grid_type=grid_type,
-        deltaz=deltaz,
-        clubb_params=clubb_params,
-        l_prescribed_avg_deltaz=False,
+        gr, ngrdcol, grid_type, deltaz,               # In
+        clubb_params, flags.l_prescribed_avg_deltaz,  # In
     )
+    if float(lmin) < 1.0:
+        raise ValueError('lmin is < 1.0')
 
     err_info = check_clubb_settings(
         ngrdcol=ngrdcol,
@@ -784,6 +804,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     time_initial = cfg['time_initial']
     time_final = cfg['time_final']
     ifinal = int(math.floor((time_final - time_initial) / dt_main))
+    iinit = 1
     stats_nsamp = int(round(cfg['stats_tsamp'] / dt_main))
     stats_nout = int(round(cfg['stats_tout'] / dt_main))
 
@@ -791,15 +812,19 @@ def init_clubb_case(namelist_path: str) -> dict:
     l_stats = bool(cfg['l_stats'])
     stats_registry_path = _resolve_stats_registry_path(namelist_path, cfg)
     stats_output_path = output_dir_path / f"{stats_prefix}_stats.nc"
-
+    # An empty source stats_output_filename keeps statistics in memory.
+    if 'stats_output_filename' in cfg:
+        stats_filename = str(cfg['stats_output_filename']).strip()
+        stats_output_path = output_dir_path / stats_filename if stats_filename else None
     stats_writer = None
     if l_stats:
         if not stats_registry_path.exists():
             raise FileNotFoundError(f"Stats registry file not found: {stats_registry_path}")
-        stats_output_path.parent.mkdir(parents=True, exist_ok=True)
+        if stats_output_path is not None:
+            stats_output_path.parent.mkdir(parents=True, exist_ok=True)
         stats_writer = StatsWriter(
             registry_path=str(stats_registry_path),
-            output_path=str(stats_output_path),
+            output_path=str(stats_output_path) if stats_output_path is not None else '',
             nzt=nzt,
             nzm=nzm,
             ngrdcol=ngrdcol,
@@ -814,7 +839,8 @@ def init_clubb_case(namelist_path: str) -> dict:
             time_initial=float(time_initial),
             stats_tstart=float(cfg.get('stats_tstart', time_initial)),
             stats_tend=float(cfg.get('stats_tend', time_final)),
-            clubb_params_vals=np.asarray(clubb_params),
+            ncol_total=total_param_sets,
+            clubb_params_vals=np.asarray(clubb_params_all),
             param_names=get_param_names(),
             sclr_dim=sclr_dim,
             edsclr_dim=edsclr_dim,
@@ -822,6 +848,15 @@ def init_clubb_case(namelist_path: str) -> dict:
         )
         if not stats_writer.enabled:
             raise RuntimeError("stats_init completed but stats are not enabled")
+
+    if (
+        total_param_sets > batch_size and stats_writer is not None
+        and stats_output_path is not None
+        and parameters_microphys.lh_microphys_type != parameters_microphys.lh_microphys_disabled
+    ):
+        # Source batch-mode NetCDF output does not support SILHS sample output.
+        stats_writer.finalize()
+        raise ValueError('Batch-mode stats NetCDF output does not yet support SILHS sample output')
 
     if parameters_microphys.lh_microphys_type != parameters_microphys.lh_microphys_disabled:
         from clubb_jax.src.SILHS.silhs_api_module import latin_hypercube_2D_output_api
@@ -855,10 +890,11 @@ def init_clubb_case(namelist_path: str) -> dict:
         runtype=runtype, ngrdcol=ngrdcol, nzt=nzt, nzm=nzm,
         dt_main=dt_main, dt_rad=dt_rad,
         time_initial=time_initial, time_final=time_final,
-        ifinal=ifinal, l_stats=l_stats, stats_writer=stats_writer,
+        iinit=iinit, ifinal=ifinal, l_stats=l_stats, stats_writer=stats_writer,
         stats_nsamp=stats_nsamp, stats_nout=stats_nout,
         stats_registry_path=str(stats_registry_path),
-        stats_output_path=str(stats_output_path),
+        stats_output_path=str(stats_output_path) if stats_output_path is not None else '',
+        total_param_sets=total_param_sets, clubb_params_all=clubb_params_all,
         saturation_formula=saturation_formula,
         sfctype=int(cfg['sfctype']),
         microphys_scheme=microphys_scheme,
@@ -943,6 +979,8 @@ def init_clubb_case(namelist_path: str) -> dict:
         thv_ds_zt=thv_ds_zt, thv_ds_zm=thv_ds_zm,
         thvm=thvm,
         radht=np.zeros((ngrdcol, nzt)),
+        # The source restart reader restores radht only. Fluxes and separate
+        # heating caches retain these zeros until the next radiation update.
         radht_SW=np.zeros((ngrdcol, nzt)),
         radht_LW=np.zeros((ngrdcol, nzt)),
         Frad=np.zeros((ngrdcol, nzm)),
@@ -1026,7 +1064,93 @@ def init_clubb_case(namelist_path: str) -> dict:
     print(f"Initialized {runtype} case: nzm={nzm}, nzt={nzt}, ngrdcol={ngrdcol}")
     print(f"  dt_main={dt_main}s, time={time_initial}s to {time_final}s, {ifinal} steps")
 
+    # Adaptation: immutable JAX leaves replace the source's per-field initial
+    # allocations. Capture restored restart/SILHS state before any advance.
+    state = jax.tree_util.tree_map(
+        lambda value: jnp.asarray(value) if isinstance(value, np.ndarray) else value,
+        state,
+    )
+    state['_initial_state'] = dict(state)
     return state
+
+
+def set_case_initial_conditions(
+    state: dict, clubb_params_in=None, batch_num=None,
+):
+    """Reset advanced fields and statistics for a rerun or runtime batch.
+
+    Mirrors ``set_case_initial_conditions`` in ``src/clubb_driver.F90``.
+    ``state`` owns the source driver globals and its InOut error container.
+    The immutable initialization snapshot replaces repeated field assignments;
+    radiation/PDF/microphysics caches and restart sampling state reset with it.
+
+    Args:
+        state: initialized driver fields and resources [InOut].
+        clubb_params_in: optional replacement (ngrdcol, nparams) matrix [In].
+        batch_num: optional one-based logical runtime batch selector [In].
+    """
+    initial_state = state['_initial_state']
+    stats_writer = initial_state['stats_writer']
+    if stats_writer is not None:
+        stats_writer.reset()
+
+    if batch_num is not None:
+        num_batches = state['total_param_sets'] // state['ngrdcol']
+        if batch_num < 1 or batch_num > num_batches:
+            raise ValueError(
+                'set_case_initial_conditions batch_num is outside the valid runtime batch range'
+            )
+        if batch_num > 1 and stats_writer is not None:
+            stats_writer.start_next_batch()
+
+    # Preserve newly supplied parameters or select an internally stored batch.
+    # Without either optional input, the source retains the current matrix.
+    if clubb_params_in is not None:
+        if clubb_params_in.shape != initial_state['clubb_params'].shape:
+            raise ValueError(
+                'clubb_params_in must match the initialized (ngrdcol,nparams) shape'
+            )
+        clubb_params = clubb_params_in
+    elif batch_num is not None:
+        batch_start = (batch_num - 1) * state['ngrdcol']
+        batch_end = batch_start + state['ngrdcol']
+        clubb_params = initial_state['clubb_params_all'][batch_start:batch_end, :]
+    else:
+        clubb_params = state['clubb_params']
+
+    # Restore case fields, zeroed diagnostics and the absolute restart clock.
+    # Resource objects stay host-owned; statistics reset through their API above.
+    state.clear()
+    state.update(initial_state)
+    state['_initial_state'] = initial_state
+    state['clubb_params'] = jnp.asarray(
+        clubb_params, dtype=initial_state['clubb_params'].dtype,
+    )
+
+    # Recompute parameter-dependent derived state for the next run.
+    state['nu_vert_res_dep'], state['lmin'], state['mixt_frac_max_mag'] = calc_derived_params(
+        state['gr'], state['ngrdcol'], state['cfg']['grid_type'],                    # In
+        jnp.full((state['ngrdcol'],), state['cfg']['deltaz_nl']),                     # In
+        state['clubb_params'], state['flags'].l_prescribed_avg_deltaz,               # In
+    )
+    if float(state['lmin']) < 1.0:
+        raise ValueError('lmin is < 1.0')
+
+    # Re-run the parameter sanity checks when debugging, as at initial setup.
+    if clubb_at_least_debug_level(1):
+        # TODO: the existing settings API is keyword-only; retain its contract
+        # until its signature mirrors the source's explicit argument groups.
+        state['err_info'] = check_clubb_settings(
+            ngrdcol=state['ngrdcol'], params=state['clubb_params'],                  # In
+            l_implemented=False, l_input_fields=False, config_flags=state['flags'], # In
+            err_info=state['err_info'],                                            # InOut
+        )
+        if state['err_info'].is_fatal():
+            raise RuntimeError(
+                'Fatal error calling check_clubb_settings in set_case_initial_conditions'
+            )
+    return state['err_info']
+
 
 def clean_up_clubb(state: dict):
     """Clean up stats state."""

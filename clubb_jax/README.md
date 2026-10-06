@@ -251,6 +251,34 @@ run; it does not generate the reference run. Missing input or a failed
 numerical assertion fails the check. The gradient check's settings and limits
 are described in [Differentiability](#differentiability-initial-test).
 
+## Reusable cases and runtime batches
+
+Initialization captures the model's initial state. `set_case_initial_conditions`
+resets fields/statistics and recomputes parameter-dependent derived values for
+reruns or one-based runtime batches. Optional absolute iteration bounds in
+`advance_clubb_to_end` support successive windows without resetting the model.
+The standalone runs all configured parameter batches.
+
+The native driver-test counterpart is `clubb_jax/src/clubb_driver_test.py`.
+It accepts the standalone namelist, initializes/cleans up/reinitializes, then
+advances, resets and advances again. Only the second advance writes statistics.
+For example, run both frontends and compare their complete NetCDF output:
+
+```sh
+python3 run_scripts/run_scm.py bomex -jax -multicol 4 -max_iters 8 -tout 60 \
+  -override 'stats_tsamp=60.' -output_dir driver_test/standalone_jax
+python3 run_scripts/run_scm.py bomex -jax -driver_test -multicol 4 -max_iters 8 \
+  -tout 60 -override 'stats_tsamp=60.' -output_dir driver_test/driver_jax
+python3 run_scripts/run_bindiff_all.py output/driver_test/standalone_jax \
+  output/driver_test/driver_jax -strict
+```
+
+The `clubb_driver` Jenkins job runs BOMEX and ATEX with distinct C8 columns and
+two-column runtime batches alongside the native driver checks. Its additional
+JAX-only window/batch assertions are runnable with
+`python3 clubb_jax/tests/run_driver_extensions_test.py`. Restart input and
+loss/tuning interfaces are separate functionality changes.
+
 ## Requirements And Environments
 
 No Fortran build is required for a JAX-only run. Runtime and test dependencies

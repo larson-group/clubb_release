@@ -19,7 +19,10 @@ run from the command line belongs in higher-level `tests/`. Put component-specif
 checks in that component's `tests/` folder; reserve repository-root `tests/` for
 shared entry points, comparisons across implementations and general CLUBB
 regressions. Give a workflow an explicit entry point, required inputs and
-meaningful assertions. Preserve its assertions when moving it out of pytest.
+meaningful assertions. Its top-level description should explain the scenario
+and assertions. For Fortran-derived checks, reference the source routines and
+native test/harness being adapted, and identify any added backend-specific
+assertions. Preserve its assertions when moving it out of pytest.
 Wiring a pytest suite does not authorize adding real-case or application/CLI
 workflow stages to Jenkins; add those stages only within the requested CI scope,
 otherwise document the manual validation route.

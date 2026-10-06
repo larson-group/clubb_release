@@ -9,6 +9,32 @@ pipeline {
     // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {
+        stage('JAX reusable driver lifecycle') {
+          agent { label 'carson' }
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                # Compare the same namelists through the normal and reset/rerun frontends.
+                run_scripts/run_scm_all.py -jax -cases bomex,atex -workers 1 \
+                  -multicol C8/0.2:0.8/4 -batch_size 2 -max_iters 8 \
+                  -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.' \
+                  -output_dir driver_test/standalone_jax
+                run_scripts/run_scm_all.py -jax -driver_test -cases bomex,atex -workers 1 \
+                  -multicol C8/0.2:0.8/4 -batch_size 2 -max_iters 8 \
+                  -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.' \
+                  -output_dir driver_test/driver_jax
+                run_scripts/run_bindiff_all.py output/driver_test/standalone_jax \
+                  output/driver_test/driver_jax -strict
+              '''
+            }
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                # JAX-only assertions beyond src/clubb_driver_test.F90.
+                python3 clubb_jax/tests/run_driver_extensions_test.py
+              '''
+            }
+          }
+        }
         stage('standard cases + multi_col with ifx') {
           agent any
           steps {

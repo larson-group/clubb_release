@@ -1,4 +1,4 @@
-"""Pure-Python implementation of selected ``parameters_tunable.F90`` APIs.
+"""JAX derived parameters and host I/O for ``parameters_tunable.F90`` APIs.
 
 Description:
   This module contains tunable model parameters.  The purpose of the module is to make it
@@ -21,16 +21,19 @@ The JAX driver needs ``get_param_names``, ``init_clubb_params``,
 Fortran ``pack_parameters`` and ``unpack_parameters`` are represented by
 ``PARAM_NAMES``/``PNAME_IDX`` plus a Python dictionary of defaults.  Fortran
 mutates derived-type allocations in place; Python returns a ``NuVertResDep``
-named tuple with NumPy arrays.
+pytree with JAX arrays. Host parameter-file I/O and validation use NumPy;
+parameter-dependent derived calculations are pure JAX. The source lmin fatal
+check is performed by the host driver at initialization and rerun reset.
 """
 from __future__ import annotations
 
-import math
+import re
 import sys
 
 import numpy as np
+import jax.numpy as jnp
 
-from clubb_jax.src.Input_fields.namelist import read_namelist
+from clubb_jax.src.Input_fields.namelist import _read_namelist_groups
 from clubb_jax.src.CLUBB_core.nu_vert_res_dep import NuVertResDep
 
 
@@ -196,8 +199,6 @@ def init_clubb_params(ngrdcol: int, filename: str) -> np.ndarray:
     References:
     None
     """
-    nparams = 102
-
     # Set the default tunable parameter values
     values = np.tile(
         np.array([_DEFAULTS[n] for n in PARAM_NAMES], dtype=np.float64),
@@ -206,37 +207,54 @@ def init_clubb_params(ngrdcol: int, filename: str) -> np.ndarray:
 
     # If the filename is empty, assume we're using a `working' set of
     # parameters that are set statically here (handy for host models).
-    # Read the namelist
-    nml = read_namelist(filename)
-    for raw_name, val in nml.items():
-        key = raw_name.lower().strip()
-        if key in _NAME_TO_IDX:
-            idx = _NAME_TO_IDX[key]
-            arr = np.asarray(val, dtype=np.float64)
-            if arr.ndim == 0:
-                values[:, idx] = float(arr)
-            else:
-                arr = arr.ravel()
-                if arr.size == 1:
-                    values[:, idx] = float(arr[0])
-                elif arr.size == ngrdcol:
-                    values[:, idx] = arr
-                else:
-                    raise ValueError(
-                        f"{raw_name} must be scalar or have ngrdcol={ngrdcol} values; "
-                        f"got {arr.size}."
-                    )
+    if filename != "":
+        # Read the namelist. Host I/O replaces the source's unit-number argument.
+        nml = _read_namelist_groups(filename).get("clubb_params_nl", {})
+        for raw_name, val in nml.items():
+            key = raw_name.lower().strip()
+            section = re.fullmatch(
+                r"([a-z_]\w*)\s*\(\s*([+-]?\d+)\s*"
+                r"(?::\s*([+-]?\d+)\s*)?(?::\s*([+-]?\d+)\s*)?\)", key,
+            )
+            if section is not None:
+                key = section.group(1)
+            elif key.split('(', 1)[0].strip() in _NAME_TO_IDX and '(' in key:
+                raise ValueError(f"Unsupported parameter section: {raw_name}")
+            if key not in _NAME_TO_IDX:
+                # The source namelist read rejects unknown parameter names.
+                raise ValueError(f"Unknown CLUBB parameter: {raw_name}")
 
+            # Fortran namelist assignments fill the supplied elements only;
+            # scalar assignments affect column one, and nulls retain defaults.
+            # f90nml stores indexed bounds as metadata; the fallback keeps keys.
+            entries = np.asarray(val, dtype=object).reshape(-1)
+            if section is None:
+                first = getattr(nml, "start_index", {}).get(key, [1])[0] - 1
+                columns = np.arange(first, first + entries.size)
+            else:
+                first = int(section.group(2))
+                last = int(section.group(3) or section.group(2))
+                stride = int(section.group(4) or 1)
+                if stride == 0:
+                    raise ValueError(f"{raw_name} section stride must not be zero")
+                # Fortran sections include both bounds, including a descending
+                # section ending at column one; convert to zero-based columns.
+                columns = np.arange(first, last + (1 if stride > 0 else -1), stride) - 1
+            if entries.size > columns.size or np.any(columns < 0) or np.any(columns >= ngrdcol):
+                raise ValueError(f"{raw_name} assignment exceeds ngrdcol={ngrdcol}")
+            for column, value in zip(columns, entries):
+                if value is not None:
+                    values[column, _NAME_TO_IDX[key]] = float(value)
+
+    # Put the variables in the output array. The named table above replaces
+    # the source's separate unpacked arrays and pack_parameters call.
     return values
 
 
 def calc_derived_params(
-    gr,
-    ngrdcol: int,
-    grid_type: int,
-    deltaz: np.ndarray,
-    clubb_params: np.ndarray,
-    l_prescribed_avg_deltaz: bool,
+    gr, ngrdcol: int, grid_type: int, deltaz: np.ndarray,  # In
+    clubb_params: np.ndarray,                            # In
+    l_prescribed_avg_deltaz: bool,                       # In
 ) -> tuple[NuVertResDep, float, float]:
     """Calculate parameters that should be derived from other quantities.
 
@@ -250,100 +268,115 @@ def calc_derived_params(
       altitudes, and hence average grid spacing, change through space
       and/or time.  This occurs, for example, when CLUBB is
       implemented in WRF.  --ldgrant Jul 2010
+
+    Args:
+      gr: Grid definition.
+      ngrdcol: Number of grid columns.
+      grid_type: Even grid (1), stretched thermodynamic (2), or momentum (3).
+      deltaz: Change per height level [m].
+      clubb_params: Tunable model parameters [-].
+      l_prescribed_avg_deltaz: If true, avg_deltaz = deltaz.
+
+    Returns:
+      nu_vert_res_dep: Vertical resolution dependent nu values.
+      lmin: Minimum value for the length scale [m].
+      mixt_frac_max_mag: Maximum allowable magnitude of mixture fraction [-].
+
+    Adaptation: immutable output values replace source inout allocations;
+    initialization and reset perform the source lmin fatal check on the host.
     """
-    #------------------------------ Constant Parameters ------------------------------
-    # Fixed value for minimum value for the length scale.
-    lmin_deltaz = 40.0
+    # ------------------------------ Constant Parameters ------------------------------
+    lmin_deltaz = 40.0  # Fixed value for minimum value for the length scale.
+
+    # Flag for adjusting the values of the constant background eddy diffusivity
+    # coefficients based on the average vertical grid spacing. If this flag is
+    # turned off, the various nu coefficients remain as declared in the input.
+    l_adj_low_res_nu = True
+
+    # At average grid spacings above this threshold the background diffusivities
+    # increase above the values specified in tunable_parameters.in.
+    # This is only relevant if l_adj_low_res_nu is turned on.
+    grid_spacing_thresh = 40.0  # Grid spacing threshold [m].
+
+    # ------------------------------ Begin Code ------------------------------
 
     # It was decided after some experimentation, that the best
     # way to produce grid independent results is to set lmin to be
     # some fixed value. -dschanen 21 May 2007
-    # TODO: using "clubb_params(ngrdcol,ilmin_coef)", but lmin should really be
-    # changed to dimension(ngrdcol) to avoid this
-    lmin = float(clubb_params[ngrdcol - 1, 61]) * lmin_deltaz
-    if lmin < 1.0:
-        raise ValueError("lmin is < 1.0")
+    # TODO: using clubb_params(ngrdcol,ilmin_coef), but lmin should really be
+    # changed to dimension(ngrdcol) to avoid this (same as Fortran). Varying
+    # this or Skw_max_mag between columns can therefore depend on batch width.
+    lmin = clubb_params[ngrdcol - 1, PNAME_IDX['lmin_coef']] * lmin_deltaz
 
     # Using ngrdcol here as well for temporary backward compatibility, same as above
-    Skw_max = float(clubb_params[ngrdcol - 1, 78])
-    inner = 4.0 * (1.0 - 0.4) ** 3 + Skw_max ** 2
-    mixt_frac_max_mag = 1.0 - 0.5 * (1.0 - Skw_max / math.sqrt(inner))
+    Skw_max = clubb_params[ngrdcol - 1, PNAME_IDX['Skw_max_mag']]
+    mixt_frac_max_mag = 1.0 - (
+        0.5 * (1.0 - Skw_max / jnp.sqrt(
+            4.0 * (1.0 - 0.4)**3 + Skw_max**2,
+        ))
+    )
     # Known magic number
 
-    #------------------------------ Local Variables ------------------------------
-    # Average grid box height   [m]
-    deltaz = np.asarray(deltaz, dtype=np.float64).ravel()
-    avg_deltaz = np.empty(ngrdcol, dtype=np.float64)
+    # Adjust constant diffusivity coefficients based on grid spacing.
+    if l_adj_low_res_nu:
 
-    if l_prescribed_avg_deltaz or grid_type == 1:
-        avg_deltaz[:] = deltaz
-    elif grid_type == 2:
-        # Stretched (unevenly-spaced) grid:  stretched thermodynamic level
-        # input.
-        # Find the average deltaz over the stretched grid based on
-        # thermodynamic level inputs.
-        zt = np.asarray(gr.zt)  # (ngrdcol, nzt)
-        for i in range(ngrdcol):
-            avg_deltaz[i] = (zt[i, -1] - zt[i, 0]) / max(1, zt.shape[1] - 1)
-    elif grid_type == 3:
-        # CLUBB is implemented in a host model, or is using grid_type = 3
-        # Find the average deltaz over the grid based on momentum level
-        # inputs.
-        zm = np.asarray(gr.zm)  # (ngrdcol, nzm)
-        for i in range(ngrdcol):
-            avg_deltaz[i] = (zm[i, -1] - zm[i, 0]) / max(1, zm.shape[1] - 1)
-    else:
-        avg_deltaz[:] = deltaz
+        # ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
 
-    # Flag for adjusting the values of the constant background eddy diffusivity
-    # coefficients based on the average vertical grid spacing.  If this flag is
-    # turned off, the values of the various nu coefficients will remain as they
-    # are declared in the tunable_parameters.in file.
+        # All background eddy diffusivities and constant 4th-order
+        # hyper-diffusion coefficients are adjusted based on deltaz for an even
+        # grid or the average grid spacing over a stretched vertical domain.
+        if l_prescribed_avg_deltaz:
+            avg_deltaz = deltaz
 
-    # The size of the average vertical grid spacing that serves as a threshold
-    # for when to increase the size of the background eddy diffusivity
-    # coefficients (nus) by a certain factor above what the background
-    # coefficients are specified to be in tunable_parameters.in.  At any average
-    # grid spacing at or below this value, the values of the background
-    # diffusivities remain the same.  However, at any average vertical grid
-    # spacing above this value, the values of the background eddy diffusivities
-    # are increased.  Traditionally, the threshold grid spacing has been set to
-    # 40.0 meters.  This is only relevant if l_adj_low_res_nu is turned on.
-    grid_spacing_thresh = 40.0
+        elif grid_type == 3:
+            # CLUBB is implemented in a host model, or is using grid_type = 3.
+            # Find the average deltaz based on momentum level inputs.
+            avg_deltaz = (
+                gr.zm[:, gr.k_ub_zm] - gr.zm[:, gr.k_lb_zm]
+            ) / (gr.nzm - 1)
 
-    # The factor by which to multiply the coefficients of background eddy
-    # diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
-    # is turned on.
-    mult_factor = np.ones(ngrdcol, dtype=np.float64)
-    for i in range(ngrdcol):
-        if avg_deltaz[i] > grid_spacing_thresh:
-            mult_factor[i] = 1.0 + float(clubb_params[i, 66]) * math.log(
-                avg_deltaz[i] / grid_spacing_thresh
-            )
+        elif grid_type == 1:
+            # Evenly-spaced grid.
+            avg_deltaz = deltaz
 
-    # The nu's are chosen for deltaz <= 40 m. Looks like they must
-    # be adjusted for larger grid spacings (Vince Larson)
+        elif grid_type == 2:
+            # Stretched (unevenly-spaced) grid: thermodynamic level input.
+            # Find the average deltaz based on thermodynamic level inputs.
+            avg_deltaz = (
+                gr.zt[:, gr.k_ub_zt] - gr.zt[:, gr.k_lb_zt]
+            ) / (gr.nzt - 1)
 
-    # Use a constant mult_factor so nu does not depend on grid spacing
-    nu1   = clubb_params[:, 38] * mult_factor
-    nu2   = clubb_params[:, 40] * mult_factor
-    nu6   = clubb_params[:, 42] * mult_factor
-    nu8   = clubb_params[:, 44] * mult_factor   # zt-level
-    nu9   = clubb_params[:, 46] * mult_factor
-    nu10  = clubb_params[:, 47] * mult_factor   # zt-level (disabled in ARM)
-    nu_hm = clubb_params[:, 51] * mult_factor   # zt-level
+        else:
+            # The case initializer rejects grid types outside the source cases.
+            raise ValueError('Unsupported grid_type')
 
+        # The nu's are chosen for deltaz <= 40 m. Looks like they must
+        # be adjusted for larger grid spacings (Vince Larson).
+
+        # Use a constant mult_factor so nu does not depend on grid spacing.
+        mult_factor_zt = jnp.where(
+            avg_deltaz > grid_spacing_thresh,
+            1.0 + clubb_params[:, PNAME_IDX['mult_coef']] *
+                jnp.log(avg_deltaz / grid_spacing_thresh),
+            1.0,
+        )
+        mult_factor_zm = mult_factor_zt
+
+    else:  # Nu values are not adjusted.
+        mult_factor_zt = jnp.ones((ngrdcol,), dtype=clubb_params.dtype)
+        mult_factor_zm = mult_factor_zt
+
+    # Immutable derived-type construction replaces inout member assignments.
     nu_vert_res_dep = NuVertResDep(
-        nzm=int(gr.nzm),
-        nu1=nu1.copy(),
-        nu2=nu2.copy(),
-        nu6=nu6.copy(),
-        nu8=nu8.copy(),
-        nu9=nu9.copy(),
-        nu10=nu10.copy(),
-        nu_hm=nu_hm.copy(),
+        nzm=gr.nzm,
+        nu1=clubb_params[:, PNAME_IDX['nu1']] * mult_factor_zm,
+        nu2=clubb_params[:, PNAME_IDX['nu2']] * mult_factor_zm,
+        nu6=clubb_params[:, PNAME_IDX['nu6']] * mult_factor_zm,
+        nu8=clubb_params[:, PNAME_IDX['nu8']] * mult_factor_zt,
+        nu9=clubb_params[:, PNAME_IDX['nu9']] * mult_factor_zm,
+        nu10=clubb_params[:, PNAME_IDX['nu10']] * mult_factor_zt,
+        nu_hm=clubb_params[:, PNAME_IDX['nu_hm']] * mult_factor_zt,
     )
-
     return nu_vert_res_dep, lmin, mixt_frac_max_mag
 
 

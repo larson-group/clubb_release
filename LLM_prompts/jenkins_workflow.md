@@ -26,6 +26,9 @@ unmaintained or multi-year cases are different validation scopes.
 
 ## Pipeline changes
 
+- Put backend variants of a functional test in the Jenkins job that owns its
+  native/Fortran equivalent: driver lifecycle belongs in `clubb_driver`, for
+  example. Use that feature's existing workflow owner when adding JAX coverage.
 - Reuse the configured wipe/reclone lifecycle; do not add `cleanWs` to pipelines.
 - Independent parallel stages may acquire their own node/executor, checkout,
   build and output. Confirm isolation rather than sharing mutable workspaces.
