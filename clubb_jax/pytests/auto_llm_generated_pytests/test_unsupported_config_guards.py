@@ -43,7 +43,6 @@ def test_baseline_and_supported_radiation_schemes_pass():
         ({"wp2_sponge_damp_settings%l_sponge_damping": True}, {}, "Sponge damping"),
         ({"lh_microphys_type": "cluster"}, {}, "lh_microphys_type"),
         ({"l_silhs_rad": True}, {}, "l_silhs_rad"),
-        ({"l_restart": True}, {}, "l_restart"),
         ({"l_input_fields": True}, {}, "l_input_fields"),
         ({"l_test_grid_generalization": True}, {}, "l_test_grid_generalization"),
         ({"grid_adapt_in_time_method": 1}, {}, "grid_adapt_in_time_method"),
@@ -67,3 +66,7 @@ def test_supported_microphysics_and_cloud_sedimentation_pass_initial_gate():
     for scheme in ('khairoutdinov_kogan', 'morrison'):
         _check(microphys_scheme=scheme)
     _check({'l_cloud_sed': True})
+
+
+def test_restart_passes_initial_feature_gate():
+    _check({'l_restart': True})

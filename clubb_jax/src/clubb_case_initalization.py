@@ -7,6 +7,7 @@ import jax
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.config_flags import ConfigFlags
+from clubb_jax.src.CLUBB_core.constants_clubb import eps
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid as py_setup_grid
 from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
 from clubb_jax.src.CLUBB_core.pdf_params import (
@@ -336,10 +337,6 @@ def _check_unsupported_features(cfg: dict, flags, microphys_scheme: str,
     if bool(cfg.get('l_silhs_rad', False)):
         errors.append("l_silhs_rad = true is not supported (SILHS radiation is not ported).")
 
-    # --- Restarts ---
-    if bool(cfg.get('l_restart', False)):
-        errors.append("l_restart = true is not supported (no GrADS restart I/O).")
-
     # --- Input fields (time-dependent forcing from files) ---
     if bool(cfg.get('l_input_fields', False)):
         errors.append("l_input_fields = true is not supported.")
@@ -388,6 +385,10 @@ def init_clubb_case(namelist_path: str) -> dict:
     if total_param_sets % batch_size != 0:
         raise ValueError('ngrdcol in &multicol_def must be evenly divisible by batch_size')
     ngrdcol = batch_size
+    if bool(cfg.get('l_restart', False)) and total_param_sets > batch_size:
+        # TODO: select the active batch's saved columns in the restart reader.
+        # It currently restores the whole saved column dimension in one read.
+        raise ValueError('JAX restart does not yet support runtime batching')
     nzmax = cfg['nzmax']
     grid_type = cfg['grid_type']
     dt_main = cfg['dt_main']
@@ -805,6 +806,19 @@ def init_clubb_case(namelist_path: str) -> dict:
     time_final = cfg['time_final']
     ifinal = int(math.floor((time_final - time_initial) / dt_main))
     iinit = 1
+    if bool(cfg.get('l_restart', False)):
+        time_restart = float(cfg.get('time_restart', 0.0))
+        if abs(math.fmod(time_restart - time_initial, dt_main)) > eps:
+            raise ValueError("(time_restart-time_initial) is not a multiple of dt_main")
+        if not time_initial <= time_restart < time_final:
+            raise ValueError("time_restart must lie in [time_initial, time_final)")
+        # The value is increased by 1 to synchronize with restart data.
+        iinit = math.floor((time_restart - time_initial) / dt_main) + 1
+        restart_path_case = Path(_clean_namelist_path(cfg['restart_path_case']))
+        if not restart_path_case.is_absolute():
+            # Native restart paths are relative to the repository root, while
+            # generated output_dir paths are relative to the aggregate namelist.
+            restart_path_case = _repo_root() / restart_path_case
     stats_nsamp = int(round(cfg['stats_tsamp'] / dt_main))
     stats_nout = int(round(cfg['stats_tout'] / dt_main))
 
@@ -816,6 +830,20 @@ def init_clubb_case(namelist_path: str) -> dict:
     if 'stats_output_filename' in cfg:
         stats_filename = str(cfg['stats_output_filename']).strip()
         stats_output_path = output_dir_path / stats_filename if stats_filename else None
+    if l_stats and stats_output_path is not None and bool(cfg.get('l_restart', False)):
+        from clubb_jax.src.Input_fields import input_fields
+
+        # Opening a writer would truncate a restart reference in the same path.
+        for restart_stats_path in input_fields.set_filenames(restart_path_case):
+            if (
+                stats_output_path.resolve() == restart_stats_path.resolve()
+                or (
+                    stats_output_path.exists() and restart_stats_path.exists()
+                    and stats_output_path.samefile(restart_stats_path)
+                )
+            ):
+                raise ValueError("Restart reference and output statistics must use different paths")
+
     stats_writer = None
     if l_stats:
         if not stats_registry_path.exists():
@@ -1061,6 +1089,118 @@ def init_clubb_case(namelist_path: str) -> dict:
     if runtype == 'mpace_a':
         mpace_a_init(0, _repo_root() / 'input' / 'case_setups' / 'mpace_a_forcings')
 
+    if bool(cfg.get('l_restart', False)):
+        # initialize_clubb includes reference-profile setup as well as sounding
+        # reads. Execute it first; the restart overwrites the initial sounding.
+        # The source reader omits scalar state and some frozen hydrometeors;
+        # see RESTART_PORT_NOTES.md for exact-continuation limits.
+        from clubb_jax.src.Input_fields import input_fields
+
+        input_fields.clubb_day = state['day']
+        input_fields.clubb_month = state['month']
+        input_fields.clubb_year = state['year']
+        input_fields.l_soil_veg = radiation_parameters.l_soil_veg
+        for name in ('em', 'tau_zm', 'Kh_zm', 'sigma_sqd_w'):
+            state[name] = jnp.zeros((ngrdcol, nzm))
+        for name in ('tau_zt', 'Kh_zt', 'sigma_sqd_w_zt'):
+            state[name] = jnp.zeros((ngrdcol, nzt))
+
+        try:
+            (
+                state["um"], state["upwp"], state["vm"], state["vpwp"], state["up2"], state["vp2"],
+                state["rtm"],
+                state["wprtp"], state["thlm"], state["wpthlp"], state["rtp2"], state["rtp3"],
+                state["thlp2"], state["thlp3"], state["rtpthlp"], state["wp2"], state["wp3"],
+                state["p_in_Pa"], state["exner"], state["rcm"], state["cloud_frac"],
+                state["wpthvp"], state["wp2thvp"], state["wp2up"], state["rtpthvp"],
+                state["thlpthvp"],
+                state["wp2rtp"], state["wp2thlp"], state["uprcp"], state["vprcp"],
+                state["rc_coef_zm"], state["wp4"], state["wpup2"], state["wpvp2"], state["wp2up2"],
+                state["wp2vp2"], state["ice_supersat_frac"],
+                state["wm_zt"], state["rho"], state["rho_zm"], state["rho_ds_zm"],
+                state["rho_ds_zt"], state["thv_ds_zm"], state["thv_ds_zt"],
+                state["thlm_forcing"], state["rtm_forcing"], state["wprtp_forcing"],
+                state["wpthlp_forcing"], state["rtp2_forcing"],
+                state["thlp2_forcing"], state["rtpthlp_forcing"],
+                state["hydromet"], state["hydrometp2"], state["wphydrometp"],
+                state["Ncm"], state["Nccnm"], state["thvm"], state["em"], state["tau_zm"],
+                state["tau_zt"],
+                state["Kh_zt"], state["Kh_zm"], state["ug"], state["vg"],
+                state["thlprcp"],
+                state["sigma_sqd_w"], state["sigma_sqd_w_zt"], state["radht"],
+                state["deep_soil_T_in_K"], state["sfc_soil_T_in_K"], state["veg_T_in_K"],
+                state["pdf_params"], state["pdf_params_zm"],
+                state["rcm_mc"], state["rvm_mc"], state["thlm_mc"],
+                state["wprtp_mc"], state["wpthlp_mc"], state["rtp2_mc"],
+                state["thlp2_mc"], state["rtpthlp_mc"],
+                state["wpthlp_sfc"], state["wprtp_sfc"], state["upwp_sfc"], state["vpwp_sfc"],
+            ) = restart_clubb(
+                gr, hydromet_dim, hm_metadata,                                             # In
+                restart_path_case, time_restart,                                           # In
+                state["um"], state["upwp"], state["vm"], state["vpwp"], state["up2"], state["vp2"],       # InOut
+                state["rtm"],                                                                             # InOut
+                state["wprtp"], state["thlm"], state["wpthlp"], state["rtp2"], state["rtp3"],             # InOut
+                state["thlp2"], state["thlp3"], state["rtpthlp"], state["wp2"], state["wp3"],             # InOut
+                state["p_in_Pa"], state["exner"], state["rcm"], state["cloud_frac"],                      # InOut
+                state["wpthvp"], state["wp2thvp"], state["wp2up"], state["rtpthvp"],                      # InOut
+                state["thlpthvp"],                                                                        # InOut
+                state["wp2rtp"], state["wp2thlp"], state["uprcp"], state["vprcp"],                        # InOut
+                state["rc_coef_zm"], state["wp4"], state["wpup2"], state["wpvp2"], state["wp2up2"],       # InOut
+                state["wp2vp2"], state["ice_supersat_frac"],                                              # InOut
+                state["wm_zt"], state["rho"], state["rho_zm"], state["rho_ds_zm"],                        # InOut
+                state["rho_ds_zt"], state["thv_ds_zm"], state["thv_ds_zt"],                               # InOut
+                state["thlm_forcing"], state["rtm_forcing"], state["wprtp_forcing"],                      # InOut
+                state["wpthlp_forcing"], state["rtp2_forcing"],                                           # InOut
+                state["thlp2_forcing"], state["rtpthlp_forcing"],                                         # InOut
+                state["hydromet"], state["hydrometp2"], state["wphydrometp"],                             # InOut
+                state["Ncm"], state["Nccnm"], state["thvm"], state["em"], state["tau_zm"],                # InOut
+                state["tau_zt"],                                                                          # InOut
+                state["Kh_zt"], state["Kh_zm"], state["ug"], state["vg"],                                 # InOut
+                state["thlprcp"],                                                                         # InOut
+                state["sigma_sqd_w"], state["sigma_sqd_w_zt"], state["radht"],                            # InOut
+                state["deep_soil_T_in_K"], state["sfc_soil_T_in_K"], state["veg_T_in_K"],                 # InOut
+                state["pdf_params"], state["pdf_params_zm"],                                              # InOut
+                state["rcm_mc"], state["rvm_mc"], state["thlm_mc"],                                       # Out
+                state["wprtp_mc"], state["wpthlp_mc"], state["rtp2_mc"],                                  # Out
+                state["thlp2_mc"], state["rtpthlp_mc"],                                                   # Out
+                state["wpthlp_sfc"], state["wprtp_sfc"], state["upwp_sfc"], state["vpwp_sfc"],            # Out
+            )
+        except Exception:
+            # Close the host output handle when restart reads fail.
+            if stats_writer is not None:
+                stats_writer.finalize()
+            raise
+
+        # Calculate reciprocals from the dry densities read from the input file.
+        state['invrs_rho_ds_zm'] = 1.0 / state['rho_ds_zm']
+        state['invrs_rho_ds_zt'] = 1.0 / state['rho_ds_zt']
+
+        if parameters_microphys.lh_microphys_type != parameters_microphys.lh_microphys_disabled:
+            # JAX adaptation: reconstruct the case-owned permutation using the
+            # seed of its last reshuffle. No model steps or physics are replayed.
+            # The source reseeds each timestep but stores this permutation only
+            # in memory; native JAX keys let initialization recover it exactly.
+            from clubb_jax.src.SILHS.generate_uniform_sample_module import generate_uniform_lh_sample
+
+            sequence_length = parameters_microphys.lh_sequence_length
+            last_iter = iinit - 1
+            if sequence_length > 1 and last_iter > 0:
+                reshuffle_iter = ((last_iter - 1) // sequence_length) * sequence_length + 1
+                lh_seed_custom = jnp.asarray(parameters_microphys.lh_seed * reshuffle_iter, dtype=jnp.uint32)
+                key = jax.random.fold_in(jax.random.PRNGKey(lh_seed_custom), 1)
+                key = jax.random.fold_in(key, ngrdcol - 1)
+                draw_key, _ = jax.random.split(key)
+                _, sampling_state = generate_uniform_lh_sample(
+                    reshuffle_iter, parameters_microphys.lh_num_samples, sequence_length, pdf_dim + 2,  # In
+                    silhs_config_flags.l_lh_deterministic_test,                            # In
+                    draw_key,                                                              # In
+                    state['sampling_state'],                                                              # InOut
+                )
+                state['sampling_state'] = LatinHypercubeArrays(
+                    sampling_state.one_height_time_matrix,
+                    jnp.asarray(last_iter, dtype=jnp.int32),
+                )
+
     print(f"Initialized {runtype} case: nzm={nzm}, nzt={nzt}, ngrdcol={ngrdcol}")
     print(f"  dt_main={dt_main}s, time={time_initial}s to {time_final}s, {ifinal} steps")
 
@@ -1161,3 +1301,450 @@ def clean_up_clubb(state: dict):
     from clubb_jax.src.Microphys.microphys_init_cleanup import cleanup_microphys
     cleanup_microphys()
     print("CLUBB cleanup complete.")
+
+
+# -----------------------------------------------------------------------------
+def restart_clubb(
+    gr, hydromet_dim, hm_metadata,                                                         # In
+    restart_path_case, time_restart,                                                       # In
+    um, upwp, vm, vpwp, up2, vp2, rtm,                                                     # InOut
+    wprtp, thlm, wpthlp, rtp2, rtp3,                                                       # InOut
+    thlp2, thlp3, rtpthlp, wp2, wp3,                                                       # InOut
+    p_in_Pa, exner, rcm, cloud_frac,                                                       # InOut
+    wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp,                                             # InOut
+    wp2rtp, wp2thlp, uprcp, vprcp,                                                         # InOut
+    rc_coef_zm, wp4, wpup2, wpvp2, wp2up2,                                                 # InOut
+    wp2vp2, ice_supersat_frac,                                                             # InOut
+    wm_zt, rho, rho_zm, rho_ds_zm,                                                         # InOut
+    rho_ds_zt, thv_ds_zm, thv_ds_zt,                                                       # InOut
+    thlm_forcing, rtm_forcing, wprtp_forcing,                                              # InOut
+    wpthlp_forcing, rtp2_forcing,                                                          # InOut
+    thlp2_forcing, rtpthlp_forcing,                                                        # InOut
+    hydromet, hydrometp2, wphydrometp,                                                     # InOut
+    Ncm, Nccnm, thvm, em, tau_zm, tau_zt,                                                  # InOut
+    Kh_zt, Kh_zm, ug, vg,                                                                  # InOut
+    thlprcp,                                                                               # InOut
+    sigma_sqd_w, sigma_sqd_w_zt, radht,                                                    # InOut
+    deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,                                         # InOut
+    pdf_params, pdf_params_zm,                                                             # InOut
+    rcm_mc, rvm_mc, thlm_mc,                                                               # Out
+    wprtp_mc, wpthlp_mc, rtp2_mc,                                                          # Out
+    thlp2_mc, rtpthlp_mc,                                                                  # Out
+    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,                                             # Out
+):
+    """Initialize CLUBB to a designated point in the submitted netCDF file.
+
+    Source: clubb_driver.F90:restart_clubb. Inputs/returns retain source order;
+    JAX profile arrays include the column axis, and PDF fields are immutable.
+    NetCDF reads run entirely during host initialization.
+
+    Arguments (source order; profiles include all columns):
+        gr: CLUBB thermodynamic/momentum grid [m].
+        hydromet_dim: Number of hydrometeor species [-].
+        hm_metadata: Hydrometeor/PDF species and variable indices [-].
+        restart_path_case: Path to netCDF data for restart
+        time_restart: Time of model restart [s].
+        um: eastward grid-mean wind component (thermo. levs.)  [m/s]
+        upwp: u'w' (momentum levels)                         [m^2/s^2]
+        vm: northward grid-mean wind component (thermo. levs.) [m/s]
+        vpwp: v'w' (momentum levels)                         [m^2/s^2]
+        up2: u'^2 (momentum levels)                         [m^2/s^2]
+        vp2: v'^2 (momentum levels)                         [m^2/s^2]
+        rtm: total water mixing ratio, r_t (thermo. levels) [kg/kg]
+        wprtp: w' r_t' (momentum levels)                      [kg/kg m/s]
+        thlm: liq. water pot. temp., th_l (thermo. levels)   [K]
+        wpthlp: w'th_l' (momentum levels)                      [(m/s) K]
+        rtp2: r_t'^2 (momentum levels)                       [(kg/kg)^2]
+        rtp3: r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+        thlp2: th_l'^2 (momentum levels)                      [K^2]
+        thlp3: th_l'^3 (thermodynamic levels)                 [K^3]
+        rtpthlp: r_t'th_l' (momentum levels)                    [(kg/kg) K]
+        wp2: w'^2 (momentum levels)                         [m^2/s^2]
+        wp3: w'^3 (thermodynamic levels)                    [m^3/s^3]
+        p_in_Pa: Air pressure (thermodynamic levels)            [Pa]
+        exner: Exner function (thermodynamic levels)          [-]
+        rcm: cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+        cloud_frac: cloud fraction (thermodynamic levels)          [-]
+        wpthvp: < w' th_v' > (momentum levels)                 [kg/kg K]
+        wp2thvp: < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+        wp2up: < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
+        rtpthvp: < r_t' th_v' > (momentum levels)               [kg/kg K]
+        thlpthvp: < th_l' th_v' > (momentum levels)              [K^2]
+        wp2rtp: w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+        wp2thlp: w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+        uprcp: < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+        vprcp: < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+        rc_coef_zm: Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
+        wp4: w'^4 (momentum levels)               [m^4/s^4]
+        wpup2: w'u'^2 (thermodynamic levels)        [m^3/s^3]
+        wpvp2: w'v'^2 (thermodynamic levels)        [m^3/s^3]
+        wp2up2: w'^2 u'^2 (momentum levels)          [m^4/s^4]
+        wp2vp2: w'^2 v'^2 (momentum levels)          [m^4/s^4]
+        ice_supersat_frac: ice cloud fraction (thermo. levels)  [-]
+        wm_zt: vertical mean wind component on thermo. levels  [m/s]
+        rho: Air density on thermodynamic levels             [kg/m^3]
+        rho_zm: Air density on momentum levels               [kg/m^3]
+        rho_ds_zm: Dry, static density on momentum levels       [kg/m^3]
+        rho_ds_zt: Dry, static density on thermo. levels           [kg/m^3]
+        thv_ds_zm: Dry, base-state theta_v on momentum levels   [K]
+        thv_ds_zt: Dry, base-state theta_v on thermo levels        [K]
+        thlm_forcing: liquid potential temp. forcing (thermo. levels) [K/s]
+        rtm_forcing: total water forcing (thermo. levels)      [(kg/kg)/s]
+        wprtp_forcing: total water turbulent flux forcing (m-levs) [m*K/s^2]
+        wpthlp_forcing: liq pot temp turb flux forcing (m-levs)[m(kg/kg)/s^2]
+        rtp2_forcing: total water variance forcing (m-levs)   [(kg/kg)^2/s]
+        thlp2_forcing: liq pot temp variance forcing (m-levs)  [K^2/s]
+        rtpthlp_forcing: <r_t'th_l'> covariance forcing (m-levs) [K*(kg/kg)/s]
+        hydromet: Array of hydrometeors                [hm units]
+        hydrometp2: Variance of a hydrometeor (m-levs.)  [<hm units>^2]
+        wphydrometp: Covariance of w and a hydrometeor    [(m/s) <hm units>]
+        Ncm: Mean cloud droplet concentration, <N_c> (t-levs.)    [num/kg]
+        Nccnm: Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
+        thvm: Virtual potential temperature                        [K]
+        em: Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
+        tau_zm: Eddy dissipation time scale on momentum levels       [s]
+        tau_zt: Eddy dissipation time scale on thermodynamic levels  [s]
+        Kh_zt: Eddy diffusivity coefficient on thermodynamic levels [m^2/s]
+        Kh_zm: Eddy diffusivity coefficient on momentum levels      [m^2/s]
+        ug: u geostrophic wind                                   [m/s]
+        vg: v geostrophic wind                                   [m/s]
+        thlprcp: Inout
+        sigma_sqd_w: PDF width parameter (momentum levels)                [-]
+        sigma_sqd_w_zt: PDF width parameter interpolated to t-levs.          [-]
+        radht: SW + LW heating rate                                 [K/s]
+        deep_soil_T_in_K: Deep soil temperature [K].
+        sfc_soil_T_in_K: Surface soil temperature [K].
+        veg_T_in_K: Vegetation temperature [K].
+        pdf_params: PDF parameters (thermodynamic levels)    [units vary]
+        pdf_params_zm: PDF parameters on momentum levels        [units vary]
+        rcm_mc: Tendency of liquid water due to microphysics      [kg/kg/s]
+        rvm_mc: Tendency of vapor water due to microphysics       [kg/kg/s]
+        thlm_mc: Tendency of liquid pot. temp. due to microphysics [K/s]
+        wprtp_mc: Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+        wpthlp_mc: Microphysics tendency for <w'thl'>  [m*K/s^2]
+        rtp2_mc: Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+        thlp2_mc: Microphysics tendency for <thl'^2>  [K^2/s]
+        rtpthlp_mc: Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+        wpthlp_sfc: w'theta_l' surface flux   [(m K)/s]
+        wprtp_sfc: w'rt' surface flux        [(m kg)/(kg s)]
+        upwp_sfc: u'w' at surface           [m^2/s^2]
+        vpwp_sfc: v'w' at surface           [m^2/s^2]
+    """
+    from clubb_jax.src.Input_fields import input_fields
+    from clubb_jax.src.Microphys import parameters_microphys
+
+    # Inform inputfields module.
+    input_fields.l_input_um = True
+    input_fields.l_input_vm = True
+    input_fields.l_input_rtm = True
+    input_fields.l_input_thlm = True
+    input_fields.l_input_wp2 = True
+    input_fields.l_input_ug = True
+    input_fields.l_input_vg = True
+    input_fields.l_input_rcm = True
+    input_fields.l_input_wm_zt = True
+    input_fields.l_input_exner = True
+    input_fields.l_input_em = True
+    input_fields.l_input_p = True
+    input_fields.l_input_rho = True
+    input_fields.l_input_rho_zm = True
+    input_fields.l_input_rho_ds_zm = True
+    input_fields.l_input_rho_ds_zt = True
+    input_fields.l_input_thv_ds_zm = True
+    input_fields.l_input_thv_ds_zt = True
+    input_fields.l_input_Lscale = True
+    input_fields.l_input_Lscale_up = True
+    input_fields.l_input_Lscale_down = True
+    input_fields.l_input_Kh_zt = True
+    input_fields.l_input_Kh_zm = True
+    input_fields.l_input_tau_zm = True
+    input_fields.l_input_tau_zt = True
+    input_fields.l_input_thvm = True
+    input_fields.l_input_wpthvp = True
+    input_fields.l_input_wp2thvp = True
+    input_fields.l_input_wp2up = True
+    input_fields.l_input_rtpthvp = True
+    input_fields.l_input_thlpthvp = True
+    input_fields.l_input_wp2rtp = True
+    input_fields.l_input_wp2thlp = True
+    input_fields.l_input_uprcp = True
+    input_fields.l_input_vprcp = True
+    input_fields.l_input_rc_coef_zm = True
+    input_fields.l_input_wp4 = True
+    input_fields.l_input_wpup2 = True
+    input_fields.l_input_wpvp2 = True
+    input_fields.l_input_wp2up2 = True
+    input_fields.l_input_wp2vp2 = True
+    input_fields.l_input_iss_frac = True
+    input_fields.l_input_w_1 = True
+    input_fields.l_input_w_2 = True
+    input_fields.l_input_varnce_w_1 = True
+    input_fields.l_input_varnce_w_2 = True
+    input_fields.l_input_rt_1 = True
+    input_fields.l_input_rt_2 = True
+    input_fields.l_input_varnce_rt_1 = True
+    input_fields.l_input_varnce_rt_2 = True
+    input_fields.l_input_thl_1 = True
+    input_fields.l_input_thl_2 = True
+    input_fields.l_input_varnce_thl_1 = True
+    input_fields.l_input_varnce_thl_2 = True
+    input_fields.l_input_mixt_frac = True
+    input_fields.l_input_chi_1 = True
+    input_fields.l_input_chi_2 = True
+    input_fields.l_input_stdev_chi_1 = True
+    input_fields.l_input_stdev_chi_2 = True
+    input_fields.l_input_rc_1 = True
+    input_fields.l_input_rc_2 = True
+    input_fields.l_input_w_1_zm = True
+    input_fields.l_input_w_2_zm = True
+    input_fields.l_input_varnce_w_1_zm = True
+    input_fields.l_input_varnce_w_2_zm = True
+    input_fields.l_input_mixt_frac_zm = True
+    input_fields.l_input_radht = True
+
+    microphys_scheme = parameters_microphys.microphys_scheme
+    if microphys_scheme == "coamps":
+        input_fields.l_input_rrm = True
+        input_fields.l_input_rsm = True
+        input_fields.l_input_rim = True
+        input_fields.l_input_rgm = True
+        input_fields.l_input_Nccnm = True
+        input_fields.l_input_Ncm = True
+        input_fields.l_input_Nrm = True
+        input_fields.l_input_Nim = True
+
+    elif microphys_scheme == "morrison":
+        input_fields.l_input_rrm = True
+        input_fields.l_input_Nrm = True
+        if parameters_microphys.l_ice_microphys:
+            input_fields.l_input_rsm = True
+            input_fields.l_input_rim = True
+            input_fields.l_input_Nim = True
+            if parameters_microphys.l_graupel:
+                input_fields.l_input_rgm = True
+            else:
+                input_fields.l_input_rgm = False
+        else:
+            input_fields.l_input_rsm = False
+            input_fields.l_input_rim = False
+            input_fields.l_input_Nim = False
+            input_fields.l_input_rgm = False
+        input_fields.l_input_Nccnm = False
+        if parameters_microphys.l_predict_Nc:
+            input_fields.l_input_Ncm = True
+        else:
+            input_fields.l_input_Ncm = False
+
+    elif microphys_scheme == "khairoutdinov_kogan":
+        input_fields.l_input_rrm = True
+        input_fields.l_input_rsm = False
+        input_fields.l_input_rim = False
+        input_fields.l_input_rgm = False
+        input_fields.l_input_Nccnm = False
+        input_fields.l_input_Ncm = False
+        input_fields.l_input_Nrm = True
+        input_fields.l_input_Nim = False
+
+    else:
+        input_fields.l_input_rrm = False
+        input_fields.l_input_rsm = False
+        input_fields.l_input_rim = False
+        input_fields.l_input_rgm = False
+        input_fields.l_input_Nccnm = False
+        input_fields.l_input_Ncm = False
+        input_fields.l_input_Nrm = False
+        input_fields.l_input_Nim = False
+
+    # Source soil/vegetation flag supplied from the case-owned radiation config.
+    input_fields.l_input_veg_T_in_K = input_fields.l_soil_veg
+    input_fields.l_input_deep_soil_T_in_K = input_fields.l_soil_veg
+    input_fields.l_input_sfc_soil_T_in_K = input_fields.l_soil_veg
+
+    input_fields.l_input_wprtp = True
+    input_fields.l_input_wpthlp = True
+    input_fields.l_input_wp3 = True
+    input_fields.l_input_rtp2 = True
+    input_fields.l_input_rtp3 = True
+    input_fields.l_input_thlp2 = True
+    input_fields.l_input_thlp3 = True
+    input_fields.l_input_rtpthlp = True
+    input_fields.l_input_upwp = True
+    input_fields.l_input_vpwp = True
+    input_fields.l_input_thlm_forcing = True
+    input_fields.l_input_rtm_forcing = True
+    input_fields.l_input_up2 = True
+    input_fields.l_input_vp2 = True
+    input_fields.l_input_sigma_sqd_w = True
+    input_fields.l_input_cloud_frac = True
+    input_fields.l_input_sigma_sqd_w_zt = True
+    input_fields.l_input_wprtp_forcing = True
+    input_fields.l_input_wpthlp_forcing = True
+    input_fields.l_input_rtp2_forcing = True
+    input_fields.l_input_thlp2_forcing = True
+    input_fields.l_input_rtpthlp_forcing = True
+    input_fields.l_input_thlprcp = True
+    input_fields.l_input_rcm_mc = True
+    input_fields.l_input_rvm_mc = True
+    input_fields.l_input_thlm_mc = True
+    input_fields.l_input_wprtp_mc = True
+    input_fields.l_input_wpthlp_mc = True
+    input_fields.l_input_rtp2_mc = True
+    input_fields.l_input_thlp2_mc = True
+    input_fields.l_input_rtpthlp_mc = True
+
+    stat_files = input_fields.set_filenames(restart_path_case)
+    # Determine the nearest timestep in the netCDF file to the restart time.
+    timestep = input_fields.compute_timestep(stat_files[0], True, time_restart)
+
+    # Read data from stats files.
+    (
+        um, upwp, vm, vpwp,
+        up2, vp2, rtm,
+        wprtp, thlm, wpthlp,
+        rtp2, rtp3,
+        thlp2, thlp3, rtpthlp,
+        wp2, wp3,
+        p_in_Pa, exner, rcm, cloud_frac,
+        wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp,
+        wp2rtp, wp2thlp, uprcp, vprcp,
+        rc_coef_zm, wp4, wpup2,
+        wpvp2, wp2up2,
+        wp2vp2, ice_supersat_frac,
+        wm_zt, rho, rho_zm, rho_ds_zm,
+        rho_ds_zt, thv_ds_zm, thv_ds_zt,
+        thlm_forcing, rtm_forcing, wprtp_forcing,
+        wpthlp_forcing, rtp2_forcing,
+        thlp2_forcing, rtpthlp_forcing,
+        hydromet, hydrometp2, wphydrometp,
+        Ncm, Nccnm, thvm, em,
+        tau_zm, tau_zt,
+        Kh_zt, Kh_zm, ug, vg,
+        thlprcp,
+        sigma_sqd_w, sigma_sqd_w_zt, radht,
+        deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,
+        pdf_params, pdf_params_zm
+    ) = input_fields.stat_fields_reader(
+        gr, timestep, hydromet_dim, hm_metadata,
+        microphys_scheme, parameters_microphys.l_predict_Nc,
+        um, upwp, vm, vpwp,
+        up2, vp2, rtm,
+        wprtp, thlm, wpthlp,
+        rtp2, rtp3,
+        thlp2, thlp3, rtpthlp,
+        wp2, wp3,
+        p_in_Pa, exner, rcm, cloud_frac,
+        wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp,
+        wp2rtp, wp2thlp, uprcp, vprcp,
+        rc_coef_zm, wp4, wpup2,
+        wpvp2, wp2up2,
+        wp2vp2, ice_supersat_frac,
+        wm_zt, rho, rho_zm, rho_ds_zm,
+        rho_ds_zt, thv_ds_zm, thv_ds_zt,
+        thlm_forcing, rtm_forcing, wprtp_forcing,
+        wpthlp_forcing, rtp2_forcing,
+        thlp2_forcing, rtpthlp_forcing,
+        hydromet, hydrometp2, wphydrometp,
+        Ncm, Nccnm, thvm, em,
+        tau_zm, tau_zt,
+        Kh_zt, Kh_zm, ug, vg,
+        thlprcp,
+        sigma_sqd_w, sigma_sqd_w_zt, radht,
+        deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,
+        pdf_params, pdf_params_zm
+    )
+
+    rcm_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
+        input_fields.l_input_rcm_mc, stat_files[0], "rcm_mc", gr.nzt, timestep,            # In
+        gr.zt[0, :],                                                                       # In
+        rcm_mc,                                                                            # InOut
+    )
+    if l_read_error:
+        raise ValueError("Failed to read rcm_mc for CLUBB restart")
+
+    rvm_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
+        input_fields.l_input_rvm_mc, stat_files[0], "rvm_mc", gr.nzt, timestep,            # In
+        gr.zt[0, :],                                                                       # In
+        rvm_mc,                                                                            # InOut
+    )
+    if l_read_error:
+        raise ValueError("Failed to read rvm_mc for CLUBB restart")
+
+    thlm_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
+        input_fields.l_input_thlm_mc, stat_files[0], "thlm_mc", gr.nzt, timestep,          # In
+        gr.zt[0, :],                                                                       # In
+        thlm_mc,                                                                           # InOut
+    )
+    if l_read_error:
+        raise ValueError("Failed to read thlm_mc for CLUBB restart")
+
+    wprtp_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
+        input_fields.l_input_wprtp_mc, stat_files[1], "wprtp_mc", gr.nzm, timestep,        # In
+        gr.zm[0, :],                                                                       # In
+        wprtp_mc,                                                                          # InOut
+    )
+    if l_read_error:
+        raise ValueError("Failed to read wprtp_mc for CLUBB restart")
+
+    wpthlp_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
+        input_fields.l_input_wpthlp_mc, stat_files[1], "wpthlp_mc", gr.nzm, timestep,      # In
+        gr.zm[0, :],                                                                       # In
+        wpthlp_mc,                                                                         # InOut
+    )
+    if l_read_error:
+        raise ValueError("Failed to read wpthlp_mc for CLUBB restart")
+
+    rtp2_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
+        input_fields.l_input_rtp2_mc, stat_files[1], "rtp2_mc", gr.nzm, timestep,          # In
+        gr.zm[0, :],                                                                       # In
+        rtp2_mc,                                                                           # InOut
+    )
+    if l_read_error:
+        raise ValueError("Failed to read rtp2_mc for CLUBB restart")
+
+    thlp2_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
+        input_fields.l_input_thlp2_mc, stat_files[1], "thlp2_mc", gr.nzm, timestep,        # In
+        gr.zm[0, :],                                                                       # In
+        thlp2_mc,                                                                          # InOut
+    )
+    if l_read_error:
+        raise ValueError("Failed to read thlp2_mc for CLUBB restart")
+
+    rtpthlp_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
+        input_fields.l_input_rtpthlp_mc, stat_files[1], "rtpthlp_mc", gr.nzm, timestep,    # In
+        gr.zm[0, :],                                                                       # In
+        rtpthlp_mc,                                                                        # InOut
+    )
+    if l_read_error:
+        raise ValueError("Failed to read rtpthlp_mc for CLUBB restart")
+
+    wpthlp_sfc = wpthlp[:, 0]
+    wprtp_sfc = wprtp[:, 0]
+    upwp_sfc = upwp[:, 0]
+    vpwp_sfc = vpwp[:, 0]
+
+    return (
+        um, upwp, vm, vpwp, up2, vp2, rtm,
+        wprtp, thlm, wpthlp, rtp2, rtp3,
+        thlp2, thlp3, rtpthlp, wp2, wp3,
+        p_in_Pa, exner, rcm, cloud_frac,
+        wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp,
+        wp2rtp, wp2thlp, uprcp, vprcp,
+        rc_coef_zm, wp4, wpup2, wpvp2, wp2up2,
+        wp2vp2, ice_supersat_frac,
+        wm_zt, rho, rho_zm, rho_ds_zm,
+        rho_ds_zt, thv_ds_zm, thv_ds_zt,
+        thlm_forcing, rtm_forcing, wprtp_forcing,
+        wpthlp_forcing, rtp2_forcing,
+        thlp2_forcing, rtpthlp_forcing,
+        hydromet, hydrometp2, wphydrometp,
+        Ncm, Nccnm, thvm, em, tau_zm, tau_zt,
+        Kh_zt, Kh_zm, ug, vg,
+        thlprcp,
+        sigma_sqd_w, sigma_sqd_w_zt, radht,
+        deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,
+        pdf_params, pdf_params_zm,
+        rcm_mc, rvm_mc, thlm_mc,
+        wprtp_mc, wpthlp_mc, rtp2_mc,
+        thlp2_mc, rtpthlp_mc,
+        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
+    )

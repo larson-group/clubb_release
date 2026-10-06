@@ -7,6 +7,30 @@ pipeline {
     // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {
+        stage('JAX multicolumn restart') {
+          agent { label 'carson' }
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                python3 tests/run_restart_test.py bomex -jax -multicol C8/0.2:0.8/4 \
+                  -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.'
+              '''
+            }
+          }
+        }
+        stage('JAX SILHS sequence restart') {
+          agent { label 'carson' }
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                # Restart after step 37, inside a three-timestep sequence.
+                python3 tests/run_restart_test.py rico_silhs -jax \
+                  -max_iters 74 -dt_main 60 -dt_rad 60 -tout 60 -multicol C8/0.2:0.8/2 \
+                  -override 'stats_tsamp=60.,lh_sequence_length=3,l_lh_importance_sampling=.false.'
+              '''
+            }
+          }
+        }
         stage('Run multicolumn restart test') {
           agent any
           steps {

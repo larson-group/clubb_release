@@ -279,6 +279,15 @@ JAX-only window/batch assertions are runnable with
 `python3 clubb_jax/tests/run_driver_extensions_test.py`. Restart input and
 loss/tuning interfaces are separate functionality changes.
 
+## Restarts
+
+Use `python3 tests/run_restart_test.py bomex -jax -multicol 4` or
+`python3 tests/run_restart_test.py rico_silhs -jax` to test the existing NetCDF
+restart format through JAX. Initialization restores source-selected state and
+absolute iteration/seeds, including retained SILHS permutations. Jenkins adds
+separate normal and sequence-restart CPU stages. See
+[RESTART_PORT_NOTES.md](./RESTART_PORT_NOTES.md) for reader/state limits.
+
 ## Requirements And Environments
 
 No Fortran build is required for a JAX-only run. Runtime and test dependencies

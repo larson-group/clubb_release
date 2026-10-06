@@ -361,6 +361,11 @@ Examples:
 - `python3 tests/run_restart_test.py bomex -keep_artifacts`
   Keeps generated `output/` and `restart/` files after the test.
 
+Use `-jax` or `-jax=cpu` for both restart integrations. The JAX check compares
+all saved columns; native first-column behavior is unchanged. The restart uses
+a saved interior record nearest the effective run midpoint, including odd
+shortened runs. Jenkins adds CPU normal and SILHS sequence restart stages.
+
 ### `run_silhs_test.py`
 
 Checks SILHS convergence by comparing a small-sample run against a large-sample
