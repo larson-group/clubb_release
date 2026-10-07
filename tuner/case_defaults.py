@@ -38,15 +38,28 @@ def load_case_defaults() -> dict[str, dict]:
 
 def available_case_names() -> list[str]:
     """Return case names that have benchmark-comparison defaults."""
-    return sorted(load_case_defaults())
+    from utilities.create_case_namelist import available_case_names as model_cases, resolve_case_model_input
+    defaults = load_case_defaults()
+    names = set(defaults)
+    for name in model_cases():
+        if resolve_case_model_input(name).get("benchmark_case") in defaults:
+            names.add(name)
+        else:
+            names.discard(name)
+    return sorted(names)
 
 
 def read_case_defaults(case_name: str, overrides: Mapping | None = None) -> dict:
     """Return one case's defaults, applying explicit caller overrides."""
     all_defaults = load_case_defaults()
-    if case_name not in all_defaults:
+    from utilities.create_case_namelist import resolve_case_model_input
+    try:
+        comparison_case = resolve_case_model_input(case_name).get("benchmark_case")
+    except ValueError:
+        comparison_case = case_name
+    if comparison_case not in all_defaults:
         raise RuntimeError(f"Missing tuner defaults for case {case_name}: {CASE_DEFAULTS_PATH}")
-    defaults = dict(all_defaults[case_name])
+    defaults = dict(all_defaults[comparison_case])
     return apply_case_overrides(case_name, defaults, overrides)
 
 

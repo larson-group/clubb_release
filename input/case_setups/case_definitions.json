@@ -1,0 +1,3228 @@
+{
+  "_notes": {
+    "merge": "For a main case, recursively merge defaults with cases[case_name]. Arrays replace whole arrays. A null override removes an inherited setting or group, leaving it unspecified as in the original namelist; it is not a Fortran value.",
+    "defaults": "Defaults use repeated modal values across the 49 main *_model.in files. Settings usually omitted within a group stay case-specific. A default group is included only when it reduces overrides after accounting for absent groups. Ties use alphabetical case order, except equally common radiation schemes prefer simplified.",
+    "identity": "runtype, fname_prefix, restart_path_case, datafile, forcings_file_path and stats_output_filename stay explicit per case when present. Original paths, units, timing, physics choices and omitted settings are preserved.",
+    "names": "Case keys correspond to NAME_model.in. Namelist and setting names are lowercase because Fortran names are case-insensitive; derived-type components are nested objects.",
+    "legacy_variants": "The eight *_model.HR.in and *_model.LR.in files retain an older namelist format with embedded profiles. legacy_variants[case][resolution] stores each complete original definition; defaults do not apply to these entries and their obsolete keys are not modernized.",
+    "array_indices": "_start_index records explicit Fortran starting indices for indexed arrays in the legacy scalar soundings. Multidimensional lists have the first Fortran dimension varying fastest, as in the source namelists."
+  },
+  "defaults": {
+    "model_setting": {
+      "nzmax": 128,
+      "grid_type": 1,
+      "deltaz_nl": 50.0,
+      "zm_init_nl": 0.0,
+      "zm_top_nl": 6950.0,
+      "zt_grid_fname": "",
+      "zm_grid_fname": "",
+      "day": 15,
+      "month": 7,
+      "year": 2003,
+      "lat_vals": 31.5,
+      "lon_vals": -122.0,
+      "sfc_elevation_nl": 0.0,
+      "time_initial": 0.0,
+      "time_final": 864000.0,
+      "dt_main": 60.0,
+      "dt_rad": 60.0,
+      "l_t_dependent": true,
+      "sfctype": 1,
+      "p_sfc_nl": 101780.0,
+      "fcor_nl": 0.0,
+      "t0": 300.0,
+      "thlm_sponge_damp_settings": {
+        "l_sponge_damping": false,
+        "tau_sponge_damp_min": 60.0,
+        "tau_sponge_damp_max": 1800.0,
+        "sponge_damp_depth": 0.25
+      },
+      "rtm_sponge_damp_settings": {
+        "l_sponge_damping": false,
+        "tau_sponge_damp_min": 60.0,
+        "tau_sponge_damp_max": 1800.0,
+        "sponge_damp_depth": 0.25
+      },
+      "uv_sponge_damp_settings": {
+        "l_sponge_damping": false,
+        "tau_sponge_damp_min": 60.0,
+        "tau_sponge_damp_max": 1800.0,
+        "sponge_damp_depth": 0.25
+      },
+      "l_restart": false,
+      "time_restart": 0.0,
+      "debug_level": 2,
+      "sclr_dim": 0,
+      "iisclr_rt": -1,
+      "iisclr_thl": -2,
+      "sclr_tol_nl": [0.01, 1e-08],
+      "edsclr_dim": 0,
+      "iiedsclr_rt": -1,
+      "iiedsclr_thl": -2,
+      "l_input_fields": false
+    },
+    "gfdl_activation_setting": {},
+    "microphysics_setting": {
+      "microphys_scheme": "morrison",
+      "hmp2_ip_on_hmm2_ip_intrcpt": {
+        "rr": 1.0,
+        "nr": 1.0,
+        "ri": 1.0,
+        "ni": 1.0,
+        "rs": 1.0,
+        "ns": 1.0,
+        "rg": 1.0,
+        "ng": 1.0
+      },
+      "hmp2_ip_on_hmm2_ip_slope": {
+        "rr": 0.0,
+        "nr": 0.0,
+        "ri": 0.0,
+        "ni": 0.0,
+        "rs": 0.0,
+        "ns": 0.0,
+        "rg": 0.0,
+        "ng": 0.0
+      }
+    },
+    "radiation_setting": {
+      "rad_scheme": "simplified"
+    },
+    "stats_setting": {
+      "l_stats": true,
+      "stats_tsamp": 60.0,
+      "stats_tout": 60.0
+    },
+    "setfields": {
+      "input_type": "SAM",
+      "l_input_um": true,
+      "l_input_vm": true,
+      "l_input_rtm": true,
+      "l_input_thlm": true,
+      "l_input_wp2": true,
+      "l_input_wprtp": true,
+      "l_input_wpthlp": true,
+      "l_input_wp3": true,
+      "l_input_rtp2": true,
+      "l_input_thlp2": true,
+      "l_input_rtpthlp": true,
+      "l_input_upwp": true,
+      "l_input_vpwp": true,
+      "l_input_rcm": true,
+      "l_input_em": true,
+      "l_input_p": true,
+      "l_input_up2": true,
+      "l_input_vp2": true
+    }
+  },
+  "cases": {
+    "arm": {
+      "model_setting": {
+        "runtype": "arm",
+        "nzmax": 110,
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 5350.0,
+        "day": 21,
+        "month": 6,
+        "year": 1997,
+        "lat_vals": 36.62,
+        "lon_vals": -97.5,
+        "time_initial": 41400.0,
+        "time_final": 93600.0,
+        "p_sfc_nl": 97000.0,
+        "fcor_nl": 8.5e-05,
+        "restart_path_case": "restart/arm"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "stats_setting": {
+        "fname_prefix": "arm"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc"
+      }
+    },
+    "arm_0003": {
+      "model_setting": {
+        "runtype": "arm_0003",
+        "grid_type": 2,
+        "deltaz_nl": 200.0,
+        "zm_top_nl": 21400.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "day": 1,
+        "month": 3,
+        "year": 2000,
+        "lat_vals": 36.5,
+        "lon_vals": -97.5,
+        "time_initial": 63003.0,
+        "time_final": 1931404.0,
+        "p_sfc_nl": 97890.0,
+        "fcor_nl": 8.697e-05,
+        "ts_nudge": 7200,
+        "forcings_file_path": "../input/case_setups/arm_0003_forcings/",
+        "l_uv_nudge": true,
+        "restart_path_case": "restart/arm_0003",
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "coamps",
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none"
+      },
+      "stats_setting": {
+        "fname_prefix": "arm_0003_clip"
+      },
+      "setfields": null
+    },
+    "arm_3year": {
+      "model_setting": {
+        "runtype": "arm_3year",
+        "deltaz_nl": 200.0,
+        "zm_top_nl": 25400.0,
+        "day": 1,
+        "month": 1,
+        "year": 2001,
+        "lat_vals": 36.5,
+        "lon_vals": -97.5,
+        "time_final": 94690790.0,
+        "p_sfc_nl": 98552.44,
+        "fcor_nl": 8.697e-05,
+        "ts_nudge": 7200,
+        "forcings_file_path": "../input/case_setups/arm_3year_forcings/",
+        "l_uv_nudge": true,
+        "restart_path_case": "restart/arm_3year",
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "arm_3year",
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "arm_97": {
+      "model_setting": {
+        "runtype": "arm_97",
+        "grid_type": 2,
+        "deltaz_nl": 150.0,
+        "zm_top_nl": 27625.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "day": 26,
+        "month": 6,
+        "year": 1997,
+        "lat_vals": 36.5,
+        "lon_vals": -97.5,
+        "time_initial": 84660.0,
+        "time_final": 419460.0,
+        "dt_rad": 1800.0,
+        "p_sfc_nl": 97151.03,
+        "ts_nudge": 7200.0,
+        "l_uv_nudge": true,
+        "restart_path_case": "restart/arm_97",
+        "edsclr_dim": 2,
+        "iiedsclr_rt": 1,
+        "iiedsclr_thl": 2,
+        "sfctype": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "l_graupel": true,
+        "l_const_nc_in_cloud": true,
+        "l_var_covar_src": true,
+        "lh_microphys_type": "interactive",
+        "lh_num_samples": 8,
+        "lh_sequence_length": 1,
+        "l_fix_w_chi_eta_correlations": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "rr": 5.0,
+          "nr": 2.5,
+          "ri": 1.25,
+          "ni": 0.625,
+          "rs": 1.25,
+          "ns": 0.625,
+          "rg": 1.25,
+          "ng": 0.625
+        },
+        "ncnp2_on_ncnm2": 0.003
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_sw_radiation": true,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "arm_97"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc",
+        "input_type": "sam"
+      }
+    },
+    "astex_a209": {
+      "model_setting": {
+        "runtype": "astex_a209",
+        "grid_type": 2,
+        "deltaz_nl": 20.0,
+        "zm_top_nl": 9000.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "day": 13,
+        "month": 6,
+        "year": 1992,
+        "lat_vals": 34.0,
+        "lon_vals": -25.0,
+        "time_final": 144000.0,
+        "p_sfc_nl": 102900.0,
+        "fcor_nl": 8.1553388e-05,
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "tau_sponge_damp_min": 1800.0
+        },
+        "rtm_sponge_damp_settings": {
+          "tau_sponge_damp_min": 1800.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 1800.0
+        },
+        "restart_path_case": "restart/astex_a209",
+        "sclr_tol_nl": 1e-08,
+        "l_diagnose_correlations": false,
+        "l_calc_w_corr": false,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "khairoutdinov_kogan",
+        "nc0_in_cloud": 100000000.0,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "hmp2_ip_on_hmm2_ip_slope": {
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "ncnp2_on_ncnm2": 2.2,
+        "c_evap": 0.5,
+        "r_0": 0.0001,
+        "l_cloud_sed": true,
+        "sigma_g": 1.2,
+        "l_var_covar_src": true
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_sw_radiation": true,
+        "slr": 1.0,
+        "sol_const": 1376.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "astex_a209",
+        "stats_tout": 300.0
+      },
+      "setfields": null
+    },
+    "atex": {
+      "model_setting": {
+        "runtype": "atex",
+        "nzmax": 150,
+        "deltaz_nl": 20.0,
+        "zm_top_nl": 3960.0,
+        "day": 7,
+        "month": 2,
+        "year": 1969,
+        "lat_vals": 14.9406,
+        "lon_vals": -35.0,
+        "l_ignore_forcings": true,
+        "time_final": 28800.0,
+        "p_sfc_nl": 101500.0,
+        "fcor_nl": 3.75e-05,
+        "restart_path_case": "restart/atex"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 74.0,
+        "f1": 0.0,
+        "kappa": 130.0
+      },
+      "stats_setting": {
+        "fname_prefix": "atex"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/les_runs/atex",
+        "input_type": "coamps_les"
+      }
+    },
+    "atex_long": {
+      "model_setting": {
+        "runtype": "atex_long",
+        "nzmax": 150,
+        "deltaz_nl": 20.0,
+        "zm_top_nl": 3000.0,
+        "day": 7,
+        "month": 2,
+        "year": 1969,
+        "lat_vals": 14.44,
+        "lon_vals": -35.0,
+        "l_ignore_forcings": true,
+        "time_final": 691200.0,
+        "p_sfc_nl": 101600.0,
+        "thlm_sponge_damp_settings": {
+          "tau_sponge_damp_min": 120.0,
+          "tau_sponge_damp_max": 43200.0,
+          "sponge_damp_depth": 0.45
+        },
+        "restart_path_case": "restart/atex_long",
+        "parameter_file": "../input/parameter_and_flag_configs/coriolis_cases/atex_long_parameters.in"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "l_cloud_sed": true,
+        "nc0_in_cloud": 100000000.0,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 57.0,
+        "f1": 0.0,
+        "kappa": 105.0
+      },
+      "stats_setting": {
+        "fname_prefix": "atex_long",
+        "stats_tout": 3600
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/les_runs/atex_long",
+        "input_type": "coamps_les"
+      }
+    },
+    "bomex": {
+      "model_setting": {
+        "runtype": "bomex",
+        "nzmax": 75,
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 3500.0,
+        "day": 22,
+        "month": 6,
+        "year": 1969,
+        "lat_vals": 15.0,
+        "lon_vals": -56.5,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "l_readiopdata": false,
+        "time_final": 21600.0,
+        "p_sfc_nl": 101500.0,
+        "fcor_nl": 3.76e-05,
+        "restart_path_case": "restart/bomex",
+        "sfctype": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "simplified_bomex"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "stats_setting": {
+        "fname_prefix": "bomex"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc"
+      }
+    },
+    "bomex_5day_4scam": {
+      "model_setting": {
+        "runtype": "bomex_5day_4scam",
+        "nzmax": 75,
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 3500.0,
+        "l_ignore_forcings": true,
+        "time_final": 14400.0,
+        "fcor_nl": 3.76e-05,
+        "restart_path_case": "restart/bomex",
+        "l_readiopdata": true,
+        "day": null,
+        "month": null,
+        "year": null,
+        "lat_vals": null,
+        "lon_vals": null,
+        "sfctype": null,
+        "p_sfc_nl": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "simplified_bomex"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "stats_setting": {
+        "fname_prefix": "bomex"
+      },
+      "setfields": {
+        "datafile": "../sam_benchmark_runs/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc"
+      }
+    },
+    "cgils_s11": {
+      "model_setting": {
+        "runtype": "cgils_s11",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 32.0,
+        "lon_vals": -129.0,
+        "dt_main": 300.0,
+        "dt_rad": 900.0,
+        "p_sfc_nl": 102078.5,
+        "fcor_nl": 7.728e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cgils_s11_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cgils_s11",
+        "debug_level": 0,
+        "sclr_tol_nl": 1e-08
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.616,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.58,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cgils_s11",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s11/ctl_s11_96x96x320_50m_DRZ_N100_ref.nc",
+        "input_type": "sam"
+      }
+    },
+    "cgils_s11_p2k": {
+      "model_setting": {
+        "runtype": "cgils_s11_p2k",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 32.0,
+        "lon_vals": -129.0,
+        "dt_main": 300.0,
+        "dt_rad": 900.0,
+        "p_sfc_nl": 102078.5,
+        "fcor_nl": 7.728e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cgils_s11_p2k_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cgils_s11_p2k",
+        "debug_level": 0,
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.616,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.58,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cgils_s11_p2k",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "cgils_s12": {
+      "model_setting": {
+        "runtype": "cgils_s12",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 35.0,
+        "lon_vals": -125.0,
+        "dt_main": 300.0,
+        "dt_rad": 900.0,
+        "p_sfc_nl": 101864.6,
+        "fcor_nl": 8.365e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cgils_s12_forcings/",
+        "l_uv_nudge": true,
+        "l_rtm_nudge": true,
+        "rtm_min": 0.003581839,
+        "rtm_nudge_max_altitude": 1200.0,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cgils_s12",
+        "debug_level": 0,
+        "sclr_tol_nl": 1e-08
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.606,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.59,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cgils_s12",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s12/ctl_s12_96x96x192_25m_DRZ_N100_fixnudge.nc",
+        "input_type": "sam"
+      }
+    },
+    "cgils_s12_p2k": {
+      "model_setting": {
+        "runtype": "cgils_s12_p2k",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 35.0,
+        "lon_vals": -125.0,
+        "dt_main": 300.0,
+        "dt_rad": 900.0,
+        "p_sfc_nl": 101864.6,
+        "fcor_nl": 8.365e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cgils_s12_p2k_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cgils_s12_p2k",
+        "debug_level": 0,
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.606,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.59,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cgils_s12_p2k",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "cgils_s6": {
+      "model_setting": {
+        "runtype": "cgils_s6",
+        "grid_type": 2,
+        "zm_top_nl": 10000.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 17.0,
+        "lon_vals": -149.0,
+        "dt_main": 300.0,
+        "dt_rad": 600.0,
+        "p_sfc_nl": 101407.8,
+        "fcor_nl": 4.264e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cgils_s6_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cgils_s6",
+        "sclr_tol_nl": 1e-08
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "l_predict_nc": true
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.629,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.539,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cgils_s6",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc",
+        "input_type": "sam"
+      }
+    },
+    "cgils_s6_p2k": {
+      "model_setting": {
+        "runtype": "cgils_s6_p2k",
+        "grid_type": 2,
+        "zm_top_nl": 10000.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 17.0,
+        "lon_vals": -149.0,
+        "dt_main": 300.0,
+        "dt_rad": 600.0,
+        "p_sfc_nl": 101407.8,
+        "fcor_nl": 4.264e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cgils_s6_p2k_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cgils_s6_p2k",
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.629,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.539,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cgils_s6_p2k",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "clex9_nov02": {
+      "model_setting": {
+        "runtype": "clex9_nov02",
+        "nzmax": 120,
+        "deltaz_nl": 25.0,
+        "zm_init_nl": 3097.0,
+        "zm_top_nl": 6601.0,
+        "day": 2,
+        "month": 11,
+        "year": 2001,
+        "lat_vals": 41.085,
+        "lon_vals": -100.3552,
+        "time_initial": 47811.0,
+        "time_final": 69411.0,
+        "p_sfc_nl": 70000.0,
+        "restart_path_case": "restart/clex9_nov02",
+        "sfctype": null,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "microphys_start_time": 51411.0,
+        "l_ice_microphys": true,
+        "l_predict_nc": true
+      },
+      "radiation_setting": {
+        "f0": 104.0,
+        "f1": 62.0,
+        "kappa": 94.2,
+        "eff_drop_radius": 1e-05,
+        "alvdr": 0.1,
+        "gc": 0.86,
+        "omega": 0.9965,
+        "l_fix_cos_solar_zen": false,
+        "cos_solar_zen_values": [0.0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        "fs_values": [0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898, 1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994],
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "clex9_nov02"
+      },
+      "setfields": null
+    },
+    "clex9_oct14": {
+      "model_setting": {
+        "runtype": "clex9_oct14",
+        "nzmax": 180,
+        "deltaz_nl": 25.0,
+        "zm_init_nl": 2213.0,
+        "zm_top_nl": 6816.0,
+        "day": 14,
+        "month": 10,
+        "year": 2001,
+        "lat_vals": 41.675,
+        "lon_vals": -101.61,
+        "time_initial": 51262.5,
+        "time_final": 72862.5,
+        "p_sfc_nl": 77170.0,
+        "restart_path_case": "restart/clex9_oct14",
+        "sfctype": null,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "l_graupel": false,
+        "microphys_start_time": 54862.5
+      },
+      "radiation_setting": {
+        "f0": 104.0,
+        "f1": 62.0,
+        "kappa": 94.2,
+        "eff_drop_radius": 1e-05,
+        "alvdr": 0.1,
+        "gc": 0.86,
+        "omega": 0.9965,
+        "cos_solar_zen_values": [0.0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        "fs_values": [0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898, 1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994],
+        "l_sw_radiation": true,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "clex9_oct14"
+      },
+      "setfields": null
+    },
+    "cloud_feedback_s11": {
+      "model_setting": {
+        "runtype": "cloud_feedback_s11",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 32.0,
+        "lon_vals": -129.0,
+        "dt_main": 300.0,
+        "dt_rad": 900.0,
+        "p_sfc_nl": 102078.5,
+        "fcor_nl": 7.728e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cloud_feedback_s11_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cloud_feedback_s11",
+        "debug_level": 0,
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.616,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.58,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cloud_feedback_s11",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "cloud_feedback_s11_p2k": {
+      "model_setting": {
+        "runtype": "cloud_feedback_s11_p2k",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 32.0,
+        "lon_vals": -129.0,
+        "dt_main": 300.0,
+        "dt_rad": 900.0,
+        "p_sfc_nl": 102078.5,
+        "fcor_nl": 7.728e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cloud_feedback_s11_p2k_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cloud_feedback_s11_p2k",
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.616,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.58,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cloud_feedback_s11_p2k",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "cloud_feedback_s12": {
+      "model_setting": {
+        "runtype": "cloud_feedback_s12",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 35.0,
+        "lon_vals": -125.0,
+        "dt_main": 300.0,
+        "dt_rad": 900.0,
+        "p_sfc_nl": 101864.6,
+        "fcor_nl": 8.365e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cloud_feedback_s12_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cloud_feedback_s12",
+        "debug_level": 0,
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.606,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.59,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cloud_feedback_s12",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "cloud_feedback_s12_p2k": {
+      "model_setting": {
+        "runtype": "cloud_feedback_s12_p2k",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 35.0,
+        "lon_vals": -125.0,
+        "dt_main": 300.0,
+        "dt_rad": 900.0,
+        "p_sfc_nl": 101864.6,
+        "fcor_nl": 8.365e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cloud_feedback_s12_p2k_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cloud_feedback_s12_p2k",
+        "debug_level": 0,
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.606,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.59,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cloud_feedback_s12_p2k",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "cloud_feedback_s6": {
+      "model_setting": {
+        "runtype": "cloud_feedback_s6",
+        "grid_type": 2,
+        "zm_top_nl": 10000.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 17.0,
+        "lon_vals": -149.0,
+        "dt_main": 300.0,
+        "dt_rad": 600.0,
+        "p_sfc_nl": 101407.8,
+        "fcor_nl": 4.264e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cloud_feedback_s6_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cloud_feedback_s6",
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.629,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.539,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cloud_feedback_s6",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "cloud_feedback_s6_p2k": {
+      "model_setting": {
+        "runtype": "cloud_feedback_s6_p2k",
+        "grid_type": 2,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "lat_vals": 17.0,
+        "lon_vals": -149.0,
+        "dt_main": 300.0,
+        "dt_rad": 600.0,
+        "p_sfc_nl": 101407.8,
+        "fcor_nl": 4.264e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/cloud_feedback_s6_p2k_forcings/",
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 86400.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "uv_sponge_damp_settings": {
+          "tau_sponge_damp_min": 10800.0,
+          "tau_sponge_damp_max": 86400.0
+        },
+        "restart_path_case": "restart/cloud_feedback_s6_p2k",
+        "debug_level": 0,
+        "sclr_tol_nl": 1e-08,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "cos_solar_zen_values": 0.629,
+        "cos_solar_zen_times": 2592001.0,
+        "slr": 0.539,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdf": 0.07,
+        "alndr": 0.07,
+        "alndf": 0.07,
+        "alvdr": 0.07,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cloud_feedback_s6_p2k",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "cobra": {
+      "model_setting": {
+        "runtype": "cobra",
+        "nzmax": 100,
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 4000.0,
+        "day": 11,
+        "month": 6,
+        "year": 2004,
+        "lat_vals": 45.20407,
+        "lon_vals": -68.7402,
+        "time_initial": 57600.0,
+        "time_final": 230400.0,
+        "p_sfc_nl": 97750.0,
+        "fcor_nl": 0.00010349,
+        "restart_path_case": "restart/cobra",
+        "sclr_dim": 2,
+        "iisclr_co2": 1,
+        "iisclr_rt": 2,
+        "edsclr_dim": 2,
+        "iiedsclr_co2": 1,
+        "iiedsclr_rt": 2,
+        "sfctype": null,
+        "iisclr_thl": null,
+        "iiedsclr_thl": null,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "stats_setting": {
+        "fname_prefix": "cobra"
+      },
+      "setfields": null
+    },
+    "coriolis_test": {
+      "model_setting": {
+        "runtype": "coriolis_test",
+        "nzmax": 75,
+        "zm_top_nl": 10000.0,
+        "day": 1,
+        "month": 1,
+        "year": 1,
+        "lat_vals": 0.0,
+        "lon_vals": 0.0,
+        "l_ignore_forcings": true,
+        "l_input_xpwp_sfc": true,
+        "l_uv_nudge": true,
+        "ts_nudge": 60.0,
+        "time_final": 86400.0,
+        "p_sfc_nl": 100000.0,
+        "restart_path_case": "restart/coriolis_test",
+        "parameter_file": "../input/parameter_and_flag_configs/coriolis_cases/coriolis_test_parameters.in",
+        "sfctype": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "stats_setting": {
+        "fname_prefix": "coriolis_test"
+      },
+      "setfields": {
+        "datafile": "",
+        "input_type": "clubb"
+      }
+    },
+    "dycoms2_rf01": {
+      "model_setting": {
+        "runtype": "dycoms2_rf01",
+        "nzmax": 132,
+        "deltaz_nl": 10.0,
+        "zm_top_nl": 5000.0,
+        "day": 10,
+        "year": 2001,
+        "time_initial": 21600.0,
+        "time_final": 36000.0,
+        "l_ignore_forcings": true,
+        "sfctype": 0,
+        "p_sfc_nl": 101700.0,
+        "fcor_nl": 7.6e-05,
+        "restart_path_case": "restart/dycoms2_rf01"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "l_rad_above_cloud": false
+      },
+      "stats_setting": {
+        "fname_prefix": "dycoms2_rf01"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
+      }
+    },
+    "dycoms2_rf01_fixed_sst": {
+      "model_setting": {
+        "runtype": "dycoms2_rf01",
+        "nzmax": 48,
+        "grid_type": 3,
+        "deltaz_nl": 10.0,
+        "zm_top_nl": 5000.0,
+        "zm_grid_fname": "../input/grid/48_level_zm_grid.grd",
+        "day": 10,
+        "year": 2001,
+        "time_initial": 21600.0,
+        "time_final": 183600.0,
+        "dt_main": 300.0,
+        "dt_rad": 300.0,
+        "l_ignore_forcings": true,
+        "p_sfc_nl": 101700.0,
+        "fcor_nl": 7.6e-05,
+        "restart_path_case": "restart/dycoms2_rf01"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "l_rad_above_cloud": true,
+        "eff_drop_radius": 1e-05,
+        "alvdr": 0.1,
+        "gc": 0.85,
+        "omega": 0.992,
+        "fs_values": 1212.75,
+        "l_sw_radiation": true,
+        "l_fix_cos_solar_zen": false
+      },
+      "stats_setting": {
+        "fname_prefix": "dycoms2_rf01_fixed_sst",
+        "stats_tsamp": 300.0,
+        "stats_tout": 300.0
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/DYCOMS_RF01_fixed_sst/DYCOMS_RF01_96x96x320_LES_fixed_sst.nc"
+      }
+    },
+    "dycoms2_rf02_do": {
+      "model_setting": {
+        "runtype": "dycoms2_rf02",
+        "deltaz_nl": 10.0,
+        "zm_top_nl": 1600.0,
+        "day": 11,
+        "year": 2001,
+        "time_final": 21600.0,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "t_sfc_nl": 292.0,
+        "fcor_nl": 7.6e-05,
+        "restart_path_case": "restart/dycoms2_rf02_do",
+        "nzmax": null,
+        "sfctype": null
+      },
+      "microphysics_setting": {
+        "l_cloud_sed": false,
+        "microphys_scheme": "khairoutdinov_kogan",
+        "nc0_in_cloud": 55000000.0,
+        "l_const_nc_in_cloud": true,
+        "l_var_covar_src": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "hmp2_ip_on_hmm2_ip_slope": {
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "ncnp2_on_ncnm2": 0.003
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "l_rad_above_cloud": true
+      },
+      "stats_setting": {
+        "fname_prefix": "dycoms2_rf02_do"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_nosed/DYCOMS_RF02_128x128x96_dr_nosed.nc",
+        "l_input_ug": false,
+        "l_input_vg": false,
+        "l_input_wm_zt": false,
+        "l_input_exner": false,
+        "l_input_rho": true,
+        "l_input_rho_zm": false,
+        "l_input_lscale": false,
+        "l_input_lscale_up": false,
+        "l_input_lscale_down": false,
+        "l_input_kh_zt": false,
+        "l_input_kh_zm": false,
+        "l_input_tau_zm": false,
+        "l_input_tau_zt": false,
+        "l_input_wpthvp": false,
+        "l_input_thl_1": false,
+        "l_input_thl_2": false,
+        "l_input_mixt_frac": false,
+        "l_input_chi_1": false,
+        "l_input_chi_2": false,
+        "l_input_stdev_chi_1": false,
+        "l_input_stdev_chi_2": false,
+        "l_input_rc_1": false,
+        "l_input_rc_2": false,
+        "l_input_thvm": false,
+        "l_input_rrm": false,
+        "l_input_nrm": false,
+        "l_input_ncm": false,
+        "l_input_rsm": false,
+        "l_input_rim": false,
+        "l_input_rgm": false,
+        "l_input_nccnm": false,
+        "l_input_nim": false,
+        "l_input_thlm_forcing": false,
+        "l_input_rtm_forcing": false,
+        "l_input_sigma_sqd_w": false,
+        "l_input_cloud_frac": false,
+        "l_input_sigma_sqd_w_zt": false,
+        "l_input_veg_t_in_k": false,
+        "l_input_deep_soil_t_in_k": false,
+        "l_input_sfc_soil_t_in_k": false
+      }
+    },
+    "dycoms2_rf02_ds": {
+      "model_setting": {
+        "runtype": "dycoms2_rf02",
+        "deltaz_nl": 10.0,
+        "zm_top_nl": 1600.0,
+        "day": 11,
+        "year": 2001,
+        "time_final": 21600.0,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "t_sfc_nl": 292.0,
+        "fcor_nl": 7.6e-05,
+        "restart_path_case": "restart/dycoms2_rf02_ds",
+        "l_diagnose_correlations": false,
+        "l_calc_w_corr": false,
+        "nzmax": null,
+        "sfctype": null
+      },
+      "microphysics_setting": {
+        "l_cloud_sed": true,
+        "microphys_scheme": "khairoutdinov_kogan",
+        "nc0_in_cloud": 55000000.0,
+        "l_var_covar_src": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "hmp2_ip_on_hmm2_ip_slope": {
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "ncnp2_on_ncnm2": 0.003
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "l_rad_above_cloud": true
+      },
+      "stats_setting": {
+        "fname_prefix": "dycoms2_rf02_ds"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc"
+      }
+    },
+    "dycoms2_rf02_morr": {
+      "model_setting": {
+        "runtype": "dycoms2_rf02",
+        "nzmax": 97,
+        "grid_type": 2,
+        "deltaz_nl": 10.0,
+        "zm_top_nl": 1460.0,
+        "zt_grid_fname": "../input/grid/dycoms2_rf02_97lev_grid.grd",
+        "day": 11,
+        "year": 2001,
+        "time_final": 21600.0,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "t_sfc_nl": 292.0,
+        "fcor_nl": 7.6e-05,
+        "restart_path_case": "restart/dycoms2_rf02_ds",
+        "sfctype": null,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "nc0_in_cloud": 55000000.0,
+        "l_ice_microphys": false,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "l_rad_above_cloud": true
+      },
+      "stats_setting": {
+        "fname_prefix": "dycoms2_rf02_morr"
+      },
+      "setfields": null
+    },
+    "dycoms2_rf02_nd": {
+      "model_setting": {
+        "runtype": "dycoms2_rf02",
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 1600.0,
+        "day": 11,
+        "year": 2001,
+        "time_final": 21600.0,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "t_sfc_nl": 292.0,
+        "fcor_nl": 7.6e-05,
+        "restart_path_case": "restart/dycoms2_rf02_nd",
+        "nzmax": null,
+        "sfctype": null
+      },
+      "microphysics_setting": {
+        "l_cloud_sed": false,
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "l_rad_above_cloud": true
+      },
+      "stats_setting": {
+        "fname_prefix": "dycoms2_rf02_nd"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc"
+      }
+    },
+    "dycoms2_rf02_so": {
+      "model_setting": {
+        "runtype": "dycoms2_rf02",
+        "nzmax": 97,
+        "grid_type": 3,
+        "deltaz_nl": 10.0,
+        "zm_top_nl": 1600.0,
+        "zm_grid_fname": "../input/grid/dycoms2_rf02_gcss_zm_grid.grd",
+        "day": 11,
+        "year": 2001,
+        "time_final": 21600.0,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "t_sfc_nl": 292.0,
+        "fcor_nl": 7.6e-05,
+        "restart_path_case": "restart/dycoms2_rf02_so",
+        "sfctype": null
+      },
+      "microphysics_setting": {
+        "l_cloud_sed": true,
+        "microphys_scheme": "none",
+        "nc0_in_cloud": 55000000.0,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "l_rad_above_cloud": true
+      },
+      "stats_setting": {
+        "fname_prefix": "dycoms2_rf02_so"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/DYCOMS_RF02_128x128x96_nodr_sed/DYCOMS_RF02_128x128x96_nodr_sed.nc"
+      }
+    },
+    "ekman": {
+      "model_setting": {
+        "runtype": "ekman",
+        "deltaz_nl": 100.0,
+        "zm_top_nl": 10000.0,
+        "day": 1,
+        "month": 1,
+        "year": 1,
+        "lat_vals": 14.44,
+        "lon_vals": 0.0,
+        "l_ignore_forcings": true,
+        "time_final": 1382400.0,
+        "dt_main": 300.0,
+        "dt_rad": 86400.0,
+        "p_sfc_nl": 101500.0,
+        "thlm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 600.0
+        },
+        "rtm_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 600.0
+        },
+        "uv_sponge_damp_settings": {
+          "l_sponge_damping": true,
+          "tau_sponge_damp_min": 600.0
+        },
+        "restart_path_case": "restart/ekman",
+        "parameter_file": "../input/parameter_and_flag_configs/coriolis_cases/ekman_parameters.in",
+        "sfctype": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "stats_setting": {
+        "fname_prefix": "ekman",
+        "stats_tsamp": 300.0,
+        "stats_tout": 172800.0
+      },
+      "setfields": {
+        "datafile": "",
+        "input_type": "clubb"
+      }
+    },
+    "fire": {
+      "model_setting": {
+        "runtype": "fire",
+        "nzmax": 48,
+        "deltaz_nl": 25.0,
+        "zm_top_nl": 1600.0,
+        "day": 7,
+        "year": 1987,
+        "lat_vals": 43.23,
+        "lon_vals": -125.0,
+        "l_ignore_forcings": true,
+        "time_final": 10800.0,
+        "p_sfc_nl": 100000.0,
+        "fcor_nl": 0.0001,
+        "restart_path_case": "restart/fire"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "l_local_kk": false,
+        "l_var_covar_src": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 74.0,
+        "f1": 0.0,
+        "kappa": 130.0
+      },
+      "stats_setting": {
+        "fname_prefix": "fire"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/les_runs/fire",
+        "input_type": "coamps_les",
+        "l_input_ug": false,
+        "l_input_vg": false,
+        "l_input_wm_zt": true,
+        "l_input_exner": true,
+        "l_input_rho": true,
+        "l_input_rho_zm": true,
+        "l_input_lscale": false,
+        "l_input_lscale_up": false,
+        "l_input_lscale_down": false,
+        "l_input_kh_zt": true,
+        "l_input_kh_zm": false,
+        "l_input_tau_zm": false,
+        "l_input_tau_zt": false,
+        "l_input_wpthvp": true,
+        "l_input_thl_1": false,
+        "l_input_thl_2": false,
+        "l_input_mixt_frac": false,
+        "l_input_s1": false,
+        "l_input_s2": false,
+        "l_input_stdev_s1": false,
+        "l_input_stdev_s2": false,
+        "l_input_rc_1": false,
+        "l_input_rc_2": false,
+        "l_input_thvm": true,
+        "l_input_rrm": false,
+        "l_input_nrm": false,
+        "l_input_ncm": false,
+        "l_input_rsm": false,
+        "l_input_rim": false,
+        "l_input_rgm": false,
+        "l_input_ncnm": false,
+        "l_input_nim": false,
+        "l_input_thlm_forcing": false,
+        "l_input_rtm_forcing": false,
+        "l_input_sigma_sqd_w": false,
+        "l_input_cloud_frac": false,
+        "l_input_sigma_sqd_w_zt": false,
+        "l_input_veg_t_in_k": false,
+        "l_input_deep_soil_t_in_k": false,
+        "l_input_sfc_soil_t_in_k": false
+      }
+    },
+    "gabls2": {
+      "model_setting": {
+        "runtype": "gabls2",
+        "nzmax": 400,
+        "deltaz_nl": 10.0,
+        "zm_top_nl": 4000.0,
+        "day": 22,
+        "month": 10,
+        "year": 1999,
+        "lat_vals": 37.6,
+        "lon_vals": -96.7,
+        "time_final": 212400.0,
+        "sfctype": 0,
+        "p_sfc_nl": 97200.0,
+        "fcor_nl": 8.8983571e-05,
+        "t0": 283.15,
+        "restart_path_case": "restart/gabls2",
+        "sclr_dim": 2,
+        "iisclr_thl": 1,
+        "iisclr_rt": 2,
+        "iisclr_co2": -1,
+        "edsclr_dim": 2,
+        "iiedsclr_thl": 1,
+        "iiedsclr_rt": 2,
+        "iiedsclr_co2": -1,
+        "l_t_dependent": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "stats_setting": {
+        "fname_prefix": "gabls2",
+        "stats_tout": 600.0
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/les_runs/gabls2",
+        "input_type": "coamps_les",
+        "l_input_ug": false,
+        "l_input_vg": false,
+        "l_input_wm_zt": true,
+        "l_input_exner": true,
+        "l_input_rho": true,
+        "l_input_rho_zm": true,
+        "l_input_lscale": false,
+        "l_input_lscale_up": false,
+        "l_input_lscale_down": false,
+        "l_input_kh_zt": true,
+        "l_input_kh_zm": false,
+        "l_input_tau_zm": false,
+        "l_input_tau_zt": false,
+        "l_input_wpthvp": true,
+        "l_input_thl_1": false,
+        "l_input_thl_2": false,
+        "l_input_mixt_frac": false,
+        "l_input_s1": false,
+        "l_input_s2": false,
+        "l_input_stdev_s1": false,
+        "l_input_stdev_s2": false,
+        "l_input_rc_1": false,
+        "l_input_rc_2": false,
+        "l_input_thvm": true,
+        "l_input_rrm": false,
+        "l_input_nrm": false,
+        "l_input_ncm": false,
+        "l_input_rsm": false,
+        "l_input_rim": false,
+        "l_input_rgm": false,
+        "l_input_ncnm": false,
+        "l_input_nim": false,
+        "l_input_thlm_forcing": false,
+        "l_input_rtm_forcing": false,
+        "l_input_sigma_sqd_w": false,
+        "l_input_cloud_frac": false,
+        "l_input_sigma_sqd_w_zt": false,
+        "l_input_veg_t_in_k": false,
+        "l_input_deep_soil_t_in_k": false,
+        "l_input_sfc_soil_t_in_k": false
+      }
+    },
+    "gabls3": {
+      "model_setting": {
+        "runtype": "gabls3",
+        "nzmax": 250,
+        "deltaz_nl": 20.0,
+        "zm_top_nl": 5000.0,
+        "day": 1,
+        "year": 2006,
+        "lat_vals": 51.9711,
+        "lon_vals": 4.9267,
+        "time_initial": 43200.0,
+        "time_final": 129600.0,
+        "p_sfc_nl": 102440.0,
+        "fcor_nl": 0.000114566338,
+        "l_ignore_forcings": false,
+        "l_soil_veg": true,
+        "restart_path_case": "restart/gabls3",
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_sw_radiation": true,
+        "sol_const": 1321.0,
+        "radiation_top": 30000,
+        "alvdr": 0.23,
+        "alvdf": 0.23,
+        "alndr": 0.23,
+        "alndf": 0.23,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "gabls3",
+        "stats_tout": 600.0
+      },
+      "setfields": null
+    },
+    "gabls3_night": {
+      "model_setting": {
+        "runtype": "gabls3_night",
+        "nzmax": 135,
+        "deltaz_nl": 6.25,
+        "zm_top_nl": 800.0,
+        "day": 1,
+        "year": 2006,
+        "lat_vals": 51.9711,
+        "lon_vals": 4.9267,
+        "time_initial": 86400.0,
+        "time_final": 118800.0,
+        "dt_main": 10.0,
+        "dt_rad": 10.0,
+        "p_sfc_nl": 102440.0,
+        "fcor_nl": 0.000114566338,
+        "l_input_xpwp_sfc": true,
+        "l_soil_veg": false,
+        "restart_path_case": "restart/gabls3_night"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false,
+        "sol_const": 1321.0,
+        "alvdr": 0.23,
+        "alvdf": 0.23,
+        "alndr": 0.23,
+        "alndf": 0.23,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "gabls3_night",
+        "stats_tout": 300.0
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/GABLS3_NIGHT/gabls3_night.nc",
+        "input_type": "sam",
+        "l_input_thlm": false,
+        "l_input_rcm": false
+      }
+    },
+    "jun25_altocu": {
+      "model_setting": {
+        "runtype": "jun25_altocu",
+        "nzmax": 201,
+        "deltaz_nl": 12.5,
+        "zm_init_nl": 4808.0,
+        "zm_top_nl": 7810.0,
+        "day": 25,
+        "month": 6,
+        "year": 1996,
+        "lat_vals": 38.0,
+        "lon_vals": -96.4,
+        "time_initial": 35799.1,
+        "time_final": 71799.1,
+        "p_sfc_nl": 57487.0,
+        "fcor_nl": 8.9763e-05,
+        "l_t_dependent": true,
+        "restart_path_case": "restart/jun25_altocu",
+        "sfctype": null,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "f0": 107.0,
+        "f1": 61.0,
+        "kappa": 100.0,
+        "eff_drop_radius": 1e-05,
+        "alvdr": 0.1,
+        "gc": 0.85,
+        "omega": 0.992,
+        "cos_solar_zen_values": [0.0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        "fs_values": [0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898, 1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994],
+        "l_sw_radiation": true
+      },
+      "stats_setting": {
+        "fname_prefix": "jun25_altocu"
+      },
+      "setfields": null
+    },
+    "lba": {
+      "model_setting": {
+        "runtype": "lba",
+        "grid_type": 2,
+        "deltaz_nl": 75.0,
+        "zm_top_nl": 28625.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "day": 23,
+        "month": 2,
+        "year": 1999,
+        "lat_vals": -10.8667,
+        "lon_vals": -61.95,
+        "l_ignore_forcings": true,
+        "time_initial": 41400.0,
+        "time_final": 63000.0,
+        "p_sfc_nl": 99129.99988,
+        "fcor_nl": 3.76e-05,
+        "ts_nudge": 7200.0,
+        "forcings_file_path": "../input/case_setups/lba_forcings/",
+        "l_uv_nudge": true,
+        "restart_path_case": "restart/lba"
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "l_graupel": true,
+        "l_const_nc_in_cloud": true,
+        "l_var_covar_src": true,
+        "lh_microphys_type": "interactive",
+        "lh_num_samples": 64,
+        "lh_sequence_length": 1,
+        "l_fix_w_chi_eta_correlations": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "rr": 5.0,
+          "nr": 2.5,
+          "ri": 1.25,
+          "ni": 0.625,
+          "rs": 1.25,
+          "ns": 0.625,
+          "rg": 1.25,
+          "ng": 0.625
+        },
+        "ncnp2_on_ncnm2": 0.003
+      },
+      "radiation_setting": {
+        "rad_scheme": "lba"
+      },
+      "stats_setting": {
+        "fname_prefix": "lba"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_noprbuoy.nc",
+        "input_type": "sam"
+      }
+    },
+    "mc3e": {
+      "model_setting": {
+        "runtype": "mc3e",
+        "grid_type": 2,
+        "deltaz_nl": 150.0,
+        "zm_top_nl": 28625.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "day": 22,
+        "month": 4,
+        "year": 2011,
+        "lat_vals": 36.5,
+        "lon_vals": -97.5,
+        "time_final": 3888000.0,
+        "dt_main": 300.0,
+        "dt_rad": 1800.0,
+        "p_sfc_nl": 96900.0,
+        "ts_nudge": 7200.0,
+        "l_uv_nudge": true,
+        "thlm_sponge_damp_settings": {
+          "sponge_damp_depth": 0.2
+        },
+        "rtm_sponge_damp_settings": {
+          "sponge_damp_depth": 0.2
+        },
+        "uv_sponge_damp_settings": {
+          "sponge_damp_depth": 0.2
+        },
+        "restart_path_case": "restart/mc3e",
+        "sfctype": null,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "l_graupel": true,
+        "l_const_nc_in_cloud": true,
+        "l_var_covar_src": true,
+        "lh_microphys_type": "interactive",
+        "lh_num_samples": 8,
+        "lh_sequence_length": 1,
+        "l_fix_w_chi_eta_correlations": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "rr": 5.0,
+          "nr": 2.5,
+          "ri": 1.25,
+          "ni": 0.625,
+          "rs": 1.25,
+          "ns": 0.625,
+          "rg": 1.25,
+          "ng": 0.625
+        },
+        "ncnp2_on_ncnm2": 0.003
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_sw_radiation": true,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "mc3e",
+        "stats_tsamp": 300.0,
+        "stats_tout": 3600.0
+      },
+      "setfields": null
+    },
+    "mpace_a": {
+      "model_setting": {
+        "runtype": "mpace_a",
+        "nzmax": 200,
+        "zm_top_nl": 10950.0,
+        "day": 5,
+        "month": 10,
+        "year": 2004,
+        "lat_vals": 70.5,
+        "lon_vals": -154.0,
+        "l_ignore_forcings": true,
+        "time_initial": 50400.0,
+        "time_final": 309600.0,
+        "sfctype": 0,
+        "p_sfc_nl": 101500.0,
+        "fcor_nl": 0.00013747,
+        "ts_nudge": 3600.0,
+        "forcings_file_path": "../input/case_setups/mpace_a_forcings/",
+        "l_uv_nudge": true,
+        "restart_path_case": "restart/mpace_a",
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "l_graupel": false,
+        "l_arctic_nucl": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "nr": 0.6,
+          "ns": 0.6
+        },
+        "ncnp2_on_ncnm2": 2.2,
+        "c_evap": 0.5,
+        "r_0": 0.0001,
+        "nc0_in_cloud": 70000000.0,
+        "lh_microphys_type": "disabled",
+        "lh_num_samples": 4,
+        "lh_sequence_length": 1,
+        "l_fix_w_chi_eta_correlations": true,
+        "aer_rm1": 5.2e-08,
+        "aer_sig1": 2.04,
+        "aer_n1": 72200000.0,
+        "aer_rm2": 1.3e-06,
+        "aer_sig2": 2.5,
+        "aer_n2": 1800000.0
+      },
+      "radiation_setting": {
+        "f0": 100.0,
+        "f1": 20.0,
+        "kappa": 119.0,
+        "eff_drop_radius": 1e-05,
+        "alvdr": 0.1,
+        "gc": 0.86,
+        "omega": 0.9965,
+        "fs_values": 1212.75,
+        "l_sw_radiation": true,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "mpace_a",
+        "stats_tout": 600.0
+      },
+      "setfields": null
+    },
+    "mpace_b": {
+      "model_setting": {
+        "runtype": "mpace_b",
+        "nzmax": 56,
+        "zm_top_nl": 3750.0,
+        "day": 9,
+        "month": 10,
+        "year": 2004,
+        "lat_vals": 71.75,
+        "lon_vals": -151.0,
+        "time_initial": 61200.0,
+        "time_final": 104400.0,
+        "l_ignore_forcings": true,
+        "sfctype": 0,
+        "p_sfc_nl": 101000.0,
+        "fcor_nl": 0.0001,
+        "ts_nudge": 3600.0,
+        "l_uv_nudge": true,
+        "restart_path_case": "restart/mpace_b"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "coamps",
+        "l_ice_microphys": true,
+        "l_graupel": false,
+        "l_predict_nc": true
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "eff_drop_radius": 1e-05,
+        "alvdr": 0.1,
+        "gc": 0.86,
+        "omega": 0.9965,
+        "fs_values": 1212.75,
+        "l_sw_radiation": true,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "mpace_b"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/les_runs/mpace_b",
+        "input_type": "coamps_les"
+      }
+    },
+    "mpace_b_silhs": {
+      "model_setting": {
+        "runtype": "mpace_b",
+        "nzmax": 56,
+        "zm_top_nl": 3750.0,
+        "day": 9,
+        "month": 10,
+        "year": 2004,
+        "lat_vals": 71.75,
+        "lon_vals": -151.0,
+        "time_initial": 61200.0,
+        "time_final": 104400.0,
+        "l_ignore_forcings": true,
+        "sfctype": 0,
+        "p_sfc_nl": 101000.0,
+        "fcor_nl": 0.0001,
+        "ts_nudge": 3600.0,
+        "l_uv_nudge": true,
+        "restart_path_case": "restart/mpace_b",
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "l_graupel": false,
+        "l_arctic_nucl": true,
+        "l_predict_nc": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "nr": 0.6,
+          "ns": 0.6
+        },
+        "ncnp2_on_ncnm2": 2.2,
+        "lh_microphys_type": "interactive",
+        "l_local_kk": true,
+        "lh_num_samples": 2,
+        "lh_sequence_length": 1,
+        "l_fix_w_chi_eta_correlations": true,
+        "aer_rm1": 5.2e-08,
+        "aer_sig1": 2.04,
+        "aer_n1": 72200000.0,
+        "aer_rm2": 1.3e-06,
+        "aer_sig2": 2.5,
+        "aer_n2": 1800000.0
+      },
+      "radiation_setting": {
+        "f0": 70.0,
+        "f1": 22.0,
+        "kappa": 85.0,
+        "eff_drop_radius": 1e-05,
+        "alvdr": 0.1,
+        "gc": 0.86,
+        "omega": 0.9965,
+        "fs_values": 1212.75,
+        "l_sw_radiation": true,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "mpace_b_silhs"
+      },
+      "setfields": null
+    },
+    "neutral": {
+      "model_setting": {
+        "runtype": "neutral",
+        "nzmax": 97,
+        "grid_type": 3,
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 2300.0,
+        "zm_grid_fname": "../input/grid/neutral_case.grd",
+        "month": 5,
+        "year": 2009,
+        "lat_vals": 36.68,
+        "lon_vals": -98.35,
+        "t_sfc_nl": 300.0,
+        "l_ignore_forcings": true,
+        "time_initial": 77880.0,
+        "time_final": 99480.0,
+        "p_sfc_nl": 100000,
+        "fcor_nl": 0.0001,
+        "restart_path_case": "restart/neutral",
+        "sfctype": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "stats_setting": {
+        "fname_prefix": "neutral"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/NEUTRAL/NEUTRAL_96x96x96_32m_10m_LES.nc",
+        "l_input_um": null,
+        "l_input_vm": null,
+        "l_input_rtm": null,
+        "l_input_thlm": null,
+        "l_input_wprtp": null,
+        "l_input_wpthlp": null,
+        "l_input_rtp2": null,
+        "l_input_thlp2": null,
+        "l_input_rtpthlp": null,
+        "l_input_upwp": null,
+        "l_input_vpwp": null,
+        "l_input_rcm": null,
+        "l_input_em": null,
+        "l_input_p": null
+      }
+    },
+    "nov11_altocu": {
+      "model_setting": {
+        "runtype": "nov11_altocu",
+        "nzmax": 176,
+        "deltaz_nl": 25.0,
+        "zm_init_nl": 3000.0,
+        "zm_top_nl": 7541.0,
+        "day": 11,
+        "month": 11,
+        "year": 1999,
+        "lat_vals": 47.25,
+        "lon_vals": -112.0,
+        "time_initial": 61200.0,
+        "time_final": 82800.0,
+        "p_sfc_nl": 69512.0,
+        "restart_path_case": "restart/nov11_altocu",
+        "sfctype": null,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "microphys_start_time": 64800.0
+      },
+      "radiation_setting": {
+        "f0": 104.0,
+        "f1": 62.0,
+        "kappa": 94.2,
+        "eff_drop_radius": 1e-05,
+        "alvdr": 0.1,
+        "gc": 0.86,
+        "omega": 0.9965,
+        "cos_solar_zen_values": 0.4329,
+        "fs_values": 1212.75,
+        "l_fix_cos_solar_zen": true,
+        "l_sw_radiation": true,
+        "l_use_default_std_atmosphere": true
+      },
+      "stats_setting": {
+        "fname_prefix": "nov11_altocu"
+      },
+      "setfields": null
+    },
+    "rico": {
+      "model_setting": {
+        "runtype": "rico",
+        "grid_type": 2,
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 10000.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "day": 16,
+        "month": 12,
+        "year": 2004,
+        "lat_vals": 18.0,
+        "lon_vals": -61.5,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "time_final": 259200.0,
+        "dt_main": 300.0,
+        "dt_rad": 300.0,
+        "sfctype": 0,
+        "p_sfc_nl": 101540.0,
+        "fcor_nl": 4.506704e-05,
+        "restart_path_case": "restart/rico",
+        "l_diagnose_correlations": false,
+        "l_calc_w_corr": false,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "khairoutdinov_kogan",
+        "l_fix_w_chi_eta_correlations": false,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "rr": 1.25,
+          "nr": 1.25,
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "hmp2_ip_on_hmm2_ip_slope": {
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "ncnp2_on_ncnm2": 2.2,
+        "nc0_in_cloud": 70000000.0,
+        "l_const_nc_in_cloud": true,
+        "l_var_covar_src": true
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "stats_setting": {
+        "fname_prefix": "rico",
+        "stats_tsamp": 300.0,
+        "stats_tout": 300.0
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc"
+      }
+    },
+    "rico_silhs": {
+      "model_setting": {
+        "runtype": "rico",
+        "grid_type": 2,
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 10000.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "day": 16,
+        "month": 12,
+        "year": 2004,
+        "lat_vals": 18.0,
+        "lon_vals": -61.5,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "time_final": 259200.0,
+        "dt_main": 300.0,
+        "dt_rad": 300.0,
+        "sfctype": 0,
+        "p_sfc_nl": 101540.0,
+        "fcor_nl": 4.506704e-05,
+        "restart_path_case": "restart/rico_silhs",
+        "l_diagnose_correlations": false,
+        "l_calc_w_corr": false,
+        "l_input_fields": null
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "khairoutdinov_kogan",
+        "l_fix_w_chi_eta_correlations": false,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "rr": 1.25,
+          "nr": 1.25,
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "hmp2_ip_on_hmm2_ip_slope": {
+          "ri": null,
+          "ni": null,
+          "rs": null,
+          "ns": null,
+          "rg": null,
+          "ng": null
+        },
+        "ncnp2_on_ncnm2": 2.2,
+        "nc0_in_cloud": 70000000.0,
+        "l_const_nc_in_cloud": true,
+        "l_var_covar_src": true,
+        "lh_microphys_type": "interactive",
+        "l_local_kk": true,
+        "lh_num_samples": 8,
+        "lh_sequence_length": 1
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "stats_setting": {
+        "fname_prefix": "rico_silhs",
+        "stats_tsamp": 300.0,
+        "stats_tout": 300.0
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc"
+      }
+    },
+    "twp_ice": {
+      "model_setting": {
+        "runtype": "twp_ice",
+        "grid_type": 2,
+        "deltaz_nl": 200.0,
+        "zm_top_nl": 28625.0,
+        "zt_grid_fname": "../input/grid/deep_convection_128lev_27km_zt_grid.grd",
+        "day": 19,
+        "month": 1,
+        "year": 2006,
+        "lat_vals": -12.425,
+        "lon_vals": 130.891,
+        "time_initial": 10800.0,
+        "time_final": 604800.0,
+        "dt_main": 300.0,
+        "dt_rad": 1800.0,
+        "p_sfc_nl": 100440.0,
+        "fcor_nl": -3.1379e-05,
+        "ts_nudge": 7200,
+        "l_uv_nudge": true,
+        "restart_path_case": "restart/twp_ice",
+        "iisclr_rt": null,
+        "iisclr_thl": null,
+        "sclr_tol_nl": null,
+        "edsclr_dim": null,
+        "iiedsclr_rt": null,
+        "iiedsclr_thl": null
+      },
+      "microphysics_setting": {
+        "l_ice_microphys": true,
+        "l_graupel": true,
+        "l_const_nc_in_cloud": true,
+        "l_var_covar_src": true,
+        "lh_microphys_type": "interactive",
+        "lh_num_samples": 8,
+        "lh_sequence_length": 1,
+        "l_fix_w_chi_eta_correlations": true,
+        "hmp2_ip_on_hmm2_ip_intrcpt": {
+          "rr": 5.0,
+          "nr": 2.5,
+          "ri": 1.25,
+          "ni": 0.625,
+          "rs": 1.25,
+          "ns": 0.625,
+          "rg": 1.25,
+          "ng": 0.625
+        },
+        "ncnp2_on_ncnm2": 0.003
+      },
+      "radiation_setting": {
+        "rad_scheme": "bugsrad",
+        "l_sw_radiation": true,
+        "radiation_top": 38000.0,
+        "l_use_default_std_atmosphere": false
+      },
+      "stats_setting": {
+        "fname_prefix": "twp_ice",
+        "stats_tsamp": 600.0,
+        "stats_tout": 3600.0
+      },
+      "scalar_sounding": {},
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/TWP_ICE_r1315_128x128x128_1km_Morrison/TWP_ICE.nc",
+        "input_type": "sam",
+        "l_input_p": false
+      }
+    },
+    "wangara": {
+      "model_setting": {
+        "runtype": "wangara",
+        "nzmax": 50,
+        "deltaz_nl": 40.0,
+        "zm_top_nl": 2300.0,
+        "month": 8,
+        "year": 1967,
+        "lat_vals": -34.6,
+        "lon_vals": 145.072222,
+        "l_ignore_forcings": true,
+        "l_modify_ic_with_cubic_int": true,
+        "l_modify_bc_for_cnvg_test": true,
+        "time_initial": 82800.0,
+        "time_final": 111600.0,
+        "p_sfc_nl": 102300.0,
+        "fcor_nl": -8.21e-05,
+        "restart_path_case": "restart/wangara"
+      },
+      "microphysics_setting": {
+        "microphys_scheme": "none",
+        "hmp2_ip_on_hmm2_ip_intrcpt": null,
+        "hmp2_ip_on_hmm2_ip_slope": null
+      },
+      "radiation_setting": {
+        "rad_scheme": "none",
+        "l_calc_thlp2_rad": false
+      },
+      "stats_setting": {
+        "fname_prefix": "wangara"
+      },
+      "setfields": {
+        "datafile": "../les_and_clubb_benchmark_runs/sam_benchmark_runs/WANGARA/WANGARA_64x64x80_100m_40m_LES.nc",
+        "l_input_um": null,
+        "l_input_vm": null,
+        "l_input_rtm": null,
+        "l_input_thlm": null,
+        "l_input_wprtp": null,
+        "l_input_wpthlp": null,
+        "l_input_rtp2": null,
+        "l_input_thlp2": null,
+        "l_input_rtpthlp": null,
+        "l_input_upwp": null,
+        "l_input_vpwp": null,
+        "l_input_rcm": null,
+        "l_input_em": null,
+        "l_input_p": null
+      }
+    }
+  },
+  "legacy_variants": {
+    "dycoms2_rf02_do": {
+      "HR": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "nzmax": 147,
+          "grid_type": 1,
+          "deltaz_nl": 10.0,
+          "zm_init_nl": 0.0,
+          "zt_grid_fname": "",
+          "zm_grid_fname": "",
+          "day": 11,
+          "month": 7,
+          "year": 2001,
+          "lat_vals": 31.5,
+          "lon_vals": -122.0,
+          "sfc_elevation_nl": 0.0,
+          "time_initial": 0.0,
+          "time_final": 21600.0,
+          "time_spinup": 30000.0,
+          "dt_main": 5.0,
+          "dt_rad": 5.0,
+          "t_sfc_nl": 292.0,
+          "p_sfc_nl": 101780.0,
+          "fcor_nl": 7.6e-05,
+          "t0": 300.0,
+          "sol_const": 1367.0,
+          "std_atmos_buffer": 10,
+          "alvdr": 0.1,
+          "alvdf": 0.1,
+          "alndr": 0.1,
+          "alndf": 0.1,
+          "l_cloud_sed": false,
+          "l_kk_rain": true,
+          "l_coamps_microphys": false,
+          "l_icedfs": false,
+          "l_bugsrad": false,
+          "l_restart": false,
+          "restart_path_case": "restart/dycoms2_rf02_do_HR",
+          "time_restart": 0.0,
+          "debug_level": 2
+        },
+        "stats_setting": {
+          "l_stats": true,
+          "fname_prefix": "dycoms2_rf02_do_HR",
+          "stats_tsamp": 5.0,
+          "stats_tout": 5.0
+        },
+        "sounding": {
+          "nlevels": 4,
+          "z": [0.0, 794.0, 795.0, 1600.0],
+          "theta": [288.3, 288.3, 295.0, 304.3],
+          "rt": [0.00945, 0.00945, 0.005, 0.0026],
+          "u": [3.0, 6.4142, 6.4185, 9.88],
+          "v": [-9.0, -4.5336, -4.548, -0.04],
+          "ug": [3.0, 6.4142, 6.4185, 9.88],
+          "vg": [-9.0, -4.5336, -4.548, -0.04]
+        },
+        "scalar_sounding": {
+          "sclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "edsclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "_start_index": {
+            "sclr": [null, 1],
+            "edsclr": [null, 1]
+          }
+        }
+      },
+      "LR": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "nzmax": 15,
+          "grid_type": 1,
+          "deltaz_nl": 100.0,
+          "zm_init_nl": 0.0,
+          "zt_grid_fname": "",
+          "zm_grid_fname": "",
+          "day": 11,
+          "month": 7,
+          "year": 2001,
+          "lat_vals": 31.5,
+          "lon_vals": -122.0,
+          "sfc_elevation_nl": 0.0,
+          "time_initial": 0.0,
+          "time_final": 21600.0,
+          "time_spinup": 30000.0,
+          "dt_main": 20.0,
+          "dt_rad": 20.0,
+          "t_sfc_nl": 292.0,
+          "p_sfc_nl": 101780.0,
+          "fcor_nl": 7.6e-05,
+          "t0": 300.0,
+          "sol_const": 1367.0,
+          "std_atmos_buffer": 10,
+          "alvdr": 0.1,
+          "alvdf": 0.1,
+          "alndr": 0.1,
+          "alndf": 0.1,
+          "l_cloud_sed": false,
+          "l_kk_rain": true,
+          "l_coamps_microphys": false,
+          "l_icedfs": false,
+          "l_bugsrad": false,
+          "l_restart": false,
+          "restart_path_case": "restart/dycoms2_rf02_do_LR",
+          "time_restart": 0.0,
+          "debug_level": 2
+        },
+        "stats_setting": {
+          "l_stats": true,
+          "fname_prefix": "dycoms2_rf02_do_LR",
+          "stats_tsamp": 20.0,
+          "stats_tout": 20.0
+        },
+        "sounding": {
+          "nlevels": 4,
+          "z": [0.0, 794.0, 795.0, 1600.0],
+          "theta": [288.3, 288.3, 295.0, 304.3],
+          "rt": [0.00945, 0.00945, 0.005, 0.0026],
+          "u": [3.0, 6.4142, 6.4185, 9.88],
+          "v": [-9.0, -4.5336, -4.548, -0.04],
+          "ug": [3.0, 6.4142, 6.4185, 9.88],
+          "vg": [-9.0, -4.5336, -4.548, -0.04]
+        },
+        "scalar_sounding": {
+          "sclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "edsclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "_start_index": {
+            "sclr": [null, 1],
+            "edsclr": [null, 1]
+          }
+        }
+      }
+    },
+    "dycoms2_rf02_ds": {
+      "HR": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "nzmax": 147,
+          "grid_type": 1,
+          "deltaz_nl": 10.0,
+          "zm_init_nl": 0.0,
+          "zt_grid_fname": "",
+          "zm_grid_fname": "",
+          "day": 11,
+          "month": 7,
+          "year": 2001,
+          "lat_vals": 31.5,
+          "lon_vals": -122.0,
+          "sfc_elevation_nl": 0.0,
+          "time_initial": 0.0,
+          "time_final": 21600.0,
+          "time_spinup": 30000.0,
+          "dt_main": 5.0,
+          "dt_rad": 5.0,
+          "t_sfc_nl": 292.0,
+          "p_sfc_nl": 101780.0,
+          "fcor_nl": 7.6e-05,
+          "t0": 300.0,
+          "sol_const": 1367.0,
+          "std_atmos_buffer": 10,
+          "alvdr": 0.1,
+          "alvdf": 0.1,
+          "alndr": 0.1,
+          "alndf": 0.1,
+          "l_cloud_sed": true,
+          "l_kk_rain": true,
+          "l_coamps_microphys": false,
+          "l_icedfs": false,
+          "l_bugsrad": false,
+          "l_restart": false,
+          "restart_path_case": "restart/dycoms2_rf02_ds_HR",
+          "time_restart": 0.0,
+          "debug_level": 2
+        },
+        "stats_setting": {
+          "l_stats": true,
+          "fname_prefix": "dycoms2_rf02_ds_HR",
+          "stats_tsamp": 5.0,
+          "stats_tout": 5.0
+        },
+        "sounding": {
+          "nlevels": 4,
+          "z": [0.0, 794.0, 795.0, 1600.0],
+          "theta": [288.3, 288.3, 295.0, 304.3],
+          "rt": [0.00945, 0.00945, 0.005, 0.0026],
+          "u": [3.0, 6.4142, 6.4185, 9.88],
+          "v": [-9.0, -4.5336, -4.548, -0.04],
+          "ug": [3.0, 6.4142, 6.4185, 9.88],
+          "vg": [-9.0, -4.5336, -4.548, -0.04]
+        },
+        "scalar_sounding": {
+          "sclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "edsclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "_start_index": {
+            "sclr": [null, 1],
+            "edsclr": [null, 1]
+          }
+        }
+      },
+      "LR": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "nzmax": 15,
+          "grid_type": 1,
+          "deltaz_nl": 100.0,
+          "zm_init_nl": 0.0,
+          "zt_grid_fname": "",
+          "zm_grid_fname": "",
+          "day": 11,
+          "month": 7,
+          "year": 2001,
+          "lat_vals": 31.5,
+          "lon_vals": -122.0,
+          "sfc_elevation_nl": 0.0,
+          "time_initial": 0.0,
+          "time_final": 21600.0,
+          "time_spinup": 30000.0,
+          "dt_main": 20.0,
+          "dt_rad": 20.0,
+          "t_sfc_nl": 292.0,
+          "p_sfc_nl": 101780.0,
+          "fcor_nl": 7.6e-05,
+          "t0": 300.0,
+          "sol_const": 1367.0,
+          "std_atmos_buffer": 10,
+          "alvdr": 0.1,
+          "alvdf": 0.1,
+          "alndr": 0.1,
+          "alndf": 0.1,
+          "l_cloud_sed": true,
+          "l_kk_rain": true,
+          "l_coamps_microphys": false,
+          "l_icedfs": false,
+          "l_bugsrad": false,
+          "l_restart": false,
+          "restart_path_case": "restart/dycoms2_rf02_ds_LR",
+          "time_restart": 0.0,
+          "debug_level": 2
+        },
+        "stats_setting": {
+          "l_stats": true,
+          "fname_prefix": "dycoms2_rf02_ds_LR",
+          "stats_tsamp": 20.0,
+          "stats_tout": 20.0
+        },
+        "sounding": {
+          "nlevels": 4,
+          "z": [0.0, 794.0, 795.0, 1600.0],
+          "theta": [288.3, 288.3, 295.0, 304.3],
+          "rt": [0.00945, 0.00945, 0.005, 0.0026],
+          "u": [3.0, 6.4142, 6.4185, 9.88],
+          "v": [-9.0, -4.5336, -4.548, -0.04],
+          "ug": [3.0, 6.4142, 6.4185, 9.88],
+          "vg": [-9.0, -4.5336, -4.548, -0.04]
+        },
+        "scalar_sounding": {
+          "sclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "edsclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "_start_index": {
+            "sclr": [null, 1],
+            "edsclr": [null, 1]
+          }
+        }
+      }
+    },
+    "dycoms2_rf02_nd": {
+      "HR": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "nzmax": 147,
+          "grid_type": 1,
+          "deltaz_nl": 10.0,
+          "zm_init_nl": 0.0,
+          "zt_grid_fname": "",
+          "zm_grid_fname": "",
+          "day": 11,
+          "month": 7,
+          "year": 2001,
+          "lat_vals": 31.5,
+          "lon_vals": -122.0,
+          "sfc_elevation_nl": 0.0,
+          "time_initial": 0.0,
+          "time_final": 21600.0,
+          "time_spinup": 30000.0,
+          "dt_main": 5.0,
+          "dt_rad": 5.0,
+          "t_sfc_nl": 292.0,
+          "p_sfc_nl": 101780.0,
+          "fcor_nl": 7.6e-05,
+          "t0": 300.0,
+          "sol_const": 1367.0,
+          "std_atmos_buffer": 10,
+          "alvdr": 0.1,
+          "alvdf": 0.1,
+          "alndr": 0.1,
+          "alndf": 0.1,
+          "l_cloud_sed": false,
+          "l_kk_rain": false,
+          "l_coamps_microphys": false,
+          "l_icedfs": false,
+          "l_bugsrad": false,
+          "l_restart": false,
+          "restart_path_case": "restart/dycoms2_rf02_nd_HR",
+          "time_restart": 0.0,
+          "debug_level": 2
+        },
+        "stats_setting": {
+          "l_stats": true,
+          "fname_prefix": "dycoms2_rf02_nd_HR",
+          "stats_tsamp": 5.0,
+          "stats_tout": 5.0
+        },
+        "sounding": {
+          "nlevels": 4,
+          "z": [0.0, 794.0, 795.0, 1600.0],
+          "theta": [288.3, 288.3, 295.0, 304.3],
+          "rt": [0.00945, 0.00945, 0.005, 0.0026],
+          "u": [3.0, 6.4142, 6.4185, 9.88],
+          "v": [-9.0, -4.5336, -4.548, -0.04],
+          "ug": [3.0, 6.4142, 6.4185, 9.88],
+          "vg": [-9.0, -4.5336, -4.548, -0.04]
+        },
+        "scalar_sounding": {
+          "sclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "edsclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "_start_index": {
+            "sclr": [null, 1],
+            "edsclr": [null, 1]
+          }
+        }
+      },
+      "LR": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "nzmax": 15,
+          "grid_type": 1,
+          "deltaz_nl": 100.0,
+          "zm_init_nl": 0.0,
+          "zt_grid_fname": "",
+          "zm_grid_fname": "",
+          "day": 11,
+          "month": 7,
+          "year": 2001,
+          "lat_vals": 31.5,
+          "lon_vals": -122.0,
+          "sfc_elevation_nl": 0.0,
+          "time_initial": 0.0,
+          "time_final": 21600.0,
+          "time_spinup": 30000.0,
+          "dt_main": 20.0,
+          "dt_rad": 20.0,
+          "t_sfc_nl": 292.0,
+          "p_sfc_nl": 101780.0,
+          "fcor_nl": 7.6e-05,
+          "t0": 300.0,
+          "sol_const": 1367.0,
+          "std_atmos_buffer": 10,
+          "alvdr": 0.1,
+          "alvdf": 0.1,
+          "alndr": 0.1,
+          "alndf": 0.1,
+          "l_cloud_sed": false,
+          "l_kk_rain": false,
+          "l_coamps_microphys": false,
+          "l_icedfs": false,
+          "l_bugsrad": false,
+          "l_restart": false,
+          "restart_path_case": "restart/dycoms2_rf02_nd_LR",
+          "time_restart": 0.0,
+          "debug_level": 2
+        },
+        "stats_setting": {
+          "l_stats": true,
+          "fname_prefix": "dycoms2_rf02_nd_LR",
+          "stats_tsamp": 20.0,
+          "stats_tout": 20.0
+        },
+        "sounding": {
+          "nlevels": 4,
+          "z": [0.0, 794.0, 795.0, 1600.0],
+          "theta": [288.3, 288.3, 295.0, 304.3],
+          "rt": [0.00945, 0.00945, 0.005, 0.0026],
+          "u": [3.0, 6.4142, 6.4185, 9.88],
+          "v": [-9.0, -4.5336, -4.548, -0.04],
+          "ug": [3.0, 6.4142, 6.4185, 9.88],
+          "vg": [-9.0, -4.5336, -4.548, -0.04]
+        },
+        "scalar_sounding": {
+          "sclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "edsclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "_start_index": {
+            "sclr": [null, 1],
+            "edsclr": [null, 1]
+          }
+        }
+      }
+    },
+    "dycoms2_rf02_so": {
+      "HR": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "nzmax": 147,
+          "grid_type": 1,
+          "deltaz_nl": 10.0,
+          "zm_init_nl": 0.0,
+          "zt_grid_fname": "",
+          "zm_grid_fname": "",
+          "day": 11,
+          "month": 7,
+          "year": 2001,
+          "lat_vals": 31.5,
+          "lon_vals": -122.0,
+          "sfc_elevation_nl": 0.0,
+          "time_initial": 0.0,
+          "time_final": 21600.0,
+          "time_spinup": 30000.0,
+          "dt_main": 5.0,
+          "dt_rad": 5.0,
+          "t_sfc_nl": 292.0,
+          "p_sfc_nl": 101780.0,
+          "fcor_nl": 7.6e-05,
+          "t0": 300.0,
+          "sol_const": 1367.0,
+          "std_atmos_buffer": 10,
+          "alvdr": 0.1,
+          "alvdf": 0.1,
+          "alndr": 0.1,
+          "alndf": 0.1,
+          "l_cloud_sed": true,
+          "l_kk_rain": false,
+          "l_coamps_microphys": false,
+          "l_icedfs": false,
+          "l_bugsrad": false,
+          "l_restart": false,
+          "restart_path_case": "restart/dycoms2_rf02_so_HR",
+          "time_restart": 0.0,
+          "debug_level": 2
+        },
+        "stats_setting": {
+          "l_stats": true,
+          "fname_prefix": "dycoms2_rf02_so_HR",
+          "stats_tsamp": 5.0,
+          "stats_tout": 5.0
+        },
+        "sounding": {
+          "nlevels": 4,
+          "z": [0.0, 794.0, 795.0, 1600.0],
+          "theta": [288.3, 288.3, 295.0, 304.3],
+          "rt": [0.00945, 0.00945, 0.005, 0.0026],
+          "u": [3.0, 6.4142, 6.4185, 9.88],
+          "v": [-9.0, -4.5336, -4.548, -0.04],
+          "ug": [3.0, 6.4142, 6.4185, 9.88],
+          "vg": [-9.0, -4.5336, -4.548, -0.04]
+        },
+        "scalar_sounding": {
+          "sclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "_start_index": {
+            "sclr": [null, 1]
+          }
+        }
+      },
+      "LR": {
+        "model_setting": {
+          "runtype": "dycoms2_rf02",
+          "nzmax": 15,
+          "grid_type": 1,
+          "deltaz_nl": 100.0,
+          "zm_init_nl": 0.0,
+          "zt_grid_fname": "",
+          "zm_grid_fname": "",
+          "day": 11,
+          "month": 7,
+          "year": 2001,
+          "lat_vals": 31.5,
+          "lon_vals": -122.0,
+          "sfc_elevation_nl": 0.0,
+          "time_initial": 0.0,
+          "time_final": 21600.0,
+          "time_spinup": 30000.0,
+          "dt_main": 20.0,
+          "dt_rad": 20.0,
+          "t_sfc_nl": 292.0,
+          "p_sfc_nl": 101780.0,
+          "fcor_nl": 7.6e-05,
+          "t0": 300.0,
+          "sol_const": 1367.0,
+          "std_atmos_buffer": 10,
+          "alvdr": 0.1,
+          "alvdf": 0.1,
+          "alndr": 0.1,
+          "alndf": 0.1,
+          "l_cloud_sed": true,
+          "l_kk_rain": false,
+          "l_coamps_microphys": false,
+          "l_icedfs": false,
+          "l_bugsrad": false,
+          "l_restart": false,
+          "restart_path_case": "restart/dycoms2_rf02_so_LR",
+          "time_restart": 0.0,
+          "debug_level": 2
+        },
+        "stats_setting": {
+          "l_stats": true,
+          "fname_prefix": "dycoms2_rf02_so_LR",
+          "stats_tsamp": 20.0,
+          "stats_tout": 20.0
+        },
+        "sounding": {
+          "nlevels": 4,
+          "z": [0.0, 794.0, 795.0, 1600.0],
+          "theta": [288.3, 288.3, 295.0, 304.3],
+          "rt": [0.00945, 0.00945, 0.005, 0.0026],
+          "u": [3.0, 6.4142, 6.4185, 9.88],
+          "v": [-9.0, -4.5336, -4.548, -0.04],
+          "ug": [3.0, 6.4142, 6.4185, 9.88],
+          "vg": [-9.0, -4.5336, -4.548, -0.04]
+        },
+        "scalar_sounding": {
+          "sclr": [[288.3, 288.3, 295.0, 304.3], [0.00945, 0.00945, 0.005, 0.0026]],
+          "_start_index": {
+            "sclr": [null, 1]
+          }
+        }
+      }
+    }
+  }
+}

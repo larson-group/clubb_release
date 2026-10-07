@@ -15,11 +15,13 @@ from pathlib import Path
 
 RUN_SCRIPTS = Path(__file__).resolve().parent
 CLUBB_ROOT = RUN_SCRIPTS.parent
+if str(CLUBB_ROOT) not in sys.path:
+    sys.path.insert(0, str(CLUBB_ROOT))
+from utilities.create_case_namelist import resolve_case_model_input
 INPUT_DIR = CLUBB_ROOT / "input"
 OUTPUT_DIR = CLUBB_ROOT / "output"
 TUNABLE_CONFIG_ROOT = INPUT_DIR / "parameter_and_flag_configs"
 TUNABLE_DIR = TUNABLE_CONFIG_ROOT / "default"
-CASE_SETUP_DIR = INPUT_DIR / "case_setups"
 STATS_DIR = INPUT_DIR / "stats"
 TUNER_MISC_DIR = CLUBB_ROOT / "input_misc" / "tuner"
 
@@ -180,7 +182,8 @@ def main() -> int:
     flags_file = TUNABLE_DIR / "configurable_model_flags.in"
     stats_tune_file = Path(args.stats_tune).resolve()
     stats_opt_file = Path(args.stats_opt).resolve()
-    error_in_file = TUNER_MISC_DIR / f"error_{args.run_case}.in"
+    comparison_case = resolve_case_model_input(args.run_case).get("benchmark_case") or args.run_case
+    error_in_file = TUNER_MISC_DIR / f"error_{comparison_case}.in"
     rand_seed_file = TUNER_MISC_DIR / "rand_seed.dat"
 
     try:
@@ -205,13 +208,11 @@ def main() -> int:
         print("No cases specified for -model_mult")
         return 1
 
-    model_files: dict[str, Path] = {}
+    model_inputs: dict[str, str] = {}
     try:
         for case in cases_for_runs:
-            model_file = CASE_SETUP_DIR / f"{case}_model.in"
-            require_file(model_file)
-            model_files[case] = model_file
-    except FileNotFoundError as exc:
+            model_inputs[case] = resolve_case_model_input(case)["model_namelist"]
+    except (ValueError, OSError) as exc:
         print(str(exc))
         return 1
 
@@ -229,10 +230,8 @@ def main() -> int:
     try:
         for case in cases_for_runs:
             hoc_path = RUN_SCRIPTS / f"{case}_hoc.in"
-            concat_stripped_files(
-                [model_files[case], stats_tune_file, flags_file, silhs_params_file],
-                hoc_path,
-            )
+            concat_stripped_files([stats_tune_file, flags_file, silhs_params_file], hoc_path)
+            hoc_path.write_text(model_inputs[case] + hoc_path.read_text(encoding="utf-8"), encoding="utf-8")
             hoc_files.append(hoc_path)
 
         error_text = strip_fortran_comments(error_in_file.read_text(encoding="utf-8"))

@@ -3,18 +3,13 @@
 import ast
 import os
 
-from .state import CASE_DIR, RUN_SCM_ALL
+from .state import RUN_SCM_ALL
+from utilities.create_case_namelist import available_case_names
 
 
 def list_cases():
-    """Return available SCM case names from input/case_setups."""
-    cases = []
-    if not os.path.isdir(CASE_DIR):
-        return cases
-    for entry in os.listdir(CASE_DIR):
-        if entry.endswith("_model.in"):
-            cases.append(entry[: -len("_model.in")])
-    return sorted(cases)
+    """Discover catalog and saved cases through the shared case resolver."""
+    return available_case_names()
 
 
 def load_available_cases():

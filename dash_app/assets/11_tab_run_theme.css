@@ -461,7 +461,7 @@
 }
 
 .run-select-actions > button,
-.run-case-buttons > button,
+.run-case-buttons .run-case-button,
 .run-stats-buttons > button {
   margin: 0 !important;
 }
@@ -475,12 +475,40 @@
   gap: 6px;
 }
 
-.run-case-buttons > button {
+.run-case-buttons .run-case-button {
   min-width: 94px;
   padding: 7px 12px !important;
   border-radius: 7px !important;
   font-size: 14px !important;
   line-height: 1.15;
+}
+
+.run-custom-cases {
+  flex-basis: 100%;
+  margin-top: 5px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, .25);
+}
+
+.run-custom-cases-label {
+  font-size: 11px;
+  font-weight: 650;
+  opacity: .75;
+  margin: 0;
+}
+
+.run-custom-cases-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.run-custom-case-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .run-stats-buttons > button {

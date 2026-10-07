@@ -50,6 +50,7 @@ windows should be assembled.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -66,6 +67,12 @@ TUNABLE_CONFIG_ROOT = os.path.join(CLUBB_ROOT, "input/parameter_and_flag_configs
 DEFAULT_TUNABLE_CONFIG = os.path.join(TUNABLE_CONFIG_ROOT, "default")
 DEFAULT_TUNABLE_PARAMS = os.path.join(DEFAULT_TUNABLE_CONFIG, "tunable_parameters.in")
 MULTI_COL_PARAMS_SCRIPT = os.path.join(UTILITIES, "create_multi_col_params.py")
+
+if os.path.abspath(CLUBB_ROOT) not in sys.path:
+    sys.path.insert(0, os.path.abspath(CLUBB_ROOT))
+from utilities.case_json_to_namelist import (
+    CASE_NAME, available_case_names as json_case_names, case_definition_record, namelists_to_text,
+)
 
 HR_SPEC_RE = re.compile(
     r"^[A-Za-z_]\w*/[-+]?\d*\.?\d+(?:[eEdD][-+]?\d+)?:[-+]?\d*\.?\d+(?:[eEdD][-+]?\d+)?/\d+"
@@ -205,6 +212,29 @@ def read_model_times(model_file):
     return values
 
 
+def available_case_names():
+    """Discover model files and JSON-backed cases through the input owner."""
+    directory = Path(CLUBB_ROOT) / "input/case_setups"
+    legacy = {path.name.removesuffix("_model.in") for path in directory.glob("*_model.in")}
+    return sorted(legacy | set(json_case_names()))
+
+
+def resolve_case_model_input(case_name):
+    """Use NAME_model.in when present, otherwise resolve the JSON definition."""
+    if not CASE_NAME.fullmatch(str(case_name)):
+        raise ValueError("Case names must start with a letter and use letters, numbers or underscores")
+    path = Path(CLUBB_ROOT) / "input/case_setups" / f"{case_name}_model.in"
+    if path.is_file():
+        contents = path.read_bytes()
+        return {"name": case_name, "kind": "namelist", "source_file": str(path.resolve()),
+                "sha256": hashlib.sha256(contents).hexdigest(),
+                "model_namelist": contents.decode("utf-8"), "model_setting": read_model_times(path),
+                "benchmark_case": case_name}
+    definition = case_definition_record(case_name)
+    return {**definition, "model_namelist": namelists_to_text(definition["namelists"]),
+            "model_setting": definition["namelists"].get("model_setting", {})}
+
+
 def parse_override_pairs(override_string):
     """Parse KEY=value overrides while allowing comma-separated value lists."""
     pairs = []
@@ -256,8 +286,7 @@ def resolve_override_pairs(override, case_name=None):
     if any(isinstance(item, dict) for item in settings.values()):
         if not all(isinstance(item, dict) for item in settings.values()):
             raise ValueError("Override JSON cannot mix global settings and case-specific objects")
-        known_cases = {path.name.removesuffix("_model.in")
-                       for path in Path(CLUBB_ROOT, "input/case_setups").glob("*_model.in")}
+        known_cases = set(available_case_names())
         unknown = settings.keys() - known_cases - {"all"}
         if unknown:
             raise ValueError("Unknown case(s) in override JSON: " + ", ".join(sorted(unknown)))
@@ -430,7 +459,7 @@ def apply_namelist_overrides(args, clubb_in: str, model_file: str, output_dir: s
         clubb_in = set_model_value(clubb_in, "debug_level", str(args.debug))
 
     if args.max_iters is not None:
-        vals = read_model_times(model_file)
+        vals = model_file if isinstance(model_file, dict) else read_model_times(model_file)
         time_initial = vals.get("time_initial")
         time_final = vals.get("time_final")
         dt_main_val = args.dt_main if args.dt_main is not None else vals.get("dt_main")
@@ -486,9 +515,8 @@ def create_case_namelist_file(
     output_dir_abs = os.path.abspath(os.fspath(output_dir) if output_dir else DEFAULT_OUTPUT_DIR)
     os.makedirs(output_dir_abs, exist_ok=True)
 
-    model_file = os.path.join(CLUBB_ROOT, f"input/case_setups/{case_name}_model.in")
-    if not os.path.isfile(model_file):
-        raise RuntimeError(f"{model_file} does not exist")
+    model_input = resolve_case_model_input(case_name)
+    model_namelist = model_input["model_namelist"]
 
     config_dir = resolve_tunable_config_dir(config)
 
@@ -535,13 +563,15 @@ def create_case_namelist_file(
 
     clubb_input_namelist = os.path.join(output_dir_abs, f"{case_name}.in")
     clubb_in = ""
-    files_to_aggregate = [params_file, silhs_params_file, flags_file, model_file]
-    if stats_file is not None:
-        files_to_aggregate.append(stats_file)
+    files_to_aggregate = [params_file, silhs_params_file, flags_file]
     for filename in files_to_aggregate:
         with open(filename, encoding="utf-8") as src:
             clubb_in += strip_comments_and_remove_keys(src.read())
             clubb_in += "\n"
+    clubb_in += model_namelist
+    if stats_file is not None:
+        with open(stats_file, encoding="utf-8") as src:
+            clubb_in += strip_comments_and_remove_keys(src.read()) + "\n"
     clubb_in += stats_namelist
 
     args = argparse.Namespace(
@@ -559,7 +589,7 @@ def create_case_namelist_file(
         stats_tend=stats_tend,
         override=override,
     )
-    clubb_in = apply_namelist_overrides(args, clubb_in, model_file, output_dir_abs)
+    clubb_in = apply_namelist_overrides(args, clubb_in, model_input["model_setting"], output_dir_abs)
 
     with open(clubb_input_namelist, "w", encoding="utf-8") as out:
         out.write(clubb_in)
@@ -647,7 +677,7 @@ def prune_clubb_stats_namelist(clubb_in: str, requested_vars: list[str]) -> str:
 
 
 def _loss_timing_settings(case_name: str, model_file: Path, case_defaults: dict, num_time_windows: int) -> dict:
-    vals = read_model_times(str(model_file))
+    vals = model_file if isinstance(model_file, dict) else read_model_times(str(model_file))
     dt_main_val = vals.get("dt_main")
     dt_rad_val = vals.get("dt_rad", dt_main_val)
     time_initial_seconds = vals.get("time_initial")
@@ -827,7 +857,7 @@ def create_loss_case_namelist(
         num_time_windows=num_time_windows,
     )
 
-    model_file = Path(CLUBB_ROOT) / "input" / "case_setups" / f"{case_name}_model.in"
+    model_file = resolve_case_model_input(case_name)["model_setting"]
     timing = _loss_timing_settings(case_name, model_file, case_defaults, num_time_windows)
     if verbose:
         _print_loss_timing(timing)

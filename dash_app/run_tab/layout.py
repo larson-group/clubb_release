@@ -8,6 +8,8 @@ from dash_app.shared.components import styled_dropdown
 
 from .state import MAX_RUN_PROCS
 from .stats import build_stats_editor
+from .cases import build_case_editor
+from utilities.case_json_to_namelist import load_case_catalog
 
 
 def field_style(changed, disabled=False):
@@ -111,10 +113,11 @@ def build_select_actions(case_groups):
     )
 
 
-def build_case_buttons(cases):
-    """Render all case buttons with the default unselected style."""
-    return [
-        html.Button(
+def build_case_buttons(cases, *, custom=False):
+    """Render either catalog or saved case buttons with shared selection IDs."""
+    catalog_names = load_case_catalog()["cases"]
+    def button(case_name):
+        return html.Button(
             case_name,
             id={"type": "run-case-button", "name": case_name},
             n_clicks=0,
@@ -122,8 +125,7 @@ def build_case_buttons(cases):
             style=case_button_style("#2563eb", False),
             **{"data-case-name": case_name},
         )
-        for case_name in cases
-    ]
+    return [button(name) for name in cases if (name not in catalog_names) == custom]
 
 
 def build_stats_buttons(default_stats_name):
@@ -561,7 +563,7 @@ def build_console_shell(_cases):
     )
 
 
-def build_left_header(case_groups, case_buttons, stats_buttons):
+def build_left_header(case_groups, case_buttons, stats_buttons, custom_case_buttons):
     """Render the left header block with selections and action controls."""
     return html.Div(
         [
@@ -575,7 +577,18 @@ def build_left_header(case_groups, case_buttons, stats_buttons):
                         className="run-setup-section-heading",
                     ),
                     build_select_actions(case_groups),
-                    html.Div(case_buttons, className="run-case-buttons"),
+                    html.Div(case_buttons, id="run-case-buttons", className="run-case-buttons"),
+                    html.Div([
+                        html.Div([
+                            html.Div("Custom cases", className="run-custom-cases-label"),
+                        ], className="run-custom-cases-heading"),
+                        html.Div([
+                            html.Div(custom_case_buttons, id="run-custom-case-buttons", style={"display": "contents"}),
+                            html.Button("Create Case", id="run-case-custom-open", n_clicks=0,
+                                        className="run-case-button",
+                                        style={**case_button_style("#ffffff", False), "color": "#0f172a"}),
+                        ], className="run-case-buttons run-custom-case-buttons"),
+                    ], className="run-custom-cases"),
                 ],
                 className="run-setup-section run-cases-section",
             ),
@@ -935,7 +948,8 @@ def build_layout(initial_data):
             dcc.Store(id="run-ui-render-signal"),
             build_output_overwrite_dialog(),
             build_stats_editor(),
-            html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"]), build_console_shell(initial_data["cases"])], className="run-left-pane"),
+            build_case_editor(),
+            html.Div([build_left_header(initial_data["case_groups"], initial_data["case_buttons"], initial_data["stats_buttons"], initial_data["custom_case_buttons"]), build_console_shell(initial_data["cases"])], className="run-left-pane"),
             html.Div(id="run-pane-divider", className="run-pane-divider"),
             # The settings pane intentionally grows with its controls.  It is
             # part of the document flow, so the browser's main scrollbar—not

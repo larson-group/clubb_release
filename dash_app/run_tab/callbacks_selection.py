@@ -31,6 +31,8 @@ def register_selection_callbacks(app, case_groups):
     )
     def select_case(_n_clicks, selected_cases):
         """Toggle one case in the next-submission selection."""
+        if not any(_n_clicks or []):
+            return no_update
         trigger_id = callback_context.triggered_id
         case_name = trigger_id.get("name") if isinstance(trigger_id, dict) else None
         if not case_name:

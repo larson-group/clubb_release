@@ -29,6 +29,46 @@ To run a case:
 4. Open **Plots** to view the output. You can also plot existing NetCDF files
    without compiling or running anything.
 
+### Creating and editing cases
+
+The Run tab's **Create Case** button in the **Custom cases** row opens a model-settings editor.
+Choose **Defaults**, a catalog case or a saved case in **Start from**, then
+enter a case name. Edit the name/value rows under each namelist heading;
+booleans use a **false | unset | true** slider. Orange markers show changes from the starting point.
+Blank cells omit optional settings; enter `""` for an explicit empty string and
+JSON notation for arrays. **Unset** omits a boolean setting and uses the model
+default; **false** and **true** explicitly set it. Click or drag between the three
+positions, or use the arrow keys while the slider is focused.
+The optional **Namelist preview → Update preview** displays the generated input.
+The editor/converter does not check model validity or whether input files exist;
+model validation happens downstream when you run.
+**Close** keeps the current draft ready for reopening. Selecting a different
+starting point replaces it; reloading the page clears unsaved edits.
+
+**Save case** creates a complete JSON snapshot in
+`input/case_setups/custom/<name>.json`, an ignored local directory, and selects
+it for the next run. Changing the original case or catalog defaults later does
+not change the copy. Saved copies appear in the **Custom cases** row below the
+catalog buttons. To replace a catalog or saved case, use its existing name
+and confirm the before/after values in the replacement popup. Catalog replacement
+updates that case's overrides; other cases and shared defaults are preserved.
+
+The saved name identifies the run and output; **runtype** identifies its physical
+inputs and case-specific behavior. A BOMEX copy can have a new name while keeping
+`runtype = bomex`. Defaults can be saved with incomplete or invalid model settings.
+For a runnable case, supply its physical runtype, inputs and timing. LES
+comparison defaults are separate from diagnostic `setfields.datafile` inputs;
+copies retain their source comparison defaults while the physical runtype stays
+the same. Copies with a changed runtype require comparison configuration before
+they can be tuned against a benchmark.
+
+Normal runs look for `NAME_model.in` first, then use saved custom JSON or the
+catalog. Dash edits and saves JSON; duplicate legacy/JSON definitions are not
+synchronized during the transition. Case settings are resolved when a queued
+run starts, so edits made while waiting affect that run. The generated namelist
+is retained with its output. Reload other already-open workflow tabs after
+creating cases to refresh their case dropdowns.
+
 ### Choosing statistics
 
 The Run tab offers **All**, **Standard**, and **Core** from
@@ -295,10 +335,11 @@ client may optionally supply `out_dir`; it is resolved below the repository's
 `output/dash_default`.
 
 `submit_scm_batch` accepts `{request_id, cases, stats_file, config, overrides,
-run_options, max_workers, out_dir}`. `cases` must be a nonempty list of unique checked-in
-case names; the other settings are common to every child. The returned parent
+run_options, max_workers, out_dir}`. `cases` must be a nonempty list of unique
+checked-in or locally saved case names; the other settings are common to every
+child. The returned parent
 `job_id`/`batch_id` can be passed to `get_job`, while each child retains its own
-`job_id` and `run_id` for immutable case-level provenance.
+`job_id` and `run_id` for recorded case-level provenance.
 Private immutable manifests and temporary execution evidence still live under
 ignored, owner-private `output/agent_artifacts/`. This is **ephemeral staging**,
 not an experiment or report archive: active bundles are protected from broker

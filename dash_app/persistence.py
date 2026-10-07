@@ -90,10 +90,14 @@ def enable_workspace_persistence(root: Component) -> Component:
             isinstance(component_id, str) and component_id in {"run-stats-save-name", "run-stats-list", "run-stats-search"}
             or isinstance(component_id, dict) and component_id.get("type") in {"run-stats-category", "run-stats-variables"}
         )
+        is_case_draft = (
+            isinstance(component_id, str) and component_id.startswith("run-case-")
+            or isinstance(component_id, dict) and component_id.get("type") == "run-case-value"
+        )
         # Tune is workspace-backed, unlike the free-form Run/Plot surfaces.
         # Do not let Dash's automatic component persistence restore stale
         # values into a saved revision after its loader rebuilds the controls.
-        if component_id is not None and "persistence" in properties and not is_tune_control and not is_stats_draft:
+        if component_id is not None and "persistence" in properties and not is_tune_control and not is_stats_draft and not is_case_draft:
             component.persistence = WORKSPACE_TOKEN
             if "persistence_type" in properties:
                 component.persistence_type = "local"

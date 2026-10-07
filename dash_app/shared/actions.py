@@ -122,7 +122,9 @@ from tuner.taylor_metrics import (
     normalize_aggregation_weights,
 )
 from tuner.tuning_strategy import VALID_STRATEGY_NAMES
-from utilities.create_case_namelist import normalize_override_string, parse_override_pairs
+from utilities.create_case_namelist import (
+    available_case_names, normalize_override_string, parse_override_pairs, resolve_case_model_input,
+)
 from utilities.output_paths import resolve_output_dir
 from utilities.clubb_settings_validation import (
     canonical_flag_name,
@@ -438,7 +440,7 @@ def _validate_case(case: str) -> str:
     value = str(case or "").strip()
     if not _CASE_RE.fullmatch(value):
         raise ValueError("case must be a simple CLUBB case name")
-    if not (REPO_ROOT / "input" / "case_setups" / f"{value}_model.in").is_file():
+    if value not in available_case_names():
         raise ValueError(f"unknown or unavailable case: {value}")
     return value
 
@@ -1348,12 +1350,9 @@ def _run_manifest_inputs(
 ) -> dict[str, Any]:
     """Capture one case input plus batch-wide SCM inputs."""
     inputs = dict(common_inputs or _run_common_manifest_inputs(stats_file, config))
-    case_path = REPO_ROOT / "input" / "case_setups" / f"{case}_model.in"
-    if case_path.is_file():
-        inputs["case_setup"] = {
-            "path": str(case_path),
-            "sha256": sha256_file(case_path),
-        }
+    definition = resolve_case_model_input(case)
+    inputs["case_setup"] = {"path": definition["source_file"], "sha256": definition["sha256"],
+                            "case": case}
     return inputs
 
 
@@ -2236,7 +2235,7 @@ def read_artifact_file(artifact_id: str, filename: str) -> bytes:
 
 def list_cases() -> dict[str, Any]:
     """List only checked-in SCM cases available to the public service."""
-    cases = sorted(path.name.removesuffix("_model.in") for path in (REPO_ROOT / "input" / "case_setups").glob("*_model.in"))
+    cases = available_case_names()
     return {"cases": cases, "stats_files": [*load_stats_choices(), NO_STATS_NAME]}
 
 
@@ -4018,10 +4017,7 @@ def inspect_dashboard(tab: str | None = None) -> dict[str, Any]:
             entry["context"] = inspect_compile()
         elif tab_name == "run":
             entry["context"] = {
-                "available_cases": sorted(
-                    path.name.removesuffix("_model.in")
-                    for path in (REPO_ROOT / "input" / "case_setups").glob("*_model.in")
-                ),
+                "available_cases": available_case_names(),
                 **inspect_runs(),
             }
         elif tab_name == "tune":

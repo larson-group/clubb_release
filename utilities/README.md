@@ -1,5 +1,13 @@
 ## Utilities Directory Contents ## 
 
+`case_json_to_namelist.py` resolves `input/case_setups/case_definitions.json`
+and local saved-case snapshots into model namelists. For example,
+`python utilities/case_json_to_namelist.py bomex -output_file /tmp/bomex_model.in`.
+`create_case_namelist.py` looks for `NAME_model.in` first and uses JSON when no
+model file exists. Saved custom cases are run by name with the normal CLI. See
+[case setups](../input/case_setups/README) for inheritance and custom-case rules.
+The converter serializes values without enforcing model rules or checking assets.
+
 The [CLUBBStandardsCheck.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/utilities/CLUBBStandardsCheck.py) python script can be used to check Fortran 
 source files to determine if they follow certain good software engineering 
 practices which are meant to be enforced for CLUBB source files. 

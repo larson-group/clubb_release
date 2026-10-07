@@ -17,6 +17,7 @@ import psutil
 from clubb_jax.run_jax import runtime_arguments, runtime_selection
 
 from utilities.time_clubb import REQUIRED_TIMER, parse_positive_int_list
+from utilities.create_case_namelist import available_case_names
 from utilities.timing_profiles import (
     discover_profiles,
     load_profiles,
@@ -104,8 +105,7 @@ def normalize_profile_settings(settings: dict[str, Any]) -> dict[str, Any]:
     case_name = _clean(settings.get("case_name"))
     if not case_name:
         raise ValueError("select a case")
-    case_file = REPO_ROOT / "input" / "case_setups" / f"{case_name}_model.in"
-    if not case_file.is_file():
+    if case_name not in available_case_names():
         raise ValueError(f"unknown CLUBB case: {case_name}")
 
     processes = _positive_list(settings.get("processes"), "processes")

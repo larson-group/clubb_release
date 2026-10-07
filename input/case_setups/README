@@ -1,5 +1,42 @@
 $Id$
 
+CASE CATALOG
+============
+
+Normal runs look for NAME_model.in first, then fall back to saved custom JSON
+and case_definitions.json. The model files will be removed during the upcoming
+JSON migration; duplicate definitions are not synchronized or checked.
+Each main case overrides shared defaults, grouped by Fortran namelist;
+derived-type components are nested objects. Arrays replace complete arrays.
+A null override removes an inherited setting or group, preserving the original
+case's use of Fortran initialization. Case names and physical runtype values
+are distinct: a copied case can reuse its source's soundings and forcings.
+The converter writes settings without model-specific validation or input-file
+existence checks; model validity is handled downstream when the input is run.
+
+  python utilities/case_json_to_namelist.py bomex -output_file /tmp/bomex_model.in
+  python utilities/case_json_to_namelist.py -list
+  python run_scripts/run_scm.py bomex
+
+The shared aggregate namelist builder calls this converter directly. Existing
+*_model.in files retain priority during the transition. Historical
+HR/LR definitions are retained under legacy_variants and are not offered by
+the current case editor.
+
+Dash's Run / Custom cases / Create Case editor saves complete local snapshots under
+custom/NAME.json (ignored by Git). Replace an existing case only after reviewing
+the confirmation diff. Replacing a catalog entry updates just that case;
+optional case_metadata records the copy source and benchmark-comparison case.
+Copies changing runtype do not silently retain an unrelated comparison benchmark.
+
+Run a saved custom case by its name:
+
+  python run_scripts/run_scm.py my_case
+
+Soundings, surface data, forcings, correlation inputs and referenced grids
+remain their existing files. LES benchmark comparison windows/files are owned
+by tuner/case_defaults.json, separately from setfields diagnostic input data.
+
 
 INPUT/CASE_SETUPS DIRECTORY OVERVIEW
 ====================================

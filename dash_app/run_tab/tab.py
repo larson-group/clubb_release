@@ -10,6 +10,7 @@ from .config_state import build_tunable_config_state
 from .discovery import load_available_cases, load_case_groups
 from .layout import build_case_buttons, build_layout, build_stats_buttons
 from .stats import register_stats_callbacks
+from .cases import register_case_callbacks
 from dash_app.shared.tunable_configs import available_tunable_configs, default_tunable_config_name
 
 
@@ -28,6 +29,7 @@ def build_initial_run_state():
         "default_stats_name": default_stats_name,
         "tunable_configs": tunable_configs,
         "case_buttons": build_case_buttons(cases),
+        "custom_case_buttons": build_case_buttons(cases, custom=True),
         "stats_buttons": build_stats_buttons(default_stats_name),
         **config_state,
     }
@@ -39,6 +41,7 @@ def build_tab(app, *, lazy=None):
     # Wire case and stats selection first because the remaining callbacks depend on these stores.
     register_selection_callbacks(app, load_case_groups(load_available_cases()))
     register_stats_callbacks(app)
+    register_case_callbacks(app)
 
     # Register settings synchronization before run lifecycle so dirty-state invalidation is in place.
     register_settings_callbacks(app)

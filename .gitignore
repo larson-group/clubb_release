@@ -28,5 +28,6 @@ run_scripts/tmp_dup_params.in
 
 input/parameter_and_flag_configs/**/*_tmp.in
 /input/stats/custom/
+/input/case_setups/custom/
 .clubb-jax-tools
 .clubb-python-tools/

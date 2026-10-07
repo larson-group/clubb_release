@@ -132,10 +132,6 @@ def build_loss_case_namelist(args, output_dir, case_name, fields):
 
 
 def run_loss_case(args, case_name, fields, output_dir, run_cmd, run_cwd, run_env):
-    model_file = os.path.join(CLUBB_ROOT, f"input/case_setups/{case_name}_model.in")
-    if not os.path.isfile(model_file):
-        sys.exit(f"{model_file} does not exist")
-
     clubb_input_namelist, _ = build_loss_case_namelist(
         args,
         output_dir,
