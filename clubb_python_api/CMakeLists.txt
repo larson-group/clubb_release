@@ -153,3 +153,9 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/clubb_python"
     FILES_MATCHING PATTERN "*.py"
     PATTERN "__pycache__" EXCLUDE
 )
+
+# Ship the backend-independent formatter for installed loss CLI use. Leave this
+# as a namespace fragment so it does not shadow the repository utilities package.
+install(FILES "${PROJECT_SOURCE_DIR}/utilities/loss_metrics.py"
+    DESTINATION "${F2PY_INSTALL_SUBDIR}/utilities"
+)

@@ -13,7 +13,9 @@ from utilities.create_case_namelist import (
     validate_multicol,
 )
 from utilities.output_paths import resolve_output_dir
-from run_scm import choose_install_dir, python_runtime_dir_from_install, run_case
+from run_scm import (
+    choose_install_dir, python_runtime_dir_from_install, run_case, extract_jax_options,
+)
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults
 
 RUN_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
@@ -21,18 +23,34 @@ CLUBB_ROOT = os.path.join(RUN_SCRIPTS, "..")
 
 
 def choose_run_command(args):
+    if args.jax:
+        if args.python or args.driver_test:
+            sys.exit("-jax cannot be combined with -python or -driver_test")
+        command = [sys.executable, os.path.join(CLUBB_ROOT, "clubb_jax", "run_jax.py")]
+        if args.jax_options is not None:
+            command.append("-options=" + args.jax_options)
+        command.append("-module=clubb_jax.src.clubb_standalone_loss")
+        return command, RUN_SCRIPTS, None
     if args.python:
-        module_name = "tuner.clubb_loss_driver_test" if args.driver_test else "tuner.clubb_loss_driver"
-        python_driver = os.path.join(CLUBB_ROOT, "tuner", f"{module_name.split('.')[-1]}.py")
+        install_dir, install_source = choose_install_dir()
+        f2py_runtime_dir = python_runtime_dir_from_install(install_dir)
+        if args.driver_test:
+            module_name = "clubb_python_api.tests.clubb_loss_driver_test"
+            python_driver = os.path.join(
+                CLUBB_ROOT, "clubb_python_api", "tests", "clubb_loss_driver_test.py",
+            )
+        else:
+            module_name = "clubb_python.clubb_standalone_loss"
+            python_driver = os.path.join(
+                f2py_runtime_dir, "clubb_python", "clubb_standalone_loss.py",
+            )
         if not os.path.isfile(python_driver):
-            sys.exit(f"Python loss driver not found: {python_driver}")
+            sys.exit(f"Python loss driver not found: {python_driver} (rebuild with ./compile.py -python)")
 
         executable = f"{sys.executable} -m {module_name}"
         run_cmd = [sys.executable, "-m", module_name]
         run_env = os.environ.copy()
         existing_pythonpath = run_env.get("PYTHONPATH", "")
-        install_dir, install_source = choose_install_dir()
-        f2py_runtime_dir = python_runtime_dir_from_install(install_dir)
         pythonpath_entries = [f2py_runtime_dir, CLUBB_ROOT]
         if existing_pythonpath:
             pythonpath_entries.append(existing_pythonpath)
@@ -229,7 +247,15 @@ def main():
         help="JSON file containing per-case time/height/average-window overrides.",
     )
     parser.add_argument("case_name", nargs="?", help="Name of the case to run")
-    args = parser.parse_args()
+    parser.add_argument(
+        "-jax", action="store_true",
+        help="Run the JAX loss driver; accepts -jax=cpu or -jax=gpu.",
+    )
+    normalized, options, occurrences = extract_jax_options(sys.argv[1:])
+    if occurrences > 1:
+        parser.error("-jax may be specified only once")
+    args = parser.parse_args(normalized)
+    args.jax_options = options
 
     if args.batch_size is not None and args.multicol is None:
         sys.exit("-batch_size requires -multicol")

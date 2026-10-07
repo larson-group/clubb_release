@@ -310,7 +310,11 @@ Examples:
 ### `run_loss_output_consistency.py`
 
 Runs normal CLUBB and the loss driver for one case, then checks that loss-driver
-stats output and printed metrics are consistent.
+stats output and printed metrics are consistent. The `-jax` option selects JAX for both
+runs. This check requests one full-window record even when tuning defaults
+use several subwindows. Profiles and printed metrics retain existing criteria.
+Jenkins adds a CPU JAX loss consistency stage.
+
 
 Examples:
 

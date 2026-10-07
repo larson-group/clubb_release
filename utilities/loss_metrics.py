@@ -1,4 +1,4 @@
-"""Profile metric helpers shared by loss-driver tests and Dash plots.
+"""Profile metrics and loss-table formatting shared by runners and Dash plots.
 
 These functions mirror the raw profile math in `src/clubb_loss_driver.F90`.
 They intentionally do not read NetCDF files, choose time windows, interpolate
@@ -122,3 +122,38 @@ def calculate_column_loss_metrics(model_matrix: np.ndarray, benchmark_profile: n
             metrics[metric_name][col_idx] = col_metrics[metric_name]
 
     return metrics
+
+
+def print_loss_matrix(
+    clubb_var_names,
+    scaled_rmse: np.ndarray,
+    correlation: np.ndarray,
+    std_ratio: np.ndarray,
+    centered_rmse_norm: np.ndarray,
+    bias_norm: np.ndarray,
+):
+    """Print the loss table in the same row-oriented format as the Fortran tools."""
+    header = ["variable"]
+    if scaled_rmse.shape[0] > 1:
+        header.append("window")
+    header.extend(f"scaled_rmse_col{i + 1}" for i in range(scaled_rmse.shape[2]))
+    header.extend(f"corr_col{i + 1}" for i in range(scaled_rmse.shape[2]))
+    header.extend(f"std_ratio_col{i + 1}" for i in range(scaled_rmse.shape[2]))
+    header.extend(f"crmse_norm_col{i + 1}" for i in range(scaled_rmse.shape[2]))
+    header.extend(f"bias_norm_col{i + 1}" for i in range(scaled_rmse.shape[2]))
+    header.append("best_col")
+    print(" ".join(header))
+
+    for window_idx in range(scaled_rmse.shape[0]):
+        for row_idx, var_name in enumerate(clubb_var_names):
+            best_col_idx = int(np.argmin(scaled_rmse[window_idx, row_idx, :])) + 1
+            row = [str(var_name).strip()]
+            if scaled_rmse.shape[0] > 1:
+                row.append(f"window{window_idx + 1}")
+            row.extend(f"{value:16.8E}" for value in scaled_rmse[window_idx, row_idx, :])
+            row.extend(f"{value:16.8E}" for value in correlation[window_idx, row_idx, :])
+            row.extend(f"{value:16.8E}" for value in std_ratio[window_idx, row_idx, :])
+            row.extend(f"{value:16.8E}" for value in centered_rmse_norm[window_idx, row_idx, :])
+            row.extend(f"{value:16.8E}" for value in bias_norm[window_idx, row_idx, :])
+            row.append(f"col{best_col_idx}")
+            print(" ".join(row))

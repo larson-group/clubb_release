@@ -22,10 +22,14 @@ This script checks two loss-driver contracts:
    - Compare the reported values, including `best_col`, against the recomputed
      values.
 
-   This matters because the loss metrics are printed from in-memory Fortran
+   This matters because the loss metrics are printed from in-memory model
    stats, not by reading the saved NetCDF file. Recomputing them from the saved
    artifacts catches cases where the reported loss and saved profiles drift
    apart.
+The native contract belongs to src/clubb_loss_driver.F90; related reusable
+loss comparisons live in src/clubb_loss_driver_test.F90. Passing -jax applies
+this same output/metric workflow to its JAX port, retaining the shared fields,
+independent NetCDF recomputation and comparison thresholds.
 """
 
 from __future__ import annotations
@@ -57,6 +61,7 @@ if CLUBB_ROOT not in sys.path:
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults  # noqa: E402
 from utilities.loss_metrics import calculate_column_loss_metrics  # noqa: E402
 from utilities.create_case_namelist import read_model_times, resolve_tunable_config_dir  # noqa: E402
+from run_scripts.run_scm import extract_jax_options  # noqa: E402
 
 
 DEFAULT_OUT_ROOT = os.path.join(CLUBB_ROOT, "output", "loss_output_consistency")
@@ -205,6 +210,8 @@ def common_forwarded_options(args: argparse.Namespace) -> list[str]:
         options.extend(["-config", args.config])
     if args.flags:
         options.extend(["-flags", args.flags])
+    if args.jax:
+        options.append("-jax" if args.jax_options is None else f"-jax={args.jax_options}")
     return options
 
 
@@ -262,6 +269,9 @@ def loss_run_command(
         output_dir,
         "-fields",
         ",".join(fields),
+        # Compare one full-window record, independently of tuning subwindows.
+        "-num_time_windows",
+        "1",
         args.case_name,
     ]
 
@@ -786,7 +796,15 @@ def parse_args() -> argparse.Namespace:
             "field default."
         ),
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "-jax", action="store_true",
+        help="Use JAX for both runs; accepts an attached backend such as -jax=cpu.",
+    )
+    argv, jax_options, jax_occurrences = extract_jax_options(sys.argv[1:])
+    if jax_occurrences > 1:
+        parser.error("-jax may be specified only once")
+    args = parser.parse_args(argv)
+    args.jax_options = jax_options
 
     args.config = config_arg(args.config)
     args.params = abs_path(args.params)

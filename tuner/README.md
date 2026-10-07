@@ -16,15 +16,12 @@ parameter sets, and records ranked results.
   Case specs may include Dash-style timing as `case:t_start:t_end:t_interval`.
 - `python -m tuner.tune_clubb -job_dir <dir>` runs one tuning job from a job
   directory. This is the entry point used by the Dash tuning tab.
-- `python -m tuner.clubb_loss_driver <namelist>` runs the Python front end for
-  the reusable Fortran loss driver once.
-- `python -m tuner.clubb_loss_driver_test <namelist>` runs extra reusable-loss
-  consistency checks. `run_scripts/run_scm_loss.py -python -driver_test` uses
-  this path.
 
-Ad-hoc loss checks from the Dash result table still go through
-`run_scripts/run_scm_loss.py`, which now launches the `tuner.clubb_loss_driver`
-module for Python loss runs.
+Ad-hoc loss checks from the Dash result table go through
+`run_scripts/run_scm_loss.py`. The reusable Fortran loss API and its Python
+front end belong to [clubb_python_api/](../clubb_python_api/README.md#loss-evaluation);
+JAX loss implementation and its front end belong to
+[clubb_jax/](../clubb_jax/README.md#standalone-loss-evaluation).
 
 ## High-Level Flow
 
@@ -214,6 +211,4 @@ Current strategies:
 - `tuning_strategy.py`: parameter proposal algorithms.
 - `adam_spsa_strategy.py`: multi-chain Adam with SPSA gradients and seeded
   Latin-hypercube starts.
-- `clubb_loss_driver.py`: Python CLI wrapper for the reusable Fortran loss driver.
-- `clubb_loss_driver_test.py`: extra reusable-loss consistency checks.
 - `paths.py`: shared repository paths used by tuner modules.

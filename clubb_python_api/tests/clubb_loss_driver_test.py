@@ -11,7 +11,7 @@ run_scm_loss.py builds the loss-driver namelist, sets PYTHONPATH so the repo and
 clubb_python_api package are visible, and passes the generated input file to
 this module. For direct debugging:
 
-    python -m tuner.clubb_loss_driver_test <namelist_path>
+    python -m clubb_python_api.tests.clubb_loss_driver_test <namelist_path>
 
 Like the normal standalone drivers, exit code 6 means success.
 
@@ -42,7 +42,7 @@ import sys
 from pathlib import Path
 
 if __name__ == "__main__":
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from utilities.setup_python_venv import ensure_python_venv
 
     ensure_python_venv()
@@ -50,14 +50,13 @@ if __name__ == "__main__":
 import numpy as np
 
 from clubb_python import clubb_api
-from tuner.clubb_loss_driver import (
+from clubb_python.clubb_api import (
     clubb_get_loss,
     clubb_get_loss_for_params,
     finalize_clubb_loss,
     init_clubb_loss,
-    print_loss_matrix,
 )
-from tuner.taylor_metrics import LOSS_METRIC_NAMES
+from utilities.loss_metrics import LOSS_METRIC_NAMES, print_loss_matrix
 
 
 def assert_loss_outputs_match(
@@ -202,7 +201,7 @@ def main():
     if len(sys.argv) >= 2 and sys.argv[1] not in ("-h", "--help"):
         namelist_filename = sys.argv[1]
     elif len(sys.argv) >= 2:
-        print("Usage: python -m tuner.clubb_loss_driver_test <namelist_path>")
+        print("Usage: python -m clubb_python_api.tests.clubb_loss_driver_test <namelist_path>")
         sys.exit(0)
 
     clubb_var_names, scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm = clubb_get_loss(namelist_filename)

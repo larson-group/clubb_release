@@ -288,6 +288,28 @@ absolute iteration/seeds, including retained SILHS permutations. Jenkins adds
 separate normal and sequence-restart CPU stages. See
 [RESTART_PORT_NOTES.md](./RESTART_PORT_NOTES.md) for reader/state limits.
 
+## Standalone loss evaluation
+
+`python3 run_scripts/run_scm_loss.py -jax -cases bomex -fields thlm,wp2`
+runs `clubb_jax.src.clubb_standalone_loss` in the managed JAX runtime. This
+small front end mirrors `src/clubb_standalone_loss.F90` and calls the loss
+implementation directly; runtime setup remains in `run_jax.py`. For repeated
+calls, import `clubb_jax.src.clubb_loss_driver` directly. Its five arrays have shape
+(window, field, candidate). Runtime batches reuse initialized state and
+compiled shapes. Shared tuner orchestration is a separate functionality PR.
+
+Run `python3 tests/run_loss_output_consistency.py bomex -jax -fields thlm wp2`
+for saved-profile and independently recomputed metric checks. Jenkins adds this
+CPU check alongside the native stats/loss workflows. The explicit native-oracle
+workflow requires `CLUBB_TEST_LOSS_EXE` or the installed loss executable:
+
+```bash
+.venv-jax/bin/python -m pytest -q clubb_jax/tests/test_loss_driver.py \
+  clubb_jax/tests/test_silhs_loss_driver.py
+```
+
+See [TUNER_PORT.md](./TUNER_PORT.md) for loss-window and batch restrictions.
+
 ## Requirements And Environments
 
 No Fortran build is required for a JAX-only run. Runtime and test dependencies

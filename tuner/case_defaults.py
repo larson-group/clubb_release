@@ -64,6 +64,9 @@ def apply_case_overrides(case_name: str, defaults: dict, overrides: Mapping | No
         )
 
     merged = dict(defaults)
+    # An explicit window count replaces the inherited averaging interval.
+    if "num_time_windows" in overrides and "average_time_seconds" not in overrides:
+        merged.pop("average_time_seconds", None)
     for key in OVERRIDABLE_KEYS:
         if key in overrides:
             merged[key] = overrides[key]

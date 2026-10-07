@@ -66,7 +66,8 @@ fields using CLUBB's thermodynamic constants and saturation formula. Used by
 
 [loss_metrics.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/utilities/loss_metrics.py) is a Python copy of the profile loss and Taylor metrics
 computed in [src/clubb_loss_driver.F90](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/src/clubb_loss_driver.F90). Used by the Dash plot tab and the
-loss-driver tests.
+loss-driver tests. It also owns the shared loss-table formatter used by the
+Fortran Python API and JAX standalone loss front ends.
 
 [output_paths.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/utilities/output_paths.py) turns a user-given output name into a directory under output/
 (and rejects ".."). Shared by [run_scm.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/run_scripts/run_scm.py), [run_scm_loss.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/run_scripts/run_scm_loss.py), and Dash.

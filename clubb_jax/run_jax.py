@@ -49,7 +49,8 @@ Options:
   -xla_prealloc         Enable CUDA memory preallocation (CUDA only)
   -init_env             Prepare the environment without running a case
   -info[=json]          Inspect hardware and runtime readiness without setup
-  -module=NAME         Entry module: CLUBB standalone or CLUBB driver test
+  -module=NAME         Entry module: CLUBB standalone, CLUBB driver test,
+                        or clubb_jax.src.clubb_standalone_loss
   -launcher_help        Show this help
 
 Environment:
@@ -104,6 +105,7 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
             values["module"] = token.split("=", 1)[1]
             if values["module"] not in {
                 "clubb_jax.src.clubb_standalone", "clubb_jax.src.clubb_driver_test",
+                "clubb_jax.src.clubb_standalone_loss",
             }:
                 fail("Unsupported JAX entry module")
         elif token.startswith("-options="):
@@ -537,6 +539,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         prepare_run(env)
 
     venv_python = _prepare_environment(accelerator, requirements, venv, tools_dir, env)
+    env["_CLUBB_JAX_ENVIRONMENT_PYTHON"] = str(venv_python)
     _print_runtime_summary(venv_python, accelerator)
     if values["init_env"]:
         _verify_backend(venv_python, accelerator, env)

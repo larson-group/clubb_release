@@ -126,6 +126,35 @@ For broader and more comprehensive examples, see the API tests under
 return behavior, but they are written to isolate individual routines and
 for testing rather than to set up a physically realistic CLUBB run.
 
+## Loss evaluation
+
+Run one loss evaluation through the existing SCM wrapper:
+
+```bash
+python run_scripts/run_scm_loss.py -python -cases bomex -fields thlm,wp2
+```
+
+The installed command-line front end is
+`python -m clubb_python.clubb_standalone_loss <aggregate_namelist>`.
+It calls the existing `clubb_api.clubb_get_loss()` and prints the native loss
+table. Its successful completion status is 6, matching the Fortran executable.
+The installed runtime includes the shared table formatter; no tuner package is
+needed by this front end. Rebuild with `./compile.py -python` after updating it.
+
+For repeated parameter evaluations, import `clubb_api` directly and use
+`init_clubb_loss()`, `clubb_get_loss_for_params()` and `finalize_clubb_loss()`.
+These routines retain their existing signatures and behavior.
+
+Run the reusable lifecycle workflow with:
+
+```bash
+python run_scripts/run_scm_loss.py -python -driver_test -cases bomex
+```
+
+That command launches [tests/clubb_loss_driver_test.py](./tests/clubb_loss_driver_test.py),
+adapted from `src/clubb_loss_driver_test.F90`. It checks one-shot/reusable
+agreement, repeated evaluations, parameter changes and reinitialization.
+
 ## Code Layout
 
 ```text
