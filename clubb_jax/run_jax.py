@@ -59,6 +59,7 @@ Environment:
   CLUBB_JAX_ACCELERATOR  Backend used when no option is given: cpu, cuda13, rocm, metal
   CLUBB_JAX_VENV         Override the profile virtualenv path
   CLUBB_JAX_TOOLS_DIR    Managed uv/Python path (default: .clubb-jax-tools)
+  JAX_COMPILATION_CACHE_DIR  Override the persistent compiled-program cache
   PYTHON                 Python used when creating a new virtualenv
   XLA_PYTHON_CLIENT_PREALLOCATE  CUDA memory preallocation (default: false)
 """
@@ -281,6 +282,10 @@ def _runtime_environment(
     env["CLUBB_JAX_PROFILE"] = profile
     env["CLUBB_JAX_ACCELERATOR"] = accelerator
     env["JAX_PLATFORMS"] = backend.PLATFORM
+    # Keep compiled programs across model processes and wiped CI checkouts.
+    # JAX keys entries by computation, compiler settings and device configuration.
+    cache_dir = Path.home() / ".cache" / "clubb-jax" / "compilation" / accelerator
+    env.setdefault("JAX_COMPILATION_CACHE_DIR", str(cache_dir))
     device = str(values["device"])
     prealloc_gpu_mem = values["prealloc_gpu_mem"]
     if device and accelerator != "cuda13":
@@ -325,6 +330,7 @@ def runtime_configuration(
         "CUDA_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
         "CLUBB_JAX_ACCELERATOR", "CLUBB_JAX_PRECISION", "CLUBB_JAX_VENV",
         "CLUBB_JAX_TOOLS_DIR", "XLA_PYTHON_CLIENT_PREALLOCATE", "JAX_PLATFORMS",
+        "JAX_COMPILATION_CACHE_DIR",
     )
     return {
         "profile": profile, "accelerator": accelerator, "precision": precision,

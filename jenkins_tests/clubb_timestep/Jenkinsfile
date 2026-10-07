@@ -7,7 +7,25 @@ pipeline {
     // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {
-        stage('Large timestep test') {
+        stage('JAX timestep sweep') {
+          agent { label 'carson' }
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                # Native cases shared with the JAX/Fortran comparison list.
+                # Keep the sweep's default timesteps and full case durations.
+                python3 tests/run_timestep_sweep.py -jax=cpu -workers 4 \
+                  -cases "arm,atex,bomex,clex9_oct14,
+                    dycoms2_rf01,dycoms2_rf01_fixed_sst,
+                    dycoms2_rf02_do,dycoms2_rf02_ds,dycoms2_rf02_nd,
+                    fire,gabls2,gabls3_night,jun25_altocu,lba,
+                    nov11_altocu,rico,rico_silhs,wangara" \
+                  -output_root output/jax_timestep_sweep
+              '''
+            }
+          }
+        }
+        stage('Fortran timestep sweep') {
           agent any
           steps {
             sh '''
@@ -17,11 +35,11 @@ pipeline {
             '''
 
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''tests/run_timestep_tests.py'''
+              sh '''tests/run_timestep_sweep.py'''
             }
           }
         }
-        stage('Run timestep convergence test') {
+        stage('Fortran timestep convergence') {
           agent any
           steps {
             sh '''

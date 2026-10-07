@@ -444,15 +444,46 @@ Examples:
 - `python3 tests/run_thread_test.py -threads 4`
   Runs with four OpenMP threads.
 
-### `run_timestep_tests.py`
+### `run_timestep_sweep.py`
 
 Runs the standard SCM case list repeatedly with increasing `dt_main` and
 `dt_rad` values while stats output is disabled.
 
 Example:
 
-- `python3 tests/run_timestep_tests.py`
+- `python3 tests/run_timestep_sweep.py`
   Runs the timestep sweep for the built-in case list.
+
+JAX uses the same sweep defaults: 600, 1200, 1800, 2400 and 3000 seconds,
+with each case's full configured duration and no iteration cap. Jenkins selects
+these 18 native cases shared with the JAX/Fortran comparison's default list:
+`arm`, `atex`, `bomex`, `clex9_oct14`, `dycoms2_rf01`,
+`dycoms2_rf01_fixed_sst`, `dycoms2_rf02_do`, `dycoms2_rf02_ds`,
+`dycoms2_rf02_nd`, `fire`, `gabls2`, `gabls3_night`, `jun25_altocu`, `lba`,
+`nov11_altocu`, `rico`, `rico_silhs` and `wangara`.
+
+For example, run a smaller selection without changing those defaults:
+
+```bash
+python3 tests/run_timestep_sweep.py -jax=cpu -cases bomex,atex,rico \
+  -output_root jax_timestep_sweep
+```
+
+The comparison harness's timestep caps, parameter overrides and named variants
+are not applied: this sweep uses the native case inputs. Native defaults and
+informational exit status are retained. Use `-output_root DIR` for separate
+case/timestep outputs; bare names go under `output/`, and absolute paths support
+isolated external runs. The `-jax=VALUE` selection is forwarded unchanged,
+including device and GPU memory modifiers understood by the launcher.
+
+The sweep uses four case workers by default (`-workers 1` selects a serial run).
+Known expensive cases are scheduled first, and each worker runs its case's
+ordered timesteps until completion or the first failure. Each case's output is
+printed as one block when it finishes. GPU sweeps should use `-workers 1`.
+
+Jenkins stages are `Fortran timestep sweep`, `JAX timestep sweep` and
+`Fortran timestep convergence`. The JAX stage explicitly uses four CPU workers. An unstable timestep is printed and ends that
+case's sweep, while the harness keeps its legacy successful exit.
 
 ### `test_fatal_error_handling.py`
 

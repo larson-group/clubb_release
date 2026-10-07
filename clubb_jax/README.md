@@ -421,6 +421,15 @@ The launcher never clears a custom `CLUBB_JAX_VENV`. It validates the selected
 Python and installed packages, then uses `uv` to repair missing or incompatible
 requirements if necessary.
 
+Compiled JAX programs are cached under
+`~/.cache/clubb-jax/compilation/<backend>`, outside the repository checkout.
+Model subprocesses and later Jenkins builds can reuse matching executables.
+Set `JAX_COMPILATION_CACHE_DIR` to choose another cache location; an existing
+setting is preserved. JAX manages compatibility using the compiled computation,
+compiler settings and device configuration. Initialization still clears the
+in-memory cache when changing physics; the disk cache remains available.
+
+
 ### Advanced GPU Options
 
 Select one CUDA device for a job using the identifier returned by
