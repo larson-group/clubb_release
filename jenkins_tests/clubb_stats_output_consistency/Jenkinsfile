@@ -6,6 +6,17 @@ pipeline {
     // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {
+        stage('JAX statistics consistency') {
+          agent { label 'carson' }
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              sh '''
+                # Different batch sizes may make JIT optimize differently, causing tiny rounding differences.
+                python3 tests/run_stats_output_consistency.py bomex -jax=cpu -jax_tolerance 3e-9
+              '''
+            }
+          }
+        }
         stage('JAX loss output consistency') {
           agent { label 'carson' }
           steps {

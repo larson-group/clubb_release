@@ -32,10 +32,19 @@ The workflow has four checks:
    reference.
 
 The default configuration uses BOMEX, standard_stats.in, and four deterministic
-multicol columns. It does not shorten the case with max_iters; by default it
-uses the case's own time_initial/time_final from the model file. The windowing
-checks derive a middle-of-run window from that default case time range unless
--window_start/-window_end are provided explicitly.
+multicol columns. By default it uses the case's own time_initial/time_final;
+-max_iters can shorten each run. The windowing checks derive a middle-of-run
+window from the effective case time range unless -window_start/-window_end
+are provided explicitly. Use -jax or -jax=cpu to select the JAX runner.
+
+The native workflow exercises runtime batches in src/clubb_driver.F90
+(run_clubb) and statistics accumulation/output in
+src/CLUBB_core/stats_clubb_utilities.F90 and src/CLUBB_core/stats_netcdf.F90. The JAX variant uses the same
+harness and exact batch/window comparisons and averaging thresholds. This
+backend selection alone does not change the statistics consistency criteria.
+-jax_tolerance T applies atol=rtol=T to floating scientific statistics only;
+coordinates and metadata remain strict. Raw zero-fill values are compared
+numerically because CLUBB uses zero as its NetCDF fill value.
 """
 
 from __future__ import annotations
@@ -58,6 +67,7 @@ if __name__ == "__main__":
 
 import netCDF4
 import numpy as np
+from run_scripts.run_scm import extract_jax_options
 
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -91,7 +101,7 @@ DEFAULT_COARSE_TOUTS = "300,600"
 
 # Tolerances:
 #
-# Batch-size comparisons and fine-output window subset comparisons use exact
+# Without -jax_tolerance, batch-size and fine-output window checks use exact
 # array equality. Those paths should be bit-for-bit because they compare values
 # that CLUBB wrote through the same stats_tout cadence.
 #
@@ -228,6 +238,8 @@ def derive_stats_window(args: argparse.Namespace) -> tuple[int, int]:
     time_initial = timing["time_initial"]
     time_final = timing["time_final"]
     dt_main = args.dt_main if args.dt_main is not None else timing["dt_main"]
+    if args.max_iters is not None:
+        time_final = min(time_final, time_initial + args.max_iters * dt_main)
     window_average_tout = args.coarse_touts[0]
     alignment = lcm_many([dt_main, args.fine_tout, window_average_tout])
 
@@ -319,6 +331,8 @@ def build_run_command(args: argparse.Namespace, spec: RunSpec) -> list[str]:
         "-tout",
         str(spec.tout),
     ]
+    if args.jax:
+        cmd.append("-jax" if args.jax_options is None else f"-jax={args.jax_options}")
 
     forwarded_paths = (
         ("-config", args.config),
@@ -329,7 +343,7 @@ def build_run_command(args: argparse.Namespace, spec: RunSpec) -> list[str]:
     )
     for opt, value in forwarded_paths:
         if value is not None:
-            cmd.extend([opt, os.path.abspath(value)])
+            cmd.extend([opt, value])
 
     if args.debug is not None:
         cmd.extend(["-debug", str(args.debug)])
@@ -337,6 +351,8 @@ def build_run_command(args: argparse.Namespace, spec: RunSpec) -> list[str]:
         cmd.extend(["-dt_main", str(args.dt_main)])
     if args.dt_rad is not None:
         cmd.extend(["-dt_rad", str(args.dt_rad)])
+    if args.max_iters is not None:
+        cmd.extend(["-max_iters", str(args.max_iters)])
     if spec.stats_window is not None:
         window_start, window_end = spec.stats_window
         cmd.extend([
@@ -438,6 +454,54 @@ def variable_payload(var: netCDF4.Variable) -> tuple[np.ndarray, np.ndarray]:
     return values, mask
 
 
+def floating_statistic(var: netCDF4.Variable) -> bool:
+    """Identify scientific output, excluding coordinates and static metadata."""
+    return (
+        np.issubdtype(var.dtype, np.floating)
+        and "time" in var.dimensions
+        and var.name not in var.group().dimensions
+        and var.name != "time_bnds"
+    )
+
+
+def statistic_payload(var: netCDF4.Variable) -> tuple[np.ndarray, np.ndarray]:
+    """Treat CLUBB's zero fill as a number, retaining other missing-value masks."""
+    data = var[:]
+    values = np.asarray(np.ma.getdata(data))
+    mask = np.ma.getmaskarray(data)
+    if getattr(var, "_FillValue", None) == 0 and not any(
+        name in var.ncattrs() for name in ("missing_value", "valid_min", "valid_max", "valid_range")
+    ):
+        mask = np.zeros(values.shape, dtype=bool)
+    return values, mask
+
+
+def payloads_equal(values, reference, mask, reference_mask, tolerance=None) -> bool:
+    """Compare selected payloads without broadcasting or accepting nonfinite data."""
+    if values.shape != reference.shape or not np.array_equal(mask, reference_mask):
+        return False
+    if tolerance is None:
+        return np.array_equal(values, reference)
+    return (
+        np.all(np.isfinite(values)) and np.all(np.isfinite(reference))
+        and np.allclose(values, reference, atol=tolerance, rtol=tolerance)
+    )
+
+
+def variable_schema_errors(reference, test) -> list[str]:
+    """Keep dtype and variable attributes strict when relaxing numeric payloads."""
+    errors = []
+    if reference.dtype != test.dtype:
+        errors.append(f"{reference.name}: dtype mismatch")
+    if set(reference.ncattrs()) != set(test.ncattrs()):
+        errors.append(f"{reference.name}: attribute set mismatch")
+    else:
+        for name in reference.ncattrs():
+            if not np.array_equal(reference.getncattr(name), test.getncattr(name)):
+                errors.append(f"{reference.name}: attribute {name} mismatch")
+    return errors
+
+
 def arrays_exact_equal(var_a: netCDF4.Variable, var_b: netCDF4.Variable) -> bool:
     """Return True when two variable payloads are exactly identical."""
     values_a, mask_a = variable_payload(var_a)
@@ -487,8 +551,8 @@ def compare_dimensions_exact(
     return mismatches
 
 
-def compare_exact_stats(reference_path: str, test_path: str) -> tuple[list[str], str]:
-    """Compare two stats files exactly at the variable-payload level."""
+def compare_exact_stats(reference_path: str, test_path: str, *, tolerance: float | None = None) -> tuple[list[str], str]:
+    """Compare batch payloads exactly, or relax floating statistics explicitly."""
     mismatches: list[str] = []
     variables_checked = 0
 
@@ -521,16 +585,28 @@ def compare_exact_stats(reference_path: str, test_path: str) -> tuple[list[str],
                     f"{var_name}: shape mismatch {ref_var.shape} vs {test_var.shape}"
                 )
                 continue
-            if not arrays_exact_equal(ref_var, test_var):
+            if tolerance is not None:
+                schema_errors = variable_schema_errors(ref_var, test_var)
+                if schema_errors:
+                    mismatches.extend(schema_errors)
+                    continue
+            relaxed = tolerance is not None and floating_statistic(ref_var)
+            if relaxed:
+                ref_values, ref_mask = statistic_payload(ref_var)
+                test_values, test_mask = statistic_payload(test_var)
+                equal = payloads_equal(test_values, ref_values, test_mask, ref_mask, tolerance)
+            else:
+                equal = arrays_exact_equal(ref_var, test_var)
+            if not equal:
                 max_abs = numeric_max_abs(ref_var, test_var)
                 if max_abs is None:
-                    mismatches.append(f"{var_name}: exact payload mismatch")
+                    mismatches.append(f"{var_name}: payload mismatch")
                 else:
                     mismatches.append(
-                        f"{var_name}: exact payload mismatch, max_abs={max_abs:.6e}"
+                        f"{var_name}: payload mismatch, max_abs={max_abs:.6e}"
                     )
 
-    return mismatches, f"checked {variables_checked} variables exactly"
+    return mismatches, f"checked {variables_checked} variables; floating tolerance={tolerance}"
 
 
 def compare_non_time_dimensions(
@@ -623,9 +699,11 @@ def validate_time_bounds_window(
     return mismatches
 
 
-def time_dependent_payload(var: netCDF4.Variable) -> tuple[np.ndarray, np.ndarray]:
+def time_dependent_payload(
+    var: netCDF4.Variable, *, raw_zero_fill: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
     """Read a time-dependent variable with time moved to axis 0."""
-    values, mask = variable_payload(var)
+    values, mask = statistic_payload(var) if raw_zero_fill else variable_payload(var)
     axis = time_axis_index(var)
     return np.moveaxis(values, axis, 0), np.moveaxis(mask, axis, 0)
 
@@ -645,6 +723,7 @@ def compare_window_subset(
     full_path: str,
     window_path: str,
     expected_window: tuple[int, int],
+    *, tolerance: float | None = None,
 ) -> tuple[list[str], str]:
     """Compare a windowed fine-tout file to the matching full-run records."""
     mismatches: list[str] = []
@@ -690,6 +769,11 @@ def compare_window_subset(
             full_var = full.variables[var_name]
             window_var = windowed.variables[var_name]
             variables_checked += 1
+            if tolerance is not None:
+                schema_errors = variable_schema_errors(full_var, window_var)
+                if schema_errors:
+                    mismatches.extend(schema_errors)
+                    continue
 
             if full_var.dimensions != window_var.dimensions:
                 mismatches.append(
@@ -706,8 +790,9 @@ def compare_window_subset(
             if var_name == "time_bnds":
                 continue
 
-            full_values, full_mask = time_dependent_payload(full_var)
-            window_values, window_mask = time_dependent_payload(window_var)
+            relaxed = tolerance is not None and floating_statistic(full_var)
+            full_values, full_mask = time_dependent_payload(full_var, raw_zero_fill=relaxed)
+            window_values, window_mask = time_dependent_payload(window_var, raw_zero_fill=relaxed)
             selected_values = full_values[selected, ...]
             selected_mask = full_mask[selected, ...]
 
@@ -718,9 +803,9 @@ def compare_window_subset(
                 )
                 continue
 
-            if not np.array_equal(selected_mask, window_mask) or not np.array_equal(
-                selected_values,
-                window_values,
+            if not payloads_equal(
+                window_values, selected_values, window_mask, selected_mask,
+                tolerance if relaxed else None,
             ):
                 max_abs = array_max_abs(selected_values, window_values)
                 if max_abs is None:
@@ -739,6 +824,7 @@ def compare_tout_average(
     fine_path: str,
     coarse_path: str,
     expected_window: tuple[int, int] | None = None,
+    *, tolerance: float | None = None,
 ) -> tuple[list[str], str]:
     """Compare a coarse tout file to manual averages from a fine tout file."""
     mismatches: list[str] = []
@@ -781,6 +867,14 @@ def compare_tout_average(
         for var_name in sorted(fine_vars):
             fine_var = fine.variables[var_name]
             coarse_var = coarse.variables[var_name]
+            if tolerance is not None:
+                schema_errors = variable_schema_errors(fine_var, coarse_var)
+                if schema_errors:
+                    mismatches.extend(schema_errors)
+                    continue
+                if fine_var.dimensions != coarse_var.dimensions:
+                    mismatches.append(f"{var_name}: dimension mismatch")
+                    continue
 
             if "time" not in fine_var.dimensions:
                 if not arrays_exact_equal(fine_var, coarse_var):
@@ -795,6 +889,13 @@ def compare_tout_average(
             if not np.issubdtype(fine_var.dtype, np.number):
                 mismatches.append(f"{var_name}: time-dependent nonnumeric variable is unsupported")
                 continue
+
+            if tolerance is not None:
+                _, fine_mask = statistic_payload(fine_var)
+                _, coarse_mask = statistic_payload(coarse_var)
+                if np.any(fine_mask) or np.any(coarse_mask):
+                    mismatches.append(f"{var_name}: missing scientific data in averaging records")
+                    continue
 
             compared_vars += 1
             for coarse_record, bounds in enumerate(coarse_bnds):
@@ -820,7 +921,11 @@ def compare_tout_average(
                 max_abs_seen = max(max_abs_seen, max_abs)
                 max_rel_seen = max(max_rel_seen, max_rel)
 
-                if not np.allclose(actual, reconstructed, atol=ABS_TOL, rtol=REL_TOL):
+                atol = tolerance if tolerance is not None and floating_statistic(fine_var) else ABS_TOL
+                rtol = tolerance if tolerance is not None and floating_statistic(fine_var) else REL_TOL
+                if tolerance is not None and not np.issubdtype(fine_var.dtype, np.floating):
+                    atol, rtol = 0.0, 0.0
+                if not np.allclose(actual, reconstructed, atol=atol, rtol=rtol):
                     mismatches.append(
                         f"{var_name}[record={coarse_record}, "
                         f"window=({bounds[0]}, {bounds[1]}]] mismatch "
@@ -970,7 +1075,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-debug", type=int, help="Optional debug level forwarded to run_scm.py")
     parser.add_argument("-dt_main", type=int, help="Optional dt_main forwarded to run_scm.py")
     parser.add_argument("-dt_rad", type=int, help="Optional dt_rad forwarded to run_scm.py")
-    args = parser.parse_args()
+    parser.add_argument("-max_iters", type=int, help="Optional iteration limit for every run")
+    parser.add_argument(
+        "-jax", action="store_true",
+        help="Use JAX; an attached backend such as -jax=cpu is accepted",
+    )
+    parser.add_argument(
+        "-jax_tolerance", type=float,
+        help="JAX-only absolute and relative tolerance for floating statistics; default is strict",
+    )
+    argv, jax_options, jax_occurrences = extract_jax_options(sys.argv[1:])
+    args = parser.parse_args(argv)
+    if jax_occurrences > 1:
+        parser.error("-jax may be specified only once")
+    args.jax_options = jax_options
+    if args.jax_tolerance is not None:
+        if not args.jax:
+            parser.error("-jax_tolerance requires -jax")
+        if not math.isfinite(args.jax_tolerance) or args.jax_tolerance <= 0:
+            parser.error("-jax_tolerance must be finite and positive")
+    if args.max_iters is not None and args.max_iters <= 0:
+        parser.error("-max_iters must be positive")
 
     args.batch_sizes = parse_csv_ints(args.batch_sizes, "-batch_sizes")
     args.coarse_touts = parse_csv_ints(args.coarse_touts, "-coarse_touts")
@@ -1000,6 +1125,7 @@ def main() -> None:
 
     print_banner("Test Setup")
     print(f"Case: {args.case_name}")
+    print(f"JAX floating statistics tolerance: {args.jax_tolerance} (atol and rtol)")
     print(f"Stats file: {args.stats}")
     print(f"Multicol spec: {args.multicol}")
     print(f"Reference batch size: {reference.batch_size}")
@@ -1042,7 +1168,7 @@ def main() -> None:
     print_banner("Batch-Size Checks")
     for spec in batch_runs:
         test_path = stats_path(spec.output_dir, args.case_name)
-        run_mismatches, detail = compare_exact_stats(reference_path, test_path)
+        run_mismatches, detail = compare_exact_stats(reference_path, test_path, tolerance=args.jax_tolerance)
         label = f"{spec.label}_vs_{reference.label}"
         if run_mismatches:
             mismatches.extend(f"{label}: {message}" for message in run_mismatches)
@@ -1053,7 +1179,7 @@ def main() -> None:
     print_banner("Tout Averaging Checks")
     for spec in coarse_runs:
         coarse_path = stats_path(spec.output_dir, args.case_name)
-        run_mismatches, detail = compare_tout_average(reference_path, coarse_path)
+        run_mismatches, detail = compare_tout_average(reference_path, coarse_path, tolerance=args.jax_tolerance)
         label = f"{spec.label}_manual_average_vs_{reference.label}"
         if run_mismatches:
             mismatches.extend(f"{label}: {message}" for message in run_mismatches)
@@ -1067,6 +1193,7 @@ def main() -> None:
         reference_path,
         window_fine_path,
         stats_window,
+        tolerance=args.jax_tolerance,
     )
     label = f"{window_fine_run.label}_selected_window_vs_{reference.label}"
     if run_mismatches:
@@ -1080,6 +1207,7 @@ def main() -> None:
         reference_path,
         window_average_path,
         expected_window=stats_window,
+        tolerance=args.jax_tolerance,
     )
     label = f"{window_average_run.label}_manual_average_vs_{reference.label}"
     if run_mismatches:
@@ -1098,6 +1226,7 @@ def main() -> None:
         raise SystemExit(1)
 
     print("All stats consistency checks passed.")
+
 
 if __name__ == "__main__":
     main()

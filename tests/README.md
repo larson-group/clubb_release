@@ -412,6 +412,25 @@ Examples:
 - `python3 tests/run_stats_output_consistency.py bomex -config default -debug 0`
   Forwards a named config and debug level to `run_scm.py`.
 
+Select JAX with `-jax` or `-jax=cpu`; optional `-max_iters` caps the
+effective run/window duration without extending the native case.
+
+```sh
+python3 tests/run_stats_output_consistency.py bomex -jax=cpu -jax_tolerance 3e-9
+```
+
+`-jax_tolerance` sets both absolute and relative tolerance for floating scientific
+statistics in batch, window and averaging checks. It requires `-jax`; omitting it
+keeps the original strict comparisons. Jenkins uses `3e-9`, calibrated on CPU JAX
+BOMEX (24 and 360 steps) and ATEX (72 steps). Different batch sizes may cause JIT
+to optimize differently and introduce tiny rounding differences. This is the
+working explanation, not a traced compiler transformation.
+
+Relaxed comparisons treat CLUBB's zero fill value as a numerical zero, so zero
+versus a tiny residual can pass. Variable schema, dtypes, attributes, coordinates,
+static metadata and other missing-value masks remain strict, and nonfinite
+scientific values fail. Native commands and comparison criteria are unchanged.
+
 ### `run_thread_test.py`
 
 Runs the thread-safety regression test using the compiled standalone and thread
