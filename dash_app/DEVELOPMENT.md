@@ -284,14 +284,27 @@ The preallocation checkbox is enabled only for a compatible CUDA selection,
 including one that needs environment setup. It is disabled during checks and
 for CPU, Metal, or unavailable selections. Both checked and unchecked values
 explicitly override the server's `XLA_PYTHON_CLIENT_PREALLOCATE` setting. Freeze
-the effective GPU and preallocation settings into each submitted Run/Profile
-request and include them in command previews. Enabling preallocation maps to
-`-jax=gpu,xla_prealloc`.
+the effective GPU and preallocation settings into each submitted Run/Profile/Tune
+request and include them in command previews. The launcher arguments carry both enabled and disabled preallocation choices.
 
 Compiled implementations follow `install/selected`, falling back to
 `install/latest`. Explicit runner `-exe` or `-install_dir` options override
-that default. Tune continues to use its Fortran/F2PY worker independently of
-the chooser's JAX selection.
+that default. Tune converts the chooser selection into the canonical tuner
+`backend`, `jax_options`, `jax_gpu` and `jax_xla_prealloc` request fields. The
+broker, typed MCP service and native Start callback preserve the same fields.
+Loading a saved revision restores its runtime; Continue and leaderboard reruns
+use the immutable request rather than the current chooser. The broker owns
+result-run processes and terminal polling as well as tuning workers.
+
+`clubb_jax/run_jax.py` owns the public selection interface: `runtime_selection`
+validates saved settings, `runtime_arguments` encodes one opaque selection value
+for `-options` or `-jax`, and `runtime_configuration` supplies launch provenance without
+setup. Discovery uses the same arguments with `-info=json`; its report contains
+available devices, the resolved selection and runtime readiness. Dash and the
+tuner forward settings rather than constructing GPU environment variables.
+The launcher delegates device visibility and memory settings to its backends
+before inspection or importing JAX. Rerun parameter/physics override precedence
+is shared through `utilities/create_case_namelist.py`.
 
 ## Profile results
 

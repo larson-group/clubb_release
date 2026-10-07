@@ -8,7 +8,7 @@ import pytest
 from dash import Dash
 
 from dash_app.compile_tab import callbacks, build_selector
-from dash_app.shared.jax_device import jax_device_env, normalize_jax_gpu
+from clubb_jax.run_jax import runtime_selection
 from dash_app.services.models import ScmRunBatchRequest
 from dash_app.shared import actions
 
@@ -26,28 +26,6 @@ def inventory():
         {"index": 0, "uuid": GPU_A, "name": "Test GPU A", "memory_mib": 8192},
         {"index": 1, "uuid": GPU_B, "name": "Test GPU B", "memory_mib": 16384},
     ]}}}
-
-
-def test_environments_are_per_job_and_default_preserves_server_selection(monkeypatch):
-    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "1")
-    base = {"CUDA_VISIBLE_DEVICES": "1", "KEEP": "yes"}
-    assert jax_device_env(gpu_settings(), base) == {**base, "CUDA_VISIBLE_DEVICES": GPU_B}
-    assert jax_device_env(gpu_settings(GPU_A), base)["CUDA_VISIBLE_DEVICES"] == GPU_A
-    assert jax_device_env(gpu_settings(""), base) == base
-    assert jax_device_env({"implementation": "jax", "jax_profile": "cpu"}, base) == base
-    assert base["CUDA_VISIBLE_DEVICES"] == "1"
-    assert jax_device_env({})["CUDA_VISIBLE_DEVICES"] == "1"
-
-
-@pytest.mark.parametrize("value", ["1", "GPU-short", GPU_A + "," + GPU_B, "MIG-example", "bad\nvalue"])
-def test_only_full_single_gpu_uuids_are_accepted(value):
-    with pytest.raises(ValueError):
-        normalize_jax_gpu(value)
-
-
-def test_explicit_gpu_requires_gpu_backend():
-    with pytest.raises(ValueError, match="requires"):
-        jax_device_env({**gpu_settings(), "jax_profile": "cpu"})
 
 
 def test_cpu_launch_ignores_remembered_gpu(monkeypatch):
@@ -138,15 +116,16 @@ def test_preflight_uses_same_uuid_as_launch_without_changing_cpu(tmp_path, monke
     seen = {}
 
     def inspect(command, **kwargs):
-        profile = command[1].split("=")[1]
-        seen[profile] = kwargs["env"]["CUDA_VISIBLE_DEVICES"]
+        selection = runtime_selection(command[1].split("=", 1)[1])
+        profile = selection["profile"]
+        seen[profile] = selection["device"]
         return subprocess.CompletedProcess(command, 0, json.dumps({
             "schema_version": 1, "profile": profile, "status": "ready", "selectable": True,
         }), "")
 
     monkeypatch.setattr(build_selector.subprocess, "run", inspect)
     build_selector.inspect_jax_runtime_profiles(tmp_path, jax_gpu=GPU_B)
-    assert seen == {"cpu": "0", "gpu": GPU_B}
+    assert seen == {"cpu": "", "gpu": GPU_B}
 
 
 def test_batch_children_and_provenance_retain_device():
@@ -163,8 +142,8 @@ def test_run_process_receives_uuid(monkeypatch, tmp_path, prealloc):
 
     captured = {}
     def launch(command, **kwargs):
-        captured.update(kwargs)
-        assert ("-jax=gpu,xla_prealloc" if prealloc else "-jax=gpu") in command
+        captured.update(kwargs, command=command)
+        assert any(arg.startswith("-jax=gpu,") for arg in command)
         return SimpleNamespace(pid=123)
 
     monkeypatch.setattr(runtime, "write_temp_namelist", lambda *args: None)
@@ -173,8 +152,9 @@ def test_run_process_receives_uuid(monkeypatch, tmp_path, prealloc):
     monkeypatch.setattr(runtime.subprocess, "Popen", launch)
     monkeypatch.setattr(runtime.tempfile, "NamedTemporaryFile", lambda **kwargs: (tmp_path / "run.log").open("w"))
     runtime.start_case_process("arm", "none", {}, {**gpu_settings(), "jax_xla_prealloc": prealloc})
-    assert captured["env"]["CUDA_VISIBLE_DEVICES"] == GPU_B
-    assert captured["env"]["XLA_PYTHON_CLIENT_PREALLOCATE"] == str(prealloc).lower()
+    assert captured["env"]["CUDA_VISIBLE_DEVICES"] == "0"
+    assert captured["env"]["XLA_PYTHON_CLIENT_PREALLOCATE"] == "true"
+    assert f"-jax=gpu,device={GPU_B},prealloc_gpu_mem={str(prealloc).lower()}" in captured["command"]
 
 
 @pytest.mark.parametrize("prealloc", [False, True])
@@ -185,8 +165,8 @@ def test_profile_process_and_preview_receive_uuid(monkeypatch, tmp_path, preallo
     selected = {**settings(tmp_path), **gpu_settings(), "jax_xla_prealloc": prealloc}
     captured = {}
     def launch(command, **kwargs):
-        captured.update(kwargs)
-        assert ("-jax=gpu,xla_prealloc" if prealloc else "-jax=gpu") in command
+        captured.update(kwargs, command=command)
+        assert any(arg.startswith("-jax=gpu,") for arg in command)
         return SimpleNamespace(pid=123)
 
     monkeypatch.setattr(runtime.subprocess, "Popen", launch)
@@ -194,11 +174,10 @@ def test_profile_process_and_preview_receive_uuid(monkeypatch, tmp_path, preallo
     monkeypatch.setattr(runtime, "PROFILE_PROCESSES", {})
     monkeypatch.setattr(runtime.tempfile, "NamedTemporaryFile", lambda **kwargs: (tmp_path / "profile.log").open("wb"))
     job = runtime.start_profile_process(selected)
-    assert captured["env"]["CUDA_VISIBLE_DEVICES"] == GPU_B
-    assert captured["env"]["XLA_PYTHON_CLIENT_PREALLOCATE"] == str(prealloc).lower()
+    assert "env" not in captured
+    assert f"-jax=gpu,device={GPU_B},prealloc_gpu_mem={str(prealloc).lower()}" in captured["command"]
     assert job["settings"]["jax_gpu"] == GPU_B
-    assert f"CUDA_VISIBLE_DEVICES={GPU_B} " in job["command_display"]
-    assert f"XLA_PYTHON_CLIENT_PREALLOCATE={str(prealloc).lower()} " in job["command_display"]
+    assert f"-jax=gpu,device={GPU_B},prealloc_gpu_mem={str(prealloc).lower()}" in job["command_display"]
     assert job["command_display"] == runtime.profile_command_display(selected)
 
 

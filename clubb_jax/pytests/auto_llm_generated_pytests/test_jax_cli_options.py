@@ -201,3 +201,32 @@ def test_environment_setup_failure_stops_before_restart(monkeypatch):
     with pytest.raises(SystemExit) as exc:
         run_jax.ensure_environment()
     assert exc.value.code == 7
+
+
+@pytest.mark.parametrize("module", [
+    "clubb_jax.src.clubb_standalone",
+    "tuner.tune_clubb",
+    "clubb_jax.src.clubb_standalone_loss",
+])
+def test_managed_launcher_dispatches_selected_entry_module(module, tmp_path, monkeypatch):
+    python = tmp_path / "bin" / "python"
+    calls = []
+    monkeypatch.setattr(run_jax, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(run_jax, "_prepare_environment", lambda *args: python)
+    monkeypatch.setattr(run_jax, "_print_runtime_summary", lambda *args: None)
+    monkeypatch.setattr(run_jax.os, "chdir", lambda *args: None)
+    monkeypatch.setattr(run_jax.os, "execvpe", lambda *args: calls.append(args))
+    assert run_jax.main(["-options=cpu", f"-module={module}", "run.in"]) == 0
+    executable, command, env = calls[0]
+    assert executable == str(python)
+    assert command == [str(python), "-m", module, "run.in"]
+    assert env["_CLUBB_JAX_ENVIRONMENT_PYTHON"] == str(python)
+
+
+@pytest.mark.parametrize("options", [
+    ["-module=unrecognized"],
+    ["-module=tuner.tune_clubb", "-module=clubb_jax.src.clubb_standalone_loss"],
+])
+def test_managed_launcher_rejects_bad_entry_modules(options):
+    with pytest.raises(run_jax.LauncherError, match="module"):
+        run_jax.parse_launcher_args(options)

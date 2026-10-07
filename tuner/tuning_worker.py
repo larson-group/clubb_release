@@ -12,6 +12,7 @@ import numpy as np
 
 from tuner.paths import REPO_ROOT, RUN_SCRIPTS
 from tuner.taylor_metrics import INVALID_SCALED_RMSE_PENALTY, LOSS_METRIC_NAMES
+from tuner.loss_backend import load_loss_backend, parameter_metadata
 
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -52,7 +53,7 @@ def _baseline_worker_main(conn, init_payload: dict) -> None:
     original_cwd = os.getcwd()
 
     try:
-        from clubb_python import clubb_api
+        clubb_api = load_loss_backend(init_payload.get("backend", "fortran"))
 
         baselines = {}
         baseline_specs = [("clubb_default", "default", None)]
@@ -172,7 +173,8 @@ def worker_main(conn, init_payload: dict) -> None:
         baselines = _evaluate_baselines_in_subprocess(init_payload, conn) if evaluate_baselines else {}
         if baselines is None:
             return
-        from clubb_python import clubb_api
+        backend = init_payload.get("backend", "fortran")
+        clubb_api = load_loss_backend(backend)
 
         worker_dir.mkdir(parents=True, exist_ok=True)
         aggregate_path, _, _ = create_loss_case_namelist(
@@ -194,9 +196,7 @@ def worker_main(conn, init_payload: dict) -> None:
             return_default_params=True,
         )
         initialized = True
-        param_names = list(clubb_api.get_param_names())
-        nparams = len(clubb_api.get_param_names())
-        hard_parameter_bounds = list(clubb_api.get_parameter_hard_bounds(nparams))
+        param_names, hard_parameter_bounds = parameter_metadata(backend)
 
         conn.send(
             {
@@ -205,8 +205,8 @@ def worker_main(conn, init_payload: dict) -> None:
                 "worker_dir": str(worker_dir),
                 "field_names": list(field_names),
                 "param_names": param_names,
-                # The worker owns the compiled F2PY module that will score
-                # candidates.  Return its Fortran-owned hard envelope so the
+                # The worker owns the runtime that will score candidates.
+                # Return its source-matched hard envelope so the
                 # scheduler cannot propose values that this exact build will
                 # reject during model setup.
                 "hard_parameter_bounds": hard_parameter_bounds,
@@ -274,8 +274,6 @@ def worker_main(conn, init_payload: dict) -> None:
             pass
         if initialized:
             try:
-                from clubb_python import clubb_api
-
                 clubb_api.finalize_clubb_loss()
             except Exception:
                 pass

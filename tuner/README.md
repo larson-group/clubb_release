@@ -6,6 +6,73 @@ which is the Python SCM driver. The tuner package does not advance CLUBB itself;
 it prepares loss-driver namelists, launches reusable loss sessions, proposes
 parameter sets, and records ranked results.
 
+## JAX tuning
+
+Use the same tuning CLI with `-jax` (CPU) or `-jax=gpu`:
+
+```bash
+python run_scripts/run_tuner_job.py -jax -cases bomex \
+  -fields cloud_frac wp2 -param_ranges C8:0.2:0.8 \
+  -strategy random:32 -batch_size 8 -workers 1 -run_top never
+```
+
+This prepares the managed JAX environment and runs the existing strategies,
+multi-case scheduler, baselines, checkpointing, and results through the JAX
+loss driver. A Fortran build is unnecessary. Job-directory callers set
+`"backend": "jax"` and optionally `"jax_options": "cpu"` or `"gpu"` in
+`request.json`; omitting `backend` retains the Fortran default. Dash's Tune
+runtime chooser writes these same fields into each revision. Optional
+`jax_gpu` selects a full GPU UUID, and `jax_xla_prealloc` explicitly controls
+CUDA preallocation for that job. Loading or continuing a revision and replaying
+its results retain the saved settings. CLI callers pass one selection value,
+for example `-jax=gpu,device=DEVICE,prealloc_gpu_mem=false`.
+The JAX launcher validates these selections and lets the backend configure the
+child environment; the tuner does not set GPU environment variables.
+
+For a standalone loss check:
+
+```bash
+python run_scripts/run_scm_loss.py -jax -cases bomex -fields cloud_frac,wp2 \
+  -multicol C8/0.2:0.8/8 -batch_size 4 -disable_stats_storage
+```
+
+For direct reusable calls, use `clubb_jax.src.clubb_loss_driver`:
+
+```python
+from clubb_jax.src import clubb_loss_driver
+
+names, defaults = clubb_loss_driver.init_clubb_loss(runfile, return_default_params=True)
+try:
+    metrics = clubb_loss_driver.clubb_get_loss_for_params(defaults)
+    # Pass another (candidate_count, 102) matrix using the canonical parameter order.
+    next_metrics = clubb_loss_driver.clubb_get_loss_for_params(next_params)
+finally:
+    clubb_loss_driver.finalize_clubb_loss()
+```
+
+Each of the five returned arrays has shape `(window, field, candidate)`.
+Initialization prepares benchmark interpolation and an immutable initial-state
+snapshot once. Reruns reset all state and refresh parameter-derived quantities.
+Post-tuning runs retain the request's other physics overrides; winning parameter
+values take precedence over initial overrides for those tuned parameters.
+Parameter values are dynamic JAX arrays; changing them reuses compiled model
+kernels. The runtime batch width stays fixed, with a short final batch padded
+and trimmed. Different cases, grid sizes, flags, stats layouts, or runtime batch
+widths can compile different kernels. Initial compilation also includes the
+configured sampling/radiation paths. No caches are cleared between candidates.
+
+Variable candidate counts require in-memory stats (`stats_output_filename = ""`),
+as used by the scheduler. File-backed loss runs retain their configured total
+column count. Tuning from a restart is currently rejected; standalone restart
+tests remain supported separately.
+
+The existing JAX standalone feature gates apply to tuning. Source-compatible
+`lmin` and maximum mixture-fraction values still use the last runtime column,
+as in Fortran; varying those parameters across columns retains that source
+behavior. GPU precision follows the JAX launcher's normal settings. Adam uses
+the existing SPSA strategy; this workflow does not require long-run gradients.
+Port outline and adaptations are in [`TUNER_PORT.md`](../clubb_jax/TUNER_PORT.md).
+
 ## Entry Points
 
 - `python run_scripts/run_tuner_job.py ...` is the friendly command-line wrapper.
@@ -40,7 +107,8 @@ The normal Dash tuning path is:
 6. Each worker uses `utilities/create_case_namelist.py` to build the
    case-specific loss namelist and normalized LES benchmark file in its worker
    directory.
-7. Workers initialize the reusable Fortran loss driver through `clubb_python`,
+7. Workers initialize the selected reusable loss driver (Fortran through
+   `clubb_python`, or the independent JAX port),
    evaluate parameter batches, and return loss matrices to the scheduler.
 8. The scheduler converts the per-field Taylor diagnostics into a smart loss,
    ranks samples by that value, keeps the best result rows, and periodically
@@ -81,7 +149,8 @@ leased unless their `control.json` explicitly enables keepalive.
   `case_name`, `altitude_comparison_range`, `time_average_range`, and
   `num_time_windows`. A value of `num_time_windows = 1` is the old
   single-average behavior; larger values split the case time range into equal
-  windows.
+  windows. An explicit window count replaces an inherited
+  `average_time_seconds`; supplying an averaging interval derives the count.
 - `cases`: legacy list of case names. A single legacy `case_name` is also
   accepted and normalized into `case_configs`.
 - `selected_fields`: CLUBB-facing field names to compare.
@@ -131,7 +200,7 @@ selected CLUBB field names for both `clubb_var_names` and `benchmark_var_name`.
 
 The loss driver can therefore read the converted benchmark file as if it used
 CLUBB naming conventions. Time averaging and altitude comparisons remain in the
-Fortran loss driver.
+selected loss driver (Fortran or JAX).
 
 ## Scheduler And Workers
 

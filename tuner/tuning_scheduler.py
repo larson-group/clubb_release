@@ -514,6 +514,7 @@ class TuningScheduler:
         worker_dir = self.job_dir / "workers" / f"{case_name}_{worker_id}"
         parent_conn, child_conn = self.ctx.Pipe()
         payload = {
+            "backend": self.request.get("backend", "fortran"),
             "case_name": case_name,
             "selected_fields": self.selected_fields,
             "batch_size": self.batch_size,

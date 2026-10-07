@@ -38,6 +38,27 @@ CUDA_MIN_COMPUTE_CAPABILITY = 7.5
 VERIFY_SCRIPT = "ok = backend == 'gpu'"
 
 
+def normalize_device(value: str | None) -> str:
+    """An explicit job selection names one whole GPU; empty inherits visibility."""
+    device = str(value or "").strip()
+    if device and not re.fullmatch(
+        r"GPU-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+        r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", device,
+    ):
+        raise ValueError("JAX device must be a full GPU UUID or empty for Default")
+    return device
+
+
+def configure_selection(
+    env: dict[str, str], device: str, prealloc_gpu_mem: bool | None,
+) -> None:
+    """Apply this job's overrides before CUDA inspection or initialization."""
+    if device:
+        env[VISIBLE_DEVICES_VARIABLE] = normalize_device(device)
+    if prealloc_gpu_mem is not None:
+        env["XLA_PYTHON_CLIENT_PREALLOCATE"] = str(prealloc_gpu_mem).lower()
+
+
 def has_gpu() -> bool:
     return bool(shutil.which("nvidia-smi"))
 

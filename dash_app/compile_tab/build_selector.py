@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from dash import ALL, Input, Output, dcc, html
-from dash_app.shared.jax_device import jax_device_env, normalize_jax_gpu
+from clubb_jax.run_jax import runtime_arguments, runtime_selection
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -33,11 +33,11 @@ def inspect_jax_runtime_profiles(repo_root: Path = REPO_ROOT, *, jax_gpu="", jax
         error = "JAX runtime inspection returned invalid metadata."
         try:
             result = subprocess.run(
-                [str(wrapper), f"-profile={profile}", "-info=json"],
+                [str(wrapper), *runtime_arguments(
+                    profile, device=jax_gpu if profile == "gpu" else "",
+                    prealloc_gpu_mem=jax_xla_prealloc if profile == "gpu" else None,
+                ), "-info=json"],
                 cwd=repo_root,
-                env=jax_device_env({"implementation": "jax", "jax_profile": profile,
-                                    "jax_xla_prealloc": jax_xla_prealloc if profile == "gpu" else None,
-                                    "jax_gpu": jax_gpu if profile == "gpu" else ""}),
                 capture_output=True,
                 text=True,
                 timeout=20,
@@ -231,7 +231,7 @@ def selected_launch_target(
             "implementation": implementation,
             "jax_profile": profile,
             **({"jax_xla_prealloc": jax_xla_prealloc} if profile == "gpu" and jax_xla_prealloc is not None else {}),
-            **({"jax_gpu": normalize_jax_gpu(jax_gpu)} if profile == "gpu" and jax_gpu else {}),
+            **({"jax_gpu": runtime_selection(profile, device=jax_gpu)["device"]} if profile == "gpu" and jax_gpu else {}),
             "install_dir": "",
             "build_name": f"{profile.upper()} environment",
         }

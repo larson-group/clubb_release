@@ -68,6 +68,17 @@ def read_json_or_default(path: Path, default: dict) -> dict:
         return dict(default)
 
 
+def write_job_error(status_path: Path, results_path: Path, error_message: str) -> None:
+    """Record a launch failure while retaining any completed tuning results."""
+    finished_at = utc_now_iso()
+    for path in (status_path, results_path):
+        payload = read_json_or_default(path, {})
+        payload.update(state="error", error_message=error_message)
+        if path == results_path:
+            payload.update(updated_at=finished_at, finished_at=finished_at)
+        atomic_write_json(path, payload)
+
+
 def read_control(control_path: Path) -> dict:
     """Read the control file, defaulting to stop_requested=false."""
     if not control_path.is_file():

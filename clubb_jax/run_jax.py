@@ -43,13 +43,15 @@ Missing copies of uv and a supported Python are downloaded automatically.
 
 Options:
   -options=VALUE        Parse the value forwarded by run_scm.py -jax=VALUE:
-                         cpu or gpu, optionally followed by ,xla_prealloc
+                         cpu or gpu, with comma-separated device=UUID,
+                         prealloc_gpu_mem=true|false, or xla_prealloc modifiers
   -profile=cpu|gpu      Select CPU or the host-native GPU backend
   -accelerator=VALUE    Select an explicit backend: cpu, cuda13, rocm, or metal
   -xla_prealloc         Enable CUDA memory preallocation (CUDA only)
   -init_env             Prepare the environment without running a case
   -info[=json]          Inspect hardware and runtime readiness without setup
   -module=NAME         Entry module: CLUBB standalone, CLUBB driver test,
+                        tuner.tune_clubb,
                         or clubb_jax.src.clubb_standalone_loss
   -launcher_help        Show this help
 
@@ -58,27 +60,41 @@ Environment:
   CLUBB_JAX_VENV         Override the profile virtualenv path
   CLUBB_JAX_TOOLS_DIR    Managed uv/Python path (default: .clubb-jax-tools)
   PYTHON                 Python used when creating a new virtualenv
-  XLA_PYTHON_CLIENT_PREALLOCATE  CUDA preallocation (default: false)
+  XLA_PYTHON_CLIENT_PREALLOCATE  CUDA memory preallocation (default: false)
 """
 
 
-def _split_options(value: str) -> tuple[str, bool]:
+def _parse_options(value: str) -> dict:
+    """Interpret the opaque selection string forwarded by SCM callers."""
     if not value:
         fail("-options requires a profile; supported profiles are cpu and gpu")
     if "\n" in value or "\r" in value:
         fail("JAX options must be on one line")
     pieces = value.split(",")
     if any(not piece for piece in pieces):
-        fail("Empty JAX option; expected cpu or gpu, optionally followed by ,xla_prealloc")
-    profile = pieces[0].lower()
-    xla_prealloc = False
+        fail("Empty JAX option; expected a profile followed by selection modifiers")
+    selection = {"profile": pieces[0].lower(), "device": "", "prealloc_gpu_mem": None}
+    seen = set()
     for modifier in pieces[1:]:
-        if modifier.lower() != "xla_prealloc":
-            fail(f"Unknown JAX option: {modifier}; supported modifier is xla_prealloc")
-        if xla_prealloc:
-            fail("xla_prealloc may be specified only once")
-        xla_prealloc = True
-    return profile, xla_prealloc
+        key, separator, setting = modifier.partition("=")
+        key = key.lower()
+        if key == "xla_prealloc" and not separator:
+            key, setting = "prealloc_gpu_mem", "true"
+        elif key not in {"device", "prealloc_gpu_mem"} or not separator:
+            fail(
+                f"Unknown JAX option: {modifier}; supported modifiers are "
+                "device=UUID, prealloc_gpu_mem=true|false, and xla_prealloc"
+            )
+        if key in seen:
+            fail(f"JAX {key} may be specified only once")
+        seen.add(key)
+        if key == "device":
+            selection[key] = backends.cuda.normalize_device(setting)
+        else:
+            if setting not in {"true", "false"}:
+                fail("JAX prealloc_gpu_mem requires true or false")
+            selection[key] = setting == "true"
+    return selection
 
 
 def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[str]]:
@@ -87,6 +103,8 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
         "profile": None,
         "accelerator": None,
         "xla_prealloc": False,
+        "device": "",
+        "prealloc_gpu_mem": None,
         "init_env": False,
         "info_format": None,
         "help": False,
@@ -105,7 +123,7 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
             values["module"] = token.split("=", 1)[1]
             if values["module"] not in {
                 "clubb_jax.src.clubb_standalone", "clubb_jax.src.clubb_driver_test",
-                "clubb_jax.src.clubb_standalone_loss",
+                "tuner.tune_clubb", "clubb_jax.src.clubb_standalone_loss",
             }:
                 fail("Unsupported JAX entry module")
         elif token.startswith("-options="):
@@ -114,9 +132,9 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
             if values["profile"] is not None or values["accelerator"] is not None:
                 fail("-options cannot be combined with -profile or -accelerator")
             options_seen = True
-            profile, attached_prealloc = _split_options(token.split("=", 1)[1])
-            values["profile"] = profile
-            if attached_prealloc:
+            selection = _parse_options(token.split("=", 1)[1])
+            values.update(selection)
+            if selection["prealloc_gpu_mem"] is True:
                 if prealloc_seen:
                     fail("xla_prealloc may be specified only once")
                 values["xla_prealloc"] = True
@@ -162,7 +180,69 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
 
     if values["init_env"] and values["info_format"] is not None:
         fail("-init_env and -info cannot be used together")
+    if values["xla_prealloc"] and values["prealloc_gpu_mem"] is False:
+        fail("xla_prealloc conflicts with prealloc_gpu_mem=false")
     return values, list(argv[index:])
+
+
+def runtime_selection(
+    options: str | None = None, *,
+    device: str = "", prealloc_gpu_mem: bool | None = None,
+) -> dict:
+    """Validate a requested runtime without installing packages or initializing JAX.
+
+    A missing profile preserves the launcher's environment-based default.
+    Device identifiers are opaque to callers; their format belongs to CUDA.
+    """
+    try:
+        selection = (
+            _parse_options(options) if options is not None
+            else {"profile": None, "device": "", "prealloc_gpu_mem": None}
+        )
+        profile = selection["profile"]
+        if profile is not None and profile not in {"cpu", "gpu"}:
+            fail("JAX profile must be cpu or gpu")
+        if prealloc_gpu_mem is not None and not isinstance(prealloc_gpu_mem, bool):
+            fail("JAX prealloc_gpu_mem must be a boolean")
+        if selection["prealloc_gpu_mem"] is not None and prealloc_gpu_mem is not None:
+            if selection["prealloc_gpu_mem"] != prealloc_gpu_mem:
+                fail("JAX option conflicts with the saved prealloc_gpu_mem setting")
+        if prealloc_gpu_mem is not None:
+            selection["prealloc_gpu_mem"] = prealloc_gpu_mem
+        device = backends.cuda.normalize_device(device)
+        if device and selection["device"] and device != selection["device"]:
+            fail("JAX option conflicts with the saved device selection")
+        if device:
+            selection["device"] = device
+        if selection["device"] and profile != "gpu":
+            fail("JAX device requires the GPU profile")
+        if selection["prealloc_gpu_mem"] is True and profile != "gpu":
+            fail("JAX prealloc_gpu_mem requires the GPU profile")
+    except LauncherError as exc:
+        raise ValueError(str(exc)) from exc
+    return selection
+
+
+def runtime_arguments(
+    options: str | None = None, *,
+    device: str = "", prealloc_gpu_mem: bool | None = None, scm: bool = False,
+) -> list[str]:
+    """Encode a runtime selection for this launcher or an SCM forwarding script."""
+    selection = runtime_selection(options, device=device, prealloc_gpu_mem=prealloc_gpu_mem)
+    profile = selection["profile"]
+    modifiers = []
+    if selection["device"]:
+        modifiers.append(f"device={selection['device']}")
+    if selection["prealloc_gpu_mem"] is not None:
+        modifiers.append(f"prealloc_gpu_mem={str(selection['prealloc_gpu_mem']).lower()}")
+    if profile is None and modifiers:
+        # Preserve an inherited explicit backend when encoding a memory setting.
+        values, _ = parse_launcher_args([])
+        profile, _ = resolve_accelerator(values)
+    if profile is None:
+        return ["-jax"] if scm else []
+    value = ",".join([profile, *modifiers])
+    return [f"-jax={value}" if scm else f"-options={value}"]
 
 
 def resolve_accelerator(values: dict[str, object]) -> tuple[str, str]:
@@ -190,6 +270,68 @@ def resolve_accelerator(values: dict[str, object]) -> tuple[str, str]:
 def runtime_paths(accelerator: str) -> tuple[Path, Path, str]:
     backend = backends.get_backend(accelerator)
     return SCRIPT_DIR / backend.REQUIREMENTS, REPO_ROOT / backend.VENV, backend.PLATFORM
+
+
+def _runtime_environment(
+    values: dict, accelerator: str, profile: str, tools_dir: Path,
+) -> dict[str, str]:
+    """Build the child environment; backend details stay behind this boundary."""
+    backend = backends.get_backend(accelerator)
+    env = dict(os.environ)
+    env["CLUBB_JAX_PROFILE"] = profile
+    env["CLUBB_JAX_ACCELERATOR"] = accelerator
+    env["JAX_PLATFORMS"] = backend.PLATFORM
+    device = str(values["device"])
+    prealloc_gpu_mem = values["prealloc_gpu_mem"]
+    if device and accelerator != "cuda13":
+        fail("Explicit device selection requires the CUDA GPU backend")
+    if values["xla_prealloc"] and not getattr(backend, "SUPPORTS_PREALLOCATION", False):
+        fail("-xla_prealloc is a CUDA-only option")
+    if prealloc_gpu_mem is True and not getattr(backend, "SUPPORTS_PREALLOCATION", False):
+        fail("prealloc_gpu_mem=true is a CUDA-only option")
+    configure_selection = getattr(backend, "configure_selection", None)
+    if configure_selection is not None:
+        configure_selection(env, device, prealloc_gpu_mem)
+    configure_environment = getattr(backend, "configure_environment", None)
+    if configure_environment is not None:
+        configure_environment(env, tools_dir, bool(values["xla_prealloc"]))
+    return env
+
+
+def runtime_configuration(
+    options: str | None = None, *,
+    device: str = "", prealloc_gpu_mem: bool | None = None,
+) -> dict:
+    """Describe the launch configuration for provenance, without setup or JAX.
+
+    This describes requested/inherited settings. Use -info=json for hardware
+    discovery and backend readiness; it does not confirm JAX initialization.
+    """
+    values, _ = parse_launcher_args(runtime_arguments(
+        options, device=device, prealloc_gpu_mem=prealloc_gpu_mem,
+    ))
+    accelerator, profile = resolve_accelerator(values)
+    requirements, default_venv, _ = runtime_paths(accelerator)
+    tools_dir = Path(os.environ.get("CLUBB_JAX_TOOLS_DIR", str(REPO_ROOT / ".clubb-jax-tools")))
+    if not tools_dir.is_absolute():
+        tools_dir = REPO_ROOT / tools_dir
+    env = _runtime_environment(values, accelerator, profile, tools_dir)
+    precision_value = env.get("CLUBB_JAX_PRECISION", "double").strip().lower()
+    precision = (
+        "single" if precision_value in {"single", "float32", "f32", "32", "real4", "sp"}
+        else "double"
+    )
+    environment_keys = (
+        "CUDA_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
+        "CLUBB_JAX_ACCELERATOR", "CLUBB_JAX_PRECISION", "CLUBB_JAX_VENV",
+        "CLUBB_JAX_TOOLS_DIR", "XLA_PYTHON_CLIENT_PREALLOCATE", "JAX_PLATFORMS",
+    )
+    return {
+        "profile": profile, "accelerator": accelerator, "precision": precision,
+        "requirements": str(requirements),
+        "venv": env.get("CLUBB_JAX_VENV", str(default_venv)),
+        "environment": {key: env.get(key, "") for key in environment_keys},
+    }
 
 
 def _python_version(executable: Path | str) -> tuple[int, int]:
@@ -495,7 +637,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     accelerator, profile = resolve_accelerator(values)
-    requirements, default_venv, jax_platform = runtime_paths(accelerator)
+    requirements, default_venv, _ = runtime_paths(accelerator)
     venv = Path(os.environ.get("CLUBB_JAX_VENV", str(default_venv)))
     tools_dir = Path(os.environ.get("CLUBB_JAX_TOOLS_DIR", str(REPO_ROOT / ".clubb-jax-tools")))
     if not venv.is_absolute():
@@ -503,17 +645,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not tools_dir.is_absolute():
         tools_dir = REPO_ROOT / tools_dir
 
-    env = dict(os.environ)
-    env["CLUBB_JAX_PROFILE"] = profile
-    env["CLUBB_JAX_ACCELERATOR"] = accelerator
-    env["JAX_PLATFORMS"] = jax_platform
     backend = backends.get_backend(accelerator)
-    xla_prealloc = bool(values["xla_prealloc"])
-    if xla_prealloc and not getattr(backend, "SUPPORTS_PREALLOCATION", False):
-        fail("-xla_prealloc is a CUDA-only option")
-    configure_environment = getattr(backend, "configure_environment", None)
-    if configure_environment is not None:
-        configure_environment(env, tools_dir, xla_prealloc)
+    env = _runtime_environment(values, accelerator, profile, tools_dir)
 
     info_format = values["info_format"]
     if info_format is not None:
@@ -554,16 +687,39 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 0
 
 
+def _record_tuner_launch_error(argv: Sequence[str], error_message: str) -> None:
+    """Persist setup errors that occur before the tuner module can run."""
+    if "-module=tuner.tune_clubb" not in argv:
+        return
+    job_dir = None
+    for index, token in enumerate(argv):
+        if token == "-job_dir" and index + 1 < len(argv):
+            job_dir = Path(argv[index + 1])
+        elif token.startswith("-job_dir="):
+            job_dir = Path(token.split("=", 1)[1])
+    if job_dir is not None:
+        sys.path.insert(0, str(REPO_ROOT))
+        from tuner.status import write_job_error
+
+        write_job_error(job_dir / "status.json", job_dir / "results.json", error_message)
+
+
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except LauncherError as exc:
+    except (LauncherError, ValueError) as exc:
+        _record_tuner_launch_error(sys.argv[1:], str(exc))
         print(f"ERROR: {exc}", file=sys.stderr)
         raise SystemExit(1) from exc
     except subprocess.CalledProcessError as exc:
+        _record_tuner_launch_error(sys.argv[1:], str(exc))
         print(
             f"ERROR: command failed with exit code {exc.returncode}: "
             f"{' '.join(map(str, exc.cmd))}",
             file=sys.stderr,
         )
         raise SystemExit(exc.returncode or 1) from exc
+    except OSError as exc:
+        _record_tuner_launch_error(sys.argv[1:], str(exc))
+        print(f"ERROR: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc

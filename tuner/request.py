@@ -9,6 +9,7 @@ import re
 from functools import lru_cache
 
 from tuner.case_defaults import read_case_defaults
+from tuner.job_runtime import tuner_runtime_settings
 from tuner.presets import apply_preset
 from utilities.benchmark_converter import supported_fields
 from tuner.taylor_metrics import (
@@ -47,6 +48,14 @@ REQUIRED_TUNABLE_CONFIG_FILES = (
 def load_request(request_path: Path) -> dict:
     """Load and validate the tuning request."""
     request = apply_preset(json.loads(request_path.read_text(encoding="utf-8")))
+
+    request["backend"] = _normalize_choice(
+        request.get("backend", "fortran"), {"fortran", "jax"}, "backend",
+    )
+    if request["backend"] == "jax":
+        request["jax_options"] = str(request.get("jax_options", "cpu"))
+
+    tuner_runtime_settings(request)
 
     request["config"] = _normalize_config(request.get("config"))
     available_targets = _tunable_parameter_names(request["config"])

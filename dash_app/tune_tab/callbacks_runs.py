@@ -23,7 +23,6 @@ from .runtime import (
     poll_loss_runs,
     read_tuning_results,
     read_tuning_status,
-    start_loss_run,
     stop_tuning_job,
 )
 from dash_app.shared.tunable_configs import canonical_tunable_parameter_name
@@ -431,6 +430,10 @@ def build_request_payload(
     adam_learning_rate_percent=1.0,
     adam_perturbation_percent=5.0,
     adam_spsa_pairs=2,
+    implementation="fortran",
+    jax_profile="cpu",
+    jax_gpu="",
+    jax_xla_prealloc=None,
 ):
     """Build the worker request payload from the live UI values."""
     batch_size = int(float(batch_size))
@@ -500,6 +503,13 @@ def build_request_payload(
             "options": strategy_options,
         },
     }
+    request["backend"] = "jax" if implementation == "jax" else "fortran"
+    if request["backend"] == "jax":
+        request.update(
+            jax_options=str(jax_profile or "cpu") + (",xla_prealloc" if jax_xla_prealloc is True else ""),
+            jax_gpu=jax_gpu or "",
+            jax_xla_prealloc=jax_xla_prealloc,
+        )
     return request
 
 
@@ -511,6 +521,9 @@ def agent_request_to_tune_controls(request, case_data):
     windows editable once a running job has stopped.
     """
     request = dict(request or {})
+    from tuner.job_runtime import tuner_runtime_settings
+
+    runtime_settings = tuner_runtime_settings(request)
     selected_config = str(request.get("config") or "default").strip() or "default"
     tunable_names = load_tunable_names(selected_config)
     default_ranges = load_tunable_default_ranges(selected_config)
@@ -588,6 +601,7 @@ def agent_request_to_tune_controls(request, case_data):
         "aggregation_scope": request.get("time_window_aggregation_scope") or DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
         "aggregation_weights": request.get("aggregation_weights") or list(DEFAULT_AGGREGATION_WEIGHTS),
         "override": request.get("override") or "",
+        "runtime": runtime_settings,
     }
 
 
@@ -678,6 +692,10 @@ def register_run_callbacks(app):
         Output("tune-interval", "disabled", allow_duplicate=True),
         Output("tune-interval", "n_intervals", allow_duplicate=True),
         Output("tune-validation-message", "children", allow_duplicate=True),
+        Output("compile-run-implementation", "data", allow_duplicate=True),
+        Output("compile-run-jax-profile", "data", allow_duplicate=True),
+        Output("compile-run-jax-gpu", "data", allow_duplicate=True),
+        Output("compile-run-jax-xla-prealloc", "data", allow_duplicate=True),
         Input("tune-workspace-selection", "data"),
         State("tune-case-data", "data"),
         State("tune-active-job", "data"),
@@ -703,7 +721,7 @@ def register_run_callbacks(app):
                 try:
                     controls = agent_request_to_tune_controls(apply_preset({"preset": preset_name}), case_data or {})
                 except (OSError, TypeError, ValueError) as exc:
-                    return (no_update,) * 38 + (f"Could not apply Tune preset: {exc}",)
+                    return (no_update,) * 38 + (f"Could not apply Tune preset: {exc}",) + (no_update,) * 4
                 case_options = [{"label": name, "value": name} for name in sorted((case_data or {}).keys())]
                 case_children = [build_case_config_row(row, case_options) for row in controls["case_rows"]]
                 range_children = [build_param_range_row(row, controls["tunable_names"]) for row in controls["parameter_rows"]]
@@ -721,6 +739,7 @@ def register_run_callbacks(app):
                     # scheduling.  Preserve the user's batch/worker choices.
                     no_update, no_update, controls["override"], {}, empty_status_payload(),
                     [], [], {}, True, 0, f"Applied preset {preset_name}. Review this editable draft, then Start to save and run it.",
+                    *(no_update,) * 4,
                 )
             # A new workspace has no durable request yet.  Clear any prior
             # selected execution's retained plots/status, but leave the normal
@@ -735,9 +754,10 @@ def register_run_callbacks(app):
                 True,
                 0,
                 "Configure this new workspace, then Start to create its original revision.",
+                *(no_update,) * 4,
             )
         if not workspace_id or not revision_id:
-            return (no_update,) * 39
+            return (no_update,) * 43
         try:
             from dash_app.shared.broker_client import perform_action
 
@@ -747,11 +767,11 @@ def register_run_callbacks(app):
                 internal=True,
             )
         except Exception as exc:
-            return (no_update,) * 38 + (f"Could not load saved Tune revision: {exc}",)
+            return (no_update,) * 38 + (f"Could not load saved Tune revision: {exc}",) + (no_update,) * 4
         request = dict(loaded.get("request") or {})
         job = dict(loaded.get("job") or {})
         if not job or not request:
-            return (no_update,) * 38 + ("Saved Tune revision has no readable request.",)
+            return (no_update,) * 38 + ("Saved Tune revision has no readable request.",) + (no_update,) * 4
         job.update({"workspace_id": workspace_id, "revision_id": revision_id})
         execution_state = str((loaded.get("execution") or {}).get("state") or "draft")
         message_prefix = (
@@ -763,7 +783,7 @@ def register_run_callbacks(app):
         try:
             controls = agent_request_to_tune_controls(request, case_data or {})
         except (OSError, TypeError, ValueError) as exc:
-            return (no_update,) * 38 + (f"Could not display agent tuning request: {exc}",)
+            return (no_update,) * 38 + (f"Could not display agent tuning request: {exc}",) + (no_update,) * 4
         case_names = [row["case_name"] for row in controls["case_rows"]]
         case_options = [
             {"label": name, "value": name}
@@ -830,6 +850,10 @@ def register_run_callbacks(app):
             False,
             0,
             message,
+            controls["runtime"]["implementation"],
+            controls["runtime"]["jax_profile"],
+            controls["runtime"]["jax_gpu"],
+            controls["runtime"]["jax_xla_prealloc"],
         )
 
     @app.callback(
@@ -883,6 +907,9 @@ def register_run_callbacks(app):
         State("tune-workspace-selection", "data"),
         State("tune-status", "data"),
         State("compile-run-implementation", "data"),
+        State("compile-run-jax-profile", "data"),
+        State("compile-run-jax-gpu", "data"),
+        State("compile-run-jax-xla-prealloc", "data"),
         prevent_initial_call=True,
     )
     def start_tuning(
@@ -926,7 +953,10 @@ def register_run_callbacks(app):
         active_job,
         workspace_selection,
         displayed_status,
-        _run_implementation,
+        run_implementation,
+        jax_profile,
+        jax_gpu,
+        jax_xla_prealloc,
     ):
         """Validate the tuning inputs, then launch the background worker."""
         active_status = read_tuning_status((active_job or {}).get("status_path")) if active_job else dict(displayed_status or {})
@@ -1025,6 +1055,10 @@ def register_run_callbacks(app):
             adam_learning_rate_percent=adam_learning_rate_percent,
             adam_perturbation_percent=adam_perturbation_percent,
             adam_spsa_pairs=adam_spsa_pairs,
+            implementation=run_implementation,
+            jax_profile=jax_profile,
+            jax_gpu=jax_gpu,
+            jax_xla_prealloc=jax_xla_prealloc,
         )
         try:
             # The worker must be born in the durable broker, even when a user
@@ -1211,15 +1245,6 @@ def register_run_callbacks(app):
         Input({"type": "tune-loss-run-button", "action": ALL}, "n_clicks_timestamp"),
         State("tune-top-results", "data"),
         State("tune-best-results", "data"),
-        State({"type": "tune-case-name", "index": ALL}, "value"),
-        State({"type": "tune-case-time-start", "index": ALL}, "value"),
-        State({"type": "tune-case-time-end", "index": ALL}, "value"),
-        State({"type": "tune-case-average-time", "index": ALL}, "value"),
-        State({"type": "tune-case-altitude-min", "index": ALL}, "value"),
-        State({"type": "tune-case-altitude-max", "index": ALL}, "value"),
-        State("tune-field-selector", "value"),
-        State("tune-selected-config", "data"),
-        State("tune-scm-override", "value"),
         State("tune-loss-runs", "data"),
         State("tune-workspace-selection", "data"),
         prevent_initial_call=True,
@@ -1228,15 +1253,6 @@ def register_run_callbacks(app):
         _button_timestamps,
         top_results,
         best_results,
-        case_names,
-        time_start_values,
-        time_end_values,
-        average_time_values,
-        altitude_min_values,
-        altitude_max_values,
-        selected_fields,
-        selected_config,
-        scm_override,
         loss_runs,
         workspace_selection,
     ):
@@ -1272,37 +1288,24 @@ def register_run_callbacks(app):
         if not param_sets:
             return no_update, no_update, "No result rows are available to run."
         try:
-            if action == "window":
-                case_configs = _case_configs_from_rows(
-                    case_names,
-                    time_start_values,
-                    time_end_values,
-                    average_time_values,
-                    altitude_min_values,
-                    altitude_max_values,
-                )
-                selected_case_names = [config["case_name"] for config in case_configs]
-                run_case_configs = case_configs
-                run_fields = list(selected_fields or [])
-                message_prefix = "Started windowed loss run"
-            else:
-                selected_case_names = _case_list(case_names)
-                run_case_configs = None
-                run_fields = []
-                message_prefix = "Started complete loss run"
-            run_data = start_loss_run(
-                selected_case_names,
-                run_fields,
-                param_sets,
-                rank=action,
-                case_configs=run_case_configs,
-                run_mode=action,
-                config=selected_config,
-                override=scm_override,
-                workspace_id=(workspace_selection or {}).get("workspace_id"),
-                revision_id=(workspace_selection or {}).get("revision_id"),
-                workspace_name=(workspace_selection or {}).get("display_name"),
+            from dash_app.shared.broker_client import perform_action
+
+            selected = dict(workspace_selection or {})
+            result = perform_action(
+                "run_tuning_loss",
+                {
+                    "mode": action,
+                    "max_results": len(param_sets),
+                    "workspace_id": selected.get("workspace_id"),
+                    "revision_id": selected.get("revision_id"),
+                },
+                internal=True,
             )
+            run_data = dict(result.get("run") or {})
+            if not run_data:
+                raise RuntimeError("dashboard broker did not return result-run metadata")
+            run_data["broker_managed"] = True
+            message_prefix = "Started windowed loss run" if action == "window" else "Started complete loss run"
         except Exception as exc:
             return no_update, no_update, str(exc)
 
@@ -1322,5 +1325,17 @@ def register_run_callbacks(app):
     )
     def poll_result_loss_runs(_tick, loss_runs):
         """Poll ad-hoc loss runs and update row button states."""
-        updated_runs, any_running = poll_loss_runs(loss_runs or {})
+        runs = dict(loss_runs or {})
+        if any(run.get("broker_managed") for run in runs.values()):
+            from dash_app.shared.broker_client import perform_action
+
+            snapshot = perform_action("inspect_tuning", {}, internal=True, ensure_running=False)
+            retained = snapshot.get("loss_runs") or {}
+            for key, run in list(runs.items()):
+                if run.get("broker_managed"):
+                    latest = retained.get(str(run.get("run_id")))
+                    if latest:
+                        runs[key] = {**run, **latest}
+            return runs, not any(run.get("state") in {"running", "stopping"} for run in runs.values())
+        updated_runs, any_running = poll_loss_runs(runs)
         return updated_runs, not any_running

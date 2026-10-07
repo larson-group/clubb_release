@@ -310,6 +310,15 @@ workflow requires `CLUBB_TEST_LOSS_EXE` or the installed loss executable:
 
 See [TUNER_PORT.md](./TUNER_PORT.md) for loss-window and batch restrictions.
 
+## Managed JAX tuning
+
+Use `python3 run_scripts/run_tuner_job.py -jax` with the normal cases, fields,
+parameter ranges and strategy options. Jobs retain shared baseline evaluation,
+workers, durable errors, checkpoints and top-result reruns. `-jax=gpu` forwards
+GPU selection to the existing launcher; GPU model execution is unvalidated.
+Jenkins adds a bounded CPU JAX tuner stage to the existing tuner job.
+See [tuner/README.md](../tuner/README.md) for examples and request fields.
+
 ## Requirements And Environments
 
 No Fortran build is required for a JAX-only run. Runtime and test dependencies
@@ -413,6 +422,25 @@ Python and installed packages, then uses `uv` to repair missing or incompatible
 requirements if necessary.
 
 ### Advanced GPU Options
+
+Select one CUDA device for a job using the identifier returned by
+`./clubb_jax/run_jax.py -profile=gpu -info=json`:
+
+```bash
+./clubb_jax/run_jax.py \
+  -options=gpu,device=GPU-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,prealloc_gpu_mem=false \
+  input/case_setups/bomex_model.in
+```
+
+Replace the example identifier with a full GPU UUID from the report. The same
+settings work for inspection with `-info=json`. With SCM wrappers, use
+`-jax=gpu,device=UUID,prealloc_gpu_mem=true|false` as one selection value.
+SCM scripts forward it unchanged; only the JAX launcher interprets modifiers.
+An omitted device inherits visibility. Omitting `prealloc_gpu_mem` preserves
+the launcher default/environment. Explicit single-device selection currently
+supports CUDA whole GPUs. Other backends retain their existing selection rules.
+The launcher and backend own validation and environment setup; UI and tuner
+callers only forward the request and consume runtime information.
 
 `CUDA_VISIBLE_DEVICES` accepts physical indices from `nvidia-smi`, full GPU
 UUIDs, or unique UUID prefixes. Find UUIDs with `nvidia-smi -L`. The launcher

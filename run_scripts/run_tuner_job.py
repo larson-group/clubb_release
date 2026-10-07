@@ -75,12 +75,16 @@ RUN_SCM_LOSS = RUN_SCRIPTS / "run_scm_loss.py"
 if str(CLUBB_ROOT) not in sys.path:
     sys.path.insert(0, str(CLUBB_ROOT))
 
+from clubb_jax.run_jax import runtime_arguments  # noqa: E402
 from tuner.job_runtime import TERMINAL_STATES, TunerJob, tuner_worker_env  # noqa: E402
 from tuner.presets import apply_preset, list_presets  # noqa: E402
 from tuner.status import read_json_or_default  # noqa: E402
 from tuner.system_defaults import default_max_workers  # noqa: E402
 from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE  # noqa: E402
-from utilities.create_case_namelist import resolve_tunable_config_dir  # noqa: E402
+from utilities.create_case_namelist import (  # noqa: E402
+    filter_tuned_overrides,
+    resolve_tunable_config_dir,
+)
 
 
 DEFAULT_MAX_WORKERS = default_max_workers()
@@ -251,6 +255,7 @@ def build_request(args: argparse.Namespace) -> dict:
     if strategy["name"] == "simann":
         strategy["options"].setdefault("chain_count", max(1, max_workers * batch_size))
     request = {
+        "backend": "jax" if getattr(args, "jax", False) else "fortran",
         "batch_size": batch_size,
         "max_workers": max_workers,
         "strategy": strategy,
@@ -262,6 +267,8 @@ def build_request(args: argparse.Namespace) -> dict:
     }
     if args.preset:
         request["preset"] = args.preset
+    if getattr(args, "jax", False):
+        request["jax_options"] = args.jax_options or "cpu"
     if case_values:
         request["cases"] = [config["case_name"] for config in case_configs]
         request["case_configs"] = case_configs
@@ -464,6 +471,7 @@ def print_request_summary(
                 str(len(request["cases"]) * (2 if str(request.get("override") or "").strip() else 1)),
             ),
             ("batch_size", str(request["batch_size"])),
+            ("backend", request.get("backend", "fortran")),
             ("max_workers", str(request["max_workers"])),
             ("config", str(request.get("config") or "default")),
             ("loss", request["loss_mode"]),
@@ -642,6 +650,13 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
     config = str(request.get("config") or args.config or "default").strip() or "default"
     params_path = write_top_params_file(best_results, top_n, base_output_dir, config=config)
 
+    # Candidate vectors replace initialized values for tuned parameters. Keep
+    # that precedence in reruns while retaining the other request overrides.
+    rerun_override = filter_tuned_overrides(
+        request.get("override"), cases,
+        {name for result in best_results[:top_n] for name in result.get("selected_params", {})},
+    )
+
     print(f"Running top {top_n} result(s) with params: {params_path}", flush=True)
     exit_code = 0
     if mode in {"window", "both"}:
@@ -661,6 +676,14 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
             "-case_config_file",
             str(request_path),
         ]
+        if request.get("backend") == "jax":
+            command.extend(runtime_arguments(
+                request.get("jax_options", "cpu"),
+                device=request.get("jax_gpu", ""),
+                prealloc_gpu_mem=request.get("jax_xla_prealloc"), scm=True,
+            ))
+        if rerun_override:
+            command.extend(["-override", rerun_override])
         exit_code = run_command(command, cwd=CLUBB_ROOT) or exit_code
 
     if mode in {"complete", "both"}:
@@ -676,6 +699,14 @@ def run_top_results(args: argparse.Namespace, request_path: Path, results_path: 
                 str(params_path),
                 str(case_name),
             ]
+            if request.get("backend") == "jax":
+                command.extend(runtime_arguments(
+                    request.get("jax_options", "cpu"),
+                    device=request.get("jax_gpu", ""),
+                    prealloc_gpu_mem=request.get("jax_xla_prealloc"), scm=True,
+                ))
+            if rerun_override:
+                command.extend(["-override", rerun_override])
             exit_code = run_command(command, cwd=CLUBB_ROOT) or exit_code
 
     return exit_code
@@ -744,6 +775,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         nargs="+",
         help="Case specs: CASE, CASE:T_START:T_END, or CASE:T_START:T_END:T_INTERVAL.",
     )
+    parser.add_argument(
+        "-jax", action="store_true",
+        help="Use the JAX loss backend; -jax=cpu or -jax=gpu selects its runtime.",
+    )
     parser.add_argument("-fields", nargs="+", help="CLUBB-facing fields, comma-separated or space-separated.")
     parser.add_argument('-param_ranges', dest='params', nargs="+", help="Ranges as PARAM:MIN:MAX or linked PARAM=PARAM:MIN:MAX.", metavar='RANGE')
     parser.add_argument('-preset', dest='preset', help="Named tuner preset; explicit -cases/-fields/-param_ranges override its pieces.")
@@ -804,8 +839,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("-top_n", type=int, default=1, help="Number of top parameter sets to run. Default: 1.")
     parser.add_argument('-output_run_dir', dest='run_out_dir', default=str(CLUBB_OUTPUT_DIR), help="Output directory for post-tuning runs.", metavar='DIR')
     parser.add_argument("-dry_run", action="store_true", help="Write request/control/status files and exit without launching.")
-    args = parser.parse_args(argv)
+    from run_scripts.run_scm import extract_jax_options
 
+    normalized, jax_options, occurrences = extract_jax_options(sys.argv[1:] if argv is None else argv)
+    if occurrences > 1:
+        parser.error("-jax may be specified only once")
+    args = parser.parse_args(normalized)
+    args.jax_options = jax_options
     if args.batch_size < 1:
         parser.error("-batch_size must be >= 1")
     if args.max_workers < 1:

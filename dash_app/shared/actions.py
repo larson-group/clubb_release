@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import os
-import platform
 import re
 import shlex
 import signal
@@ -148,7 +147,7 @@ from dash_app.services import (
 )
 from dash_app.services import profiles as profile_service
 from dash_app.shared.provenance import sha256_file, source_provenance
-from dash_app.shared.jax_device import jax_device_env
+from clubb_jax.run_jax import runtime_configuration, runtime_selection
 from dash_app.shared.runtime import (
     atomic_write_json,
     exclusive_file_lock,
@@ -937,6 +936,9 @@ def _canonical_tune_request(request: TuneRequest) -> TuneRequest:
     manifest, worker request, and later Dash rendering all use exactly the
     current namelist name rather than a legacy spelling supplied by a client.
     """
+    from tuner.job_runtime import tuner_runtime_settings
+
+    tuner_runtime_settings(request.model_dump())
     config = _valid_tune_config(request.config)
     ranges = _normalize_tune_ranges(
         [item.model_dump() for item in request.parameter_ranges],
@@ -1215,7 +1217,10 @@ def _canonical_scm_request(request: ScmRunRequest) -> tuple[ScmRunRequest, dict[
     """
     from dash_app.run_tab.namelist import is_bool_value, is_true, read_namelist_entries
 
-    jax_device_env(request.model_dump(), {})
+    runtime_selection(
+        request.jax_profile if request.implementation == "jax" else "cpu",
+        device=request.jax_gpu, prealloc_gpu_mem=request.jax_xla_prealloc,
+    )
     config = _valid_tune_config(request.config)
     flag_entries = read_namelist_entries(tunable_config_file(config, "configurable_model_flags.in"))
     parameter_entries = read_namelist_entries(tunable_config_file(config, "tunable_parameters.in"))
@@ -1283,7 +1288,11 @@ def _normalize_dashboard_cli_options(cli_options: dict[str, Any] | None) -> dict
         if jax_profile not in {"cpu", "gpu"}:
             raise ValueError("JAX profile must be cpu or gpu")
         normalized["jax_profile"] = jax_profile
-    jax_device_env(normalized, {})
+    runtime_selection(
+        normalized.get("jax_profile") if implementation == "jax" else "cpu",
+        device=normalized.get("jax_gpu", ""),
+        prealloc_gpu_mem=normalized.get("jax_xla_prealloc"),
+    )
     if implementation == "jax":
         normalized.pop("install_dir", None)
     if normalized.get("install_dir"):
@@ -1359,35 +1368,14 @@ def _scm_build_identity(cli_options: dict[str, Any] | None = None) -> dict[str, 
     implementation = str(options.get("implementation") or "fortran").lower()
     if implementation == "jax":
         jax_root = REPO_ROOT / "clubb_jax"
-        requested_profile = str(options.get("jax_profile") or "").strip().lower()
-        if requested_profile:
-            profile = requested_profile
-            accelerator = (
-                "metal" if profile == "gpu" and platform.system() == "Darwin"
-                else "cuda13" if profile == "gpu"
-                else "cpu"
-            )
-        else:
-            accelerator = os.environ.get("CLUBB_JAX_ACCELERATOR", "cpu").strip().lower()
-            profile = "gpu" if accelerator in {"cuda13", "metal"} else "cpu"
-        default_precision = "single" if accelerator == "metal" else "double"
-        precision_value = os.environ.get(
-            "CLUBB_JAX_PRECISION", default_precision
-        ).strip().lower()
-        precision = (
-            "single"
-            if precision_value in {"single", "float32", "f32", "32", "real4", "sp"}
-            else "double"
+        runtime = runtime_configuration(
+            options.get("jax_profile") or None,
+            device=options.get("jax_gpu", ""),
+            prealloc_gpu_mem=options.get("jax_xla_prealloc"),
         )
         wrapper = jax_root / "run_jax.py"
         driver = jax_root / "src" / "clubb_standalone.py"
-        requirements = jax_root / (
-            "requirements-cuda13.txt"
-            if accelerator == "cuda13"
-            else "requirements-metal.txt"
-            if accelerator == "metal"
-            else "requirements.txt"
-        )
+        requirements = jax_root / Path(runtime["requirements"]).name
 
         def source_identity(path: Path) -> dict[str, Any]:
             return {
@@ -1401,22 +1389,14 @@ def _scm_build_identity(cli_options: dict[str, Any] | None = None) -> dict[str, 
             "install_directory": None,
             "implementation": "jax",
             "runtime": "repository-managed",
-            "profile": profile,
+            "profile": runtime["profile"],
             "executable": source_identity(wrapper),
             "launcher": source_identity(wrapper),
             "driver": source_identity(driver),
             "requirements": source_identity(requirements),
-            "environment": {
-                "CUDA_VISIBLE_DEVICES": options.get("jax_gpu") or os.environ.get("CUDA_VISIBLE_DEVICES", ""),
-                "CLUBB_JAX_ACCELERATOR": accelerator,
-                "CLUBB_JAX_PRECISION": precision_value or default_precision,
-                "CLUBB_JAX_VENV": os.environ.get("CLUBB_JAX_VENV", ""),
-                "CLUBB_JAX_TOOLS_DIR": os.environ.get("CLUBB_JAX_TOOLS_DIR", ""),
-                "XLA_PYTHON_CLIENT_PREALLOCATE": jax_device_env(options).get(
-                    "XLA_PYTHON_CLIENT_PREALLOCATE", "false"),
-            },
-            "precision": precision,
-            "accelerator": accelerator,
+            "environment": runtime["environment"],
+            "precision": runtime["precision"],
+            "accelerator": runtime["accelerator"],
         }
 
     selected = REPO_ROOT / "install" / "selected"
@@ -2028,6 +2008,10 @@ def submit_tune(request: TuneRequest) -> dict[str, Any]:
             aggregation_weights=request.aggregation_weights,
             time_window_aggregation_scope=request.time_window_aggregation_scope,
             overrides=_typed_override_text(request.overrides),
+            backend=request.backend,
+            jax_options=request.jax_options,
+            jax_gpu=request.jax_gpu,
+            jax_xla_prealloc=request.jax_xla_prealloc,
             job_id=record["job_id"],
         )
         _ARTIFACT_STORE.write_summary(record["job_id"], "submission_result.json", {"state": "started", "runtime": result})
@@ -2055,7 +2039,10 @@ def submit_leaderboard_rerun(request: LeaderboardRerunRequest) -> dict[str, Any]
             active=True,
         )
         _JOB_STORE.update(record["job_id"], state="starting", manifest_path=str(manifest))
-        result = run_tuning_loss(request.mode, request.max_results, job_id=record["job_id"])
+        result = run_tuning_loss(
+            request.mode, request.max_results, job_id=record["job_id"],
+            workspace_id=request.workspace_id, revision_id=request.revision_id,
+        )
         _ARTIFACT_STORE.write_summary(record["job_id"], "submission_result.json", {"state": "started", "runtime": result})
         updated = _JOB_STORE.update(record["job_id"], state="running", runtime=result) or record
         return {"status": "started", **updated}
@@ -3127,6 +3114,10 @@ def launch_tuning(
     aggregation_weights: list[float] | tuple[float, ...] = DEFAULT_AGGREGATION_WEIGHTS,
     time_window_aggregation_scope: str = DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
     overrides: str = "",
+    backend: str = "fortran",
+    jax_options: str = "cpu",
+    jax_gpu: str = "",
+    jax_xla_prealloc: bool | None = None,
     job_id: str | None = None,
     workspace_id: str | None = None,
     revision_id: str | None = None,
@@ -3203,6 +3194,10 @@ def launch_tuning(
     if selected_aggregation_scope not in TIME_WINDOW_AGGREGATION_SCOPES:
         raise ValueError("unknown time-window aggregation scope")
     request = {
+        "backend": backend,
+        "jax_options": jax_options,
+        "jax_gpu": jax_gpu,
+        "jax_xla_prealloc": jax_xla_prealloc,
         "config": selected_config,
         "override": normalized_override,
         "cases": case_names,
@@ -3234,6 +3229,9 @@ def launch_tuning(
             max_samples_limit=_max_samples_limit,
         ),
     }
+    from tuner.job_runtime import tuner_runtime_settings
+
+    tuner_runtime_settings(request)
     publish_event(
         "tune",
         "Starting tuning job",
@@ -3303,6 +3301,10 @@ def launch_tuning_request(request: dict[str, Any]) -> dict[str, Any]:
         aggregation_weights=payload.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS),
         time_window_aggregation_scope=payload.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE),
         overrides=payload.get("override", ""),
+        backend=payload.get("backend", "fortran"),
+        jax_options=payload.get("jax_options", "cpu"),
+        jax_gpu=payload.get("jax_gpu", ""),
+        jax_xla_prealloc=payload.get("jax_xla_prealloc"),
         workspace_id=payload.get("workspace_id"),
         revision_id=payload.get("revision_id"),
         workspace_display_name=payload.get("workspace_display_name"),
@@ -3565,20 +3567,21 @@ def stop_all_broker_work(*, reason: str = "dashboard manager is stopping") -> di
 
 def inspect_tuning() -> dict[str, Any]:
     """Return the current Tune worker's exact request and file-backed status."""
+    loss_runs = broker_jobs().get("loss_runs") or {}
     job = active_tuning_job_data()
     if not job:
         record = broker_jobs().get("tune") or {}
         job = dict(record.get("job") or {})
         request = dict(record.get("request") or {})
         if job:
-            return {"status": read_tuning_status(job.get("status_path")), "job": job, "request": request}
+            return {"status": read_tuning_status(job.get("status_path")), "job": job, "request": request, "loss_runs": loss_runs}
     if not job:
-        return {"status": "idle", "job": None, "request": None}
+        return {"status": "idle", "job": None, "request": None, "loss_runs": loss_runs}
     try:
         request = json.loads(Path(str(job.get("request_path") or "")).read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         request = {}
-    return {"status": read_tuning_status(job.get("status_path")), "job": job, "request": request}
+    return {"status": read_tuning_status(job.get("status_path")), "job": job, "request": request, "loss_runs": loss_runs}
 
 
 def _watch_tuning_loss_run(run_data: dict[str, Any], job_id: str | None = None) -> None:
@@ -3612,15 +3615,26 @@ def _watch_tuning_loss_run(run_data: dict[str, Any], job_id: str | None = None) 
         time.sleep(1.0)
 
 
-def run_tuning_loss(mode: str = "window", max_results: int = 16, *, job_id: str | None = None) -> dict[str, Any]:
+def run_tuning_loss(
+    mode: str = "window", max_results: int = 16, *, job_id: str | None = None,
+    workspace_id: str | None = None, revision_id: str | None = None,
+) -> dict[str, Any]:
     """Run the current Tune leaderboard through its loss window or full SCM path."""
     selected_mode = str(mode or "window").strip().lower()
     if selected_mode not in {"window", "complete"}:
         raise ValueError("mode must be 'window' or 'complete'")
     result_limit = _positive_int(max_results, "max_results", maximum=16)
-    record = broker_jobs().get("tune") or {}
-    job = dict(record.get("job") or active_tuning_job_data() or {})
-    request = dict(record.get("request") or {})
+    if bool(workspace_id) != bool(revision_id):
+        raise ValueError("workspace_id and revision_id must be supplied together")
+    if workspace_id:
+        loaded = load_tune_workspace_execution(workspace_id, revision_id)
+        job = dict(loaded.get("job") or {})
+        job.update(workspace_id=workspace_id, revision_id=revision_id)
+        request = dict(loaded.get("request") or {})
+    else:
+        record = broker_jobs().get("tune") or {}
+        job = dict(record.get("job") or active_tuning_job_data() or {})
+        request = dict(record.get("request") or {})
     if not job:
         raise ValueError("no Tune job is available; run a tuning job before requesting a result run")
     if not request:
@@ -3654,6 +3668,7 @@ def run_tuning_loss(mode: str = "window", max_results: int = 16, *, job_id: str 
         run_mode=selected_mode,
         config=str(request.get("config") or "default"),
         override=str(request.get("override") or ""),
+        runtime_request=request,
         workspace_id=job.get("workspace_id"),
         revision_id=job.get("revision_id"),
     )
@@ -4672,5 +4687,8 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "inspect_tuning":
         return inspect_tuning()
     if action == "run_tuning_loss":
-        return run_tuning_loss(payload.get("mode", "window"), payload.get("max_results", 16))
+        return run_tuning_loss(
+            payload.get("mode", "window"), payload.get("max_results", 16),
+            workspace_id=payload.get("workspace_id"), revision_id=payload.get("revision_id"),
+        )
     raise ValueError("unknown action; allowed actions are " + ", ".join(allowed_action_names()))

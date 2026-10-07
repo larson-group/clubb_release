@@ -26,7 +26,7 @@ from .state import (
     set_child_stack_limit,
 )
 from dash_app.shared.tunable_configs import tunable_config_file
-from dash_app.shared.jax_device import jax_device_env, jax_command_display
+from clubb_jax.run_jax import runtime_arguments
 from utilities.output_paths import resolve_output_dir
 
 
@@ -197,8 +197,12 @@ def append_launch_target(cmd, cli_options):
         cmd.append("-python")
     elif implementation == "jax":
         jax_profile = clean_cli_option((cli_options or {}).get("jax_profile")).lower()
-        modifier = ",xla_prealloc" if (cli_options or {}).get("jax_xla_prealloc") is True else ""
-        cmd.append(f"-jax={jax_profile}{modifier}" if jax_profile else "-jax")
+        cmd.extend(runtime_arguments(
+            jax_profile or None,
+            device=(cli_options or {}).get("jax_gpu", ""),
+            prealloc_gpu_mem=(cli_options or {}).get("jax_xla_prealloc"),
+            scm=True,
+        ))
     install_dir = clean_cli_option((cli_options or {}).get("install_dir"))
     if install_dir and implementation != "jax":
         cmd.extend(["-install_dir", install_dir])
@@ -218,7 +222,7 @@ def build_case_command(case_name, stats_name, cli_options=None, config_name=None
             cmd.extend([flag, value])
     cmd.extend(extra_cli_args(cli_options))
     cmd.append(case_name)
-    return jax_command_display([str(part) for part in cmd], cli_options)
+    return shlex.join([str(part) for part in cmd])
 
 
 def start_case_process(case_name, stats_name, overrides, cli_options=None, config_name=None):
@@ -264,7 +268,7 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None, confi
     proc = subprocess.Popen(
         cmd,
         cwd=REPO_ROOT,
-        env=jax_device_env(cli_options, run_child_env()),
+        env=run_child_env(),
         stdout=log_file,
         stderr=subprocess.STDOUT,
         text=True,

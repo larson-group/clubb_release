@@ -96,6 +96,21 @@ pipeline {
         }
       }
     }
+    stage('JAX tuner command') {
+      agent { label 'carson' }
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            # Keep CPU model workers serialized in this bounded tuner regression.
+            python3 run_scripts/run_tuner_job.py -jax -cases bomex \
+              -fields cloud_frac wp2 -param_ranges C8:0.2:0.8 \
+              -strategy random:16 -batch_size 2 -workers 1 -seed 7 \
+              -output_root output/tuner/jax_regression -run_top never
+          '''
+        }
+      }
+    }
+
   }
   post {
     failure {

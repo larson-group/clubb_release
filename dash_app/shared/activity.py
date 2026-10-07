@@ -486,9 +486,9 @@ def set_broker_loss_run(run_id: str, payload: dict[str, Any] | None) -> dict[str
         return None if record is None else dict(record)
 
 
-def update_broker_loss_run(run_id: str, **updates: Any) -> dict[str, Any] | None:
+def update_broker_loss_run(run_identifier: str, **updates: Any) -> dict[str, Any] | None:
     """Merge a completion or log update into one Tune result run."""
-    name = str(run_id or "").strip()
+    name = str(run_identifier or "").strip()
     with _locked_state() as state:
         jobs = dict(state.get("jobs") or {})
         runs = {str(key): dict(value or {}) for key, value in (jobs.get("loss_runs") or {}).items()}

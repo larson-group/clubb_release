@@ -19,10 +19,11 @@ from .state import (
     TUNE_LOCK,
     TUNE_STATUS_TEMPLATE,
 )
-from tuner.job_runtime import TunerJob, tuner_worker_env
+from tuner.job_runtime import TunerJob, tuner_worker_env, tuner_runtime_settings
 from tuner.status import atomic_write_json, write_control
 from tuner.workspaces import create_workspace, replace_draft_request, workspace_display_name
-from utilities.create_case_namelist import normalize_override_string, resolve_tunable_config_dir
+from utilities.create_case_namelist import filter_tuned_overrides, normalize_override_string, resolve_tunable_config_dir
+from dash_app.run_tab.runtime import append_launch_target
 
 
 TUNE_RESULT_OUTPUT_ROOT = Path(OUTPUT_TUNER_DIR)
@@ -212,6 +213,7 @@ def start_loss_run(
     workspace_id=None,
     revision_id=None,
     workspace_name=None,
+    runtime_request=None,
 ):
     """Launch one multi-column replay containing every selected parameter row."""
     cases = [str(case).strip() for case in (case_names or []) if str(case).strip()]
@@ -245,7 +247,12 @@ def start_loss_run(
     work_dir = output_root / "_run_metadata"
     work_dir.mkdir(parents=True, exist_ok=True)
     config = str(config or "default").strip() or "default"
-    override = normalize_override_string(override)
+    override = filter_tuned_overrides(
+        normalize_override_string(override), cases,
+        {name for param_set in param_sets for name in param_set},
+    )
+    runtime_request = dict(runtime_request or {})
+    runtime_settings = tuner_runtime_settings(runtime_request)
     params_path = write_loss_params_file(
         work_dir,
         param_sets,
@@ -261,6 +268,7 @@ def start_loss_run(
         "run_mode": run_mode,
         "params": param_sets,
         "column_count": len(param_sets),
+        "runtime": runtime_settings,
         "params_path": str(params_path),
         "output_dir": str(output_root),
         "workspace_id": str(workspace_id or ""),
@@ -312,6 +320,7 @@ def start_loss_run(
 
     processes = []
     for command in commands:
+        append_launch_target(command, runtime_settings)
         with open(log_path, "a", encoding="utf-8") as log_handle:
             log_handle.write("\n=== Command: " + " ".join(command) + " ===\n")
             log_handle.flush()

@@ -359,3 +359,13 @@ scheduler's `-job_dir` selects an existing job. Relative-path resolution follows
 each script's documented behavior. Case lists accept commas and spaces.
 Model options pass through wrappers to the SCM runner; namelist definitions and
 JSON `-override` resolution are shared in `create_case_namelist.py`.
+
+JAX runtime settings travel in the existing opaque `-jax=VALUE` selection,
+for example `-jax=gpu,device=DEVICE,prealloc_gpu_mem=false`.
+This works with `run_scm.py`, `run_scm_loss.py`, and `run_tuner_job.py`.
+SCM scripts forward the value unchanged; the JAX launcher owns its syntax and
+validation. `prealloc_gpu_mem` controls CUDA GPU memory preallocation; both
+`true` and `false` override the inherited setting.
+Use `clubb_jax/run_jax.py -profile=gpu -info=json` to inspect available devices
+and runtime readiness. Omitting these settings preserves the inherited device
+selection and launcher memory policy; the JAX backend owns their interpretation.

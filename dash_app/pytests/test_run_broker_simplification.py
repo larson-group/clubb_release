@@ -64,15 +64,13 @@ def test_api_jax_batch_copy_commands_preserve_launch_target(tmp_path, monkeypatc
                     "jax_gpu": gpu, "jax_xla_prealloc": prealloc, "max_iters": 1,
                 }})
             command = shlex.split(scm_run_view(store.get(child["job_id"]))["command"])
-            modifier = ",xla_prealloc" if prealloc else ""
-            assert f"-jax={profile}{modifier}" in command
+            assert any(arg == "-jax=" + profile or arg.startswith("-jax=" + profile + ",") for arg in command)
             assert command[command.index("-max_iters") + 1] == "1"
             assert command[-1] == child["case"]
             if gpu:
-                assert f"CUDA_VISIBLE_DEVICES={gpu}" in command
-                assert f"XLA_PYTHON_CLIENT_PREALLOCATE={str(prealloc).lower()}" in command
+                assert f"-jax=gpu,device={gpu},prealloc_gpu_mem={str(prealloc).lower()}" in command
             else:
-                assert not any(part.startswith("CUDA_VISIBLE_DEVICES=") for part in command)
+                assert not any(",device=" in part for part in command if part.startswith("-jax="))
 
 
 def _native_output_resolver(root):

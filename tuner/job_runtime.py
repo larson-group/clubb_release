@@ -10,6 +10,7 @@ import subprocess
 import sys
 
 from tuner.paths import REPO_ROOT
+from clubb_jax.run_jax import runtime_arguments, runtime_selection
 from tuner.status import (
     DEFAULT_KEEPALIVE_ACTION,
     DEFAULT_KEEPALIVE_TIMEOUT_SECONDS,
@@ -17,6 +18,7 @@ from tuner.status import (
     read_json_or_default,
     renew_keepalive,
     write_control,
+    write_job_error,
 )
 
 
@@ -49,6 +51,25 @@ def _pythonpath_runtime_entries() -> list[str]:
         entries.append(str(api_root))
     entries.append(str(REPO_ROOT))
     return list(dict.fromkeys(entries))
+
+
+def tuner_runtime_settings(request: dict) -> dict:
+    """Translate the saved request through the public JAX selection interface."""
+    backend = str(request.get("backend", "fortran")).strip().lower()
+    if backend not in {"jax", "fortran"}:
+        raise ValueError(f"Unknown tuner backend: {backend}")
+    selection = runtime_selection(
+        str(request.get("jax_options", "cpu")) if backend == "jax" else "cpu",
+        device=request.get("jax_gpu", ""),
+        prealloc_gpu_mem=request.get("jax_xla_prealloc"),
+    )
+    settings = {
+        "implementation": "jax" if backend == "jax" else "fortran",
+        "jax_profile": selection["profile"],
+        "jax_gpu": selection["device"],
+        "jax_xla_prealloc": selection["prealloc_gpu_mem"],
+    }
+    return settings
 
 
 def tuner_worker_env() -> dict:
@@ -211,14 +232,29 @@ class TunerJob:
             write_control(self.control_path, stop_requested=False)
         log_handle = open(self.log_path, "a" if resume else "w", encoding="utf-8")
         try:
+            request = read_json_or_default(self.request_path, {})
+            command = [sys.executable, "-m", "tuner.tune_clubb", "-job_dir", str(self.job_dir)]
+            if str(request.get("backend", "")).strip().lower() == "jax":
+                command = [
+                    sys.executable, str(REPO_ROOT / "clubb_jax" / "run_jax.py"),
+                    *runtime_arguments(
+                        request.get("jax_options", "cpu"),
+                        device=request.get("jax_gpu", ""),
+                        prealloc_gpu_mem=request.get("jax_xla_prealloc"),
+                    ),
+                    "-module=tuner.tune_clubb", "-job_dir", str(self.job_dir),
+                ]
             self.proc = subprocess.Popen(
-                [sys.executable, "-m", "tuner.tune_clubb", "-job_dir", str(self.job_dir)],
+                command,
                 cwd=str(REPO_ROOT),
                 env=tuner_worker_env(),
                 stdout=log_handle,
                 stderr=subprocess.STDOUT,
                 text=True,
             )
+        except Exception as exc:
+            write_job_error(self.status_path, self.results_path, str(exc))
+            raise
         finally:
             log_handle.close()
         self.pid = self.proc.pid
@@ -227,7 +263,16 @@ class TunerJob:
     def poll(self) -> int | None:
         if self.proc is None:
             return None
-        return self.proc.poll()
+        returncode = self.proc.poll()
+        if returncode is not None:
+            status = read_json_or_default(self.status_path, {})
+            if status.get("state") not in TERMINAL_STATES:
+                write_job_error(
+                    self.status_path, self.results_path,
+                    f"Tuner exited with code {returncode} before writing terminal results; "
+                    f"see {self.log_path}",
+                )
+        return returncode
 
     def request_stop(self) -> None:
         """Request graceful stop through the file-backed control API."""
@@ -265,7 +310,7 @@ class TunerJob:
 
     def is_process_alive(self) -> bool:
         if self.proc is not None:
-            return self.proc.poll() is None
+            return self.poll() is None
         if not self.pid:
             return False
         try:

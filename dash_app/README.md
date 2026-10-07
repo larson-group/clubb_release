@@ -80,8 +80,9 @@ See the [JAX guide](../clubb_jax/README.md#gpu-running) for
 hardware requirements and command-line equivalents.
 
 Fortran and Python use the selected compiled build, which you can change or
-rebuild through the chooser. Tune uses its own Fortran/Python worker regardless
-of the JAX selection.
+rebuild through the chooser. New Tune jobs use the selected Fortran or JAX loss
+backend. Each saved revision keeps its runtime choice; Continue and result
+reruns use that saved choice even if the chooser changes later.
 
 ## Basic Workflows
 
@@ -91,8 +92,9 @@ of the JAX selection.
   compare saved profiles. See [profiling](#profiling) for details.
 - **Plots tab:** load one or more CLUBB output directories and make profile,
   time-height, time-series, budget, and subcolumn plots from the NetCDF files.
-- **Tune tab:** configure and monitor tuning runs. This requires a
-  [Python build](#python-runs-and-tuning).
+- **Tune tab:** configure and monitor tuning runs. Choose JAX CPU/GPU in the
+  runtime chooser, or use a [Python build](#python-runs-and-tuning) for the
+  Fortran loss backend.
 - **Tutorial tab:** explore CLUBB concepts through interactive lessons,
   including a guide to the model equations and the ADG1 two-Gaussian explorer.
 - **Reports tab:** browse saved investigation reports from `doc/reports/`,
@@ -105,7 +107,9 @@ of the JAX selection.
 
 ### Python runs and tuning
 
-Python runs and Tune jobs require CLUBB's Python/F2PY interface. Build it with:
+Python SCM runs and Fortran-backed Tune jobs require CLUBB's Python/F2PY
+interface. JAX tuning uses its managed environment and needs no Fortran build.
+Build the Fortran interface with:
 
 ```bash
 ./compile.py -python

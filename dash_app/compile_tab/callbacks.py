@@ -563,7 +563,7 @@ def render_jax_profile_info(profile, info, *, source_error="", compact=False, la
 def render_build_selector_help(runtime_info):
     """Use the same explanatory notecard as the plot-card help controls."""
     body = information_body(
-        "Choose how CLUBB runs in Run and Profile. Your choice is remembered; "
+        "Choose how CLUBB runs in Run, Profile and new Tune jobs. Your choice is remembered; "
         "jobs already running won't change.",
         [
             {"heading": "Choose a version", "bullets": [
@@ -579,7 +579,7 @@ def render_build_selector_help(runtime_info):
                 "Leave this unchecked when sharing the GPU with other apps. Checking it reserves memory up front, which can help performance but leaves less for other apps. It's available only after selecting a compatible GPU and has no effect on CPU runs.",
             ]},
             {"heading": "Using Tune?", "paragraphs": [
-                "Tune uses Fortran regardless of this chooser.",
+                "New Tune jobs use the selected Fortran or JAX backend. Saved revisions and result reruns retain their original runtime.",
             ]},
         ],
     )
@@ -661,7 +661,7 @@ def render_compact_build_selector(
                     className="compile-run-implementation-choices",
                 ),
                 html.Div(
-                    "Tune uses the Fortran worker.",
+                    "Tune uses the selected Fortran or JAX loss backend.",
                     className="compile-run-implementation-note",
                 ) if trigger_id == "tune-selected-build-badge" else None,
             ],

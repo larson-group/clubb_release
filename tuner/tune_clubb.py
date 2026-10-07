@@ -4,15 +4,54 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 from pathlib import Path
 import sys
 import traceback
 
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from utilities.setup_python_venv import ensure_python_venv
+    # Choose the runtime before importing scheduler dependencies. Direct
+    # job-directory calls use the same managed JAX launcher as TunerJob.
+    bootstrap_parser = argparse.ArgumentParser(add_help=False)
+    bootstrap_parser.add_argument("-job_dir")
+    bootstrap_args, _ = bootstrap_parser.parse_known_args()
+    try:
+        raw_request = (
+            json.loads((Path(bootstrap_args.job_dir) / "request.json").read_text())
+            if bootstrap_args.job_dir else {}
+        )
+    except (OSError, ValueError):
+        raw_request = {}  # Normal error reporting below retains the job results.
+    if not isinstance(raw_request, dict):
+        raw_request = {}  # Let load_request report the invalid saved JSON below.
+    if str(raw_request.get("backend", "")).strip().lower() == "jax":
+        if os.environ.get("_CLUBB_JAX_ENVIRONMENT_PYTHON") != sys.executable:
+            from tuner.job_runtime import tuner_worker_env
+            from clubb_jax.run_jax import runtime_arguments
+            from tuner.status import write_job_error
 
-    ensure_python_venv()
+            try:
+                os.execve(sys.executable, [
+                    sys.executable,
+                    str(Path(__file__).resolve().parents[1] / "clubb_jax" / "run_jax.py"),
+                    *runtime_arguments(
+                        str(raw_request.get("jax_options", "cpu")),
+                        device=raw_request.get("jax_gpu", ""),
+                        prealloc_gpu_mem=raw_request.get("jax_xla_prealloc"),
+                    ),
+                    "-module=tuner.tune_clubb", *sys.argv[1:],
+                ], tuner_worker_env())
+            except Exception as exc:
+                job_dir = Path(bootstrap_args.job_dir)
+                write_job_error(job_dir / "status.json", job_dir / "results.json", str(exc))
+                print(f"ERROR: {exc}", file=sys.stderr)
+                raise SystemExit(1) from exc
+    else:
+        from utilities.setup_python_venv import ensure_python_venv
+
+        ensure_python_venv()
 
 from tuner.request import load_request
 from tuner.status import (

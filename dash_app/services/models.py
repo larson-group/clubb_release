@@ -5,12 +5,30 @@ from __future__ import annotations
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from dash_app.shared.jax_device import GPU_UUID_PATTERN
+from clubb_jax.run_jax import runtime_selection
 from dash_app.shared.stats import validate_stats_selection
 
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+
+class JaxDeviceOptions(StrictModel):
+    """Saved device preferences, validated by the JAX launcher."""
+
+    jax_gpu: str = Field(
+        default="", max_length=128,
+        description="Device identifier returned by JAX runtime discovery; empty inherits the environment.",
+    )
+    jax_xla_prealloc: bool | None = Field(
+        default=None, strict=True,
+        description="GPU memory preallocation override; null preserves the launcher default/environment.",
+    )
+
+    @field_validator("jax_gpu")
+    @classmethod
+    def _device_selection(cls, value: str) -> str:
+        return runtime_selection("gpu", device=value)["device"]
 
 
 class TimeWindow(StrictModel):
@@ -37,13 +55,11 @@ class ScmRunOptions(StrictModel):
     tout: float | None = Field(default=None, gt=0.0)
 
 
-class ScmRunRequest(StrictModel):
+class ScmRunRequest(JaxDeviceOptions):
     request_id: str = Field(min_length=8, max_length=128)
     case: str = Field(pattern=r"^[A-Za-z0-9_]+$")
     implementation: Literal["fortran", "python", "jax"] = "fortran"
     jax_profile: Literal["cpu", "gpu"] = "cpu"
-    jax_gpu: str = Field(default="", pattern=GPU_UUID_PATTERN, description="Full GPU UUID; empty inherits the server environment.")
-    jax_xla_prealloc: bool | None = Field(default=None, strict=True, description="GPU preallocation override; null preserves the launcher default/environment.")
     stats_file: str = "standard_stats.in"
     config: str = Field(default="default", pattern=r"^[A-Za-z0-9_.-]+$")
     overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
@@ -56,15 +72,13 @@ class ScmRunRequest(StrictModel):
         return validate_stats_selection(value)
 
 
-class ScmRunBatchRequest(StrictModel):
+class ScmRunBatchRequest(JaxDeviceOptions):
     """One idempotent request for a shared-output group of SCM cases."""
 
     request_id: str = Field(min_length=8, max_length=128)
     cases: list[str] = Field(min_length=1, max_length=64)
     implementation: Literal["fortran", "python", "jax"] = "fortran"
     jax_profile: Literal["cpu", "gpu"] = "cpu"
-    jax_gpu: str = Field(default="", pattern=GPU_UUID_PATTERN, description="Full GPU UUID; empty inherits the server environment.")
-    jax_xla_prealloc: bool | None = Field(default=None, strict=True, description="GPU preallocation override; null preserves the launcher default/environment.")
     stats_file: str = "standard_stats.in"
     config: str = Field(default="default", pattern=r"^[A-Za-z0-9_.-]+$")
     overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
@@ -104,8 +118,10 @@ class ParameterRange(StrictModel):
     max: float
 
 
-class TuneRequest(StrictModel):
+class TuneRequest(JaxDeviceOptions):
     request_id: str = Field(min_length=8, max_length=128)
+    backend: Literal["fortran", "jax"] = "fortran"
+    jax_options: str = Field(default="cpu", max_length=512)
     cases: list[TuneCaseRequest | str] = Field(min_length=1)
     parameter_ranges: list[ParameterRange] = Field(min_length=1, max_length=24)
     fields: list[str] = Field(default_factory=list, max_length=128)
@@ -128,6 +144,12 @@ class TuneRequest(StrictModel):
     time_window_aggregation_scope: Literal["overall", "by_case"] = "overall"
     overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
 
+    @field_validator("jax_options")
+    @classmethod
+    def _runtime_options(cls, value: str) -> str:
+        runtime_selection(value)
+        return value
+
 
 class ProfileArtifactRequest(StrictModel):
     request_id: str = Field(min_length=8, max_length=128)
@@ -139,5 +161,7 @@ class ProfileArtifactRequest(StrictModel):
 
 class LeaderboardRerunRequest(StrictModel):
     request_id: str = Field(min_length=8, max_length=128)
+    workspace_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.-]+$")
+    revision_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.-]+$")
     mode: Literal["window", "complete"] = "window"
     max_results: int = Field(default=16, ge=1, le=16)

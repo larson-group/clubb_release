@@ -1014,7 +1014,7 @@ def test_leaderboard_rerun_is_idempotent_and_cancellable(monkeypatch, tmp_path):
     monkeypatch.setattr(
         actions,
         "run_tuning_loss",
-        lambda mode, max_results, *, job_id: launched.append((mode, max_results, job_id)) or {"status": "started", "run": {"run_id": "loss_123", "log_path": str(tmp_path / "loss.log")}},
+        lambda mode, max_results, *, job_id, **_kwargs: launched.append((mode, max_results, job_id)) or {"status": "started", "run": {"run_id": "loss_123", "log_path": str(tmp_path / "loss.log")}},
     )
     request = LeaderboardRerunRequest(request_id="leaderboard-request-123", mode="complete", max_results=2)
     first = actions.submit_leaderboard_rerun(request)

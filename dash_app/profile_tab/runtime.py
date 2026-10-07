@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import psutil
-from dash_app.shared.jax_device import jax_device_env, normalize_jax_gpu, jax_command_display
+from clubb_jax.run_jax import runtime_arguments, runtime_selection
 
 from utilities.time_clubb import REQUIRED_TIMER, parse_positive_int_list
 from utilities.timing_profiles import (
@@ -129,10 +129,12 @@ def normalize_profile_settings(settings: dict[str, Any]) -> dict[str, Any]:
     jax_profile = _clean(settings.get("jax_profile")).lower() or "cpu"
     if jax_profile not in {"cpu", "gpu"}:
         raise ValueError("JAX profile must be CPU or GPU")
-    jax_gpu = normalize_jax_gpu(settings.get("jax_gpu"))
     jax_xla_prealloc = settings.get("jax_xla_prealloc")
-    jax_device_env({"implementation": implementation, "jax_profile": jax_profile,
-                    "jax_gpu": jax_gpu, "jax_xla_prealloc": jax_xla_prealloc}, {})
+    selection = runtime_selection(
+        jax_profile if implementation == "jax" else "cpu",
+        device=settings.get("jax_gpu", ""), prealloc_gpu_mem=jax_xla_prealloc,
+    )
+    jax_gpu = selection["device"]
     if executable and implementation != "fortran":
         raise ValueError("an explicit executable can only be used with Fortran")
     executable_path = Path(executable).expanduser() if executable else None
@@ -152,7 +154,8 @@ def normalize_profile_settings(settings: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(f"additional run_scm.py arguments are invalid: {exc}") from exc
     managed = (
         "-multicol", "--multicol", "-batch_size", "--batch_size", "-output_dir", "--out_dir",
-        "-python", "--python", "-jax", "--jax", "-exe", "--exe", "-install_dir", "--install_dir",
+        "-python", "--python", "-jax", "--jax",
+        "-exe", "--exe", "-install_dir", "--install_dir",
     )
     for token in extra_args:
         if token in managed or any(token.startswith(option + "=") for option in managed):
@@ -219,8 +222,10 @@ def profile_command(settings: dict[str, Any]) -> list[str]:
         if normalized["implementation"] == "python":
             command.append("-python")
         elif normalized["implementation"] == "jax":
-            modifier = ",xla_prealloc" if normalized["jax_xla_prealloc"] is True else ""
-            command.append(f"-jax={normalized['jax_profile']}{modifier}")
+            command.extend(runtime_arguments(
+                normalized["jax_profile"], device=normalized["jax_gpu"],
+                prealloc_gpu_mem=normalized["jax_xla_prealloc"], scm=True,
+            ))
     if (
         normalized["install_dir"]
         and not normalized["executable"]
@@ -232,7 +237,7 @@ def profile_command(settings: dict[str, Any]) -> list[str]:
 
 
 def profile_command_display(settings: dict[str, Any]) -> str:
-    return jax_command_display(profile_command(settings), settings)
+    return shlex.join(profile_command(settings))
 
 
 def summary_run_ids(output_dir: Path) -> list[str]:
@@ -327,7 +332,6 @@ def start_profile_process(settings: dict[str, Any]) -> dict[str, Any]:
         process = subprocess.Popen(
             command,
             cwd=REPO_ROOT,
-            env=jax_device_env(normalized),
             stdout=log_file,
             stderr=subprocess.STDOUT,
             start_new_session=True,
@@ -345,7 +349,7 @@ def start_profile_process(settings: dict[str, Any]) -> dict[str, Any]:
         "start_time": time.time(),
         "settings": normalized,
         "command": command,
-        "command_display": jax_command_display(command, normalized),
+        "command_display": shlex.join(command),
         "output": normalized["output"],
         "log": log_path,
         "existing_run_ids": existing_run_ids,

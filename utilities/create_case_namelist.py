@@ -280,6 +280,30 @@ def resolve_override_pairs(override, case_name=None):
             for key, item in settings.items()]
 
 
+def filter_tuned_overrides(override, case_names, tuned_names):
+    """Retain case-resolved physics overrides without replacing tuned columns."""
+    tuned_names = {str(name).lower() for name in tuned_names}
+    resolved_overrides = {
+        case_name: resolve_override_pairs(override, case_name)
+        for case_name in case_names
+    }
+    if not any(
+        name.rsplit(".", 1)[-1].lower() in tuned_names
+        for pairs in resolved_overrides.values()
+        for name, _ in pairs
+    ):
+        return override
+    remaining_overrides = {
+        case_name: {
+            name: value
+            for name, value in pairs
+            if name.rsplit(".", 1)[-1].lower() not in tuned_names
+        }
+        for case_name, pairs in resolved_overrides.items()
+    }
+    return json.dumps(remaining_overrides) if any(remaining_overrides.values()) else ""
+
+
 def override_value(override_string, clubb_in_text, case_name=None):
     """
     Apply assignment strings or case-selected JSON overrides to the aggregate text.
