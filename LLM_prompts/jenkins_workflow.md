@@ -34,6 +34,9 @@ unmaintained or multi-year cases are different validation scopes.
   build and output. Confirm isolation rather than sharing mutable workspaces.
 - Use current CLI conventions and the shared dependency bootstrap in the script
   entry point. Avoid copying venv setup into each caller to repair one script.
+- Keep commands easy to reproduce at a terminal: list cases directly on run
+  lines rather than in Groovy or environment variables. Let Pyplotgen detect
+  cases from its input folders unless an explicit filter is needed.
 - Keep GPU run stages at one worker. Use the approved job/resource limit for
   long CPU tests; Pyplotgen retains its own automatic process policy.
 - Indent continuations and explain unusual commands with concise one-line

@@ -51,6 +51,45 @@ pipeline {
             }
           }
         }
+        stage('Plot JAX vs Fortran') {
+          agent any
+          steps {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+              script {
+                withPlotMetadata {
+                  sh '''
+                    source /etc/profile.d/larson-group.sh
+                    module load intel netcdf-fortran
+                    ./compile.py -debug
+                  '''
+                  // Native cases with ported features; keep their settings and full durations.
+                  sh '''
+                    run_scripts/run_scm_all.py -workers 4 \
+                      -cases arm atex bomex clex9_oct14 \
+                        dycoms2_rf01 dycoms2_rf01_fixed_sst dycoms2_rf02_do \
+                        dycoms2_rf02_ds dycoms2_rf02_nd dycoms2_rf02_so \
+                        fire gabls2 gabls3_night jun25_altocu lba \
+                        neutral nov11_altocu rico rico_silhs wangara \
+                      -output_dir jax_vs_fortran/fortran_${commit}
+                    run_scripts/run_scm_all.py -jax=cpu -workers 4 \
+                      -cases arm atex bomex clex9_oct14 \
+                        dycoms2_rf01 dycoms2_rf01_fixed_sst dycoms2_rf02_do \
+                        dycoms2_rf02_ds dycoms2_rf02_nd dycoms2_rf02_so \
+                        fire gabls2 gabls3_night jun25_altocu lba \
+                        neutral nov11_altocu rico rico_silhs wangara \
+                      -output_dir jax_vs_fortran/jax_${commit}
+                    python3 postprocessing/pyplotgen/pyplotgen.py -les \
+                      -clubb output/jax_vs_fortran/fortran_${commit} output/jax_vs_fortran/jax_${commit} \
+                      -output_dir output/${commit}_jax_vs_fortran
+                  '''
+                  sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_jax_plots/${branch_name}'"
+                  sh "scp -r output/${commit}_jax_vs_fortran carson:/home/pub/web_plots/clubb_jax_plots/${branch_name}"
+                  sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_jax_plots/'"
+                }
+              }
+            }
+          }
+        }
         stage('Plot CPU vs OpenACC') {
           agent any
           steps {
