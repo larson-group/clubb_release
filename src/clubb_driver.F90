@@ -3284,7 +3284,7 @@ module clubb_driver
 
     ! Re-run the parameter sanity checks when debugging so reruns with updated
     ! parameter sets are validated the same way as the initial setup.
-    if ( clubb_at_least_debug_level_api( 1 ) ) then
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
       call check_clubb_settings_api( ngrdcol,             & ! Intent(in)
                                      clubb_params,        & ! Intent(in)
                                      l_implemented,       & ! Intent(in)
