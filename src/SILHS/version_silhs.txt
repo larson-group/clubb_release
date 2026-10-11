@@ -1,0 +1,244 @@
+commit 9429ba2f18a79e7b17ef53bccc8f17af6649c3fd
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Oct 8 14:34:09 2026 -0500
+
+    Always do idiot-proofing of flags in check_clubb_settings_api
+    
+    Changed debug level check from 1 to 0 for parameter sanity checks.
+
+commit e92c2f24486a32610935ff4eede3512c67e313ea
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Oct 7 21:50:33 2026 -0500
+
+    Add JAX comparison plots
+
+commit 341cac040a0d352fd5a4da6a5938a86d7d06e332
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 7 18:51:22 2026 -0500
+
+    Run timestep sweep tests with JAX (#1384)
+    
+    Adding a jax run to the timestep test (now renamed timestep sweep because it's more descriptive).
+    
+    This was really slow on JAX at first - one trick was to add a compilation cache, so that different runs that only use different timesteps didn't need to be recompiled. From my undestanding this is super easy with jax, basically just set `JAX_COMPILATION_CACHE_DIR` to a directory the process can save compiled parts is all it takes, then the compiled parts can live there even after the processes dies, and future ones can reuse it.
+    
+    * Run existing timestep sweeps with the JAX runner
+    
+    * Explain the shared native and JAX timestep sweep behavior
+    
+    * Keep timestep checks aligned with current launcher and CLI conventions
+    
+    Select CPU explicitly in the bounded JAX stage and resolve optional output roots through the shared owner. Support standard single-dash help, reject ambiguous option abbreviations, and cover opaque runtime forwarding while preserving native defaults and exploratory status.
+    
+    Validate with 373 shared checks and four eight-step BOMEX/ATEX runs per backend at 60 and 600 seconds.
+    
+    * Rename the timestep sweep and run shared JAX cases at native defaults
+    
+    Select the 18 cases shared by the native sweep and JAX/Fortran comparison list. Remove Jenkins timestep and iteration overrides, update stage names and documentation, and preserve the sweep's stability-reporting behavior.
+    
+    Validate the selection and rename with 374 shared checks before live branch testing.
+    
+    * Reuse JAX compilations and parallelize case timestep sweeps
+    
+    Keep a backend-specific persistent cache outside the checkout and preserve explicit cache overrides. Run four isolated case sweeps, prioritize measured expensive cases, and print each completed report as a block while preserving timestep order and first-failure semantics.
+    
+    Validate cache reuse across fresh processes and cache clearing, scheduling/overlap/interruption contracts, 379 shared checks, and full 90-run cold-cache JAX/native matrices.
+
+commit 166ec211468128c37d8bb4b917ffac337bf80247
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 7 18:42:28 2026 -0500
+
+    Run JAX statistics consistency with an explicit rounding tolerance (#1385)
+    
+    This adds a jax jenkins stage for the statistics consistency test. This is the test that runs clubb with different batches sizes and averaging methods, e.g
+    - start by: run once with 60s output intervals all the way through
+    - test: running with 300s output intervals should give the same stats as manually averaging 5 steps of 60s output
+    - test: outputing only a "window" of stats data (like from timesteps 100-200 instead of whole run), should produce a window idendical to the 60s full output run
+    - test: running 16 columns at once should produce the same as running 16 columns in batches of 4 at a time
+    
+    In fortran these comparisons should be BFB (other than the manually averaging one, which is only close), but in jax, changing things like the batch size can cause optimizations to happen differently, which breaks BFBness and seems to cause differences larger than expected by fortran. For example, the threshold for the manual averaging test in fortran is 1e-12, but for the jax we need 1e-9 even for the batch test. I added a tolerance, `jax_tolerance`, that I left named after jax for now since that is the only current reason that flag exists.
+    
+    This difficulty with jax wasn't unexpected - we also have to compile the fortran with `-O0` to get this test working, also to disable optimizations. There just seems to be less control over how jax does that, so I went with a "relax the tolerance for this specific instance" approach.
+    
+    * Support reusable JAX driver state and runtime batches
+    
+    * Expose JAX in the strict statistics consistency workflow
+    
+    * Keep JAX lifecycle coverage with native driver tests and document its origins
+    
+    * Reference native driver and statistics owners in the JAX test workflow
+    
+    * Keep full Fortran statistics source paths in the test description
+    
+    * Mirror the native driver lifecycle test and compare complete JAX statistics
+    
+    * Run JAX driver extensions as an independent step in the lifecycle stage
+    
+    * Update the C8 comparison mutation for indexed parameter loading
+    
+    * Keep statistics windows within the capped native case duration
+    
+    * Allow explicit JAX statistics tolerance for JIT rounding differences
+
+commit 5f8b57f69c01c59fc3c4457178ae85d57894c1d9
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 7 18:22:04 2026 -0500
+
+    Add JSON case definitions and Dash case editor (#1389)
+    
+    This is mainly a dash update right now, but it adds json versions of our model files. Basically just 2 new files for that - each json stores default values then one entry for each case with overrides it is not default yet and the current system of defining cases is unchanged.
+    
+    
+    * Add JSON case definitions and Dash case editor
+    
+    * Simplify named case lookup and remove queued snapshots
+    
+    * Remove model validation from JSON case conversion
+
+commit 9a1b8b23408d3a5abe78ebae7dd1390755fa4fec
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 7 16:12:06 2026 -0500
+
+    Use JAX in tuner (#1383)
+    
+    This makes the JAX work through the new tuner, same sort of way the fortran does. Probably needs a little more testing but seems to be working properly now.
+    
+    * Support reusable JAX driver state and runtime batches
+    
+    * Add standalone JAX loss evaluation and consistency coverage
+    
+    * Keep standalone loss CLI coverage separate from tuning
+    
+    * Integrate JAX with managed tuner jobs and add bounded Jenkins coverage
+    
+    * Remove trailing whitespace from extracted loss CLI tests
+    
+    * Run JAX loss help checks in the JAX pytest suite
+    
+    * Keep JAX lifecycle coverage with native driver tests and document its origins
+    
+    * Document loss test scenarios, native counterparts and JAX extensions
+    
+    * Keep the native loss executable path intact in the test description
+    
+    * Explain managed tuning test ownership and native backend contracts
+    
+    * Mirror the native driver lifecycle test and compare complete JAX statistics
+    
+    * Run JAX driver extensions as an independent step in the lifecycle stage
+    
+    * Update the C8 comparison mutation for indexed parameter loading
+    
+    * Refresh JAX tuner integration for merged loss frontends
+    
+    Use the relocated standalone loss entry point and retain CLI checks only in their shared owner. Give each Jenkins tuning run a separate job directory so repeated builds can succeed.
+    
+    * Record invalid direct tuner requests as terminal errors
+    
+    Let the existing request and launcher error handlers report malformed JSON and non-string JAX options instead of crashing during bootstrap before writing job results.
+    
+    * Preserve winning parameter columns in tuner reruns
+    
+    Retain request physics overrides while excluding initialized values for tuned parameters. Window and full-case reruns now use the winning candidate values, including multiple columns and grouped override names.
+    
+    * Use the selected JAX runtime throughout Dash tuning
+    
+    Persist backend and per-job device settings through native and typed broker requests, saved revisions, continuation and result reruns. Reuse the launcher, shared device controls and rerun override resolver; supervise browser replay processes in the broker.
+    
+    * Allow run IDs in broker replay completion metadata
+    
+    Avoid a selector argument collision that killed the replay watcher before recording terminal state. Preserve run IDs and cancellation metadata while reporting completed jobs accurately.
+    
+    * Keep JAX device setup inside the launcher and backends
+    
+    Expose a standard-library selection interface and forward per-job device and preallocation settings through the SCM and tuner launch paths. Use the same backend configuration for discovery, provenance, and execution; remove GPU environment handling from Dash and the tuner.
+    
+    Validate with Dash/shared suites, focused launcher checks, a CPU tuning and replay workflow, and synthetic two-GPU discovery.
+    
+    * Forward device settings through the existing JAX selection option
+    
+    Extend the launcher-owned -options grammar with device=UUID and prealloc_gpu_mem=true|false, while retaining xla_prealloc compatibility. Remove the transient device-specific options from SCM and tuner scripts so they forward one opaque -jax value.
+    
+    Validate saved settings, discovery and replays through the same public interface; verify CPU tuning metrics remain identical.
+
+commit 04ff5df702bc2ad372325353ee19dde5a2fc3fc1
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Oct 6 22:47:12 2026 -0500
+
+    Port standalone JAX loss evaluation and consistency checks (#1382)
+    
+    This adds the capability for the jax to run and compute loss vs les data the same as fortran does. Fortran uses the "loss driver" which does this, and has some additional testing code and a clubb_standalone_loss program that supports that, so this was basically just porting more of the high level fortran code to jax and hooking it up with some of the high level python scripts the tuner uses.
+    
+    
+    * Support reusable JAX driver state and runtime batches
+    
+    * Add standalone JAX loss evaluation and consistency coverage
+    
+    * Keep standalone loss CLI coverage separate from tuning
+    
+    * Remove trailing whitespace from extracted loss CLI tests
+    
+    * Run JAX loss help checks in the JAX pytest suite
+    
+    * Keep JAX lifecycle coverage with native driver tests and document its origins
+    
+    * Document loss test scenarios, native counterparts and JAX extensions
+    
+    * Keep the native loss executable path intact in the test description
+    
+    * Mirror the native driver lifecycle test and compare complete JAX statistics
+    
+    * Run JAX driver extensions as an independent step in the lifecycle stage
+    
+    * Update the C8 comparison mutation for indexed parameter loading
+    
+    * Reject unsupported loss restarts before opening model resources
+    
+    * Clean up merged loss launcher state and document early restart rejection
+    
+    * Move loss frontends and tests out of the tuner package
+    
+    Call the existing Fortran Python API directly from its installed standalone loss frontend, and keep the JAX standalone frontend with its source port. Share unchanged table formatting, relocate lifecycle and CLI coverage, and update runners and documentation.
+
+commit 7666fd0f4e1bf2c8c46194dcbaa31fedf8f3c824
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Oct 6 17:31:37 2026 -0500
+
+    Port JAX restart initialization and test normal and SILHS continuation (#1381)
+    
+    This makes jax restarts work. Also adding jax restart test stages in the existing jenkins restart test.
+    
+    * Port JAX restart initialization and exercise native and SILHS restarts
+    
+    * Describe restart validation and dependencies for the focused PR
+    
+    * Describe JAX restart scenarios and their native source equivalents
+    
+    * Keep JAX restart validation in the shared harness and exercise distinct columns
+
+commit 56e1502fbdd1be881a4c3ae1a2a9570dfc8615ab
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Oct 6 16:39:37 2026 -0500
+
+    Support reusable JAX driver initialization and runtime batches (#1380)
+    
+    This is just getting the jax driver to be more in line with fortran. It was lacking features like being able to start/stop at a certain timestep. Certain driver tests were also missing, which got added and included in the driver jenkins test.
+    
+    
+    * Support reusable JAX driver state and runtime batches
+    
+    * Keep JAX lifecycle coverage with native driver tests and document its origins
+    
+    * Mirror the native driver lifecycle test and compare complete JAX statistics
+    
+    * Run JAX driver extensions as an independent step in the lifecycle stage
+    
+    * Update the C8 comparison mutation for indexed parameter loading
+
+commit 350a98e42b5a193c8471cc67c288bce95e7f7ac0
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Oct 5 18:50:16 2026 -0500
+
+    Prune inherited JAX pytests and remove binding dependencies (#1379)
+    
+    This just prunes lots of outdated and unneccesary pytests. These are all LLM generated and I just never went through them before. Probably still needs cleanup.
