@@ -559,7 +559,7 @@ def _prescribe_forcings(state: dict, itime: int, l_sample: bool = False):
         f_arr(state['exner']), f_arr(state['rho']), f_arr(state['rho_zm']), f_arr(state['thvm']),
         f_arr(state['gr'].zt),
         bool(state['l_t_dependent']), bool(state['l_ignore_forcings']), bool(state['l_input_xpwp_sfc']),
-        bool(state['l_modify_bc_for_cnvg_test']),
+        bool(state['l_modify_bc_for_cnvg_test']), bool(state['flags'].l_do_expldiff_rtm_thlm),
         int(state['flags'].saturation_formula), bool(state['flags'].l_add_dycore_grid),
         int(state['flags'].grid_remap_method), int(state['flags'].grid_adapt_in_time_method),
         f_arr(state['rtm']), f_arr(state['wm_zm']), f_arr(state['wm_zt']), f_arr(state['ug']),

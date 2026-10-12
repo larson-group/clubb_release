@@ -681,7 +681,7 @@ def advance_clubb_core(
             #   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
             #----------------------------------------------------------------
             result = clubb_api.advance_windm_edsclrm(
-                nzm, nzt, ngrdcol, edsclr_dim, gr, dt,
+                nzm, nzt, ngrdcol, edsclr_dim, gr, sclr_idx, dt,
                 wm_zt, Kh_zm, clubb_params,
                 ug, vg, um_ref, vm_ref,
                 wp2, up2, vp2, um_forcing, vm_forcing,

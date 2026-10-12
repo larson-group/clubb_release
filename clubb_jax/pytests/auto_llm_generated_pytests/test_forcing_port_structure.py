@@ -81,6 +81,7 @@ PRESCRIBE_FORCINGS_ARGUMENTS = [
     "sclr_dim",
     "edsclr_dim",
     "sclr_idx",
+    "l_do_expldiff_rtm_thlm",
     "runtype",
     "sfctype",
     "time_current",

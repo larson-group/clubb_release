@@ -4,14 +4,17 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 sys.path.insert(0, str(_REPO_ROOT / "clubb_python_api"))
 
 from clubb_python import clubb_api
 from clubb_python.derived_types.err_info import ErrInfo
+from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
+from clubb_python.derived_types.sclr_idx import SclrIdx
 
 
-def _setup_env(tmp_path: Path, ngrdcol: int = 1):
+def _setup_env(tmp_path: Path, ngrdcol: int = 1, edsclr_dim: int = 1):
     """Initialize grid and persistent UDT state used by advance_windm_edsclrm."""
     nzmax = 5
     dz = 100.0
@@ -45,7 +48,7 @@ def _setup_env(tmp_path: Path, ngrdcol: int = 1):
         grid_type=1,
         deltaz=np.full(ngrdcol, dz, dtype=np.float64),
         clubb_params=clubb_params,
-        nu_vert_res_dep=None,
+        nu_vert_res_dep=NuVertResDep.zeros(ngrdcol),
         l_prescribed_avg_deltaz=False,
     )
     err_info = ErrInfo(ngrdcol=ngrdcol)
@@ -65,7 +68,7 @@ def _setup_env(tmp_path: Path, ngrdcol: int = 1):
         zm=np.asfortranarray(gr.zm),
         err_info=err_info,
         sclr_dim=0,
-        edsclr_dim=1,
+        edsclr_dim=edsclr_dim,
         clubb_params=clubb_params,
         param_names=clubb_api.get_param_names(),
     )
@@ -83,6 +86,7 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, err_info):
 
     args = {
         "gr": gr,
+        "sclr_idx": SclrIdx(-1, -1, -1, -1, -1, -1),
         "nzm": nzm,
         "nzt": nzt,
         "ngrdcol": ngrdcol,
@@ -138,7 +142,7 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, err_info):
 
 def test_advance_windm_edsclrm_returns_finite_arrays(tmp_path):
     """advance_windm_edsclrm should run and return finite output arrays."""
-    gr, flags, clubb_params, nu_vert_res_dep, err_info = _setup_env(tmp_path, ngrdcol=1)
+    gr, flags, clubb_params, nu_vert_res_dep, err_info = _setup_env(tmp_path, ngrdcol=2)
     args = _make_args(gr, flags, clubb_params, nu_vert_res_dep, err_info)
 
     try:
@@ -155,7 +159,7 @@ def test_advance_windm_edsclrm_returns_finite_arrays(tmp_path):
 
 def test_advance_windm_edsclrm_updates_match_return_values(tmp_path):
     """Returned arrays should match in-place updated input buffers."""
-    gr, flags, clubb_params, nu_vert_res_dep, err_info = _setup_env(tmp_path, ngrdcol=1)
+    gr, flags, clubb_params, nu_vert_res_dep, err_info = _setup_env(tmp_path, ngrdcol=2)
     args = _make_args(gr, flags, clubb_params, nu_vert_res_dep, err_info)
 
     um_in = args["um"]
@@ -195,3 +199,99 @@ def test_advance_windm_edsclrm_updates_match_return_values(tmp_path):
     assert isinstance(err_info_out, ErrInfo)
     assert int(upwp_cl_num_out) >= args["upwp_cl_num"]
     assert int(vpwp_cl_num_out) >= args["vpwp_cl_num"]
+
+
+def _expldiff_args(tmp_path, thl_index, rt_index, enabled=True):
+    gr, flags, params, nu, err = _setup_env(tmp_path, ngrdcol=2, edsclr_dim=4)
+    args = _make_args(gr, flags, params, nu, err)
+    shape = (gr.ngrdcol, gr.nzt, 4)
+    args.update(
+        edsclr_dim=4,
+        sclr_idx=SclrIdx(-1, -1, -1, rt_index, thl_index, -1),
+        edsclrm=np.full(shape, 5.0, order="F"),
+        edsclrm_forcing=np.asfortranarray(np.broadcast_to([0.01, 0.02, 0.03, 0.04], shape)),
+        wpedsclrp=np.zeros((gr.ngrdcol, gr.nzm, 4), order="F"),
+        kh_zm=np.zeros((gr.ngrdcol, gr.nzm), order="F"),
+        p_in_pa=np.asfortranarray(np.broadcast_to(np.linspace(100000., 60000., gr.nzt), (gr.ngrdcol, gr.nzt))),
+        l_lmm_stepping=False,
+        l_do_expldiff_rtm_thlm=enabled,
+        fill_holes_type=0,
+    )
+    return args
+
+
+def _zero_copy_forcing(args, thl_index, rt_index):
+    """The driver gives the thlm/rtm copies no forcing under expldiff."""
+    args["edsclrm_forcing"][:, :, thl_index - 1] = 0.0
+    args["edsclrm_forcing"][:, :, rt_index - 1] = 0.0
+
+
+@pytest.mark.parametrize("thl_index,rt_index", [(1, 2), (2, 1), (1, 3), (4, 2)])
+def test_expldiff_uses_named_slots_and_preserves_other_forcing(tmp_path, thl_index, rt_index):
+    """Changing slot order must not change physics or suppress other tracers."""
+    args = _expldiff_args(tmp_path, thl_index, rt_index)
+    _zero_copy_forcing(args, thl_index, rt_index)
+    forcing = args["edsclrm_forcing"].copy()
+    expected = args["edsclrm"] + args["dt"] * forcing
+    expected[:, :, thl_index - 1] = args["thlm"]
+    expected[:, :, rt_index - 1] = args["rtm"]
+    try:
+        out = clubb_api.advance_windm_edsclrm(**args)
+        assert not np.any(out[-1].err_code == clubb_api.CLUBB_FATAL_ERROR)
+        np.testing.assert_allclose(out[4], 300., rtol=0, atol=1e-12)
+        np.testing.assert_allclose(out[5], 0.01, rtol=0, atol=1e-14)
+        np.testing.assert_allclose(out[6], expected, rtol=0, atol=1e-12)
+        np.testing.assert_array_equal(args["edsclrm_forcing"], forcing)
+    finally:
+        clubb_api.finalize_stats(err_info=args["err_info"])
+
+
+@pytest.mark.parametrize("forced_copy", ["thl", "rt"])
+def test_expldiff_rejects_forcing_on_copies_before_updating_state(tmp_path, forced_copy):
+    """thlm and rtm are already forced in advance_xm_wpxp; forcing the copies is an error."""
+    thl_index, rt_index = 1, 3
+    args = _expldiff_args(tmp_path, thl_index, rt_index)
+    _zero_copy_forcing(args, thl_index, rt_index)
+    index = thl_index if forced_copy == "thl" else rt_index
+    args["edsclrm_forcing"][1, 0, index - 1] = 1.0e-5  # second column, lowest level only
+    before = args["edsclrm"].copy()
+    try:
+        out = clubb_api.advance_windm_edsclrm(**args)
+        np.testing.assert_array_equal(
+            out[-1].err_code == clubb_api.CLUBB_FATAL_ERROR, [False, True]
+        )
+        np.testing.assert_array_equal(out[6], before)
+    finally:
+        clubb_api.finalize_stats(err_info=args["err_info"])
+
+
+@pytest.mark.parametrize("flux_copy", ["thl", "rt"])
+def test_expldiff_rejects_surface_flux_on_copies_before_updating_state(tmp_path, flux_copy):
+    """thlm and rtm already get their surface fluxes in advance_xm_wpxp."""
+    thl_index, rt_index = 1, 3
+    args = _expldiff_args(tmp_path, thl_index, rt_index)
+    _zero_copy_forcing(args, thl_index, rt_index)
+    index = thl_index if flux_copy == "thl" else rt_index
+    k_sfc = args["gr"].k_lb_zm
+    args["wpedsclrp"][:, k_sfc, 1] = 1.0e-3  # a surface flux on another tracer is fine
+    args["wpedsclrp"][1, k_sfc, index - 1] = 1.0e-5  # second column only
+    before = args["edsclrm"].copy()
+    try:
+        out = clubb_api.advance_windm_edsclrm(**args)
+        np.testing.assert_array_equal(
+            out[-1].err_code == clubb_api.CLUBB_FATAL_ERROR, [False, True]
+        )
+        np.testing.assert_array_equal(out[6], before)
+    finally:
+        clubb_api.finalize_stats(err_info=args["err_info"])
+
+
+def test_expldiff_disabled_keeps_all_scalar_forcing(tmp_path):
+    args = _expldiff_args(tmp_path, -1, -1, enabled=False)
+    expected = args["edsclrm"] + args["dt"] * args["edsclrm_forcing"]
+    try:
+        out = clubb_api.advance_windm_edsclrm(**args)
+        assert not np.any(out[-1].err_code == clubb_api.CLUBB_FATAL_ERROR)
+        np.testing.assert_allclose(out[6], expected, rtol=0, atol=1e-12)
+    finally:
+        clubb_api.finalize_stats(err_info=args["err_info"])

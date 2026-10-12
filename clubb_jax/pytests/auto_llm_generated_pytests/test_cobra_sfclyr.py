@@ -1,6 +1,7 @@
 """Regression checks for the COBRA surface-flux Fortran mirror."""
 
 import numpy as np
+import pytest
 
 from clubb_jax.src.Benchmark_cases.cobra import cobra_sfclyr
 from clubb_jax.src.Benchmark_cases import time_dependent_input
@@ -8,7 +9,8 @@ from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv
 from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
 
 
-def test_cobra_assigns_co2_heat_and_moisture_scalar_fluxes():
+@pytest.mark.parametrize("l_do_expldiff_rtm_thlm", [False, True])
+def test_cobra_assigns_co2_heat_and_moisture_scalar_fluxes(l_do_expldiff_rtm_thlm):
     time_dependent_input.time_sfc_given = np.linspace(0.0, 10.0, 49)
     time_dependent_input.sens_ht_given = np.linspace(100.0, 200.0, 49)
     time_dependent_input.latent_ht_given = np.linspace(50.0, 70.0, 49)
@@ -25,6 +27,7 @@ def test_cobra_assigns_co2_heat_and_moisture_scalar_fluxes():
         3,
         3,
         sclr_idx,
+        l_do_expldiff_rtm_thlm,
         5.0,
         np.array([20.0, 20.0]),
         rho,
@@ -41,6 +44,11 @@ def test_cobra_assigns_co2_heat_and_moisture_scalar_fluxes():
     np.testing.assert_allclose(passive[:, 1], expected_moisture, rtol=0.0, atol=0.0)
     np.testing.assert_allclose(passive[:, 2], expected_heat, rtol=0.0, atol=0.0)
     np.testing.assert_allclose(eddy[:, 0], expected_co2, rtol=0.0, atol=0.0)
-    np.testing.assert_allclose(eddy[:, 1], expected_heat, rtol=0.0, atol=0.0)
-    np.testing.assert_allclose(eddy[:, 2], expected_moisture, rtol=0.0, atol=0.0)
+    if l_do_expldiff_rtm_thlm:
+        # The thlm/rtm copies already get their surface fluxes in advance_xm_wpxp.
+        np.testing.assert_array_equal(eddy[:, 1], 0.0)
+        np.testing.assert_array_equal(eddy[:, 2], 0.0)
+    else:
+        np.testing.assert_allclose(eddy[:, 1], expected_heat, rtol=0.0, atol=0.0)
+        np.testing.assert_allclose(eddy[:, 2], expected_moisture, rtol=0.0, atol=0.0)
     np.testing.assert_array_equal(temperature, np.array([285.0, 285.0]))

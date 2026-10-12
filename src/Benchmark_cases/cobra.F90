@@ -15,6 +15,7 @@ module cobra
 
   !-----------------------------------------------------------------------
   subroutine cobra_sfclyr( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
+                           l_do_expldiff_rtm_thlm, &
                            time, z, rho_sfc, thlm_sfc, ubar, & 
                            wpthlp_sfc, wprtp_sfc, ustar, & 
                            wpsclrp_sfc, wpedsclrp_sfc, T_sfc )
@@ -30,7 +31,8 @@ module cobra
   !-----------------------------------------------------------------------
 
   use constants_clubb, only: &
-    grav ! Variable(s)
+    grav, & ! Variable(s)
+    zero
 
   use interpolation, only: &
     linear_interp_factor
@@ -76,6 +78,10 @@ module cobra
   type (sclr_idx_type), intent(in) :: &
     sclr_idx
 
+  logical, intent(in) :: &
+    l_do_expldiff_rtm_thlm ! thlm/rtm eddy scalars are copies diffused in
+                           ! advance_windm_edsclrm
+
   real(kind=time_precision), intent(in) ::  & 
     time      ! Current time                [s]
 
@@ -111,8 +117,10 @@ module cobra
 
   real( kind = core_rknd ) :: &
     CO2_flx, &
-    CO2_flx2, &
     T_sfc_calc
+
+  real( kind = core_rknd ), dimension(ngrdcol) :: &
+    CO2_flx2       ! CO2 surface flux in natural units [ppmv m/s]
 
   ! COBRA roughness height
   ! real, parameter :: z0 = 0.035_core_rknd  ! ARM momentum roughness height
@@ -120,6 +128,7 @@ module cobra
 
   !--------------------- Begin Code ---------------------
 
+  !$acc enter data create( CO2_flx2 )
 
   ! Compute heat and moisture fluxes from ARM data in (W/m2)
 
@@ -158,7 +167,7 @@ module cobra
     !       The units are:  10^6 * [ mol (CO2) / mol (dry air) ].
     !       w'CO2' = (Flux) * [ M (dry air) / rho (dry air) ];
     !       where M is the molecular weight of dry air.
-    CO2_flx2 = CO2_flx * ( M_da / rho_sfc(i) )
+    CO2_flx2(i) = CO2_flx * ( M_da / rho_sfc(i) )
 
     ! Heat flux in units of (m2/s3) (needed by diag_ustar)
     bflx = grav / thlm_sfc(i) * heat_flx2
@@ -175,7 +184,7 @@ module cobra
   if ( sclr_dim > 0 ) then
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      if ( sclr_idx%iisclr_CO2 > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_CO2) = CO2_flx2
+      if ( sclr_idx%iisclr_CO2 > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_CO2) = CO2_flx2(i)
       if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_thl) = wpthlp_sfc(i)
       if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(i,sclr_idx%iisclr_rt)  = wprtp_sfc(i)
     end do
@@ -184,11 +193,22 @@ module cobra
   if ( edsclr_dim > 0 ) then
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      if ( sclr_idx%iiedsclr_CO2 > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_CO2) = CO2_flx2
-      if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = wpthlp_sfc(i)
-      if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = wprtp_sfc(i)
+      if ( sclr_idx%iiedsclr_CO2 > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_CO2) = CO2_flx2(i)
+
+      ! With l_do_expldiff_rtm_thlm, advance_windm_edsclrm puts copies of thlm
+      ! and rtm in these eddy scalars. thlm and rtm already get wpthlp_sfc and
+      ! wprtp_sfc in advance_xm_wpxp, so the copies must not get them again.
+      if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
+        if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = zero
+        if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = zero
+      else
+        if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_thl) = wpthlp_sfc(i)
+        if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(i,sclr_idx%iiedsclr_rt)  = wprtp_sfc(i)
+      end if
     end do
   end if
+
+  !$acc exit data delete( CO2_flx2 )
 
   return
 

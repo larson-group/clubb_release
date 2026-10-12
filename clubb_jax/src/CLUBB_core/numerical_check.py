@@ -16,12 +16,15 @@ Porting deviations:
 - The Fortran generic `check_nan` has scalar, 1D, and 2D implementations. JAX
   uses one broadcasting implementation because `jnp.isfinite` handles all
   ranks used by the port.
-- `check_clubb_settings_api` is kept as a compatibility wrapper because the
-  JAX driver rejects unsupported runtime options elsewhere. The model flag
-  constants used by the Fortran routine are still mirrored below so dispatch
-  values remain source-grounded.
+- `check_clubb_settings_api` ports the parameter checks and the
+  l_do_expldiff_rtm_thlm eddy-scalar checks. Its other flag checks are left
+  out because the JAX driver rejects unsupported runtime options elsewhere.
+  The model flag constants used by the Fortran routine are still mirrored
+  below so dispatch values remain source-grounded.
 """
 
+
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -370,18 +373,41 @@ def invalid_model_arrays(**arrays):
     return False
 
 
-def check_clubb_settings(*, err_info, ngrdcol, params, **kwargs):
+def check_clubb_settings(*, err_info, ngrdcol, edsclr_dim, sclr_idx, params, config_flags, **kwargs):
     """Subroutine to set up the model for execution.
 
     References:
       None
 
     Parameter validation is the first operation in current Fortran.  The
-    remaining flag and mixed-setting checks are still handled by the JAX
-    driver's supported-feature gates.
+    l_do_expldiff_rtm_thlm eddy-scalar checks are ported; the remaining flag
+    and mixed-setting checks are still handled by the JAX driver's
+    supported-feature gates.
     """
     del kwargs
-    return check_parameters(ngrdcol, params, err_info)
+    err_info = check_parameters(ngrdcol, params, err_info)
+
+    # The l_do_expldiff_rtm_thlm flag explicitly diffuses copies of thlm and
+    # rtm that advance_windm_edsclrm stores in the eddy scalars
+    # sclr_idx%iiedsclr_thl and sclr_idx%iiedsclr_rt.  With fewer than two
+    # eddy scalars there is nowhere to store the copies, so the flag has no
+    # effect.
+    if config_flags.l_do_expldiff_rtm_thlm and edsclr_dim > 1:
+
+        # The copies of thlm and rtm need distinct, valid eddy-scalar slots.
+        if (sclr_idx.iiedsclr_thl < 1 or sclr_idx.iiedsclr_thl > edsclr_dim
+                or sclr_idx.iiedsclr_rt < 1 or sclr_idx.iiedsclr_rt > edsclr_dim
+                or sclr_idx.iiedsclr_thl == sclr_idx.iiedsclr_rt):
+            print("l_do_expldiff_rtm_thlm = T requires distinct"
+                  " iiedsclr_thl and iiedsclr_rt in 1:edsclr_dim.", file=sys.stderr)
+            print("iiedsclr_thl = ", sclr_idx.iiedsclr_thl, file=sys.stderr)
+            print("iiedsclr_rt = ", sclr_idx.iiedsclr_rt, file=sys.stderr)
+            print("edsclr_dim = ", edsclr_dim, file=sys.stderr)
+            print("Fatal error in check_clubb_settings_api", file=sys.stderr)
+            # General error -> set all entries to clubb_fatal_error
+            return err_info.set_fatal()
+
+    return err_info
 
 
 __all__ = [

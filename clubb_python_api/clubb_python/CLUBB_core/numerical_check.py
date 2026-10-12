@@ -11,6 +11,8 @@ from clubb_python.derived_types.err_info import ErrInfo
 from clubb_python.derived_types.err_info_converter import get_fortran_err_info, set_fortran_err_info
 from clubb_python.derived_types.pdf_params import pdf_parameter
 from clubb_python.derived_types.pdf_params_converter import set_fortran_pdf_params
+from clubb_python.derived_types.sclr_idx import SclrIdx
+from clubb_python.derived_types.sclr_idx_converter import set_fortran_sclr_idx
 
 
 def _parameterization_profile_arr(value, ngrdcol: int):
@@ -41,6 +43,8 @@ def calculate_spurious_source(
 
 def check_clubb_settings(
     ngrdcol: int,
+    edsclr_dim: int,
+    sclr_idx: SclrIdx,
     params,
     l_implemented: bool,
     l_input_fields: bool,
@@ -48,10 +52,11 @@ def check_clubb_settings(
     err_info: ErrInfo,
 ):
     """Validate the complete CLUBB configuration, including parameters."""
+    set_fortran_sclr_idx(sclr_idx)
     set_fortran_config_flags(clubb_config_flags)
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_check_clubb_settings(
-        f_arr(params), l_implemented, l_input_fields, ngrdcol=int(ngrdcol))
+        int(edsclr_dim), f_arr(params), l_implemented, l_input_fields, ngrdcol=int(ngrdcol))
     return get_fortran_err_info()
 
 

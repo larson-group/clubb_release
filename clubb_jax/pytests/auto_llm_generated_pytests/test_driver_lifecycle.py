@@ -19,7 +19,7 @@ import pytest
 from clubb_jax.src import advance_clubb_to_end as driver
 from clubb_jax.src import clubb_case_initalization as initialization
 from clubb_jax.src.CLUBB_core.err_info import ErrInfo
-from clubb_jax.src.CLUBB_core import error_code
+from clubb_jax.src.CLUBB_core import SclrIdx, error_code
 from clubb_jax.src.CLUBB_core.parameters_tunable import (
     PNAME_IDX, calc_derived_params, init_clubb_params,
 )
@@ -61,7 +61,8 @@ def lifecycle_state(tmp_path, monkeypatch):
         ngrdcol=2, total_param_sets=4, clubb_params_all=params,
         clubb_params=params[:2], gr=_grid(),
         cfg=dict(grid_type=1, deltaz_nl=20.),
-        flags=SimpleNamespace(l_prescribed_avg_deltaz=False),
+        flags=SimpleNamespace(l_prescribed_avg_deltaz=False, l_do_expldiff_rtm_thlm=False),
+        edsclr_dim=0, sclr_idx=SclrIdx(-1, -1, -1, -1, -1, -1),
         stats_writer=_writer(tmp_path, total_columns=4), err_info=ErrInfo.initialized(2),
         iinit=4, thlm=jnp.ones((2, 3)),
         sampling_state=SimpleNamespace(prior_iter=3, perm=jnp.arange(4)),
@@ -204,7 +205,7 @@ def test_explicit_parameters_take_precedence_and_keep_runtime_shape(lifecycle_st
         initialization.set_case_initial_conditions(state, changed[:1])
 
 
-@pytest.mark.parametrize('debug_level,raises', [(-1, False), (0, False), (1, True), (2, True)])
+@pytest.mark.parametrize('debug_level,raises', [(-1, False), (0, True), (1, True), (2, True)])
 def test_reset_validates_replacement_parameters_at_source_debug_level(
     lifecycle_state, monkeypatch, debug_level, raises,
 ):

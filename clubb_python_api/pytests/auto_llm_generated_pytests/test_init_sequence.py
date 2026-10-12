@@ -14,6 +14,7 @@ sys.path.insert(0, str(_REPO_ROOT / "clubb_python_api"))
 
 from clubb_python.derived_types.config_flags import ConfigFlags, CONFIG_FLAG_NAMES
 from clubb_python.derived_types.err_info import ErrInfo
+from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
 from clubb_python.derived_types.pdf_params import implicit_coefs_terms
 from clubb_python.derived_types.pdf_params import pdf_parameter
 from clubb_python.derived_types.pdf_params import (
@@ -256,7 +257,7 @@ class TestCalcDerivedParams:
             gr=gr,
             ngrdcol=ngrdcol,
             grid_type=1, deltaz=deltaz_arr,
-            clubb_params=params, nu_vert_res_dep=None, l_prescribed_avg_deltaz=False,
+            clubb_params=params, nu_vert_res_dep=NuVertResDep.zeros(ngrdcol), l_prescribed_avg_deltaz=False,
         )
 
         assert np.isfinite(lmin), f"lmin not finite: {lmin}"
@@ -365,7 +366,7 @@ class TestFullInitSequence:
             gr=gr, ngrdcol=ngrdcol, grid_type=1,
             deltaz=np.full(ngrdcol, dz, dtype=np.float64),
             clubb_params=params,
-            nu_vert_res_dep=None,
+            nu_vert_res_dep=NuVertResDep.zeros(ngrdcol),
             l_prescribed_avg_deltaz=False,
         )
         assert lmin > 0

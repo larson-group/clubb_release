@@ -1216,6 +1216,8 @@ module numerical_check
 
   !=============================================================================
   subroutine check_clubb_settings_api( ngrdcol,             & ! intent(in)
+                                       edsclr_dim,          & ! intent(in)
+                                       sclr_idx,            & ! intent(in)
                                        params,              & ! intent(in)
                                        l_implemented,       & ! intent(in)
                                        l_input_fields,      & ! intent(in)
@@ -1296,12 +1298,19 @@ module numerical_check
       use err_info_type_module, only: &
         err_info_type        ! Type
 
+      use array_index, only: &
+        sclr_idx_type        ! Type
+
       implicit none
 
       !---------------------- Input Variables ----------------------
 
       integer, intent(in) :: &
-        ngrdcol
+        ngrdcol,    &
+        edsclr_dim    ! Number of eddy-diffusivity passive scalars
+
+      type(sclr_idx_type), intent(in) :: &
+        sclr_idx      ! Indices of the thlm/rtm/CO2 passive scalars
 
       real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
         params  ! Including C1, nu1, nu2, etc.
@@ -1530,6 +1539,31 @@ module numerical_check
          endif ! iiPDF_type /= iiPDF_ADG1
 
       endif ! l_predict_upwp_vpwp
+
+      ! The l_do_expldiff_rtm_thlm flag explicitly diffuses copies of thlm and
+      ! rtm that advance_windm_edsclrm stores in the eddy scalars
+      ! sclr_idx%iiedsclr_thl and sclr_idx%iiedsclr_rt.  With fewer than two
+      ! eddy scalars there is nowhere to store the copies, so the flag has no
+      ! effect.
+      if ( clubb_config_flags%l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
+
+         ! The copies of thlm and rtm need distinct, valid eddy-scalar slots.
+         if ( sclr_idx%iiedsclr_thl < 1 .or. sclr_idx%iiedsclr_thl > edsclr_dim &
+              .or. sclr_idx%iiedsclr_rt < 1 .or. sclr_idx%iiedsclr_rt > edsclr_dim &
+              .or. sclr_idx%iiedsclr_thl == sclr_idx%iiedsclr_rt ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "l_do_expldiff_rtm_thlm = T requires distinct" &
+                             // " iiedsclr_thl and iiedsclr_rt in 1:edsclr_dim."
+            write(fstderr,*) "iiedsclr_thl = ", sclr_idx%iiedsclr_thl
+            write(fstderr,*) "iiedsclr_rt = ", sclr_idx%iiedsclr_rt
+            write(fstderr,*) "edsclr_dim = ", edsclr_dim
+            write(fstderr,*) "Fatal error in check_clubb_settings_api"
+            ! General error -> set all entries to clubb_fatal_error
+            err_info%err_code = clubb_fatal_error
+            return
+         endif ! invalid iiedsclr_thl or iiedsclr_rt
+
+      endif ! l_do_expldiff_rtm_thlm
 
       ! The flags l_min_xp2_from_corr_wx and l_enable_relaxed_clipping must
       ! have opposite values.

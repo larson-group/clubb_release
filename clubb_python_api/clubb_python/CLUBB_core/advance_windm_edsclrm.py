@@ -5,6 +5,8 @@ from numpy import asfortranarray as f_arr
 
 import clubb_f2py
 
+from clubb_python.derived_types.sclr_idx import SclrIdx
+from clubb_python.derived_types.sclr_idx_converter import set_fortran_sclr_idx
 from clubb_python.derived_types.grid_class import Grid
 from clubb_python.derived_types.grid_class_converter import set_fortran_grid
 from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
@@ -14,7 +16,7 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 
 
 def advance_windm_edsclrm(
-    nzm: int, nzt: int, ngrdcol: int, edsclr_dim: int, gr: Grid, dt: float,
+    nzm: int, nzt: int, ngrdcol: int, edsclr_dim: int, gr: Grid, sclr_idx: SclrIdx, dt: float,
     wm_zt, kh_zm, clubb_params,
     ug, vg, um_ref, vm_ref,
     wp2, up2, vp2, um_forcing, vm_forcing,
@@ -36,6 +38,7 @@ def advance_windm_edsclrm(
     before the Fortran call.
     """
     set_fortran_grid(gr)
+    set_fortran_sclr_idx(sclr_idx)
     set_fortran_nu_vert_res_dep(nu_vert_res_dep)
     set_fortran_err_info(err_info)
 

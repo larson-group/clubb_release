@@ -20,6 +20,9 @@ Porting deviations:
 - The detailed Fortran error-print diagnostics and diagnostic-only early
   returns are reduced until full JAX diagnostic state is available; fatal
   conditions still mark err_info.
+- Non-zero edsclrm_forcing or surface flux for the thlm/rtm copies marks the
+  affected columns fatal (with a reason code) but does not return early as the
+  Fortran does.
 - Stats are threaded explicitly with JaxStats because the Fortran routine uses
   global stats side effects that are not JAX-compatible state.
 - Fortran intent(out)/intent(inout) arguments are returned explicitly.
@@ -51,12 +54,17 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
 from clubb_jax.src.CLUBB_core.model_flags import l_force_descending_solves
 from clubb_jax.src.CLUBB_core.parameter_indices import ic_K10, ic_K10h
 from clubb_jax.src.CLUBB_core.diffusion import diffusion_zt_lhs
+from clubb_jax.src.CLUBB_core.err_info_codes import (
+    ERR_WINDM_EDSCLRM_FORCED_EXPLDIFF_COPY,
+    ERR_WINDM_EDSCLRM_SFC_FLUX_EXPLDIFF_COPY,
+)
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import tridiag_solve
 from clubb_jax.src.CLUBB_core.mean_adv import term_ma_zt_lhs
 from clubb_jax.src.CLUBB_core import ErrInfo, Grid, NuVertResDep
+from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
 
 
 windm_edsclrm_um = 1
@@ -90,7 +98,7 @@ ndiags3 = 3
     ),
 )
 def advance_windm_edsclrm(
-    nzm: int, nzt: int, ngrdcol: int, edsclr_dim: int, gr: Grid, dt,
+    nzm: int, nzt: int, ngrdcol: int, edsclr_dim: int, gr: Grid, sclr_idx: SclrIdx, dt,
     wm_zt, Kh_zm, clubb_params,
     ug, vg, um_ref, vm_ref,
     wp2, up2, vp2, um_forcing, vm_forcing,
@@ -121,6 +129,27 @@ def advance_windm_edsclrm(
     back substitutions (since the left hand side matrix is the same for all
     input variables).
     """
+    if edsclr_dim > 1 and l_do_expldiff_rtm_thlm:
+
+        # The thlm and rtm eddy scalars hold copies of thlm and rtm, which
+        # advance_xm_wpxp already advances with thlm_forcing and rtm_forcing.
+        # Forcing the copies here would apply those forcings a second time.
+        forced_copy = jnp.any(
+            (edsclrm_forcing[:, :, sclr_idx.iiedsclr_thl - 1] != zero)
+            | (edsclrm_forcing[:, :, sclr_idx.iiedsclr_rt - 1] != zero),
+            axis=1,
+        )
+        err_info = err_info.set_fatal(forced_copy)
+        err_info = err_info.set_reason(ERR_WINDM_EDSCLRM_FORCED_EXPLDIFF_COPY, forced_copy)
+
+        # advance_xm_wpxp also already applies wpthlp_sfc and wprtp_sfc to thlm
+        # and rtm. A surface flux on the copies would apply it a second time.
+        sfc_flux_on_copy = (
+            (wpedsclrp[:, gr.k_lb_zm, sclr_idx.iiedsclr_thl - 1] != zero)
+            | (wpedsclrp[:, gr.k_lb_zm, sclr_idx.iiedsclr_rt - 1] != zero)
+        )
+        err_info = err_info.set_fatal(sfc_flux_on_copy)
+        err_info = err_info.set_reason(ERR_WINDM_EDSCLRM_SFC_FLUX_EXPLDIFF_COPY, sfc_flux_on_copy)
     nu_zero = jnp.zeros((ngrdcol,), dtype=jnp.float64)
 
     # Coefficient for momentum
@@ -130,8 +159,8 @@ def advance_windm_edsclrm(
     Km_zm_p_nu10 = Km_zm + nu_vert_res_dep.nu10[:, None]
 
     if edsclr_dim > 1 and l_do_expldiff_rtm_thlm:
-        edsclrm = edsclrm.at[:, :, edsclr_dim - 2].set(thlm)
-        edsclrm = edsclrm.at[:, :, edsclr_dim - 1].set(rtm)
+        edsclrm = edsclrm.at[:, :, sclr_idx.iiedsclr_thl - 1].set(thlm)
+        edsclrm = edsclrm.at[:, :, sclr_idx.iiedsclr_rt - 1].set(rtm)
 
     l_perturbed_wind = (not l_predict_upwp_vpwp) and l_linearize_pbl_winds
 
@@ -564,12 +593,12 @@ def advance_windm_edsclrm(
         if stats.l_sample:
             thlm_ed = jnp.where(
                 apply_explicit_diffusion[:, None],
-                (edsclrm[:, :, edsclr_dim - 2] - thlm) / dt,
+                (edsclrm[:, :, sclr_idx.iiedsclr_thl - 1] - thlm) / dt,
                 zero,
             )
             rtm_ed = jnp.where(
                 apply_explicit_diffusion[:, None],
-                (edsclrm[:, :, edsclr_dim - 1] - rtm) / dt,
+                (edsclrm[:, :, sclr_idx.iiedsclr_rt - 1] - rtm) / dt,
                 zero,
             )
         else:
@@ -578,12 +607,12 @@ def advance_windm_edsclrm(
 
         thlm = jnp.where(
             apply_explicit_diffusion[:, None],
-            edsclrm[:, :, edsclr_dim - 2],
+            edsclrm[:, :, sclr_idx.iiedsclr_thl - 1],
             thlm,
         )
         rtm = jnp.where(
             apply_explicit_diffusion[:, None],
-            edsclrm[:, :, edsclr_dim - 1],
+            edsclrm[:, :, sclr_idx.iiedsclr_rt - 1],
             rtm,
         )
     else:

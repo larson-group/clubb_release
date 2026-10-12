@@ -3286,6 +3286,8 @@ module clubb_driver
     ! parameter sets are validated the same way as the initial setup.
     if ( clubb_at_least_debug_level_api( 0 ) ) then
       call check_clubb_settings_api( ngrdcol,             & ! Intent(in)
+                                     edsclr_dim,          & ! Intent(in)
+                                     sclr_idx,            & ! Intent(in)
                                      clubb_params,        & ! Intent(in)
                                      l_implemented,       & ! Intent(in)
                                      l_input_fields,      & ! Intent(in)
@@ -3548,6 +3550,7 @@ module clubb_driver
       call timer_start( "prescribe_forcings" )
       call prescribe_forcings( gr, gr%nzm, gr%nzt, ngrdcol,                   & ! Intent(in)
                                 sclr_dim, edsclr_dim, sclr_idx,               & ! Intent(In)
+                                clubb_config_flags%l_do_expldiff_rtm_thlm,    & ! Intent(In)
                                 runtype, sfctype,                             & ! Intent(In)
                                 time_current, time_initial, dt_main,          & ! Intent(In)
                                 l_readiopdata,                                & ! Intent(in)

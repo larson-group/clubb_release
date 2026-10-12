@@ -10,7 +10,7 @@ from clubb_jax.src.Benchmark_cases.sfc_flux import (
     convert_latent_ht_to_m_s,
     convert_sens_ht_to_km_s,
 )
-from clubb_jax.src.CLUBB_core.constants_clubb import grav
+from clubb_jax.src.CLUBB_core.constants_clubb import grav, zero
 from clubb_jax.src.CLUBB_core.interpolation import linear_interp_factor
 
 
@@ -20,6 +20,7 @@ def cobra_sfclyr(
     sclr_dim,
     edsclr_dim,
     sclr_idx,
+    l_do_expldiff_rtm_thlm,
     time,
     z,
     rho_sfc,
@@ -109,10 +110,20 @@ def cobra_sfclyr(
     if edsclr_dim > 0:
         if sclr_idx.iiedsclr_CO2 > 0:
             wpedsclrp_sfc = wpedsclrp_sfc.at[:, sclr_idx.iiedsclr_CO2 - 1].set(CO2_flx2)
-        if sclr_idx.iiedsclr_thl > 0:
-            wpedsclrp_sfc = wpedsclrp_sfc.at[:, sclr_idx.iiedsclr_thl - 1].set(wpthlp_sfc)
-        if sclr_idx.iiedsclr_rt > 0:
-            wpedsclrp_sfc = wpedsclrp_sfc.at[:, sclr_idx.iiedsclr_rt - 1].set(wprtp_sfc)
+
+        # With l_do_expldiff_rtm_thlm, advance_windm_edsclrm puts copies of thlm
+        # and rtm in these eddy scalars. thlm and rtm already get wpthlp_sfc and
+        # wprtp_sfc in advance_xm_wpxp, so the copies must not get them again.
+        if l_do_expldiff_rtm_thlm and edsclr_dim > 1:
+            if sclr_idx.iiedsclr_thl > 0:
+                wpedsclrp_sfc = wpedsclrp_sfc.at[:, sclr_idx.iiedsclr_thl - 1].set(zero)
+            if sclr_idx.iiedsclr_rt > 0:
+                wpedsclrp_sfc = wpedsclrp_sfc.at[:, sclr_idx.iiedsclr_rt - 1].set(zero)
+        else:
+            if sclr_idx.iiedsclr_thl > 0:
+                wpedsclrp_sfc = wpedsclrp_sfc.at[:, sclr_idx.iiedsclr_thl - 1].set(wpthlp_sfc)
+            if sclr_idx.iiedsclr_rt > 0:
+                wpedsclrp_sfc = wpedsclrp_sfc.at[:, sclr_idx.iiedsclr_rt - 1].set(wprtp_sfc)
     return wpthlp_sfc, wprtp_sfc, ustar, wpsclrp_sfc, wpedsclrp_sfc, T_sfc
 
 

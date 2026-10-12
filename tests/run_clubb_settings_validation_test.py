@@ -100,10 +100,26 @@ def _silence_fortran_stdio():
             os.close(saved_stderr)
 
 
-def _fortran_rejects(clubb_api, ErrInfo, params, flags, *, l_input_fields: bool = False) -> bool:
+# The standalone default: no eddy scalars and unset thlm/rtm eddy-scalar indices.
+_NO_EDDY_SCALARS = {"edsclr_dim": 0, "iiedsclr_thl": -1, "iiedsclr_rt": -1}
+
+
+def _fortran_rejects(clubb_api, ErrInfo, params, flags, *, l_input_fields: bool = False, eddy_scalars=_NO_EDDY_SCALARS) -> bool:
+    from clubb_python.derived_types.sclr_idx import SclrIdx
+
+    sclr_idx = SclrIdx(
+        iisclr_rt=-1,
+        iisclr_thl=-1,
+        iisclr_CO2=-1,
+        iiedsclr_rt=eddy_scalars["iiedsclr_rt"],
+        iiedsclr_thl=eddy_scalars["iiedsclr_thl"],
+        iiedsclr_CO2=-1,
+    )
     with _silence_fortran_stdio():
         result = clubb_api.check_clubb_settings(
             ngrdcol=1,
+            edsclr_dim=eddy_scalars["edsclr_dim"],
+            sclr_idx=sclr_idx,
             params=params,
             l_implemented=False,
             l_input_fields=l_input_fields,
@@ -126,10 +142,11 @@ def _mutated_case(clubb_api, param_updates=None, flag_updates=None):
     return params, flags, values
 
 
-def _assert_case_matches(clubb_api, ErrInfo, label: str, *, param_updates=None, flag_updates=None, l_input_fields=False) -> None:
+def _assert_case_matches(clubb_api, ErrInfo, label: str, *, param_updates=None, flag_updates=None, l_input_fields=False, eddy_scalars=None) -> None:
     params, flags, values = _mutated_case(clubb_api, param_updates, flag_updates)
-    python_rejects = bool(validation_errors(values, flags._asdict(), lmin=1.0, l_input_fields=l_input_fields))
-    fortran_rejects = _fortran_rejects(clubb_api, ErrInfo, params, flags, l_input_fields=l_input_fields)
+    eddy_scalars = {**_NO_EDDY_SCALARS, **(eddy_scalars or {})}
+    python_rejects = bool(validation_errors(values, flags._asdict(), lmin=1.0, l_input_fields=l_input_fields, **eddy_scalars))
+    fortran_rejects = _fortran_rejects(clubb_api, ErrInfo, params, flags, l_input_fields=l_input_fields, eddy_scalars=eddy_scalars)
     _assert(python_rejects == fortran_rejects, f"{label}: Python rejects={python_rejects}, Fortran rejects={fortran_rejects}")
 
 
@@ -156,6 +173,12 @@ def run_test() -> None:
     _assert_case_matches(clubb_api, ErrInfo, "PDF pre/post placement accepted", flag_updates={"ipdf_call_placement": 3})
     _assert_case_matches(clubb_api, ErrInfo, "predicted wind PDF relation", flag_updates={"l_predict_upwp_vpwp": True, "iiPDF_type": 4}, l_input_fields=True)
     _assert_case_matches(clubb_api, ErrInfo, "xp2 clipping relation", flag_updates={"l_min_xp2_from_corr_wx": True, "l_enable_relaxed_clipping": True})
+    expldiff = {"l_do_expldiff_rtm_thlm": True}
+    _assert_case_matches(clubb_api, ErrInfo, "expldiff without eddy scalars accepted (no effect)", flag_updates=expldiff)
+    _assert_case_matches(clubb_api, ErrInfo, "expldiff with one eddy scalar accepted (no effect)", flag_updates=expldiff, eddy_scalars={"edsclr_dim": 1, "iiedsclr_thl": 1, "iiedsclr_rt": 1})
+    _assert_case_matches(clubb_api, ErrInfo, "expldiff with unset eddy-scalar indices", flag_updates=expldiff, eddy_scalars={"edsclr_dim": 2})
+    _assert_case_matches(clubb_api, ErrInfo, "expldiff with a shared eddy-scalar index", flag_updates=expldiff, eddy_scalars={"edsclr_dim": 2, "iiedsclr_thl": 2, "iiedsclr_rt": 2})
+    _assert_case_matches(clubb_api, ErrInfo, "expldiff eddy scalars accepted", flag_updates=expldiff, eddy_scalars={"edsclr_dim": 2, "iiedsclr_thl": 1, "iiedsclr_rt": 2})
     _assert_case_matches(clubb_api, ErrInfo, "valid baseline after rejecting cases")
     print("PASS CLUBB Python/Fortran settings-validation parity")
 

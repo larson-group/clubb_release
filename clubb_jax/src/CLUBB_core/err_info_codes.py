@@ -9,6 +9,8 @@ ERR_XP2_XPYP_MULTIPLE_LHS_REQUIRED = 1
 ERR_XP2_XPYP_INVALID_C_UU = 2
 ERR_RADIATION_COS_SOLAR_ZEN_TIME_NOT_FOUND = 3
 ERR_RADIATION_COS_SOLAR_ZEN_INVALID_HOUR = 4
+ERR_WINDM_EDSCLRM_FORCED_EXPLDIFF_COPY = 5
+ERR_WINDM_EDSCLRM_SFC_FLUX_EXPLDIFF_COPY = 6
 
 
 ERROR_MESSAGES = {
@@ -25,6 +27,16 @@ ERROR_MESSAGES = {
     ),
     ERR_RADIATION_COS_SOLAR_ZEN_INVALID_HOUR: (
         "cos_solar_zen received an invalid current_time."
+    ),
+    ERR_WINDM_EDSCLRM_FORCED_EXPLDIFF_COPY: (
+        "advance_windm_edsclrm: l_do_expldiff_rtm_thlm requires zero edsclrm_forcing "
+        "for iiedsclr_thl and iiedsclr_rt, because thlm and rtm are already forced "
+        "in advance_xm_wpxp."
+    ),
+    ERR_WINDM_EDSCLRM_SFC_FLUX_EXPLDIFF_COPY: (
+        "advance_windm_edsclrm: l_do_expldiff_rtm_thlm requires zero wpedsclrp_sfc "
+        "for iiedsclr_thl and iiedsclr_rt, because wpthlp_sfc and wprtp_sfc are "
+        "already applied in advance_xm_wpxp."
     ),
 }
 

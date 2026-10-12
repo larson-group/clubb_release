@@ -30,7 +30,7 @@ module advance_windm_edsclrm_module
   contains
 
   !=============================================================================
-  subroutine advance_windm_edsclrm( nzm, nzt, ngrdcol, edsclr_dim, gr, dt, &
+  subroutine advance_windm_edsclrm( nzm, nzt, ngrdcol, edsclr_dim, gr, sclr_idx, dt, &
                                     wm_zt, Kh_zm, clubb_params, &
                                     ug, vg, um_ref, vm_ref, &
                                     wp2, up2, vp2, um_forcing, vm_forcing, &
@@ -55,6 +55,10 @@ module advance_windm_edsclrm_module
     ! Description:
     ! Solves for both mean horizontal wind components, um and vm, and for the
     ! eddy-scalars (passive scalars that don't use the high-order closure).
+    ! With l_do_expldiff_rtm_thlm, sclr_idx must identify distinct, valid
+    ! thlm/rtm slots, which check_clubb_settings_api verifies. Those slots hold
+    ! temporary copies for diffusion, so their edsclrm_forcing and surface
+    ! flux (wpedsclrp at gr%k_lb_zm, i.e. wpedsclrp_sfc) must be zero.
 
     ! Uses the LAPACK tridiagonal solver subroutine with 2 + # of scalar(s)
     ! back substitutions (since the left hand side matrix is the same for all
@@ -70,6 +74,9 @@ module advance_windm_edsclrm_module
     use grid_class, only:  &
         grid, &  ! Type
         zm2zt_api
+
+    use array_index, only: &
+        sclr_idx_type  ! Type
 
     use parameter_indices, only: &
         nparams, &
@@ -132,6 +139,9 @@ module advance_windm_edsclrm_module
 
     type (grid), intent(in) :: &
       gr
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx  ! Indices identifying the eddy scalars for thlm and rtm [-]
   
     real( kind = core_rknd ), intent(in) ::  &
       dt                 ! Model timestep                             [s]
@@ -300,6 +310,53 @@ module advance_windm_edsclrm_module
 
     ! ------------------------ Begin Code ------------------------
 
+    ! Validate before allocating device scratch storage.
+    if ( edsclr_dim > 1 .and. l_do_expldiff_rtm_thlm ) then
+
+      ! The thlm and rtm eddy scalars hold copies of thlm and rtm, which
+      ! advance_xm_wpxp already advances with thlm_forcing and rtm_forcing.
+      ! Forcing the copies here would apply those forcings a second time.
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        do k = 1, nzt
+          if ( edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) /= zero .or. &
+               edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt) /= zero ) then
+            err_info%err_code(i) = clubb_fatal_error
+          end if
+        end do
+      end do
+      !$acc end parallel loop
+
+      !$acc update host( err_info%err_code )
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "advance_windm_edsclrm: l_do_expldiff_rtm_thlm requires zero", &
+                         " edsclrm_forcing for iiedsclr_thl and iiedsclr_rt, because", &
+                         " thlm and rtm are already forced in advance_xm_wpxp"
+        return
+      end if
+
+      ! advance_xm_wpxp also already applies wpthlp_sfc and wprtp_sfc to thlm
+      ! and rtm. A surface flux on the copies would apply it a second time.
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        if ( wpedsclrp(i,gr%k_lb_zm,sclr_idx%iiedsclr_thl) /= zero .or. &
+             wpedsclrp(i,gr%k_lb_zm,sclr_idx%iiedsclr_rt) /= zero ) then
+          err_info%err_code(i) = clubb_fatal_error
+        end if
+      end do
+      !$acc end parallel loop
+
+      !$acc update host( err_info%err_code )
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr,*) err_info%err_header_global
+        write(fstderr,*) "advance_windm_edsclrm: l_do_expldiff_rtm_thlm requires zero", &
+                         " wpedsclrp_sfc for iiedsclr_thl and iiedsclr_rt, because", &
+                         " wpthlp_sfc and wprtp_sfc are already applied in advance_xm_wpxp"
+        return
+      end if
+    end if
+
     !$acc enter data create( um_old, vm_old, um_tndcy, vm_tndcy, &
     !$acc                    thlm1000, thlm700, &
     !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
@@ -329,8 +386,8 @@ module advance_windm_edsclrm_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt
         do i = 1, ngrdcol
-          edsclrm(i,k,edsclr_dim-1) = thlm(i,k)
-          edsclrm(i,k,edsclr_dim) = rtm(i,k)
+          edsclrm(i,k,sclr_idx%iiedsclr_thl) = thlm(i,k)
+          edsclrm(i,k,sclr_idx%iiedsclr_rt) = rtm(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -1147,8 +1204,8 @@ module advance_windm_edsclrm_module
         do k = 1, nzt
           do i = 1, ngrdcol
             if ( thlm700(i) - thlm1000(i) < 20.0_core_rknd ) then
-              thlm_ed(i,k) = ( edsclrm(i,k,edsclr_dim-1) - thlm(i,k) ) / dt
-              rtm_ed(i,k)  = ( edsclrm(i,k,edsclr_dim)   - rtm(i,k) )  / dt
+              thlm_ed(i,k) = ( edsclrm(i,k,sclr_idx%iiedsclr_thl) - thlm(i,k) ) / dt
+              rtm_ed(i,k)  = ( edsclrm(i,k,sclr_idx%iiedsclr_rt)   - rtm(i,k) )  / dt
             else
               thlm_ed(i,k) = zero
               rtm_ed(i,k)  = zero
@@ -1162,8 +1219,8 @@ module advance_windm_edsclrm_module
       do k = 1, nzt
         do i = 1, ngrdcol
           if ( thlm700(i) - thlm1000(i) < 20.0_core_rknd ) then
-            thlm(i,k) = edsclrm(i,k,edsclr_dim-1)
-            rtm(i,k)  = edsclrm(i,k,edsclr_dim)
+            thlm(i,k) = edsclrm(i,k,sclr_idx%iiedsclr_thl)
+            rtm(i,k)  = edsclrm(i,k,sclr_idx%iiedsclr_rt)
           end if
         end do
       end do

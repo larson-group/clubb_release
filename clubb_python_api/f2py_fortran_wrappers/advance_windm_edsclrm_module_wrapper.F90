@@ -14,10 +14,14 @@ subroutine f2py_advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, edsclr_dim_
     um, vm, thlm, rtm, edsclrm, upwp, vpwp, wpedsclrp, &
     um_pert, vm_pert, upwp_pert, vpwp_pert)
 
+  ! Description:
+  ! Advances winds and eddy scalars using the grid and scalar-index metadata
+  ! supplied by the Python derived-type converters.
+
   use clubb_precision, only: core_rknd
   use parameter_indices, only: nparams
   use derived_type_storage, only: &
-    stored_grid, stored_nu_vert_res_dep, stored_stats, stored_err_info
+    stored_grid, stored_sclr_idx, stored_nu_vert_res_dep, stored_stats, stored_err_info
   use advance_windm_edsclrm_module, only: advance_windm_edsclrm
 
   implicit none
@@ -47,7 +51,7 @@ subroutine f2py_advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, edsclr_dim_
   real(core_rknd), dimension(ngrdcol, nzt, edsclr_dim_transport), intent(inout) :: edsclrm
   real(core_rknd), dimension(ngrdcol, nzm, edsclr_dim_transport), intent(inout) :: wpedsclrp
 
-  call advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, stored_grid, dt, &
+  call advance_windm_edsclrm(nzm, nzt, ngrdcol, edsclr_dim, stored_grid, stored_sclr_idx, dt, &
     wm_zt, kh_zm, clubb_params, ug, vg, um_ref, vm_ref, &
     wp2, up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, p_in_pa, &
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, fcor, l_implemented, &

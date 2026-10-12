@@ -17,7 +17,7 @@ from clubb_python.derived_types.err_info_converter import get_fortran_err_info, 
 
 def prescribe_forcings(
     gr: Grid, nzm: int, nzt: int, ngrdcol: int, sclr_dim: int, edsclr_dim: int,
-    sclr_idx: SclrIdx, runtype: str, sfctype: int,
+    sclr_idx: SclrIdx, l_do_expldiff_rtm_thlm: bool, runtype: str, sfctype: int,
     time_current: float, time_initial: float, dt: float,
     l_readiopdata: bool,
     um, vm, thlm, p_in_Pa, exner, rho, rho_zm, thvm, veg_t_in_k,
@@ -51,7 +51,7 @@ def prescribe_forcings(
         bool(l_readiopdata), 
         f_arr(um), f_arr(vm), f_arr(thlm), f_arr(p_in_Pa), f_arr(exner), f_arr(rho), f_arr(rho_zm), f_arr(thvm), f_arr(zt_in),
         l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc,
-        l_modify_bc_for_cnvg_test,
+        l_modify_bc_for_cnvg_test, bool(l_do_expldiff_rtm_thlm),
         int(saturation_formula), l_add_dycore_grid, int(grid_remap_method),
         int(grid_adapt_in_time_method),
         f_arr(rtm), f_arr(wm_zm), f_arr(wm_zt), f_arr(ug), f_arr(vg), f_arr(um_ref), f_arr(vm_ref),

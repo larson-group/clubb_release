@@ -250,6 +250,9 @@ EXTERNAL_SETTING_OWNERS: dict[str, str] = {
     "rad_scheme": "src/Radiation/radiation_module.F90",
     "l_silhs_rad": "src/Radiation/radiation_module.F90",
     "l_soil_veg": "src/Radiation/radiation_module.F90",
+    "edsclr_dim": "src/clubb_driver.F90",
+    "iiedsclr_thl": "src/clubb_driver.F90",
+    "iiedsclr_rt": "src/clubb_driver.F90",
 }
 
 
@@ -1013,12 +1016,16 @@ def validate_clubb_settings(
     l_avg_Lscale: bool | None = None,
     rad_scheme: str | None = None,
     microphys_scheme: str | None = None,
+    edsclr_dim: int | None = None,
+    iiedsclr_thl: int = -1,
+    iiedsclr_rt: int = -1,
 ) -> list[ValidationIssue]:
     """Validate a complete effective CLUBB settings set without F2PY.
 
     Missing parameters are ignored so callers may validate a partial edit.  A
     production caller should pass its resolved namelist values.  Missing flags
-    use the relevant Fortran defaults (false, PDF type 1, and option 1).
+    use the relevant Fortran defaults (false, PDF type 1, and option 1).  The
+    eddy-scalar rule is checked only when the caller supplies edsclr_dim.
     """
     issues: list[ValidationIssue] = []
     values: dict[str, list[float]] = {}
@@ -1101,6 +1108,11 @@ def validate_clubb_settings(
             issues.append(ValidationIssue("predict_wind_requires_implicit_ta", "l_predict_upwp_vpwp is incompatible with explicit wpxp turbulent advection.", setting="l_predict_upwp_vpwp"))
         if pdf_type is not None and pdf_type not in {1, 7}:
             issues.append(ValidationIssue("predict_wind_pdf_type", "l_predict_upwp_vpwp requires PDF type 1 or 7.", setting="l_predict_upwp_vpwp"))
+    # The copies of thlm and rtm need two distinct, valid eddy-scalar slots.
+    # With fewer than two eddy scalars the flag has no effect.
+    if edsclr_dim is not None and edsclr_dim > 1 and _as_bool(flag("l_do_expldiff_rtm_thlm")):
+        if not 1 <= iiedsclr_thl <= edsclr_dim or not 1 <= iiedsclr_rt <= edsclr_dim or iiedsclr_thl == iiedsclr_rt:
+            issues.append(ValidationIssue("expldiff_eddy_scalar_indices", "l_do_expldiff_rtm_thlm requires distinct iiedsclr_thl and iiedsclr_rt in 1:edsclr_dim.", setting="l_do_expldiff_rtm_thlm"))
     if _as_bool(flag("l_min_xp2_from_corr_wx")) and _as_bool(flag("l_enable_relaxed_clipping")):
         issues.append(ValidationIssue("incompatible_xp2_clipping", "l_min_xp2_from_corr_wx and l_enable_relaxed_clipping cannot both be true.", setting="l_min_xp2_from_corr_wx"))
     elif not _as_bool(flag("l_min_xp2_from_corr_wx")) and not _as_bool(flag("l_enable_relaxed_clipping")):

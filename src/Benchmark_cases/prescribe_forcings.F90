@@ -19,6 +19,7 @@ module prescribe_forcings_module
   !----------------------------------------------------------------------
   subroutine prescribe_forcings( gr, nzm, nzt, ngrdcol, &
                                  sclr_dim, edsclr_dim, sclr_idx, &
+                                 l_do_expldiff_rtm_thlm, &
                                  runtype, sfctype, &
                                  time_current, time_initial, dt, &
                                  l_readiopdata, &
@@ -158,6 +159,10 @@ module prescribe_forcings_module
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
+
+    logical, intent(in) :: &
+      l_do_expldiff_rtm_thlm ! thlm/rtm eddy scalars are copies diffused in
+                             ! advance_windm_edsclrm
 
     type (grid), intent(in) :: &
       gr
@@ -346,6 +351,7 @@ module prescribe_forcings_module
         call apply_time_dependent_forcings_from_dycore( &
                 ngrdcol, gr%nzm, gr%nzt, &
                 sclr_dim, edsclr_dim, sclr_idx, &
+                l_do_expldiff_rtm_thlm, &
                 gr, gr_dycore, time_current, rtm, rho, exner,  &
                 grid_remap_method, &
                 total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -358,6 +364,7 @@ module prescribe_forcings_module
         call apply_time_dependent_forcings( &
               ngrdcol, gr%nzm, gr%nzt, &
               sclr_dim, edsclr_dim, sclr_idx, & ! In
+              l_do_expldiff_rtm_thlm, & ! In
               gr, time_current, rtm, rho, exner, & ! In
               thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, & ! In/Out
               wm_zt, wm_zm, ug, vg, & ! In/Out
@@ -605,6 +612,7 @@ module prescribe_forcings_module
         l_compute_momentum_flux = .true.
 
         call cobra_sfclyr( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                          l_do_expldiff_rtm_thlm,                  & ! Intent(in)
                           time_current, z_bot, rho_bot,            & ! Intent(in)
                           thlm_bot, ubar,                          & ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar,            & ! Intent(out)

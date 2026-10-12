@@ -1338,7 +1338,7 @@ module advance_clubb_core_module
         !   the mean of the eddy-diffusivity scalars (i.e. edsclrm),
         !   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
         !----------------------------------------------------------------
-        call advance_windm_edsclrm( nzm, nzt, ngrdcol, edsclr_dim, gr, dt,      & ! In
+        call advance_windm_edsclrm( nzm, nzt, ngrdcol, edsclr_dim, gr, sclr_idx, dt, & ! In
                                     wm_zt, Kh_zm, clubb_params,                 & ! In
                                     ug, vg, um_ref, vm_ref,                     & ! In
                                     wp2, up2, vp2, um_forcing, vm_forcing,      & ! In

@@ -10,7 +10,7 @@ subroutine f2py_prescribe_forcings( &
     l_readiopdata, &
     um, vm, thlm, p_in_pa, exner, rho, rho_zm, thvm, zt_in, &
     l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc, &
-    l_modify_bc_for_cnvg_test, &
+    l_modify_bc_for_cnvg_test, l_do_expldiff_rtm_thlm, &
     saturation_formula, l_add_dycore_grid, grid_remap_method, &
     grid_adapt_in_time_method, &
     rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
@@ -43,6 +43,7 @@ subroutine f2py_prescribe_forcings( &
   real(core_rknd), intent(in) :: dt
   logical, intent(in) :: l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc
   logical, intent(in) :: l_modify_bc_for_cnvg_test
+  logical, intent(in) :: l_do_expldiff_rtm_thlm
   logical, intent(in) :: l_readiopdata
   integer, intent(in) :: saturation_formula
   logical, intent(in) :: l_add_dycore_grid
@@ -101,6 +102,7 @@ subroutine f2py_prescribe_forcings( &
   call prescribe_forcings( &
       stored_grid, nzm, nzt, ngrdcol, &
       sclr_dim, edsclr_dim, stored_sclr_idx, &
+      l_do_expldiff_rtm_thlm, &
       runtype, sfctype, &
       time_current, time_initial, dt, &
       l_readiopdata, &

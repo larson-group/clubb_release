@@ -1,20 +1,20 @@
 ! numerical_check_wrapper.F90 — wrappers extracted from util_wrappers.F90 for module numerical_check
 
-subroutine f2py_check_clubb_settings(ngrdcol, params, &
+subroutine f2py_check_clubb_settings(ngrdcol, edsclr_dim, params, &
     l_implemented, l_input_fields)
 
   use clubb_precision, only: core_rknd
   use parameter_indices, only: nparams
-  use derived_type_storage, only: stored_config_flags, stored_err_info
+  use derived_type_storage, only: stored_sclr_idx, stored_config_flags, stored_err_info
   use numerical_check, only: check_clubb_settings_api
 
   implicit none
 
-  integer, intent(in) :: ngrdcol
+  integer, intent(in) :: ngrdcol, edsclr_dim
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: params
   logical, intent(in) :: l_implemented, l_input_fields
 
-  call check_clubb_settings_api(ngrdcol, params, &
+  call check_clubb_settings_api(ngrdcol, edsclr_dim, stored_sclr_idx, params, &
     l_implemented, l_input_fields, &
     stored_config_flags, stored_err_info)
 

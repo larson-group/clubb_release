@@ -9,6 +9,7 @@ sys.path.insert(0, str(_REPO_ROOT / "clubb_python_api"))
 
 from clubb_python import clubb_api
 from clubb_python.derived_types.err_info import ErrInfo
+from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
 from clubb_python.derived_types.pdf_params import implicit_coefs_terms, pdf_parameter
 from clubb_python.derived_types.sclr_idx import SclrIdx
 
@@ -49,7 +50,7 @@ def _make_advance_inputs(ngrdcol: int):
         grid_type=1,
         deltaz=np.full(ngrdcol, dz, dtype=np.float64),
         clubb_params=clubb_params,
-        nu_vert_res_dep=None,
+        nu_vert_res_dep=NuVertResDep.zeros(ngrdcol),
         l_prescribed_avg_deltaz=False,
     )
 

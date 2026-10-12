@@ -75,6 +75,7 @@ from clubb_jax.src.CLUBB_core.interpolation import mono_cubic_interp
         "ngrdcol",
         "sclr_dim",
         "edsclr_dim",
+        "l_do_expldiff_rtm_thlm",
         "runtype",
         "sfctype",
         "l_modify_bc_for_cnvg_test",
@@ -84,6 +85,7 @@ from clubb_jax.src.CLUBB_core.interpolation import mono_cubic_interp
 def prescribe_forcings(
     gr, nzm, nzt, ngrdcol,
     sclr_dim, edsclr_dim, sclr_idx,
+    l_do_expldiff_rtm_thlm,
     runtype, sfctype,
     time_current, time_initial, dt,
     um, vm, thlm,
@@ -139,7 +141,7 @@ def prescribe_forcings(
             sclrm_forcing, edsclrm_forcing,
         ) = time_dependent_input.apply_time_dependent_forcings(
             ngrdcol, gr.nzm, gr.nzt,
-            sclr_dim, edsclr_dim, sclr_idx,
+            sclr_dim, edsclr_dim, sclr_idx, l_do_expldiff_rtm_thlm,
             gr, time_current, rtm, rho, exner,
             thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing,
             wm_zt, wm_zm, ug, vg,
@@ -333,6 +335,7 @@ def prescribe_forcings(
             wpsclrp_sfc, wpedsclrp_sfc, T_sfc,
         ) = cobra_sfclyr(
             ngrdcol, sclr_dim, edsclr_dim, sclr_idx,
+            l_do_expldiff_rtm_thlm,
             time_current, z_bot, rho_bot,
             thlm_bot, ubar,
         )

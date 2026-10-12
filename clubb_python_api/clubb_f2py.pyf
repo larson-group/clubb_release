@@ -871,7 +871,7 @@ python module clubb_f2py
         l_readiopdata, &
         um, vm, thlm, p_in_pa, exner, rho, rho_zm, thvm, zt_in, &
         l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc, &
-        l_modify_bc_for_cnvg_test, &
+        l_modify_bc_for_cnvg_test, l_do_expldiff_rtm_thlm, &
         saturation_formula, l_add_dycore_grid, grid_remap_method, &
         grid_adapt_in_time_method, &
         rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
@@ -889,6 +889,7 @@ python module clubb_f2py
       logical, intent(in) :: l_t_dependent, l_ignore_forcings, l_input_xpwp_sfc
       logical, intent(in) :: l_readiopdata
       logical, intent(in) :: l_modify_bc_for_cnvg_test
+      logical, intent(in) :: l_do_expldiff_rtm_thlm
       integer, intent(in) :: saturation_formula
       logical, intent(in) :: l_add_dycore_grid
       integer, intent(in) :: grid_remap_method, grid_adapt_in_time_method
@@ -1133,9 +1134,9 @@ python module clubb_f2py
     subroutine f2py_zero_pdf_implicit_coefs_terms()
     end subroutine
 
-    subroutine f2py_check_clubb_settings(ngrdcol, params, &
+    subroutine f2py_check_clubb_settings(ngrdcol, edsclr_dim, params, &
         l_implemented, l_input_fields)
-      integer, intent(in) :: ngrdcol
+      integer, intent(in) :: ngrdcol, edsclr_dim
       double precision, dimension(ngrdcol, *), intent(in) :: params
       logical, intent(in) :: l_implemented, l_input_fields
     end subroutine

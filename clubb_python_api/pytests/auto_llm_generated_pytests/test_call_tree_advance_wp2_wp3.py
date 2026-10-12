@@ -9,6 +9,7 @@ sys.path.insert(0, str(_REPO_ROOT / "clubb_python_api"))
 
 from clubb_python import clubb_api
 from clubb_python.derived_types.err_info import ErrInfo
+from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
 
 
 def _setup_env(tmp_path: Path, ngrdcol: int = 1):
@@ -45,7 +46,7 @@ def _setup_env(tmp_path: Path, ngrdcol: int = 1):
         grid_type=1,
         deltaz=np.full(ngrdcol, dz, dtype=np.float64),
         clubb_params=clubb_params,
-        nu_vert_res_dep=None,
+        nu_vert_res_dep=NuVertResDep.zeros(ngrdcol),
         l_prescribed_avg_deltaz=False,
     )
     pdf_implicit_coefs_terms = clubb_api.init_pdf_implicit(gr.nzm, ngrdcol, sclr_dim=0)

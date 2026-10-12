@@ -575,6 +575,7 @@ module time_dependent_input
   subroutine apply_time_dependent_forcings_from_array( &
               ngrdcol, nzm, nzt, &
               sclr_dim, edsclr_dim, sclr_idx, &
+              l_do_expldiff_rtm_thlm, &
               gr, rtm, rho, exner,  &
               forcings_array, &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
@@ -591,6 +592,8 @@ module time_dependent_input
       grav, & ! Variable(s)
       sec_per_hr, &
       pascal_per_mb, &
+      
+      zero, &
       fstderr
 
     use input_names, only: &
@@ -631,6 +634,10 @@ module time_dependent_input
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
+
+    logical, intent(in) :: &
+      l_do_expldiff_rtm_thlm ! thlm/rtm eddy scalars are copies diffused in
+                             ! advance_windm_edsclrm
 
     type (grid), intent(in) :: &
       gr
@@ -733,10 +740,17 @@ module time_dependent_input
 
           if ( sclr_idx%iiedsclr_thl > 0 ) then
 
+            ! With l_do_expldiff_rtm_thlm, advance_windm_edsclrm puts a copy of thlm
+            ! in this eddy scalar. thlm is already forced with thlm_f in
+            ! advance_xm_wpxp, so the copy must not be forced again.
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_f(i,k)
+                if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
+                  edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = zero
+                else
+                  edsclrm_forcing(i,k,sclr_idx%iiedsclr_thl) = thlm_f(i,k)
+                end if
               end do
             end do
 
@@ -778,10 +792,15 @@ module time_dependent_input
 
           if ( sclr_idx%iiedsclr_rt  > 0 ) then
 
+            ! Copy of rtm with l_do_expldiff_rtm_thlm; see the thlm case above.
             !$acc parallel loop gang vector collapse(2) default(present)
             do k = 1, nzt
               do i = 1, ngrdcol
-                edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_f(i,k)
+                if ( l_do_expldiff_rtm_thlm .and. edsclr_dim > 1 ) then
+                  edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = zero
+                else
+                  edsclrm_forcing(i,k,sclr_idx%iiedsclr_rt)  = rtm_f(i,k)
+                end if
               end do
             end do
 
@@ -905,6 +924,7 @@ module time_dependent_input
   subroutine apply_time_dependent_forcings( &
               ngrdcol, nzm, nzt, &
               sclr_dim, edsclr_dim, sclr_idx, &
+              l_do_expldiff_rtm_thlm, &
               gr, time, rtm, rho, exner,  &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
               wm_zt, wm_zm,  ug, vg, &
@@ -941,6 +961,10 @@ module time_dependent_input
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
+
+    logical, intent(in) :: &
+      l_do_expldiff_rtm_thlm ! thlm/rtm eddy scalars are copies diffused in
+                             ! advance_windm_edsclrm
 
     type (grid), intent(in) :: &
       gr
@@ -1003,6 +1027,7 @@ module time_dependent_input
     call apply_time_dependent_forcings_from_array( &
                                                    ngrdcol, nzm, nzt, &
                                                    sclr_dim, edsclr_dim, sclr_idx, &
+                                                   l_do_expldiff_rtm_thlm, &
                                                    gr, rtm, rho, exner,  &
                                                    forcings_array, &
                                                    thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
@@ -1017,6 +1042,7 @@ module time_dependent_input
   subroutine apply_time_dependent_forcings_from_dycore( &
               ngrdcol, nzm, nzt, &
               sclr_dim, edsclr_dim, sclr_idx, &
+              l_do_expldiff_rtm_thlm, &
               gr, gr_dycore, time, rtm, rho, exner, &
               grid_remap_method, &
               total_idx_rho_lin_spline, rho_lin_spline_vals, &
@@ -1061,6 +1087,10 @@ module time_dependent_input
 
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
+
+    logical, intent(in) :: &
+      l_do_expldiff_rtm_thlm ! thlm/rtm eddy scalars are copies diffused in
+                             ! advance_windm_edsclrm
 
     type (grid), intent(in) :: &
       gr, gr_dycore
@@ -1157,6 +1187,7 @@ module time_dependent_input
     call apply_time_dependent_forcings_from_array( &
                                                    ngrdcol, nzm, nzt, &
                                                    sclr_dim, edsclr_dim, sclr_idx, &
+                                                   l_do_expldiff_rtm_thlm, &
                                                    gr, rtm, rho, exner,  &
                                                    forcings_array, &
                                                    thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &

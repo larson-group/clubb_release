@@ -651,17 +651,20 @@ def init_clubb_case(namelist_path: str) -> dict:
     if float(lmin) < 1.0:
         raise ValueError('lmin is < 1.0')
 
-    err_info = check_clubb_settings(
-        ngrdcol=ngrdcol,
-        params=clubb_params,
-        config_flags=flags,
-        err_info=err_info,
-        l_implemented=False,
-        l_input_fields=False,
-    )
-    # Reset error codes set by check_clubb_settings warnings
-    # (they are non-fatal but would cause advance_clubb_core to bail out)
-    err_info = err_info.reset_code()
+    if clubb_at_least_debug_level(0):
+        err_info = check_clubb_settings(
+            ngrdcol=ngrdcol,
+            edsclr_dim=edsclr_dim,
+            sclr_idx=sclr_idx,
+            params=clubb_params,
+            config_flags=flags,
+            err_info=err_info,
+            l_implemented=False,
+            l_input_fields=False,
+        )
+
+        if err_info.is_fatal():
+            raise RuntimeError("Fatal error calling check_clubb_settings in clubb_case_initalization")
 
     # ── 9. Initialize TKE / variances (case-specific, Fortran-like) ────
     em, wp2, up2, vp2, upwp, um = _initialize_turbulence_state(
@@ -1277,11 +1280,12 @@ def set_case_initial_conditions(
         raise ValueError('lmin is < 1.0')
 
     # Re-run the parameter sanity checks when debugging, as at initial setup.
-    if clubb_at_least_debug_level(1):
+    if clubb_at_least_debug_level(0):
         # TODO: the existing settings API is keyword-only; retain its contract
         # until its signature mirrors the source's explicit argument groups.
         state['err_info'] = check_clubb_settings(
-            ngrdcol=state['ngrdcol'], params=state['clubb_params'],                  # In
+            ngrdcol=state['ngrdcol'], edsclr_dim=state['edsclr_dim'],               # In
+            sclr_idx=state['sclr_idx'], params=state['clubb_params'],              # In
             l_implemented=False, l_input_fields=False, config_flags=state['flags'], # In
             err_info=state['err_info'],                                            # InOut
         )

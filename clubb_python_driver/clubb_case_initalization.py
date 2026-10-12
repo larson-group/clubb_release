@@ -10,6 +10,7 @@ from clubb_python.derived_types.config_flags import ConfigFlags
 from clubb_python.derived_types.grid_class import setup_grid as py_setup_grid
 from clubb_python.derived_types.sclr_idx import SclrIdx
 from clubb_python.derived_types.err_info import ErrInfo
+from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
 from clubb_python.derived_types.pdf_params import (
     init_pdf_implicit_coefs_terms_api,
     init_pdf_params as init_pdf_params_py,
@@ -639,22 +640,25 @@ def init_clubb_case(namelist_path: str) -> dict:
         grid_type=grid_type,
         deltaz=deltaz,
         clubb_params=clubb_params,
-        nu_vert_res_dep=None,
+        nu_vert_res_dep=NuVertResDep.zeros(ngrdcol),
         l_prescribed_avg_deltaz=False,
     )
     err_info = ErrInfo(ngrdcol=ngrdcol)
 
-    err_info = clubb_api.check_clubb_settings(
-        ngrdcol=ngrdcol,
-        params=clubb_params,
-        clubb_config_flags=flags,
-        err_info=err_info,
-        l_implemented=False,
-        l_input_fields=False,
-    )
-    # Reset error codes set by check_clubb_settings warnings
-    # (they are non-fatal but would cause advance_clubb_core to bail out)
-    err_info = clubb_api.reset_err_code(err_info)
+    if clubb_api.clubb_at_least_debug_level(0):
+        err_info = clubb_api.check_clubb_settings(
+            ngrdcol=ngrdcol,
+            edsclr_dim=edsclr_dim,
+            sclr_idx=sclr_idx,
+            params=clubb_params,
+            clubb_config_flags=flags,
+            err_info=err_info,
+            l_implemented=False,
+            l_input_fields=False,
+        )
+
+        if np.any(np.asarray(err_info.err_code) == clubb_api.CLUBB_FATAL_ERROR):
+            raise RuntimeError("Fatal error calling check_clubb_settings in clubb_case_initalization")
 
     # ── 9. Initialize TKE / variances (case-specific, Fortran-like) ────
     em, wp2, up2, vp2, upwp, um = _initialize_turbulence_state(

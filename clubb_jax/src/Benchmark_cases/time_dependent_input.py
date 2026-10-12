@@ -387,6 +387,7 @@ def apply_time_dependent_forcings_from_array(
     sclr_dim,
     edsclr_dim,
     sclr_idx,
+    l_do_expldiff_rtm_thlm,
     gr,
     rtm,
     rho,
@@ -410,6 +411,12 @@ def apply_time_dependent_forcings_from_array(
     """
 
     # --------------------- Begin Code ---------------------
+    # With l_do_expldiff_rtm_thlm, advance_windm_edsclrm puts copies of thlm and
+    # rtm in the iiedsclr_thl and iiedsclr_rt eddy scalars. thlm and rtm are
+    # already forced with thlm_f and rtm_f in advance_xm_wpxp, so the copies
+    # must not be forced again.
+    l_expldiff_copies = l_do_expldiff_rtm_thlm and edsclr_dim > 1
+
     # This fixed-size Python loop dispatches heterogeneous forcing metadata
     # (temperature, moisture, winds, and omega have different updates). It is
     # resolved while JAX traces the ten-entry forcing schema; it is not a loop
@@ -442,7 +449,7 @@ def apply_time_dependent_forcings_from_array(
             if sclr_idx.iiedsclr_thl > 0:
                 old = edsclrm_forcing[:, :, sclr_idx.iiedsclr_thl - 1]
                 edsclrm_forcing = edsclrm_forcing.at[:, :, sclr_idx.iiedsclr_thl - 1].set(
-                    jnp.where(l_dummy, old, thlm_f)
+                    jnp.where(l_dummy, old, 0.0 if l_expldiff_copies else thlm_f)
                 )
 
         elif name in (rt_f_name, sp_humidity_f_name):
@@ -460,7 +467,7 @@ def apply_time_dependent_forcings_from_array(
             if sclr_idx.iiedsclr_rt > 0:
                 old = edsclrm_forcing[:, :, sclr_idx.iiedsclr_rt - 1]
                 edsclrm_forcing = edsclrm_forcing.at[:, :, sclr_idx.iiedsclr_rt - 1].set(
-                    jnp.where(l_dummy, old, rtm_f)
+                    jnp.where(l_dummy, old, 0.0 if l_expldiff_copies else rtm_f)
                 )
 
         elif name == um_ref_name:
@@ -518,6 +525,7 @@ def apply_time_dependent_forcings(
     sclr_dim,
     edsclr_dim,
     sclr_idx,
+    l_do_expldiff_rtm_thlm,
     gr,
     time,
     rtm,
@@ -568,6 +576,7 @@ def apply_time_dependent_forcings(
         sclr_dim,
         edsclr_dim,
         sclr_idx,
+        l_do_expldiff_rtm_thlm,
         gr,
         rtm,
         rho,

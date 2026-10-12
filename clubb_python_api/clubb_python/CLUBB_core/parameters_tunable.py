@@ -58,12 +58,15 @@ def calc_derived_params(
     deltaz: np.ndarray,
     clubb_params: np.ndarray,
     l_prescribed_avg_deltaz: bool,
-    nu_vert_res_dep: NuVertResDep | None,
+    nu_vert_res_dep: NuVertResDep,
 ):
-    """Calculate derived parameters and return updated nu coefficient data."""
+    """Calculate derived parameters and return updated nu coefficient data.
+
+    nu_vert_res_dep must have ngrdcol columns (for example NuVertResDep.zeros);
+    calc_derived_params overwrites all of its values.
+    """
     set_fortran_grid(gr)
-    if nu_vert_res_dep is not None:
-        set_fortran_nu_vert_res_dep(nu_vert_res_dep)
+    set_fortran_nu_vert_res_dep(nu_vert_res_dep)
     lmin, mixt_frac_max_mag = clubb_f2py.f2py_calc_derived_params(
         grid_type,
         f_arr(deltaz),

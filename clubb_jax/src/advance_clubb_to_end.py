@@ -205,6 +205,7 @@ def _prescribe_forcings(state: dict, time_current):
     ) = prescribe_forcings(
         state['gr'], state['nzm'], state['nzt'], state['ngrdcol'],
         state['sclr_dim'], state['edsclr_dim'], state['sclr_idx'],
+        state['flags'].l_do_expldiff_rtm_thlm,
         state['runtype'], state['sfctype'],
         jnp.asarray(time_current), state['time_initial'], state['dt_main'],
         state['um'], state['vm'], state['thlm'],

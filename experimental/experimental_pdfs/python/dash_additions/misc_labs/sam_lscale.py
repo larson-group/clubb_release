@@ -158,6 +158,8 @@ def _compute_native_lscale_profile(
         raise SamLscaleError("The supplied thermodynamic path contains non-finite values.")
 
     api, ErrInfo = _api()
+    from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
+
     with _FORTRAN_API_LOCK:
         ngrdcol = 1
         nzt = int(inputs["zt"].size)
@@ -187,7 +189,7 @@ def _compute_native_lscale_profile(
             grid_type=2,
             deltaz=np.full(ngrdcol, float(np.median(np.diff(inputs["zt"]))), dtype=float),
             clubb_params=params,
-            nu_vert_res_dep=None,
+            nu_vert_res_dep=NuVertResDep.zeros(ngrdcol),
             l_prescribed_avg_deltaz=bool(flags.l_prescribed_avg_deltaz),
         )
         pdf_params = api.init_pdf_params(nzt, ngrdcol)
