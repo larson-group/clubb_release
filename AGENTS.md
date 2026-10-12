@@ -8,6 +8,10 @@ broader validation. Explicit user instructions take priority.
 
 ## Repository conventions
 
+- When preparing commit messages or PR descriptions, use
+  [change_messages.md](LLM_prompts/change_messages.md): explain the purpose,
+  motivation, result and testing in plain language, and scope BFB claims to
+  their supporting comparisons.
 - Fortran is the authority for faithful ports. Passing tests does not replace
   the routine/branch/signature/comment/formatting audit in the porting workflow.
 - For script/CLI work, use

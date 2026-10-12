@@ -8,6 +8,7 @@ changes the outcome. Explicit user instructions take priority.
 
 | Request | Guidance |
 | --- | --- |
+| **Write Commit or PR Messages**: draft or revise a CLUBB commit message, PR title or description, including BFB status and test evidence. | [Change messages](change_messages.md) |
 | **Update Host Models After CLUBB Changes**: a host-consumed Fortran/C API signature, semantics, public type/constant, generated wrapper, flag or configuration changed. E3SM is excluded unless explicitly requested. | [Host compatibility](update_host_models_after_clubb_changes.md) |
 | **Fix Python API**: repair F2PY/wrappers, update Python drivers after Fortran changes, make Python/JAX drivers match Fortran, or repair `run_python_vs_fortran_cases.py` / `run_jax_vs_fortran_cases.py`. | [API and drivers](update_python_api_and_drivers.md) |
 | **Port Underlying Fortran**: port, re-port, audit or “similarize” a target file; align routines, calls, comments, argument lists; remove target-only helpers/aliases/optionals/reordered logic. | [Faithful port](port_underlying_fortran_to_other_languages.md) |
@@ -47,6 +48,6 @@ changes the outcome. Explicit user instructions take priority.
 
 [Maintaining guidance](README.md) describes how to record approved lessons
 without duplicating requirements. Optional repo skills `clubb-jax-port`,
-`clubb-script-cli`, `clubb-pytests` and `clubb-session-retrospective` point to the
-same canonical workflows; they aid discovery
-for agents with skill support, while this index supports other agents.
+`clubb-script-cli`, `clubb-pytests`, `clubb-session-retrospective` and
+`clubb-change-messages` point to the same canonical workflows. They aid
+discovery for agents with skill support; this index supports other agents.
