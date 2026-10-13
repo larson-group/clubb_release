@@ -34,6 +34,7 @@ DEFAULT_FLAGS = {
     "l_smooth_min_max_test": True,
     "l_rev_direction_grid_test": False,
     "l_fill_holes_test": True,
+    "l_cubic_solve_test": True,
 }
 
 # Mapping from CLI flag → namelist variable
@@ -53,6 +54,7 @@ TEST_OPTIONS = {
     "rev_direction_grid_test": "l_rev_direction_grid_test",
     "fill_holes_test": "l_fill_holes_test",
     "w_up_in_cloud_test": "l_w_up_in_cloud_test",
+    "cubic_solve_test": "l_cubic_solve_test",
 }
 
 # --------------------------------------------------------------------------

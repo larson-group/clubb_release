@@ -41,7 +41,7 @@ module calc_roots
     ! S = ( R + sqrt( D ) )^(1/3); and
     ! T = ( R - sqrt( D ) )^(1/3).
     !
-    ! The determinant, D, is given by:
+    ! The discriminant, D, is given by:
     !
     ! D = R^2 + Q^3.
     !
@@ -62,6 +62,7 @@ module calc_roots
     use constants_clubb, only: &
         three,     & ! Constant(s)
         two,       &
+        one,       &
         one_half,  &
         one_third
 
@@ -88,10 +89,12 @@ module calc_roots
     real( kind = core_rknd ), dimension(nz) :: &
       cap_Q_coef,  & ! Coefficient Q in cubic formula     [-]
       cap_R_coef,  & ! Coefficient R in cubic formula     [-]
-      determinant    ! Determinant D in cubic formula     [-]
+      discriminant, & ! discriminant D in cubic formula     [-]
+      sgn_S,       & ! Sign of Re( R + sqrt( D ) )        [-]
+      sgn_T          ! Sign of Re( R - sqrt( D ) )        [-]
 
     complex( kind = core_rknd ), dimension(nz) :: &
-      sqrt_det,   & ! Square root of determinant D in cubic formula     [-]
+      sqrt_det,   & ! Square root of discriminant D in cubic formula     [-]
       cap_S_coef, & ! Coefficient S in cubic formula                    [-]
       cap_T_coef    ! Coefficient T in cubic formula                    [-]
 
@@ -121,23 +124,28 @@ module calc_roots
                    - 27.0_core_rknd * (d_coef/a_coef) &
                    - two * (b_coef/a_coef)**3 ) / 54.0_core_rknd
 
-    ! Find the value of the determinant D; where
+    ! Find the value of the discriminant D; where
     ! D = R^2 + Q^3.
-    determinant = cap_Q_coef**3 + cap_R_coef**2
+    discriminant = cap_Q_coef**3 + cap_R_coef**2
 
-    ! Calculate the square root of the determinant.  This will be a complex
+    ! Calculate the square root of the discriminant.  This will be a complex
     ! number.
-    sqrt_det = sqrt( cmplx( determinant, kind = core_rknd ) )
+    sqrt_det = sqrt( cmplx( discriminant, kind = core_rknd ) )
 
-    ! Find the value of the coefficient S; where
-    ! S = ( R + sqrt( D ) )^(1/3).
-    cap_S_coef &
-    = ( cmplx( cap_R_coef, kind = core_rknd ) + sqrt_det )**one_third_cmplx
-
-    ! Find the value of the coefficient T; where
+    ! Find the values of the coefficients S and T; where
+    ! S = ( R + sqrt( D ) )^(1/3); and
     ! T = ( R - sqrt( D ) )^(1/3).
-    cap_T_coef &
-    = ( cmplx( cap_R_coef, kind = core_rknd ) - sqrt_det )**one_third_cmplx
+    ! Take the cube root of -w and negate it when Re(w) < 0, so that a negative
+    ! real base gives the real cube root instead of the principal complex one
+    ! (which would break the S*T = -Q pairing required by Cardano's formula).
+    cap_S_coef = cmplx( cap_R_coef, kind = core_rknd ) + sqrt_det
+    cap_T_coef = cmplx( cap_R_coef, kind = core_rknd ) - sqrt_det
+
+    sgn_S = sign( one, real( cap_S_coef, kind = core_rknd ) )
+    sgn_T = sign( one, real( cap_T_coef, kind = core_rknd ) )
+
+    cap_S_coef = sgn_S * ( sgn_S * cap_S_coef )**one_third_cmplx
+    cap_T_coef = sgn_T * ( sgn_T * cap_T_coef )**one_third_cmplx
 
     ! Find the values of the roots.
     ! This root is always real-valued.
@@ -147,7 +155,7 @@ module calc_roots
       + ( cap_S_coef + cap_T_coef )
 
     ! This root is real-valued when D < 0 (even though the square root of the
-    ! determinant is a complex number), as well as when D = 0 (when it is part
+    ! discriminant is a complex number), as well as when D = 0 (when it is part
     ! of a double or triple root).  When D > 0, this root is a complex number.
     ! It is the complex conjugate of roots(3).
     ! x(2) = -(1/3)*(b/a) - (1/2) * ( S + T ) + (1/2)i * sqrt(3) * ( S - T ).
@@ -157,7 +165,7 @@ module calc_roots
       + one_half_cmplx * i_cmplx * sqrt_3 * ( cap_S_coef - cap_T_coef )
 
     ! This root is real-valued when D < 0 (even though the square root of the
-    ! determinant is a complex number), as well as when D = 0 (when it is part
+    ! discriminant is a complex number), as well as when D = 0 (when it is part
     ! of a double or triple root).  When D > 0, this root is a complex number.
     ! It is the complex conjugate of roots(2).
     ! x(3) = -(1/3)*(b/a) - (1/2) * ( S + T ) - (1/2)i * sqrt(3) * ( S - T ).
@@ -191,7 +199,7 @@ module calc_roots
     ! x(1) = ( -b + sqrt( b^2 - 4*a*c ) ) / (2*a); and
     ! x(2) = ( -b - sqrt( b^2 - 4*a*c ) ) / (2*a).
     !
-    ! The determinant, D, is given by:
+    ! The discriminant, D, is given by:
     !
     ! D = b^2 - 4*a*c.
     !
@@ -226,19 +234,19 @@ module calc_roots
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
-      determinant    ! Determinant D in quadratic formula     [-]
+      discriminant    ! discriminant D in quadratic formula     [-]
 
     complex( kind = core_rknd ), dimension(nz) :: &
-      sqrt_det    ! Square root of determinant D in quadratic formula     [-]
+      sqrt_det    ! Square root of discriminant D in quadratic formula     [-]
 
 
-    ! Find the value of the determinant D; where
+    ! Find the value of the discriminant D; where
     ! D = b^2 - 4*a*c.
-    determinant = b_coef**2 - four * a_coef * c_coef
+    discriminant = b_coef**2 - four * a_coef * c_coef
 
-    ! Calculate the square root of the determinant.  This will be a complex
+    ! Calculate the square root of the discriminant.  This will be a complex
     ! number.
-    sqrt_det = sqrt( cmplx( determinant, kind = core_rknd ) )
+    sqrt_det = sqrt( cmplx( discriminant, kind = core_rknd ) )
 
     ! Find the values of the roots.
     ! This root is real-valued when D > 0, as well as when D = 0 (when it is

@@ -14,4 +14,5 @@ l_tuner_tests = .true.              ! Flag for PDF parameter tests
 l_smooth_heaviside_test = .true.    ! Flag for the smooth_heaviside test
 l_smooth_min_max_test = .true.      ! Flag for the smooth_min_max test
 l_rev_direction_grid_test = .false. ! Flag for reverse direction grid test
+l_cubic_solve_test = .true.         ! Flag for the cubic_solve test
 /
