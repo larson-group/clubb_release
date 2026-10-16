@@ -9,11 +9,17 @@ broader validation. Explicit user instructions take priority.
 Use only the applicable parts and state material exclusions. Selecting a skill
 does not authorize a token budget.
 
+Before drafting documentation or change messages, including small edits, read
+[CLUBB documentation](.agents/skills/clubb-documentation/SKILL.md) and the
+relevant writing guidance. Inspect the implementation or diff, including
+helpers, callers, or argument parsers needed to support the explanation. Do
+not infer behavior solely from names or existing comments.
+
 ## Skills
 
 | Request | Skill |
 | --- | --- |
-| **Write Commit or PR Messages**: draft or revise a CLUBB commit message, PR title or description, including BFB status and test evidence. | [Change messages](.agents/skills/clubb-change-messages/SKILL.md) |
+| **Write Documentation or Change Messages**: create or revise READMEs, file and procedure descriptions, code comments, PR titles/descriptions, or commit messages. | [Documentation](.agents/skills/clubb-documentation/SKILL.md) |
 | **Update Host Models After CLUBB Changes**: a host-consumed Fortran/C API signature, semantics, public type/constant, generated wrapper, flag or configuration changed. E3SM is excluded unless explicitly requested. | [Host compatibility](.agents/skills/clubb-host-compatibility/SKILL.md) |
 | **Fix Python API**: repair F2PY/wrappers, update Python drivers after Fortran changes, make Python/JAX drivers match Fortran, or repair `run_python_vs_fortran_cases.py` / `run_jax_vs_fortran_cases.py`. | [API and drivers](.agents/skills/clubb-python-api/SKILL.md) |
 | **Port Underlying Fortran**: port, re-port, audit or “similarize” a target file; align routines, calls, comments, argument lists; remove target-only helpers/aliases/optionals/reordered logic. | [Faithful port](.agents/skills/clubb-fortran-port/SKILL.md) |
@@ -29,10 +35,10 @@ does not authorize a token budget.
 
 ## Repository conventions
 
-- When preparing commit messages or PR descriptions, use
-  [clubb-change-messages](.agents/skills/clubb-change-messages/SKILL.md): explain the purpose,
-  motivation, result and testing in plain language, and scope BFB claims to
-  their supporting comparisons.
+- Use [CLUBB documentation](.agents/skills/clubb-documentation/SKILL.md) for
+  READMEs, change messages, file and procedure descriptions, and code comments,
+  including documentation needed by new or changed code. It selects the
+  relevant writing and language guidance.
 - Fortran is the authority for faithful ports. Passing tests does not replace
   the routine/branch/signature/comment/formatting audit in the porting workflow.
 - For script/CLI work, use
