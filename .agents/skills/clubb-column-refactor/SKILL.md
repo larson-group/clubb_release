@@ -1,7 +1,12 @@
+---
+name: clubb-column-refactor
+description: "move computation/column loops into routines, change multi-column interfaces or stats dimensions."
+---
+
 # Refactor Fortran column loops
 
 Use when moving column loops into routines or changing multi-column interfaces.
-Also follow [routine formatting](fortran_routine_formatting.md). Read the full
+Also follow [routine formatting](../clubb-fortran-format/SKILL.md). Read the full
 routine and callers, and agree which changes must remain BFB before editing.
 
 Move the actual computation and column loop to the intended routine, preserving

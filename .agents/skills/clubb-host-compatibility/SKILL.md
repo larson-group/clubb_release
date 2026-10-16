@@ -1,4 +1,19 @@
+---
+name: clubb-host-compatibility
+description: "a host-consumed Fortran/C API signature, semantics, public type/constant, generated wrapper, flag or configuration changed. E3SM is excluded unless explicitly requested."
+---
+
 # Update host models after CLUBB interface changes
+
+A host model calls [CLUBB](https://github.com/larson-group/clubb) as one of its
+parameterizations. Host repositories include [CAM](https://github.com/larson-group/cam),
+[SAM/CLUBB](https://github.com/larson-group/sam_clubb),
+[WRF](https://github.com/larson-group/wrf), and
+[E3SM](https://github.com/larson-group/e3sm), which remains excluded unless
+explicitly requested. Synchronization metadata lives in
+[`sys_admin`](https://github.com/larson-group/sys_admin). These repositories are
+private and require GitHub access granted by the group. The links identify the
+repositories; the requested task determines which hosts and branches are in scope.
 
 Use this workflow when a CLUBB API, configuration, or Fortran interface change has merged into the relevant CLUBB branch and host-model repositories need host-side compatibility updates.
 
@@ -14,7 +29,7 @@ If the host's vendored CLUBB/SILHS source also needs synchronization, report tha
 
 ## Workflow
 
-1. Read the repository instructions and inspect `LLM_prompts/SHORTCUTS.md` before making substantial changes.
+1. Read the repository instructions and select the relevant repo skills before making substantial changes.
 2. Resolve the exact target branch for each host before touching files. This is usually `master`, but may be an integration branch such as CAM's `clubb_silhs_devel`; use the branch that the PR is meant to target, not an assumed default.
 3. Use a fresh dedicated clone when possible. If an existing checkout is used, inspect `git status -sb` and its remote, but treat it as potentially stale even when clean. Do not assume a checkout from a previous task is current.
 4. Verify that `origin` points to the intended canonical host-model repository, not another local checkout. Fetch the actual remote target branch before comparison or branch creation: `git fetch origin --prune <target>`. Verify the fetched `origin/<target>` SHA against `git ls-remote origin refs/heads/<target>`, and create the work branch from `origin/<target>`, never from a possibly stale local `<target>` branch. Record the base SHA.
@@ -44,3 +59,11 @@ If the host's vendored CLUBB/SILHS source also needs synchronization, report tha
 - Never force-push, reset hard, delete branches, or merge without explicit permission.
 - If a repository is not writable or GitHub authentication is unavailable, stop before making external changes and report the blocker.
 - If the same host change is needed in multiple repositories, implement and validate it independently; do not assume identical layouts.
+
+## Scope boundaries
+
+- Host compatibility is host-owned work. Never modify, copy, synchronize,
+  reformat or include vendored CLUBB/SILHS source in a host PR. Source sync is
+  separate. Dash/MCP and Python-only changes do not trigger host work unless
+  the host directly consumes that interface. Without provided host repos,
+  audit/report exact host call-site changes; do not implicitly clone/edit them.

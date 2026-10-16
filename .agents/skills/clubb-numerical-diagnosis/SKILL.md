@@ -1,3 +1,8 @@
+---
+name: clubb-numerical-diagnosis
+description: "JAX/Fortran, compiler, BFB or multi-column mismatches; distinguish regression, roundoff and untested behavior."
+---
+
 # Diagnose numerical comparisons
 
 Use for JAX/Fortran, compiler, BFB or multi-column comparison failures. A smoke

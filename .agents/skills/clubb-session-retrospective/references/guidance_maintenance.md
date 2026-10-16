@@ -1,10 +1,10 @@
 # Maintaining agent guidance
 
-Start with [SHORTCUTS.md](SHORTCUTS.md). It routes a request to the relevant
+Start with [AGENTS.md](../../../../AGENTS.md). It routes a request to the relevant
 workflow; it is not a plan to execute every workflow. Root `AGENTS.md` contains
 only common decisions and completion habits. Keep detailed requirements in a
 narrow workflow, and keep current interface/runtime contracts in the owner
-README and code. Repo skills are thin discovery adapters to those same files.
+README and code. Repo skills contain those workflows; their descriptions support discovery.
 
 ## Learning from a correction
 
@@ -36,5 +36,5 @@ limits; a toy evaluation is not proof of numerical correctness for a real port.
 Do not add a permanent benchmark framework for every wording edit.
 
 For a user-requested review of a recent session, use the
-[session retrospective](session_retrospective.md). For test-level decisions,
-provisional admission and CI ownership, use the [pytest workflow](pytest_workflow.md).
+[session retrospective](../SKILL.md). For test-level decisions,
+provisional admission and CI ownership, use the [pytest workflow](../../clubb-pytests/SKILL.md).

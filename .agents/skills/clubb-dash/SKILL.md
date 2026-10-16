@@ -1,3 +1,8 @@
+---
+name: clubb-dash
+description: "connect/use/open/control Dash; compile/run, show profiles/contours/plots/console, tune, navigate pages, or create/update/view an investigation report."
+---
+
 # CLUBB Dash-first workflow
 
 Use this guidance when a request can be completed, demonstrated, or reviewed
@@ -31,7 +36,7 @@ dashboard using its `reports/open_report` semantic operation.
 
 Do not force Dash on a purely conceptual question, a narrow source-code edit
 with no useful interactive view, or a task the dashboard does not expose. A request to run a named Jenkins job
-belongs to the [Jenkins workflow](jenkins_workflow.md). Say
+belongs to the [Jenkins workflow](../clubb-jenkins/SKILL.md). Say
 briefly why the normal local workflow is necessary in those cases.
 
 ## 2. Discover before connecting or starting
@@ -186,3 +191,9 @@ state the gap, and then use the least-surprising local alternative only under
 the discovery/fallback rule above.  Prefer extending the declarative Dash tab
 operation surface when maintaining the application; do not accumulate a
 parallel collection of agent-specific shell shortcuts.
+
+## Scope boundaries
+
+- Dash needs one unambiguous live browser view and matching broker. Read its
+  discovery/permission/fallback rules; do not silently start a replacement or
+  guess between instances. A named Jenkins request uses Jenkins.

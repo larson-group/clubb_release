@@ -1,11 +1,16 @@
+---
+name: clubb-python-api
+description: "repair F2PY/wrappers, update Python drivers after Fortran changes, make Python/JAX drivers match Fortran, or repair `run_python_vs_fortran_cases.py` / `run_jax_vs_fortran_cases.py`."
+---
+
 Update the Python API and Python/JAX drivers so they match the current Fortran CLUBB core.
 
 The broad goal is to make the Python API, Python driver, and JAX driver structurally match the current Fortran implementation after Fortran refactors. This usually means updating f2py-facing wrapper signatures, fixing changed cross-module public routine argument lists, moving Python-side calculations to match newly internalized Fortran helper behavior, and keeping the Python and JAX driver copies in sync.
 
 Do not automatically apply this prompt after every Fortran change that might affect Python. If you are doing other Fortran work and notice that argument lists for cross-module public routines have changed, remind the user that the Python API and Python/JAX drivers may need follow-up updates, then ask whether they want that fix-up done now. Apply this prompt only when the user has asked for Python API/driver work, has agreed to the follow-up, or the current task explicitly includes keeping Python wrappers and drivers in sync.
 
-Use [numerical diagnosis](numerical_regression_workflow.md) for comparison
-failures and [the JAX workflow](jax_porting_workflow.md) for JAX-owned ports.
+Use [numerical diagnosis](../clubb-numerical-diagnosis/SKILL.md) for comparison
+failures and [the JAX workflow](../clubb-jax-port/SKILL.md) for JAX-owned ports.
 Executable dependency setup belongs in the existing script bootstrap/launcher,
 not a caller-specific hard-coded venv. For model-parameter bounds/flag changes,
 update the canonical validator and existing Python mirror together as documented
@@ -159,3 +164,8 @@ Expected final state for the full API/driver task:
 - Short `run_scm.py` Python-vs-Fortran bindiffs pass for representative cases.
 - `./tests/run_python_vs_fortran_cases.py -workers 1` passes.
 - `./tests/run_jax_vs_fortran_cases.py -workers 1` passes.
+
+## Scope boundaries
+
+- API/driver work may target the Python API, Python driver, JAX driver or a
+  combination. Distinguish compile/focused/smoke validation from a full suite.

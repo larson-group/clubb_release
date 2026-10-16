@@ -77,9 +77,9 @@ or replacing the JAX tree wholesale.
 
 Use these documents in this order:
 
-- `LLM_prompts/SHORTCUTS.md` is only the discovery index.
+- `AGENTS.md` routes requests to the relevant repo skill.
 - This file records the whole-core architecture and acceptance criteria.
-- `LLM_prompts/port_underlying_fortran_to_other_languages.md` is the executable
+- `.agents/skills/clubb-fortran-port/SKILL.md` is the executable
   structural checklist for changed files.
 - File-specific plans, such as `advance_xm_wpxp_pytree_migration_plan.md`,
   are historical checkpoints and examples, not the default starting point for a
@@ -192,7 +192,7 @@ Recommended acceptance criteria:
   curated JAX-versus-Fortran cases pass without a compiled Python/Fortran bridge.
 - **Structural success:** every changed radiation module must pass a final
   block-by-block review against
-  `LLM_prompts/port_underlying_fortran_to_other_languages.md`. Numerical
+  `.agents/skills/clubb-fortran-port/SKILL.md`. Numerical
   agreement does not excuse changed routine inventory, ordering, signatures,
   comments, call order, calculation order, or undocumented JAX adaptations.
 

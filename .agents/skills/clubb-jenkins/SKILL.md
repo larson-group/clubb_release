@@ -1,3 +1,8 @@
+---
+name: clubb-jenkins
+description: "launch named jobs, inspect failures/hangs, audit coverage, combine/remove/rename jobs or edit pipelines."
+---
+
 # Change or validate Jenkins tests
 
 Use for Jenkins job/pipeline maintenance or a request to run named Jenkins tests.

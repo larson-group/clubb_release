@@ -1,7 +1,12 @@
+---
+name: clubb-fortran-port
+description: "port, re-port, audit or “similarize” a target file; align routines, calls, comments, argument lists; remove target-only helpers/aliases/optionals/reordered logic."
+---
+
 # Faithful Fortran ports
 
 Use this workflow for a source-faithful port, re-port, or structural audit. For
-JAX driver/kernel work, also read [the JAX workflow](jax_porting_workflow.md).
+JAX driver/kernel work, also read [the JAX workflow](../clubb-jax-port/SKILL.md).
 The detailed standards below remain the contract; this entry section makes
 completion observable.
 
@@ -590,3 +595,10 @@ Final review checklist:
     short reason and expected removal path.
 20. Passing tests were followed by a structural mirror audit; tests alone were
     not treated as port completion.
+
+## Scope boundaries
+
+- A faithful port uses current Fortran as authority. An explicitly requested
+  idiomatic rewrite or relaxed numerical core is a different scope; it does
+  not relax unrelated interfaces. Determine whether the request is discussion,
+  an audit or edits, and whether it covers one file or multiple mirrors.

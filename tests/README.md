@@ -12,7 +12,7 @@ exercise.
 
 Pytests are fast, specific checks. Actual SCM cases and full CLI/application
 workflows belong in their component's `tests/` folder; shared workflows live here.
-The [pytest workflow](../LLM_prompts/pytest_workflow.md) defines test quality,
+The [pytest workflow](../.agents/skills/clubb-pytests/SKILL.md) defines test quality,
 admission and review standards.
 
 Each suite has a `pytests/` directory with admitted modules in its parent and

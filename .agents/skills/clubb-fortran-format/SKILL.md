@@ -1,3 +1,8 @@
+---
+name: clubb-fortran-format
+description: "format interfaces/calls, extract a helper, document arguments/local variables, or apply routine formatting."
+---
+
 Apply CLUBB Fortran routine formatting to new or changed subroutines/functions.
 
 Use this prompt when adding, moving, extracting, or materially changing Fortran routines in `src/CLUBB_core` or nearby CLUBB Fortran code. The goal is to keep routine interfaces readable, reviewable, and consistent with the repo's local style.
@@ -109,3 +114,9 @@ Review checklist before finishing:
    ```
 
 9. If the build/test environment is available, compile the touched Fortran path or run the smallest relevant test. If not available, state the environment blocker clearly.
+
+## Scope boundaries
+
+- Fortran formatting may be formatting only, a behavior-preserving refactor,
+  or a wider caller/wrapper update. Column refactors must distinguish BFB work
+  from separately authorized behavioral fixes.
