@@ -1,0 +1,416 @@
+commit d9e8b9588ff7b16679ca79b67fcf5382bcc723c4
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Oct 16 22:50:29 2026 -0500
+
+    Reset microphysics defaults when initializing another case (#1398)
+    
+    Restore module and saved-local namelist defaults before reading a new case.
+    This prevents omitted settings from inheriting the previous case's values. This isn't an issue for any way that clubb is currently run in the codebase, but would potentially cause an issue for a future use case (this is foreshadowing).
+
+commit eb23a4c1b51706cad0060c28d8c5ead8da595e1c
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Oct 16 20:13:25 2026 -0500
+
+    Add Jenkins workflows and branch finalization guidance (#1396)
+    
+    * Set up Jenkins API login over HTTPS
+    
+    Add an interactive token login script and teach the Jenkins skill to reuse
+    its private local credential file or direct users through setup. This lets
+    each developer use their own Jenkins account without SSH access.
+    
+    Ten focused regression checks and a live HTTPS login/save check passed.
+    BFB is not applicable: login tooling and guidance do not affect model
+    execution or output.
+    
+    * Explain Jenkins login setup and agent use
+    
+    Describe why agents use the saved login, how developers set it up, and what
+    the public routines and failure paths do. Apply the new documentation
+    guidance to the script, test comments and usage documentation.
+    
+    Executable Python statements are unchanged. Ten focused login checks pass.
+    
+    * Remove Jenkins login pytests
+    
+    Remove the provisional test file from the Jenkins login change at the
+    user’s request. Keep the login script and workflow guidance unchanged.
+    
+    * Document Jenkins access and test authoring
+    
+    Add a Jenkins README and a separate authoring skill for simple,
+    reproducible pipelines and coordinated live-job changes. Keep API access
+    in its existing skill and route both workflows from AGENTS.md.
+    
+    Place the login script with the Jenkins files and update its references.
+    Runtime statements and the credential location are unchanged. Login help,
+    import, live HTTPS identity, skill validation and local links pass.
+    
+    * Prefer relevant Jenkins evidence in test reports
+    
+    Add shared guidance for choosing checks and explaining what their results
+    establish. Lead PR reports with relevant Jenkins build links, include local
+    checks when they add evidence, and keep unexpected failures visible.
+    
+    Connect validation and change-message workflows to the shared skill.
+    Skill metadata and local guidance links validate; only Markdown changes.
+    
+    * Keep README verification notes in change reports
+    
+    Remove the authoring-history sentence from the Jenkins README and clarify
+    where the README skill should record example verification. Review the PR
+    documentation for similar notes while retaining reader-relevant setup.
+    
+    Skill metadata, local links and diff formatting checks pass.
+    
+    * Group related skills under their entry points
+    
+    Nest documentation guides and Jenkins test authoring while preserving
+    skill names and workflow text. Rebase links, make shared parent guidance
+    explicit, and use recursive skill discovery for validation.
+    
+    The Codex skill loader discovers every nested child. Recursive schema,
+    link and preservation checks pass.
+    
+    * Clarify Jenkins test authoring scope and when to wait
+    
+    Require a user request before changing Jenkins test definitions, while allowing
+    relevant existing branch builds during normal validation. Align pytest
+    integration guidance with that boundary.
+    
+    Guide intermediate work toward fast meaningful checks and later review of
+    slow builds; weigh longer waits at final validation and report pending results.
+    
+    All 20 skill schemas and 99 local guidance links validate; diff formatting
+    passes. No pipeline or runtime changes, or live Jenkins actions.
+    
+    * Explain Jenkins permissions before promising site changes
+    
+    Describe the permissions needed to read, run, create or edit jobs without
+    assuming a particular account. Link the guidance from authoring and setup,
+    and explain how to use assigned tokens or switch saved accounts.
+    
+    All 20 skill schemas and 101 local guidance links pass, including the new
+    section anchors. Diff formatting passes; this commit changes Markdown only.
+    Prior live HTTPS checks confirmed creation, build and cancellation access,
+    read-only configuration access, and denied configuration writes.
+    
+    * Add branch finalization workflow and agent PR conventions
+    
+    Define merge preparation as a full branch audit followed by current validation
+    and a commit, push and draft-PR handoff. Pause for substantive unintended
+    issues the user has not accepted; allow minor cleanup without interruption.
+    
+    Route finalization from AGENTS and shared testing guidance. Keep agent PRs
+    as drafts and sign PR comments posted through a user account with the agent name.
+    
+    Codex discovers all 21 repo skills. All 21 schemas and 110 local guidance
+    links validate; diff formatting passes. Only agent guidance changes.
+    
+    * Clarify which builds an agent may cancel
+    
+    Limit cancellation to builds and queue items launched for the current task
+    unless the user authorizes stopping others. A shared Jenkins username does
+    not establish ownership. Wrap the nearby setup and authoring text.
+    
+    Final branch audit found no substantive blockers. Login smoke checks passed
+    for live HTTPS authentication, private credential replacement and failure
+    preservation without changing the user credential file. All 21 skill schemas,
+    110 local links and 5 heading anchors pass; Codex discovers all 21 skills.
+
+commit c179bae7435e6e90a0f796cb621d9de4690429b8
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Oct 16 14:08:56 2026 -0500
+
+    Add CLUBB documentation skills (#1397)
+    
+    * Add CLUBB documentation skills
+    
+    Add focused guidance for READMEs, file descriptions, routine/code comments,
+    and plain language, with a documentation entry skill selected by AGENTS.md.
+    This gives agents one route to the writing rules for the current task.
+    
+    Shorten the existing PR/commit guide and require BFB discussion only when a
+    change could plausibly affect model results or scientific output.
+    
+    All 18 skill definitions and 45 local guidance links validate; git diff
+    --check passes.
+    
+    * Require code reading and checks before finishing documentation
+    
+    Route small documentation edits through the writing skills. Require agents
+    to inspect the implementation before drafting and check facts, coverage,
+    links, and comment syntax before finishing. Clarify that weak file headers
+    need complete descriptions in the appropriate language form.
+    
+    Validation: all 18 skill schemas, 46 local guidance links, and whitespace
+    checks pass. The fresh-agent study uses these exact frozen guidance files.
+    
+    * Clarify documentation wording and optional usage examples
+    
+    Explain meaning before usage and make important ordering clear. Read the
+    applicable language or porting standards for documentation conventions.
+    Describe file interfaces independently of current callers, using callers as
+    optional examples. Recommend examples in file headers when useful, or beside
+    individual routines for collections of independent helpers.
+    
+    Validation: all 18 skill schemas, 49 local guidance links, and whitespace
+    checks pass. These refinements have not had a new fresh-agent trial.
+
+commit 09499c45d0ef25810f48bbd43c8f92afa1497caa
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Oct 15 23:06:39 2026 -0500
+
+    Consolidate CLUBB workflows into skills (#1394)
+    
+    * Consolidate CLUBB workflows into skills
+    
+    Move the 13 workflows into repo skills and route to them from AGENTS.md,
+    removing the legacy shortcut index and prompt directory. Keep the existing
+    five skill identities and workflow instructions, including the scope rules
+    previously stored in the index. Update only paths and obsolete routing text.
+    
+    Preservation checks passed for all workflow bodies, existing skill metadata,
+    scope rules and task selectors. All 13 skills validate, all 55 local links
+    resolve, and git diff --check passed. BFB is not applicable to this
+    documentation-only migration.
+    
+    * Clarify skill selection and local guidance
+    
+    Allow multiple relevant skills in the task instructions, name user-facing
+    documentation clearly, and explain that the ignored worklog is local to
+    each checkout and should be created when absent. Add verified private
+    host-repository links near the top of the compatibility skill so readers
+    can identify the models and their access requirements.
+    
+    BFB is not applicable to these documentation-only clarifications. All 13
+    skill schemas, local guidance links, and git diff --check pass. Existing
+    host workflow instructions are preserved.
+
+commit a8c952996409f8c94d6a28714171145ed7d2c2ae
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Tue Oct 13 12:10:00 2026 -0500
+
+    Fixed bug in cubic equation solve function. Only relevant if pdf is L… (#1387)
+    
+    * Fixed bug in cubic equation solve function. Only relevant if pdf is Luhar or iiPDF_type=4
+    
+    Therefore technically BIT_CHANGING...
+    The bug existed because the old code used the principal cube root
+    which has an imaginary part for negative bases.
+    The fix is to simply calc: -|w|**(1/3) for negative real numbers.
+    
+    * Replaced determinant with discriminant
+    
+    Verified via a new Fortran unit test and also manually checked with wolfram alpha.
+    There is no way to actually run this code :/
+    would only work for iiPDF_types: iiPDF_3D_Luhar = 3 and iiPDF_3D_Luhar = 3
+    (and those are currently (Oct 2026) broken )
+
+commit af934ad3986d77e381919822755fc51a0168849f
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Tue Oct 13 11:00:59 2026 -0500
+
+    Add blank line to trigger Jenkins tests
+
+commit 4292a70f53a6b6c4eab864fe27b8fd9af5d86909
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Mon Oct 12 17:10:53 2026 -0500
+
+    Fix arm97+l do expldiff rtm thlm+set edsclrm f early (#1386)
+    
+    * Do not force the thlm/rtm copies in the expldiff eddy-scalar solve
+    
+    With l_do_expldiff_rtm_thlm, advance_windm_edsclrm copies thlm into
+    edsclrm(:,:,edsclr_dim-1) and rtm into edsclrm(:,:,edsclr_dim), advances all
+    eddy scalars, and copies those two slots back into thlm and rtm. The solve
+    added edsclrm_forcing of each slot to the copies, but thlm and rtm are
+    already advanced with thlm_forcing and rtm_forcing in advance_xm_wpxp.
+    
+    In the standalone driver the slots are filled by iiedsclr_thl/iiedsclr_rt:
+    - arm_97 (iiedsclr_rt = 1, iiedsclr_thl = 2) put thlm_forcing [K/s] on rtm,
+      so rtm < 0 at ~5.5-8.8 km within the first steps (flag11 / expldiff).
+    - With the slots in expldiff order, rtm_forcing was applied twice and arm_97
+      still hit rtm < 0 near 12 km after 1379 of 5580 steps.
+    
+    The copies now get no forcing. Mirrored in the JAX port.
+    
+    Only changes runs with l_do_expldiff_rtm_thlm = .true. and non-zero
+    edsclrm_forcing in the last two eddy scalars, therefore BIT_CHANGING for
+    those. Default runs are bit-for-bit identical (arm_97, 1076 variables).
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * not hardwire the thlm and rtm edsclrm variables to be the last two; instead use sclr_idx%iiedsclr_thlm and sclr_idx%iiedsclr_rtm
+    
+    Previously l_do_expldiff_rtm_thlm = true forced the last slot to be rtm and the one before that to be thlm.
+    If in the ..._model.in file iiedsclr_rt     = 1 ! Location in the edsclrm array to place total water
+    and iiedsclr_thl    = 2 ! Location in the edsclrm array to place a scalar like thetal
+    a switcheroo happens.
+    But if we use a not hardcoded indexing we need to check for out of bounds and distinctness of the 2 indices.
+    
+    * Zero edsclrm_forcings early in apply_time_dependent_forcings_from_array
+    
+    Check edsclrm_forcings != 0 instead of zeroing in advance_windm_edsclrm
+    BIT_CHANGING for l_do_expldiff_rtm_thlm = .true. for arm_97 and for cobra.
+    
+    Python changes include: clubb_jax, clubb_python (+f2py) + tests
+    
+    * Check l_do_expldiff_rtm_thlm eddy scalars in check_clubb_settings_api
+    
+    1. Move the eddy-scalar checks into check_clubb_settings_api
+    
+    check_clubb_settings_api now takes edsclr_dim and sclr_idx.
+    With l_do_expldiff_rtm_thlm = .true. it stops the run if
+    - edsclr_dim <= 1, since the copies of thlm and rtm need two eddy
+      scalars, or
+    - iiedsclr_thl and iiedsclr_rt are not distinct indices in
+      1:edsclr_dim.
+    The index check moved to check_clubb_settings_api from advance_windm_edsclrm.
+    The check that edsclrm_forcing is zero for the thlm/rtm copies stays in
+    advance_windm_edsclrm, because prescribe_forcings sets edsclrm_forcing
+    every time step, after the settings check has run.
+    
+    Callers in Fortran and mirrors (clubb-jax, python api) are updated
+    
+    Behavior change: l_do_expldiff_rtm_thlm = .true. with fewer than two
+    eddy scalars used to skip explicit diffusion silently and now stops at
+    setup. This affects flag sets that turn the flag on for every case,
+    e.g. flag11 in input/flag_sets/run_bindiff_w_flags_config_core_flags.json.
+    Host models must pass the new arguments; CAM must also set
+    sclr_idx%iiedsclr_thl/iiedsclr_rt when clubb_l_do_expldiff_rtm_thlm is
+    on, since it leaves them at -1.
+    
+    2. Fix the Python API
+    
+    - calc_derived_params now requires nu_vert_res_dep and always pushes
+      it to the F2PY storage (new helper NuVertResDep.zeros(ngrdcol)).
+      Before, nu_vert_res_dep=None kept the previous call's stored arrays,
+      and calc_derived_params only allocates them when unallocated. So a
+      call with more columns than an earlier one in the same process wrote
+      out of bounds. This crashed the in-process Python API pytest suite
+      once the windm tests used two columns.
+    - clubb_f2py.pyf was missing l_do_expldiff_rtm_thlm for
+      f2py_prescribe_forcings, so the Python driver failed on every case.
+    
+    3. Gate the JAX rerun settings check at debug level 0
+    
+    set_case_initial_conditions in the JAX driver now runs
+    check_clubb_settings at debug level >= 0, matching clubb_driver.F90
+    since 9429ba2f1.
+    
+    Also: put l_do_expldiff_rtm_thlm on its own line in the
+    time_dependent_input/prescribe_forcings argument lists.
+    
+    Bit-for-bit: default-flag output is unchanged, and arm_97 with
+    l_do_expldiff_rtm_thlm = .true. matches the previous commit exactly.
+    
+    Tested: debug + Python build and source checks; settings parity test;
+    Python API pytests (237 passed in one process); JAX pytests (791
+    passed); utilities settings-rule pytests; python-vs-fortran and
+    jax-vs-fortran bomex/atex; bomex and cobra with the flag stop at setup
+    in the Fortran, Python and JAX drivers.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Do not apply surface fluxes to the expldiff thlm/rtm eddy-scalar copies
+    
+    With l_do_expldiff_rtm_thlm, advance_windm_edsclrm copies thlm and rtm into
+    the iiedsclr_thl and iiedsclr_rt eddy scalars, solves all eddy scalars with
+    their surface flux wpedsclrp(:,gr%k_lb_zm,:) (from wpedsclrp_sfc) and copies
+    the two slots back. thlm and rtm already get wpthlp_sfc and wprtp_sfc in
+    advance_xm_wpxp, so a non-zero surface flux on the copies applies it twice.
+    
+    Same approach as the edsclrm_forcing fix:
+    
+    1. cobra_sfclyr (the only case that sets these fluxes) takes
+       l_do_expldiff_rtm_thlm and sets wpedsclrp_sfc of the thlm/rtm copies to
+       zero when it is on. set_sclr_sfc_rtm_thlm already zeroes all eddy-scalar
+       surface fluxes.
+    2. advance_windm_edsclrm stops with a fatal error if the surface flux of
+       either copy is non-zero, after the edsclrm_forcing check.
+    
+    Mirrored in the JAX port (new reason code
+    ERR_WINDM_EDSCLRM_SFC_FLUX_EXPLDIFF_COPY; marks the columns fatal without
+    returning early, like the forcing check). No Python API wrapper changes.
+    CAM zeroes all eddy-scalar surface fluxes, so it is unaffected.
+    
+    Default cobra output is unchanged. But technically BIT_CHANGING for cobra + l_use_expldiff_rtm_thlm
+    
+    * Compute cobra's CO2 surface flux per column
+    
+    cobra_sfclyr converted the CO2 surface flux with each column's surface
+    density inside the column loop, but stored it in the scalar CO2_flx2, and
+    the later loops gave every column that one value:
+    
+    - CPU: every column got the last column's CO2 flux. Standalone columns
+      currently share one density profile, so results were unaffected.
+    - OpenACC: the scalar was private to the device loop, and the later loops
+      copied the never-set host value (implicit firstprivate). In the GPU
+      build cobra's CO2 surface flux was 0 at every step.
+    
+    CO2_flx2 is now a per-column array (enter/exit data create/delete like
+    other case routines). The JAX port already computes it per column.
+    
+    Bit-for-bit: CPU cobra output is unchanged (1 and 2 columns, standard
+    stats incl. the CO2 scalars). GPU cobra output changes: before, the CO2
+    surface flux was 0 and CO2 differed from the CPU run by up to 10%;
+    now the CO2 scalars match the CPU run to ~1e-11 relative, like the other
+    fields.
+    
+    Tested: gfortran debug build and source checks; standalone check of
+    cobra_sfclyr with two columns of different density (before: column 1 got
+    column 2's flux); nvhpc 24.3 OpenACC build and cobra on a Quadro P4000.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * removed the idiot proofing
+    
+    * fully removed idiot proofing for l_do_expldiff_rtm_thlm+esclrdim
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit fc9087d1a7a4a8f71c74f5763ece34f18328d200
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Oct 12 13:33:45 2026 -0500
+
+    Add CLUBB commit and PR writing guidance (#1391)
+    
+    * Add CLUBB commit and PR writing guidance
+    
+    Add a canonical workflow and historical examples for writing specific titles
+    and explaining purpose, motivation, results and testing. Scope BFB claims to
+    their comparisons and distinguish tolerance matches from bitwise equality.
+    A thin repo skill, shortcut and AGENTS link make the workflow discoverable.
+    
+    This addresses generated messages that bury the reason for a change or
+    overstate what testing establishes. Six historical PR/commit drafting pairs
+    passed independent review. Skill format, 20 local links, canonical-text
+    consistency and git diff --check passed. BFB is not applicable to these
+    documentation-only changes.
+    
+    * Keep only the final commit and PR writing workflow
+    
+    Remove the worked historical examples and their references. The repository
+    should contain the final reusable guidance; the research and evaluation
+    artifacts stay outside it. The shortcut and repo skill still point to one
+    canonical workflow.
+    
+    Skill-format validation, all 19 local guidance links and git diff --check
+    passed. BFB is not applicable to these documentation-only changes.
+
+commit 9429ba2f18a79e7b17ef53bccc8f17af6649c3fd
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Oct 8 14:34:09 2026 -0500
+
+    Always do idiot-proofing of flags in check_clubb_settings_api
+    
+    Changed debug level check from 1 to 0 for parameter sanity checks.
+
+commit e92c2f24486a32610935ff4eede3512c67e313ea
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Oct 7 21:50:33 2026 -0500
+
+    Add JAX comparison plots
