@@ -38,7 +38,8 @@ module microphys_init_cleanup
 
     ! Description:
     ! Set indices to the various hydrometeor species and define hydromet_dim for
-    ! the purposes of allocating memory.
+    ! the purposes of allocating memory. Restore namelist defaults on every
+    ! initialization so settings do not carry over from a previous case.
 
     ! References:
     ! None
@@ -71,6 +72,7 @@ module microphys_init_cleanup
 
     use parameters_silhs, only: &
         silhs_config_flags_type,             & ! Type(s)
+        eight_cluster_presc_probs_type,      &
         eight_cluster_presc_probs,           & ! Sampling probabilities for prescribed mode (SILHS)
         importance_prob_thresh,              & ! Minimum PDF probability for importance sampling
         vert_decorr_coef                       ! Vertical overlap decorrelation coefficient (SILHS)
@@ -156,7 +158,11 @@ module microphys_init_cleanup
     use gfdl_activation, only: Loading ! Procedure
 
     use clubb_precision, only:  & 
-        core_rknd
+        core_rknd, &
+        time_precision
+
+    use mt95, only: &
+        genrand_intg ! Kind of the SILHS random seed
 
     use precipitation_fraction, only: &
         precip_frac_calc_type  ! Variable(s)
@@ -325,7 +331,7 @@ module microphys_init_cleanup
       l_corr_file_2_exist
 
     real( kind = core_rknd ) :: &
-      Ncnp2_on_Ncnm2 = 1.0_core_rknd
+      Ncnp2_on_Ncnm2 ! Ratio of within-cloud droplet number variance to squared mean [-]
 
     namelist /microphysics_setting/ &
       microphys_scheme, l_cloud_sed, sigma_g, &
@@ -360,10 +366,61 @@ module microphys_init_cleanup
 
     ! ---- Begin Code ----
 
-    ! Set default values, then read in the namelist.
-    ! Note: many parameters are set in the microphys_parameters module.
+    ! Restore declaration defaults before reading each case's namelists.
+    ! Module variables and explicitly initialized locals retain their values
+    ! between calls; omitted namelist entries must not inherit those values.
 
     l_gfdl_activation = .false.
+    microphys_scheme = "none"
+    microphys_start_time = 0._time_precision
+    Nc0_in_cloud = 1.0e8_core_rknd
+    l_ice_microphys = .false.
+    l_graupel = .false.
+    l_hail = .false.
+    l_seifert_beheng = .false.
+    l_predict_Nc = .false.
+    l_subgrid_w = .true.
+    l_arctic_nucl = .false.
+    l_fix_pgam = .false.
+    l_in_cloud_Nc_diff = .true.
+    l_var_covar_src = .false.
+    l_cloud_edge_activation = .false.
+    l_local_kk = .false.
+    l_upwind_diff_sed = .false.
+    l_silhs_KK_convergence_adj_mean = .false.
+    specify_aerosol = "morrison_lognormal"
+    lh_num_samples = 2
+    lh_sequence_length = 1
+    lh_seed = 5489_genrand_intg
+    C_evap = 0.86_core_rknd
+    r_0 = 25.0e-6_core_rknd
+    Ncnp2_on_Ncnm2 = 1.0_core_rknd
+    hmp2_ip_on_hmm2_ip_slope = hmp2_ip_on_hmm2_ip_slope_type()
+    hmp2_ip_on_hmm2_ip_intrcpt = hmp2_ip_on_hmm2_ip_intrcpt_type()
+
+    eight_cluster_presc_probs = eight_cluster_presc_probs_type()
+    importance_prob_thresh = 1.0e-8_core_rknd
+    vert_decorr_coef = 0.03_core_rknd
+
+    nooc = .false.
+    sul_concen = 0.1_core_rknd
+    low_concen = 0.1_core_rknd
+    high_concen = 1._core_rknd
+    lowup = 0.3_core_rknd
+    highup = 10._core_rknd
+    lowup2 = 0.01_core_rknd
+    highup2 = 0.3_core_rknd
+    lowmass2 = 0.01_core_rknd
+    highmass2 = 100._core_rknd
+    lowmass3 = 0.01_core_rknd
+    highmass3 = 100._core_rknd
+    lowmass4 = 0.01_core_rknd
+    highmass4 = 100._core_rknd
+    lowmass5 = 0.01_core_rknd
+    highmass5 = 100._core_rknd
+    lowT2 = 243.15_core_rknd
+    highT2 = 308.15_core_rknd
+    aeromass_value = 2.25e-12_core_rknd
 
     ! Cloud water sedimentation from the RF02 case
     ! This has no effect on Morrison's cloud water sedimentation
@@ -374,6 +431,8 @@ module microphys_init_cleanup
     ! Parameters for NNUCCD & NNUCCC coefficients on clex9_oct14 case
     !--------------------------------------------------------------------------
 
+    NNUCCD_REDUCE_COEF = 1.0
+    NNUCCC_REDUCE_COEF = 1.0
     select case (trim( runtype ))
     case ( "clex9_oct14")
        NNUCCD_REDUCE_COEF = .01 ! Reduce NNUCCD by factor of 100 for clex9_oct14
