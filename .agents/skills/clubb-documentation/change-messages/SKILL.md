@@ -70,11 +70,14 @@ When relevant, describe the status in Result:
 - **Verified BFB:** identify the bitwise comparison, baseline, and tested scope.
   Include cases, options, compiler/optimization, backend/device, duration, and
   fields when they limit the claim. Do not generalize beyond that scope.
-- **`BIT_CHANGING`:** use for known or expected changes to model numerical
-  values or scientific output, including diagnostics or output schema. Explain
-  what changes, why, and why it is acceptable. Distinguish observed changes
-  from expected changes in an untested path. Console text and timers alone do
-  not require this marker.
+- **`BIT_CHANGING`:** use only for changes to the Fortran implementation that
+  are known or expected to alter its numerical values or scientific output,
+  including diagnostics or output schema. Fortran edits that preserve results
+  do not require it. Omit the marker for JAX-only changes, even when results
+  differ from previous JAX versions. In mixed changes, scope the marker and
+  explanation to the Fortran changes. Explain what changes, why, and why it is
+  acceptable; distinguish observed changes from expected changes in an untested
+  path. Console text and timers alone do not require this marker.
 - **Not established:** say what the available comparisons establish and what
   remains unknown. Say “not checked” only when that is known.
 

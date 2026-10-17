@@ -71,6 +71,11 @@ their strict interface or waive numerical coverage.
 
 ## Verification and completion
 
+Judge JAX numerical correctness against the corresponding Fortran implementation;
+preserving previous JAX output is not currently its acceptance standard. Use
+[testing and reporting](../clubb-testing-and-reporting/SKILL.md#choose-checks-that-exercise-the-change)
+for comparison evidence and the current Fortran-only `BIT_CHANGING` convention.
+
 For comparison failures, use [numerical diagnosis](../clubb-numerical-diagnosis/SKILL.md)
 to establish the reference and first divergence before changing acceptance.
 
