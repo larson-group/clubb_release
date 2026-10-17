@@ -5,13 +5,36 @@ description: Write or revise CLUBB commit messages and PR titles/descriptions, w
 
 # PRs and commits
 
-Use the [language guide](../clubb-doc-language/SKILL.md). Write for a CLUBB
+Read the [shared documentation requirements](../SKILL.md) for source
+inspection and verification. Directory placement does not load them implicitly.
+
+Use the [language guide](../language/SKILL.md). Write for a CLUBB
 colleague who has not followed the chat.
 
 Read the diff and available results. Describe a commit against its parent and
 a PR against its base; tests must apply to the revision described. Separate
 observations, expectations, and pending work. Never invent results or settings.
 Missing records do not prove a test was never run.
+
+Use [testing and reporting](../../clubb-testing-and-reporting/SKILL.md) to choose
+and verify test evidence. In PRs, lead with relevant recorded Jenkins build
+results and direct links. A local run of the same test usually need not be
+listed unless it adds coverage or rigor; explain what supplemental local checks
+and pytests tested rather than only giving a total. Include unexpected failures
+and material gaps. Apply the same evidence selection to concise commit messages.
+
+## Draft PRs and agent comments
+
+Agent PRs are always drafts. Create them in draft state and do not automatically
+mark them ready for review. For the full audit, validation and publication
+sequence, use [branch finalization](../../clubb-finalization/SKILL.md) when the
+user asks to get a branch ready to merge; writing a message alone does not
+require that workflow.
+
+End every PR comment posted through a user's account with `-AGENT` on its own
+line, using the actual agent name, for example `-codex`, `-claude` or `-kimi`.
+This includes conversation comments, inline review comments and replies.
+Attribution does not itself authorize posting a comment.
 
 ## Structure
 

@@ -157,6 +157,10 @@ Debugging techniques and common failure modes:
 - Treat `bomex` and `atex` as smoke tests for a full update. They do not establish
   full-suite parity; a focused task can explicitly accept that limited coverage.
 
+Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) when choosing
+validation and reporting completion, including relevant Jenkins builds and the
+purpose of supplemental local comparisons or focused checks.
+
 Expected final state for the full API/driver task:
 
 - `./compile.py -python` succeeds.

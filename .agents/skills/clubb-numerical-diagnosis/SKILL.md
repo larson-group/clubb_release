@@ -49,6 +49,11 @@ would still detect a deliberately wrong result before trusting it.
 
 ## Preserve the meaning of a pass
 
+Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) to connect
+the final claim to relevant Jenkins builds and meaningful extra local checks.
+Keep the numerical settings and attribution requirements above when choosing
+that evidence.
+
 Do not silently shorten the final run, loosen tolerances, disable relevant
 stats or change physics to turn a failure green. An approved diagnostic is not
 a permanent acceptance change. Keep exploratory overrides separate from the

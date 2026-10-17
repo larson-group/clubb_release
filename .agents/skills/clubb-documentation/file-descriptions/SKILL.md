@@ -5,7 +5,10 @@ description: Write or revise a CLUBB file's opening description or module docstr
 
 # Top-of-file descriptions
 
-Use the [language guide](../clubb-doc-language/SKILL.md). Treat the opening
+Read the [shared documentation requirements](../SKILL.md) for source
+inspection and verification. Directory placement does not load them implicitly.
+
+Use the [language guide](../language/SKILL.md). Treat the opening
 description as a small README for this file. Replace a weak header with a
 complete description using the structure below; a one-line original does not
 limit the rewrite to one line.

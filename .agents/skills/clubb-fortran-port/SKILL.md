@@ -541,6 +541,8 @@ Recommended porting workflow:
 11. Validation expectation.
    - Testing is mandatory, but detailed test selection belongs in the user's
      current request, repo-local test guidance, or task-specific debugging plan.
+   - Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) to
+     select relevant Jenkins/local checks and report their evidence and links.
    - Passing tests are necessary but not sufficient. After tests pass, still do
      the structural and helper hygiene audit; tests can miss inactive branches
      and target-language convenience artifacts.

@@ -110,6 +110,9 @@ probe is not evidence of long-run tuning or all-physics differentiability.
 For approved stochastic adaptations, distinguish algorithm/permutation parity
 from random-stream identity and record the deterministic test mode and limits.
 
+Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) for final
+check selection and reporting Jenkins links, extra local coverage and failures.
+
 Finish with the faithful-port completion audit, including comments, spacing,
 argument grouping and every new helper. Report structural and numerical results
 separately, remaining support gates and untested configurations. Do not declare

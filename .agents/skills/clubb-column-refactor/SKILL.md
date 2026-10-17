@@ -42,3 +42,7 @@ check real multi-column behavior and stats shapes. Unit tests or a new wrapper
 alone do not establish equivalence. Inspect existing regression controls before
 claiming a new mismatch; report old failures separately. Keep the diff focused,
 retain source comments/formatting, and document necessary temporaries briefly.
+
+Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) to select
+checks and report relevant Jenkins comparisons, links, supplemental local
+coverage and unexpected failures with their tested scope.

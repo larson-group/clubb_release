@@ -5,6 +5,9 @@ description: Choose clear wording and reader context for CLUBB documentation, co
 
 # Language for CLUBB documentation
 
+Read the [shared documentation requirements](../SKILL.md) for source
+inspection and verification. Directory placement does not load them implicitly.
+
 Match the explanation to where someone encounters it:
 
 | Text | Language and context |

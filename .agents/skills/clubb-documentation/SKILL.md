@@ -9,11 +9,11 @@ Read the skill for the text being written or revised:
 
 | Text | Skill |
 | --- | --- |
-| README or substantial feature's usage documentation | [READMEs](../clubb-readmes/SKILL.md) |
-| PR title/description or commit message | [PRs and commits](../clubb-change-messages/SKILL.md) |
-| Opening file description or module docstring | [File descriptions](../clubb-file-descriptions/SKILL.md) |
-| Procedure descriptions and comments within code | [Procedure and code comments](../clubb-code-comments/SKILL.md) |
-| Wording and how much context to explain | [Language](../clubb-doc-language/SKILL.md) |
+| README or substantial feature's usage documentation | [READMEs](readmes/SKILL.md) |
+| PR title/description or commit message | [PRs and commits](change-messages/SKILL.md) |
+| Opening file description or module docstring | [File descriptions](file-descriptions/SKILL.md) |
+| Procedure descriptions and comments within code | [Procedure and code comments](code-comments/SKILL.md) |
+| Wording and how much context to explain | [Language](language/SKILL.md) |
 
 Each writing skill uses the language guide. Read the relevant skills, rather
 than the whole set. A file-wide comment rewrite uses both file descriptions

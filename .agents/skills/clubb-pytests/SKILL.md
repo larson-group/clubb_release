@@ -62,8 +62,11 @@ or a full application workflow.
   create a generic helper framework for one assertion.
 - Every maintained pytest needs an explicit Jenkins owner, including a route
   for reviewing provisional tests. Use the ownership table in `tests/README.md`;
-  update its existing pipeline and runner for a new suite. Do not leave useful
-  checks discoverable only on an individual developer's machine.
+  identify the existing pipeline and runner that should own a new suite.
+  Suggest any needed Jenkins integration; modify Jenkins test definitions only
+  when the user requests that CI work, following
+  [Jenkins test authoring](../clubb-jenkins/test-authoring/SKILL.md). Record pending
+  integration so useful checks are not left discoverable only on one machine.
 - The initial API/JAX migration classifies all their existing tests as
   generated. Their Jenkins stages explicitly include them to preserve coverage
   while humans review them. This is an admission status, not proof of quality.
@@ -99,6 +102,11 @@ CI build/input must fail setup if absent. Real-case oracles must generate or
 require explicit inputs rather than quietly skipping an old local output path.
 
 ## Review and completion
+
+Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) to choose
+relevant integrated checks and report their Jenkins links. Explain what focused
+pytests checked and what confidence they add beyond the Jenkins result, rather
+than reporting only a suite total or duplicating the same local run.
 
 Inventory pytest definitions and collected parameterized cases separately.
 Trace what Jenkins actually invokes, including provisional inclusion, rather

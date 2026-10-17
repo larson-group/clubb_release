@@ -49,6 +49,10 @@ If the host's vendored CLUBB/SILHS source also needs synchronization, report tha
 14. If a PR branch must be refreshed after its target branch advances, fetch the target branch, rebase onto the latest remote target branch, rerun focused validation, and push with `--force-with-lease`. Use this only with explicit authorization because it rewrites the remote branch history.
 15. Report each repository's branch, base SHA, commit, PR URL, changed files, validation result, and synchronized files intentionally left untouched. Do not merge the PRs.
 
+Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) for
+relevant host-job links and supplemental local evidence within the requested
+host scope.
+
 ## Safety
 
 - Inspect `git status -sb` before staging every repository.

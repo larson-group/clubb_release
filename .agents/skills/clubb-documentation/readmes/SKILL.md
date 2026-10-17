@@ -5,7 +5,10 @@ description: Write or revise CLUBB READMEs, including usage documentation for a 
 
 # READMEs
 
-Use the [language guide](../clubb-doc-language/SKILL.md).
+Read the [shared documentation requirements](../SKILL.md) for source
+inspection and verification. Directory placement does not load them implicitly.
+
+Use the [language guide](../language/SKILL.md).
 
 Write READMEs in Markdown as `README.md`. Link named scripts, files,
 directories, routines, and other codebase items at least on their first
@@ -38,7 +41,9 @@ of the runnable tools.
 
 Check the actual entry points and argument parsers before describing them.
 Show where commands are run and any required setup. Keep commands and example
-values real; distinguish examples checked by inspection from commands actually
-run. Explain purpose and use before internal implementation details. Keep detailed
+values real. Report how examples were verified in the PR description or worklog;
+keep documentation-authoring and verification history out of the README.
+Describe prerequisites and limitations that matter to the reader instead.
+Explain purpose and use before internal implementation details. Keep detailed
 test tolerances and internal setup explanations in the relevant file header;
 the README should explain what the checks are for and how to run them.

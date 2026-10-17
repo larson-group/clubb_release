@@ -97,6 +97,10 @@ command when available. Direct comparison callers should consume the existing
 compact structured status, not parse human log wording. Higher-level diagnostic
 tests may inspect logs for the specific evidence they exercise.
 
+Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) for final
+validation selection and reporting relevant Jenkins callers and additional
+local parser/forwarding coverage.
+
 ## Scope boundaries
 
 - CLI spelling applies to CLUBB commands, not external flags or structured APIs.

@@ -5,7 +5,10 @@ description: Write or revise descriptions of CLUBB procedures and comments withi
 
 # Procedure and code comments
 
-Use the [language guide](../clubb-doc-language/SKILL.md).
+Read the [shared documentation requirements](../SKILL.md) for source
+inspection and verification. Directory placement does not load them implicitly.
+
+Use the [language guide](../language/SKILL.md).
 
 ## Procedure descriptions
 
