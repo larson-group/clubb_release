@@ -119,7 +119,7 @@ def test_derived_type_pytree_metadata_is_static():
     assert len(jax.tree_util.tree_leaves(sclr_idx)) == 0
     assert len(jax.tree_util.tree_leaves(nu)) == 7
     assert len(jax.tree_util.tree_leaves(coefs)) == 27
-    assert len(jax.tree_util.tree_leaves(err_info)) == 2
+    assert len(jax.tree_util.tree_leaves(err_info)) == 1
 
 
 def test_xp2_xpyp_single_lhs_valid_compiles():

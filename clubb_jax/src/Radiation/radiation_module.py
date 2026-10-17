@@ -12,16 +12,13 @@ JAX adaptations:
 """
 
 from functools import partial
+import sys
 
 import jax
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp
-from clubb_jax.src.CLUBB_core.err_info_codes import (
-    ERR_RADIATION_COS_SOLAR_ZEN_INVALID_HOUR,
-    ERR_RADIATION_COS_SOLAR_ZEN_TIME_NOT_FOUND,
-)
 from clubb_jax.src.CLUBB_core.grid_class import ddzm
 from clubb_jax.src.Radiation.cos_solar_zen_module import cos_solar_zen
 from clubb_jax.src.Radiation.rad_lwsw_module import sunray_sw
@@ -183,9 +180,14 @@ def radiation_driver(
                 # JAX indexing must remain in bounds.  Preserve the source fatal
                 # path through ``err_info`` and let the host driver raise it.
                 err_info = err_info.set_fatal(l_time_not_found)
-                err_info = err_info.set_reason(
-                    ERR_RADIATION_COS_SOLAR_ZEN_TIME_NOT_FOUND,
+                jax.lax.cond(
                     l_time_not_found,
+                    lambda _: jax.debug.callback(
+                        lambda: print("Time not found in cos_solar_zen_times", file=sys.stderr),
+                        ordered=True,
+                    ),
+                    lambda _: None,
+                    operand=None,
                 )
                 amu0_index = jnp.minimum(amu0_index, radiation_parameters.nparam - 1)
             else:
@@ -198,9 +200,14 @@ def radiation_driver(
             # fatal behavior through the functional error state.
             l_invalid_solar_time = ~jnp.isfinite(amu0)
             err_info = err_info.set_fatal(l_invalid_solar_time)
-            err_info = err_info.set_reason(
-                ERR_RADIATION_COS_SOLAR_ZEN_INVALID_HOUR,
-                l_invalid_solar_time,
+            jax.lax.cond(
+                jnp.any(l_invalid_solar_time),
+                lambda _: jax.debug.callback(
+                    lambda: print("cos_solar_zen received an invalid current_time.", file=sys.stderr),
+                    ordered=True,
+                ),
+                lambda _: None,
+                operand=None,
             )
     else:
         amu0 = jnp.asarray(0.0, dtype=rho.dtype)

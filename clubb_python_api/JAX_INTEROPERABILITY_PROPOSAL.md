@@ -79,9 +79,7 @@ normal Python API type. When supplied, `_restore_like` could:
 2. Convert returned array fields through the corresponding template field's
    `__array_namespace__()`. NumPy inputs therefore remain NumPy, while JAX inputs
    return JAX arrays.
-3. Preserve template-only fields that have no F2PY representation. The current
-   example is `ErrInfo.reason_code` on the JAX side.
-4. Reject incompatible required fields explicitly instead of silently dropping
+3. Reject incompatible required fields explicitly instead of silently dropping
    data.
 
 Templates should be passed explicitly rather than remembered in converter
@@ -113,8 +111,8 @@ signatures and return contracts. The initial implementation should cover only
 the derived types and output arrays those routines actually use.
 
 The review should also decide whether `__array_namespace__` is sufficient for
-all required fields, how `ErrInfo.reason_code` should be preserved or reset, and
-whether any routine needs a deliberately documented return-order adapter.
+all required fields and whether any routine needs a deliberately documented
+return-order adapter.
 
 Validation should start with round-trip tests for each affected derived type,
 followed by a direct JAX-versus-F2PY routine comparison and one short integrated

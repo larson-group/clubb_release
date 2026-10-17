@@ -231,11 +231,6 @@ def parameterization_check(
                 reset.err_code_or_default(),
                 err_info.err_code_or_default(),
             ),
-            reason_code=jnp.where(
-                reset_mask,
-                reset.reason_code_or_default(),
-                err_info.reason_code_or_default(),
-            ),
         )
 
     # Check the first levels for temperatures greater than 200K

@@ -20,8 +20,7 @@ Porting deviations:
 - Diagnostic-only early returns remain reduced; fatal conditions mark err_info
   and the host driver owns stopping after the compiled call.
 - Non-zero edsclrm_forcing or surface flux for the thlm/rtm copies marks the
-  affected columns fatal (with a reason code) but does not return early as the
-  Fortran does.
+  affected columns fatal but does not return early as the Fortran does.
 - Stats are threaded explicitly with JaxStats because the Fortran routine uses
   global stats side effects that are not JAX-compatible state.
 - Fortran intent(out)/intent(inout) arguments are returned explicitly.
@@ -55,10 +54,6 @@ from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.model_flags import l_force_descending_solves
 from clubb_jax.src.CLUBB_core.parameter_indices import ic_K10, ic_K10h
 from clubb_jax.src.CLUBB_core.diffusion import diffusion_zt_lhs
-from clubb_jax.src.CLUBB_core.err_info_codes import (
-    ERR_WINDM_EDSCLRM_FORCED_EXPLDIFF_COPY,
-    ERR_WINDM_EDSCLRM_SFC_FLUX_EXPLDIFF_COPY,
-)
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
@@ -143,7 +138,23 @@ def advance_windm_edsclrm(
             axis=1,
         )
         err_info = err_info.set_fatal(forced_copy)
-        err_info = err_info.set_reason(ERR_WINDM_EDSCLRM_FORCED_EXPLDIFF_COPY, forced_copy)
+
+        def print_forced_copy(info):
+            """Write the source forcing error and global header on the host."""
+            print(info.global_error_header_host(), file=sys.stderr)
+            print(
+                "advance_windm_edsclrm: l_do_expldiff_rtm_thlm requires zero"
+                " edsclrm_forcing for iiedsclr_thl and iiedsclr_rt, because"
+                " thlm and rtm are already forced in advance_xm_wpxp",
+                file=sys.stderr,
+            )
+
+        jax.lax.cond(
+            jnp.any(forced_copy),
+            lambda _: jax.debug.callback(print_forced_copy, err_info, ordered=True),
+            lambda _: None,
+            operand=None,
+        )
 
         # advance_xm_wpxp also already applies wpthlp_sfc and wprtp_sfc to thlm
         # and rtm. A surface flux on the copies would apply it a second time.
@@ -152,7 +163,23 @@ def advance_windm_edsclrm(
             | (wpedsclrp[:, gr.k_lb_zm, sclr_idx.iiedsclr_rt - 1] != zero)
         )
         err_info = err_info.set_fatal(sfc_flux_on_copy)
-        err_info = err_info.set_reason(ERR_WINDM_EDSCLRM_SFC_FLUX_EXPLDIFF_COPY, sfc_flux_on_copy)
+
+        def print_sfc_flux_on_copy(info):
+            """Write the source surface-flux error and global header on the host."""
+            print(info.global_error_header_host(), file=sys.stderr)
+            print(
+                "advance_windm_edsclrm: l_do_expldiff_rtm_thlm requires zero"
+                " wpedsclrp_sfc for iiedsclr_thl and iiedsclr_rt, because"
+                " wpthlp_sfc and wprtp_sfc are already applied in advance_xm_wpxp",
+                file=sys.stderr,
+            )
+
+        jax.lax.cond(
+            jnp.any(sfc_flux_on_copy),
+            lambda _: jax.debug.callback(print_sfc_flux_on_copy, err_info, ordered=True),
+            lambda _: None,
+            operand=None,
+        )
     nu_zero = jnp.zeros((ngrdcol,), dtype=jnp.float64)
 
     # Coefficient for momentum

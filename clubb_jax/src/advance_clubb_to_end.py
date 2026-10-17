@@ -18,21 +18,10 @@ from clubb_jax.src.Radiation.radiation_module import advance_clubb_radiation
 
 
 def _err_code_summary(err_info) -> str:
+    """Format the per-column error status for a host-side exception."""
     if err_info is None:
         return "err_info=None"
-    err_code = getattr(err_info, "err_code", None)
-    reason_code = getattr(err_info, "reason_code", None)
-    reason_messages = err_info.reason_messages_host()
-    pieces = []
-    if err_code is None:
-        pieces.append("err_code=None")
-    else:
-        pieces.append(f"err_code={err_code}")
-    if reason_code is not None:
-        pieces.append(f"reason_code={reason_code}")
-    if reason_messages:
-        pieces.append("message=" + " | ".join(reason_messages))
-    return "; ".join(pieces)
+    return f"err_code={err_info.err_code}"
 
 
 def advance_clubb_to_end(

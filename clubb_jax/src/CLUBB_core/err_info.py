@@ -12,7 +12,6 @@ import jax
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.error_code import CLUBB_FATAL_ERROR, CLUBB_NO_ERROR
-from clubb_jax.src.CLUBB_core.err_info_codes import ERR_NONE, messages_for
 
 
 _ERR_INFO_STATIC_FIELDS = (
@@ -25,7 +24,6 @@ _ERR_INFO_ARRAY_FIELDS = (
     "lat",
     "lon",
     "err_code",
-    "reason_code",
 )
 
 
@@ -39,7 +37,6 @@ class ErrInfo(NamedTuple):
     lat: jnp.ndarray | None = None
     lon: jnp.ndarray | None = None
     err_code: jnp.ndarray | None = None
-    reason_code: jnp.ndarray | None = None
 
     @classmethod
     def initialized(
@@ -57,7 +54,6 @@ class ErrInfo(NamedTuple):
             lat=lat,
             lon=lon,
             err_code=jnp.full((int(ngrdcol),), CLUBB_NO_ERROR, dtype=jnp.int32),
-            reason_code=jnp.full((int(ngrdcol),), ERR_NONE, dtype=jnp.int32),
         )
 
     def replace(self, **kwargs):
@@ -78,11 +74,6 @@ class ErrInfo(NamedTuple):
         if self.err_code is None:
             return jnp.full((int(self.ngrdcol),), CLUBB_NO_ERROR, dtype=jnp.int32)
         return jnp.asarray(self.err_code, dtype=jnp.int32)
-
-    def reason_code_or_default(self):
-        if self.reason_code is None:
-            return jnp.full((int(self.ngrdcol),), ERR_NONE, dtype=jnp.int32)
-        return jnp.asarray(self.reason_code, dtype=jnp.int32)
 
     def fatal_mask(self):
         return self.err_code_or_default() == CLUBB_FATAL_ERROR
@@ -119,26 +110,6 @@ class ErrInfo(NamedTuple):
 
     def mark_fatal(self, mask=None):
         return self.set_fatal(mask=mask)
-
-    def set_reason(self, reason_code, mask=None):
-        current_reason = self.reason_code_or_default()
-        new_reason = jnp.asarray(reason_code, dtype=jnp.int32)
-
-        if mask is None:
-            mask = current_reason == ERR_NONE
-        else:
-            mask = jnp.asarray(mask, dtype=bool)
-            if mask.ndim == 0:
-                mask = jnp.broadcast_to(mask, current_reason.shape)
-            else:
-                mask = jnp.reshape(mask, current_reason.shape)
-            mask = mask & (current_reason == ERR_NONE)
-
-        reason = jnp.where(mask, new_reason, current_reason)
-        return self._replace(reason_code=reason)
-
-    def reason_messages_host(self) -> list[str]:
-        return messages_for(self.reason_code_or_default())
 
     def column_error_header_host(self, icol: int) -> str:
         """Format one column header from Fortran ``update_headers``.
@@ -178,5 +149,4 @@ class ErrInfo(NamedTuple):
     def reset_code(self):
         return self._replace(
             err_code=jnp.full((int(self.ngrdcol),), CLUBB_NO_ERROR, dtype=jnp.int32),
-            reason_code=jnp.full((int(self.ngrdcol),), ERR_NONE, dtype=jnp.int32),
         )

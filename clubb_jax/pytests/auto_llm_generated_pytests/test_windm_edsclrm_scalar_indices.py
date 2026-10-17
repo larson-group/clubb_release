@@ -1,6 +1,7 @@
 """Explicit diffusion must respect scalar identities, independent of slot order."""
 import numpy as np
 import pytest
+import jax
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core import ErrInfo, NuVertResDep, SclrIdx
@@ -50,13 +51,16 @@ def _forcing_without_copies(args, thl_index, rt_index):
 
 
 @pytest.mark.parametrize("indices", [(1, 2), (2, 1), (1, 3), (4, 2)])
-def test_named_slots_preserve_other_tracer_forcing(indices):
+def test_named_slots_preserve_other_tracer_forcing(indices, capsys):
     args = _args(*indices)
     args["edsclrm_forcing"] = jnp.asarray(_forcing_without_copies(args, *indices))
     expected = np.array(args["edsclrm"] + args["dt"] * args["edsclrm_forcing"])
     expected[:, :, indices[0] - 1] = args["thlm"]
     expected[:, :, indices[1] - 1] = args["rtm"]
     out = advance_windm_edsclrm(**args)
+    jax.block_until_ready(out)
+    jax.effects_barrier()
+    assert capsys.readouterr().err == ""
     assert not out[-2].is_fatal_host()
     np.testing.assert_allclose(out[4], 300., rtol=0, atol=1e-12)
     np.testing.assert_allclose(out[5], .01, rtol=0, atol=1e-14)
@@ -64,7 +68,8 @@ def test_named_slots_preserve_other_tracer_forcing(indices):
 
 
 @pytest.mark.parametrize("forced_copy", ["thl", "rt"])
-def test_forcing_on_copies_is_fatal(forced_copy):
+def test_forcing_on_copies_is_fatal(forced_copy, capsys):
+    """A forced copy prints its source diagnostic and flags only column two."""
     thl_index, rt_index = 1, 3
     args = _args(thl_index, rt_index)
     forcing = _forcing_without_copies(args, thl_index, rt_index)
@@ -72,13 +77,17 @@ def test_forcing_on_copies_is_fatal(forced_copy):
     forcing[1, 0, index - 1] = 1.e-5  # second column, lowest level only
     args["edsclrm_forcing"] = jnp.asarray(forcing)
     err_info = advance_windm_edsclrm(**args)[-2]
+    jax.block_until_ready(err_info)
+    jax.effects_barrier()
     np.testing.assert_array_equal(np.asarray(err_info.fatal_mask()), [False, True])
-    assert any("requires zero edsclrm_forcing" in message
-               for message in err_info.reason_messages_host())
+    text = capsys.readouterr().err
+    assert "requires zero edsclrm_forcing" in text
+    assert "Fatal error in CLUBB - MPI Process" in text
 
 
 @pytest.mark.parametrize("flux_copy", ["thl", "rt"])
-def test_surface_flux_on_copies_is_fatal(flux_copy):
+def test_surface_flux_on_copies_is_fatal(flux_copy, capsys):
+    """A copy's surface flux prints its source diagnostic and flags column two."""
     thl_index, rt_index = 1, 3
     args = _args(thl_index, rt_index)
     args["edsclrm_forcing"] = jnp.asarray(_forcing_without_copies(args, thl_index, rt_index))
@@ -89,9 +98,12 @@ def test_surface_flux_on_copies_is_fatal(flux_copy):
     wpedsclrp[1, gr.k_lb_zm, index - 1] = 1.e-5  # second column only
     args["wpedsclrp"] = jnp.asarray(wpedsclrp)
     err_info = advance_windm_edsclrm(**args)[-2]
+    jax.block_until_ready(err_info)
+    jax.effects_barrier()
     np.testing.assert_array_equal(np.asarray(err_info.fatal_mask()), [False, True])
-    assert any("requires zero wpedsclrp_sfc" in message
-               for message in err_info.reason_messages_host())
+    text = capsys.readouterr().err
+    assert "requires zero wpedsclrp_sfc" in text
+    assert "Fatal error in CLUBB - MPI Process" in text
 
 
 def _check_settings(edsclr_dim, thl_index, rt_index, enabled=True):

@@ -20,9 +20,9 @@ See also:
 Porting deviations:
 - Sponge damping is intentionally omitted because the JAX case initialization
   rejects sponge-enabled cases before this routine is called.
-- xp2_xpyp_single_lhs_valid is a JAX compile-time guard for the single-LHS
-  branch. It should be revisited when the multiple-LHS branch is expressed as
-  JAX control flow instead of a fatal transitional path.
+- xp2_xpyp_single_lhs_valid guards the single-LHS branch. The unsupported
+  multiple-LHS path prints a runtime diagnostic and marks err_info fatal.
+  It should be revisited when that branch is expressed as JAX control flow.
 - Scalar IDs remain Fortran-style 1-based values because they are logical
   category names rather than Python array indices.
 """
@@ -98,9 +98,6 @@ from clubb_jax.src.CLUBB_core import (
     implicit_coefs_terms,
     pdf_parameter,
 )
-from clubb_jax.src.CLUBB_core.err_info_codes import (
-    ERR_XP2_XPYP_MULTIPLE_LHS_REQUIRED,
-)
 
 
 # Private named constants to avoid string comparisons
@@ -129,7 +126,7 @@ min_cloud_frac_mult = 0.10
     static_argnames=("iiPDF_type", "l_explicit_turbulent_adv_xpyp"),
 )
 def xp2_xpyp_single_lhs_valid(clubb_params, iiPDF_type, l_explicit_turbulent_adv_xpyp):
-    """Return whether the single-LHS solve branch is statically valid.
+    """Return whether the single-LHS solve is valid for the supplied parameters.
 
     TODO(JAX port): fold this target-only helper back into the Fortran-order
     control flow when both solve branches are JAX-native.
@@ -283,9 +280,22 @@ def advance_xp2_xpyp(
     )
     l_multiple_lhs_required = jnp.logical_not(l_single_lhs_valid)
     err_info = err_info.set_fatal(l_multiple_lhs_required)
-    err_info = err_info.set_reason(
-        ERR_XP2_XPYP_MULTIPLE_LHS_REQUIRED,
+    jax.lax.cond(
         l_multiple_lhs_required,
+        lambda _: jax.debug.callback(
+            lambda: print(
+                "advance_xp2_xpyp requires the multiple-LHS solve, "
+                "which is not supported in JAX.\n"
+                "A single-LHS solve requires:\n"
+                "  (l_explicit_turbulent_adv_xpyp or iiPDF_type == iiPDF_ADG1)\n"
+                "  and, in every column, C2thl and C2rtthl must each match C2rt\n"
+                "  within the relative epsilon tolerance.",
+                file=sys.stderr,
+            ),
+            ordered=True,
+        ),
+        lambda _: None,
+        operand=None,
     )
 
     # TODO(JAX port): future lax.cond branch point:
