@@ -9,8 +9,8 @@ Porting deviations:
     ``fill_holes_vertical``.  The Fortran ``widening_windows``,
     ``smart_window``, ``smart_window_smooth``, and ``parallel_fill`` methods
     remain unported and deliberately raise ``NotImplementedError``.
-  * Fortran diagnostic printing and debug-only conservation warnings are not
-    reproduced in JAX.
+  * Method dispatch rejects unsupported methods even when there are no holes;
+    Fortran only dispatches after finding a below-threshold value.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from __future__ import annotations
 from functools import partial
 
 import jax
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -29,6 +30,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     one,
     zero,
 )
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.model_flags import global_fill, sliding_window
 
 _F64_EPS = jnp.finfo(jnp.float64).eps
@@ -309,6 +311,7 @@ def fill_holes_vertical(
     else:
         # TODO(JAX port): port the remaining Fortran fill_holes_type options
         # rather than routing them through a Python/API fallback.
+        print("ERROR: unknown fill_holes_type: ", fill_holes_type, file=sys.stderr)
         raise NotImplementedError(
             "JAX fill_holes_vertical currently supports global_fill and "
             f"sliding_window; got fill_holes_type={fill_holes_type}."
@@ -406,6 +409,62 @@ def fill_holes_wp2_from_horz_tke(
     wp2_out = jnp.where(case_not_enough, wp2_not_enough, jnp.where(case_enough, threshold, wp2))
     up2_out = jnp.where(case_not_enough, up2_not_enough, jnp.where(case_enough, up2_enough, up2))
     vp2_out = jnp.where(case_not_enough, vp2_not_enough, jnp.where(case_enough, vp2_enough, vp2))
+    if clubb_at_least_debug_level(3):
+        # Host diagnostics only: retain source column/level order and old values.
+        def print_tke_errors(w_old, u_old, v_old, w_new, u_new, v_new, limit):
+            import numpy as np
+            for i in range(w_old.shape[0]):
+                for k in range(lower_hf_level, upper_hf_level + 1):
+                    difference = abs(u_old[i,k] + v_old[i,k] + w_old[i,k] - u_new[i,k] - v_new[i,k] - w_new[i,k])
+                    if difference > np.finfo(w_old.dtype).eps * 1000:
+                        print(
+                            "Warning! fill_holes_wp2_from_horz_tke is not conservative at level ",
+                            i+1,
+                            k+1,
+                            ". Difference: ",
+                            difference,
+                            file=sys.stderr,
+                        )
+                    if w_new[i,k] > limit:
+                        print(
+                            "Warning in fill_holes_wp2_from_horz_tke! Too much TKE added to wp2. old: ",
+                            w_old[i,k],
+                            ", new: ",
+                            w_new[i,k],
+                            file=sys.stderr,
+                        )
+                    if w_new[i,k] < w_old[i,k]:
+                        print(
+                            "Warning in fill_holes_wp2_from_horz_tke! wp2 was reduced. old: ",
+                            w_old[i,k],
+                            ", new: ",
+                            w_new[i,k],
+                            file=sys.stderr,
+                        )
+                    for name, old, new in (("up2", u_old, u_new), ("vp2", v_old, v_new)):
+                        if new[i,k] > old[i,k]:
+                            print(
+                                "Warning in fill_holes_wp2_from_horz_tke! " + name + " increased. old: ",
+                                old[i,k],
+                                ", new: ",
+                                new[i,k],
+                                file=sys.stderr,
+                            )
+                        if old[i,k] <= limit and new[i,k] < old[i,k]:
+                            print(
+                                "Warning in fill_holes_wp2_from_horz_tke! TKE was falsely taken from " + name + ". Threshold: ",
+                                limit,
+                                ", old: ",
+                                old[i,k],
+                                ", new: ",
+                                new[i,k],
+                                file=sys.stderr,
+                            )
+        jax.lax.cond(
+            jnp.any(wp2 < threshold),
+            lambda _: jax.debug.callback(print_tke_errors, wp2, up2, vp2, wp2_out, up2_out, vp2_out, threshold, ordered=True),
+            lambda _: None, operand=None,
+        )
     return wp2_out, up2_out, vp2_out
 
 
@@ -445,9 +504,28 @@ def hole_filling_hm_one_lev(num_hm_fill, hm_one_lev):
     )
 
     # Leave the input unchanged if no material is available.
-    # TODO(port-mirror): source warning/conservation checks are not emitted
-    # by this batched kernel; restore them with ordered device diagnostics.
-    return jnp.where(jnp.abs(total_mass) < eps, hm_one_lev, hm_one_lev_filled)
+    result = jnp.where(jnp.abs(total_mass) < eps, hm_one_lev, hm_one_lev_filled)
+    if clubb_at_least_debug_level(2):
+        # Host adaptation of the source scalar-level/species diagnostic loops.
+        def print_hm_errors(original, filled, hole, mass):
+            import numpy as np
+            for index in np.ndindex(original.shape[:-1]):
+                if abs(mass[index][0]) < eps:
+                    print("Warning: One-level hole filling was not successful! total_mass ~= 0")
+                    continue
+                if abs(hole[index][0]) > mass[index][0]:
+                    for _ in range(num_hm_fill):
+                        print(
+                            'Warning: One-level hole filling was not able to fill holes completely! The holes were'
+                            ' filled partially. |total_hole| > total_mass',
+                        )
+                before, after = np.sum(original[index]), np.sum(filled[index])
+                if abs(before - after) > abs(before + after) * eps / 2:
+                    print("Warning: Hole filling was not conservative!")
+                if np.any(filled[index] < zero):
+                    print("Warning: Hole filling failed! A hole could not be filled.")
+        jax.debug.callback(print_hm_errors, hm_one_lev, result, total_hole, total_mass, ordered=True)
+    return result
 
 
 def fill_holes_hydromet_api(
@@ -547,6 +625,23 @@ def fill_holes_driver_api(
         _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(
             i, hydromet_dim, hm_metadata.hydromet_list
         )
+        if clubb_at_least_debug_level(1):
+            def print_hm_holes(values, name=hm_metadata.hydromet_list[i]):
+                import numpy as np
+                for k, col in np.argwhere((values < zero_threshold).T):
+                    print(
+                        name + " < ",
+                        zero_threshold,
+                        " in fill_holes_driver_api at i, k= ",
+                        col+1,
+                        k+1,
+                        file=sys.stderr,
+                    )
+            jax.lax.cond(
+                jnp.any(hydromet[..., i] < zero_threshold),
+                lambda _: jax.debug.callback(print_hm_holes, hydromet[..., i], ordered=True),
+                lambda _: None, operand=None,
+            )
         hydromet_name = hm_metadata.hydromet_list[i]
         if hydromet_name.startswith("r"):
             # Source calls each column with ngrdcol=1 but passes the full gr%dzt.

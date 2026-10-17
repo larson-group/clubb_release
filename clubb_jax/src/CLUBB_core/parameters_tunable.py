@@ -24,6 +24,9 @@ mutates derived-type allocations in place; Python returns a ``NuVertResDep``
 pytree with JAX arrays. Host parameter-file I/O and validation use NumPy;
 parameter-dependent derived calculations are pure JAX. The source lmin fatal
 check is performed by the host driver at initialization and rerun reset.
+
+Observed Fortran differences retained in this diagnostic pass:
+- The init_minmax and parameter_constraints namelist-validation routines and their warnings are not implemented here.
 """
 from __future__ import annotations
 
@@ -416,11 +419,16 @@ def check_parameter_hard_bounds(
         name = PARAM_NAMES[int(k)]
         lower = PARAMETER_HARD_BOUNDS[0, k]
         upper = PARAMETER_HARD_BOUNDS[1, k]
-        print(
-            f"{name} = {values[i, k]} is outside hard configuration bounds: "
-            f"{lower} {upper}",
-            file=sys.stderr,
-        )
+        print(err_info.column_error_header_host(int(i)), file=sys.stderr)
+        print(name + " = ", values[i, k], file=sys.stderr)
+        has_lower = np.isfinite(lower) and lower > -np.finfo(np.float64).max
+        has_upper = np.isfinite(upper) and upper < np.finfo(np.float64).max
+        if has_lower and has_upper:
+            print(name + " is outside hard configuration bounds: ", lower, upper, file=sys.stderr)
+        elif has_lower:
+            print(name + " violates lower hard configuration bound: ", lower, file=sys.stderr)
+        else:
+            print(name + " violates upper hard configuration bound: ", upper, file=sys.stderr)
         err_code[int(i)] = CLUBB_FATAL_ERROR
     return err_info._replace(err_code=err_code)
 
@@ -447,11 +455,10 @@ def check_parameters(
             right = values[i, PNAME_IDX[right_name]]
             tolerance = abs(left + right) * 0.5 * _EPS64
             if abs(left - right) > tolerance:
-                print(
-                    f"{left_name} = {left}, {right_name} = {right} "
-                    f"({left_name} and {right_name} must be equal)",
-                    file=sys.stderr,
-                )
+                print(err_info.column_error_header_host(i), file=sys.stderr)
+                print(left_name + " = ", left, file=sys.stderr)
+                print(right_name + " = ", right, file=sys.stderr)
+                print(left_name + " and " + right_name + " must be equal.", file=sys.stderr)
                 err_code[i] = CLUBB_FATAL_ERROR
 
     return err_info._replace(err_code=err_code)

@@ -4,6 +4,9 @@ The public methods intentionally mirror ``stats_netcdf.F90`` call sites. Names
 and grid slots are static trace-time metadata; dynamic pytree leaves contain
 only compact grid-grouped accumulation banks and budget diagnostics. NetCDF I/O
 is handled by the host ``StatsWriter`` at output boundaries.
+
+Observed Fortran differences retained in this diagnostic pass:
+- Source budget messages are reported from accumulated issue bits at the host output boundary; exact occurrence counts and source-call timing are not retained.
 """
 
 from __future__ import annotations
@@ -470,7 +473,7 @@ class JaxStats:
                 if int(issues[var_id]) & bit:
                     warnings.warn(f"{message} {name}", RuntimeWarning)
             if bool(l_in_budget[var_id]):
-                warnings.warn(f"stats budget left mid-update at end_timestep for {name}", RuntimeWarning)
+                warnings.warn(f"stats warning: budget left mid-update at end_timestep for {name}", RuntimeWarning)
 
     def clear_output_diagnostics(self):
         return self._new(

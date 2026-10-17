@@ -32,6 +32,9 @@ All pure-jnp -> differentiable where the called PDF path supports it.
 References:
   src/CLUBB_core/pdf_closure_module.F90, calc_{wp2xp,wpxp2,wp2xp2,wp4,wpxpyp}_pdf,
   calc_w_up_in_cloud.
+
+Observed Fortran differences retained in this diagnostic pass:
+- The large pdf_closure_new validation/dump blocks require err_info and omitted loading state; the liquid-only diagnostic gate is also absent.
 """
 
 from functools import partial
@@ -136,6 +139,9 @@ def pdf_closure(
     """
     # TODO: port the hydrometeor/liquid-ice-loading branch from the Fortran routine
     # before claiming full pdf_closure parity for hydrometeor prognostic cases.
+    # TODO: Skip Fortran's large pdf_closure_new/check/dump diagnostic blocks:
+    # this reduced interface lacks err_info and part of their hydrometeor state.
+    # Adding the missing validation/ice-loading machinery is separate port work.
     del hydromet_dim, wphydrometp, wp2hmp, rtphmp, thlphmp
     # The JAX stats recorder is handled in pdf_closure_driver; this routine still
     # computes moment fields unconditionally instead of using Fortran's stats-gated

@@ -8,8 +8,6 @@ Porting deviations:
 - The Fortran nz loop in `tsdadg_pdf_driver` is expressed as JAX vectorized
   three-way selection.
 - Fortran intent(out) subroutines return tuples.
-- Fortran warnings printed before clipping negative component variances are not
-  emitted; the JAX driver returns clipped values functionally.
 - The misspelled Fortran name `calc_respnder_parameters` is preserved for API
   parity.
 
@@ -37,6 +35,8 @@ Porting deviations:
 ! variable, which are mu_x_1, mu_x_2, sigma_x_1, and sigma_x_2 (where x stands
 ! for a responding variable here), four equations are needed.
 """
+import jax
+import sys
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
@@ -211,6 +211,30 @@ def tsdadg_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, 
     sig_rt_1 = _sel(rt_set, srt, rrt, 2); sig_rt_2 = _sel(rt_set, srt, rrt, 3)
     mu_thl_1 = _sel(thl_set, sthl, rthl, 0); mu_thl_2 = _sel(thl_set, sthl, rthl, 1)
     sig_thl_1 = _sel(thl_set, sthl, rthl, 2); sig_thl_2 = _sel(thl_set, sthl, rthl, 3)
+
+    # Host adaptation of source per-level warnings, before variance clipping.
+    def print_negative_components(w1, w2, rt1, rt2, thl1, thl2):
+        import numpy as np
+        values = (w1, w2, rt1, rt2, thl1, thl2)
+        for index in np.ndindex(w1.shape):
+            for name, component, value in zip(("w", "w", "rt", "rt", "thl", "thl"),
+                                             ("1st", "2nd", "1st", "2nd", "1st", "2nd"), values):
+                if value[index] < 0.0:
+                    print(
+                        "WARNING:  New TSDADG PDF.  The variance of " + name + " in the " + component + " PDF component is negative and is being clipped to 0.",
+                        file=sys.stderr,
+                    )
+                    number = "1" if component == "1st" else "2"
+                    print(
+                        "sigma_" + name + "_" + number + "^2 (before clipping) = ",
+                        value[index],
+                        file=sys.stderr,
+                    )
+    jax.lax.cond(
+        jnp.any((sig_w_1 < 0) | (sig_w_2 < 0) | (sig_rt_1 < 0) | (sig_rt_2 < 0) | (sig_thl_1 < 0) | (sig_thl_2 < 0)),
+        lambda _: jax.debug.callback(print_negative_components, sig_w_1, sig_w_2, sig_rt_1, sig_rt_2, sig_thl_1, sig_thl_2, ordered=True),
+        lambda _: None, operand=None,
+    )
 
     # Negative variances are clipped to 0.  The Fortran also writes warnings to
     # stderr before clipping.

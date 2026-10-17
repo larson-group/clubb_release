@@ -1,4 +1,10 @@
-"""JAX-side representations from `pdf_parameter_module.F90`."""
+"""JAX-side representations from `pdf_parameter_module.F90`.
+
+Observed Fortran differences retained in this diagnostic pass:
+- Existing constructors group implicit-coefficient routines before PDF routines,
+  unlike the source order; the restored printer precedes pack/unpack as in Fortran.
+- The source single/multiple-column copy routines are absent from this subset.
+"""
 
 from __future__ import annotations
 
@@ -238,6 +244,66 @@ def zero_pdf_params_api(params: pdf_parameter) -> pdf_parameter:
     return init_pdf_params(params.nz, params.ngrdcol)
 
 
+def print_pdf_params(pdf_params, ngrdcol):
+    """Print all PDF fields by column, mirroring Fortran ``print_pdf_params``."""
+    # Host I/O adaptation of source writes; all field arrays are callback inputs.
+    def print_values(values):
+        import sys
+        import numpy as np
+        with np.printoptions(threshold=np.inf):
+            for i in range(ngrdcol):
+                print("PDF parameters for column ", i+1, file=sys.stderr)
+                print("---------------------------------------------------", file=sys.stderr)
+                print("w_1(i,:) = ", values.w_1[i, :], file=sys.stderr)
+                print("w_2(i,:) = ", values.w_2[i, :], file=sys.stderr)
+                print("varnce_w_1(i,:) = ", values.varnce_w_1[i, :], file=sys.stderr)
+                print("varnce_w_2(i,:) = ", values.varnce_w_2[i, :], file=sys.stderr)
+                print("rt_1(i,:) = ", values.rt_1[i, :], file=sys.stderr)
+                print("rt_2(i,:) = ", values.rt_2[i, :], file=sys.stderr)
+                print("varnce_rt_1(i,:) = ", values.varnce_rt_1[i, :], file=sys.stderr)
+                print("varnce_rt_2(i,:) = ", values.varnce_rt_2[i, :], file=sys.stderr)
+                print("thl_1(i,:) = ", values.thl_1[i, :], file=sys.stderr)
+                print("thl_2(i,:) = ", values.thl_2[i, :], file=sys.stderr)
+                print("varnce_thl_1(i,:) = ", values.varnce_thl_1[i, :], file=sys.stderr)
+                print("varnce_thl_2(i,:) = ", values.varnce_thl_2[i, :], file=sys.stderr)
+                print("corr_w_rt_1(i,:) = ", values.corr_w_rt_1[i, :], file=sys.stderr)
+                print("corr_w_rt_2(i,:) = ", values.corr_w_rt_2[i, :], file=sys.stderr)
+                print("corr_w_thl_1(i,:) = ", values.corr_w_thl_1[i, :], file=sys.stderr)
+                print("corr_w_thl_2(i,:) = ", values.corr_w_thl_2[i, :], file=sys.stderr)
+                print("corr_rt_thl_1(i,:) = ", values.corr_rt_thl_1[i, :], file=sys.stderr)
+                print("corr_rt_thl_2(i,:) = ", values.corr_rt_thl_2[i, :], file=sys.stderr)
+                print("alpha_thl(i,:) = ", values.alpha_thl[i, :], file=sys.stderr)
+                print("alpha_rt(i,:) = ", values.alpha_rt[i, :], file=sys.stderr)
+                print("crt_1(i,:) = ", values.crt_1[i, :], file=sys.stderr)
+                print("crt_2(i,:) = ", values.crt_2[i, :], file=sys.stderr)
+                print("cthl_1(i,:) = ", values.cthl_1[i, :], file=sys.stderr)
+                print("cthl_2(i,:) = ", values.cthl_2[i, :], file=sys.stderr)
+                print("chi_1(i,:) = ", values.chi_1[i, :], file=sys.stderr)
+                print("chi_2(i,:) = ", values.chi_2[i, :], file=sys.stderr)
+                print("stdev_chi_1(i,:) = ", values.stdev_chi_1[i, :], file=sys.stderr)
+                print("stdev_chi_2(i,:) = ", values.stdev_chi_2[i, :], file=sys.stderr)
+                print("stdev_eta_1(i,:) = ", values.stdev_eta_1[i, :], file=sys.stderr)
+                print("stdev_eta_2(i,:) = ", values.stdev_eta_2[i, :], file=sys.stderr)
+                print("covar_chi_eta_1(i,:) = ", values.covar_chi_eta_1[i, :], file=sys.stderr)
+                print("covar_chi_eta_2(i,:) = ", values.covar_chi_eta_2[i, :], file=sys.stderr)
+                print("corr_w_chi_1(i,:) = ", values.corr_w_chi_1[i, :], file=sys.stderr)
+                print("corr_w_chi_2(i,:) = ", values.corr_w_chi_2[i, :], file=sys.stderr)
+                print("corr_w_eta_1(i,:) = ", values.corr_w_eta_1[i, :], file=sys.stderr)
+                print("corr_w_eta_2(i,:) = ", values.corr_w_eta_2[i, :], file=sys.stderr)
+                print("corr_chi_eta_1(i,:) = ", values.corr_chi_eta_1[i, :], file=sys.stderr)
+                print("corr_chi_eta_2(i,:) = ", values.corr_chi_eta_2[i, :], file=sys.stderr)
+                print("rsatl_1(i,:) = ", values.rsatl_1[i, :], file=sys.stderr)
+                print("rsatl_2(i,:) = ", values.rsatl_2[i, :], file=sys.stderr)
+                print("rc_1(i,:) = ", values.rc_1[i, :], file=sys.stderr)
+                print("rc_2(i,:) = ", values.rc_2[i, :], file=sys.stderr)
+                print("cloud_frac_1(i,:) = ", values.cloud_frac_1[i, :], file=sys.stderr)
+                print("cloud_frac_2(i,:) = ", values.cloud_frac_2[i, :], file=sys.stderr)
+                print("mixt_frac(i,:) = ", values.mixt_frac[i, :], file=sys.stderr)
+                print("ice_supersat_frac_1(i,:) = ", values.ice_supersat_frac_1[i, :], file=sys.stderr)
+                print("ice_supersat_frac_2(i,:) = ", values.ice_supersat_frac_2[i, :], file=sys.stderr)
+    jax.debug.callback(print_values, pdf_params, ordered=True)
+
+
 def pack_pdf_params_api(params: pdf_parameter, nz: int):
     """Pack the first column of a pdf_parameter into a ``(nz, 47)`` array."""
     slots = []
@@ -261,6 +327,8 @@ def unpack_pdf_params_api(r_param_array, nz: int, template: pdf_parameter) -> pd
     return pdf_parameter(ngrdcol=template.ngrdcol, nz=nz, **values)
 
 
+
+
 __all__ = [
     "implicit_coefs_terms",
     "pdf_parameter",
@@ -270,4 +338,5 @@ __all__ = [
     "zero_pdf_params_api",
     "pack_pdf_params_api",
     "unpack_pdf_params_api",
+    "print_pdf_params",
 ]

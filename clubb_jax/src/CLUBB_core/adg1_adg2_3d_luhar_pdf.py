@@ -76,6 +76,8 @@ def ADG1_w_closure(wm, wp2, Skw, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag):
         varnce_w_1, varnce_w_2: (ngrdcol, nzt) — w variances per component
         mixt_frac:          (ngrdcol, nzt) — mixture fraction (weight of 1st)
     """
+    # TODO: Fortran's debug tolerance error/header depends on err_info and its
+    # fatal-return contract, absent from this pure closure; skipped in print-only work.
     _SKW_TOL = 1.0e-5
 
     # Width (standard deviation) parameters are non-zero
@@ -175,6 +177,8 @@ def ADG1_ADG2_responder_params(xm, xp2, wp2, sqrt_wp2, wpxp,
         varnce_x_1, varnce_x_2: (ngrdcol, nzt) — component variances
         alpha_x:            (ngrdcol, nzt) — normalized variance factor
     """
+    # TODO: Fortran's responder tolerance diagnostic requires x_tol and err_info,
+    # neither carried by this reduced interface; restoring the guard is separate.
     x_1 = xm - wpxp / (sqrt_wp2 * w_2_n)
     x_2 = xm - wpxp / (sqrt_wp2 * w_1_n)
 

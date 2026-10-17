@@ -7,9 +7,12 @@ Porting deviations:
   as JAX array operations or small Python loops over static dimensions.
 - Fortran stats side effects are represented by functional updates to the JAX
   stats object.
-- Fortran debug printing and hard stops are omitted from jitted routines; the
+- Fortran hard stops are omitted from jitted routines; the
   active callers enforce thresholds before calling or carry error state
   separately.
+
+Observed Fortran differences retained in this diagnostic pass:
+- The threshold_lo > threshold_hi fatal guard is absent; this pass restores clipping warnings without adding a STOP or a new error-state interface.
 """
 
 from __future__ import annotations
@@ -17,12 +20,14 @@ from __future__ import annotations
 from functools import partial
 
 import jax
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import smooth_heaviside_peskin
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     max_mag_correlation,
     max_mag_correlation_flux,
@@ -124,6 +129,8 @@ def clip_variance(
       None
     """
     del ngrdcol, gr
+    # TODO: Source threshold_lo > threshold_hi STOP has no JAX fatal contract;
+    # leave that missing guard/termination diagnostic outside print-only work.
 
     name_xp2_cl = ""
     if solve_type == clip_wp2:
@@ -147,6 +154,26 @@ def clip_variance(
     # in WRF-CLUBB quarter_ss.
     active_mask = jnp.arange(nzm)[None, :] < nzm - 1
     xp2_out = jnp.where(active_mask, jnp.maximum(threshold_lo, xp2), xp2)
+
+    if clubb_at_least_debug_level(3):
+        def print_clipping(values, low, high):
+            import numpy as np
+            for k, i in np.argwhere((values[:, :-1] < low[:, :-1]).T):
+                print("Warning: (solve_type==", solve_type, ") xp2 =", values[i,k],
+                      "<", low[i,k], " @ k =", k+1, ". Small values are clipped.", file=sys.stderr)
+            if threshold_hi is not None:
+                for k, i in np.argwhere((np.maximum(values[:, :-1], low[:, :-1]) > high).T):
+                    print("Warning: (solve_type==", solve_type, ") xp2 =", high,
+                          ">", high, " @ k =", k+1, ". Large values are clipped.", file=sys.stderr)
+        clipping = jnp.any(active_mask & (xp2 < threshold_lo))
+        if threshold_hi is not None:
+            clipping = clipping | jnp.any(active_mask & (xp2_out > threshold_hi))
+        jax.lax.cond(
+            clipping,
+            lambda _: jax.debug.callback(print_clipping, xp2, jnp.broadcast_to(threshold_lo, xp2.shape),
+                                        jnp.asarray(threshold_hi if threshold_hi is not None else jnp.inf), ordered=True),
+            lambda _: None, operand=None,
+        )
 
     # Optional clipping of large values. This was added so the <var>_cl budget
     # term also contains the upper clipping contributions.
@@ -466,7 +493,18 @@ def clip_rcm(nzt: int, ngrdcol: int, rtm, message: str, rcm):
     References:
       None
     """
-    del nzt, ngrdcol, message
+    del nzt, ngrdcol
+    if clubb_at_least_debug_level(3):
+        def print_rcm(total, cloud):
+            import numpy as np
+            for k, i in np.argwhere((total < cloud).T):
+                print(message, ' at k=', k+1, ' at i=', i+1, 'rcm(k) = ', cloud[i,k],
+                      'rtm(k) = ', total[i,k], '.', ' Clipping rcm.', file=sys.stderr)
+        jax.lax.cond(
+            jnp.any(rtm < rcm),
+            lambda _: jax.debug.callback(print_rcm, rtm, rcm, ordered=True),
+            lambda _: None, operand=None,
+        )
     # Vince Larson clipped rcm in order to prevent rvm < 0. 5 Apr 2008.
     # This code will not work unless rtm >= 0.
     # We do not clip rcm_in_layer because rcm_in_layer only influences

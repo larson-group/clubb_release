@@ -21,6 +21,10 @@ Porting deviations:
   out because the JAX driver rejects unsupported runtime options elsewhere.
   The model flag constants used by the Fortran routine are still mirrored
   below so dispatch values remain source-grounded.
+
+Observed Fortran differences retained in this diagnostic pass:
+- parameterization_check keeps evaluating after fatal NaNs instead of taking the Fortran early return; cold-level output is suppressed after NaNs.
+- Full mixed-flag configuration checks and the detailed PDF validator schema remain unported; reduced host validity predicates do not carry error-header metadata.
 """
 
 
@@ -29,6 +33,7 @@ import sys
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
 import jax.numpy as jnp
+import jax
 import numpy as np
 
 from clubb_jax.src.CLUBB_core.error_code import CLUBB_FATAL_ERROR
@@ -234,8 +239,23 @@ def parameterization_check(
         )
 
     # Check the first levels for temperatures greater than 200K
-    # The Fortran source only writes this diagnostic and does not update
-    # err_info, so there is no JAX state update here.
+    # Host diagnostic adaptation: retain the source's diagnostic-only test.
+    def print_cold_levels(values):
+        for i, k in np.argwhere(values < 190.0):
+            print(
+                "Liquid water potential temperature (thlm) < 190K ",
+                "at grid column i = ", i + 1, " and grid level k = ", k + 1,
+                ": thlm(", i + 1, ",", k + 1, ") = ", values[i, k],
+                file=sys.stderr,
+            )
+
+    first_levels = thlm[:, :10]
+    jax.lax.cond(
+        jnp.any(first_levels < 190.0) & ~nan_fatal,
+        lambda _: jax.debug.callback(print_cold_levels, first_levels, ordered=True),
+        lambda _: None,
+        operand=None,
+    )
 
     return err_info
 
@@ -244,28 +264,54 @@ def check_negative(var, varname, operation, err_info: ErrInfo):
     """Checks for negative values in the var array and reports the column and
     vertical indices in which the negative values occur.
 
-    JAX updates `err_info` but does not reproduce the formatted per-index
-    diagnostics.
     """
-    del varname, operation
+    # Host I/O adaptation of Fortran's per-index writes, in level/column order.
+    def print_negative(values, info):
+        values = np.asarray(values)
+        indices = np.argwhere(values.T < 0.0) if values.ndim == 2 else np.argwhere(values < 0.0)
+        for index in indices:
+            if isinstance(info, ErrInfo):
+                print(info.global_error_header_host(), file=sys.stderr)
+            k, i = ((int(index[0]) + 1, int(index[1]) + 1)
+                    if values.ndim == 2 else (1, int(index[0]) + 1 if len(index) else 1))
+            print(varname, " < 0 in ", operation,
+                  " at i = ", i, " and k = ", k, file=sys.stderr)
+
     if not hasattr(err_info, "set_fatal"):
         if np.any(np.asarray(var) < 0.0):
+            print_negative(np.asarray(var), None)
             err_info[...] = CLUBB_FATAL_ERROR
         return err_info
+    jax.lax.cond(
+        jnp.any(jnp.asarray(var) < 0.0),
+        lambda _: jax.debug.callback(print_negative, var, err_info, ordered=True),
+        lambda _: None,
+        operand=None,
+    )
     return err_info.set_fatal(mask=jnp.any(jnp.asarray(var) < 0.0))
 
 
 def check_nan(var, varname, operation, err_info: ErrInfo):
     """Checks for a NaN in the var array and reports it.
 
-    JAX treats any non-finite value as fatal and does not reproduce the
-    formatted diagnostic write.
+    JAX treats any non-finite value as fatal, as does Fortran's IEEE check.
     """
-    del varname, operation
+    def print_nan(info):
+        if isinstance(info, ErrInfo):
+            print(info.global_error_header_host(), file=sys.stderr)
+        print(varname, " is NaN in ", operation, file=sys.stderr)
+
     if not hasattr(err_info, "set_fatal"):
         if np.any(~np.isfinite(np.asarray(var))):
+            print_nan(None)
             err_info[...] = CLUBB_FATAL_ERROR
         return err_info
+    jax.lax.cond(
+        jnp.any(~jnp.isfinite(jnp.asarray(var))),
+        lambda _: jax.debug.callback(print_nan, err_info, ordered=True),
+        lambda _: None,
+        operand=None,
+    )
     return err_info.set_fatal(
         mask=jnp.any(jnp.logical_not(jnp.isfinite(jnp.asarray(var))))
     )
@@ -317,11 +363,20 @@ def sfc_varnce_check(
     values = [wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc]
     if int(sclr_dim) > 0:
         values.extend([sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc])
+    for name, value in zip(
+        ("wp2_sfc", "up2_sfc", "vp2_sfc", "thlp2_sfc", "rtp2_sfc", "rtpthlp_sfc",
+         "sclrp2_sfc", "sclrprtp_sfc", "sclrpthlp_sfc"), values,
+    ):
+        if value is not None and np.any(~np.isfinite(np.asarray(value))):
+            print(name, " is NaN in ", "calc_surface_varnce", file=sys.stderr)
     return _all_finite(*values)
 
 
 def length_check(Lscale, Lscale_up, Lscale_down):
     """Determine whether length_new output variables carry values that are NaNs."""
+    for name, value in (("Lscale", Lscale), ("Lscale_up", Lscale_up), ("Lscale_down", Lscale_down)):
+        if value is not None and np.any(~np.isfinite(np.asarray(value))):
+            print(name, " is NaN in ", "compute_mixing_length", file=sys.stderr)
     return _all_finite(Lscale, Lscale_up, Lscale_down)
 
 
@@ -359,7 +414,7 @@ def invalid_model_arrays(**arrays):
     References:
       None
     """
-    for value in arrays.values():
+    for name, value in arrays.items():
         if value is None:
             continue
         try:
@@ -369,6 +424,7 @@ def invalid_model_arrays(**arrays):
         if arr.dtype.kind not in "biufc":
             continue
         if not np.all(np.isfinite(arr)):
+            print("NaN in", name, "model array", file=sys.stderr)
             return True
     return False
 
@@ -385,6 +441,8 @@ def check_clubb_settings(*, err_info, ngrdcol, edsclr_dim, sclr_idx, params, con
     supported-feature gates.
     """
     del kwargs
+    # TODO: The remaining Fortran flag checks and their diagnostics are unported;
+    # restoring that configuration machinery exceeds print-only work.
     err_info = check_parameters(ngrdcol, params, err_info)
 
     # The l_do_expldiff_rtm_thlm flag explicitly diffuses copies of thlm and

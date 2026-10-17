@@ -13,8 +13,15 @@ JAX trace; the positive-definite path remains differentiable.
 With ``CLUBB_JAX_PORTABLE_CHOLESKY=1``, small PDF matrices use a native JAX
 Cholesky factorization instead of the vendor's batched solver kernel. Scaling,
 dtype, lower-triangle ownership, and the concrete diagonal-retry path are retained.
+
+Observed Fortran differences retained in this diagnostic pass:
+- LAPACK argument status/failing-minor numbers and eigenvalue/correlation diagnostic helpers are absent; only available matrices and retry messages are printed.
+- The concrete retry path allows an initial factorization plus ten retries;
+  Fortran limits its factorization loop to ten attempts total.
 """
 import os
+import sys
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 import jax
 import jax.numpy as jnp
@@ -112,6 +119,22 @@ def Cholesky_factor(a_input):
         return jnp.where(mask, factor, m)
 
     a_cholesky = _factor(a_work)
+    if clubb_at_least_debug_level(1):
+        # Host formatting only; LAPACK's failing-minor info is unavailable in JAX.
+        def print_cholesky_error(original, factored):
+            print("factorization failed.", file=sys.stderr)
+            for label, values in (("a_input=", original), ("a_Cholesky=", factored)):
+                print(label, file=sys.stderr)
+                for i in range(values.shape[0]):
+                    print(" ".join(f"{value:10.3g}" for value in values[i, :i+1]), file=sys.stderr)
+        jax.lax.cond(
+            jnp.any(jnp.isnan(jnp.diagonal(a_cholesky))),
+            lambda _: jax.debug.callback(print_cholesky_error, a, a_cholesky, ordered=True),
+            lambda _: None, operand=None,
+        )
+    # TODO: Skip LAPACK argument/minor info and eigenvalue/correlation dumps;
+    # those diagnostic capabilities are absent and exceed print-only restoration.
+
 
     try:
         failed = bool(jnp.isnan(jnp.diagonal(a_cholesky)).any())
@@ -131,12 +154,22 @@ def Cholesky_factor(a_input):
             # -dschanen 30 Aug 2010
 
             # Use the smallest element * d_coef * iteration
+            if clubb_at_least_debug_level(1):
+                print("Fatal error in Cholesky_factor", file=sys.stderr)
+                print("Attempting to modify matrix to allow factorization.", file=sys.stderr)
             tau = d_smallest * _D_COEF * it
             m = a_work + tau * jnp.eye(n)
             cand = _factor(m)
             if not bool(jnp.isnan(jnp.diagonal(cand)).any()):
                 a_cholesky = cand
+                if clubb_at_least_debug_level(1):
+                    print("a_factored (worked)=", file=sys.stderr)
+                    for i in range(n):
+                        print(" ".join(f"{float(value):10.3g}" for value in cand[i, :i+1]), file=sys.stderr)
                 break
             a_cholesky = cand
+            if it == _ITERMAX:
+                print("iteration =", it, "itermax =", _ITERMAX, file=sys.stderr)
+                print("Fatal error in Cholesky_factor", file=sys.stderr)
 
     return a_scaling, a_cholesky, l_scaled

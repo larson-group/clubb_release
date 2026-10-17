@@ -30,6 +30,7 @@ Porting deviations:
 from functools import partial
 
 import jax
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -38,6 +39,7 @@ import jax.numpy as jnp
 from clubb_jax.src.CLUBB_core.advance_helper_module import calc_wp3_on_wp2
 from clubb_jax.src.CLUBB_core.clip_explicit import clip_covar, clip_variance
 from clubb_jax.src.CLUBB_core.diffusion import diffusion_zm_lhs
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt, zt2zm
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
@@ -555,6 +557,109 @@ def advance_xp2_xpyp(
                 )
                 sclrpthlp = sclrpthlp.at[:, :, sclr].set(sclrpthlp_s)
 
+    if clubb_at_least_debug_level(0):
+        # Host I/O adaptation: full source dump using existing immutable snapshots.
+        def print_xp_error(info, values, current, previous):
+            import numpy as np
+            with np.printoptions(threshold=np.inf):
+                print(info.global_error_header_host(), file=sys.stderr)
+                print("Error in advance_xp2_xpyp", file=sys.stderr)
+                print("Intent(in)", file=sys.stderr)
+                print('invrs_tau_xp2_zm = ', values['invrs_tau_xp2_zm'], file=sys.stderr)
+                print('invrs_tau_C4_zm = ', values['invrs_tau_C4_zm'], file=sys.stderr)
+                print('invrs_tau_C14_zm = ', values['invrs_tau_C14_zm'], file=sys.stderr)
+                print('wm_zm = ', values['wm_zm'], file=sys.stderr)
+                print('rtm = ', values['rtm'], file=sys.stderr)
+                print('wprtp = ', values['wprtp'], file=sys.stderr)
+                print('thlm = ', values['thlm'], file=sys.stderr)
+                print('wpthlp = ', values['wpthlp'], file=sys.stderr)
+                print('wpthvp = ', values['wpthvp'], file=sys.stderr)
+                print('um = ', values['um'], file=sys.stderr)
+                print('vm = ', values['vm'], file=sys.stderr)
+                print('wp2 = ', values['wp2'], file=sys.stderr)
+                print('wp3 = ', values['wp3'], file=sys.stderr)
+                print('upwp = ', values['upwp'], file=sys.stderr)
+                print('vpwp = ', values['vpwp'], file=sys.stderr)
+                print('sigma_sqd_w = ', values['sigma_sqd_w'], file=sys.stderr)
+                print('Kh_zt = ', values['Kh_zt'], file=sys.stderr)
+                print('rtp2_forcing = ', values['rtp2_forcing'], file=sys.stderr)
+                print('thlp2_forcing = ', values['thlp2_forcing'], file=sys.stderr)
+                print('rtpthlp_forcing = ', values['rtpthlp_forcing'], file=sys.stderr)
+                print('rho_ds_zm = ', values['rho_ds_zm'], file=sys.stderr)
+                print('rho_ds_zt = ', values['rho_ds_zt'], file=sys.stderr)
+                print('invrs_rho_ds_zm = ', values['invrs_rho_ds_zm'], file=sys.stderr)
+                print('thv_ds_zm = ', values['thv_ds_zm'], file=sys.stderr)
+                print('wp2_zt = ', values['wp2_zt'], file=sys.stderr)
+                for sclr in range(sclr_dim):
+                    print("sclrm = ", sclr+1, values["sclrm"][:, :, sclr], file=sys.stderr)
+                    print("wpsclrp = ", sclr+1, values["wpsclrp"][:, :, sclr], file=sys.stderr)
+                print("Intent(In/Out)", file=sys.stderr)
+                for name in ("rtp2", "thlp2", "rtpthlp", "up2", "vp2"):
+                    if l_lmm_stepping:
+                        print(name + " (pre-solve) = ", previous[name], file=sys.stderr)
+                    print(name + " = ", current[name], file=sys.stderr)
+                for sclr in range(sclr_dim):
+                    for name, label in (("sclrp2", "sclrp2"), ("sclrprtp", "sclrprtp"), ("sclrpthlp", "sclrthlp")):
+                        if l_lmm_stepping:
+                            print(label + " (pre-solve) = ", sclr+1, previous[name][:, :, sclr], file=sys.stderr)
+                        print(label + " = ", sclr+1, current[name][:, :, sclr], file=sys.stderr)
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                print_xp_error, err_info,
+                {
+                    'invrs_tau_xp2_zm': invrs_tau_xp2_zm,
+                    'invrs_tau_C4_zm': invrs_tau_C4_zm,
+                    'invrs_tau_C14_zm': invrs_tau_C14_zm,
+                    'wm_zm': wm_zm,
+                    'rtm': rtm,
+                    'wprtp': wprtp,
+                    'thlm': thlm,
+                    'wpthlp': wpthlp,
+                    'wpthvp': wpthvp,
+                    'um': um,
+                    'vm': vm,
+                    'wp2': wp2,
+                    'wp3': wp3,
+                    'upwp': upwp,
+                    'vpwp': vpwp,
+                    'sigma_sqd_w': sigma_sqd_w,
+                    'Kh_zt': Kh_zt,
+                    'rtp2_forcing': rtp2_forcing,
+                    'thlp2_forcing': thlp2_forcing,
+                    'rtpthlp_forcing': rtpthlp_forcing,
+                    'rho_ds_zm': rho_ds_zm,
+                    'rho_ds_zt': rho_ds_zt,
+                    'invrs_rho_ds_zm': invrs_rho_ds_zm,
+                    'thv_ds_zm': thv_ds_zm,
+                    'wp2_zt': wp2_zt,
+                    'sclrm': sclrm,
+                    'wpsclrp': wpsclrp,
+                },
+                {
+                    'rtp2': rtp2,
+                    'thlp2': thlp2,
+                    'rtpthlp': rtpthlp,
+                    'up2': up2,
+                    'vp2': vp2,
+                    'sclrp2': sclrp2,
+                    'sclrprtp': sclrprtp,
+                    'sclrpthlp': sclrpthlp,
+                },
+                {
+                    'rtp2': initial_rtp2,
+                    'thlp2': initial_thlp2,
+                    'rtpthlp': initial_rtpthlp,
+                    'up2': initial_up2,
+                    'vp2': initial_vp2,
+                    'sclrp2': initial_sclrp2,
+                    'sclrprtp': initial_sclrprtp,
+                    'sclrpthlp': initial_sclrpthlp,
+                }, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+
     l_return_initial_state = l_multiple_lhs_required
     rtp2 = jnp.where(l_return_initial_state, initial_rtp2, rtp2)
     thlp2 = jnp.where(l_return_initial_state, initial_thlp2, thlp2)
@@ -669,6 +774,21 @@ def solve_xp2_xpyp_with_single_lhs(
         nzm, ngrdcol, xp2_xpyp_single_lhs, l_implemented, gr,
         tridiag_solve_method, stats, rhs, lhs, err_info,
     )
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda info: print(
+                    info.global_error_header_host(),
+                    'calling xp2_xpyp_solve in solve_xp2_xpyp_with_single_lhs',
+                    sep="\n",
+                    file=sys.stderr,
+                ),
+                err_info, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+
 
     if l_lmm_stepping:
         rtp2 = one_half * (rtp2 + solution[:, :, 0])
@@ -760,6 +880,21 @@ def solve_xp2_xpyp_with_multiple_lhs(
         nzm, ngrdcol, xp2_xpyp_rtp2, l_implemented, gr,
         tridiag_solve_method, stats, rhs, lhs, err_info,
     )
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda info: print(
+                    info.global_error_header_host(),
+                    'calling xp2_xpyp_solve for rtp2 in solve_xp2_xpyp_with_multiple_lhs',
+                    sep="\n",
+                    file=sys.stderr,
+                ),
+                err_info, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+
     rtp2 = one_half * (rtp2 + rtp2_solution) if l_lmm_stepping else rtp2_solution
     if l_sample:
         stats = stats_finalize_xp2_xpyp_terms(
@@ -779,6 +914,21 @@ def solve_xp2_xpyp_with_multiple_lhs(
         nzm, ngrdcol, xp2_xpyp_thlp2, l_implemented, gr,
         tridiag_solve_method, stats, rhs, lhs, err_info,
     )
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda info: print(
+                    info.global_error_header_host(),
+                    'calling xp2_xpyp_solve for thlp2 in solve_xp2_xpyp_with_multiple_lhs',
+                    sep="\n",
+                    file=sys.stderr,
+                ),
+                err_info, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+
     thlp2 = one_half * (thlp2 + thlp2_solution) if l_lmm_stepping else thlp2_solution
     if l_sample:
         stats = stats_finalize_xp2_xpyp_terms(
@@ -799,6 +949,21 @@ def solve_xp2_xpyp_with_multiple_lhs(
         nzm, ngrdcol, xp2_xpyp_rtpthlp, l_implemented, gr,
         tridiag_solve_method, stats, rhs, lhs, err_info,
     )
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda info: print(
+                    info.global_error_header_host(),
+                    'calling xp2_xpyp_solve for rtpthlp in solve_xp2_xpyp_with_multiple_lhs',
+                    sep="\n",
+                    file=sys.stderr,
+                ),
+                err_info, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+
     rtpthlp = one_half * (rtpthlp + rtpthlp_solution) if l_lmm_stepping else rtpthlp_solution
     if l_sample:
         stats = stats_finalize_xp2_xpyp_terms(
@@ -830,6 +995,21 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     nzm, ngrdcol, xp2_xpyp_scalars, l_implemented, gr,
                     tridiag_solve_method, stats, rhs, lhs, err_info,
                 )
+                if clubb_at_least_debug_level(0):
+                    jax.lax.cond(
+                        err_info.any_fatal(),
+                        lambda _: jax.debug.callback(
+                            lambda info, index=sclr: print(
+                                info.global_error_header_host(),
+                                'calling xp2_xpyp_solve for sclrp2 with sclr index ' + str(index + 1) + " in solve_xp2_xpyp_with_multiple_lhs",
+                                sep="\n",
+                                file=sys.stderr,
+                            ),
+                            err_info, ordered=True,
+                        ),
+                        lambda _: None, operand=None,
+                    )
+
                 sclrp2 = sclrp2.at[:, :, sclr].set(
                     one_half * (sclrp2[:, :, sclr] + solution)
                     if l_lmm_stepping else solution
@@ -857,6 +1037,21 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     nzm, ngrdcol, xp2_xpyp_scalars, l_implemented, gr,
                     tridiag_solve_method, stats, rhs, lhs, err_info,
                 )
+                if clubb_at_least_debug_level(0):
+                    jax.lax.cond(
+                        err_info.any_fatal(),
+                        lambda _: jax.debug.callback(
+                            lambda info, index=sclr: print(
+                                info.global_error_header_host(),
+                                'calling xp2_xpyp_solve for sclrprtp with sclr index ' + str(index + 1) + " in solve_xp2_xpyp_with_multiple_lhs",
+                                sep="\n",
+                                file=sys.stderr,
+                            ),
+                            err_info, ordered=True,
+                        ),
+                        lambda _: None, operand=None,
+                    )
+
                 sclrprtp = sclrprtp.at[:, :, sclr].set(
                     one_half * (sclrprtp[:, :, sclr] + solution)
                     if l_lmm_stepping else solution
@@ -884,6 +1079,21 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     nzm, ngrdcol, xp2_xpyp_scalars, l_implemented, gr,
                     tridiag_solve_method, stats, rhs, lhs, err_info,
                 )
+                if clubb_at_least_debug_level(0):
+                    jax.lax.cond(
+                        err_info.any_fatal(),
+                        lambda _: jax.debug.callback(
+                            lambda info, index=sclr: print(
+                                info.global_error_header_host(),
+                                'calling xp2_xpyp_solve for sclrpthlp with sclr index ' + str(index + 1) + " in solve_xp2_xpyp_with_multiple_lhs",
+                                sep="\n",
+                                file=sys.stderr,
+                            ),
+                            err_info, ordered=True,
+                        ),
+                        lambda _: None, operand=None,
+                    )
+
                 sclrpthlp = sclrpthlp.at[:, :, sclr].set(
                     one_half * (sclrpthlp[:, :, sclr] + solution)
                     if l_lmm_stepping else solution
@@ -940,6 +1150,21 @@ def solve_xp2_xpyp_with_multiple_lhs(
                 nzm, ngrdcol, xp2_xpyp_scalars, l_implemented, gr,
                 tridiag_solve_method, stats, sclr_rhs, lhs, err_info,
             )
+            if clubb_at_least_debug_level(0):
+                jax.lax.cond(
+                    err_info.any_fatal(),
+                    lambda _: jax.debug.callback(
+                        lambda info, index=sclr: print(
+                            info.global_error_header_host(),
+                            'calling xp2_xpyp_solve for sclr with sclr index ' + str(index + 1) + " in solve_xp2_xpyp_with_multiple_lhs",
+                            sep="\n",
+                            file=sys.stderr,
+                        ),
+                        err_info, ordered=True,
+                    ),
+                    lambda _: None, operand=None,
+                )
+
             for sclr in range(sclr_dim):
                 if l_lmm_stepping:
                     sclrp2 = sclrp2.at[:, :, sclr].set(
@@ -1050,6 +1275,21 @@ def xp2_xpyp_solve(
         use_rcond=l_need_rcond,
         l_implemented=l_implemented,
     )
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda info: print(
+                    info.global_error_header_host(),
+                    'calling tridiag_solve in xp2_xpyp_solve',
+                    sep="\n",
+                    file=sys.stderr,
+                ),
+                err_info, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+
 
     if l_need_rcond and l_sample:
         cond = one / rcond

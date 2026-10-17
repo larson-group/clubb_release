@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import sys
 
 
 # ===============================================================================
@@ -31,7 +32,11 @@ def file_read_1d(file_unit, path_and_filename, num_datapts, entries_per_line):
     del file_unit, entries_per_line
 
     # Open data file.
-    variable = np.fromfile(path_and_filename, sep=" ", count=num_datapts)
+    try:
+        variable = np.fromfile(path_and_filename, sep=" ", count=num_datapts)
+    except OSError:
+        print("CLUBB encountered an error trying to open " + str(path_and_filename), file=sys.stderr)
+        raise
     if variable.size != num_datapts:
         raise ValueError(
             f"Expected {num_datapts} values in {path_and_filename}, "

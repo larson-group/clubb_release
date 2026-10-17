@@ -17,9 +17,8 @@ References:
 Porting deviations:
 - Sponge damping blocks are unsupported here because clubb_case_initalization
   rejects sponge-enabled Python/JAX driver cases before this routine is called.
-- The detailed Fortran error-print diagnostics and diagnostic-only early
-  returns are reduced until full JAX diagnostic state is available; fatal
-  conditions still mark err_info.
+- Diagnostic-only early returns remain reduced; fatal conditions mark err_info
+  and the host driver owns stopping after the compiled call.
 - Non-zero edsclrm_forcing or surface flux for the thlm/rtm copies marks the
   affected columns fatal (with a reason code) but does not return early as the
   Fortran does.
@@ -31,6 +30,7 @@ Porting deviations:
 from functools import partial
 
 import jax
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -51,6 +51,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     zero,
     zero_threshold,
 )
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.model_flags import l_force_descending_solves
 from clubb_jax.src.CLUBB_core.parameter_indices import ic_K10, ic_K10h
 from clubb_jax.src.CLUBB_core.diffusion import diffusion_zt_lhs
@@ -129,6 +130,8 @@ def advance_windm_edsclrm(
     back substitutions (since the left hand side matrix is the same for all
     input variables).
     """
+    # Retain immutable pre-solve values solely for the Fortran failure dump.
+    um_before, vm_before = um, vm
     if edsclr_dim > 1 and l_do_expldiff_rtm_thlm:
 
         # The thlm and rtm eddy scalars hold copies of thlm and rtm, which
@@ -162,6 +165,7 @@ def advance_windm_edsclrm(
         edsclrm = edsclrm.at[:, :, sclr_idx.iiedsclr_thl - 1].set(thlm)
         edsclrm = edsclrm.at[:, :, sclr_idx.iiedsclr_rt - 1].set(rtm)
 
+    edsclrm_before = edsclrm
     l_perturbed_wind = (not l_predict_upwp_vpwp) and l_linearize_pbl_winds
 
     if not l_implemented:
@@ -288,6 +292,21 @@ def advance_windm_edsclrm(
             stats, l_need_rcond,
             lhs, rhs[:, :, :nrhs], err_info,
         )
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(
+                    lambda info: print(
+                        info.global_error_header_host(),
+                        'Fatal error solving for um/vm',
+                        sep="\n",
+                        file=sys.stderr,
+                    ),
+                    err_info, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
+
         solution = solution.at[:, :, :nrhs].set(solution_wind)
 
         # ----------------------------------------------------------------
@@ -478,6 +497,21 @@ def advance_windm_edsclrm(
             stats, l_need_rcond,
             lhs, rhs[:, :, :nrhs], err_info,
         )
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(
+                    lambda info: print(
+                        info.global_error_header_host(),
+                        'Fatal error solving for um_pert/vm_pert',
+                        sep="\n",
+                        file=sys.stderr,
+                    ),
+                    err_info, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
+
         solution = solution.at[:, :, :nrhs].set(solution_wind)
 
         um_pert = solution[:, :, windm_edsclrm_um - 1]
@@ -565,6 +599,21 @@ def advance_windm_edsclrm(
             stats, l_need_rcond,
             lhs, rhs[:, :, :edsclr_dim], err_info,
         )
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(
+                    lambda info: print(
+                        info.global_error_header_host(),
+                        'Fatal error solving for edsclrm',
+                        sep="\n",
+                        file=sys.stderr,
+                    ),
+                    err_info, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
+
         solution = solution.at[:, :, :edsclr_dim].set(solution_scalar)
 
         # Update eddy scalar quantities.
@@ -584,6 +633,59 @@ def advance_windm_edsclrm(
             wpedsclrp = wpedsclrp.at[:, 1:nzm - 1, edsclr].set(
                 -one_half * xpwp[:, 1:nzm - 1]
             )
+
+    if clubb_at_least_debug_level(0):
+        # Host I/O adaptation: source field order, complete arrays, one callback.
+        def print_wind_error(inputs, outputs, old, scalar_forcing):
+            import numpy as np
+            with np.printoptions(threshold=np.inf):
+                print("Error in advance_windm_edsclrm", file=sys.stderr)
+                print("intent(in)", file=sys.stderr)
+                print("dt = ", inputs["dt"], file=sys.stderr)
+                print("wm_zt = ", inputs["wm_zt"], file=sys.stderr)
+                print("Km_zm = ", inputs["Km_zm"], file=sys.stderr)
+                print("ug = ", inputs["ug"], file=sys.stderr)
+                print("vg = ", inputs["vg"], file=sys.stderr)
+                print("um_ref = ", inputs["um_ref"], file=sys.stderr)
+                print("vm_ref = ", inputs["vm_ref"], file=sys.stderr)
+                print("wp2 = ", inputs["wp2"], file=sys.stderr)
+                print("up2 = ", inputs["up2"], file=sys.stderr)
+                print("vp2 = ", inputs["vp2"], file=sys.stderr)
+                print("um_forcing = ", inputs["um_forcing"], file=sys.stderr)
+                print("vm_forcing = ", inputs["vm_forcing"], file=sys.stderr)
+                for edsclr in range(edsclr_dim):
+                    print("edsclrm_forcing # = ", edsclr + 1, scalar_forcing, file=sys.stderr)
+                print("fcor = ", inputs["fcor"], file=sys.stderr)
+                print("l_implemented = ", l_implemented, file=sys.stderr)
+                print("intent(inout)", file=sys.stderr)
+                for name in ("um", "vm"):
+                    if l_lmm_stepping:
+                        print(name + " (pre-solve) = ", old[name], file=sys.stderr)
+                    print(name + " = ", outputs[name], file=sys.stderr)
+                for edsclr in range(edsclr_dim):
+                    if l_lmm_stepping:
+                        print(
+                            "edsclrm (pre-solve) # ",
+                            edsclr + 1,
+                            "=",
+                            old["edsclrm"][:, :, edsclr],
+                            file=sys.stderr,
+                        )
+                    print("edsclrm # ", edsclr + 1, "=", outputs["edsclrm"][:, :, edsclr], file=sys.stderr)
+                for name in ("upwp", "vpwp", "wpedsclrp"):
+                    print(name + " = ", outputs[name], file=sys.stderr)
+
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                print_wind_error,
+                {"dt": dt, "wm_zt": wm_zt, "Km_zm": Km_zm, "ug": ug, "vg": vg, "um_ref": um_ref, "vm_ref": vm_ref, "wp2": wp2, "up2": up2, "vp2": vp2, "um_forcing": um_forcing, "vm_forcing": vm_forcing, "fcor": fcor},
+                {"um": um, "vm": vm, "upwp": upwp, "vpwp": vpwp, "wpedsclrp": wpedsclrp, "edsclrm": edsclrm},
+                {"um": um_before, "vm": vm_before, "edsclrm": edsclrm_before},
+                edsclrm_forcing, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
 
     if edsclr_dim > 1 and l_do_expldiff_rtm_thlm:
         thlm700 = pvertinterp(nzt, ngrdcol, gr, p_in_Pa, 70000.0, thlm)
@@ -692,6 +794,21 @@ def windm_edsclrm_solve(
         use_rcond=l_need_rcond,
         l_implemented=l_implemented,
     )
+
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda info: print(
+                    info.global_error_header_host(),
+                    'calling tridiag_solve in windm_edsclrm_solve',
+                    sep="\n",
+                    file=sys.stderr,
+                ),
+                err_info, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
 
     if l_need_rcond and stats.l_sample:
         stats = stats.update("windm_matrix_condt_num", one / rcond)

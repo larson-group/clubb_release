@@ -15,7 +15,7 @@ Porting deviations:
 - Fortran WHERE blocks are represented with jnp.where and guarded
   denominators/square roots so the routines remain JIT friendly.
 - calc_mixture_fraction returns the symmetric limit for F_x = 0; the Fortran
-  writes to stderr and error-stops when F_x = 0 and | Skx | > 0. That
+  error-stops when F_x = 0 and | Skx | > 0. That
   impossible PDF state is guarded before these routines are used by the core.
 - sort_roots uses jnp.sort instead of the explicit Fortran three-root sorting
   network; it returns the same values.
@@ -247,6 +247,8 @@ Porting deviations:
 !
 ! Brian Griffin; September 2017.
 """
+import jax
+import sys
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
@@ -351,6 +353,15 @@ def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
     # The 2nd PDF component has a weight of 1 - mixt_frac.
     mf_pos = num / jnp.where(den > 0.0, den, 1.0)
 
+    jax.lax.cond(
+        jnp.any((F <= 0.0) & (jnp.abs(Skx) > 0.0)),
+        lambda _: jax.debug.callback(
+            lambda: print("Mixture fraction cannot be calculated.",
+                          "The value of F_x must be greater than 0 when | Skx | > 0.", sep="\n", file=sys.stderr),
+            ordered=True,
+        ),
+        lambda _: None, operand=None,
+    )
     # F_x = 0 and Skx = 0
     mf_symmetric = (zeta + 1.0) / zp2
     return jnp.where(F > 0.0, mf_pos, mf_symmetric)

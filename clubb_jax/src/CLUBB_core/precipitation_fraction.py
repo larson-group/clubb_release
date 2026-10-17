@@ -15,10 +15,11 @@ Porting deviations:
 - ``precip_fraction`` updates immutable JAX stats state but does not perform the Fortran
   debug-level ``precip_frac_assert_check`` side effect inside the jitted path.
 - ``precip_frac_assert_check`` is a NumPy validation helper that returns
-  ``bool`` instead of mutating ``err_info`` and printing diagnostics.
+  ``bool`` instead of mutating ``err_info``; header metadata is not carried.
 """
 
 import numpy as np
+import sys
 
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
@@ -168,6 +169,8 @@ def precip_fraction(
             precip_frac_tol,
         )
     else:
+        print(err_info.global_error_header_host(), file=sys.stderr)
+        print("Invalid option to calculate precip_frac_1 and precip_frac_2.", file=sys.stderr)
         raise ValueError("Invalid option to calculate precip_frac_1 and precip_frac_2.")
 
     # Increase Precipiation Fraction under special conditions.
@@ -829,6 +832,45 @@ def precip_frac_assert_check(
         - (mixt_frac * precip_frac_1 + (1.0 - mixt_frac) * precip_frac_2)
     ) <= eps
 
+    # Host-only boolean adapter: report the first source-ordered failed check.
+    # Header metadata is absent from this reduced signature.
+    for k in np.ndindex(precip_frac.shape):
+        pf, p1, p2 = precip_frac[k], precip_frac_1[k], precip_frac_2[k]
+        failures = []
+        if has_hydromet[k]:
+            failures = [
+                (pf < precip_frac_tol, "precip_frac < precip_frac_tol when a hydrometeor is present", "precip_frac", pf),
+                (pf > 1, "precip_frac > 1", "precip_frac", pf),
+                (0 < p1 < precip_frac_tol - eps, "0 < precip_frac_1 < precip_frac_tol", "precip_frac_1", p1),
+                (p1 > 1, "precip_frac_1 > 1", "precip_frac_1", p1),
+                (p1 < 0, "precip_frac_1 < 0", "precip_frac_1", p1),
+                (0 < p2 < precip_frac_tol - eps, "0 < precip_frac_2 < precip_frac_tol", "precip_frac_2", p2),
+                (p2 > 1, "precip_frac_2 > 1", "precip_frac_2", p2),
+                (p2 < 0, "precip_frac_2 < 0", "precip_frac_2", p2),
+            ]
+        else:
+            failures = [(abs(value) > eps, name + " /= 0 when no hydrometeors are found", name, value)
+                        for name, value in (("precip_frac", pf), ("precip_frac_1", p1), ("precip_frac_2", p2))]
+        for failed, message, name, value in failures:
+            if failed:
+                print(message, file=sys.stderr)
+                print("level = ", k[-1]+1, file=sys.stderr)
+                print(name + " = ", value, "precip_frac_tol = ", precip_frac_tol, file=sys.stderr)
+                return False
+        if pf - (mixt_frac[k] * p1 + (1.0 - mixt_frac[k]) * p2) > eps:
+            print(
+                'mixt_frac * precip_frac_1 + ( 1 - mixt_frac ) * precip_frac_2 /= precip_frac within n'
+                'umerical roundoff',
+                file=sys.stderr,
+            )
+            print("level = ", k[-1]+1, file=sys.stderr)
+            print(
+                "mixt_frac * precip_frac_1 + ( 1 - mixt_frac ) * precip_frac_2 = ",
+                mixt_frac[k]*p1 + (1-mixt_frac[k])*p2,
+                file=sys.stderr,
+            )
+            print("precip_frac = ", pf, file=sys.stderr)
+            return False
     return bool(np.all(np.where(has_hydromet, cloudy_ok, clear_ok)) and np.all(mixture_ok))
 
 

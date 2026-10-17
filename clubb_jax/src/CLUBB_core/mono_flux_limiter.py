@@ -25,6 +25,8 @@ from __future__ import annotations
 from functools import partial
 
 import jax
+import sys
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -390,6 +392,20 @@ def monotonic_turbulent_flux_limit(
             rhs_mfl_xm,
             err_info_in,
         )
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info_out.any_fatal(),
+                lambda _: jax.debug.callback(
+                    lambda info: print(
+                        info.global_error_header_host(),
+                        "Error in monotonic_turbulent_flux_limit after calling mfl_xm_solve",
+                        sep="\n",
+                        file=sys.stderr,
+                    ),
+                    err_info_out, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
         xm_out = jnp.where(l_xm_adjustment_needed[:, None], xm_mfl, xm_in)
 
         # Ensure there are no spikes at the top of the domain.
@@ -421,6 +437,23 @@ def monotonic_turbulent_flux_limit(
             jnp.abs(xm_vert_integral) > zero,
             xm_vert_integral,
             one,
+        )
+        def print_spike_warnings(small, low):
+            import numpy as np
+            for _ in np.flatnonzero(small):
+                print(
+                    'Vertical integral of xm is zero;mfl will remove spike at top of domain,but it will no'
+                    't conserve xm.',
+                    file=sys.stderr,
+                )
+            for _ in np.flatnonzero(low):
+                print("xm_adj_coef in mfl less than -0.99, mx_adj_coef set to -0.99", file=sys.stderr)
+        small_warning = l_top_spike & l_small_integral
+        low_warning = l_top_spike & ~l_small_integral & (xm_adj_coef < -0.99)
+        jax.lax.cond(
+            jnp.any(small_warning | low_warning),
+            lambda _: jax.debug.callback(print_spike_warnings, small_warning, low_warning, ordered=True),
+            lambda _: None, operand=None,
         )
         xm_adj_coef = jnp.maximum(xm_adj_coef, -0.99)
         xm_scaled = (xm_out * (one + xm_adj_coef)[:, None]).at[:, gr.k_ub_zt].set(
@@ -599,6 +632,20 @@ def mfl_xm_solve(
         # to be in descending mode
         xm = xm[:, ::-1]
 
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda info: print(
+                    info.global_error_header_host(),
+                    "calling tridiag_solve in mfl_xm_solve",
+                    sep="\n",
+                    file=sys.stderr,
+                ),
+                err_info, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
     return xm, err_info
 
 

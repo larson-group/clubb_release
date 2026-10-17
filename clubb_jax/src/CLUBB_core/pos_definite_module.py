@@ -18,6 +18,7 @@ configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.constants_clubb import eps, zero, zero_threshold
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.grid_class import ddzm
 
 
@@ -63,6 +64,9 @@ def pos_definite_adj(
         Nonlinear Renormalization of the Advective Fluxes'' Smolarkiewicz (1989)
         Monthly Weather Review, Vol. 117, pp. 2626--2632
     """
+    if clubb_at_least_debug_level(1):
+        jax.debug.print("Correcting flux", ordered=True)
+
     field_np1 = jnp.asarray(field_np1, dtype=jnp.float64)
     flux_np1 = jnp.asarray(flux_np1, dtype=jnp.float64)
     field_n = jnp.asarray(field_n, dtype=jnp.float64)

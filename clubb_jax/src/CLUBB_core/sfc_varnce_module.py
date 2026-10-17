@@ -8,14 +8,16 @@ Porting deviations:
   global stats side effects that are not JAX-compatible state.
 - Fortran inout arguments are returned as updated arrays, which keeps the
   routine functional and JIT-friendly.
-- The Fortran debug path calls ``sfc_varnce_check`` and prints diagnostics to
-  stderr.  The JAX path preserves the fatal error state with finite checks but
-  omits host-side debug printing inside the jitted routine.
 
 References:
 Andre, J. C., G. De Moor, P. Lacarrere, G. Therry, and R. Du Vachat, 1978.
   Modeling the 24-Hour Evolution of the Mean and Turbulent Structures of
   the Planetary Boundary Layer.  J. Atmos. Sci., 35, 1861 -- 1883.
+Observed Fortran difference: inline fatal masks use isnan, while the source
+check_nan also detects infinities; existing error-state behavior is retained.
+The inline masks also retain per-column failure status, whereas source check_nan
+marks the complete err_code array fatal when any supplied value fails.
+
 """
 
 from functools import partial
@@ -39,7 +41,10 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     wp2_max,
     zero,
 )
-from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
+from clubb_jax.src.CLUBB_core.error_code import (
+    CLUBB_FATAL_ERROR,
+    clubb_at_least_debug_level,
+)
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core import ErrInfo, Grid, SclrIdx
 
@@ -396,6 +401,61 @@ def calc_sfc_varnce(
             )
 
         err_info = err_info.set_fatal(nan_mask)
+
+        # Host I/O adaptation: one callback keeps the Fortran diagnostic block
+        # together and permits full-array formatting and stderr output in JIT.
+        def print_sfc_varnce_error_output(
+            err_info, upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc,
+            wpsclrp_sfc, wp2, up2, vp2, thlp2, rtp2, rtpthlp,
+            sclrp2, sclrprtp, sclrpthlp,
+        ):
+            import sys
+            import numpy as np  # Host formatting only; no physics calculations.
+            from clubb_jax.src.CLUBB_core.numerical_check import sfc_varnce_check
+
+            for i in range(ngrdcol):
+                k = gr.k_lb_zm
+                sfc_varnce_check(
+                    sclr_dim, wp2[i,k], up2[i,k], vp2[i,k], thlp2[i,k],
+                    rtp2[i,k], rtpthlp[i,k], sclrp2[i,k], sclrprtp[i,k], sclrpthlp[i,k],
+                )
+                if err_info.err_code[i] == CLUBB_FATAL_ERROR:
+                    print(err_info.column_error_header_host(i), file=sys.stderr)
+
+            with np.printoptions(threshold=np.inf):
+                print("Error in calc_sfc_varnce", file=sys.stderr)
+                print("Intent(in)", file=sys.stderr)
+                print("upwp_sfc = ", upwp_sfc, file=sys.stderr)
+                print("vpwp_sfc = ", vpwp_sfc, file=sys.stderr)
+                print("wpthlp = ", wpthlp, file=sys.stderr)
+                print("wprtp_sfc = ", wprtp_sfc, file=sys.stderr)
+                if sclr_dim > 0:
+                    print("wpsclrp = ", wpsclrp_sfc, file=sys.stderr)
+
+                print("Intent(out)", file=sys.stderr)
+                print("wp2 = ", wp2, file=sys.stderr)
+                print("up2 = ", up2, file=sys.stderr)
+                print("vp2 = ", vp2, file=sys.stderr)
+                print("thlp2 = ", thlp2, file=sys.stderr)
+                print("rtp2 = ", rtp2, file=sys.stderr)
+                print("rtpthlp = ", rtpthlp, file=sys.stderr)
+                if sclr_dim > 0:
+                    print("sclrp2 = ", sclrp2, file=sys.stderr)
+                    print("sclrprtp = ", sclrprtp, file=sys.stderr)
+                    print("sclrpthlp = ", sclrpthlp, file=sys.stderr)
+
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                print_sfc_varnce_error_output,
+                err_info, upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc,
+                wpsclrp_sfc, wp2, up2, vp2, thlp2, rtp2, rtpthlp,
+                sclrp2, sclrprtp, sclrpthlp,
+                ordered=True,
+            ),
+            lambda _: None,
+            operand=None,
+        )
 
     return (
         wp2, up2, vp2,

@@ -14,12 +14,17 @@ Porting deviations:
   on immutable dataclass instances.
 - Fortran debug routines that mutate ``err_info`` or write to stderr return
   booleans or formatted text in the JAX/Python port.
+
+Observed Fortran differences retained in this diagnostic pass:
+- assert_corr_symmetric returns a boolean without err_info; it prints available text/matrix data but cannot reproduce the source error headers.
 """
 
 from dataclasses import dataclass, replace
 
 import jax
 import numpy as np
+import sys
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     eps,
@@ -773,7 +778,6 @@ def setup_corr_varnce_array_api(
     corr_array_n_below_default=None,
 ):
     """Set up full symmetric cloud and below-cloud normal-space correlations."""
-    del l_fix_w_chi_eta_correlations
 
     if corr_array_n_cloud_default is not None and corr_array_n_below_default is not None:
         corr_array_n_cloud = np.array(corr_array_n_cloud_default, dtype=np.float64)
@@ -793,6 +797,18 @@ def setup_corr_varnce_array_api(
         + np.tril(corr_array_n_below, -1).T
     )
 
+    if clubb_at_least_debug_level(2) and not l_fix_w_chi_eta_correlations:
+        index = hm_metadata.iiPDF_Ncn
+        if 0 <= index < pdf_dim:
+            off_diagonal = np.arange(pdf_dim) != index
+            if np.any(off_diagonal & ((np.abs(corr_array_n_cloud[:, index]) > eps)
+                                     | (np.abs(corr_array_n_below[:, index]) > eps))):
+                print("Warning: the specified correlations for chi (old s) and Ncn are non-zero.", file=sys.stderr)
+                print(
+                    "The latin hypercube code will not converge to the analytic solution using these settings.",
+                    file=sys.stderr,
+                )
+
     return corr_array_n_cloud, corr_array_n_below
 
 
@@ -804,6 +820,15 @@ def assert_corr_symmetric(corr_array_n):
     symmetric = np.all(np.abs(corr_array_n - corr_array_n.T) <= tol)
     unit_diagonal = np.all(np.abs(np.diagonal(corr_array_n) - 1.0) <= eps)
 
+    # This reduced boolean interface has no err_info; source header output is
+    # unavailable, but the matrix and diagnostic text need no additional state.
+    if not symmetric:
+        print("in subroutine assert_corr_symmetric: Correlation array is non symmetric.", file=sys.stderr)
+    elif not unit_diagonal:
+        print("in subroutine assert_corr_symmetric: Correlation array is formatted incorrectly.", file=sys.stderr)
+    if not symmetric or not unit_diagonal:
+        with np.printoptions(threshold=np.inf):
+            print(corr_array_n, file=sys.stderr)
     return bool(symmetric and unit_diagonal)
 
 

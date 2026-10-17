@@ -16,11 +16,17 @@ Porting deviations:
 - ``calc_Lscale_directly`` keeps the Fortran ``l_avg_Lscale = .false.`` path.
   The dormant perturbation/plume-centered branches are not expanded because the
   Fortran parameter disables them in production.
+Observed Fortran difference: inline fatal masks use isnan, while the source
+check_nan also detects infinities; existing error-state behavior is retained.
+The inline masks also retain per-column failure status, whereas source check_nan
+marks the complete err_code array fatal when any supplied value fails.
+
 """
 
 from __future__ import annotations
 
 import jax
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -71,7 +77,7 @@ from clubb_jax.src.CLUBB_core.parameter_indices import (
     iwpxp_Ri_exp,
     iz_displace,
 )
-from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
+from clubb_jax.src.CLUBB_core.error_code import CLUBB_FATAL_ERROR, clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt, zm2zt2zm, zt2zm
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.saturation import sat_mixrat_liq
@@ -213,6 +219,21 @@ def calc_Lscale(
             err_info,
         )
 
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(
+                    lambda info: print(
+                        info.global_error_header_host(),
+                        'Error calling calc_Lscale_directly in calc_Lscale',
+                        sep="\n",
+                        file=sys.stderr,
+                    ),
+                    err_info, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
+
         # Calculate CLUBB's turbulent eddy-turnover time scale as CLUBB's
         # length scale divided by a velocity scale.
         em_zt = zm2zt(nzm, nzt, ngrdcol, gr, em, em_min)
@@ -290,6 +311,21 @@ def calc_Lscale(
             err_info,
         )
 
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(
+                    lambda info: print(
+                        info.global_error_header_host(),
+                        'Error calling diagnose_Lscale_from_tau in calc_Lscale',
+                        sep="\n",
+                        file=sys.stderr,
+                    ),
+                    err_info, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
+
     Lscale_zm = zt2zm(nzm, nzt, ngrdcol, gr, Lscale)
 
     invrs_tau_C6_zm = invrs_tau_wpxp_zm
@@ -297,6 +333,15 @@ def calc_Lscale(
     invrs_tau_C14_zm = invrs_tau_wp2_zm
 
     if (not l_diag_Lscale_from_tau) and l_use_invrs_tau_N2_iso:
+        jax.debug.callback(
+            lambda: print(
+                'Error! l_use_invrs_tau_N2_iso is not used when l_diag_Lscale_from_tau=false.If you wa'
+                'nt to use Lscale code, go to file src/CLUBB_core/mixing_length.F90 and change l_use_i'
+                'nvrs_tau_N2_iso to false',
+                file=sys.stderr,
+            ),
+            ordered=True,
+        )
         err_info = err_info.set_fatal()
 
     if not l_use_invrs_tau_N2_iso:
@@ -947,6 +992,19 @@ def compute_mixing_length(
     # Error in grid column i -> set ith entry to clubb_fatal_error
     mu_bad = jnp.abs(mu) < eps
     err_info = err_info.set_fatal(mask=mu_bad)
+    def print_mu_error(values, info):
+        import numpy as np
+        for i in np.flatnonzero(np.abs(values) < eps):
+            print(info.column_error_header_host(int(i)), file=sys.stderr)
+            print("mu = ", values[i], file=sys.stderr)
+        print("Entrainment rate mu cannot be 0", file=sys.stderr)
+        print("Fatal error in subroutine compute_mixing_length", file=sys.stderr)
+    jax.lax.cond(
+        err_info.any_fatal(),
+        lambda _: jax.debug.callback(print_mu_error, mu, err_info, ordered=True),
+        lambda _: None, operand=None,
+    )
+
     mu = jnp.where(mu_bad, one, mu)
 
     zlmin = 0.1
@@ -1247,6 +1305,35 @@ def compute_mixing_length(
         err_info = err_info.set_fatal(mask=jnp.any(jnp.isnan(Lscale), axis=1))
         err_info = err_info.set_fatal(mask=jnp.any(jnp.isnan(Lscale_up), axis=1))
         err_info = err_info.set_fatal(mask=jnp.any(jnp.isnan(Lscale_down), axis=1))
+        # Host I/O adaptation of Fortran's per-fatal-column state dump.
+        def print_length_errors(info, inputs, outputs):
+            import numpy as np
+            from clubb_jax.src.CLUBB_core.numerical_check import length_check
+            with np.printoptions(threshold=np.inf):
+                for i in range(ngrdcol):
+                    length_check(outputs["Lscale"][i], outputs["Lscale_up"][i], outputs["Lscale_down"][i])
+                    if info.err_code[i] != CLUBB_FATAL_ERROR:
+                        continue
+                    print(info.column_error_header_host(i), file=sys.stderr)
+                    print("Errors in compute_mixing_length subroutine in grid column ", i+1, file=sys.stderr)
+                    print("Intent(in)", file=sys.stderr)
+                    for name in ("thvm", "thlm", "rtm", "em", "exner", "p_in_Pa", "thv_ds"):
+                        print(name + " = ", inputs[name][i, :], file=sys.stderr)
+                    print("Intent(out)", file=sys.stderr)
+                    for name in ("Lscale", "Lscale_up", "Lscale_down"):
+                        print(name + " = ", outputs[name][i, :], file=sys.stderr)
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                print_length_errors, err_info,
+                {"thvm": thvm, "thlm": thlm, "rtm": rtm, "em": em,
+                 "exner": exner, "p_in_Pa": p_in_Pa, "thv_ds": thv_ds},
+                {"Lscale": Lscale, "Lscale_up": Lscale_up, "Lscale_down": Lscale_down},
+                ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+
 
     return err_info, Lscale, Lscale_up, Lscale_down
 
@@ -1290,6 +1377,12 @@ def calc_Lscale_directly(
 
     if clubb_at_least_debug_level(0):
         if l_Lscale_plume_centered and not l_avg_Lscale:
+            jax.debug.callback(
+                lambda info: print(info.global_error_header_host(),
+                                   "l_Lscale_plume_centered requires l_avg_Lscale", "Fatal error in calc_Lscale_directly",
+                                   sep="\n", file=sys.stderr),
+                err_info, ordered=True,
+            )
             # General error -> set all entries to clubb_fatal_error
             err_info = err_info.set_fatal()
             return (
@@ -1376,6 +1469,25 @@ def diagnose_Lscale_from_tau(
         < eps
     )
     err_info = err_info.set_fatal(mask=lowest_zm_below_ground)
+    def print_below_ground(mask, info):
+        import numpy as np
+        for i in np.flatnonzero(mask):
+            print(info.column_error_header_host(int(i)), file=sys.stderr)
+    jax.lax.cond(
+        jnp.any(lowest_zm_below_ground),
+        lambda _: jax.debug.callback(print_below_ground, lowest_zm_below_ground, err_info, ordered=True),
+        lambda _: None, operand=None,
+    )
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(lambda: print(
+                "Lowest zm grid level is below ground in CLUBB.",
+                file=sys.stderr,
+            ), ordered=True),
+            lambda _: None, operand=None,
+        )
+
 
     tmp_calc_ngrdcol = (upwp_sfc**2 + vpwp_sfc**2) ** one_fourth
 

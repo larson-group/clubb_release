@@ -19,6 +19,7 @@ Porting deviations:
 from __future__ import annotations
 
 import numpy as np
+import sys
 import jax.numpy as jnp
 
 
@@ -46,6 +47,8 @@ def initialize_tau_sponge_damp(z, dt, zm_top, tau_min, tau_max, sponge_damp_dept
 
     # Check the value of tau_sponge_damp_min.
     if tau_min < 2.0 * dt:
+        print("Error:  tau_sponge_damp_min is too small!", file=sys.stderr)
+        print("It must be at least 2.0 * dt", file=sys.stderr)
         raise ValueError("tau_sponge_damp_min is too small (< 2*dt)")
     tau = np.full(nz, np.inf, dtype=np.float64)
     ratio = tau_max / tau_min

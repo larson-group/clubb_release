@@ -26,11 +26,15 @@ Porting deviations:
   is available.
 - _solve_one_xm_wpxp preserves the repeated solve structure of the Fortran
   multiple-LHS path while avoiding a larger target-only abstraction.
+
+Observed Fortran differences retained in this diagnostic pass:
+- Field/scalar-specific matrix dumps are skipped because the shared solve interface does not carry their labels; the large error_prints_xm_wpxp payload remains unported.
 """
 
 from functools import partial
 
 import jax
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -223,6 +227,12 @@ def advance_xm_wpxp(
 
     if clubb_at_least_debug_level(0):
         if l_mono_flux_lim_rtm and not l_mono_flux_lim_spikefix:
+            jax.debug.callback(
+                lambda info: print(info.global_error_header_host(),
+                                   "l_mono_flux_lim_rtm=T with l_mono_flux_lim_spikefix=F can lead to spikes aloft.",
+                                   sep="\n", file=sys.stderr),
+                err_info, ordered=True,
+            )
             err_info = err_info.set_fatal()
             return (
                 wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num,
@@ -321,6 +331,16 @@ def advance_xm_wpxp(
         c7_bad = jnp.any(
             (jnp.asarray(C7_Skw_fnc) > one) | (jnp.asarray(C7_Skw_fnc) < zero),
             axis=1,
+        )
+        def print_c7_errors(values, info):
+            import numpy as np
+            for k, i in np.argwhere(((values > one) | (values < zero)).T):
+                print(info.column_error_header_host(int(i)), file=sys.stderr)
+            print("The C7_Skw_fnc variable is outside the valid range", file=sys.stderr)
+        jax.lax.cond(
+            jnp.any(c7_bad),
+            lambda _: jax.debug.callback(print_c7_errors, C7_Skw_fnc, err_info, ordered=True),
+            lambda _: None, operand=None,
         )
         err_info = err_info.set_fatal(mask=c7_bad)
 
@@ -1539,6 +1559,22 @@ def xm_wpxp_solve(
     if l_force_descending_solves and gr.grid_dir_indx > 0:
         solution = jnp.asarray(solution)[:, ::-1, :]
 
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda info: print(
+                    info.global_error_header_host(),
+                    "xm & wpxp LU decomp. failed",
+                    sep="\n",
+                    file=sys.stderr,
+                ),
+                err_info, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+    # TODO: Source field-specific matrix/RHS dumps need the caller's solve and
+    # scalar labels, absent from this shared solver interface; skipped here.
     return solution, jnp.asarray(rcond, dtype=jnp.float64), err_info
 
 
@@ -1761,6 +1797,26 @@ def xm_wpxp_clipping_and_stats(
             l_implemented, low_lev_effect, high_lev_effect, tridiag_solve_method,
             l_upwind_xm_ma, l_mono_flux_lim_spikefix, stats, xm, wpxp, err_info,
         )
+
+    if clubb_at_least_debug_level(0):
+        if ((l_mono_flux_lim_thlm and solve_type == xm_wpxp_thlm)
+                or (l_mono_flux_lim_rtm and solve_type == xm_wpxp_rtm)
+                or (l_mono_flux_lim_um and solve_type == xm_wpxp_um)
+                or (l_mono_flux_lim_vm and solve_type == xm_wpxp_vm)):
+            field_name = {xm_wpxp_rtm: "rtm", xm_wpxp_thlm: "thlm", xm_wpxp_um: "um", xm_wpxp_vm: "vm"}[solve_type]
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(
+                    lambda info: print(
+                        info.global_error_header_host(),
+                        field_name + " monotonic flux limiter:  tridiag failed",
+                        sep="\n",
+                        file=sys.stderr,
+                    ),
+                    err_info, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
 
     if solve_type == xm_wpxp_rtm and l_pos_def:
         xm_pd = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
@@ -2114,12 +2170,12 @@ def error_prints_xm_wpxp(*args, **kwargs):
     """Prints values of model fields when fatal errors (LU decomp.) occur.
 
     Porting deviation:
-      The JAX implementation prints a concise placeholder because the full
+      TODO: Skip this full diagnostic during print-only work. The complete
       Fortran diagnostic dump relies on host-side I/O and extensive mutable
       argument state that is intentionally not carried through the jitted path.
     """
     del args, kwargs
-    print("Error in advance_xm_wpxp")
+    print("Error in advance_xm_wpxp", file=sys.stderr)
 
 
 # JAX adaptation: this target-only helper compresses repeated multiple-LHS solve

@@ -8,7 +8,7 @@ Porting deviations:
   absent.
 - Fortran loops over grid columns, levels, hydrometeors, and PDF variables are
   vectorized with JAX arrays and small Python loops over static dimensions.
-- Fortran debug printing and immediate returns after fatal errors are replaced
+- Fortran immediate returns after fatal errors are replaced
   by functional updates to ``err_info``; the caller handles the fatal state
   after leaving the JAX region.
 - Stats calls update JAX stats banks instead of calling the
@@ -41,6 +41,7 @@ chi, eta, w, Ncn, <hydrometeors in hydromet-array order>, matching the iiPDF ind
 (corr_varnce_module.F90:682). For KK that is [chi, eta, w, Ncn, rr, Nr], pdf_dim = 6.
 """
 import jax
+import sys
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import calc_xpwp
@@ -53,7 +54,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     zero_threshold,
 )
 from clubb_jax.src.CLUBB_core.clip_explicit import clip_covar, clip_wphydrometp
-from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
+from clubb_jax.src.CLUBB_core.error_code import CLUBB_FATAL_ERROR, clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt, zt2zm
 from clubb_jax.src.CLUBB_core.hydromet_pdf_parameter_module import (
     HydrometPdfParameter,
@@ -164,6 +165,17 @@ def setup_pdf_parameters_api(
     # Check that all hydrometeors are positive otherwise exit the program
     if clubb_at_least_debug_level(0):
         negative_hydromet = jnp.any(hydromet < zero_threshold, axis=(1, 2))
+        def print_negative_hydromet(values, info):
+            import numpy as np
+            for j, k, i in np.argwhere((values < zero_threshold).transpose(2, 1, 0)):
+                print(info.column_error_header_host(int(i)), file=sys.stderr)
+                print(" at beginning of setup_pdf_parameters_api: ", hm_metadata.hydromet_list[int(j)] + " = ",
+                      values[i,k,j], " < ", zero_threshold, " at k = ", k+1, file=sys.stderr)
+        jax.lax.cond(
+            jnp.any(negative_hydromet),
+            lambda _: jax.debug.callback(print_negative_hydromet, hydromet, err_info, ordered=True),
+            lambda _: None, operand=None,
+        )
         err_info = err_info.set_fatal(mask=negative_hydromet)
         # JAX adaptation: Fortran returns immediately after setting a fatal
         # code. A jitted path cannot branch on that host boolean, so the fatal
@@ -211,6 +223,20 @@ def setup_pdf_parameters_api(
             err_info,                                                                     # InOut
             stats,                                                                        # InOut
         )
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(
+                    lambda info: print(
+                        info.global_error_header_host(),
+                        " in setup_pdf_parameters_api after calling precip_fraction",
+                        sep="\n",
+                        file=sys.stderr,
+                    ),
+                    err_info, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
         # JAX adaptation: preserve the fatal code from precip_fraction, but do
         # not return early inside the traced region.
     else:
@@ -650,6 +676,32 @@ def setup_pdf_parameters_api(
             )
             bad_corr = bad_corr | ~symmetric | ~unit_diagonal
         err_info = err_info.set_fatal(mask=bad_corr)
+        def print_corr_errors(first, second, info):
+            from clubb_jax.src.CLUBB_core.corr_varnce_module import assert_corr_symmetric
+            for i in range(ngrdcol):
+                for k in range(nzt):
+                    ok_first = assert_corr_symmetric(first[i,k])
+                    ok_second = assert_corr_symmetric(second[i,k])
+                    if not ok_first or not ok_second or info.err_code[i] == CLUBB_FATAL_ERROR:
+                        print(info.column_error_header_host(i), file=sys.stderr)
+        jax.lax.cond(
+            jnp.any(bad_corr),
+            lambda _: jax.debug.callback(print_corr_errors, corr_array_1_n, corr_array_2_n, err_info, ordered=True),
+            lambda _: None, operand=None,
+        )
+
+
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                lambda: print(
+                    " in setup_pdf_parameters_api after calling assert_corr_symmetric",
+                    file=sys.stderr,
+                ), ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
 
     return (
         err_info,

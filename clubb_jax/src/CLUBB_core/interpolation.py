@@ -14,6 +14,8 @@ Porting deviations:
     clamp semantics.
 """
 import jax
+import sys
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
@@ -56,6 +58,17 @@ def lin_interpolate_two_points(height_int, height_high, height_low, var_high, va
     References:
     None
     """
+    # Diagnostic-only restoration; retain the existing numerical/STOP boundary.
+    jax.lax.cond(
+        jnp.any(jnp.abs(height_low - height_high) < 1.0e-12),
+        lambda _: jax.debug.callback(
+            lambda: print(
+                "lin_interpolate_two_points: height_high and height_low cannot be equal.",
+                file=sys.stderr,
+            ), ordered=True,
+        ),
+        lambda _: None, operand=None,
+    )
     # Compute linear interpolation
     return ((height_int - height_low) / (height_high - height_low)) * (var_high - var_low) + var_low
 
@@ -182,6 +195,28 @@ def lin_interp_between_grids(interpolate_altitudes, current_altitudes, current_v
     # --------------------- Begin Code ---------------------
     tol = 1.0e-6
 
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            jnp.any(jnp.diff(current_altitudes) <= 0),
+            lambda _: jax.debug.callback(
+                lambda: print(
+                    "current_altitudes must be sorted for lin_interp_between_grids.",
+                    file=sys.stderr,
+                ), ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+        jax.lax.cond(
+            (jnp.min(interpolate_altitudes) < current_altitudes[0])
+            | (jnp.max(interpolate_altitudes) > current_altitudes[-1]),
+            lambda _: jax.debug.callback(
+                lambda: print(
+                    "lin_interp_between_grids: Value is out of range. Extrapolating...",
+                    file=sys.stderr,
+                ), ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
     interp = jnp.interp(interpolate_altitudes, current_altitudes, current_values)
 
     # find nearest zt level of gr_current for zt(i) of gr_interpolate grid

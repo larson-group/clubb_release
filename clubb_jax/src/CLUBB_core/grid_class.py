@@ -100,6 +100,9 @@ Porting deviations:
   * Fortran band selector constants are 1-based; JAX uses Python 0-based
     ``T_ABOVE``, ``T_BELOW``, ``M_ABOVE``, and ``M_BELOW``.
   * Fortran mutates output arrays.  JAX returns arrays.
+
+Observed Fortran differences retained in this diagnostic pass:
+- Fortran grid-file readers, allocation/cleanup error codes, surface-elevation validation and quintic-flag checks are absent from this reduced interface.
 """
 
 from __future__ import annotations
@@ -109,6 +112,8 @@ from typing import NamedTuple
 import jax
 import jax.numpy as jnp
 import numpy as np
+import sys
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 core_rknd = np.float64
 
@@ -209,6 +214,7 @@ def setup_grid(
         GRID_TYPE_STRETCHED_ZT,
         GRID_TYPE_STRETCHED_ZM,
     ):
+        print("Invalid grid type: ", grid_type, file=sys.stderr)
         raise ValueError(f"Unsupported grid_type={grid_type}.")
     if not l_ascending_grid:
         raise ValueError(
@@ -234,11 +240,15 @@ def setup_grid(
         )
         _validate_monotonic_increasing("thermodynamic_heights", zt_in)
         if np.any(zt_in[:, 0] <= zm_init_arr):
+            print("Stretched zt grid cannot fulfill zm_init requirement", file=sys.stderr)
+            print("It is recommended to check the zm grid for all columns of the chunk", file=sys.stderr)
             raise ValueError(
                 "Stretched zt grid lowest thermodynamic level must be above zm_init."
             )
         end_idx = int(np.searchsorted(zt_in[0], zm_top_arr[0], side="right") - 1)
         if end_idx < 0:
+            print("Stretched zt grid cannot fulfill zm_top requirement", file=sys.stderr)
+            print("It is recommended to check the zt grid for all columns of the chunk", file=sys.stderr)
             raise ValueError("Stretched zt grid cannot fulfill zm_top requirement.")
         zt = zt_in[:, : end_idx + 1]
         nzt = zt.shape[1]
@@ -250,8 +260,12 @@ def setup_grid(
         begin_idx = int(np.searchsorted(zm_in[0], zm_init_arr[0], side="left"))
         end_idx = int(np.searchsorted(zm_in[0], zm_top_arr[0], side="right") - 1)
         if begin_idx >= zm_in.shape[1]:
+            print("Stretched zm grid cannot fulfill zm_init requirement", file=sys.stderr)
+            print("It is recommended to check the zm grid for all columns of the chunk", file=sys.stderr)
             raise ValueError("Stretched zm grid cannot fulfill zm_init requirement.")
         if end_idx < begin_idx:
+            print("Stretched zm grid cannot fulfill zm_top requirement", file=sys.stderr)
+            print("It is recommended to check the zt grid for all columns of the chunk", file=sys.stderr)
             raise ValueError("Stretched zm grid cannot fulfill zm_top requirement.")
         zm = zm_in[:, begin_idx : end_idx + 1]
         nzm = zm.shape[1]
@@ -261,6 +275,10 @@ def setup_grid(
                 f"Stretched zm grid produced invalid dimensions: nzm={nzm}, nzt={nzt}."
             )
         zt = 0.5 * (zm[:, :-1] + zm[:, 1:])
+
+    if nzm > 250 and clubb_at_least_debug_level(1):
+        print("Warning:  running with vertical grid which is larger than", 250, "levels.", file=sys.stderr)
+        print("This may take a lot of CPU time and memory.", file=sys.stderr)
 
     dzm, dzt, invrs_dzm, invrs_dzt = _calc_grid_spacings(
         nzm, ngrdcol, zm, zt

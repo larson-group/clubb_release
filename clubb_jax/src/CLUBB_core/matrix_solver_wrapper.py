@@ -12,13 +12,16 @@ Porting deviations:
     computes an equivalent reciprocal-condition estimate for active paths:
     band solves mirror LAPACK band equilibration plus condition estimation, and
     tridiagonal solves use a dense 1-norm reciprocal condition number.
-  * Fortran prints every NaN location to ``fstderr``.  JAX reduces the NaN mask
-    by column and records a fatal ``err_info`` state, which is jit-friendly.
+
+Observed Fortran differences retained in this diagnostic pass:
+- The rank-2/3 NaN checks retain per-column fatal flags; Fortran marks all columns fatal when any NaN is found.
 """
 
 from __future__ import annotations
 
 import jax
+import sys
+from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -244,10 +247,12 @@ def band_solve_single_rhs_multiple_lhs(
 
     else:
         # The solve method should match one of the above
-        print(
-            "WARNING: matrix_solver_wrapper.band_solve_single_rhs_multiple_lhs "
-            f"has no case for penta_solve_method={penta_solve_method}."
-        )
+        if clubb_at_least_debug_level(0):
+            jax.debug.callback(
+                lambda info: print(info.global_error_header_host(), "Error in band_solve_single_rhs_multiple_lhs: ",
+                                   "  no case for penta_solve_method = ", penta_solve_method, sep="\n", file=sys.stderr),
+                err_info, ordered=True,
+            )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
     if l_implemented:
@@ -316,10 +321,12 @@ def band_solve_multiple_rhs_lhs(
 
     else:
         # The solve method should match one of the above
-        print(
-            "WARNING: matrix_solver_wrapper.band_solve_multiple_rhs_lhs "
-            f"has no case for penta_solve_method={penta_solve_method}."
-        )
+        if clubb_at_least_debug_level(0):
+            jax.debug.callback(
+                lambda info: print(info.global_error_header_host(), "Error in band_solve_multiple_rhs_lhs: ",
+                                   "  no case for penta_solve_method = ", penta_solve_method, sep="\n", file=sys.stderr),
+                err_info, ordered=True,
+            )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
     if l_implemented:
@@ -422,10 +429,12 @@ def tridiag_solve_single_rhs_lhs(
 
     else:
         # The solve method should match one of the above
-        print(
-            "WARNING: matrix_solver_wrapper.tridiag_solve_single_rhs_lhs "
-            f"has no case for tridiag_solve_method={tridiag_solve_method}."
-        )
+        if clubb_at_least_debug_level(0):
+            jax.debug.callback(
+                lambda info: print(info.global_error_header_host(), "Error in tridiag_solve_single_rhs_lhs: ",
+                                   "  no case for tridiag_solve_method = ", tridiag_solve_method, sep="\n", file=sys.stderr),
+                err_info, ordered=True,
+            )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
     return check_nan_soln_1d(
@@ -470,10 +479,12 @@ def tridiag_solve_single_rhs_multiple_lhs(
         )
     else:
         # The solve method should match one of the above
-        print(
-            "WARNING: matrix_solver_wrapper.tridiag_solve_single_rhs_multiple_lhs "
-            f"has no case for tridiag_solve_method={tridiag_solve_method}."
-        )
+        if clubb_at_least_debug_level(0):
+            jax.debug.callback(
+                lambda info: print(info.global_error_header_host(), "Error in tridiag_solve_single_rhs_multiple_lhs: ",
+                                   "  no case for tridiag_solve_method = ", tridiag_solve_method, sep="\n", file=sys.stderr),
+                err_info, ordered=True,
+            )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
     if l_implemented:
@@ -522,10 +533,12 @@ def tridiag_solve_multiple_rhs_lhs(
         )
     else:
         # The solve method should match one of the above
-        print(
-            "WARNING: matrix_solver_wrapper.tridiag_solve_multiple_rhs_lhs "
-            f"has no case for tridiag_solve_method={tridiag_solve_method}."
-        )
+        if clubb_at_least_debug_level(0):
+            jax.debug.callback(
+                lambda info: print(info.global_error_header_host(), "Error in tridiag_solve_multiple_rhs_lhs: ",
+                                   "  no case for tridiag_solve_method = ", tridiag_solve_method, sep="\n", file=sys.stderr),
+                err_info, ordered=True,
+            )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
     if l_implemented:
@@ -587,8 +600,21 @@ def tridiag_solve(
 
 
 def check_nan_soln_1d(solve_name: str, solve_method: int, ndim: int, soln, err_info):
-    del solve_name, solve_method, ndim
+    del ndim
     l_has_nan = jnp.any(jnp.isnan(soln))
+    # Host I/O adaptation of source rank-specific loops; fatal state unchanged.
+    def print_nan_solution(values, info):
+        import numpy as np
+        for k in np.flatnonzero(np.isnan(values)):
+            print("ERROR: NaN detected: soln(", k+1, ") = ", values[k], file=sys.stderr)
+        print(info.global_error_header_host(), file=sys.stderr)
+        print("solve_method =", solve_method, file=sys.stderr)
+        print(solve_name.strip() + " NaNs in solution", file=sys.stderr)
+    jax.lax.cond(
+        jnp.any(l_has_nan),
+        lambda _: jax.debug.callback(print_nan_solution, soln, err_info, ordered=True),
+        lambda _: None, operand=None,
+    )
     return err_info.set_fatal(
         mask=jnp.full((int(err_info.ngrdcol),), l_has_nan, dtype=bool)
     )
@@ -597,8 +623,21 @@ def check_nan_soln_1d(solve_name: str, solve_method: int, ndim: int, soln, err_i
 def check_nan_soln_2d(
     solve_name: str, solve_method: int, ngrdcol: int, ndim: int, soln, err_info
 ):
-    del solve_name, solve_method, ndim
+    del ndim
     l_has_nan = jnp.any(jnp.isnan(soln), axis=1)
+    # Host I/O adaptation of source rank-specific loops; fatal state unchanged.
+    def print_nan_solution(values, info):
+        import numpy as np
+        for k, i in np.argwhere(np.isnan(values).T):
+            print("ERROR: NaN detected: soln(", i+1, ",", k+1, ") = ", values[i,k], file=sys.stderr)
+        print(info.global_error_header_host(), file=sys.stderr)
+        print("solve_method =", solve_method, file=sys.stderr)
+        print(solve_name.strip() + " NaNs in solution", file=sys.stderr)
+    jax.lax.cond(
+        jnp.any(l_has_nan),
+        lambda _: jax.debug.callback(print_nan_solution, soln, err_info, ordered=True),
+        lambda _: None, operand=None,
+    )
     return err_info.set_fatal(mask=l_has_nan[:ngrdcol])
 
 
@@ -611,8 +650,21 @@ def check_nan_soln_3d(
     soln,
     err_info,
 ):
-    del solve_name, solve_method, ndim, nrhs
+    del ndim, nrhs
     l_has_nan = jnp.any(jnp.isnan(soln), axis=(1, 2))
+    # Host I/O adaptation of source rank-specific loops; fatal state unchanged.
+    def print_nan_solution(values, info):
+        import numpy as np
+        for j, k, i in np.argwhere(np.isnan(values).transpose(2, 1, 0)):
+            print("ERROR: NaN detected: soln(", i+1, ",", k+1, ",", j+1, ") = ", values[i,k,j], file=sys.stderr)
+        print(info.global_error_header_host(), file=sys.stderr)
+        print("solve_method =", solve_method, file=sys.stderr)
+        print(solve_name.strip() + " NaNs in solution", file=sys.stderr)
+    jax.lax.cond(
+        jnp.any(l_has_nan),
+        lambda _: jax.debug.callback(print_nan_solution, soln, err_info, ordered=True),
+        lambda _: None, operand=None,
+    )
     return err_info.set_fatal(mask=l_has_nan[:ngrdcol])
 
 

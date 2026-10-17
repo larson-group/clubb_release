@@ -1,4 +1,8 @@
-"""JAX-side representation of `err_info_type`."""
+"""JAX-side representation of `err_info_type`.
+Observed Fortran differences retained in this diagnostic pass:
+- Fortran stores formatted global/column character headers; JAX builds them on demand at host output boundaries.
+- Fortran set_err_info_values_api normalizes alternate latitude/longitude ranges; this subset stores supplied coordinates directly.
+"""
 
 from __future__ import annotations
 
@@ -135,6 +139,41 @@ class ErrInfo(NamedTuple):
 
     def reason_messages_host(self) -> list[str]:
         return messages_for(self.reason_code_or_default())
+
+    def column_error_header_host(self, icol: int) -> str:
+        """Format one column header from Fortran ``update_headers``.
+
+        Host I/O adaptation: build the string on demand instead of storing
+        character arrays in the pytree. ``icol`` is zero-based; displayed column
+        numbers are one-based. Missing coordinates use Fortran's unused value.
+        """
+        from clubb_jax.src.CLUBB_core.constants_clubb import unused_var
+
+        lat = unused_var if self.lat is None else float(self.lat[icol])
+        lon = unused_var if self.lon is None else float(self.lon[icol])
+        return (
+            f"Fatal error in CLUBB in - MPI Process {self.mpi_rank}"
+            f" / Chunk index {self.chunk_idx}\n"
+            f"Grid column index i = {icol + 1}, Latitude {lat:.2f}"
+            f" / Longitude {lon:.2f}\n"
+            "Latitude range from -90 to 90 degrees, "
+            "Longitude range from -180 to 180 degrees"
+        )
+
+    def global_error_header_host(self) -> str:
+        """Host formatting of the column-independent Fortran ``update_headers``."""
+        from clubb_jax.src.CLUBB_core.constants_clubb import unused_var
+
+        lat = unused_var if self.lat is None else float(self.lat[0])
+        lon = unused_var if self.lon is None else float(self.lon[0])
+        return (
+            f"Fatal error in CLUBB - MPI Process {self.mpi_rank}"
+            f" / Chunk index {self.chunk_idx}\n"
+            f"Column index not available. Latitude/Longitude for column 1: "
+            f"{lat:.2f}/{lon:.2f}\n"
+            "Latitude range from -90 to 90 degrees, "
+            "Longitude range from -180 to 180 degrees"
+        )
 
     def reset_code(self):
         return self._replace(

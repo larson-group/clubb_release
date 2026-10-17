@@ -18,7 +18,7 @@ Porting deviations:
   arguments marked static.
 - The Fortran routine mutates a long intent(inout)/intent(out) argument list;
   this JAX port returns the full updated state tuple explicitly.
-- Host-model preprocessor branches and full diagnostic print exits are not
+- Host-model preprocessor branches and diagnostic-only early returns are not
   represented inside this Python/JAX driver. Fatal status is carried through
   err_info instead of using host-side early returns.
 """
@@ -26,6 +26,7 @@ Porting deviations:
 from functools import partial
 
 import jax
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
@@ -240,6 +241,15 @@ def advance_clubb_core(
             edsclrm_forcing,
             err_info,
         )
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(lambda info: print(
+                    'Fatal error detected in parameterization_check when testing input',
+                    file=sys.stderr,
+                ), err_info, ordered=True),
+                lambda _: None, operand=None,
+            )
 
     if l_sample:
         rtm_before = rtm.copy()
@@ -351,6 +361,17 @@ def advance_clubb_core(
          cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, rcm_zm,
          rcm_supersat_adj, wp2sclrp, wpsclrp2, sclrprcp,
          wpsclrprtp, wpsclrpthlp, stats) = pdf_result
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(lambda info: print(
+                    info.global_error_header_host(),
+                    'Error calling pdf_closure_driver in advance_clubb_core',
+                    sep="\n",
+                    file=sys.stderr,
+                ), err_info, ordered=True),
+                lambda _: None, operand=None,
+            )
 
     # This feels like an awkward place to have this, but this keeps things BFB
     # with where it was before
@@ -450,6 +471,17 @@ def advance_clubb_core(
      invrs_tau_C1_zm, invrs_tau_C4_zm, invrs_tau_C6_zm, invrs_tau_C14_zm,
      tau_max_zm, tau_max_zt, tau_zm,
      Lscale, Lscale_zm, Lscale_up, Lscale_down, stats) = lscale_result
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(lambda info: print(
+                info.global_error_header_host(),
+                'Error calling calc_Lscale in advance_clubb_core',
+                sep="\n",
+                file=sys.stderr,
+            ), err_info, ordered=True),
+            lambda _: None, operand=None,
+        )
 
     if clubb_config_flags.l_stability_correct_tau_zm:
         stability_correction = calc_stability_correction(
@@ -517,6 +549,17 @@ def advance_clubb_core(
     (wp2, up2, vp2,
      thlp2, rtp2, rtpthlp,
      sclrp2, sclrprtp, sclrpthlp, err_info, stats) = sfc_result
+    if clubb_at_least_debug_level(0):
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(lambda info: print(
+                info.global_error_header_host(),
+                'Error calling calc_sfc_varnce in advance_clubb_core',
+                sep="\n",
+                file=sys.stderr,
+            ), err_info, ordered=True),
+            lambda _: None, operand=None,
+        )
 
     ########################################################################
     ############### ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
@@ -610,6 +653,17 @@ def advance_clubb_core(
             (_wprtp_cl_num, _wpthlp_cl_num, _upwp_cl_num, _vpwp_cl_num,
              rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, vm, vpwp,
              um_pert, vm_pert, upwp_pert, vpwp_pert, err_info, stats) = result
+            if clubb_at_least_debug_level(0):
+                jax.lax.cond(
+                    err_info.any_fatal(),
+                    lambda _: jax.debug.callback(lambda info: print(
+                        info.global_error_header_host(),
+                        'Error calling advance_xm_wpxp in advance_clubb_core',
+                        sep="\n",
+                        file=sys.stderr,
+                    ), err_info, ordered=True),
+                    lambda _: None, operand=None,
+                )
             wprtp_cl_num += 1
             wpthlp_cl_num += 1
             if clubb_config_flags.l_predict_upwp_vpwp:
@@ -678,6 +732,17 @@ def advance_clubb_core(
                 rtp2, thlp2, rtpthlp, up2, vp2,
                 sclrp2, sclrprtp, sclrpthlp, err_info, stats,
             ) = result
+            if clubb_at_least_debug_level(0):
+                jax.lax.cond(
+                    err_info.any_fatal(),
+                    lambda _: jax.debug.callback(lambda info: print(
+                        info.global_error_header_host(),
+                        'Error calling advance_xp2_xpyp in advance_clubb_core',
+                        sep="\n",
+                        file=sys.stderr,
+                    ), err_info, ordered=True),
+                    lambda _: None, operand=None,
+                )
 
             #----------------------------------------------------------------
             # Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
@@ -740,6 +805,17 @@ def advance_clubb_core(
                 up2, vp2, wp2, wp3, err_info,
             )
             up2, vp2, wp2, wp3, err_info, stats = result
+            if clubb_at_least_debug_level(0):
+                jax.lax.cond(
+                    err_info.any_fatal(),
+                    lambda _: jax.debug.callback(lambda info: print(
+                        info.global_error_header_host(),
+                        'Error calling advance_wp2_wp3 in advance_clubb_core',
+                        sep="\n",
+                        file=sys.stderr,
+                    ), err_info, ordered=True),
+                    lambda _: None, operand=None,
+                )
 
             #----------------------------------------------------------------
             # Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
@@ -793,6 +869,17 @@ def advance_clubb_core(
             (_upwp_cl_num, _vpwp_cl_num,
              um, vm, thlm, rtm, edsclrm, upwp, vpwp, wpedsclrp,
              um_pert, vm_pert, upwp_pert, vpwp_pert, err_info, stats) = result
+            if clubb_at_least_debug_level(0):
+                jax.lax.cond(
+                    err_info.any_fatal(),
+                    lambda _: jax.debug.callback(lambda info: print(
+                        info.global_error_header_host(),
+                        'Error calling advance_windm_edsclrm in advance_clubb_core',
+                        sep="\n",
+                        file=sys.stderr,
+                    ), err_info, ordered=True),
+                    lambda _: None, operand=None,
+                )
 
     #----------------------------------------------------------------
     # Advance or otherwise calculate <thl'^3>, <rt'^3>, and
@@ -896,6 +983,17 @@ def advance_clubb_core(
          cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, thlm_zm, rcm_zm,
          rcm_supersat_adj, wp2sclrp, wpsclrp2, sclrprcp,
          wpsclrprtp, wpsclrpthlp, stats) = pdf_result
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(lambda info: print(
+                    info.global_error_header_host(),
+                    'Error calling pdf_closure_driver in advance_clubb_core',
+                    sep="\n",
+                    file=sys.stderr,
+                ), err_info, ordered=True),
+                lambda _: None, operand=None,
+            )
 
 
     ########################################################################
@@ -966,6 +1064,15 @@ def advance_clubb_core(
             edsclrm_forcing,
             err_info,
         )
+        if clubb_at_least_debug_level(0):
+            jax.lax.cond(
+                err_info.any_fatal(),
+                lambda _: jax.debug.callback(lambda info: print(
+                    'Error occurred during parameterization_check at end of advance_clubb_core',
+                    file=sys.stderr,
+                ), err_info, ordered=True),
+                lambda _: None, operand=None,
+            )
 
     # ================================================================== #
     return _result_tuple()

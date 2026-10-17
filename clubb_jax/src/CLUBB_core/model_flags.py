@@ -14,8 +14,8 @@ Porting deviations:
   because Python callers expect a returned value.
 - `initialize_clubb_config_flags_type_api` is omitted because direct
   `ConfigFlags(...)` construction replaces it.
-- `print_clubb_config_flags_api` is omitted because the JAX path does not use
-  Fortran unit-based formatted output.
+- `print_clubb_config_flags_api` accepts a Python output stream in place of
+  the Fortran integer unit; flag metadata is already host-owned.
 """
 from __future__ import annotations
 
@@ -248,3 +248,71 @@ def get_default_config_flags() -> ConfigFlags:
         l_wp2_fill_holes_tke=True,
         l_add_dycore_grid=False,
     )
+
+
+def print_clubb_config_flags_api(iunit, clubb_config_flags):
+    """Print all flags in Fortran order; iunit is a Python output stream."""
+    print('iiPDF_type = ', clubb_config_flags.iiPDF_type, file=iunit)
+    print('ipdf_call_placement = ', clubb_config_flags.ipdf_call_placement, file=iunit)
+    print('penta_solve_method = ', clubb_config_flags.penta_solve_method, file=iunit)
+    print('tridiag_solve_method = ', clubb_config_flags.tridiag_solve_method, file=iunit)
+    print('grid_remap_method = ', clubb_config_flags.grid_remap_method, file=iunit)
+    print('grid_adapt_in_time_method = ', clubb_config_flags.grid_adapt_in_time_method, file=iunit)
+    print('l_use_precip_frac = ', clubb_config_flags.l_use_precip_frac, file=iunit)
+    print('l_predict_upwp_vpwp = ', clubb_config_flags.l_predict_upwp_vpwp, file=iunit)
+    print('l_ho_nontrad_coriolis = ', clubb_config_flags.l_ho_nontrad_coriolis, file=iunit)
+    print('l_ho_trad_coriolis = ', clubb_config_flags.l_ho_trad_coriolis, file=iunit)
+    print('l_min_wp2_from_corr_wx = ', clubb_config_flags.l_min_wp2_from_corr_wx, file=iunit)
+    print('l_min_xp2_from_corr_wx = ', clubb_config_flags.l_min_xp2_from_corr_wx, file=iunit)
+    print('l_C2_cloud_frac = ', clubb_config_flags.l_C2_cloud_frac, file=iunit)
+    print('l_diffuse_rtm_and_thlm = ', clubb_config_flags.l_diffuse_rtm_and_thlm, file=iunit)
+    print('l_stability_correct_Kh_N2_zm = ', clubb_config_flags.l_stability_correct_Kh_N2_zm, file=iunit)
+    print('l_calc_thlp2_rad = ', clubb_config_flags.l_calc_thlp2_rad, file=iunit)
+    print('l_upwind_xpyp_ta = ', clubb_config_flags.l_upwind_xpyp_ta, file=iunit)
+    print('l_upwind_xm_ma = ', clubb_config_flags.l_upwind_xm_ma, file=iunit)
+    print('l_uv_nudge = ', clubb_config_flags.l_uv_nudge, file=iunit)
+    print('l_rtm_nudge = ', clubb_config_flags.l_rtm_nudge, file=iunit)
+    print('l_vert_avg_closure = ', clubb_config_flags.l_vert_avg_closure, file=iunit)
+    print('l_trapezoidal_rule_zt = ', clubb_config_flags.l_trapezoidal_rule_zt, file=iunit)
+    print('l_trapezoidal_rule_zm = ', clubb_config_flags.l_trapezoidal_rule_zm, file=iunit)
+    print('l_call_pdf_closure_twice = ', clubb_config_flags.l_call_pdf_closure_twice, file=iunit)
+    print('l_standard_term_ta = ', clubb_config_flags.l_standard_term_ta, file=iunit)
+    print('l_partial_upwind_wp3 = ', clubb_config_flags.l_partial_upwind_wp3, file=iunit)
+    print('l_godunov_upwind_wpxp_ta = ', clubb_config_flags.l_godunov_upwind_wpxp_ta, file=iunit)
+    print('l_godunov_upwind_xpyp_ta = ', clubb_config_flags.l_godunov_upwind_xpyp_ta, file=iunit)
+    print('l_use_cloud_cover = ', clubb_config_flags.l_use_cloud_cover, file=iunit)
+    print('l_diagnose_correlations = ', clubb_config_flags.l_diagnose_correlations, file=iunit)
+    print('l_calc_w_corr = ', clubb_config_flags.l_calc_w_corr, file=iunit)
+    print('l_const_Nc_in_cloud = ', clubb_config_flags.l_const_Nc_in_cloud, file=iunit)
+    print('l_fix_w_chi_eta_correlations = ', clubb_config_flags.l_fix_w_chi_eta_correlations, file=iunit)
+    print('l_stability_correct_tau_zm = ', clubb_config_flags.l_stability_correct_tau_zm, file=iunit)
+    print('l_damp_wp2_using_em = ', clubb_config_flags.l_damp_wp2_using_em, file=iunit)
+    print('l_do_expldiff_rtm_thlm = ', clubb_config_flags.l_do_expldiff_rtm_thlm, file=iunit)
+    print('l_Lscale_plume_centered = ', clubb_config_flags.l_Lscale_plume_centered, file=iunit)
+    print('l_diag_Lscale_from_tau = ', clubb_config_flags.l_diag_Lscale_from_tau, file=iunit)
+    print('l_use_C7_Richardson = ', clubb_config_flags.l_use_C7_Richardson, file=iunit)
+    print('l_use_C11_Richardson = ', clubb_config_flags.l_use_C11_Richardson, file=iunit)
+    print('l_use_shear_Richardson = ', clubb_config_flags.l_use_shear_Richardson, file=iunit)
+    print('l_brunt_vaisala_freq_moist = ', clubb_config_flags.l_brunt_vaisala_freq_moist, file=iunit)
+    print('l_use_thvm_in_bv_freq = ', clubb_config_flags.l_use_thvm_in_bv_freq, file=iunit)
+    print('l_rcm_supersat_adj = ', clubb_config_flags.l_rcm_supersat_adj, file=iunit)
+    print('l_damp_wp3_Skw_squared = ', clubb_config_flags.l_damp_wp3_Skw_squared, file=iunit)
+    print('l_prescribed_avg_deltaz = ', clubb_config_flags.l_prescribed_avg_deltaz, file=iunit)
+    print('l_lmm_stepping = ', clubb_config_flags.l_lmm_stepping, file=iunit)
+    print('l_e3sm_config = ', clubb_config_flags.l_e3sm_config, file=iunit)
+    print('l_vary_convect_depth = ', clubb_config_flags.l_vary_convect_depth, file=iunit)
+    print('l_use_tke_in_wp3_pr_turb_term = ', clubb_config_flags.l_use_tke_in_wp3_pr_turb_term, file=iunit)
+    print('l_use_tke_in_wp2_wp3_K_dfsn = ', clubb_config_flags.l_use_tke_in_wp2_wp3_K_dfsn, file=iunit)
+    print('l_use_wp3_lim_with_smth_Heaviside = ', clubb_config_flags.l_use_wp3_lim_with_smth_Heaviside, file=iunit)
+    print('l_smooth_Heaviside_tau_wpxp = ', clubb_config_flags.l_smooth_Heaviside_tau_wpxp, file=iunit)
+    print('l_modify_limiters_for_cnvg_test = ', clubb_config_flags.l_modify_limiters_for_cnvg_test, file=iunit)
+    print('l_enable_relaxed_clipping = ', clubb_config_flags.l_enable_relaxed_clipping, file=iunit)
+    print('l_linearize_pbl_winds = ', clubb_config_flags.l_linearize_pbl_winds, file=iunit)
+    print('l_mono_flux_lim_thlm = ', clubb_config_flags.l_mono_flux_lim_thlm, file=iunit)
+    print('l_mono_flux_lim_rtm = ', clubb_config_flags.l_mono_flux_lim_rtm, file=iunit)
+    print('l_mono_flux_lim_um = ', clubb_config_flags.l_mono_flux_lim_vm, file=iunit)
+    print('l_mono_flux_lim_vm = ', clubb_config_flags.l_mono_flux_lim_um, file=iunit)
+    print('l_mono_flux_lim_spikefix = ', clubb_config_flags.l_mono_flux_lim_spikefix, file=iunit)
+    print('l_host_applies_sfc_fluxes = ', clubb_config_flags.l_host_applies_sfc_fluxes, file=iunit)
+    print('l_wp2_fill_holes_tke = ', clubb_config_flags.l_wp2_fill_holes_tke, file=iunit)
+    print('l_add_dycore_grid = ', clubb_config_flags.l_add_dycore_grid, file=iunit)

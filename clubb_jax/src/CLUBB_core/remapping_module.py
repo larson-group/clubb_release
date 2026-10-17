@@ -18,6 +18,7 @@ Porting deviations:
 from __future__ import annotations
 
 import jax
+import sys
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
@@ -436,6 +437,11 @@ def remap_vals_to_target(levels_source, levels_target, rho_lin_spline_vals, rho_
         target_values: (ngrdcol, nt-1).
     """
     if grid_remap_method not in (_CONS_ULLRICH_REMAP, _PPM_REMAP):
+        print(
+            "There is no remapping method implemented for grid_remap_method=",
+            grid_remap_method,
+            file=sys.stderr,
+        )
         raise ValueError(f"no remapping method for grid_remap_method={grid_remap_method}")
 
     # Calculate pressure levels from altitudes and densities

@@ -10,6 +10,10 @@ Variable shapes in the Python/JAX codebase are (ngrdcol, nz) for profile
 variables and (ngrdcol,) for surface variables.  The NetCDF dimensions in the
 output file are (time, nz, col) for profiles and (time, col) for surface
 variables, matching the Fortran-produced reference files.
+
+Observed Fortran differences retained in this diagnostic pass:
+- Python exceptions replace Fortran NetCDF return-code/header reporting; duplicate lifecycle messages are not added.
+- Fortran mixed sub-timestep update modes and fixed registry-capacity overflow diagnostics are not represented in this dynamic registry/bank implementation.
 """
 
 from __future__ import annotations
@@ -17,6 +21,7 @@ from __future__ import annotations
 import itertools
 import re
 import warnings
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Tuple
@@ -298,12 +303,16 @@ class StatsWriter:
         self.stats_tend = None if stats_tend is None else float(stats_tend)
 
         if dt_main <= 0.0:
+            print('stats init: dt_main must be positive', file=sys.stderr)
             raise ValueError("dt_main must be positive.")
         if stats_tsamp <= 0.0 or stats_tout <= 0.0:
+            print('stats init: stats_tsamp and stats_tout must be positive', file=sys.stderr)
             raise ValueError("stats_tsamp and stats_tout must be positive.")
         if self.stats_tstart < self.time_initial:
+            print('stats init: stats_tstart must be >= time_initial', file=sys.stderr)
             raise ValueError("stats_tstart must be greater than or equal to time_initial.")
         if self.stats_tend is not None and self.stats_tend <= self.stats_tstart:
+            print('stats init: invalid stats_tstart/stats_tend window', file=sys.stderr)
             raise ValueError("stats_tend must be greater than stats_tstart.")
         for label, interval in (
             ("stats_tsamp", stats_tsamp),
@@ -312,26 +321,31 @@ class StatsWriter:
         ):
             ratio = float(interval) / dt_main
             if not np.isclose(ratio, round(ratio), rtol=0.0, atol=1.0e-10):
+                print("stats init: " + label + " must align to a dt_main boundary", file=sys.stderr)
                 raise ValueError(f"{label} must align to a dt_main boundary.")
         if self.stats_tend is not None:
             ratio = (self.stats_tend - self.time_initial) / dt_main
             if not np.isclose(ratio, round(ratio), rtol=0.0, atol=1.0e-10):
+                print('stats init: stats_tend must align to a dt_main boundary', file=sys.stderr)
                 raise ValueError("stats_tend must align to a dt_main boundary.")
 
         # Sampling cadence (matching Fortran stats_init_api)
         self.stats_nsamp = max(1, round(stats_tsamp / dt_main))
         self.stats_nout = max(1, round(stats_tout / dt_main))
         if self.stats_nout % self.stats_nsamp != 0:
+            print('stats init: stats_nout not a multiple of stats_nsamp', file=sys.stderr)
             raise ValueError("stats_tout must be an integer multiple of stats_tsamp.")
         self.samples_per_write = max(1, self.stats_nout // self.stats_nsamp)
 
         if (rad_zt is None) != (rad_zm is None):
+            print('stats error: rad_zt and rad_zm must be used together, or not at all', file=sys.stderr)
             raise ValueError("rad_zt and rad_zm must be supplied together.")
         if (clubb_params_vals is None) != (param_names is None):
             raise ValueError("clubb_params_vals and param_names must be supplied together.")
         if clubb_params_vals is not None:
             params = np.asarray(clubb_params_vals)
             if params.ndim != 2 or params.shape[0] != self.ncol_total:
+                print('stats init: clubb_params metadata must have ncol_total rows', file=sys.stderr)
                 raise ValueError("clubb_params_vals must have ncol_total rows.")
             if len(param_names) != params.shape[1]:
                 raise ValueError("param_names must match the parameter-array width.")
@@ -489,7 +503,7 @@ class StatsWriter:
 
         for name, _, cnt in values:
             if np.any(cnt > jax_stats.samples_per_write):
-                warnings.warn(f"stats oversampling warning for {name}", RuntimeWarning)
+                warnings.warn(f"stats oversampling warning for {name}: max_count={np.max(cnt)}, expected={jax_stats.samples_per_write}", RuntimeWarning)
 
         self._time_index += 1
         if self._ncid is not None and self._time_varid is not None:
@@ -547,6 +561,7 @@ class StatsWriter:
         """Advance the active NetCDF column slice by one runtime batch."""
         new_offset = self.active_batch_offset + self.ngrdcol
         if new_offset + self.ngrdcol > self.ncol_total:
+            print('stats start next batch: new batch exceeds total stats columns', file=sys.stderr)
             raise ValueError("New stats batch exceeds ncol_total.")
         self.active_batch_offset = new_offset
 
@@ -612,6 +627,7 @@ class StatsWriter:
         if self.grid_remap_method is None or grid not in {GRID_ZT, GRID_ZM}:
             return values
         if self._remap_state is None:
+            print('stats netcdf error: runtime state not prepared', file=sys.stderr)
             raise RuntimeError("stats_update_grid must be called before remapped output is written.")
 
         from clubb_jax.src.CLUBB_core.remapping_module import remap_vals_to_target
@@ -688,6 +704,7 @@ class StatsWriter:
             raise ValueError(f"SILHS zt values must have shape ({nzt},).")
         if self._lh_initialized:
             if self._lh_num_samples != num_samples or self._lh_nzt != nzt:
+                print('stats lh init mismatch with existing definition', file=sys.stderr)
                 raise ValueError("SILHS stats initialization does not match the existing definition.")
             return
 

@@ -18,25 +18,30 @@ See also
 Porting deviations:
 - Sponge damping blocks are unsupported here because clubb_case_initalization
   rejects sponge-enabled Python/JAX driver cases before this routine is called.
-- The detailed Fortran error-print diagnostics and diagnostic-only early
-  returns are reduced until full JAX diagnostic state is available; fatal
-  conditions still mark err_info.
+- Diagnostic-only early returns remain reduced; fatal conditions mark err_info
+  and the host driver owns stopping after the compiled call.
 - Stats are threaded explicitly with JaxStats because the Fortran routine uses
   global stats side effects that are not JAX-compatible state.
 - Intent(out) and intent(inout) variables are returned explicitly instead of
   being modified through Fortran argument side effects.
+
+Observed Fortran differences retained in this diagnostic pass:
+- Failure dumps show the original immutable band system; LAPACK-mutated factor arrays are not available from the JAX solver.
+- The debug-3 conservation report uses the existing batched vertical_avg helper
+  and reports column averages; the source invokes its scalar helper on bulk arrays.
 """
 
 from functools import partial
 
 import jax
+import sys
 
 from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.Skx_module import Skx_func
-from clubb_jax.src.CLUBB_core.advance_helper_module import calc_wp3_on_wp2
+from clubb_jax.src.CLUBB_core.advance_helper_module import calc_wp3_on_wp2, vertical_avg
 from clubb_jax.src.CLUBB_core.clip_explicit import clip_skewness, clip_variance
 from clubb_jax.src.CLUBB_core.diffusion import diffusion_zt_lhs, diffusion_zm_lhs
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
@@ -192,7 +197,6 @@ def advance_wp2_wp3(
     up2, vp2, wp2, wp3, err_info: ErrInfo,
 ):
     """Advance w'^2 and w'^3 one timestep."""
-    del mixt_frac
 
     wp2_zt = zm2zt(nzm, nzt, ngrdcol, gr, wp2, w_tol_sqd)
     wp3_zm = zt2zm(nzm, nzt, ngrdcol, gr, wp3)
@@ -213,6 +217,12 @@ def advance_wp2_wp3(
         stats = stats.update("a3_coef", a3_coef)
 
     if l_crank_nich_diff and l_use_tke_in_wp2_wp3_K_dfsn:
+        jax.debug.callback(
+            lambda info: print(info.global_error_header_host(),
+                               "The l_crank_nich_diff flag and l_use_tke_in_wp2_wp3_K_dfsn flags cannot currently be used together.",
+                               sep="\n", file=sys.stderr),
+            err_info, ordered=True,
+        )
         # General error -> set all entries to clubb_fatal_error
         err_info = err_info.set_fatal()
         return up2, vp2, wp2, wp3, err_info, stats
@@ -269,6 +279,19 @@ def advance_wp2_wp3(
         # Assertion check for C11_Skw_fnc
         C16_bad = jnp.any((C16_fnc > one) | (C16_fnc < zero), axis=1)
         # Error in grid column i -> set ith entry to clubb_fatal_error
+        # Host I/O adaptation of the two source level/column diagnostic loops.
+        def print_coefficient_errors(c11, c16, info):
+            import numpy as np
+            for name, values in (("C11_Skw_fnc", c11), ("C16_fnc", c16)):
+                for k, i in np.argwhere(((values > one) | (values < zero)).T):
+                    print(info.column_error_header_host(int(i)), file=sys.stderr)
+                    print("The " + name + " is outside the valid range for this variable", file=sys.stderr)
+
+        jax.lax.cond(
+            jnp.any(C11_bad | C16_bad),
+            lambda _: jax.debug.callback(print_coefficient_errors, C11_Skw_fnc, C16_fnc, err_info, ordered=True),
+            lambda _: None, operand=None,
+        )
         err_info = err_info.set_fatal(mask=C11_bad | C16_bad)
 
     if stats.l_sample:
@@ -609,6 +632,135 @@ def advance_wp2_wp3(
         wp2 = one_half * (wp2_old + wp2)
         wp3 = one_half * (wp3_old + wp3)
 
+    if clubb_at_least_debug_level(0):
+        # Host I/O adaptation: preserve the complete source field dump in order.
+        def print_wp23_error(info, values):
+            import numpy as np
+            with np.printoptions(threshold=np.inf):
+                print(info.global_error_header_host(), file=sys.stderr)
+                print("Error in advance_wp2_wp3", file=sys.stderr)
+                print("intent(in)", file=sys.stderr)
+                print('gr%zt(1,:) = ', values['gr%zt(1,:) = '], file=sys.stderr)
+                print('dt = ', values['dt = '], file=sys.stderr)
+                print('sfc_elevation = ', values['sfc_elevation = '], file=sys.stderr)
+                print('sigma_sqd_w = ', values['sigma_sqd_w = '], file=sys.stderr)
+                print('wm_zm = ', values['wm_zm = '], file=sys.stderr)
+                print('wm_zt = ', values['wm_zt = '], file=sys.stderr)
+                print('wpup2 = ', values['wpup2 = '], file=sys.stderr)
+                print('wpvp2 = ', values['wpvp2 = '], file=sys.stderr)
+                print('wp2up2 = ', values['wp2up2 = '], file=sys.stderr)
+                print('wp2vp2 = ', values['wp2vp2 = '], file=sys.stderr)
+                print('wp4 = ', values['wp4 = '], file=sys.stderr)
+                print('wpthvp = ', values['wpthvp = '], file=sys.stderr)
+                print('wp2thvp = ', values['wp2thvp = '], file=sys.stderr)
+                print('wp2up = ', values['wp2up = '], file=sys.stderr)
+                print('um = ', values['um = '], file=sys.stderr)
+                print('vm = ', values['vm = '], file=sys.stderr)
+                print('upwp = ', values['upwp = '], file=sys.stderr)
+                print('vpwp = ', values['vpwp = '], file=sys.stderr)
+                print('up2 = ', values['up2 = '], file=sys.stderr)
+                print('vp2 = ', values['vp2 = '], file=sys.stderr)
+                print('em = ', values['em = '], file=sys.stderr)
+                print('Kh_zm = ', values['Kh_zm = '], file=sys.stderr)
+                print('Kh_zt = ', values['Kh_zt = '], file=sys.stderr)
+                print('invrs_tau_C4 zm = ', values['invrs_tau_C4 zm = '], file=sys.stderr)
+                print('invrs_tau_wp3_zt = ', values['invrs_tau_wp3_zt = '], file=sys.stderr)
+                print('Skw_zm = ', values['Skw_zm = '], file=sys.stderr)
+                print('Skw_zt = ', values['Skw_zt = '], file=sys.stderr)
+                print('mixt_frac = ', values['mixt_frac = '], file=sys.stderr)
+                print('a3_coef = ', values['a3_coef = '], file=sys.stderr)
+                print('a3_coef_zt = ', values['a3_coef_zt = '], file=sys.stderr)
+                print('wp3_on_wp2 = ', values['wp3_on_wp2 = '], file=sys.stderr)
+                print('invrs_tau_C1_zm = ', values['invrs_tau_C1_zm = '], file=sys.stderr)
+                print('rho_ds_zm = ', values['rho_ds_zm = '], file=sys.stderr)
+                print('rho_ds_zt = ', values['rho_ds_zt = '], file=sys.stderr)
+                print('invrs_rho_ds_zm = ', values['invrs_rho_ds_zm = '], file=sys.stderr)
+                print('invrs_rho_ds_zt = ', values['invrs_rho_ds_zt = '], file=sys.stderr)
+                print('thv_ds_zm = ', values['thv_ds_zm = '], file=sys.stderr)
+                print('thv_ds_zt = ', values['thv_ds_zt = '], file=sys.stderr)
+                print('Cx_fnc_Richardson = ', values['Cx_fnc_Richardson = '], file=sys.stderr)
+                print('lhs_splat_wp2 = ', values['lhs_splat_wp2 = '], file=sys.stderr)
+                print('lhs_splat_wp3 = ', values['lhs_splat_wp3 = '], file=sys.stderr)
+                print('wprtp = ', values['wprtp = '], file=sys.stderr)
+                print('wpthlp = ', values['wpthlp = '], file=sys.stderr)
+                print('rtp2 = ', values['rtp2 = '], file=sys.stderr)
+                print('thlp2 = ', values['thlp2 = '], file=sys.stderr)
+                print(
+                    'pdf_implicit_coefs_terms%coef_wp4_implicit = ',
+                    values['pdf_implicit_coefs_terms%coef_wp4_implicit = '],
+                    file=sys.stderr,
+                )
+                print("intent(in/out)", file=sys.stderr)
+                print('wp2_zt = ', values['wp2_zt = '], file=sys.stderr)
+                print('wp3_zm = ', values['wp3_zm = '], file=sys.stderr)
+                if l_lmm_stepping:
+                    print('wp2 (pre-solve) = ', values['wp2 (pre-solve) = '], file=sys.stderr)
+                print('wp2 = ', values['wp2 = '], file=sys.stderr)
+                if l_lmm_stepping:
+                    print('wp3 (pre-solve) = ', values['wp3 (pre-solve) = '], file=sys.stderr)
+                print('wp3 = ', values['wp3 = '], file=sys.stderr)
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(
+                print_wp23_error, err_info,
+                {
+                    'gr%zt(1,:) = ': gr.zt,
+                    'dt = ': dt,
+                    'sfc_elevation = ': sfc_elevation,
+                    'sigma_sqd_w = ': sigma_sqd_w,
+                    'wm_zm = ': wm_zm,
+                    'wm_zt = ': wm_zt,
+                    'wpup2 = ': wpup2,
+                    'wpvp2 = ': wpvp2,
+                    'wp2up2 = ': wp2up2,
+                    'wp2vp2 = ': wp2vp2,
+                    'wp4 = ': wp4,
+                    'wpthvp = ': wpthvp,
+                    'wp2thvp = ': wp2thvp,
+                    'wp2up = ': wp2up,
+                    'um = ': um,
+                    'vm = ': vm,
+                    'upwp = ': upwp,
+                    'vpwp = ': vpwp,
+                    'up2 = ': up2,
+                    'vp2 = ': vp2,
+                    'em = ': em,
+                    'Kh_zm = ': Kh_zm,
+                    'Kh_zt = ': Kh_zt,
+                    'invrs_tau_C4 zm = ': invrs_tau_C4_zm,
+                    'invrs_tau_wp3_zt = ': invrs_tau_wp3_zt,
+                    'Skw_zm = ': Skw_zm,
+                    'Skw_zt = ': Skw_zt,
+                    'mixt_frac = ': mixt_frac,
+                    'a3_coef = ': a3_coef,
+                    'a3_coef_zt = ': a3_coef_zt,
+                    'wp3_on_wp2 = ': wp3_on_wp2,
+                    'invrs_tau_C1_zm = ': invrs_tau_C1_zm,
+                    'rho_ds_zm = ': rho_ds_zm,
+                    'rho_ds_zt = ': rho_ds_zt,
+                    'invrs_rho_ds_zm = ': invrs_rho_ds_zm,
+                    'invrs_rho_ds_zt = ': invrs_rho_ds_zt,
+                    'thv_ds_zm = ': thv_ds_zm,
+                    'thv_ds_zt = ': thv_ds_zt,
+                    'Cx_fnc_Richardson = ': Cx_fnc_Richardson,
+                    'lhs_splat_wp2 = ': lhs_splat_wp2,
+                    'lhs_splat_wp3 = ': lhs_splat_wp3,
+                    'wprtp = ': wprtp,
+                    'wpthlp = ': wpthlp,
+                    'rtp2 = ': rtp2,
+                    'thlp2 = ': thlp2,
+                    'pdf_implicit_coefs_terms%coef_wp4_implicit = ': pdf_implicit_coefs_terms.coef_wp4_implicit,
+                    'wp2_zt = ': wp2_zt,
+                    'wp3_zm = ': wp3_zm,
+                    'wp2 (pre-solve) = ': wp2_old,
+                    'wp2 = ': wp2,
+                    'wp3 (pre-solve) = ': wp3_old,
+                    'wp3 = ': wp3,
+                }, ordered=True,
+            ),
+            lambda _: None, operand=None,
+        )
+
     if stats.l_sample:
         stats = stats.update("wp2_zt", wp2_zt)
         stats = stats.update("wp3_zm", wp3_zm)
@@ -688,6 +840,49 @@ def wp23_solve(
         # Flip the back to the ascending direction if we forced the solve
         # to be in descending mode
         solut = solut[:, ::-1]
+
+    if clubb_at_least_debug_level(0):
+        # JAX solvers leave inputs immutable; dump the available original system.
+        def print_wp23_system(info, bands, right, zm, zt):
+            import numpy as np
+            with np.printoptions(threshold=np.inf):
+                print(info.global_error_header_host(), file=sys.stderr)
+                print("Error in wp23_solve calling band_solve for wp2_wp3", file=sys.stderr)
+                print("wp2 & wp3 LU decomp. failed", file=sys.stderr)
+                for label, values in (("LHS", bands), ("RHS", right)):
+                    print("wp2 and wp3 " + label, file=sys.stderr)
+                    for k in range(nzm):
+                        for i in range(ngrdcol):
+                            value = values[:, i, 2*k] if label == "LHS" else values[i, 2*k]
+                            print(
+                                "grid col = ",
+                                i+1,
+                                "zm level = ",
+                                k+1,
+                                "height [m] = ",
+                                zm[i,k],
+                                label+" = ",
+                                value,
+                                file=sys.stderr,
+                            )
+                            if k < nzt:
+                                value = values[:, i, 2*k+1] if label == "LHS" else values[i, 2*k+1]
+                                print(
+                                    "grid col = ",
+                                    i+1,
+                                    "zt level = ",
+                                    k+1,
+                                    "height [m] = ",
+                                    zt[i,k],
+                                    label+" = ",
+                                    value,
+                                    file=sys.stderr,
+                                )
+        jax.lax.cond(
+            err_info.any_fatal(),
+            lambda _: jax.debug.callback(print_wp23_system, err_info, lhs, rhs, gr.zm, gr.zt, ordered=True),
+            lambda _: None, operand=None,
+        )
 
     # Copy result into output arrays and clip
     wp2 = solut[:, 0::2]
@@ -898,6 +1093,8 @@ def wp23_solve(
         stats = stats.begin_budget("vp2_pd", vp2 / dt)
 
     if fill_holes_type != 0:
+        if clubb_at_least_debug_level(3):
+            wp2_avg_before = vertical_avg(nzm, rho_ds_zm, wp2, gr.dzm)
         # Use a simple hole filling algorithm
         # upper_hf_level = nzm-1 since we are filling the zm levels
         wp2 = fill_holes_vertical(
@@ -908,6 +1105,22 @@ def wp23_solve(
             fill_holes_type,
             wp2,
         )
+
+        if clubb_at_least_debug_level(3):
+            wp2_avg_after = vertical_avg(nzm, rho_ds_zm, wp2, gr.dzm)
+            difference = wp2_avg_after - wp2_avg_before
+            jax.lax.cond(
+                jnp.any(jnp.abs(difference) > jnp.finfo(wp2.dtype).eps * 1000),
+                lambda _: jax.debug.callback(
+                    lambda value: print(
+                        "Warning! Hole-filling on wp2 is not conservative! The difference is ",
+                        value,
+                        file=sys.stderr,
+                    ),
+                    difference, ordered=True,
+                ),
+                lambda _: None, operand=None,
+            )
 
         if l_wp2_fill_holes_tke:
             wp2, up2, vp2 = fill_holes_wp2_from_horz_tke(
@@ -972,6 +1185,33 @@ def wp23_solve(
             wp2_min_array,
             vpwp ** 2 / (vp2 * corr_max_sqd),
         )
+        if clubb_at_least_debug_level(3):
+            def print_wp2_threshold(values, moisture_flux, moisture_var,
+                                    heat_flux, heat_var, u_flux, u_var, v_flux, v_var):
+                import numpy as np
+                for i, k in np.argwhere(values > one):
+                    print("Warning: wp2_min_array(", i+1, ",", k+1, ") = ", values[i,k],
+                          "> 1.0. The threshold value is limited to 1.0.", file=sys.stderr)
+                    print("Checking inputs:", file=sys.stderr)
+                    for flux_name, flux, var_name, variance in (
+                        ("wprtp", moisture_flux, "rtp2", moisture_var),
+                        ("wpthlp", heat_flux, "thlp2", heat_var),
+                        ("upwp", u_flux, "up2", u_var),
+                        ("vpwp", v_flux, "vp2", v_var),
+                    ):
+                        print(
+                            flux_name + " = ",
+                            flux[i,k],
+                            ", " + var_name + " = ",
+                            variance[i,k],
+                            file=sys.stderr,
+                        )
+            jax.lax.cond(
+                jnp.any(wp2_min_array > one),
+                lambda _: jax.debug.callback(print_wp2_threshold, wp2_min_array,
+                                            wprtp, rtp2, wpthlp, thlp2, upwp, up2, vpwp, vp2, ordered=True),
+                lambda _: None, operand=None,
+            )
         wp2_min_array = jnp.minimum(one, wp2_min_array)
     else:
         # Consider only the minimum tolerance threshold value for wp2.

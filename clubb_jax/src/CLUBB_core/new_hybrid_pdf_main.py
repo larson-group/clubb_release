@@ -22,6 +22,7 @@ Porting deviations:
 from __future__ import annotations
 
 import jax
+import sys
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
@@ -224,6 +225,15 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
     (mu_w_1, mu_w_2, sigma_w_1, sigma_w_2, mixt_frac,
      coef_sigma_w_1_sqd, coef_sigma_w_2_sqd) = calculate_w_params(
         wm, wp2, Skw, F_w, zeta_w)
+    jax.lax.cond(
+        jnp.any(mixt_frac < 0.0),
+        lambda _: jax.debug.callback(
+            lambda: print("Mixture fraction cannot be calculated.",
+                          "The value of F_w must be greater than 0 when | Skw | > 0.", sep="\n", file=sys.stderr),
+            ordered=True,
+        ),
+        lambda _: None, operand=None,
+    )
 
     out = dict(mu_w_1=mu_w_1, mu_w_2=mu_w_2,
                sigma_w_1_sqd=sigma_w_1 ** 2, sigma_w_2_sqd=sigma_w_2 ** 2,
