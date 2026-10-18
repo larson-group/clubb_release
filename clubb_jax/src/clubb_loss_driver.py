@@ -24,6 +24,7 @@ import jax.numpy as jnp
 import numpy as np
 from netCDF4 import Dataset
 
+from clubb_jax.view_profile import print_profile_commands
 from clubb_jax.src.Input_fields.namelist import _read_namelist_groups, read_namelist
 from clubb_jax.src.clubb_case_initalization import (
     init_clubb_case,
@@ -475,11 +476,17 @@ def clubb_get_loss_for_params(clubb_params_all):
 
 
 def finalize_clubb_loss():
-    """Release CLUBB state and clear the prepared module-local loss request."""
+    """Release CLUBB state, clear the request and return its optional capture path.
+
+    The returned path is a JAX adaptation for callers presenting saved profiles;
+    reusable API callers can ignore it without changing the metric interface.
+    """
     global active_request
+    capture_path = None
     if active_request.state:
-        clean_up_clubb(active_request.state)
+        capture_path = clean_up_clubb(active_request.state)
     active_request = loss_request_type()
+    return capture_path
 
 
 def clubb_get_loss(runfile):
@@ -495,7 +502,9 @@ def clubb_get_loss(runfile):
         return (names, *clubb_get_loss_for_params(params))
     finally:
         # Phase 3: release CLUBB state after the one-shot evaluation.
-        finalize_clubb_loss()
+        # JAX adaptation: the high-level driver presents the optional capture;
+        # timer finalization itself only writes files and returns their location.
+        print_profile_commands(finalize_clubb_loss())
 
 
 def prepare_loss_request_for_scoring(

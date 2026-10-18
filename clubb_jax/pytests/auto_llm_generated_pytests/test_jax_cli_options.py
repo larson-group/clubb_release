@@ -14,7 +14,7 @@ from run_scripts import run_scm
 from utilities import clubb_case_runner as runner_module
 
 
-@pytest.mark.parametrize("value", [None, "", "gpu,xla_prealloc", "FUTURE,option=some value"])
+@pytest.mark.parametrize("value", [None, "", "gpu,xla_prealloc", "profile", "gpu,profile", "FUTURE,option=some value"])
 @pytest.mark.parametrize("case_first", [False, True])
 def test_scm_main_passes_opaque_options_to_case_launch(value, case_first, tmp_path, monkeypatch):
     """Require SCM to pass opaque JAX options to the shared runner without parsing them."""

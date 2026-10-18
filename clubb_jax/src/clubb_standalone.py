@@ -24,12 +24,15 @@ Understanding:
     wait for outstanding device computations and callbacks before cleanup and
     acknowledgment; the one-shot path preserves its existing asynchronous
     behavior. Compiled programs can survive cleanup of the per-case state.
+    Cleanup returns an optional profiling directory. This frontend prints its
+    viewing commands after the case finishes; the model never starts a viewer.
 """
 import os
 import sys
 import time
 
 import jax
+from clubb_jax.view_profile import print_profile_commands
 from clubb_jax.src.clubb_case_initalization import (
     clean_up_clubb,
     init_clubb_case,
@@ -103,10 +106,12 @@ def run_case(namelist_path, l_stdout=True, *, wait_for_completion=False):
             jax.effects_barrier()
     finally:
         # Release this case's resources before the worker accepts another path.
-        clean_up_clubb(state)
+        capture_path = clean_up_clubb(state)
     elapsed = time.time() - t0
 
     print(f"Completed {state['ifinal']} timesteps in {elapsed:.1f}s")
+    # Keep viewer instructions in the frontend, outside the timer module.
+    print_profile_commands(capture_path)
 
 
 if __name__ == '__main__':

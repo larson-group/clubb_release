@@ -13,6 +13,7 @@ from clubb_jax.src.CLUBB_core.advance_helper_module import calculate_thlp2_rad
 from clubb_jax.src.CLUBB_core.calc_pressure import calculate_thvm
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
+from clubb_jax.src.CLUBB_core.code_timer_module import timer_start, timer_stop, timer_guard
 from clubb_jax.src.Benchmark_cases.prescribe_forcings import prescribe_forcings
 from clubb_jax.src.Radiation.radiation_module import advance_clubb_radiation
 
@@ -24,6 +25,7 @@ def _err_code_summary(err_info) -> str:
     return f"err_code={err_info.err_code}"
 
 
+@timer_guard
 def advance_clubb_to_end(
     state: dict, l_stdout: bool = True, l_suppress_stats: bool = False,
     itime_start: int | None = None, itime_end: int | None = None,
@@ -38,6 +40,7 @@ def advance_clubb_to_end(
     existing JAX-only iteration cap; source optional arguments precede it.
     """
 
+    timer_start("advance_clubb_to_end")
     dt_main = state['dt_main']
     dt_rad = state['dt_rad']
     time_initial = state['time_initial']
@@ -59,11 +62,14 @@ def advance_clubb_to_end(
         loop_ifinal = min(loop_ifinal, loop_iinit + max_steps - 1)
 
     for itime in range(loop_iinit, loop_ifinal + 1):
+        # JAX profiling adaptation: identify model steps for XProf's step analysis.
+        timer_start("timestep", step_num=itime)
         time_current = time_initial + (itime - 1) * dt_main
 
         # ── Stats: begin timestep ───────────────────────────────────────
         # Begin stats collection and initialize JAX stats banks for core updates.
         if l_stats:
+            timer_start("stats_begin_timestep_api")
             stats_writer = state['stats_writer']
             l_sample, l_last_sample = stats_writer.begin_timestep(itime - 1)
             jax_stats = state.get('_jax_stats')
@@ -76,6 +82,7 @@ def advance_clubb_to_end(
                 l_sample=l_sample,
                 reset_accumulators=stats_writer.l_reset,
             )
+            timer_stop("stats_begin_timestep_api")
         elif state['l_stats']:
             # Source suppression leaves the configured stats state intact.
             # Keep its banks but disable updates, so a later unsuppressed window
@@ -115,7 +122,9 @@ def advance_clubb_to_end(
         )
 
         # ── Prescribe forcings (case-specific) ──────────────────────────
+        timer_start("prescribe_forcings")
         _prescribe_forcings(state, time_current)
+        timer_stop("prescribe_forcings")
 
         # ── Add radiation tendency to forcing ─────────────────────────────────
         state['rtm_forcing'] = state['rtm_forcing'] + state['rcm_mc'] + state['rvm_mc']
@@ -129,6 +138,7 @@ def advance_clubb_to_end(
         # ── Radiation contribution to thlp2 ─────────────────────────────
         # Apply radiation contribution to thlp2 forcing when enabled.
         if state['l_calc_thlp2_rad']:
+            timer_start("calculate_thlp2_rad_api")
             state['thlp2_forcing'] = calculate_thlp2_rad(
                 state['ngrdcol'],
                 state['nzm'],
@@ -140,17 +150,22 @@ def advance_clubb_to_end(
                 state['clubb_params'],
                 state['thlp2_forcing'],
             )
+            timer_stop("calculate_thlp2_rad_api")
 
         # ── Advance CLUBB core ──────────────────────────────────────────
         state['l_sample'] = l_sample
+        timer_start("advance_clubb_core_api")
         _advance_clubb_core(state)
+        timer_stop("advance_clubb_core_api")
 
         # ── Radiation ───────────────────────────────────────────────────
         l_rad_itime = (itime % rad_interval == 0) or (itime == 1)
 
         _advance_microphysics(state, itime, time_current, l_rad_itime)
 
+        timer_start("advance_clubb_radiation")
         _advance_radiation(state=state, time_current=time_current, l_rad_itime=l_rad_itime)
+        timer_stop("advance_clubb_radiation")
 
         if clubb_at_least_debug_level(0) and state['err_info'].is_fatal():
             raise RuntimeError(
@@ -160,6 +175,7 @@ def advance_clubb_to_end(
 
         # ── Stats: end timestep ─────────────────────────────────────────
         if l_last_sample:
+            timer_start("stats_end_timestep_api")
             # Finalize a sampled stats timestep through the F2PY-free writer.
             # ``time_current`` is the start of the model step.  The output timestamp
             # is the end of this step, not the end of the potentially multi-step
@@ -169,12 +185,16 @@ def advance_clubb_to_end(
                 stats_time,
                 jax_stats=state['_jax_stats'],
             )
+            timer_stop("stats_end_timestep_api")
 
         # ── Update time ─────────────────────────────────────────────────
         time_current = time_initial + itime * dt_main
         if l_stdout:
             print(f"iteration: {itime:8d} / {ifinal:8d}"
                   f" -- time = {time_current:10.1f} / {state['time_final']:10.1f}", flush=True)
+        timer_stop("timestep")
+
+    timer_stop("advance_clubb_to_end")
 
 
 def _prescribe_forcings(state: dict, time_current):
@@ -518,6 +538,7 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
     gr = state["gr"]
     if state["microphys_scheme"] != "none":
         # Set PDF parameters/mixed moments, then generate and clip samples.
+        timer_start("pdf_hydromet_microphys_prep")
         (
             state["_jax_stats"],
             state["err_info"],
@@ -559,6 +580,7 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
             state["precip_fracs"],                                                   # InOut
             state["sampling_state"],                                                 # InOut
         )
+        timer_stop("pdf_hydromet_microphys_prep")
         # Error check after pdf_hydromet_microphys_prep
         if clubb_at_least_debug_level(0) and state["err_info"].is_fatal():
             raise RuntimeError(
@@ -574,6 +596,7 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
             if time_current >= parameters_microphys.microphys_start_time
             else parameters_microphys.microphys_start_time - 1.0
         )
+        timer_start("calc_microphys_scheme_tendcies")
         (
             state["_jax_stats"],
             state["Nccnm"],
@@ -618,6 +641,7 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
             state["_jax_stats"],                                                              # InOut
             state["Nccnm"],                                                                   # InOut
         )
+        timer_stop("calc_microphys_scheme_tendcies")
         # Source diagnostic ERROR STOPs become per-column compiled status.
         state["err_info"] = state["err_info"].set_fatal(l_microphys_error)
         if clubb_at_least_debug_level(0) and state["err_info"].is_fatal():
@@ -625,6 +649,7 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
                 "Fatal error in calc_microphys_scheme_tendcies: SILHS Kessler diagnostics"
                 + _err_code_summary(state["err_info"])
             )
+        timer_start("advance_microphys")
         (
             state["_jax_stats"],
             state["hydromet"],
@@ -657,6 +682,7 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
             state["K_hm"], state["Ncm"], state["Nc_in_cloud"], state["rvm_mc"],  # InOut
             state["thlm_mc"], state["err_info"],                                 # InOut
         )
+        timer_stop("advance_microphys")
         if clubb_at_least_debug_level(0) and state["err_info"].is_fatal():
             from clubb_jax.src.Microphys.advance_microphys_module import write_adv_micro_errors
 
@@ -683,12 +709,14 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
     else:
         if state["l_cloud_sed"]:
             state["Ncm"] = state["Nc_in_cloud"] * state["cloud_frac"]
+            timer_start("cloud_drop_sed")
             state["_jax_stats"], state["rcm_mc"], state["thlm_mc"] = cloud_drop_sed(
                 gr, gr.ngrdcol, state["rcm"], state["Ncm"],                       # In
                 state["rho_zm"], state["rho"], state["exner"], state["sigma_g"],  # In
                 state["_jax_stats"], jnp.zeros_like(state["rcm"]),                # InOut
                 jnp.zeros_like(state["rcm"]),                                     # InOut
             )
+            timer_stop("cloud_drop_sed")
         state["Ncm"] = state["Nc_in_cloud"] * state["cloud_frac"]
         state["_jax_stats"] = state["_jax_stats"].update("Ncm", state["Ncm"])
         state["_jax_stats"] = state["_jax_stats"].update("Nc_in_cloud", state["Nc_in_cloud"])

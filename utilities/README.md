@@ -229,8 +229,7 @@ stops the workload. `-continue_on_error` proceeds to the next workload without
 retrying the failed one. Existing profile names get a version suffix unless
 `-overwrite` is selected, which replaces that named profile.
 
-JAX `.timing` output is added separately in
-[#1393](https://github.com/larson-group/clubb/pull/1393); this branch alone cannot
-produce JAX timing profiles. The Python SCM does not yet emit timing summaries.
+Add `-jax=cpu` to time JAX. Its named `.timing` regions measure host wall time.
+The Python SCM does not yet emit timing summaries.
 [timing_profiles.py](timing_profiles.py) reads and writes this profile format
 for the timing command and Dash.

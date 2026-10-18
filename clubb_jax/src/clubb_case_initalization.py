@@ -8,6 +8,14 @@ import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.config_flags import ConfigFlags
 from clubb_jax.src.CLUBB_core.constants_clubb import eps
+from clubb_jax.src.CLUBB_core.code_timer_module import (
+    timer_initialize,
+    timer_disable,
+    timer_start,
+    timer_stop,
+    timer_finalize,
+    timer_guard,
+)
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid as py_setup_grid
 from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
 from clubb_jax.src.CLUBB_core.pdf_params import (
@@ -364,12 +372,17 @@ def _check_unsupported_features(cfg: dict, flags, microphys_scheme: str,
 # Initialization
 # =========================================================================
 
+@timer_guard
 def init_clubb_case(namelist_path: str) -> dict:
     """Initialize a CLUBB case from a namelist file.
 
     Returns a dict containing all model state arrays and config.
     """
+    timer_initialize()
+    timer_start("init_clubb_case")
+    timer_start("read_namelists")
     cfg = read_namelist(namelist_path)
+    timer_stop("read_namelists")
     # Invalidate compiled functions before initialization can capture changed
     # module settings; identical cases keep their in-memory compiled programs.
     from clubb_jax.src.Microphys.microphys_init_cleanup import prepare_microphys_configuration
@@ -403,6 +416,9 @@ def init_clubb_case(namelist_path: str) -> dict:
 
     # ── 1. Initialize error handling ────────────────────────────────────
     set_jax_debug_level(cfg['debug_level'])
+    if cfg['debug_level'] < 0:
+        timer_stop("init_clubb_case")
+        timer_disable()
     err_info = ErrInfo.initialized(ngrdcol=ngrdcol)
 
     # ── 2. Get config flags ─────────────────────────────────────────────
@@ -929,6 +945,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         stats_nsamp=stats_nsamp, stats_nout=stats_nout,
         stats_registry_path=str(stats_registry_path),
         stats_output_path=str(stats_output_path) if stats_output_path is not None else '',
+        output_file_prefix=str(output_dir_path / stats_prefix),
         total_param_sets=total_param_sets, clubb_params_all=clubb_params_all,
         saturation_formula=saturation_formula,
         sfctype=int(cfg['sfctype']),
@@ -1218,9 +1235,11 @@ def init_clubb_case(namelist_path: str) -> dict:
         state,
     )
     state['_initial_state'] = dict(state)
+    timer_stop("init_clubb_case")
     return state
 
 
+@timer_guard
 def set_case_initial_conditions(
     state: dict, clubb_params_in=None, batch_num=None,
 ):
@@ -1236,6 +1255,7 @@ def set_case_initial_conditions(
         clubb_params_in: optional replacement (ngrdcol, nparams) matrix [In].
         batch_num: optional one-based logical runtime batch selector [In].
     """
+    timer_start("set_case_initial_conditions")
     initial_state = state['_initial_state']
     stats_writer = initial_state['stats_writer']
     if stats_writer is not None:
@@ -1297,18 +1317,29 @@ def set_case_initial_conditions(
             raise RuntimeError(
                 'Fatal error calling check_clubb_settings in set_case_initial_conditions'
             )
+    timer_stop("set_case_initial_conditions")
     return state['err_info']
 
 
+@timer_guard
 def clean_up_clubb(state: dict):
-    """Clean up stats state."""
+    """Close case output, release microphysics and finalize its timers.
+
+    JAX adaptation: return the saved profiling directory, or None when no
+    capture was made, so the calling driver can describe how to view it.
+    """
+    timer_start("clean_up_clubb")
     if state['l_stats'] and state.get('stats_writer') is not None:
+        timer_start("stats_finalize_api")
         state['stats_writer'].finalize()
+        timer_stop("stats_finalize_api")
     if state['l_t_dependent']:
         time_dependent_input.finalize_t_dependent_input()
     from clubb_jax.src.Microphys.microphys_init_cleanup import cleanup_microphys
     cleanup_microphys()
     print("CLUBB cleanup complete.")
+    timer_stop("clean_up_clubb")
+    return timer_finalize(state['output_file_prefix'] + ".timing", state=state)
 
 
 # -----------------------------------------------------------------------------

@@ -88,6 +88,119 @@ advances and cleans up its model; compiled JAX programs stay in memory.
 Device/environment setup continues to belong to `run_jax.py`.
 Tuning retains model allocations through the existing JAX loss API.
 
+### Timing and experimental execution traces
+
+JAX writes `<fname_prefix>.timing` in the case's output directory at cleanup.
+The basic timer runs automatically at debug levels `0` and above; negative
+debug levels disable timing, matching the Fortran driver. For example:
+
+```bash
+./run_scripts/run_scm.py -jax=cpu -debug 0 -max_iters 20 bomex
+```
+
+The file uses Fortran's summary table format: call counts, inclusive and
+exclusive seconds, average inclusive time and exclusive percentage. Its
+`Backend: wall_clock` label identifies elapsed host time measured with Python's
+`perf_counter()`, including compilation during timed calls. Basic timing adds
+no device synchronization: a region can end before its submitted work completes,
+so these are host-region timings rather than completed device execution times.
+Fortran's default `cpu_time` summaries measure a different clock. Use untraced
+process-group wall time for completed-run speed comparisons: in Dash, select
+**Process-group wall time** from the Timer menu. The default
+`advance_clubb_to_end` selection uses each implementation's own regional clock.
+The existing [`time_clubb.py`](../utilities/time_clubb.py) utility and Dash's
+Profile tab read both formats:
+
+```bash
+./utilities/time_clubb.py bomex -jax=cpu -max_iters 20 \
+    -process_counts 1 -batch_sizes 1 -warmups 1 -repeats 2 \
+    -output_root output/timing -name jax_bomex
+```
+
+The timing utility keeps each workload's workers alive for full-case warmups
+and repetitions. Measured repetitions include fresh initialization and cleanup,
+while reusing in-memory compiled programs. Workers wait for all peers before
+starting each run. Process-group wall time measures completed model execution;
+worker startup is recorded separately. Persistent caching also helps with the
+initial warmup.
+
+Add `profile` to `-jax` to record initialization, advancement and cleanup
+with JAX's full profiler in addition to the basic summary:
+
+```bash
+./run_scripts/run_scm.py -jax=profile -debug 0 -max_iters 20 bomex
+./run_scripts/run_scm.py -jax=gpu,profile -debug 0 -max_iters 20 bomex
+```
+
+`-jax=profile` uses the same default backend as bare `-jax`; an explicit CPU
+selection is `-jax=cpu,profile`. Deep tracing is off by default and follows the
+same negative-debug disabling rule. Tracing starts before the namelist is read;
+if that namelist selects negative debug, the initial capture is stopped and
+marked interrupted. Each profiled initialization saves a separate
+capture beneath `output/jax_traces/`. At the end of the case, the driver prints
+its directory and commands for opening that exact capture with either viewer.
+It never starts a viewer itself.
+
+Use [`view_profile.py`](view_profile.py) to open a saved capture. With no
+arguments it opens the latest completed run in XProf. Select Perfetto or supply
+a capture directory to revisit a particular run:
+
+```bash
+./clubb_jax/view_profile.py
+./clubb_jax/view_profile.py -viewer perfetto
+./clubb_jax/view_profile.py -viewer xprof output/jax_traces/trace_7h9mr__h
+```
+
+XProf is prepared automatically in an isolated tool environment, independently
+of the model's JAX environment. Its server stays in the foreground until Ctrl+C.
+Open **Trace Viewer** and expand the CPU process or use **Expand All** to reveal
+its thread timelines. The Perfetto command opens a local page; click **Open in
+Perfetto** to load the saved trace. Its temporary server exits once the browser
+has fetched the file. Both commands print the browser URL for remote/headless
+use; remote viewing requires forwarding the local server port. `-port` selects
+another port; defaults are 8791 for XProf and 9001 for Perfetto. XProf also uses the next port for its worker service
+(the preceding port when the UI uses 65535).
+
+The same capture contains native XPlane data for XProf and
+`perfetto_trace.json.gz` for [Perfetto](https://ui.perfetto.dev/), so either viewer
+can be used without rerunning the model. The Perfetto file can also be opened
+manually in its UI. `trace_info.json` records capture settings and separates
+capture duration from export time. When deep tracing is enabled, the `.timing`
+summary includes its recording overhead; leave deep tracing off for baseline
+timing comparisons.
+
+Each model timestep has a step marker for XProf's step analysis. These regions
+preserve asynchronous execution: their host durations are not synchronized
+device timings. Some XProf analysis tools have limited data for JAX CPU runs;
+an empty accelerator chart does not mean the trace is empty. See the
+[JAX profiling guide](https://docs.jax.dev/en/latest/profiling.html).
+With Python function tracing enabled, Perfetto can report overlaps between
+Python calls and named timer regions. It displays these on overflow tracks;
+the tested viewer reports no data loss from those overlaps.
+Large captures can also truncate JAX's JSON export: a tested cold CPU run with
+Python tracing reached 5 million events and omitted later steps in Perfetto,
+while XProf retained all steps in its native data. Turning off Python function
+tracing reduced that capture enough to retain every timestep in both formats.
+
+Normal profiling needs no environment variables. Advanced capture overrides
+remain available: `CLUBB_JAX_TRACE_DIR` changes the parent directory,
+`CLUBB_JAX_TRACE_HOST_LEVEL` selects host detail (0–3, default 2), and
+`CLUBB_JAX_TRACE_PYTHON_LEVEL` controls Python function tracing (0 or 1, default
+1). The earlier `CLUBB_JAX_TRACE=1` enable switch also remains usable.
+Reducing host detail to level 1 still records many CPU operation events in the
+tested JAX version. Turning off Python tracing does not guarantee a small trace.
+
+Capture buffers and exports can be large, especially with Python tracing during
+compilation. Recording can also substantially slow CPU execution; leave it off
+for baseline speed measurements. Use an existing iteration limit for initial
+exploration. Named regions mirror the timers in `clubb_driver.F90`, with an
+additional region identifying each timestep; the corresponding JAX driver
+is split between `clubb_case_initalization.py` and `advance_clubb_to_end.py`.
+The timer module owns timing, capture and error cleanup. Deep trace finalization
+waits for outstanding case work rather than synchronizing every region.
+Instrumentation is outside compiled physics functions and does not change model
+arguments.
+
 ### GPU Running
 
 Use `-jax=gpu` to run on an NVIDIA or AMD GPU on Linux or an Apple Silicon GPU on macOS:

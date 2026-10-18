@@ -50,8 +50,9 @@ Understanding:
     includes input validation and runtime/environment setup. Temporary per-run
     outputs are removed after representative/failure artifacts are preserved.
     Failed or timed-out workers stop that workload; -continue_on_error permits
-    the next workload, without retrying the failed one. JAX timing summaries are
-    added separately from the case-runner change; the Python SCM emits none.
+    the next workload, without retrying the failed one. JAX summaries use host
+    wall time; native summaries use CPU time or GPTL wall time. The Python SCM
+    does not emit timing summaries.
 """
 
 from __future__ import annotations
@@ -403,7 +404,7 @@ def parse_timer_text(text: str) -> list[TimerRecord]:
                 records.append(
                     TimerRecord(
                         backend=backend,
-                        time_basis="cpu_time",
+                        time_basis="wallclock" if backend == "wall_clock" else "cpu_time",
                         thread=0,
                         timer_name=match.group(1).strip(),
                         calls=int(match.group(2)),
@@ -412,7 +413,7 @@ def parse_timer_text(text: str) -> list[TimerRecord]:
                     )
                 )
         if not records:
-            raise TimerParseError("CLUBB cpu_time summary contains no timer rows")
+            raise TimerParseError("CLUBB timer summary contains no timer rows")
         return records
 
     gptl_rows: dict[int, list[tuple[TimerRecord, int]]] = {}

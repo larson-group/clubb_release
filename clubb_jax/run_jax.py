@@ -43,8 +43,9 @@ Missing copies of uv and a supported Python are downloaded automatically.
 
 Options:
   -options=VALUE        Parse the value forwarded by run_scm.py -jax=VALUE:
-                         cpu or gpu, with comma-separated device=UUID,
-                         prealloc_gpu_mem=true|false, or xla_prealloc modifiers
+                         optional cpu or gpu, with comma-separated profile,
+                         device=UUID, prealloc_gpu_mem=true|false, or xla_prealloc
+                         profile alone uses the default backend and records a trace
   -profile=cpu|gpu      Select CPU or the host-native GPU backend
   -accelerator=VALUE    Select an explicit backend: cpu, cuda13, rocm, or metal
   -xla_prealloc         Enable CUDA memory preallocation (CUDA only)
@@ -68,28 +69,35 @@ Environment:
 def _parse_options(value: str) -> dict:
     """Interpret the opaque selection string forwarded by SCM callers."""
     if not value:
-        fail("-options requires a profile; supported profiles are cpu and gpu")
+        fail("-options requires cpu, gpu, or profile")
     if "\n" in value or "\r" in value:
         fail("JAX options must be on one line")
     pieces = value.split(",")
     if any(not piece for piece in pieces):
         fail("Empty JAX option; expected a profile followed by selection modifiers")
-    selection = {"profile": pieces[0].lower(), "device": "", "prealloc_gpu_mem": None}
+    selection = {"profile": None, "device": "", "prealloc_gpu_mem": None, "trace": False}
+    if pieces[0].lower() != "profile":
+        selection["profile"] = pieces.pop(0).lower()
+
     seen = set()
-    for modifier in pieces[1:]:
+    for modifier in pieces:
         key, separator, setting = modifier.partition("=")
         key = key.lower()
-        if key == "xla_prealloc" and not separator:
+        if key == "profile" and not separator:
+            key, setting = "trace", True
+        elif key == "xla_prealloc" and not separator:
             key, setting = "prealloc_gpu_mem", "true"
         elif key not in {"device", "prealloc_gpu_mem"} or not separator:
             fail(
                 f"Unknown JAX option: {modifier}; supported modifiers are "
-                "device=UUID, prealloc_gpu_mem=true|false, and xla_prealloc"
+                "profile, device=UUID, prealloc_gpu_mem=true|false, and xla_prealloc"
             )
         if key in seen:
             fail(f"JAX {key} may be specified only once")
         seen.add(key)
-        if key == "device":
+        if key == "trace":
+            selection[key] = setting
+        elif key == "device":
             selection[key] = backends.cuda.normalize_device(setting)
         else:
             if setting not in {"true", "false"}:
@@ -106,6 +114,7 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
         "xla_prealloc": False,
         "device": "",
         "prealloc_gpu_mem": None,
+        "trace": False,
         "init_env": False,
         "info_format": None,
         "help": False,
@@ -198,7 +207,7 @@ def runtime_selection(
     try:
         selection = (
             _parse_options(options) if options is not None
-            else {"profile": None, "device": "", "prealloc_gpu_mem": None}
+            else {"profile": None, "device": "", "prealloc_gpu_mem": None, "trace": False}
         )
         profile = selection["profile"]
         if profile is not None and profile not in {"cpu", "gpu"}:
@@ -240,9 +249,11 @@ def runtime_arguments(
         # Preserve an inherited explicit backend when encoding a memory setting.
         values, _ = parse_launcher_args([])
         profile, _ = resolve_accelerator(values)
-    if profile is None:
+    if selection["trace"]:
+        modifiers.append("profile")
+    if profile is None and not modifiers:
         return ["-jax"] if scm else []
-    value = ",".join([profile, *modifiers])
+    value = ",".join(([profile] if profile is not None else []) + modifiers)
     return [f"-jax={value}" if scm else f"-options={value}"]
 
 
@@ -281,6 +292,8 @@ def _runtime_environment(
     env = dict(os.environ)
     env["CLUBB_JAX_PROFILE"] = profile
     env["CLUBB_JAX_ACCELERATOR"] = accelerator
+    if values["trace"]:
+        env["CLUBB_JAX_TRACE"] = "1"
     env["JAX_PLATFORMS"] = backend.PLATFORM
     # Keep compiled programs across model processes and wiped CI checkouts.
     # JAX keys entries by computation, compiler settings and device configuration.
@@ -330,7 +343,7 @@ def runtime_configuration(
         "CUDA_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
         "CLUBB_JAX_ACCELERATOR", "CLUBB_JAX_PRECISION", "CLUBB_JAX_VENV",
         "CLUBB_JAX_TOOLS_DIR", "XLA_PYTHON_CLIENT_PREALLOCATE", "JAX_PLATFORMS",
-        "JAX_COMPILATION_CACHE_DIR",
+        "JAX_COMPILATION_CACHE_DIR", "CLUBB_JAX_TRACE",
     )
     return {
         "profile": profile, "accelerator": accelerator, "precision": precision,

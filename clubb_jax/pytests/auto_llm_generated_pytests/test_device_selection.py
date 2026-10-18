@@ -105,7 +105,7 @@ def test_scm_wrappers_forward_the_selection_to_the_launcher():
 def test_encoded_settings_round_trip_through_the_public_selection_interface(memory):
     value = f"gpu,device={GPU_B},prealloc_gpu_mem={str(memory).lower()}"
     selection = run_jax.runtime_selection(value)
-    assert selection == {"profile": "gpu", "device": GPU_B, "prealloc_gpu_mem": memory}
+    assert selection == {"profile": "gpu", "device": GPU_B, "prealloc_gpu_mem": memory, "trace": False}
     assert run_jax.runtime_arguments(value, scm=True) == ["-jax=" + value]
     assert run_jax.runtime_selection(value, device=GPU_B, prealloc_gpu_mem=memory) == selection
     with pytest.raises(ValueError, match="conflicts"):

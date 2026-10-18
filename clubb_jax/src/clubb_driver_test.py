@@ -18,6 +18,8 @@ separately in clubb_jax/tests/run_driver_extensions_test.py.
 
 import sys
 
+from clubb_jax.view_profile import print_profile_commands
+
 from clubb_jax.src.clubb_case_initalization import (
     init_clubb_case,
     set_case_initial_conditions,
@@ -48,7 +50,7 @@ def main():
 
     # Read in model parameter values by initializing, cleaning up, and initializing again.
     state = init_clubb_case(namelist_filename)
-    clean_up_clubb(state)
+    print_profile_commands(clean_up_clubb(state))
     state = init_clubb_case(namelist_filename)
 
     try:
@@ -91,7 +93,9 @@ def main():
               "not resetting everything it needs to.",
               file=sys.stderr, flush=True)
     finally:
-        clean_up_clubb(state)
+        capture_path = clean_up_clubb(state)
+
+    print_profile_commands(capture_path)
 
     # Clean up err_info. JAX owns this value in state rather than an allocation.
     if state['err_info'].is_fatal():
