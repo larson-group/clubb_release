@@ -41,11 +41,10 @@ Do not require numerical comparison for changes that cannot affect results.
 JAX correctness currently targets agreement with the corresponding Fortran
 implementation, rather than preserving outputs from previous JAX versions.
 Report JAX/Fortran comparison outcomes with their tested scope and limitations.
-JAX-only output changes do not warrant `BIT_CHANGING`; follow
-[PRs and commits](../clubb-documentation/change-messages/SKILL.md#bfb-and-evidence)
-for the marker's Fortran-only scope. Revisit this convention if a dedicated JAX
-BFB regression test is introduced. Explain numerical differences and unexpected
-failures regardless of whether the marker applies.
+Use the canonical [bit-change policy](../clubb-bit-changing/SKILL.md) when
+classifying answer changes and naming affected tests or untested conditions.
+Explain numerical differences and unexpected failures regardless of whether a
+declaration applies.
 
 A focused test should exercise the changed routine or a meaningful edge/error
 path. A large unrelated suite is not a substitute. For a regression fix, use

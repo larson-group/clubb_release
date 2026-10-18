@@ -87,7 +87,9 @@ mention worthwhile cleanup in the handoff without turning every nit into a stop.
 ## Commit, push and hand off a draft PR
 
 After the audit and required validation are satisfactory, review the final diff
-and working tree. Commit intended work and push the branch. If no changes remain
+and working tree. Apply the [bit-change policy](../clubb-bit-changing/SKILL.md)
+to commit separation and audit the actual commit/merge messages before publishing.
+Commit intended work and push the branch. If no changes remain
 to commit, retain the existing commits; do not manufacture an empty commit.
 Verify the remote head and that the test evidence still applies to that head.
 

@@ -34,6 +34,7 @@ requirements; selecting a child does not automatically load its parent.
 | **Diagnose Numerical Comparisons**: JAX/Fortran, compiler, BFB or multi-column mismatches; distinguish regression, roundoff and untested behavior. | [Numerical diagnosis](.agents/skills/clubb-numerical-diagnosis/SKILL.md) |
 | **Run or Inspect Jenkins Tests**: launch named jobs, monitor builds, inspect failures/hangs or query live jobs. | [Jenkins access](.agents/skills/clubb-jenkins/SKILL.md) |
 | **Create or Change Jenkins Tests**: add/edit pipelines, audit coverage, combine/remove/rename tests or coordinate their live jobs. | [Jenkins test authoring](.agents/skills/clubb-jenkins/test-authoring/SKILL.md) |
+| **Declare Bit-Changing Commits**: decide whether to mark a Fortran answer change, identify affected BFB tests/options, or split preserving and changing edits. | [Bit-change policy](.agents/skills/clubb-bit-changing/SKILL.md) |
 | **Choose Validation or Report Test Results**: plan relevant checks or summarize evidence in a PR, commit or response. | [Testing and reporting](.agents/skills/clubb-testing-and-reporting/SKILL.md) |
 | **Finalize a Branch for Merge**: audit all branch changes, confirm current validation, stop for substantive unaccepted issues, then commit, push and create/update a draft PR. | [Finalization](.agents/skills/clubb-finalization/SKILL.md) |
 | **Add or Review Pytests**: focused checks, generated-test admission, test pruning, or pytest CI coverage. | [Pytest workflow](.agents/skills/clubb-pytests/SKILL.md) |

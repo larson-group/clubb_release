@@ -60,24 +60,20 @@ beside the claims they support.
 
 ## BFB and evidence
 
-Discuss BFB only when a change could plausibly affect model results or
-scientific output. Renames, documentation, or high-level Dash/tuner/PyPlotGen
-changes usually need no BFB statement. A possible build failure or crash alone
-does not qualify. Otherwise omit BFB, including “not applicable.”
+Read the canonical [bit-change policy](../../clubb-bit-changing/SKILL.md)
+before deciding whether to declare a numerical answer change or how to split
+its commits. Apply its test-or-condition justification to commit and PR messages.
+Discuss preservation evidence when relevant to numerical answers; otherwise
+omit BFB statements, including “not applicable.”
 
 When relevant, describe the status in Result:
 
 - **Verified BFB:** identify the bitwise comparison, baseline, and tested scope.
   Include cases, options, compiler/optimization, backend/device, duration, and
   fields when they limit the claim. Do not generalize beyond that scope.
-- **`BIT_CHANGING`:** use only for changes to the Fortran implementation that
-  are known or expected to alter its numerical values or scientific output,
-  including diagnostics or output schema. Fortran edits that preserve results
-  do not require it. Omit the marker for JAX-only changes, even when results
-  differ from previous JAX versions. In mixed changes, scope the marker and
-  explanation to the Fortran changes. Explain what changes, why, and why it is
-  acceptable; distinguish observed changes from expected changes in an untested
-  path. Console text and timers alone do not require this marker.
+- **Declared answer change:** follow the [bit-change policy](../../clubb-bit-changing/SKILL.md).
+  Name the affected test(s) or precise untested conditions and explain the
+  intentional numerical change and why it is acceptable.
 - **Not established:** say what the available comparisons establish and what
   remains unknown. Say “not checked” only when that is known.
 
