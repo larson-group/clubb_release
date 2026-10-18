@@ -259,6 +259,10 @@ Comments and block structure:
 
 1. Preserve Fortran comments and divider blocks.
    - Keep comments in the same relative location.
+   - Preserve visual grouping too. Use the shared
+     [whitespace guidance](../clubb-fortran-format/SKILL.md) for blank lines and
+     alignment, adapting indentation to the target language without changing
+     Fortran block order.
    - Keep major block headers even if the target language code below them looks
      different syntactically.
    - Do not delete diagnostic, error-checking, or setup comments because the

@@ -27,7 +27,7 @@ from pathlib import Path
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from run_scripts.run_scm import extract_jax_options
+from utilities.clubb_case_runner import extract_jax_options
 from utilities.output_paths import resolve_output_dir
 
 

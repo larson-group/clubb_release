@@ -120,12 +120,21 @@ is more useful for that change than only "500 pytests passed." Counts can
 supplement the explanation; do not use a large total in place of its purpose.
 Only describe coverage confirmed by the actual tests/results.
 
-Report every unexpected failure encountered during the task's validation,
-even if it seems unrelated. Link the failed Jenkins build and identify the
-failed stage/command and effect on validation. Call a failure pre-existing or
-unrelated only when supported by comparison or other evidence; otherwise leave
-attribution open. A later successful rerun does not erase an unexplained
-failure. Report expected failures as such only with supporting evidence.
+When a Jenkins job or stage fails, check the same test on master with comparable
+settings and record the tested revisions. Use an existing master result when
+applicable; otherwise run the relevant comparison. A matching, understood master
+failure need not be highlighted as a branch issue. Do not assume a failure is
+pre-existing without evidence.
+
+Report the relevant stages separately even when the overall job fails on master.
+For a JAX change, for example, show the focused checks, standard comparisons and
+other affected stages; a known failure in another stage does not replace their
+results or make them irrelevant. Link the builds and distinguish stage results
+from the overall status without repeatedly listing unrelated baseline failures.
+
+Report every unexpected failure not established as a master baseline, including
+its stage/command and effect on validation. Leave attribution open when evidence
+is missing. A later successful rerun does not erase an unexplained failure.
 
 ## Adapt the report to where it is read
 

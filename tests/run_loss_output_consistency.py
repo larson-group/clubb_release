@@ -61,7 +61,7 @@ if CLUBB_ROOT not in sys.path:
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults  # noqa: E402
 from utilities.loss_metrics import calculate_column_loss_metrics  # noqa: E402
 from utilities.create_case_namelist import read_model_times, resolve_tunable_config_dir  # noqa: E402
-from run_scripts.run_scm import extract_jax_options  # noqa: E402
+from utilities.clubb_case_runner import extract_jax_options  # noqa: E402
 
 
 DEFAULT_OUT_ROOT = os.path.join(CLUBB_ROOT, "output", "loss_output_consistency")

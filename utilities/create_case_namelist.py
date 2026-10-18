@@ -939,16 +939,56 @@ def add_namelist_arguments(parser):
     )
 
 
+def case_namelist_command(args, output_dir):
+    """Return the generator command for args.case_name and its model options.
+
+    args uses add_namelist_arguments field names. output_dir must be the
+    caller's resolved output directory; it replaces args.out_dir. Runtime
+    options are omitted and repeated overrides retain their original order.
+    """
+    parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    add_namelist_arguments(parser)
+    command = [sys.executable, str(Path(__file__).resolve()), "-output_dir", str(output_dir)]
+    for action in parser._actions:
+        if action.dest == "out_dir":
+            continue
+        value = getattr(args, action.dest, None)
+        if value is None:
+            continue
+        values = value if isinstance(action, argparse._AppendAction) else [value]
+        for item in values:
+            command.extend([action.option_strings[0], str(item)])
+    return [*command, args.case_name]
+
+
+def create_case_namelist_from_args(args, output_dir, *, log_file=None, timeout=None):
+    """Generate args' aggregate namelist in resolved output_dir and return its Path.
+
+    args supplies the case name and parsed model options. Run the generator as
+    a subprocess so concurrent callers can send console output to separate open
+    log_file streams (None inherits stdout). timeout is its limit in seconds.
+    Generation failure/timeout propagates from subprocess.run. This helper does
+    not initialize a model or select its runtime.
+    """
+    subprocess.run(case_namelist_command(args, output_dir), check=True,
+                   stdout=log_file, stderr=subprocess.STDOUT, timeout=timeout)
+    return Path(output_dir) / f"{args.case_name}.in"
+
+
 def parse_forwarded_args(parser, argv=None):
-    """Keep model option values away from a wrapper's optional positional case."""
+    """Return (wrapper Namespace, forwarded tokens) from argv or sys.argv.
+
+    parser owns wrapper options; shared declarations identify runtime/model
+    options whose values must be kept together when forwarded. Unknown options
+    are rejected. -- forwards the remaining tokens unchanged to the SCM parser.
+    """
     model = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
     add_namelist_arguments(model)
+    # Runtime option declarations have the same owner as actual runner selection.
+    from utilities.clubb_case_runner import add_runner_arguments
+
+    add_runner_arguments(model)
     actions = dict(model._option_string_actions)
-    # Backend controls belong to run_scm, not the namelist generator.
-    for name in ("-exe", "-install_dir"):
-        actions[name] = model.add_argument(name)
-    for name in ("-driver_test", "-python", "-jax", "-gdb"):
-        actions[name] = model.add_argument(name, action="store_true")
     own, forwarded = [], []
     tokens = list(sys.argv[1:] if argv is None else argv)
     index = 0

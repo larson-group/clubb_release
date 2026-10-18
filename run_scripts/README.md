@@ -11,8 +11,11 @@ Most model-running scripts expect CLUBB to have already been compiled with
 
 ### `run_scm.py`
 
-Runs one CLUBB single-column case. It builds the generated case namelist with
-`utilities/create_case_namelist.py`, then runs the selected standalone driver.
+Runs one CLUBB case with native Fortran, the Python SCM or JAX. It builds the
+aggregate namelist with
+[`create_case_namelist.py`](../utilities/create_case_namelist.py), then runs the
+selected standalone. Output includes the generated input, a console log and
+configured statistics under `output/` or `-output_dir`.
 
 Examples:
 
@@ -42,6 +45,16 @@ Examples:
 
 - `python3 run_scripts/run_scm.py -gdb arm`
   Launches the compiled `arm` run under `gdb`.
+
+- `python3 run_scripts/run_scm.py -jax=cpu -output_dir jax_bomex -max_iters 20 bomex`
+  Runs 20 steps through JAX's managed CPU launcher. Use `-python` instead for
+  the Python SCM with a Python-enabled install.
+
+[`run_scm.py`](run_scm.py) and [`time_clubb.py`](../utilities/time_clubb.py) share
+[`clubb_case_runner`](../utilities/clubb_case_runner.py) for runtime selection
+and process execution. The SCM script prepares and runs one case; timing
+reuses runners across full-case warmups and repetitions. JAX runtime options
+remain owned by its launcher. See the [runner interface](../utilities/README.md#reusable-case-runners).
 
 ### `run_scm_all.py`
 
@@ -160,9 +173,13 @@ Examples:
 
 ### `run_scm_loss.py`
 
-Runs the in-memory CLUBB loss driver for one or more cases. It is used by the
-tuning workflow to compare selected CLUBB fields against configured benchmark
-data.
+Runs the in-memory CLUBB loss driver for one or more cases. It prepares the
+comparison namelist and uses the shared case runner to select the native,
+Python or JAX frontend. Each case runs once and prints its loss table against
+the configured benchmark data. Benchmark files and default comparison windows
+come from [`tuner/case_defaults.json`](../tuner/case_defaults.json). This command
+finishes and releases each loss run; the tuner separately retains initialized
+allocations through its loss API.
 
 Examples:
 
@@ -180,6 +197,9 @@ Examples:
 
 - `python3 run_scripts/run_scm_loss.py -python bomex -fields cloud_frac`
   Runs the Python loss-driver front end instead of the compiled executable.
+
+- `python3 run_scripts/run_scm_loss.py -jax=cpu bomex -fields cloud_frac`
+  Runs the JAX loss frontend through its managed CPU launcher.
 
 ### `run_tuner.py`
 

@@ -50,85 +50,9 @@ advance_clubb_to_end                   4        0    1.100000 1.100000 1.100000
 """
 
 
-FAKE_RUN_SCM = r'''#!/usr/bin/env python3
-import json
-import os
-import sys
-import time
-from pathlib import Path
-
-
-def option(name):
-    for index, token in enumerate(sys.argv[2:], start=2):
-        if token == name:
-            return sys.argv[index + 1]
-        if token.startswith(name + "="):
-            return token.split("=", 1)[1]
-    return None
-
-
-case_name = sys.argv[1]
-output_dir = Path(option("-output_dir"))
-columns = int(option("-multicol"))
-output_dir.mkdir(parents=True, exist_ok=True)
-print(f" - using executable: {sys.executable}")
-print(" - arguments:", json.dumps(sys.argv[1:]))
-(output_dir / f"{case_name}.in").write_text(
-    """&model
-grid_type = 1
-nzmax = 110
-deltaz_nl = 40.0
-zm_init_nl = 0.0
-zm_top_nl = 400.0
-time_initial = 0.0
-time_final = 180.0
-dt_main = 60.0
-/
-""",
-    encoding="utf-8",
+from utilities.pytests.timing_test_inputs import (
+    make_fake_standalone, fake_runner_factory, prepare_fake_case,
 )
-(output_dir / f"{case_name}_setup.txt").write_text("setup", encoding="utf-8")
-(output_dir / f"{case_name}_log").write_text("model log", encoding="utf-8")
-started = time.monotonic()
-(output_dir / "invocation.json").write_text(
-    json.dumps({"argv": sys.argv[1:], "pid": os.getpid(), "started": started}), encoding="utf-8"
-)
-
-override = option("-override") or ""
-if "SLEEP=" in override:
-    time.sleep(float(override.split("SLEEP=", 1)[1].split(",", 1)[0]))
-else:
-    time.sleep(0.15)
-
-finished = time.monotonic()
-payload = json.loads((output_dir / "invocation.json").read_text(encoding="utf-8"))
-payload["finished"] = finished
-(output_dir / "invocation.json").write_text(json.dumps(payload), encoding="utf-8")
-(Path.cwd() / f"trace_{output_dir.name}.json").write_text(json.dumps(payload), encoding="utf-8")
-
-if f"FAIL_COLUMNS={columns}" in override:
-    print("Synthetic child failure: requested column count is unavailable", file=sys.stderr)
-    raise SystemExit(9)
-
-(output_dir / f"{case_name}.timing").write_text(
-    """========================= CLUBB TIMER SUMMARY =========================
-Backend: cpu_time
-                                           Timer      Calls   Inclusive(s)   Exclusive(s)     Avg Inc(s)   Excl Pct
------------------------------------------------- ---------- -------------- -------------- -------------- ----------
-                        advance_clubb_to_end          3       0.300000       0.250000       0.100000      90.00
-----------------------------------------------------------------------
-Total exclusive timed cpu_time seconds:       0.250000
-=======================================================================
-""",
-    encoding="utf-8",
-)
-'''
-
-
-def make_fake_run_scm(tmp_path: Path) -> Path:
-    path = tmp_path / "fake_run_scm.py"
-    path.write_text(FAKE_RUN_SCM, encoding="utf-8")
-    return path
 
 
 def make_options(tmp_path: Path, **changes) -> BenchmarkOptions:
@@ -168,8 +92,8 @@ def run_cancellable_group_from_ignoring_parent(
             process_count=1,
             batch_size=1,
             group_dir=group_dir,
-            run_scm_path=fake_runner,
-            invocation_cwd=invocation_cwd,
+            runner_factory=fake_runner_factory(fake_runner, invocation_cwd),
+            prepare_case=prepare_fake_case,
         )
     except KeyboardInterrupt:
         raise SystemExit(130) from None
@@ -320,14 +244,15 @@ def test_parse_timer_rejects_unknown_text():
 
 
 def test_fake_runner_is_concurrent_and_writes_isolated_csv_rows(tmp_path):
-    fake_runner = make_fake_run_scm(tmp_path)
+    """Run synthetic peers concurrently and require isolated inputs, logs, CSV rows and profile metadata."""
+    fake_runner = make_fake_standalone(tmp_path)
     options = make_options(tmp_path, processes=(2,), batch_sizes=(3,))
 
     result = run_benchmark(
         options,
         ["-config", "paper", "-stats", "none", "-debug", "0"],
-        run_scm_path=fake_runner,
-        invocation_cwd=tmp_path,
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
     )
 
     assert result == 0
@@ -361,7 +286,8 @@ def test_fake_runner_is_concurrent_and_writes_isolated_csv_rows(tmp_path):
 
 
 def test_benchmark_overwrites_named_profile_without_creating_a_version(tmp_path):
-    fake_runner = make_fake_run_scm(tmp_path)
+    """Repeat a named sweep and require the existing profile to be replaced without a version suffix."""
+    fake_runner = make_fake_standalone(tmp_path)
     options = make_options(tmp_path, name="replace me", overwrite=True)
     old_profile = options.output / "replace_me"
     old_profile.mkdir(parents=True)
@@ -374,8 +300,8 @@ def test_benchmark_overwrites_named_profile_without_creating_a_version(tmp_path)
     result = run_benchmark(
         options,
         ["-stats", "none", "-debug", "0"],
-        run_scm_path=fake_runner,
-        invocation_cwd=tmp_path,
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
     )
 
     assert result == 0
@@ -386,16 +312,18 @@ def test_benchmark_overwrites_named_profile_without_creating_a_version(tmp_path)
 
 
 def test_live_results_have_workload_metadata_before_benchmark_finishes(tmp_path):
-    fake_runner = make_fake_run_scm(tmp_path)
+    """Read a live synthetic sweep and require workload coordinates before its model run finishes."""
+    fake_runner = make_fake_standalone(tmp_path)
     options = make_options(tmp_path, repetitions=3)
     outcome: dict[str, int] = {}
 
     def run() -> None:
+        """Execute the synthetic sweep while the test reads its flushed live results."""
         outcome["returncode"] = run_benchmark(
             options,
             ["-stats", "none", "-debug", "0"],
-            run_scm_path=fake_runner,
-            invocation_cwd=tmp_path,
+            runner_factory=fake_runner_factory(fake_runner, tmp_path),
+            prepare_case=prepare_fake_case,
         )
 
     worker = threading.Thread(target=run)
@@ -425,14 +353,15 @@ def test_live_results_have_workload_metadata_before_benchmark_finishes(tmp_path)
 
 
 def test_failure_preserves_completed_and_failed_points(tmp_path, capsys):
-    fake_runner = make_fake_run_scm(tmp_path)
+    """Fail a later workload and require successful observations and failure diagnostics to survive."""
+    fake_runner = make_fake_standalone(tmp_path)
     options = make_options(tmp_path, batch_sizes=(1, 2))
 
     result = run_benchmark(
         options,
         ["-override", "FAIL_COLUMNS=2", "-stats", "none", "-debug", "0"],
-        run_scm_path=fake_runner,
-        invocation_cwd=tmp_path,
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
     )
 
     assert result == 1
@@ -453,6 +382,7 @@ def test_failure_preserves_completed_and_failed_points(tmp_path, capsys):
 
 
 def test_failure_console_includes_namelist_error_without_launching_model(tmp_path, capsys):
+    """Reject invalid generated inputs before model launch and preserve the namelist diagnostic."""
     executable = tmp_path / "model-must-not-run"
     executable.write_text("#!/bin/sh\nexit 99\n")
     executable.chmod(0o700)
@@ -463,7 +393,7 @@ def test_failure_console_includes_namelist_error_without_launching_model(tmp_pat
     ) == 1
     console = capsys.readouterr().err
     assert "key 'missing_profile_flag' could not be matched" in console
-    assert "Process 0: run_scm.py exited with status 1" in console
+    assert "Process 0:" in console
     saved = options.output / options.name / "logs" / "p0001_b000001" / "warmup_001_process_000_failed.log"
     assert saved.is_file()
     assert "key 'missing_profile_flag' could not be matched" in saved.read_text()
@@ -495,14 +425,15 @@ def test_failure_report_uses_failed_sibling_and_bounds_console_output(tmp_path, 
 
 
 def test_continue_on_error_completes_remaining_sweep_points(tmp_path):
-    fake_runner = make_fake_run_scm(tmp_path)
+    """Fail one synthetic workload and require the next workload to run without retrying the failure."""
+    fake_runner = make_fake_standalone(tmp_path)
     options = make_options(tmp_path, batch_sizes=(1, 2, 3), continue_on_error=True)
 
     result = run_benchmark(
         options,
         ["-override", "FAIL_COLUMNS=2", "-stats", "none", "-debug", "0"],
-        run_scm_path=fake_runner,
-        invocation_cwd=tmp_path,
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
     )
 
     assert result == 1
@@ -516,20 +447,21 @@ def test_continue_on_error_completes_remaining_sweep_points(tmp_path):
 
 
 def test_warmups_are_aggregated_and_dash_ignores_them(tmp_path):
-    fake_runner = make_fake_run_scm(tmp_path)
+    """Keep warmup observations in raw CSV while requiring Dash summaries to use measured rows."""
+    fake_runner = make_fake_standalone(tmp_path)
     options = make_options(tmp_path, warmups=1)
 
     result = run_benchmark(
         options,
         ["-stats", "none", "-debug", "0"],
-        run_scm_path=fake_runner,
-        invocation_cwd=tmp_path,
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
     )
 
     assert result == 0
     run_dir = next(options.output.iterdir())
     timing_rows = read_csv(run_dir / "timings.csv")
-    assert {row["phase"] for row in timing_rows} == {"warmup", "measured"}
+    assert {row["phase"] for row in timing_rows} == {"startup", "warmup", "measured"}
     assert sum(row["timer"] == "advance_clubb_to_end" for row in timing_rows) == 2
     summaries, processes = load_profiles(options.output, [run_dir.name])
     assert len(summaries) == 2
@@ -537,7 +469,8 @@ def test_warmups_are_aggregated_and_dash_ignores_them(tmp_path):
 
 
 def test_timeout_terminates_group_and_reports_status(tmp_path):
-    fake_runner = make_fake_run_scm(tmp_path)
+    """Timeout sleeping synthetic peers and require child cleanup and recorded timeout status."""
+    fake_runner = make_fake_standalone(tmp_path)
     options = make_options(tmp_path, timeout=0.05)
 
     results, elapsed = run_process_group(
@@ -546,8 +479,8 @@ def test_timeout_terminates_group_and_reports_status(tmp_path):
         process_count=1,
         batch_size=1,
         group_dir=tmp_path / "timeout",
-        run_scm_path=fake_runner,
-        invocation_cwd=tmp_path,
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
     )
 
     assert elapsed < 2
@@ -556,7 +489,8 @@ def test_timeout_terminates_group_and_reports_status(tmp_path):
 
 
 def test_sigint_from_ignoring_parent_terminates_child_group(tmp_path):
-    fake_runner = make_fake_run_scm(tmp_path)
+    """Restore inherited interrupt handling and require SIGINT to release the child process group."""
+    fake_runner = make_fake_standalone(tmp_path)
     options = make_options(tmp_path)
     group_dir = tmp_path / "cancelled"
     invocation_path = group_dir / "process_000" / "invocation.json"

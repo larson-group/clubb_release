@@ -43,6 +43,10 @@ requirements; selecting a child does not automatically load its parent.
 
 ## Repository conventions
 
+- A request to investigate a problem authorizes diagnosis and a proposed remedy,
+  not a substantive fix. Explain the findings and obtain acceptance before
+  fixing, unless the user explicitly authorized fixing that problem or working
+  through issues.
 - Use [CLUBB documentation](.agents/skills/clubb-documentation/SKILL.md) for
   READMEs, change messages, file and procedure descriptions, and code comments,
   including documentation needed by new or changed code. It selects the

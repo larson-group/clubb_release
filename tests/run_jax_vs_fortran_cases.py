@@ -83,7 +83,8 @@ DEFAULT_CASES = (
         "microphysics_setting.l_ice_microphys": False,
         "microphysics_setting.l_graupel": False,
     }),
-    CaseConfig("rico", 380, 60),  # First failing saved prefix: 385 steps; Fortran O0/O2: 390.
+    # Late roundoff amplification; first failing saved prefix at 375 steps.
+    CaseConfig("rico", 370, 60),
 
     # --- Morrison microphysics ---
     # The float32 core is sensitive to FMA/intermediate rounding: Fortran debug

@@ -1,8 +1,25 @@
-"""Microphysics lifecycle from microphys_init_cleanup.F90.
+"""Initialize and release the microphysics configuration for a JAX case.
 
-Host adaptation: ``namelist_file`` may be the driver's already parsed namelist mapping. Fortran
-module parameters retain module ownership. File-unit/report arguments are retained, while the
-standalone driver owns output-file lifetime.
+Ported from src/Microphys/microphys_init_cleanup.F90. Microphysics and SILHS
+settings remain module-owned, while the driver owns model arrays and output
+files. JAX captures some settings when compiling a function, so successive
+cases must invalidate compiled programs when those settings change.
+
+Usage:
+    - init_microphys(...): read scheme/SILHS settings, initialize hydrometeor
+      metadata and correlations, and return dimensions, flags and arrays.
+    - cleanup_microphys(): release module-owned sedimentation flags.
+    - prepare_microphys_configuration(runtype, cfg): check captured settings
+      immediately after reading a namelist, before initialization uses JIT.
+
+Understanding:
+    init_microphys accepts either a namelist path or the driver's parsed mapping.
+    File-unit/report arguments retain their Fortran roles; the driver creates
+    output files and this initializer appends its enabled configuration report.
+    Identical parsed settings retain compiled programs and static metadata
+    classes. The cache check excludes output_dir, fname_prefix and
+    stats_output_filename; other setting changes conservatively clear caches.
+    init_microphys repeats the check for callers initializing it directly.
 """
 
 import sys
@@ -10,6 +27,7 @@ from pathlib import Path
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from dataclasses import fields
 import importlib
+import json
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -25,6 +43,12 @@ from clubb_jax.src.CLUBB_core.corr_varnce_module import (
     hmp2_ip_on_hmm2_ip_slope_type,
     hmp2_ip_on_hmm2_ip_intrcpt_type,
 )
+
+
+# JAX adaptation: module-owned namelist constants are captured during tracing.
+# Keep their previous initialization settings to invalidate caches on changes,
+# while repeated complete runs with identical physics retain compiled programs.
+_initialization_settings = None
 
 
 # -----------------------------------------------------------------------------
@@ -57,18 +81,20 @@ def init_microphys(
     """
     # Set default values, then read in the namelist.
     # Reset module state between independently initialized cases.
-    # Namelist values are module-owned constants captured at trace time. A new
-    # case must not reuse executables traced with the previous case's physics.
     # Description:
     # Set indices to the various hydrometeor species and define hydromet_dim for
     # the purposes of allocating memory.
     # References:
     # None
     # -----------------------------------------------------------------------
-    jax.clear_caches()
+    cfg = namelist_file if isinstance(namelist_file, dict) else read_namelist(str(namelist_file))
+    cfg = {name.lower(): value for name, value in cfg.items()}
+    prepare_microphys_configuration(runtype, cfg)
+    # Restore scalar module defaults on every case, without replacing the
+    # SILHS metadata classes that participate in JAX's compilation-cache keys.
     importlib.reload(parameters)
     importlib.reload(parameters_KK)
-    importlib.reload(parameters_silhs)
+    parameters_silhs.eight_cluster_presc_probs = parameters_silhs.eight_cluster_presc_probs_type()
 
     # Reset the source module defaults for independently initialized JAX cases.
     module_mp_graupel.NNUCCD_REDUCE_COEF = 1.0
@@ -84,9 +110,6 @@ def init_microphys(
         module_mp_graupel.NNUCCC_REDUCE_COEF = (
             0.01  # Reduce NNUCCC by factor of 100 for clex9_oct14
         )
-
-    cfg = namelist_file if isinstance(namelist_file, dict) else read_namelist(str(namelist_file))
-    cfg = {name.lower(): value for name, value in cfg.items()}
 
     # Only module-owned entries of /microphysics_setting/ are writable.
     # Other namelists in the driver's merged mapping must not alter enum constants.
@@ -296,7 +319,7 @@ def init_microphys(
     if parameters.microphys_scheme == "morrison":
         # GRAUPEL_INIT constructs a pure parameter mapping when the core is
         # traced, rather than mutating module arrays here. It reads the flags
-        # set above; clear_caches prevents stale case constants. Aerosol ccn/aer
+        # set above; settings-based invalidation prevents stale case constants. Aerosol ccn/aer
         # namelist constants remain unavailable; the guard below rejects their
         # active use. TODO: map these constants when activation is implemented.
         if parameters.specify_aerosol not in (
@@ -456,3 +479,30 @@ def cleanup_microphys():
     # None
     # -----------------------------------------------------------------------
     parameters.l_hydromet_sed = ()
+
+
+# -----------------------------------------------------------------------------
+def prepare_microphys_configuration(runtype, cfg):
+    """Clear stale JAX programs when runtype or parsed case settings change.
+
+    cfg is the flat, lowercase namelist mapping. Compare JSON-serializable
+    settings excluding three output destinations; on change, clear JAX caches
+    and reload SILHS metadata definitions. Return None. Identical settings keep
+    compiled programs and metadata class identities for process reuse.
+
+    This JAX-only check runs before the driver's initialization can use JIT;
+    init_microphys also calls it for direct lifecycle users. It does not retain
+    model arrays or replace the per-case reset of scalar microphysics defaults.
+    """
+    global _initialization_settings
+    # Output destinations do not affect compiled physics. Compare the remaining
+    # parsed settings conservatively, including runtype's case-specific constants.
+    settings = json.dumps(
+        [runtype, {name: value for name, value in cfg.items()
+                   if name not in ("output_dir", "fname_prefix", "stats_output_filename")}],
+        sort_keys=True,
+    )
+    if settings != _initialization_settings:
+        jax.clear_caches()
+        importlib.reload(parameters_silhs)
+        _initialization_settings = settings

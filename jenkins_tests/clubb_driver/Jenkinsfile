@@ -1,4 +1,24 @@
-// GPU SILHS requires straight Monte Carlo sampling in both comparison runs.
+// Check complete-case process reuse first, then the existing reusable-model drivers.
+// The first stage requires stable worker PIDs and exact numeric NetCDF statistics
+// versus fresh processes for Fortran, Python and CPU JAX. Native/JAX change cases
+// BOMEX -> RICO_SILHS -> BOMEX; Python changes column counts using BOMEX only.
+// Run the three case-runner checks sequentially on any available worker.
+//
+// Later stages compare standalone and reset/rerun outputs: JAX BOMEX/ATEX with
+// four parameter sets in batches of two (eight steps), Intel standard cases with
+// four columns (at most 500 steps), and NVIDIA OpenACC minimal cases with eight
+// columns (at most 200 steps). GPU SILHS uses straight Monte Carlo in both runs.
+//
+// Reproduce the first stage from the repository root on a UWM worker:
+//   source /etc/profile.d/larson-group.sh
+//   module load gcc netcdf-fortran
+//   ./compile.py -debug -python
+//   ulimit -s 8388608
+//   python3 tests/case_runner_lifecycle_test.py -output_dir output/driver_test/case_runner_native
+//   python3 tests/case_runner_lifecycle_test.py -python -output_dir output/driver_test/case_runner_python
+//   python3 tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/driver_test/case_runner_jax
+// Elsewhere, provide the GNU/NetCDF build environment described in BUILD.md.
+// Python dependencies and the JAX CPU environment use the existing bootstraps.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
 
@@ -6,6 +26,38 @@ pipeline {
   options { disableConcurrentBuilds() }
 
   stages {
+    stage('Case runner lifecycle') {
+      agent any
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            ./compile.py -debug -python
+            ulimit -s 8388608
+            python3 tests/case_runner_lifecycle_test.py -output_dir output/driver_test/case_runner_native
+          '''
+        }
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            ulimit -s 8388608
+            python3 tests/case_runner_lifecycle_test.py -python -output_dir output/driver_test/case_runner_python
+          '''
+        }
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            python3 tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/driver_test/case_runner_jax
+          '''
+        }
+      }
+      post {
+        unsuccessful {
+          archiveArtifacts artifacts: 'output/driver_test/case_runner_*/**', allowEmptyArchive: true
+        }
+      }
+    }
     // Each branch owns its executor, checkout, build, and output files.
     stage('Independent workflows') {
       parallel {

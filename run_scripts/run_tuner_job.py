@@ -752,6 +752,7 @@ def choose_top_run_mode(args: argparse.Namespace, results_path: Path) -> str | N
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse tuner job, backend and post-tuning run options from argv or the command line."""
     parser = argparse.ArgumentParser(
         description="Run the CLUBB Dash-style tuner from the command line.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -839,7 +840,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("-top_n", type=int, default=1, help="Number of top parameter sets to run. Default: 1.")
     parser.add_argument('-output_run_dir', dest='run_out_dir', default=str(CLUBB_OUTPUT_DIR), help="Output directory for post-tuning runs.", metavar='DIR')
     parser.add_argument("-dry_run", action="store_true", help="Write request/control/status files and exit without launching.")
-    from run_scripts.run_scm import extract_jax_options
+    from utilities.clubb_case_runner import extract_jax_options
 
     normalized, jax_options, occurrences = extract_jax_options(sys.argv[1:] if argv is None else argv)
     if occurrences > 1:

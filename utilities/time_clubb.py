@@ -1,16 +1,57 @@
 #!/usr/bin/env python3
-"""Benchmark CLUBB with groups of concurrent ``run_scm.py`` processes.
+"""Measure complete CLUBB runs with groups of reusable case processes.
 
-Timing options are parsed here.  Every other option is forwarded verbatim to
-``run_scripts/run_scm.py`` so executable, configuration, and namelist choices
-stay under the existing runner's control.  For example::
+For each process count and per-process column count, warm up a group of workers
+and measure full-case repetitions in those same processes. Every run includes
+model initialization, advancement and cleanup; process reuse lets JAX keep its
+compiled programs between runs. Runtime selection belongs to clubb_case_runner
+and model input preparation belongs to create_case_namelist.
 
-    utilities/time_clubb.py arm -process_counts 1,4 -batch_sizes 1,8 \
-        -max_iters 20 -config my_config -override C2=1.2
+Usage:
+    From the repository root, with a current native build:
 
-``-multicol``, ``-batch_size``, and ``-output_dir`` are reserved because this
-utility assigns them independently to every child process.  Each invocation
-writes one compact, self-contained profile directory.
+        ./utilities/time_clubb.py bomex
+        ./utilities/time_clubb.py bomex -process_counts 1,2 -batch_sizes 1,4
+
+    CLI and execution:
+    - main(argv), parse_arguments(argv) and build_argument_parser(): run the CLI
+      or parse BenchmarkOptions and forwarded SCM options.
+    - validate_passthrough(): add stats/debug defaults and reject options whose
+      values the timing sweep assigns itself. parse_positive_int_list,
+      nonnegative_int, positive_int and positive_float validate CLI values.
+    - run_benchmark(options, forwarded): write a sweep and return its exit code.
+    - ProcessGroup: start a worker group on context entry, run(group_dir) to
+      execute one complete case per peer, and close() to release every runner.
+      run_process_group() is the convenience entry point for a single execution.
+    - BenchmarkOptions, ProcessResult and TimerRecord: workload settings,
+      per-process results and normalized timer values.
+
+    Profile output:
+    - parse_timer_text(), parse_timer_file(): read built-in or GPTL summaries.
+    - CsvSink: append rows; write_timing_rows() writes process and group values.
+    - choose_representative(), archive_representative(): preserve one example's
+      inputs, log and timing file. report_failed_group() preserves diagnostics.
+
+Understanding:
+    Put the case before forwarded options, which use the same parsers as
+    run_scm.py. Defaults are one process, one column, one full warmup and three
+    repetitions, with stats disabled and debug 0. -multicol, -batch_size and
+    -output_dir are reserved: this script assigns columns and distinct output
+    directories to peers. A workload is one process-count/batch-size pair.
+
+    All workers finish a warmup/repetition before the next is submitted. Inputs
+    are prepared before sequential submissions to all peers; no peer is waited
+    on until all are submitted. Group wall time covers submission through the
+    last completion, excluding startup, input preparation and inter-run waiting.
+    Named .timing regions retain their backend's clock and nesting semantics.
+
+    Each profile contains profile.json, batches.csv, timings.csv and selected
+    logs/inputs. Raw timing phases are startup, warmup and measured. Startup
+    includes input validation and runtime/environment setup. Temporary per-run
+    outputs are removed after representative/failure artifacts are preserved.
+    Failed or timed-out workers stop that workload; -continue_on_error permits
+    the next workload, without retrying the failed one. JAX timing summaries are
+    added separately from the case-runner change; the Python SCM emits none.
 """
 
 from __future__ import annotations
@@ -34,34 +75,27 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Sequence
 
-try:
-    from utilities.timing_profiles import (
-        GROUP_WALL_TIMER,
-        TIMING_FIELDS,
-        TIMINGS_FILE,
-        create_profile_manifest,
-        reserve_profile_directory,
-        update_profile_manifest,
-        write_batches,
-        write_profile_manifest,
-        write_profile_readme,
-    )
-except ModuleNotFoundError:  # Support direct execution from utilities/.
-    from timing_profiles import (  # type: ignore[no-redef]
-        GROUP_WALL_TIMER,
-        TIMING_FIELDS,
-        TIMINGS_FILE,
-        create_profile_manifest,
-        reserve_profile_directory,
-        update_profile_manifest,
-        write_batches,
-        write_profile_manifest,
-        write_profile_readme,
-    )
-
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
-RUN_SCM = REPO_ROOT / "run_scripts" / "run_scm.py"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from utilities.timing_profiles import (
+    GROUP_WALL_TIMER,
+    TIMING_FIELDS,
+    TIMINGS_FILE,
+    create_profile_manifest,
+    reserve_profile_directory,
+    update_profile_manifest,
+    write_batches,
+    write_profile_manifest,
+    write_profile_readme,
+)
+
+
+from utilities.clubb_case_runner import clubb_case_runner, parse_case_arguments
+from utilities.create_case_namelist import create_case_namelist_from_args
+
+
 REQUIRED_TIMER = "advance_clubb_to_end"
 _FLOAT = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][-+]?\d+)?"
 _CPU_ROW = re.compile(
@@ -85,6 +119,12 @@ class TimerParseError(ValueError):
 
 @dataclass(frozen=True)
 class TimerRecord:
+    """One named timer's calls and seconds for a backend/thread.
+
+    Inclusive time contains children; exclusive time omits them. GPTL exclusive
+    time is inferred from its printed call tree. time_basis identifies the clock.
+    """
+
     backend: str
     time_basis: str
     thread: int
@@ -96,6 +136,8 @@ class TimerRecord:
 
 @dataclass
 class ProcessResult:
+    """A peer's status, normalized timers and paths to its run artifacts."""
+
     process_index: int
     return_code: int | None
     status: str
@@ -107,6 +149,8 @@ class ProcessResult:
 
 @dataclass(frozen=True)
 class BenchmarkOptions:
+    """Sweep settings: process counts, columns per process, repeats and output policy."""
+
     case_name: str
     processes: tuple[int, ...]
     batch_sizes: tuple[int, ...]
@@ -123,6 +167,7 @@ class CsvSink:
     """Append rows to a CSV while checking and preserving its schema."""
 
     def __init__(self, path: Path, fields: Sequence[str]):
+        """Open the CSV at path, checking its existing header against fields."""
         self.path = path
         self.fields = tuple(fields)
         self.row_count = 0
@@ -139,17 +184,21 @@ class CsvSink:
             self._file.flush()
 
     def write(self, row: dict[str, object]) -> None:
+        """Append and flush one schema-compatible row, updating row_count."""
         self._writer.writerow(row)
         self._file.flush()
         self.row_count += 1
 
     def close(self) -> None:
+        """Close the CSV output file."""
         self._file.close()
 
     def __enter__(self) -> "CsvSink":
+        """Return this open sink for context-managed row writing."""
         return self
 
     def __exit__(self, _exc_type, _exc_value, _traceback) -> None:
+        """Close the CSV output file when leaving the context."""
         self.close()
 
 
@@ -172,6 +221,7 @@ def parse_positive_int_list(value: str) -> tuple[int, ...]:
 
 
 def nonnegative_int(value: str) -> int:
+    """Parse a CLI integer and reject values below zero."""
     parsed = int(value)
     if parsed < 0:
         raise argparse.ArgumentTypeError("must be nonnegative")
@@ -179,6 +229,7 @@ def nonnegative_int(value: str) -> int:
 
 
 def positive_int(value: str) -> int:
+    """Parse a CLI integer and reject values below one."""
     parsed = int(value)
     if parsed < 1:
         raise argparse.ArgumentTypeError("must be positive")
@@ -186,6 +237,7 @@ def positive_int(value: str) -> int:
 
 
 def positive_float(value: str) -> float:
+    """Parse a CLI floating-point value and reject values at or below zero."""
     parsed = float(value)
     if parsed <= 0:
         raise argparse.ArgumentTypeError("must be positive")
@@ -193,6 +245,7 @@ def positive_float(value: str) -> float:
 
 
 def build_argument_parser() -> argparse.ArgumentParser:
+    """Return the timing-option parser; model/runtime options are parsed separately."""
     parser = argparse.ArgumentParser(
         description=(
             "Time CLUBB across concurrent process counts and per-process batch sizes. "
@@ -243,6 +296,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 
 def _option_occurrences(arguments: Sequence[str], names: Iterable[str]) -> list[str | None]:
+    """Return values for matching separate/attached options, using None if missing."""
     names = tuple(names)
     occurrences: list[str | None] = []
     for index, token in enumerate(arguments):
@@ -257,13 +311,14 @@ def _option_occurrences(arguments: Sequence[str], names: Iterable[str]) -> list[
 
 
 def validate_passthrough(arguments: Sequence[str], parser: argparse.ArgumentParser) -> list[str]:
+    """Validate forwarded SCM options and add timing defaults for statistics and debug level."""
     forwarded = list(arguments)
     if forwarded[:1] == ["--"]:
         forwarded.pop(0)
 
     managed_options = (
         "-multicol", "--multicol", "-batch_size", "--batch_size",
-        "-output_dir", "--out_dir",
+        "-output_dir", "--out_dir", "-benchmark_worker",
     )
     for option in managed_options:
         if _option_occurrences(forwarded, (option,)):
@@ -290,6 +345,7 @@ def validate_passthrough(arguments: Sequence[str], parser: argparse.ArgumentPars
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> tuple[BenchmarkOptions, list[str]]:
+    """Return resolved sweep options and forwarded SCM arguments from argv or sys.argv."""
     parser = build_argument_parser()
     arguments = list(argv) if argv is not None else sys.argv[1:]
     # ``argparse`` treats ``-batch_size`` as a prefix of ``-batch_sizes`` even
@@ -319,6 +375,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> tuple[BenchmarkOptions
 
 
 def _as_float(value: str) -> float:
+    """Convert a timer number, including Fortran D-exponent notation, to float."""
     return float(value.replace("D", "E").replace("d", "e"))
 
 
@@ -441,6 +498,7 @@ def parse_timer_text(text: str) -> list[TimerRecord]:
 
 
 def parse_timer_file(path: Path) -> list[TimerRecord]:
+    """Return normalized timers from path, raising TimerParseError for unreadable output."""
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
@@ -448,153 +506,225 @@ def parse_timer_file(path: Path) -> list[TimerRecord]:
     return parse_timer_text(text)
 
 
-def _terminate_process(process: subprocess.Popen[bytes]) -> None:
-    if process.poll() is not None:
-        return
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        return
-
-
-def _kill_process(process: subprocess.Popen[bytes]) -> None:
-    if process.poll() is not None:
-        return
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        return
-
-
-def _stop_processes(processes: Sequence[subprocess.Popen[bytes]]) -> None:
-    for process in processes:
-        _terminate_process(process)
-    deadline = time.monotonic() + 2.0
-    for process in processes:
-        if process.poll() is None:
-            try:
-                process.wait(timeout=max(0.0, deadline - time.monotonic()))
-            except subprocess.TimeoutExpired:
-                pass
-    for process in processes:
-        _kill_process(process)
-    for process in processes:
-        try:
-            process.wait(timeout=1.0)
-        except subprocess.TimeoutExpired:
-            pass
-
-
 def _find_timing_file(output_dir: Path) -> Path | None:
+    """Return the sole .timing file directly in output_dir, or None if ambiguous/missing."""
     files = sorted(output_dir.glob("*.timing"))
     return files[0] if len(files) == 1 else None
 
 
-def run_process_group(
-    *,
-    options: BenchmarkOptions,
-    forwarded: Sequence[str],
-    process_count: int,
-    batch_size: int,
-    group_dir: Path,
-    run_scm_path: Path = RUN_SCM,
-    invocation_cwd: Path | None = None,
-) -> tuple[list[ProcessResult], float]:
-    """Launch and collect one equal-work group of ``run_scm.py`` processes."""
-    environment = os.environ.copy()
-    environment.setdefault("OMP_NUM_THREADS", "1")
-    cwd = invocation_cwd or Path.cwd()
-    running: list[tuple[int, subprocess.Popen[bytes], object, Path, Path]] = []
-    started = time.perf_counter()
-    timed_out: set[int] = set()
+class ProcessGroup:
+    """Keep one worker per peer through a workload's warmups and repetitions.
 
-    try:
-        for process_index in range(process_count):
-            process_dir = group_dir / f"process_{process_index:03d}"
-            process_dir.mkdir(parents=True, exist_ok=True)
-            log_path = process_dir / "run_scm.log"
-            log_file = log_path.open("wb")
-            command = [
-                sys.executable,
-                str(run_scm_path),
-                options.case_name,
-                *forwarded,
-                "-multicol",
-                str(batch_size),
-                "-batch_size",
-                str(batch_size),
-                "-output_dir",
-                str(process_dir),
-            ]
-            try:
-                process = subprocess.Popen(
-                    command,
-                    cwd=cwd,
-                    env=environment,
-                    stdout=log_file,
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True,
+    Context entry prepares/validates inputs and initializes every runner. run()
+    prepares new outputs, submits to all peers and waits for all completions.
+    The case runner owns subprocesses/output; this group owns their scheduling.
+    Use close() or a context manager to release the entire group after failure.
+    """
+
+    def __init__(self, *, options, forwarded, process_count, batch_size, group_dir,
+                 runner_factory=clubb_case_runner,
+                 prepare_case=create_case_namelist_from_args):
+        """Store one process_count/batch_size workload and parse its case options.
+
+        forwarded contains ordinary SCM options; options supplies timeout and
+        sweep settings. group_dir holds startup files. runner_factory and
+        prepare_case default to the shared runtime and namelist owners; focused
+        checks substitute synthetic implementations. No worker starts here.
+        """
+        self.options = options
+        self.forwarded = forwarded
+        self.process_count = process_count
+        self.batch_size = batch_size
+        self.group_dir = Path(group_dir)
+        self.runner_factory = runner_factory
+        self.prepare_case = prepare_case
+        self.workers = []
+        self.broken = False
+        self.timed_out = set()
+        self.startup_wall_seconds = 0.0
+        self.startup_error = ''
+        self.startup_return_code = None
+        self.args = parse_case_arguments([
+            options.case_name, *forwarded, '-multicol', str(batch_size),
+            '-batch_size', str(batch_size),
+        ])
+
+    def __enter__(self):
+        """Validate initial inputs and start all workers, recording startup wall time."""
+        started = time.perf_counter()
+        environment = os.environ.copy()
+        environment.setdefault('OMP_NUM_THREADS', '1')
+        try:
+            for index in range(self.process_count):
+                directory = self.group_dir / f'process_{index:03d}'
+                directory.mkdir(parents=True, exist_ok=True)
+                log_path = directory / 'startup.log'
+                runner = self.runner_factory(
+                    self.args, env=environment, persistent=True,
+                    log_file=log_path, timeout=self.options.timeout,
                 )
-            except BaseException:
-                log_file.close()
+                worker = {'index': index, 'runner': runner, 'log_path': log_path,
+                          'startup_path': log_path}
+                self.workers.append(worker)
+                # Validate generated inputs before starting the model runtime.
+                # Each execution later gets its own input and output directory.
+                with log_path.open('a', encoding='utf-8') as log:
+                    self.prepare_case(
+                        self.args, directory, log_file=log, timeout=self.options.timeout,
+                    )
+                runner.init()
+            self.startup_wall_seconds = time.perf_counter() - started
+            return self
+        except Exception as exc:
+            if not self.workers:
                 raise
-            running.append((process_index, process, log_file, process_dir, log_path))
+            self.broken = True
+            self.startup_error = str(exc)
+            self.startup_return_code = getattr(exc, 'returncode', 1)
+            if isinstance(exc, (TimeoutError, subprocess.TimeoutExpired)):
+                self.timed_out.add(self.workers[-1]['index'])
+            with self.workers[-1]['startup_path'].open('a', encoding='utf-8') as log:
+                log.write(str(exc) + '\n')
+            self.close()
+            self.startup_wall_seconds = time.perf_counter() - started
+            return self
+        except BaseException:
+            self.close()
+            raise
 
-        deadline = started + options.timeout if options.timeout is not None else None
-        while any(process.poll() is None for _, process, _, _, _ in running):
-            if deadline is not None and time.perf_counter() >= deadline:
-                timed_out = {
-                    index for index, process, _, _, _ in running if process.poll() is None
-                }
-                _stop_processes([process for _, process, _, _, _ in running])
+    def _wait(self):
+        """Wait for every submitted peer; close the cohort on failure or timeout."""
+        pending = {worker['index'] for worker in self.workers}
+        deadline = (time.perf_counter() + self.options.timeout
+                    if self.options.timeout is not None else None)
+        while pending:
+            for worker in self.workers:
+                status = worker['runner'].status()
+                if status['state'] == 'completed':
+                    pending.discard(worker['index'])
+                elif status['state'] in ('failed', 'closed'):
+                    self.broken = True
+            if deadline is not None and time.perf_counter() >= deadline and pending:
+                self.timed_out.update(pending)
+                self.broken = True
+            if self.broken:
+                self.close()
                 break
-            time.sleep(0.02)
-    except BaseException:
-        _stop_processes([process for _, process, _, _, _ in running])
-        raise
-    finally:
-        for _, _, log_file, _, _ in running:
-            log_file.close()
+            if pending:
+                time.sleep(0.001)
 
-    group_wall_seconds = time.perf_counter() - started
-    results: list[ProcessResult] = []
-    for process_index, process, _, process_dir, log_path in running:
-        timing_file = _find_timing_file(process_dir)
-        timers: list[TimerRecord] = []
-        message = ""
-        if process_index in timed_out:
-            status = "timeout"
-            message = f"process group exceeded {options.timeout:g} seconds"
-        elif process.returncode != 0:
-            status = "failed"
-            message = f"run_scm.py exited with status {process.returncode}"
-        elif timing_file is None:
-            status = "missing_timing"
-            message = "expected exactly one .timing file"
-        else:
+    def run(self, group_dir):
+        """Return (peer results, group wall seconds) for one complete execution.
+
+        Write each peer's inputs/output under group_dir, preparing all inputs
+        before starting the wall clock for submission and model execution. Each
+        peer must finish and produce a readable .timing file containing
+        advance_clubb_to_end. A process/preparation failure closes all workers;
+        result status also identifies missing or malformed timing output.
+        """
+        group_dir = Path(group_dir)
+        started = time.perf_counter()
+        deadline = (started + self.options.timeout
+                    if self.options.timeout is not None else None)
+        for worker in self.workers:
+            worker['submitted'] = False
+            worker.pop('namelist', None)
+            directory = group_dir / f"process_{worker['index']:03d}"
+            directory.mkdir(parents=True, exist_ok=True)
+            worker['log_path'] = directory / 'run_scm.log'
+            worker['log_path'].write_bytes(worker['startup_path'].read_bytes())
+        for worker in self.workers if not self.broken else []:
+            directory = worker['log_path'].parent
             try:
-                timers = parse_timer_file(timing_file)
-            except TimerParseError as exc:
-                status = "timer_parse_error"
-                message = str(exc)
+                remaining = None if deadline is None else max(0., deadline-time.perf_counter())
+                with worker['log_path'].open('a', encoding='utf-8') as log:
+                    worker['namelist'] = self.prepare_case(
+                        self.args, directory, log_file=log, timeout=remaining,
+                    )
+            except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+                self.broken = True
+                if isinstance(exc, (TimeoutError, subprocess.TimeoutExpired)):
+                    self.timed_out.add(worker['index'])
+                with worker['log_path'].open('a', encoding='utf-8') as log:
+                    log.write(str(exc) + '\n')
+                break
+        # Exclude input generation; submit every peer before polling completion.
+        if not self.broken:
+            started = time.perf_counter()
+            for worker in self.workers:
+                try:
+                    worker['runner'].run(worker['namelist'], log_file=worker['log_path'])
+                    worker['submitted'] = True
+                except (OSError, RuntimeError) as exc:
+                    with worker['log_path'].open('a', encoding='utf-8') as log:
+                        log.write(str(exc) + '\n')
+                    self.broken = True
+                    break
+            if not self.broken:
+                self._wait()
+        if self.broken:
+            self.close()
+        elapsed = time.perf_counter() - started
+        results = []
+        for worker in self.workers:
+            index = worker['index']
+            current = worker['runner'].status()
+            snapshot = worker.get('closed_status', current)
+            timing_file = _find_timing_file(group_dir / f'process_{index:03d}')
+            timers = []
+            code = snapshot['return_code'] if snapshot['return_code'] is not None else current['return_code']
+            if code is None and self.startup_error:
+                code = self.startup_return_code
+            message = ''
+            if index in self.timed_out:
+                status = 'timeout'
+                message = f'process group exceeded {self.options.timeout:g} seconds'
+            elif not worker['submitted'] or snapshot['state'] != 'completed':
+                status = 'failed'
+                message = snapshot['error'] or self.startup_error or f'CLUBB runner exited with status {code} before completing the case'
+            elif timing_file is None:
+                status, message = 'missing_timing', 'expected exactly one .timing file'
             else:
-                if any(timer.timer_name == REQUIRED_TIMER for timer in timers):
-                    status = "success"
+                try:
+                    timers = parse_timer_file(timing_file)
+                except TimerParseError as exc:
+                    status, message = 'timer_parse_error', str(exc)
                 else:
-                    status = "missing_required_timer"
-                    message = f"required timer {REQUIRED_TIMER!r} was not found"
-        results.append(
-            ProcessResult(
-                process_index=process_index,
-                return_code=process.returncode,
-                status=status,
-                timers=timers,
-                timing_file=timing_file,
-                log_file=log_path,
-                message=message,
-            )
-        )
-    return results, group_wall_seconds
+                    status = ('success' if any(t.timer_name == REQUIRED_TIMER for t in timers)
+                              else 'missing_required_timer')
+                    if status != 'success':
+                        message = f'required timer {REQUIRED_TIMER!r} was not found'
+            results.append(ProcessResult(index, code, status, timers, timing_file,
+                                         worker['log_path'], message))
+        return results, elapsed
+
+    def close(self):
+        """Save final status and close every runner owned by this cohort."""
+        for worker in self.workers:
+            worker.setdefault('closed_status', worker['runner'].status())
+            worker['runner'].close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Close every worker when leaving the cohort context."""
+        self.close()
+
+
+def run_process_group(
+    *, options: BenchmarkOptions, forwarded: Sequence[str], process_count: int,
+    batch_size: int, group_dir: Path, runner_factory=clubb_case_runner,
+    prepare_case=create_case_namelist_from_args,
+):
+    """Run a full case per peer and return (peer results, group wall seconds).
+
+    Unlike run_benchmark, this helper does not reuse a group across warmups or
+    repetitions. Arguments select one workload and its input/output directory.
+    """
+    with ProcessGroup(
+        options=options, forwarded=forwarded, process_count=process_count,
+        batch_size=batch_size, group_dir=group_dir, runner_factory=runner_factory,
+        prepare_case=prepare_case,
+    ) as group:
+        return group.run(group_dir)
 
 
 def write_timing_rows(
@@ -744,6 +874,7 @@ def archive_representative(
 
 
 def _git_revision() -> str:
+    """Return the checkout commit hash, or an empty string when Git is unavailable."""
     try:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -759,6 +890,7 @@ def _git_revision() -> str:
 
 
 def _git_dirty() -> bool | None:
+    """Report tracked working-tree changes, or None when Git status is unavailable."""
     try:
         result = subprocess.run(
             ["git", "status", "--porcelain", "--untracked-files=no"],
@@ -774,11 +906,13 @@ def _git_dirty() -> bool | None:
 
 
 def _option_value(arguments: Sequence[str], names: Sequence[str]) -> str:
+    """Return the last supplied option value, or an empty string when absent."""
     values = _option_occurrences(arguments, names)
     return str(values[-1] or "") if values else ""
 
 
 def _file_sha256(path: Path) -> str:
+    """Return the file content digest, or an empty string when it cannot be read."""
     try:
         digest = hashlib.sha256()
         with path.open("rb") as handle:
@@ -790,6 +924,7 @@ def _file_sha256(path: Path) -> str:
 
 
 def _cpu_model() -> str:
+    """Return a CPU description from /proc/cpuinfo or the platform fallback."""
     try:
         for line in Path("/proc/cpuinfo").read_text(encoding="utf-8", errors="replace").splitlines():
             if line.lower().startswith("model name") and ":" in line:
@@ -800,6 +935,7 @@ def _cpu_model() -> str:
 
 
 def _profile_build_metadata(forwarded: Sequence[str]) -> dict[str, object]:
+    """Record requested backend/install options and the explicit executable digest."""
     requested = _option_value(forwarded, ("-exe", "--exe"))
     executable = Path(requested).expanduser() if requested else None
     if executable is not None and not executable.is_absolute():
@@ -819,6 +955,7 @@ def _profile_build_metadata(forwarded: Sequence[str]) -> dict[str, object]:
 
 
 def _profile_environment() -> dict[str, object]:
+    """Return host, Python and OpenMP settings for the saved profile manifest."""
     return {
         "hostname": socket.gethostname(),
         "platform": platform.platform(),
@@ -831,6 +968,7 @@ def _profile_environment() -> dict[str, object]:
 
 
 def _reported_executable(results: Sequence[ProcessResult]) -> str:
+    """Read the first available runtime selection message from the peer logs."""
     for result in results:
         try:
             text = result.log_file.read_text(encoding="utf-8", errors="replace")
@@ -843,6 +981,7 @@ def _reported_executable(results: Sequence[ProcessResult]) -> str:
 
 
 def _resolved_build_metadata(reported_executable: str) -> dict[str, str]:
+    """Record a reported command and resolve/hash it when it is a single file path."""
     if not reported_executable:
         return {}
     if any(character.isspace() for character in reported_executable):
@@ -859,6 +998,7 @@ def _resolved_build_metadata(reported_executable: str) -> dict[str, str]:
 
 
 def _namelist_value(text: str, name: str) -> str:
+    """Read the last simple scalar assignment for name from the generated namelist text."""
     matches = re.findall(
         rf"(?mi)^\s*{re.escape(name)}\s*=\s*([^!,\n]+)",
         text,
@@ -867,6 +1007,7 @@ def _namelist_value(text: str, name: str) -> str:
 
 
 def _namelist_float(text: str, name: str) -> float | None:
+    """Read a numeric namelist assignment, returning None if absent or unparseable."""
     value = _namelist_value(text, name)
     try:
         return _as_float(value)
@@ -930,12 +1071,18 @@ def run_benchmark(
     options: BenchmarkOptions,
     forwarded: Sequence[str],
     *,
-    run_scm_path: Path = RUN_SCM,
-    invocation_cwd: Path | None = None,
+    runner_factory=clubb_case_runner,
+    prepare_case=create_case_namelist_from_args,
 ) -> int:
-    if not run_scm_path.is_file():
-        raise FileNotFoundError(f"run_scm.py not found: {run_scm_path}")
+    """Write a profile for options' sweep and return 0 if every execution succeeds.
 
+    forwarded supplies runtime/model options. Each workload owns its worker
+    group through all warmups and measured repetitions, with fresh model setup
+    per execution. Flush raw rows and workload progress for live Dash readers;
+    retain representative/failure artifacts before deleting temporary outputs.
+    Failed executions return 1; unexpected errors propagate after finalizing
+    the manifest. runner_factory/prepare_case allow isolated protocol checks.
+    """
     options.output.mkdir(parents=True, exist_ok=True)
     run_id, profile_root = reserve_profile_directory(
         options.output,
@@ -970,6 +1117,7 @@ def run_benchmark(
             "warmups": options.warmups,
             "repetitions": options.repetitions,
             "timeout_seconds": options.timeout,
+            "execution_model": "persistent_workers",
             "continue_on_error": options.continue_on_error,
         },
         environment=_profile_environment(),
@@ -982,7 +1130,7 @@ def run_benchmark(
     print(f"Profile library: {options.output}")
     print(f"Run ID: {run_id}")
     print(f"Portable profile: {profile_root}")
-    print(f"Forwarding to run_scm.py: {forwarded_args}")
+    print(f"Case/runtime options: {forwarded_args}")
 
     try:
         with CsvSink(profile_root / TIMINGS_FILE, TIMING_FIELDS) as timing_sink:
@@ -1013,71 +1161,80 @@ def run_benchmark(
                     # process and batch-size metadata while this point is active.
                     batch_rows.append(batch_row)
                     write_batches(profile_root, batch_rows)
-                    with tempfile.TemporaryDirectory(prefix=f"clubb_profile_{batch_id}_") as temporary:
+                    # Keep workers through every full warmup and repetition for this shape.
+                    with tempfile.TemporaryDirectory(prefix=f".workers_{batch_id}_", dir=profile_root) as temporary:
                         temporary_root = Path(temporary)
                         try:
-                            for phase, count in (("warmup", options.warmups), ("measured", options.repetitions)):
-                                for repetition in range(1, count + 1):
-                                    label = "Warm-up" if phase == "warmup" else "Repetition"
-                                    print(
-                                        f"{label} {repetition}/{count}: {process_count} process(es) "
-                                        f"x batch size {batch_size}"
-                                    )
-                                    results, group_wall = run_process_group(
-                                        options=options,
-                                        forwarded=forwarded,
-                                        process_count=process_count,
-                                        batch_size=batch_size,
-                                        group_dir=temporary_root / f"{phase}_{repetition:03d}",
-                                        run_scm_path=run_scm_path,
-                                        invocation_cwd=invocation_cwd,
-                                    )
+                            with ProcessGroup(
+                                options=options, forwarded=forwarded,
+                                process_count=process_count, batch_size=batch_size,
+                                group_dir=temporary_root / "startup",
+                                runner_factory=runner_factory, prepare_case=prepare_case,
+                            ) as group:
+                                if not group.broken:
                                     write_timing_rows(
-                                        timing_sink,
-                                        results,
-                                        batch_id=batch_id,
-                                        phase=phase,
-                                        repetition=repetition,
-                                        group_wall_seconds=group_wall,
+                                        timing_sink, [], batch_id=batch_id, phase="startup",
+                                        repetition=0, group_wall_seconds=group.startup_wall_seconds,
                                     )
-                                    candidates.extend((phase, repetition, result) for result in results)
-                                    if not reported_executable:
-                                        reported_executable = _reported_executable(results)
-                                    for result in results:
-                                        for timer in result.timers:
-                                            observed_backends.add(timer.backend)
-                                            observed_time_bases.add(timer.time_basis)
-                                            if timer.timer_name == "advance_clubb_core_api":
-                                                observed_model_steps.add(timer.calls)
-                                    run_failed = any(result.status != "success" for result in results)
-                                    batch_failed_runs += int(run_failed)
-                                    if phase == "warmup":
-                                        warmups_completed += 1
-                                    else:
-                                        measurements_completed += 1
-                                    batch_row.update(
-                                        {
-                                            "warmups_completed": warmups_completed,
-                                            "measurements_completed": measurements_completed,
-                                            "failed_runs": batch_failed_runs,
-                                        }
-                                    )
-                                    write_batches(profile_root, batch_rows)
-                                    if run_failed:
-                                        failed = True
-                                        print(f"{label} failed; compact timing rows were preserved.", file=sys.stderr)
-                                        report_failed_group(
-                                            results, profile_root, batch_id, options.case_name,
-                                            phase, repetition,
+                                # Each run waits for all peers, including the warmup boundary.
+                                abort_workload = False
+                                for phase, count in (("warmup", options.warmups), ("measured", options.repetitions)):
+                                    for repetition in range(1, count + 1):
+                                        label = "Warm-up" if phase == "warmup" else "Repetition"
+                                        print(
+                                            f"{label} {repetition}/{count}: {process_count} process(es) "
+                                            f"x batch size {batch_size}"
                                         )
-                                        if not options.continue_on_error:
-                                            stop_after_batch = True
+                                        results, group_wall = group.run(
+                                            temporary_root / f"{phase}_{repetition:03d}",
+                                        )
+                                        write_timing_rows(
+                                            timing_sink,
+                                            results,
+                                            batch_id=batch_id,
+                                            phase=phase,
+                                            repetition=repetition,
+                                            group_wall_seconds=group_wall,
+                                        )
+                                        candidates.extend((phase, repetition, result) for result in results)
+                                        if not reported_executable:
+                                            reported_executable = _reported_executable(results)
+                                        for result in results:
+                                            for timer in result.timers:
+                                                observed_backends.add(timer.backend)
+                                                observed_time_bases.add(timer.time_basis)
+                                                if timer.timer_name == "advance_clubb_core_api":
+                                                    observed_model_steps.add(timer.calls)
+                                        run_failed = any(result.status != "success" for result in results)
+                                        batch_failed_runs += int(run_failed)
+                                        if phase == "warmup":
+                                            warmups_completed += 1
+                                        else:
+                                            measurements_completed += 1
+                                        batch_row.update(
+                                            {
+                                                "warmups_completed": warmups_completed,
+                                                "measurements_completed": measurements_completed,
+                                                "failed_runs": batch_failed_runs,
+                                            }
+                                        )
+                                        write_batches(profile_root, batch_rows)
+                                        if run_failed:
+                                            failed = True
+                                            print(f"{label} failed; compact timing rows were preserved.", file=sys.stderr)
+                                            report_failed_group(
+                                                results, profile_root, batch_id, options.case_name,
+                                                phase, repetition,
+                                            )
+                                            abort_workload = True
+                                            stop_after_batch = not options.continue_on_error
                                             break
-                                if stop_after_batch:
-                                    break
+                                    if abort_workload:
+                                        break
                         except BaseException as exc:
                             batch_exception = exc
 
+                        # Preserve usable diagnostics before temporary run outputs disappear.
                         representative = choose_representative(candidates)
                         representative_phase, representative_repetition, representative_process = archive_representative(
                             profile_root,
@@ -1176,10 +1333,15 @@ def run_benchmark(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Run the timing CLI; return 0/1 for sweep success/failure, 130 for interruption.
+
+    argv defaults to sys.argv. File/value errors return 2; argparse errors exit
+    during parsing. Restore interrupt handling so cancellation closes workers.
+    """
     # The managed Dash broker ignores SIGINT so Ctrl-C remains owned by the
     # foreground manager. Signal dispositions survive exec, so explicitly
     # restore Python's handler before doing any work. This lets Profile cancel
-    # raise KeyboardInterrupt and unwind every active run_scm.py process group.
+    # raise KeyboardInterrupt and release every active case-runner process group.
     _restore_sigint_handler()
     options, forwarded = parse_arguments(argv)
     try:

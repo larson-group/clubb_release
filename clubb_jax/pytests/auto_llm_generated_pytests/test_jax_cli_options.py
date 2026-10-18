@@ -11,38 +11,53 @@ import pytest
 from clubb_jax import run_jax
 from clubb_jax.backends import metal, rocm
 from run_scripts import run_scm
+from utilities import clubb_case_runner as runner_module
 
 
 @pytest.mark.parametrize("value", [None, "", "gpu,xla_prealloc", "FUTURE,option=some value"])
 @pytest.mark.parametrize("case_first", [False, True])
 def test_scm_main_passes_opaque_options_to_case_launch(value, case_first, tmp_path, monkeypatch):
+    """Require SCM to pass opaque JAX options to the shared runner without parsing them."""
     token = "-jax" if value is None else f"-jax={value}"
     args = ["arm", token] if case_first else [token, "arm"]
     monkeypatch.setattr(sys, "argv", ["run_scm.py", *args, "-stats", "none"])
     monkeypatch.setattr(run_scm, "resolve_output_dir", lambda _: tmp_path)
     namelist = str(tmp_path / "arm.in")
-    monkeypatch.setattr(run_scm, "create_case_namelist", lambda *_: namelist)
+    monkeypatch.setattr(run_scm, "create_case_namelist_from_args", lambda *_: namelist)
     captured = []
 
-    def launch(command, cwd, case, input_file, *args, **kwargs):
-        captured.append(command)
-        assert case == "arm" and input_file == namelist
-        return 0
+    class FakeRunner:
+        def __init__(self, options, **kwargs):
+            """Record runtime options supplied by the SCM command."""
+            command, _, _ = runner_module.choose_run_command(options)
+            captured.append(command)
+        def __enter__(self):
+            """Return the synthetic runner without launching a backend."""
+            return self
+        def __exit__(self, *args):
+            """Allow the synthetic runner context to close."""
+            pass
+        def run_and_wait(self, input_file, **kwargs):
+            """Record the submitted namelist and report successful synthetic completion."""
+            assert input_file == namelist
+            return {'state': 'completed'}
 
-    monkeypatch.setattr(run_scm, "run_case", launch)
+    monkeypatch.setattr(run_scm, "clubb_case_runner", FakeRunner)
     assert run_scm.main() == 0
     assert captured[0][1:] == ([] if value is None else [f"-options={value}"])
+
 
 
 @pytest.mark.parametrize("value", [None, "", "cpu", "gpu,xla_prealloc",
     "FUTURE,option=some value", "gpu,unknown", "literal;$NOT_EXPANDED", "gpu\n,typo"])
 def test_runner_forwards_value_verbatim_without_interpreting_it(value, tmp_path, monkeypatch):
     # No JAX driver/runtime is needed by the SCM runner, only the wrapper entrypoint.
+    """Require command selection to forward attached modifiers verbatim to the JAX launcher."""
     wrapper = tmp_path / "clubb_jax" / "run_jax.py"
     wrapper.parent.mkdir()
     wrapper.touch()
-    monkeypatch.setattr(run_scm, "CLUBB_ROOT", str(tmp_path))
-    command, _, _ = run_scm.choose_run_command(SimpleNamespace(
+    monkeypatch.setattr(runner_module, "CLUBB_ROOT", str(tmp_path))
+    command, _, _ = runner_module.choose_run_command(SimpleNamespace(
         exe=None, python=False, jax=True, jax_options=value, gdb=False,
     ))
     assert command == [str(wrapper)] + ([] if value is None else [f"-options={value}"])

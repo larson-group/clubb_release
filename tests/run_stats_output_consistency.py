@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
 import netCDF4
 import numpy as np
-from run_scripts.run_scm import extract_jax_options
+from utilities.clubb_case_runner import extract_jax_options
 
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))

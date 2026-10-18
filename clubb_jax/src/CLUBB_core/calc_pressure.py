@@ -54,6 +54,9 @@ def _exner_step(exner_1, z_1, z_2, thvm_1, thvm_2):
     return jnp.where(use_log, log_step, constant_step)
 
 
+# Keep the recurrence executable across fresh case initializations. An outer
+# JIT gives its locally defined scan body a stable compilation-cache owner.
+@partial(jax.jit)
 def init_pressure(thvm, p_sfc, gr):
     """Calculate hydrostatic pressure and Exner on thermodynamic and momentum levels.
 

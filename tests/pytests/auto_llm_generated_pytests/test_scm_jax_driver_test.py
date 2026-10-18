@@ -5,15 +5,30 @@ import pytest
 
 from clubb_jax import run_jax
 from run_scripts import run_scm
+from utilities.clubb_case_runner import choose_run_command
 
 
 @pytest.mark.parametrize('selection', ['-jax', '-jax=cpu', '-jax=gpu'])
 def test_scm_driver_test_uses_managed_launcher(monkeypatch, tmp_path, selection):
+    """Require driver-test selection to reach the managed JAX module through the shared runner."""
     monkeypatch.setattr(sys, 'argv', ['run_scm.py', 'bomex', selection, '-driver_test'])
     monkeypatch.setattr(run_scm, 'resolve_output_dir', lambda value: tmp_path)
-    monkeypatch.setattr(run_scm, 'create_case_namelist', lambda *args: 'case.in')
+    monkeypatch.setattr(run_scm, 'create_case_namelist_from_args', lambda *args: 'case.in')
     calls = []
-    monkeypatch.setattr(run_scm, 'run_case', lambda command, *args, **kwargs: calls.append(command) or 0)
+    class Runner:
+        def __init__(self, options, **kwargs):
+            """Capture the runtime options passed into the SCM runner."""
+            calls.append(choose_run_command(options, report=lambda *_: None)[0])
+        def __enter__(self):
+            """Return the synthetic runner for the SCM context."""
+            return self
+        def __exit__(self, *args):
+            """Accept context cleanup without launching a backend."""
+            pass
+        def run_and_wait(self, *args, **kwargs):
+            """Record the namelist submission and report synthetic success."""
+            return {'state': 'completed'}
+    monkeypatch.setattr(run_scm, 'clubb_case_runner', Runner)
     assert run_scm.main() == 0
     assert calls[0][-1] == '-module=clubb_jax.src.clubb_driver_test'
     expected = [] if selection == '-jax' else ['-options=' + selection.split('=', 1)[1]]

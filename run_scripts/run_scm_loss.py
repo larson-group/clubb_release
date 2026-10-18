@@ -1,76 +1,56 @@
 #!/usr/bin/env python3
+"""Prepare comparison inputs and run the CLUBB loss frontend once per case.
+
+A loss compares selected model fields with configured benchmark profiles.
+This command prepares the comparison namelist and chooses the native, Python
+or JAX frontend through the shared case runner, then prints its loss table.
+
+Usage:
+    ./run_scripts/run_scm_loss.py bomex
+    ./run_scripts/run_scm_loss.py -jax=cpu -fields thlm,wp2 bomex
+    - parse_csv_values(values, label): split nonempty CLI field/case lists.
+    - case_default_overrides_from_args(args, case): collect explicit comparison
+      window/height overrides for the configured case defaults.
+    - build_loss_case_namelist(args, output_dir, case, fields): prepare the
+      aggregate namelist and return its path and selected fields.
+    - run_loss_case(args, case, fields, output_dir): wait for one frontend and
+      return its success/failure status.
+    - main(): parse the CLI and run every selected case.
+
+Understanding:
+    Benchmark locations come from tuner/case_defaults.json. Time ranges are
+    absolute seconds and altitude ranges are meters. Each frontend invocation
+    initializes, evaluates and cleans up once; this command does not retain a
+    loss session. The tuner independently reuses allocations through the loss
+    APIs. -disable_stats_storage keeps in-memory scoring and omits NetCDF output.
+"""
+
 import argparse
 import json
 import os
 import sys
 from pathlib import Path
 
-if os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")) not in sys.path:
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
+CLUBB_ROOT = str(Path(__file__).resolve().parents[1])
+if CLUBB_ROOT not in sys.path:
+    sys.path.insert(0, CLUBB_ROOT)
 
 from utilities.create_case_namelist import (
     create_loss_case_namelist,
     validate_multicol,
 )
 from utilities.output_paths import resolve_output_dir
-from run_scm import (
-    choose_install_dir, python_runtime_dir_from_install, run_case, extract_jax_options,
+from utilities.clubb_case_runner import (
+    clubb_case_runner, extract_jax_options, validate_runtime_options,
 )
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults
 
-RUN_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
-CLUBB_ROOT = os.path.join(RUN_SCRIPTS, "..")
-
-
-def choose_run_command(args):
-    if args.jax:
-        if args.python or args.driver_test:
-            sys.exit("-jax cannot be combined with -python or -driver_test")
-        command = [sys.executable, os.path.join(CLUBB_ROOT, "clubb_jax", "run_jax.py")]
-        if args.jax_options is not None:
-            command.append("-options=" + args.jax_options)
-        command.append("-module=clubb_jax.src.clubb_standalone_loss")
-        return command, RUN_SCRIPTS, None
-    if args.python:
-        install_dir, install_source = choose_install_dir()
-        f2py_runtime_dir = python_runtime_dir_from_install(install_dir)
-        if args.driver_test:
-            module_name = "clubb_python_api.tests.clubb_loss_driver_test"
-            python_driver = os.path.join(
-                CLUBB_ROOT, "clubb_python_api", "tests", "clubb_loss_driver_test.py",
-            )
-        else:
-            module_name = "clubb_python.clubb_standalone_loss"
-            python_driver = os.path.join(
-                f2py_runtime_dir, "clubb_python", "clubb_standalone_loss.py",
-            )
-        if not os.path.isfile(python_driver):
-            sys.exit(f"Python loss driver not found: {python_driver} (rebuild with ./compile.py -python)")
-
-        executable = f"{sys.executable} -m {module_name}"
-        run_cmd = [sys.executable, "-m", module_name]
-        run_env = os.environ.copy()
-        existing_pythonpath = run_env.get("PYTHONPATH", "")
-        pythonpath_entries = [f2py_runtime_dir, CLUBB_ROOT]
-        if existing_pythonpath:
-            pythonpath_entries.append(existing_pythonpath)
-        run_env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
-        print(f" - using Python runtime dir ({install_source}): {os.path.realpath(f2py_runtime_dir)}")
-        print(f" - using executable: {executable}")
-        return run_cmd, RUN_SCRIPTS, run_env
-
-    executable_name = "clubb_loss_driver_test" if args.driver_test else "clubb_standalone_loss"
-    executable = os.path.join(CLUBB_ROOT, f"install/latest/{executable_name}")
-
-    if not os.path.isfile(executable):
-        sys.exit(f"{executable} not found (did you re-compile?)")
-
-    print(f" - using executable: {executable}")
-    return [executable], RUN_SCRIPTS, None
-
 
 def parse_csv_values(values, label):
-    """Parse one or more comma-separated CLI values."""
+    """Return stripped, nonempty items from CLI strings, allowing commas in each.
+
+    label names the option in the SystemExit message if no items remain.
+    """
     parsed = []
     for value in values or []:
         for item in str(value).split(","):
@@ -83,7 +63,12 @@ def parse_csv_values(values, label):
 
 
 def case_default_overrides_from_args(args, case_name):
-    """Return explicit CLI overrides for case comparison defaults."""
+    """Return case_name's comparison-window overrides from parsed args.
+
+    Altitudes are meters and time ranges are absolute model seconds. Per-case
+    config values override general CLI ranges; num_time_windows fills a missing
+    case value. Benchmark-file overrides exit because case_defaults owns them.
+    """
     overrides = {}
     if args.les_stats_file:
         sys.exit("LES benchmark files are configured in tuner/case_defaults.json and cannot be overridden here.")
@@ -106,7 +91,12 @@ def case_default_overrides_from_args(args, case_name):
 
 
 def build_loss_case_namelist(args, output_dir, case_name, fields):
-    """Build the loss-driver aggregate namelist using the shared namelist builder."""
+    """Return (aggregate namelist path, selected fields) for case_name.
+
+    Apply args' model options and case-default loss windows under output_dir.
+    Empty fields selects DEFAULT_LOSS_FIELDS; driver tests disable disk stats
+    while keeping in-memory loss data. Preparation errors exit with a diagnostic.
+    """
     try:
         case_defaults = read_case_defaults(case_name, overrides=case_default_overrides_from_args(args, case_name))
         requested_fields = fields or list(DEFAULT_LOSS_FIELDS)
@@ -131,7 +121,14 @@ def build_loss_case_namelist(args, output_dir, case_name, fields):
     return clubb_input_namelist, requested_fields
 
 
-def run_loss_case(args, case_name, fields, output_dir, run_cmd, run_cwd, run_env):
+def run_loss_case(args, case_name, fields, output_dir):
+    """Generate and run case_name's loss namelist; return 0 for success, 1 for failure.
+
+    args selects runtime/model settings, fields chooses comparison variables,
+    and output_dir receives inputs, the console log and optional NetCDF output.
+    The frontend prints its loss table through echo=True; the runner closes
+    after this evaluation. Model/setup failures are reported to stderr.
+    """
     clubb_input_namelist, _ = build_loss_case_namelist(
         args,
         output_dir,
@@ -139,20 +136,28 @@ def run_loss_case(args, case_name, fields, output_dir, run_cmd, run_cwd, run_env
         fields,
     )
 
+    # Loss frontends own one complete evaluation; reusable tuning stays in the API.
     print(f"=================== Running {case_name} loss ===================")
     disable_stats_storage = args.disable_stats_storage or args.driver_test
-    return run_case(
-        run_cmd,
-        run_cwd,
-        case_name,
-        str(clubb_input_namelist),
-        output_dir,
-        run_env,
-        expect_stats_output=not disable_stats_storage,
-    )
+    try:
+        with clubb_case_runner(args, persistent=False, loss=True, echo=True) as runner:
+            result = runner.run_and_wait(
+                clubb_input_namelist, log_file=Path(output_dir) / f"{case_name}_log",
+            )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    if result['state'] != 'completed':
+        print(result['error'], file=sys.stderr)
+        return 1
+    stats_file = Path(output_dir) / f"{case_name}_stats.nc"
+    if not disable_stats_storage and not stats_file.is_file():
+        print(f"WARNING: stats output not found: {stats_file}")
+    return 0
 
 
 def main():
+    """Parse loss inputs, run the selected cases, and exit nonzero if any frontend fails."""
     parser = argparse.ArgumentParser(description="Run the in-memory CLUBB loss driver.", add_help=False, allow_abbrev=False)
     parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     parser.add_argument("-config", metavar="[NAME|DIR]",
@@ -252,6 +257,10 @@ def main():
         parser.error("-jax may be specified only once")
     args = parser.parse_args(normalized)
     args.jax_options = options
+    try:
+        validate_runtime_options(args, loss=True)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if args.batch_size is not None and args.multicol is None:
         sys.exit("-batch_size requires -multicol")
@@ -281,8 +290,6 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output directory: {output_dir}")
 
-    run_cmd, run_cwd, run_env = choose_run_command(args)
-
     if args.cases:
         case_names = parse_csv_values(args.cases, "-cases")
     elif args.case_name:
@@ -293,7 +300,7 @@ def main():
 
     exit_code = 0
     for case_name in case_names:
-        result = run_loss_case(args, case_name, fields, output_dir, run_cmd, run_cwd, run_env)
+        result = run_loss_case(args, case_name, fields, output_dir)
         if result != 0:
             exit_code = result
 
@@ -303,6 +310,6 @@ def main():
 if __name__ == "__main__":
     from utilities.setup_python_venv import ensure_python_venv
 
-    # Fortran runs also use NumPy when processing the loss output.
+    # Loss input preparation needs managed Python dependencies for every backend.
     ensure_python_venv()
     main()

@@ -109,10 +109,11 @@ def test_grid_json_generates_the_same_namelist_as_legacy_assignments(tmp_path, p
 
 
 def test_run_scm_forwards_mixed_overrides_to_the_real_generator(tmp_path):
+    """Apply an inline override followed by a JSON override and require the later case value."""
     import json
     from pathlib import Path
     from types import SimpleNamespace
-    from run_scripts import run_scm
+    from utilities import create_case_namelist as namelist_module
 
     profile = tmp_path / "cases.json"
     profile.write_text(json.dumps({"bomex": {"dt_main": 3.0}}))
@@ -120,7 +121,7 @@ def test_run_scm_forwards_mixed_overrides_to_the_real_generator(tmp_path):
               "nzmax debug max_iters dt_main dt_rad tout stats_tstart stats_tend").split()
     args = SimpleNamespace(**dict.fromkeys(fields), case_name="bomex",
                            override=["dt_main=2.0", str(profile)])
-    result = Path(run_scm.create_case_namelist(args, str(tmp_path)))
+    result = Path(namelist_module.create_case_namelist_from_args(args, str(tmp_path)))
     assert "dt_main = 3.0" in result.read_text()
 
 

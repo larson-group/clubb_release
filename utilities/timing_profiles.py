@@ -208,6 +208,7 @@ def write_profile_readme(profile_dir: Path, manifest: dict[str, Any]) -> None:
         f"- Per-process batch sizes: `{benchmark.get('batch_sizes', [])}`",
         f"- Warmups: `{benchmark.get('warmups', '')}`",
         f"- Measured repetitions: `{benchmark.get('repetitions', '')}`",
+        f"- Execution model: `{benchmark.get('execution_model', 'fresh_processes')}`",
         f"- Forwarded arguments: `{manifest.get('forwarded_args', '')}`",
         "",
         "## Provenance",
@@ -232,6 +233,13 @@ def write_profile_readme(profile_dir: Path, manifest: dict[str, Any]) -> None:
         "Warmup observations are retained in `timings.csv` with `phase=warmup`; analysis views ignore them by default.",
         "",
     ]
+    if benchmark.get("execution_model") == "persistent_workers":
+        lines.extend([
+            "Persistent workers store startup separately as `phase=startup`. Each measured repetition",
+            "includes fresh model initialization, advancement and cleanup after a cohort barrier.",
+            "Its process-group wall time excludes startup, input preparation and inter-run waiting.",
+            "",
+        ])
     _atomic_write(Path(profile_dir) / README_FILE, "\n".join(lines))
 
 
@@ -319,6 +327,7 @@ def _number_list(value: Any) -> str:
 
 
 def _catalog_record(manifest: dict[str, Any], profile_dir: Path) -> dict[str, Any]:
+    """Return one profile-library entry from the saved manifest and its directory."""
     benchmark = dict(manifest.get("benchmark") or {})
     results = dict(manifest.get("results") or {})
     environment = dict(manifest.get("environment") or {})
@@ -340,6 +349,7 @@ def _catalog_record(manifest: dict[str, Any], profile_dir: Path) -> dict[str, An
         # Dash retains its established generic column terminology internally.
         "columns_per_process": _number_list(benchmark.get("batch_sizes")),
         "vertical_levels": benchmark.get("vertical_levels", ""),
+        "execution_model": benchmark.get("execution_model", "fresh_processes"),
         "model_steps": _number_list(results.get("observed_model_steps")),
         "backends": _number_list(results.get("timer_backends")),
         "time_bases": _number_list(results.get("time_bases")),
@@ -407,6 +417,7 @@ def _floating(value: Any) -> float | None:
 
 
 def _derived_rows(profile_dir: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return summary and per-process analysis rows derived from a saved timing profile."""
     manifest = read_profile_manifest(profile_dir)
     if manifest is None:
         return [], []
@@ -429,6 +440,7 @@ def _derived_rows(profile_dir: Path) -> tuple[list[dict[str, Any]], list[dict[st
         "forwarded_args": str(manifest.get("forwarded_args") or ""),
         "omp_num_threads": str(manifest.get("omp_num_threads") or ""),
         "vertical_levels": benchmark.get("vertical_levels", ""),
+        "execution_model": benchmark.get("execution_model", "fresh_processes"),
     }
 
     by_execution: dict[tuple[str, int], list[dict[str, str]]] = {}

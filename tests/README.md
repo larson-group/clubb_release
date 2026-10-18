@@ -90,6 +90,37 @@ implementations and general CLUBB regressions.
 
 ## Test Scripts
 
+### `case_runner_lifecycle_test.py`
+
+Checks that a reused standalone process produces the same numeric statistics as
+fresh processes after changing cases and column counts. The script requires a
+stable worker PID and exact numeric stats equality for each request; it keeps
+inputs, logs and statistics under the chosen output directory, which must be new.
+
+From the repository root, use a current native build for the default backend:
+
+```sh
+python3 tests/case_runner_lifecycle_test.py -output_dir output/case_runner_native
+```
+
+Select CPU JAX or the Python SCM with:
+
+```sh
+python3 tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/case_runner_jax
+python3 tests/case_runner_lifecycle_test.py -python -output_dir output/case_runner_python
+```
+
+JAX prepares its managed environment automatically. The Python SCM needs a build
+with `./compile.py -python`; `-install_dir DIR` can select another installed
+native/Python runtime. Native/JAX runs use BOMEX → RICO_SILHS → BOMEX; Python
+uses BOMEX throughout because its standalone does not implement SILHS. See the
+script header for column counts, step limits and comparison details.
+
+This check is the first stage of
+[`clubb_driver`](../jenkins_tests/clubb_driver/Jenkinsfile), before the existing
+driver reset/rerun comparisons. Jenkins builds GNU Fortran with the Python API,
+runs native and Python checks from that build, and runs CPU JAX independently.
+
 ### `check_budget_balance.py`
 
 Runs a fixed list of SCM cases and then checks CLUBB budget closure with

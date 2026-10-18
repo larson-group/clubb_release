@@ -77,12 +77,19 @@ materially false correctness claim, or a failure that would break a relevant
 Jenkins test. Gather enough evidence to explain the issue; do not silently fix
 it, weaken checks or redefine success to finish.
 
-Tell the user what was found, the supporting location or build link, its effect
-on merge readiness and the decision needed. Wait for their direction on fixing,
-accepting or deferring it, then repeat affected checks after any fix. A previously
-accepted limitation need not be approved again, but keep it visible. Minor
-comment improvements, formatting and small standards cleanups may proceed;
-mention worthwhile cleanup in the handoff without turning every nit into a stop.
+Tell the user what was found, the supporting evidence, its effect on merge
+readiness and the proposed remedy. Before substantive edits, verify that the
+user accepted that remedy or explicitly authorized working through issues;
+permission to investigate alone does not satisfy this checkpoint. Diagnose and
+explain the issue first, then wait for acceptance of a fix, deferral or limitation.
+Repeat affected checks after the accepted change.
+
+This checkpoint applies to unexpected, non-trivial failures during late testing
+as well as finalization. Earlier implementation may allow routine problem-solving
+within its authorized scope. A previously accepted limitation need not be
+approved again, but keep it visible. Trivial corrections such as a missed rename,
+a broken README extension, a comment typo or small formatting cleanup may proceed;
+mention useful cleanup without turning every nit into a stop.
 
 ## Commit, push and hand off a draft PR
 

@@ -370,6 +370,10 @@ def init_clubb_case(namelist_path: str) -> dict:
     Returns a dict containing all model state arrays and config.
     """
     cfg = read_namelist(namelist_path)
+    # Invalidate compiled functions before initialization can capture changed
+    # module settings; identical cases keep their in-memory compiled programs.
+    from clubb_jax.src.Microphys.microphys_init_cleanup import prepare_microphys_configuration
+    prepare_microphys_configuration(str(cfg['runtype']).strip(), cfg)
     namelist_dir = Path(namelist_path).resolve().parent
 
     # Unpack key config values

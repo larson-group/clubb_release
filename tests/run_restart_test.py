@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
 import numpy as np
 from netCDF4 import Dataset
-from run_scripts.run_scm import extract_jax_options
+from utilities.clubb_case_runner import extract_jax_options
 
 
 TESTS_DIR = Path(__file__).resolve().parent

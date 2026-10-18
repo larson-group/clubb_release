@@ -80,6 +80,14 @@ more permissive, so use it only when a partial run is sufficient:
   -stats input/stats/multi_col_stats.in -debug 0 -max_iters 120 arm
 ```
 
+### Reusable case processes
+
+[`clubb_case_runner`](../utilities/README.md#reusable-case-runners) keeps the
+standalone process alive across complete cases. Each request initializes,
+advances and cleans up its model; compiled JAX programs stay in memory.
+Device/environment setup continues to belong to `run_jax.py`.
+Tuning retains model allocations through the existing JAX loss API.
+
 ### GPU Running
 
 Use `-jax=gpu` to run on an NVIDIA or AMD GPU on Linux or an Apple Silicon GPU on macOS:

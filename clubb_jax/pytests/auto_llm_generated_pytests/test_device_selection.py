@@ -82,9 +82,10 @@ def test_default_selection_preserves_visibility_and_configuration_is_read_only(m
 
 
 def test_scm_wrappers_forward_the_selection_to_the_launcher():
+    """Require SCM runtime selection to preserve device and GPU-memory modifiers for the launcher."""
     from types import SimpleNamespace
-    from run_scripts.run_scm import extract_jax_options
-    from run_scripts.run_scm import choose_run_command
+    from utilities.clubb_case_runner import extract_jax_options
+    from utilities.clubb_case_runner import choose_run_command
 
     args = run_jax.runtime_arguments("gpu", device=GPU_B, prealloc_gpu_mem=False, scm=True)
     assert args == [f"-jax=gpu,device={GPU_B},prealloc_gpu_mem=false"]

@@ -12,6 +12,9 @@ Before editing:
 1. Inspect the surrounding module and at least two nearby routines.
    - Match the local indentation, comment divider style, `use` ordering, and declaration grouping where it is already consistent.
    - Prefer the existing module's vocabulary for comments such as `thermodynamic levels`, `momentum levels`, `CLUBB tunable parameter`, `PDF parameters`, and similar units/descriptions.
+   - When styles conflict, prefer recently maintained blocks; check `git log` or
+     `git blame` for the relevant lines. A recent file-wide rename does not make
+     years-old formatting a useful template. Explicit user preferences win.
    - If the nearby code conflicts with this prompt, preserve behavior first, then improve only the routine(s) you are touching.
 
 2. Identify every changed routine signature and every call site.
@@ -87,6 +90,53 @@ Declaration formatting inside routines:
 5. Do not leave undocumented temporary arrays. If a temporary exists only to avoid OpenACC/function side effects or preserve BFB behavior, say that briefly.
 6. Keep intrinsic declarations, parameters, and local constants near the relevant declaration group and document them too.
 
+Whitespace and visual grouping:
+
+Use whitespace to expose the sequence of work and make related expressions easy
+to compare. Keep a small group together because it shares a purpose or structure,
+not merely because every statement fits on one line.
+
+1. Separate `if` blocks, loops, `select case`, and other major operations from
+   neighboring work with blank lines. Single-line conditional guards are still
+   control flow. In substantial branches/loops, also leave space after the
+   opening statement and before `else`, `else if`, or the closing statement.
+2. Almost always surround a statement spanning two or more lines with blank
+   lines. Treat the complete continued call, assignment, `use`, or declaration
+   as one unit; do not insert blank lines between its continuation lines.
+   Separate successive module imports and distinct declaration groups too.
+3. Stack short, closely related one-line assignments or calls when they form a
+   readable group. Separate the next group when its purpose changes, such as
+   computing coefficients after initializing fields. Avoid both a wall of
+   unrelated statements and a blank line after every trivial assignment.
+4. Within a small group, left-align assignment destinations and line up `=`.
+   Right-align scalar values or corresponding right-hand-side terms where that
+   makes differences easy to compare. Align matching operators, indices, and
+   trailing comments when useful; do not force unrelated expressions into a wide
+   table or change expression order just to obtain visual symmetry.
+5. Keep a stage comment attached to the code it introduces: put the separating
+   blank line before the comment, not between the comment and its statement.
+   Keep OpenACC/OpenMP directives and their continuations attached to the
+   construct they govern; whitespace edits must preserve directive binding.
+6. One blank line normally separates groups. Before finishing, scan the routine
+   as a whole: control-flow boundaries, continued statements, imports and
+   declarations should stand out without reading every token. Keep the pass
+   within the requested scope rather than reformatting unrelated legacy code.
+
+For example, these short assignments read as a table, while the conditional and
+continued call have their own space:
+
+```fortran
+    first_index =   1
+    last_index  = 100
+
+    if ( l_stats ) then
+
+      call stats_update( "thlm", thlm, & ! In
+                         stats )        ! InOut
+
+    end if
+```
+
 Style details observed in this repo:
 
 1. Use `real( kind = core_rknd )`, not shortened kind syntax, unless the surrounding routine already consistently uses another style.
@@ -107,13 +157,15 @@ Review checklist before finishing:
 5. Optional arguments are declared and passed after required arguments.
 6. OpenACC create/delete lists match moved local variables.
 7. No removed argument remains in wrappers, tests, Python API files, or driver mirrors.
-8. Run at least:
+8. Do a visual whitespace pass using the grouping rules above; correct intent
+   comments and indentation alone do not make a densely packed routine readable.
+9. Run at least:
 
    ```bash
    git diff --check
    ```
 
-9. If the build/test environment is available, compile the touched Fortran path or run the smallest relevant test. If not available, state the environment blocker clearly.
+10. If the build/test environment is available, compile the touched Fortran path or run the smallest relevant test. If not available, state the environment blocker clearly.
 
 ## Scope boundaries
 

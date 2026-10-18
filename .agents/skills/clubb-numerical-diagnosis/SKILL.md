@@ -47,6 +47,23 @@ or relaxed thresholds can be useful agreed experiments; selected per-case
 tolerance/duration exceptions remain local to their case definitions. Check that a diagnostic
 would still detect a deliberately wrong result before trusting it.
 
+## Choose a remedy for confirmed roundoff
+
+Once controlled evidence attributes a comparison failure to tiny floating-point
+changes accumulating through the model, consider the test first. Do not default
+to reverting a semantically correct change or restructuring JIT merely to recover
+previous rounding. Small final differences alone do not establish this diagnosis;
+locate the initial perturbation and rule out incorrect formulas, state or inputs.
+Respect an explicitly required BFB contract.
+
+Propose a comparison that better distinguishes defects from accumulated roundoff,
+or the smallest practical relaxation: a case-local tolerance change or a shorter
+comparison window. Explain the evidence and coverage tradeoff, obtain acceptance
+under the investigation/finalization rules, then verify the agreed settings. Keep
+other cases, schema/error checks and relevant numerical fault detection intact.
+Record the observed failing boundary and accepted limit beside the case setting;
+do not present the reduced window as full-duration agreement.
+
 ## Preserve the meaning of a pass
 
 Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) to connect
