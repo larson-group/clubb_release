@@ -51,3 +51,19 @@ subroutine f2py_zlinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src, var_
   var_out = zlinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src)
 
 end subroutine f2py_zlinterp_fnc
+
+subroutine f2py_plinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src, var_out)
+
+  use clubb_precision, only: core_rknd
+  use interpolation, only: plinterp_fnc
+
+  implicit none
+
+  integer, intent(in) :: dim_out, dim_src
+  real(core_rknd), dimension(dim_out), intent(in) :: grid_out
+  real(core_rknd), dimension(dim_src), intent(in) :: grid_src, var_src
+  real(core_rknd), dimension(dim_out), intent(out) :: var_out
+
+  var_out = plinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src)
+
+end subroutine f2py_plinterp_fnc

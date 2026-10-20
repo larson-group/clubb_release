@@ -9,7 +9,8 @@ pipeline {
         sh '''
           source /etc/profile.d/larson-group.sh
           module load gcc netcdf-fortran
-          ./compile.py -debug
+          # The Python API build also provides the Fortran reference for the JAX F2PY unit tests.
+          ./compile.py -debug -python
         '''
       }
     }
@@ -19,7 +20,20 @@ pipeline {
           sh '''
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
-            bash tests/run_pytests.sh -jax -include_generated -v --durations=15
+            bash tests/run_pytests.sh -jax -include_generated -v --durations=15 \
+              --junitxml="$WORKSPACE/output/tests/pytests/jax.xml"
+          '''
+        }
+      }
+    }
+    stage('JAX F2PY unit tests') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            bash tests/run_pytests.sh -jax_f2py_unit_tests -include_generated -v --durations=15 \
+              --junitxml="$WORKSPACE/output/tests/pytests/jax_f2py_unit_tests.xml"
           '''
         }
       }
@@ -63,7 +77,7 @@ pipeline {
   }
   post {
     always {
-      junit testResults: 'output/tests/pytests/jax/**/*.xml', allowEmptyResults: true
+      junit testResults: 'output/tests/pytests/*.xml', allowEmptyResults: true
     }
     failure {
       script {

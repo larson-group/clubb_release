@@ -30,6 +30,7 @@ bash tests/run_pytests.sh -dash
 ./compile.py -debug -python
 bash tests/run_pytests.sh -api -include_generated
 bash tests/run_pytests.sh -jax -include_generated
+bash tests/run_pytests.sh -jax_f2py_unit_tests -include_generated
 ```
 
 `-unit` selects utilities, tuner and `tests/pytests` harness contracts. `-dash`
@@ -38,16 +39,16 @@ callback checks also use Node. Provide Node 22 on `PATH`; Jenkins workers use
 an installation in the Jenkins account's `$HOME/.local/bin`, prepared once
 outside the checkout. The pipeline does not download tools or require npm.
 `-api` requires a compatible build in `install/latest/python` (or
-`CLUBB_F2PY_DIR`). `-jax`
-prepares the CPU JAX environment and runs independent NumPy/analytic and
-JAX contract checks. It requires no compiled Fortran library or Python API. `-all`
-runs unit, Dash, API and JAX in that order. Pytest options such as `-q`, `-k` and
-`--durations=10` are forwarded unchanged. JAX runs each module in a fresh
-process so module-level flags and JIT caches cannot contaminate other modules.
-Its per-module XML reports are saved under
-`output/tests/pytests/jax` (`CLUBB_PYTEST_OUTPUT_DIR` selects another location).
-Filters apply per module; a filter that selects nothing returns pytest's usual
-exit code 5.
+`CLUBB_F2PY_DIR`). `-jax` prepares the CPU JAX environment and runs
+independent NumPy/analytic and JAX contract checks in `clubb_jax/pytests`. It
+needs no compiled Fortran library or Python API, so it ignores every
+`f2py_unit_tests` folder. `-jax_f2py_unit_tests` runs those folders, which
+compare JAX routines with the same Fortran routines called through the Python
+API; it uses the JAX environment with the `-api` build on the import path and
+fails setup when that build is missing. `-all` runs unit, Dash, API, JAX and
+JAX F2PY unit tests in that order. Each mode is one ordinary pytest session,
+and pytest options such as `-q`, `-k`, `--durations=10` and `--junitxml` are
+forwarded unchanged.
 
 The wrappers exclude generated subdirectories by default; `-include_generated`
 opts in for a review run. They print an explicit "no tests executed" message
@@ -60,8 +61,14 @@ does not apply the wrappers' environment setup or generated-test exclusion.
 | --- | --- | --- |
 | `utilities/pytests`, `tuner/pytests`, `tests/pytests` | `clubb_python` unit stage | Set `INCLUDE_GENERATED_PYTESTS` for a review build |
 | `clubb_python_api/pytests` | `clubb_python` F2PY stage | Explicitly included during the initial migration |
-| `clubb_jax/pytests` | `clubb_jax` first testing stage | Explicitly included during the initial migration |
+| `clubb_jax/pytests` (except `f2py_unit_tests`) | `clubb_jax` first testing stage | Explicitly included during the initial migration |
+| `clubb_jax/pytests/**/f2py_unit_tests` | `clubb_jax` JAX F2PY unit tests stage | Explicitly included while the restored tests are reviewed |
 | `dash_app/pytests` | `clubb_dash` | Set `INCLUDE_GENERATED_PYTESTS` for a review build |
+
+`clubb_jax` keeps its F2PY unit tests in a folder of that name on both sides of
+review: provisional ones in `auto_llm_generated_pytests/f2py_unit_tests` and
+reviewed ones in `pytests/f2py_unit_tests`, created when the first test is
+promoted. That folder name is what keeps them out of `-jax`.
 
 The legacy SensMatrix tests and their local configuration remain unchanged in
 `utilities/sens_matrix/`. They are outside this migration and are not selected

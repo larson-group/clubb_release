@@ -55,7 +55,9 @@ or a full application workflow.
   `tests/run_pytests.sh -SUITE -include_generated` to review them explicitly.
   A passing CI run does not promote a test. Human review promotes useful
   coverage by moving it into the parent `pytests/` or merging it into an
-  existing admitted module, removing the provisional copy.
+  existing admitted module, removing the provisional copy. Exception:
+  `clubb_jax` F2PY unit tests keep their `f2py_unit_tests` folder and are
+  promoted to `clubb_jax/pytests/f2py_unit_tests`, so `-jax` can ignore them.
 - Keep fixtures/helpers with their existing suite owner, outside generated
   test modules when shared. Use existing owner paths for source/fixture lookups
   so promotion into the parent folder preserves them. Do not import one test module from another or
@@ -82,10 +84,15 @@ inside the test is not production coverage. Source-contract checks can protect
 public fields/calls/porting requirements, but do not substitute for numerical
 checks or the full faithful-port audit.
 
-JAX pytests must remain independent of `clubb_python_api`, `clubb_python` and
-F2PY, including reference oracles and runner preloads. Use analytic/NumPy
-references or supported JAX contracts; shared higher-level comparisons use the
-Fortran executable. Reading Fortran source text for a public schema is fine.
+JAX pytests outside `f2py_unit_tests` folders must remain
+independent of `clubb_python_api`, `clubb_python` and F2PY, including reference
+oracles and runner preloads. Use analytic/NumPy references or supported JAX
+contracts there; reading Fortran source text for a public schema is fine.
+Routine-level comparisons against compiled Fortran belong in an
+`f2py_unit_tests` folder (`-jax_f2py_unit_tests`; `-jax` ignores them), which calls
+the `clubb_python` wrappers with the same inputs as the JAX routine and fails
+setup without a Python API build. Whole-model comparisons use the
+Fortran executable.
 Numerical comparisons must assert the expected shape before comparing values
 so accidental scalar broadcasting cannot pass as a full-array reference.
 

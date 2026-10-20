@@ -52,8 +52,10 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     Rd,
     ep,
     grav,
+    invrs_pi,
     min_max_smth_mag,
     one_half,
+    pi,
     rc_tol,
     three,
     w_tol_sqd,
@@ -671,7 +673,7 @@ def smooth_heaviside_peskin(nz: int, ngrdcol: int, input, smth_range: float):
     interior = one_half * (
         1.0
         + input_over_smth_range
-        + (1.0 / jnp.pi) * jnp.sin(jnp.pi * input_over_smth_range)
+        + invrs_pi * jnp.sin(pi * input_over_smth_range)
     )
     # Note that this case will only ever be reached if smth_range != 0,
     # so this division is fine and should not cause any issues

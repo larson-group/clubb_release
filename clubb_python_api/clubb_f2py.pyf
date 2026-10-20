@@ -1125,6 +1125,17 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, nzt+1), intent(out) :: frad_sw
     end subroutine
 
+    ! --- cloud_sed_module_wrapper ---
+
+    subroutine f2py_cloud_drop_sed(nzm, nzt, ngrdcol, rcm, ncm, rho_zm, rho, exner, &
+        sigma_g, rcm_mc, thlm_mc)
+      integer, intent(in) :: nzm, nzt, ngrdcol
+      double precision, dimension(ngrdcol, nzt), intent(in) :: rcm, ncm, rho, exner
+      double precision, dimension(ngrdcol, nzm), intent(in) :: rho_zm
+      double precision, intent(in) :: sigma_g
+      double precision, dimension(ngrdcol, nzt), intent(in,out) :: rcm_mc, thlm_mc
+    end subroutine
+
     ! --- util_wrappers ---
 
     subroutine f2py_zero_pdf_params(which)
@@ -1238,6 +1249,13 @@ python module clubb_f2py
     end subroutine
 
     subroutine f2py_zlinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src, var_out)
+      integer, intent(in) :: dim_out, dim_src
+      double precision, dimension(dim_out), intent(in) :: grid_out
+      double precision, dimension(dim_src), intent(in) :: grid_src, var_src
+      double precision, dimension(dim_out), intent(out) :: var_out
+    end subroutine
+
+    subroutine f2py_plinterp_fnc(dim_out, dim_src, grid_out, grid_src, var_src, var_out)
       integer, intent(in) :: dim_out, dim_src
       double precision, dimension(dim_out), intent(in) :: grid_out
       double precision, dimension(dim_src), intent(in) :: grid_src, var_src
@@ -1545,10 +1563,9 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, nzt), intent(out) :: xp3
     end subroutine
 
-    subroutine f2py_compute_gamma_skw(nzm, nzt, ngrdcol, l_gamma_skw, &
+    subroutine f2py_compute_gamma_skw(nzm, nzt, ngrdcol, &
         skw_zm, clubb_params, skw_zt, gamma_skw_fnc, gamma_skw_fnc_zt)
       integer, intent(in) :: nzm, nzt, ngrdcol
-      logical, intent(in) :: l_gamma_skw
       double precision, dimension(ngrdcol, nzm), intent(in) :: skw_zm
       double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
       double precision, dimension(ngrdcol, nzt), intent(in) :: skw_zt

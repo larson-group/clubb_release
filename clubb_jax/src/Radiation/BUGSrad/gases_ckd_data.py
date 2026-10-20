@@ -25,7 +25,7 @@ _SYM = {'NUMPS': NUMPS, 'NUMTS': NUMTS, 'NUMPIR': NUMPIR, 'NUMTIR': NUMTIR,
         'T_1': 1, 'T_2': 2, 'T_3': 3, **{f'KG_{k + 1}': KG[k] for k in range(MB)}}
 
 _DATA_H = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
-                       'clubb_release', 'src', 'Radiation', 'BUGSrad', 'gases_ckd_data.h')
+                       'src', 'Radiation', 'BUGSrad', 'gases_ckd_data.h')
 
 
 def _resolve(tok):

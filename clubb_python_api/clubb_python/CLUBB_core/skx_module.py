@@ -34,6 +34,6 @@ def xp3_lg_2005_ansatz(
 def compute_gamma_skw(nz: int, ngrdcol: int, skw, clubb_params):
     """Compute gamma as a function of skewness on one vertical grid."""
     gamma_skw, _gamma_skw_zt = clubb_f2py.f2py_compute_gamma_skw(
-        True, f_arr(skw), f_arr(clubb_params), f_arr(skw),
+        f_arr(skw), f_arr(clubb_params), f_arr(skw),
         nzm=int(nz), nzt=int(nz), ngrdcol=int(ngrdcol))
     return gamma_skw

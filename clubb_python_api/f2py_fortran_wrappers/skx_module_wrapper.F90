@@ -58,7 +58,7 @@ subroutine f2py_xp3_lg_2005_ansatz(nzt, ngrdcol, skw_zt, wpxp_zt, wp2_zt, &
 
 end subroutine f2py_xp3_lg_2005_ansatz
 
-subroutine f2py_compute_gamma_skw(nzm, nzt, ngrdcol, l_gamma_skw, &
+subroutine f2py_compute_gamma_skw(nzm, nzt, ngrdcol, &
     skw_zm, clubb_params, skw_zt, gamma_skw_fnc, gamma_skw_fnc_zt)
 
   use clubb_precision, only: core_rknd
@@ -68,7 +68,6 @@ subroutine f2py_compute_gamma_skw(nzm, nzt, ngrdcol, l_gamma_skw, &
   implicit none
 
   integer, intent(in) :: nzm, nzt, ngrdcol
-  logical, intent(in) :: l_gamma_skw
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: skw_zm
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: skw_zt

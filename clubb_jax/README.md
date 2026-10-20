@@ -346,6 +346,28 @@ From the repo root:
 bash tests/run_pytests.sh -jax -include_generated --durations=15
 ```
 
+Routine-level ground truth lives in
+`pytests/auto_llm_generated_pytests/f2py_unit_tests/`: each check calls a JAX
+routine and the same Fortran routine through the Python API (`clubb_python`)
+with identical inputs, and asserts matching shapes and values. The exception is
+`diagnose_upxp`, which is private in Fortran; its check evaluates the Fortran
+formula on Fortran's `ddzt`. Build the Python API first; these tests fail setup
+instead of skipping when the build is missing:
+
+```bash
+./compile.py -debug -python
+bash tests/run_pytests.sh -jax_f2py_unit_tests -include_generated
+```
+
+Set `CLUBB_F2PY_DIR` to use a build other than `install/latest/python`.
+The runner executes these tests as one pytest session, and `-jax` ignores them, and Fortran module storage
+(grid, error info, PDF parameters) persists across calls in that process. Call
+any Fortran routine that reads that storage through its `clubb_python` wrapper,
+which sets the storage from its arguments on every call; raw `clubb_f2py` calls
+are for routines that read no stored state. The wrappers also loop over
+single-column routines. `pytests/f2py_unit_test_helpers.py` builds matching JAX
+and Fortran grids and compares outputs with shape checks.
+
 See [tests/README.md](../tests/README.md) for admission and Jenkins ownership.
 
 ### Manual component checks

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Run focused pytest suites in their owned environments.
-# Usage: tests/run_pytests.sh [-unit|-dash|-api|-jax|-all] [-include_generated] [pytest options]
+# Usage: tests/run_pytests.sh [-unit|-dash|-api|-jax|-jax_f2py_unit_tests|-all] [-include_generated] [pytest options]
 # Generated tests remain provisional even when explicitly included in a run.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MODE=-unit
 case "${1:-}" in
-    -unit|-dash|-api|-jax|-all) MODE="$1"; shift ;;
+    -unit|-dash|-api|-jax|-jax_f2py_unit_tests|-all) MODE="$1"; shift ;;
     -h|-help) sed -n '2,4p' "$0"; exit 0 ;;
 esac
 PYTEST_ARGS=()
@@ -42,7 +42,7 @@ run_pytest() {
     local collection_args=()
     # Admission belongs to the wrapper; pytest itself has no repository-wide policy.
     if [[ "${CLUBB_PYTEST_INCLUDE_GENERATED:-0}" != 1 ]]; then
-        collection_args=(--ignore-glob='*/auto_llm_generated_pytests')
+        collection_args=(--ignore-glob='*/auto_llm_generated_pytests/*')
     fi
     "$python_bin" -m pytest ${collection_args[@]+"${collection_args[@]}"} \
         "$@" ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}
@@ -74,77 +74,40 @@ run_api() {
     bash clubb_python_api/run_pytests.sh ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}
 }
 
-run_jax() {
-    for arg in ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}; do
-        case "$arg" in
-            --junitxml|--junitxml=*|--junit-xml|--junit-xml=*)
-                echo "JAX writes one XML report per module; select its directory with CLUBB_PYTEST_OUTPUT_DIR." >&2
-                return 2
-                ;;
-        esac
-    done
-    if ! have_tests clubb_jax/pytests; then
-        echo "No admitted JAX pytests; no tests executed. Use -include_generated for provisional coverage."
-        return
-    fi
+# Prepare the CPU JAX environment and set JAX_PYTHON to its interpreter.
+prepare_jax() {
     python3 clubb_jax/run_jax.py -profile=cpu -init_env
     local venv="${CLUBB_JAX_VENV:-$REPO_ROOT/.venv-jax}"
     [[ "$venv" == /* ]] || venv="$REPO_ROOT/$venv"
-    local python_bin="$venv/bin/python"
-    local reports="${CLUBB_PYTEST_OUTPUT_DIR:-$REPO_ROOT/output/tests/pytests/jax}"
-    [[ "$reports" == /* ]] || reports="$REPO_ROOT/$reports"
-    local path relative report result failures=0 selected=0 executed=0
-    # Isolate module-level flags and JIT caches between independently selected modules.
-    trap 'exit 130' INT
-    trap 'exit 143' TERM
-    while IFS= read -r path; do
-        if [[ "${CLUBB_PYTEST_INCLUDE_GENERATED:-0}" != 1 && "$path" == */auto_llm_generated_pytests/* ]]; then
-            continue
-        fi
-        relative="${path#$REPO_ROOT/clubb_jax/pytests/}"
-        report="$reports/${relative%.py}.xml"
-        mkdir -p "$(dirname "$report")"
-        rm -f "$report"
-        selected=$((selected + 1))
-        echo "JAX pytest module: $relative"
-        if "$python_bin" -m pytest "$path" \
-            --capture=sys --junitxml="$report" \
-            ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}; then
-            executed=$((executed + 1))
-        else
-            result=$?
-            case "$result" in
-                130|143) return "$result" ;;
-                5) ;;  # A forwarded -k/-m filter can deselect every check in this module.
-                *)
-                    echo "JAX pytest module failed: $relative (exit $result)" >&2
-                    failures=$((failures + 1))
-                    # Record a process error if pytest exits before finalizing its report.
-                    if [[ ! -s "$report" ]]; then
-                        "$python_bin" - "$report" "$relative" "$result" <<'PY_REPORT'
-from pathlib import Path
-import sys
-import xml.etree.ElementTree as ET
-report, module, result = sys.argv[1:]
-suite = ET.Element("testsuite", name=module, tests="1", errors="1", failures="0", skipped="0")
-case = ET.SubElement(suite, "testcase", classname=module, name="pytest_module_process")
-message = f"Module process exited {result} before writing its pytest report; see the console."
-ET.SubElement(case, "error", message=message).text = message
-ET.ElementTree(suite).write(Path(report), encoding="utf-8", xml_declaration=True)
-PY_REPORT
-                    fi
-                    ;;
-            esac
-        fi
-    done < <(find "$REPO_ROOT/clubb_jax/pytests" -type f \( -name 'test_*.py' -o -name '*_test.py' \) | sort)
-    echo "JAX pytest commands: $selected modules selected, $failures module commands failed."
-    if [[ "$failures" -gt 0 ]]; then
+    JAX_PYTHON="$venv/bin/python"
+}
+
+# JAX checks that need no compiled Fortran. The f2py_unit_tests folders need the
+# Python API build and run with -jax_f2py_unit_tests instead.
+run_jax() {
+    prepare_jax
+    local PYTEST_ARGS=(--ignore-glob='*/f2py_unit_tests' ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"})
+    run_pytest "$JAX_PYTHON" clubb_jax/pytests
+}
+
+# JAX checks against the same Fortran routines called through the Python API build.
+run_jax_f2py_unit_tests() {
+    local f2py_dir="${CLUBB_F2PY_DIR:-$REPO_ROOT/install/latest/python}"
+    [[ "$f2py_dir" == /* ]] || f2py_dir="$REPO_ROOT/$f2py_dir"
+    if ! compgen -G "$f2py_dir/clubb_f2py*.so" > /dev/null || [[ ! -d "$f2py_dir/clubb_python" ]]; then
+        echo "No clubb_f2py build with clubb_python in: $f2py_dir" >&2
+        echo "Rebuild with ./compile.py -debug -python, or set CLUBB_F2PY_DIR." >&2
         return 1
     fi
-    if [[ "$executed" -eq 0 ]]; then
-        echo "No JAX checks matched the pytest selection; no tests executed." >&2
-        return 5
-    fi
+    prepare_jax
+    # Reviewed tests move from the generated folder to pytests/f2py_unit_tests.
+    local dir dirs=()
+    for dir in clubb_jax/pytests/f2py_unit_tests clubb_jax/pytests/auto_llm_generated_pytests/f2py_unit_tests; do
+        if [[ -d "$dir" ]]; then
+            dirs+=("$dir")
+        fi
+    done
+    PYTHONPATH="$f2py_dir:$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" run_pytest "$JAX_PYTHON" "${dirs[@]}"
 }
 
 case "$MODE" in
@@ -152,5 +115,6 @@ case "$MODE" in
     -dash) run_dash ;;
     -api) run_api ;;
     -jax) run_jax ;;
-    -all) run_unit; run_dash; run_api; run_jax ;;
+    -jax_f2py_unit_tests) run_jax_f2py_unit_tests ;;
+    -all) run_unit; run_dash; run_api; run_jax; run_jax_f2py_unit_tests ;;
 esac

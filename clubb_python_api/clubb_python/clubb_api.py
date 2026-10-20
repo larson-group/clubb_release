@@ -111,7 +111,7 @@ from clubb_python.CLUBB_core.error_code import (
     initialize_error_headers,
 )
 from clubb_python.CLUBB_core.file_functions import file_read_1d
-from clubb_python.CLUBB_core.interpolation import lin_interpolate_two_points, mono_cubic_interp, zlinterp_fnc
+from clubb_python.CLUBB_core.interpolation import lin_interpolate_two_points, mono_cubic_interp, zlinterp_fnc, plinterp_fnc
 from clubb_python.CLUBB_core.index_mapping import (
     hydromet2pdf_idx,
     mvr_hm_max,
@@ -272,3 +272,4 @@ from clubb_python.CLUBB_core.pdf_closure import (
     calc_w_up_in_cloud,
 )
 from clubb_python.radiation import cos_solar_zen, sunray_sw, set_simplified_radiation_params
+from clubb_python.microphys import cloud_drop_sed
