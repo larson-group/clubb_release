@@ -2367,14 +2367,13 @@ module fill_holes
       ! then we apply the hole filling algorithm
       if ( any( hydromet(:,:,ihm) < zero_threshold ) &
            .and. hydromet_name(1:1) == "r" .and. l_hole_fill ) then
-        ! Keep the vertical calculation core column-local to preserve its
-        ! established scalar grid-metric mapping and BFB results.
+        ! Fill holes one column at a time, only in columns that have holes
         do i = 1, ngrdcol
           if ( any( hydromet(i,:,ihm) < zero_threshold ) ) then
             ! Apply the hole filling algorithm
             ! upper_hf_level = nzt since we are filling the zt levels
             call fill_holes_vertical_api( nzt, 1, zero_threshold, &
-                                          1, nzt, gr%dzt, rho_ds_zt(i:i,:), 1, &
+                                          1, nzt, gr%dzt(i:i,:), rho_ds_zt(i:i,:), 1, &
                                           fill_holes_type, hydromet(i:i,:,ihm) )
           endif
         enddo

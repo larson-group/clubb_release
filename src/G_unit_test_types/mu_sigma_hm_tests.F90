@@ -399,7 +399,7 @@ module mu_sigma_hm_tests
                                          precip_frac_1, precip_frac_2, &  ! In
                                          hm_tol, precip_frac_tol, &       ! In
                                          mu_thl_1, mu_thl_2, &            ! In
-                                         omicron, zeta_vrnce_rat, &       ! In
+                                         [omicron], [zeta_vrnce_rat], &   ! In
                                          mu_hm_1, mu_hm_2, &              ! Out
                                          sigma_hm_1, sigma_hm_2, &        ! Out
                                          hm_1, hm_2, &                    ! Out
@@ -628,7 +628,7 @@ module mu_sigma_hm_tests
                                 precip_frac_1, precip_frac_2, &  ! In
                                 hm_tol, precip_frac_tol, &       ! In
                                 mu_thl_1, mu_thl_2, &            ! In
-                                omicron, zeta_vrnce_rat, &       ! In
+                                [omicron], [zeta_vrnce_rat], &   ! In
                                 mu_hm_1, mu_hm_2, &              ! Out
                                 sigma_hm_1, sigma_hm_2, &        ! Out
                                 hm_1, hm_2, &                    ! Out
@@ -736,7 +736,7 @@ module mu_sigma_hm_tests
                                 precip_frac_1, precip_frac_2, &  ! In
                                 hm_tol, precip_frac_tol, &       ! In
                                 mu_thl_1, mu_thl_2, &            ! In
-                                omicron, zeta_vrnce_rat, &       ! In
+                                [omicron], [zeta_vrnce_rat], &   ! In
                                 mu_hm_1, mu_hm_2, &              ! Out
                                 sigma_hm_1, sigma_hm_2, &        ! Out
                                 hm_1, hm_2, &                    ! Out

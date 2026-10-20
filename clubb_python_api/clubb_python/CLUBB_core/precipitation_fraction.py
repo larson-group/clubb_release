@@ -64,7 +64,7 @@ def precip_fraction(
         f_arr(ice_supersat_frac_1),
         f_arr(ice_supersat_frac_2),
         f_arr(mixt_frac),
-        f_arr(clubb_params).reshape(-1),
+        f_arr(clubb_params),
         nzt=int(nzt),
         ngrdcol=int(ngrdcol),
         hydromet_dim_transport=max(int(hydromet_dim), 1),

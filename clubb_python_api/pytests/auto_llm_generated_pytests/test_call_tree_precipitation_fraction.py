@@ -83,7 +83,7 @@ def test_precip_fraction_returns_zero_when_no_hydrometeors(tmp_path):
             ice_supersat_frac_1=zeros_2d,
             ice_supersat_frac_2=zeros_2d,
             mixt_frac=np.full((ngrdcol, nzt), 0.5, dtype=np.float64, order="F"),
-            clubb_params=clubb_params[0, :],
+            clubb_params=clubb_params,
             err_info=err_info,
         )
     finally:

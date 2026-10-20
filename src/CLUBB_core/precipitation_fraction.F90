@@ -101,7 +101,7 @@ module precipitation_fraction
       ice_supersat_frac_2, & ! Ice supersaturation fraction (2nd PDF comp.)  [-]
       mixt_frac              ! Mixture fraction                              [-]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
       
     !------------------------- Inout Variables -------------------------
@@ -237,7 +237,7 @@ module precipitation_fraction
 
       ! Specified method.
       call component_precip_frac_specify( nzt, ngrdcol, hydromet_dim, hydromet_tol, & ! In
-                                          clubb_params(iupsilon_precip_frac_rat), & ! In
+                                          clubb_params(:,iupsilon_precip_frac_rat), & ! In
                                           hydromet(:,:,:), precip_frac(:,:), & ! In
                                           mixt_frac(:,:), precip_frac_tol(:), & ! In
                                           precip_frac_1(:,:), precip_frac_2(:,:) ) ! Out
@@ -811,7 +811,7 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       upsilon_precip_frac_rat    ! ratio mixt_frac*precip_frac_1/precip_frac [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
@@ -843,7 +843,7 @@ module precipitation_fraction
 
           ! Calculate precipitation fraction in the 1st PDF component.
           precip_frac_1(j,k) &
-          = upsilon_precip_frac_rat * precip_frac(j,k) / mixt_frac(j,k)
+          = upsilon_precip_frac_rat(j) * precip_frac(j,k) / mixt_frac(j,k)
 
           ! Special cases for precip_frac_1
           if ( precip_frac_1(j,k) > one ) then

@@ -1841,7 +1841,7 @@ module generalized_grid_test
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(clubb_config_flags_type), intent(in) :: &

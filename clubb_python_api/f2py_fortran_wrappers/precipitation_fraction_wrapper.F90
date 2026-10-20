@@ -19,7 +19,7 @@ subroutine f2py_precip_fraction(nzt, ngrdcol, hydromet_dim, hydromet_dim_transpo
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
     cloud_frac, cloud_frac_1, cloud_frac_2, ice_supersat_frac, &
     ice_supersat_frac_1, ice_supersat_frac_2, mixt_frac
-  real(core_rknd), dimension(nparams), intent(in) :: clubb_params
+  real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: precip_frac, precip_frac_1, precip_frac_2
   real(core_rknd), dimension(ngrdcol), intent(out) :: precip_frac_tol
 

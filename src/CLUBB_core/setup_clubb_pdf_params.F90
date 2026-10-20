@@ -189,7 +189,7 @@ module setup_clubb_pdf_params
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
@@ -309,7 +309,7 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       rtp2_zm_from_chi
  
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       omicron,        & ! Relative width parameter, omicron = R / Rmax    [-]
       zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
 
@@ -523,7 +523,11 @@ module setup_clubb_pdf_params
 
       end do ! i = 1, hydromet_dim, 1
 
-      Kh_zm_c_K_hm(:,:) = -clubb_params(ic_K_hm) * Kh_zm(:,:)
+      do k = 1, nzm
+        do i = 1, ngrdcol
+          Kh_zm_c_K_hm(i,k) = -clubb_params(i,ic_K_hm) * Kh_zm(i,k)
+        end do
+      end do
 
       call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Kh_zm_c_K_hm, Ncnm, &
@@ -550,8 +554,8 @@ module setup_clubb_pdf_params
     end if ! l_calc_w_corr
 
     ! Unpack CLUBB parameters
-    omicron = clubb_params(iomicron)
-    zeta_vrnce_rat = clubb_params(izeta_vrnce_rat)
+    omicron(:) = clubb_params(:,iomicron)
+    zeta_vrnce_rat(:) = clubb_params(:,izeta_vrnce_rat)
 
     !!! Calculate the means and standard deviations involving PDF variables
     !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
@@ -903,7 +907,7 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       omicron,        & ! Relative width parameter, omicron = R / Rmax    [-]
       zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
 
@@ -2144,7 +2148,7 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       precip_frac_tol       ! Min. precip. frac. when hydromet. are present  [-]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       omicron,           & ! Relative width parameter, omicron = R / Rmax    [-]
       zeta_vrnce_rat_in    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
 
@@ -2191,16 +2195,16 @@ module setup_clubb_pdf_params
            ! Adjust the value of zeta based on the relationship of mu_thl_1 to
            ! mu_thl_2.
            if ( mu_thl_1(i,k) <= mu_thl_2(i,k) ) then
-              if ( zeta_vrnce_rat_in >= zero ) then
-                 zeta_vrnce_rat = zeta_vrnce_rat_in
+              if ( zeta_vrnce_rat_in(i) >= zero ) then
+                 zeta_vrnce_rat = zeta_vrnce_rat_in(i)
               else ! zeta_vrnce_rat_in < 0
-                 zeta_vrnce_rat = ( one / ( one + zeta_vrnce_rat_in ) ) - one
+                 zeta_vrnce_rat = ( one / ( one + zeta_vrnce_rat_in(i) ) ) - one
               end if ! zeta_vrnce_rat_in >= 0
            else ! mu_thl_1 > mu_thl_2
-              if ( zeta_vrnce_rat_in <= zero ) then
-                 zeta_vrnce_rat = zeta_vrnce_rat_in
+              if ( zeta_vrnce_rat_in(i) <= zero ) then
+                 zeta_vrnce_rat = zeta_vrnce_rat_in(i)
               else ! zeta_vrnce_rat_in > 0
-                 zeta_vrnce_rat = ( one / ( one + zeta_vrnce_rat_in ) ) - one
+                 zeta_vrnce_rat = ( one / ( one + zeta_vrnce_rat_in(i) ) ) - one
               end if ! zeta_vrnce_rat_in <= 0
            end if ! mu_thl_1 <= mu_thl_2
 
@@ -2217,16 +2221,16 @@ module setup_clubb_pdf_params
            ! A = a * f_p_1 * ( 1 + omicron * Rmax * ( 1 + zeta ) )
            !     + a^2 * f_p_1^2 * ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ).
            coef_A = mixt_frac(i,k) * precip_frac_1(i,k) &
-                    * ( one + omicron * Rmax * ( one + zeta_vrnce_rat ) ) &
+                    * ( one + omicron(i) * Rmax * ( one + zeta_vrnce_rat ) ) &
                     + mixt_frac(i,k)**2 * precip_frac_1(i,k)**2 &
-                      * ( one + omicron * Rmax ) &
+                      * ( one + omicron(i) * Rmax ) &
                       / ( ( one - mixt_frac(i,k) ) * precip_frac_2(i,k) )
 
            ! Calculate the value of coefficient B.
            ! B = - 2 * <hm> * a * f_p_1 * ( 1 + omicron * Rmax )
            !     / ( ( 1 - a ) * f_p_2 ).
            coef_B = -two * hmm(i,k) * mixt_frac(i,k) * precip_frac_1(i,k) &
-                     * ( one + omicron * Rmax ) &
+                     * ( one + omicron(i) * Rmax ) &
                      / ( ( one - mixt_frac(i,k) ) * precip_frac_2(i,k) )
 
            ! Calculate the value of coefficient C.
@@ -2234,7 +2238,7 @@ module setup_clubb_pdf_params
            !         + ( 1 - ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ) )
            !           * <hm>^2 ).
            coef_C = - ( hmp2(i,k) + ( one &
-                                 - ( one + omicron * Rmax ) &
+                                 - ( one + omicron(i) * Rmax ) &
                                    / ( ( one - mixt_frac(i,k) ) * precip_frac_2(i,k) ) &
                                ) * hmm(i,k)**2 )
 
@@ -2265,7 +2269,7 @@ module setup_clubb_pdf_params
            ! Calculate the value of the ratio R (which is sigma_hm_2^2 / mu_hm_2^2),
            ! where R = omicron * Rmax.  The name of the variable used for R is
            ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
-           sigma_hm_2_sqd_on_mu_hm_2_sqd(i,k) = omicron * Rmax
+           sigma_hm_2_sqd_on_mu_hm_2_sqd(i,k) = omicron(i) * Rmax
 
            ! Calculate minimum allowable values for mu_hm_1 and mu_hm_2.
            if ( hmm(i,k) / precip_frac(i,k) > hm_tol / precip_frac_1(i,k) ) then

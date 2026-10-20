@@ -1912,7 +1912,7 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, nzt), intent(in) :: &
         cloud_frac, cloud_frac_1, cloud_frac_2, ice_supersat_frac, &
         ice_supersat_frac_1, ice_supersat_frac_2, mixt_frac
-      double precision, dimension(*), intent(in) :: clubb_params
+      double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
       double precision, dimension(ngrdcol, nzt), intent(out) :: precip_frac, precip_frac_1, precip_frac_2
       double precision, dimension(ngrdcol), intent(out) :: precip_frac_tol
     end subroutine
