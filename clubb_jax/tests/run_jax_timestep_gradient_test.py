@@ -1,5 +1,30 @@
 #!/usr/bin/env python3
-"""Differentiate one real BOMEX/ATEX driver step, including a finite-difference check."""
+"""Check derivatives of one normal CLUBB driver timestep for BOMEX and ATEX.
+
+Usage (repository root):
+    python3 clubb_jax/tests/run_jax_timestep_gradient_test.py
+    python3 clubb_jax/tests/run_jax_timestep_gradient_test.py -cases bomex
+
+main(cases) initializes each requested case, calls check_driver_step(state),
+and cleans up. Both cases use the configured default mixing-length method;
+the test does not override it. The script prepares the managed JAX
+runtime and writes temporary namelists; no saved reference output is needed.
+
+Each case uses the normal initialization/advance path with debug=-1,
+statistics disabled, and printing off during differentiation. An artificial
+weighted squared-state loss exercises input fields and runtime parameters;
+it is a derivative probe, not a tuning objective. Check finite gradients and
+input immutability first, then perturb temperature slightly away from neutral
+clipped-root boundaries for the derivative comparisons.
+
+Assertions compare forward/reverse directional derivatives (rtol=1e-9,
+atol=1e-10), central differences along selected smooth inputs (rtol=2e-4,
+atol=1e-7), and compiled/eager outputs (rtol=1e-12, atol=1e-14). Returned
+fatal errors also fail the check. Print one success line per pair and exit
+zero only after all pass. Cleanup restores debug state and clears JAX caches.
+Passing establishes these one-step checks, not long-run or all-physics
+differentiability and not Fortran numerical parity.
+"""
 from pathlib import Path
 import argparse
 import sys
@@ -30,10 +55,19 @@ OUTPUT_SCALES = {'thlm': 1e-4, 'rtm': 1e4, 'um': 1., 'vm': 1., 'wp2': 1.,
 
 
 def check_driver_step(state):
+    """Check one timestep's gradients and compiled outputs from initialized state.
+
+    Differentiate the artificial loss with respect to INPUTS, verify finite
+    results and unchanged inputs, then compare JVP/reverse products, smooth
+    finite differences, and eager/JIT outputs. Raise on failure; return no value.
+    """
     inputs = {key: jnp.asarray(state[key]) for key in INPUTS}
     original = {key: np.asarray(value).copy() for key, value in inputs.items()}
 
     def step(x):
+        """Return a copied state advanced through one normal configured timestep,
+        without progress printing.
+        """
         # The ordinary driver updates its dictionary. Copy it locally to keep
         # repeated JAX evaluations independent; JAX arrays are immutable.
         result = dict(state, **x)
@@ -43,6 +77,7 @@ def check_driver_step(state):
         return result
 
     def loss(x):
+        """Return the weighted squared-output scalar and error state after one driver step."""
         result = step(x)
         total = sum(scale * jnp.mean(jnp.linspace(1., 2., result[key].shape[-1]) * result[key]**2)
                     for key, scale in OUTPUT_SCALES.items())
@@ -93,6 +128,9 @@ def check_driver_step(state):
 
     # Compiling the ordinary driver preserves its eager forward outputs.
     def select(x):
+        """Return the advanced input/output field subset used to compare eager and
+        compiled execution.
+        """
         result = step(x)
         return {k: result[k] for k in set(INPUTS) | set(OUTPUT_SCALES)}
     compiled = jax.jit(select)(inputs)
@@ -103,6 +141,9 @@ def check_driver_step(state):
 
 
 def main(cases):
+    """Initialize/check/clean up each requested case, restore debug state,
+    and return zero on success.
+    """
     from clubb_jax.src.CLUBB_core import error_code
     for case in cases:
         previous_debug = error_code._debug_level
@@ -110,17 +151,16 @@ def main(cases):
         jax.clear_caches()
         try:
             with tempfile.TemporaryDirectory(prefix='clubb-gradient-') as directory:
-                # Tau Lscale avoids reverse-mode-incompatible parcel loops; host I/O stays outside the trace.
+                # Use the ordinary driver and its configured mixing-length default.
+                # Host I/O stays outside the differentiated timestep.
                 path = create_case_namelist_file(
                     case, Path(directory), stats='none', debug='-1', max_iters=1,
-                    override='l_diag_Lscale_from_tau=.true.',
                 )
                 state = init_clubb_case(str(path))
-                assert state['flags'].l_diag_Lscale_from_tau
                 assert not state['l_stats']
                 assert not error_code.clubb_at_least_debug_level(0)
                 check_driver_step(state)
-                print(f'{case}: full driver gradient/JVP/finite difference/eager checks passed', flush=True)
+                print(f"{case}, Lscale_method={state['flags'].Lscale_method}: full driver gradient/JVP/finite difference/eager checks passed", flush=True)
         finally:
             if state is not None:
                 clean_up_clubb(state)

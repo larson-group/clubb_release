@@ -98,7 +98,7 @@ module parameters_tunable
        "slope_coef_spread_DG_means_w", "pdf_component_stdev_factor_w", &
        "coef_spread_DG_means_rt     ", "coef_spread_DG_means_thl    ", &
        "gamma_coef                  ", "gamma_coefb                 ", &
-       "gamma_coefc                 ", "mu                          ", &
+       "gamma_coefc                 ", "Lscale_mu_entrain           ", &
        "beta                        ", "lmin_coef                   ", &
        "omicron                     ", "zeta_vrnce_rat              ", &
        "upsilon_precip_frac_rat     ", "lambda0_stability_coef      ", &
@@ -189,7 +189,7 @@ module parameters_tunable
     zero,                 no_upper_bound, & ! gamma_coef
     zero,                 no_upper_bound, & ! gamma_coefb
     zero,                 no_upper_bound, & ! gamma_coefc
-    zero,                 no_upper_bound, & ! mu
+    strictly_positive,    no_upper_bound, & ! Lscale_mu_entrain
     zero,                 3.0_core_rknd, & ! beta
     zero,                 no_upper_bound, & ! lmin_coef
     strictly_positive,    one, & ! omicron
@@ -252,7 +252,7 @@ module parameters_tunable
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
                slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
                coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-               gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+               gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, &
                omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
@@ -284,7 +284,7 @@ module parameters_tunable
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
       slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
       coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-      gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+      gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, &
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
@@ -354,11 +354,11 @@ module parameters_tunable
     gamma_coef  = 0.250000_core_rknd ! Low Skw.: gamma coef. Skw. Fnct.   [-]
     gamma_coefb = 0.250000_core_rknd ! High Skw.: gamma coef. Skw. Fnct.  [-]
     gamma_coefc = 5.000000_core_rknd ! Deg. Slope: gamma coef. Skw. Fnct. [-]
-    mu          = 1.000E-3_core_rknd ! Fract entrain rate per unit alt  [1/m]
+    Lscale_mu_entrain          = 1.000E-3_core_rknd ! Fract entrain rate per unit alt  [1/m]
     mult_coef   = 0.500000_core_rknd ! Coef. applied to log(avg dz/thresh)[-]
     taumin      = 90.00000_core_rknd ! Min. allow. value: time-scale tau  [s]
     taumax      = 3600.000_core_rknd ! Max. allow. value: time-scale tau  [s]
-    Lscale_mu_coef   = 2.0_core_rknd ! Coef perturb mu: av calc Lscale    [-]
+    Lscale_mu_coef   = 2.0_core_rknd ! Entrainment perturbation factor for averaged method 1 [-]
     Lscale_pert_coef = 0.1_core_rknd ! Coef pert thlm/rtm: av calc Lscale [-]
     alpha_corr = 0.15_core_rknd   ! Coef. for the corr. diagnosis algorithm  [-]
     nu1   = 20.00000_core_rknd ! Bg. Coef. Eddy Diffusion: wp2        [m^2/s]
@@ -944,7 +944,7 @@ module parameters_tunable
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
       slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
       coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-      gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+      gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, &
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
@@ -974,7 +974,7 @@ module parameters_tunable
       coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
       beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
-      lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
+      lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_entrain, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
       Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
@@ -999,7 +999,7 @@ module parameters_tunable
                 c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
                 slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
                 coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-                gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+                gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, &
                 omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
                 lambda0_stability_coef, mult_coef, taumin, taumax, &
                 Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
@@ -1039,7 +1039,7 @@ module parameters_tunable
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & ! intent(in)
                slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, & ! intent(in)
                coef_spread_DG_means_rt, coef_spread_DG_means_thl, & ! intent(in)
-               gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, & ! intent(in)
+               gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, & ! intent(in)
                omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, & ! intent(in)
                lambda0_stability_coef, mult_coef, taumin, taumax, & ! intent(in)
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, & ! intent(in)
@@ -1153,7 +1153,7 @@ module parameters_tunable
         igamma_coef, &
         igamma_coefb, &
         igamma_coefc, &
-        imu, &
+        iLscale_mu_entrain, &
         ibeta, &
         ilmin_coef, &
         iomicron, &
@@ -1236,7 +1236,7 @@ module parameters_tunable
       beta_minmax, gamma_coef_minmax, gamma_coefb_minmax, gamma_coefc_minmax, lmin_coef_minmax, &
       omicron_minmax, zeta_vrnce_rat_minmax, upsilon_precip_frac_rat_minmax, &
       lambda0_stability_coef_minmax, mult_coef_minmax, taumin_minmax, taumax_minmax, &
-      mu_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, alpha_corr_minmax, &
+      Lscale_mu_entrain_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, alpha_corr_minmax, &
       Skw_denom_coef_minmax, c_K10_minmax, c_K10h_minmax, thlp2_rad_coef_minmax, &
       thlp2_rad_cloud_frac_thresh_minmax, up2_sfc_coef_minmax, Skw_max_mag_minmax, &
       xp3_coef_base_minmax, xp3_coef_slope_minmax, altitude_threshold_minmax, &
@@ -1263,7 +1263,7 @@ module parameters_tunable
       beta_minmax, gamma_coef_minmax, gamma_coefb_minmax, gamma_coefc_minmax, lmin_coef_minmax, &
       omicron_minmax, zeta_vrnce_rat_minmax, upsilon_precip_frac_rat_minmax, &
       lambda0_stability_coef_minmax, mult_coef_minmax, taumin_minmax, taumax_minmax, &
-      mu_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, alpha_corr_minmax, &
+      Lscale_mu_entrain_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, alpha_corr_minmax, &
       Skw_denom_coef_minmax, c_K10_minmax, c_K10h_minmax, thlp2_rad_coef_minmax, &
       thlp2_rad_cloud_frac_thresh_minmax, up2_sfc_coef_minmax, Skw_max_mag_minmax, &
       xp3_coef_base_minmax, xp3_coef_slope_minmax, altitude_threshold_minmax, &
@@ -1342,7 +1342,7 @@ module parameters_tunable
     params_minmax(:,igamma_coef) = gamma_coef_minmax
     params_minmax(:,igamma_coefb) = gamma_coefb_minmax
     params_minmax(:,igamma_coefc) = gamma_coefc_minmax
-    params_minmax(:,imu) = mu_minmax
+    params_minmax(:,iLscale_mu_entrain) = Lscale_mu_entrain_minmax
     params_minmax(:,ibeta) = beta_minmax
     params_minmax(:,ilmin_coef) = lmin_coef_minmax
     params_minmax(:,iomicron) = omicron_minmax
@@ -1539,7 +1539,7 @@ module parameters_tunable
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
                slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
                coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-               gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+               gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, &
                omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
@@ -1627,7 +1627,7 @@ module parameters_tunable
         igamma_coef, &
         igamma_coefb, &
         igamma_coefc, &
-        imu, &
+        iLscale_mu_entrain, &
         ibeta, &
         ilmin_coef, &
         iomicron, &
@@ -1688,7 +1688,7 @@ module parameters_tunable
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
       slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
       coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-      gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+      gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, &
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
@@ -1770,7 +1770,7 @@ module parameters_tunable
       clubb_params(i,igamma_coef)  = gamma_coef(i)
       clubb_params(i,igamma_coefb) = gamma_coefb(i)
       clubb_params(i,igamma_coefc) = gamma_coefc(i)
-      clubb_params(i,imu) = mu(i)
+      clubb_params(i,iLscale_mu_entrain) = Lscale_mu_entrain(i)
       clubb_params(i,ibeta) = beta(i)
       clubb_params(i,ilmin_coef) = lmin_coef(i)
       clubb_params(i,iomicron) = omicron(i)
@@ -1831,7 +1831,7 @@ module parameters_tunable
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
                slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
                coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-               gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+               gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, &
                omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
@@ -1919,7 +1919,7 @@ module parameters_tunable
         igamma_coef, &
         igamma_coefb, &
         igamma_coefc, &
-        imu, &
+        iLscale_mu_entrain, &
         ibeta, &
         ilmin_coef, &
         iomicron, &
@@ -1981,7 +1981,7 @@ module parameters_tunable
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
       slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
       coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-      gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+      gamma_coef, gamma_coefb, gamma_coefc, Lscale_mu_entrain, beta, lmin_coef, &
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
@@ -2059,7 +2059,7 @@ module parameters_tunable
     gamma_coefb = clubb_params(igamma_coefb)
     gamma_coefc = clubb_params(igamma_coefc)
 
-    mu = clubb_params(imu)
+    Lscale_mu_entrain = clubb_params(iLscale_mu_entrain)
 
     beta = clubb_params(ibeta)
 

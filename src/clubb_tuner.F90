@@ -545,6 +545,7 @@ subroutine logical_flags_driver( current_date, current_time )
     penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
     tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
     saturation_formula,             & ! Integer that stores the saturation formula to be used
+    Lscale_method,                  & ! Mixing-length formulation
     grid_remap_method,              & ! Integer that stores what remapping technique should
                                       ! be used to remap values from one grid to another
                                       ! (starts at 1, so 0 is an invalid value for this flag)
@@ -636,8 +637,6 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! -(2/3)*em/tau_zm, as in Bougeault (1981)
     l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
     l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
-    l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
-                                    ! mixing length scale as Lscale = tau * tke
     l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
     l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
     l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
@@ -678,7 +677,7 @@ subroutine logical_flags_driver( current_date, current_time )
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-    saturation_formula, grid_remap_method, &
+    saturation_formula, Lscale_method, grid_remap_method, &
     grid_adapt_in_time_method, fill_holes_type, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, &
     l_vert_avg_closure, l_standard_term_ta, &
@@ -686,8 +685,8 @@ subroutine logical_flags_driver( current_date, current_time )
     l_use_cloud_cover, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
     l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
-    l_diag_Lscale_from_tau, l_stability_correct_tau_zm, &
-    l_damp_wp2_using_em, l_use_C7_Richardson, l_use_precip_frac, l_do_expldiff_rtm_thlm, &
+    l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson, &
+    l_use_precip_frac, l_do_expldiff_rtm_thlm, &
     l_use_C11_Richardson, l_use_shear_Richardson, l_prescribed_avg_deltaz, &
     l_diffuse_rtm_and_thlm, l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, &
     l_trapezoidal_rule_zm, l_call_pdf_closure_twice, l_Lscale_plume_centered, &
@@ -704,6 +703,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                            penta_solve_method,                & ! Intent(out)
                                            tridiag_solve_method,              & ! Intent(out)
                                            saturation_formula,                & ! Intent(out)
+                                           Lscale_method,                     & ! Intent(out)
                                            grid_remap_method,                 & ! Intent(out)
                                            grid_adapt_in_time_method,         & ! Intent(out)
                                            fill_holes_type,                   & ! Intent(out)
@@ -738,7 +738,6 @@ subroutine logical_flags_driver( current_date, current_time )
                                            l_damp_wp2_using_em,               & ! Intent(out)
                                            l_do_expldiff_rtm_thlm,            & ! Intent(out)
                                            l_Lscale_plume_centered,           & ! Intent(out)
-                                           l_diag_Lscale_from_tau,            & ! Intent(out)
                                            l_use_C7_Richardson,               & ! Intent(out)
                                            l_use_C11_Richardson,              & ! Intent(out)
                                            l_use_shear_Richardson,            & ! Intent(out)

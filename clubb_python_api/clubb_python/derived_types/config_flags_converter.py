@@ -6,7 +6,7 @@ import clubb_f2py
 
 from clubb_python.derived_types.config_flags import ConfigFlags, CONFIG_FLAG_NAMES
 
-_NUM_INT_FLAGS = 8
+_NUM_INT_FLAGS = 9
 
 
 def decode_config_flags(values: Iterable[object]) -> ConfigFlags:
@@ -18,9 +18,11 @@ def decode_config_flags(values: Iterable[object]) -> ConfigFlags:
         )
 
     decoded = []
-    for i, v in enumerate(vals):
-        iv = int(v)
-        decoded.append(iv if i < _NUM_INT_FLAGS else bool(iv))
+    for i, value in enumerate(vals):
+        if i < _NUM_INT_FLAGS:
+            decoded.append(int(value))
+        else:
+            decoded.append(bool(int(value)))
     return ConfigFlags(*decoded)
 
 

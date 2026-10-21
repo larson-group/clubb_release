@@ -1,5 +1,46 @@
 !-----------------------------------------------------------------------
 ! $Id: mixing_length.F90 8664 2018-05-10 20:21:35Z huebler@uwm.edu $
+!
+! Mixing distances and turbulence dissipation time scales for CLUBB.
+!
+! Description:
+!   The mixing length estimates how far turbulent air motions exchange heat,
+!   water, and momentum. This module computes that distance and the damping
+!   time scales used by the moment equations. Lscale_method selects the
+!   legacy buoyant-parcel method (1) or length diagnosed from a time scale (2).
+!
+! Usage:
+!   Normal timestep:
+!     - calc_Lscale(): select the method, compute lengths and inverse damping
+!       times, and accumulate registered mixing-length/time-scale statistics.
+!
+!   Components, when only part of the calculation is needed:
+!     - set_Lscale_max(): set the per-column length cap from host grid spacing,
+!       or use the standalone cap of 100000 m.
+!     - calc_Lscale_directly(): compute method 1 from thermodynamic state
+!       and PDF (probability density function) properties. The source constant
+!       l_avg_Lscale controls the optional perturbed-launch calculation.
+!     - diagnose_Lscale_from_tau(): compute method 2 from background, surface,
+!       shear, and stability contributions to inverse damping times.
+!
+! Understanding:
+!   Fields are shaped (ngrdcol,nzt) on thermodynamic levels or (ngrdcol,nzm)
+!   on momentum levels. Lengths are in m, time scales in s, inverse time scales
+!   in 1/s, temperatures in K, and water mixing ratios in kg/kg. Column
+!   parameters are constant with height. Callers supply initialized grid, PDF,
+!   statistics, and error structures; no parcel state is kept between calls.
+!   stats and err_info are updated in place by the public calculation routines.
+!
+!   compute_mixing_length() is the private parcel kernel. It accounts for
+!   entrainment and moist buoyancy along upward and downward paths and stops
+!   at the first energy exhaustion. Parcel saturation uses saturation_formula.
+!   Only the combined length is capped and copied to the upper boundary;
+!   directional lengths retain separate boundary values. Method 2 returns
+!   zero directional lengths.
+!
+! References:
+!   Golaz et al. (2002), J. Atmos. Sci., 59, 3540--3551: parcel-method background.
+!   Guo et al. (2021, JAMES): length diagnosed from the dissipation time scale.
 !===============================================================================
 module mixing_length
 
@@ -22,7 +63,8 @@ module mixing_length
                           upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
                           ufmin, tau_const, sfc_elevation, clubb_params, &
                           saturation_formula, l_Lscale_plume_centered, &
-                          l_diag_Lscale_from_tau, l_e3sm_config, &
+                          Lscale_method, &
+                          l_e3sm_config, &
                           l_smooth_Heaviside_tau_wpxp, &
                           l_modify_limiters_for_cnvg_test, &
                           l_use_invrs_tau_N2_iso, &
@@ -38,6 +80,10 @@ module mixing_length
     ! Description:
     !   Compute CLUBB's mixing length and dissipation time scales, including
     !   Richardson-number-dependent damping terms and Lscale-related stats.
+    !   Read thermodynamic fields on nzt levels, moments on nzm levels, and
+    !   per-column tunable parameters; Lscale_method selects methods 1 and 2.
+    !   Return lengths [m], time scales [s], and inverse times [1/s], and update
+    !   stats and err_info. Grid and PDF state must be initialized by the caller.
     !
     ! References:
     !   Guo et al. (2021, JAMES) for the diagnosed Lscale-from-tau option.
@@ -61,8 +107,10 @@ module mixing_length
 
     use parameter_indices, only: &
         nparams, &
-        imu, &
         itaumax
+
+    use model_flags, only: &
+        Lscale_tau
 
     use grid_class, only: &
         grid, &
@@ -84,6 +132,10 @@ module mixing_length
     use err_info_type_module, only: &
         err_info_type
 
+    use code_timer_module, only: &
+        timer_start, &
+        timer_stop
+
     implicit none
 
     !--------------------------- Input Variables ---------------------------
@@ -98,7 +150,6 @@ module mixing_length
     logical, intent(in) :: &
       l_implemented,                    & ! True when current configuration is implemented
       l_Lscale_plume_centered,          & ! Whether to use plume-centered Lscale calculation
-      l_diag_Lscale_from_tau,           & ! Whether to diagnose Lscale from tau
       l_e3sm_config,                    & ! Whether E3SM configuration options are active
       l_smooth_Heaviside_tau_wpxp,      & ! Whether to smooth Heaviside functions in wpxp tau
       l_modify_limiters_for_cnvg_test,  & ! Whether to modify limiters for convergence tests
@@ -137,7 +188,8 @@ module mixing_length
       clubb_params   ! Tunable CLUBB parameters
 
     integer, intent(in) :: &
-      saturation_formula   ! Saturation vapor pressure formula selector
+      saturation_formula, & ! Saturation vapor pressure formula selector
+      Lscale_method         ! Mixing-length formulation
 
     type(pdf_parameter), intent(in) :: &
       pdf_params   ! PDF parameters
@@ -171,8 +223,7 @@ module mixing_length
 
     !--------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol) :: &
-      Lscale_max,  & ! Maximum allowable mixing length [m]
-      newmu          ! Horizontal grid-length scale used by Lscale limiters [m]
+      Lscale_max   ! Maximum allowable mixing length [m]
 
     logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min
                                                       ! and max functions
@@ -203,7 +254,9 @@ module mixing_length
 
     !----------------------------- Begin Code ------------------------------
 
-    !$acc enter data create( Lscale_max, newmu, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+    call timer_start( "calc_Lscale" )
+
+    !$acc enter data create( Lscale_max, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
     !$acc                    tau_zt, &
     !$acc                    invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
     !$acc                    invrs_tau_N2_iso, invrs_tau_wp2_zm, &
@@ -261,14 +314,8 @@ module mixing_length
       call stats_update( "Ri_zm", Ri_zm, stats )
     end if
 
-    if ( .not. l_diag_Lscale_from_tau ) then
+    if ( Lscale_method /= Lscale_tau ) then
       ! Compute Lscale first using the buoyant parcel calculation.
-
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        newmu(i) = clubb_params(i,imu)
-      end do
-      !$acc end parallel loop
 
       ! Interpolate thlp2 and rtp2 to thermodynamic levels.
       thlp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, thlp2(:,:), &
@@ -279,11 +326,12 @@ module mixing_length
       call calc_Lscale_directly ( ngrdcol, nzm, nzt, gr,                             & ! In
                                   l_implemented, p_in_Pa,                            & ! In
                                   exner, rtm, thlm, thvm,                            & ! In
-                                  newmu, rtp2_zt, thlp2_zt, rtpthlp_zt, pdf_params,  & ! In
+                                  rtp2_zt, thlp2_zt, rtpthlp_zt, pdf_params,         & ! In
                                   em, thv_ds_zt, Lscale_max, lmin,                   & ! In
                                   clubb_params,                                      & ! In
                                   saturation_formula,                                & ! In
                                   l_Lscale_plume_centered,                           & ! In
+                                  Lscale_method,                                     & ! In
                                   stats, err_info,                                   & ! InOut
                                   Lscale, Lscale_up, Lscale_down )                     ! Out
 
@@ -291,7 +339,7 @@ module mixing_length
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "Error calling calc_Lscale_directly in calc_Lscale"
-          !$acc exit data delete( Lscale_max, newmu, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+          !$acc exit data delete( Lscale_max, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
           !$acc                   tau_zt, &
           !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
           !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
@@ -375,7 +423,7 @@ module mixing_length
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr,*) err_info%err_header_global
           write(fstderr,*) "Error calling diagnose_Lscale_from_tau in calc_Lscale"
-          !$acc exit data delete( Lscale_max, newmu, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+          !$acc exit data delete( Lscale_max, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
           !$acc                   tau_zt, &
           !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
           !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
@@ -407,9 +455,9 @@ module mixing_length
     end do
     !$acc end parallel loop
 
-    if ( .not. l_diag_Lscale_from_tau .and. l_use_invrs_tau_N2_iso) then
+    if ( Lscale_method /= Lscale_tau .and. l_use_invrs_tau_N2_iso) then
       write(fstderr,*) "Error! l_use_invrs_tau_N2_iso is not used when "// &
-                       "l_diag_Lscale_from_tau=false."// &
+                       "Lscale_method is not the tau method."// &
                        "If you want to use Lscale code, go to file "// &
                        "src/CLUBB_core/mixing_length.F90 and "// &
                        "change l_use_invrs_tau_N2_iso to false"
@@ -450,7 +498,7 @@ module mixing_length
       !$acc update host( tau_zt )
       call stats_update( "tau_zt", tau_zt, stats )
 
-      if ( l_diag_Lscale_from_tau ) then
+      if ( Lscale_method == Lscale_tau ) then
         !$acc update host( invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
         !$acc              invrs_tau_sfc, invrs_tau_shear )
         call stats_update( "invrs_tau_no_N2_zm", invrs_tau_no_N2_zm, stats )
@@ -460,13 +508,15 @@ module mixing_length
       end if
     end if
 
-    !$acc exit data delete( Lscale_max, newmu, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
+    !$acc exit data delete( Lscale_max, em_zt, thlp2_zt, rtp2_zt, rtpthlp_zt, &
     !$acc                   tau_zt, &
     !$acc                   invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
     !$acc                   invrs_tau_N2_iso, invrs_tau_wp2_zm, &
     !$acc                   invrs_tau_wp3_zm, invrs_tau_wpxp_zm, &
     !$acc                   invrs_tau_shear, Ri_zm, &
     !$acc                   ddzt_umvm_sqd_clipped, brunt_vaisala_freq_clipped )
+
+    call timer_stop( "calc_Lscale" )
 
     return
 
@@ -541,7 +591,7 @@ module mixing_length
 
   subroutine compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, &
                                     rtm, em, Lscale_max, p_in_Pa, &
-                                    exner, thv_ds, mu, lmin, &
+                                    exner, thv_ds, Lscale_mu_entrain, lmin, &
                                     saturation_formula, &
                                     l_implemented, &
                                     err_info, &
@@ -561,16 +611,16 @@ module mixing_length
     !   The equation for the rate of change of theta_l and r_t of the parcel with
     !   respect to height, due to entrainment, is:
     !
-    !           d(thl_par)/dz = - mu * ( thl_parcel - thl_environment );
+    !           d(thl_par)/dz = - Lscale_mu_entrain * ( thl_parcel - thl_environment );
     !
-    !           d(rt_par)/dz = - mu * ( rt_parcel - rt_environment );
+    !           d(rt_par)/dz = - Lscale_mu_entrain * ( rt_parcel - rt_environment );
     !
-    !   where mu is the entrainment rate,
+    !   where Lscale_mu_entrain is the entrainment rate,
     !   such that:
     !
-    !           mu = (1/m)*(dm/dz);
+    !           Lscale_mu_entrain = (1/m)*(dm/dz);
     !
-    !   where m is the mass of the parcel.  The value of mu is set to be a
+    !   where m is the mass of the parcel.  The value of Lscale_mu_entrain is set to be a
     !   constant.
     !
     !   The differential equations are solved for given the boundary condition
@@ -578,7 +628,7 @@ module mixing_length
     !   are treated as changing linearly for a parcel of air from one grid level
     !   to the next.
     !
-    !   For the special case where entrainment rate, mu, is set to 0,
+    !   For the special case where entrainment rate, Lscale_mu_entrain, is set to 0,
     !   thl_parcel and rt_parcel remain constant
     !
     !
@@ -628,9 +678,9 @@ module mixing_length
     !   algorithm is an N^2
     !--------------------------------------------------------------------------------
 
-    ! mu = (1/M) dM/dz > 0.  mu=0 for no entrainment.
-    ! Siebesma recommends mu=2e-3, although most schemes use mu=1e-4
-    ! When mu was fixed, we used the value mu = 6.e-4
+    ! Lscale_mu_entrain = (1/M) dM/dz > 0.  Lscale_mu_entrain=0 for no entrainment.
+    ! Siebesma recommends Lscale_mu_entrain=2e-3, although most schemes use Lscale_mu_entrain=1e-4
+    ! When Lscale_mu_entrain was fixed, we used the value Lscale_mu_entrain = 6.e-4
 
     use constants_clubb, only:  &  ! Variable(s)
         Cp,             & ! Dry air specific heat at constant pressure [J/kg/K]
@@ -677,12 +727,12 @@ module mixing_length
 
     !--------------------------------- Input Variables ---------------------------------
     integer, intent(in) :: &
-      nzm, &
-      nzt, &
-      ngrdcol
+      nzm, & ! Number of momentum levels
+      nzt, & ! Number of thermodynamic levels
+      ngrdcol ! Number of grid columns
 
     type (grid), intent(in) :: &
-      gr
+      gr ! Grid heights, interpolation weights, and orientation
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
@@ -700,7 +750,7 @@ module mixing_length
       Lscale_max ! Maximum allowable value for Lscale             [m]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      mu      ! mu Fractional extrainment rate per unit altitude  [1/m]
+      Lscale_mu_entrain      ! Fractional entrainment rate per unit altitude [1/m]
 
     real( kind = core_rknd ), intent(in) :: &
       lmin    ! CLUBB tunable parameter lmin
@@ -781,20 +831,22 @@ module mixing_length
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      if ( abs(mu(i)) < eps ) then
+      if ( abs(Lscale_mu_entrain(i)) < eps ) then
         ! Error in grid column i -> set ith entry to clubb_fatal_error
         err_info%err_code(i) = clubb_fatal_error
         write(fstderr,*) err_info%err_header(i)
-        write(fstderr,*) "mu = ", mu(i)
+        write(fstderr,*) "Lscale_mu_entrain = ", Lscale_mu_entrain(i)
       end if
     end do
     !$acc end parallel loop
 
-    !$acc update host( err_info%err_code )
-    if ( any(err_info%err_code == clubb_fatal_error) ) then
-      write(fstderr, *) "Entrainment rate mu cannot be 0"
-      write(fstderr, *) "Fatal error in subroutine compute_mixing_length"
-      return
+    if ( clubb_at_least_debug_level_api( 0 ) ) then
+      !$acc update host( err_info%err_code )
+      if ( any(err_info%err_code == clubb_fatal_error) ) then
+        write(fstderr, *) "Entrainment rate Lscale_mu_entrain cannot be 0"
+        write(fstderr, *) "Fatal error in subroutine compute_mixing_length"
+        return
+      end if
     end if
 
     ! Calculate initial turbulent kinetic energy for each grid level
@@ -822,8 +874,8 @@ module mixing_length
       do k = 1, nzm
 
         ! Precalculate values to avoid unnecessary calculations later
-        exp_mu_dzm(i,k) = exp( -mu(i) * gr%grid_dir * gr%dzm(i,k) )
-        invrs_dzm_on_mu(i,k) = ( gr%grid_dir * gr%invrs_dzm(i,k) ) / mu(i)
+        exp_mu_dzm(i,k) = exp( -Lscale_mu_entrain(i) * gr%grid_dir * gr%dzm(i,k) )
+        invrs_dzm_on_mu(i,k) = ( gr%grid_dir * gr%invrs_dzm(i,k) ) / Lscale_mu_entrain(i)
         entrain_coef(i,k) = ( one - exp_mu_dzm(i,k) ) * invrs_dzm_on_mu(i,k)
 
       end do
@@ -1023,14 +1075,14 @@ module mixing_length
             ! theta_l of the parcel starting at grid level k, and currenly
             ! at grid level j
             !
-            ! d(thl_par)/dz = - mu * ( thl_par - thl_env )
+            ! d(thl_par)/dz = - Lscale_mu_entrain * ( thl_par - thl_env )
             thl_par_j = thl_par_j_precalc(i,j) + thl_par_j * exp_mu_dzm(i,j_zm)
 
 
             ! r_t of the parcel starting at grid level k, and currenly
             ! at grid level j
             !
-            ! d(rt_par)/dz = - mu * ( rt_par - rt_env )
+            ! d(rt_par)/dz = - Lscale_mu_entrain * ( rt_par - rt_env )
             rt_par_j = rt_par_j_precalc(i,j) + rt_par_j * exp_mu_dzm(i,j_zm)
 
 
@@ -1354,14 +1406,14 @@ module mixing_length
             ! theta_l of the parcel starting at grid level k, and currenly
             ! at grid level j
             !
-            ! d(thl_par)/dz = - mu * ( thl_par - thl_env )
+            ! d(thl_par)/dz = - Lscale_mu_entrain * ( thl_par - thl_env )
             thl_par_j = thl_par_j_precalc(i,j) + thl_par_j * exp_mu_dzm(i,jp1_zm)
 
 
             ! r_t of the parcel starting at grid level k, and currenly
             ! at grid level j
             !
-            ! d(rt_par)/dz = - mu * ( rt_par - rt_env )
+            ! d(rt_par)/dz = - Lscale_mu_entrain * ( rt_par - rt_env )
             rt_par_j = rt_par_j_precalc(i,j) + rt_par_j * exp_mu_dzm(i,jp1_zm)
 
 
@@ -1588,13 +1640,23 @@ module mixing_length
 
   subroutine calc_Lscale_directly ( ngrdcol, nzm, nzt, gr, &
                                     l_implemented, p_in_Pa, exner, rtm,    &
-                                    thlm, thvm, newmu, rtp2_zt, thlp2_zt, rtpthlp_zt, &
+                                    thlm, thvm, rtp2_zt, thlp2_zt, rtpthlp_zt, &
                                     pdf_params, em, thv_ds_zt, Lscale_max, lmin, &
                                     clubb_params, &
                                     saturation_formula, &
                                     l_Lscale_plume_centered, &
+                                    Lscale_method, &
                                     stats, err_info,         &
                                     Lscale, Lscale_up, Lscale_down)
+
+    ! Description:
+    !   Compute the legacy parcel mixing length (method 1)
+    !   using environmental profiles, momentum-level TKE, PDF properties, and
+    !   per-column parameters. Return thermodynamic-level combined, upward,
+    !   and downward lengths [m], updating stats and err_info.
+    !   If source constant l_avg_Lscale is enabled, compute perturbed launches
+    !   before the mean launch so the directional outputs describe the mean.
+    !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
         thl_tol,      &
@@ -1606,8 +1668,12 @@ module mixing_length
 
     use parameter_indices, only: &
         nparams, &
+        iLscale_mu_entrain, &
         iLscale_mu_coef, &
         iLscale_pert_coef
+
+    use model_flags, only: &
+        Lscale_direct
 
     use grid_class, only: &
         grid ! Type
@@ -1647,25 +1713,24 @@ module mixing_length
       l_implemented ! True if CLUBB is being implemented and run in a host model
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
-      rtp2_zt,    &
-      thlp2_zt,   &
-      rtpthlp_zt, &
-      thlm,       &
-      thvm,       &
-      rtm,        &
+      rtp2_zt,    & ! Total-water variance [(kg/kg)^2]
+      thlp2_zt,   & ! Liquid-water potential-temperature variance [K^2]
+      rtpthlp_zt, & ! Total-water/temperature covariance [K kg/kg]
+      thlm,       & ! Mean liquid-water potential temperature [K]
+      thvm,       & ! Mean virtual potential temperature [K]
+      rtm,        & ! Mean total-water mixing ratio [kg/kg]
       p_in_Pa,    & ! Air pressure (thermodynamic levels)       [Pa]
-      exner,      &
-      thv_ds_zt
+      exner,      & ! Exner function [-]
+      thv_ds_zt      ! Reference-state virtual potential temperature [K]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
-      em
+      em   ! Turbulent kinetic energy [m^2/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      newmu, &
-      Lscale_max
+      Lscale_max ! Per-column cap on combined mixing length [m]
 
     real( kind = core_rknd ), intent(in) ::  &
-      lmin
+      lmin ! Surface value of the height-dependent length floor [m]
 
     type (pdf_parameter), intent(in) :: &
       pdf_params    ! PDF Parameters  [units vary]
@@ -1674,13 +1739,15 @@ module mixing_length
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
-      saturation_formula ! Integer that stores the saturation formula to be used
+      saturation_formula, & ! Integer that stores the saturation formula to be used
+      Lscale_method         ! Mixing-length formulation
 
     logical, intent(in) :: &
-      l_Lscale_plume_centered    ! Alternate that uses the PDF to compute the perturbed values
+      l_Lscale_plume_centered ! Alternate that uses the PDF to compute the perturbed values
 
+    !----------------------- Input/Output Variables ------------------------
     type(stats_type), intent(inout) :: &
-      stats
+      stats ! Statistics accumulator
 
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
@@ -1692,7 +1759,7 @@ module mixing_length
       Lscale_down  ! Mixing length down [m]
 
     !--------------------------------- Local Variables ---------------------------------
-    integer :: k, i
+    integer :: k, i ! Vertical-level and column loop indices
 
     logical, parameter :: &
       l_avg_Lscale = .false.  ! Lscale is calculated in subroutine compute_mixing_length
@@ -1721,6 +1788,14 @@ module mixing_length
     !point.
 
     !--------------------------------- Begin Code ---------------------------------
+
+    if ( l_avg_Lscale .and. Lscale_method /= Lscale_direct ) then
+      write(fstderr,*) err_info%err_header_global
+      write(fstderr,*) "l_avg_Lscale requires Lscale_method=1"
+      write(fstderr,*) "Fatal error in calc_Lscale_directly"
+      err_info%err_code = clubb_fatal_error
+      return
+    end if
 
     !$acc enter data create( sign_rtpthlp_zt, Lscale_pert_1, Lscale_pert_2, &
     !$acc                    thlm_pert_1, thlm_pert_2, rtm_pert_1, rtm_pert_2, &
@@ -1774,15 +1849,14 @@ module mixing_length
 
       !$acc parallel loop gang vector default(present)
       do  i = 1, ngrdcol
-        mu_pert_1(i)   = newmu(i) / clubb_params(i,iLscale_mu_coef)
+        mu_pert_1(i) = clubb_params(i,iLscale_mu_entrain) / clubb_params(i,iLscale_mu_coef)
       end do
       !$acc end parallel loop
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_1, & ! In
                                   rtm_pert_1, em, Lscale_max, p_in_Pa,      & ! In
                                   exner, thv_ds_zt, mu_pert_1, lmin,        & ! In
-                                  saturation_formula,                       & ! In
-                                  l_implemented,                            & ! In
+                                  saturation_formula, l_implemented,        & ! In
                                   err_info,                                 & ! InOut
                                   Lscale_pert_1, Lscale_up, Lscale_down )     ! Out
 
@@ -1806,15 +1880,14 @@ module mixing_length
 
       !$acc parallel loop gang vector default(present)
       do  i = 1, ngrdcol
-        mu_pert_2(i)   = newmu(i) * clubb_params(i,iLscale_mu_coef)
+        mu_pert_2(i) = clubb_params(i,iLscale_mu_entrain) * clubb_params(i,iLscale_mu_coef)
       end do
       !$acc end parallel loop
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_2, & ! In
                                   rtm_pert_2, em, Lscale_max, p_in_Pa,      & ! In
                                   exner, thv_ds_zt, mu_pert_2, lmin,        & ! In
-                                  saturation_formula,                       & ! In
-                                  l_implemented,                            & ! In
+                                  saturation_formula, l_implemented,        & ! In
                                   err_info,                                 & ! InOut
                                   Lscale_pert_2, Lscale_up, Lscale_down )     ! Out
 
@@ -1876,8 +1949,8 @@ module mixing_length
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        mu_pert_pos_rt(i) = newmu(i) / clubb_params(i,iLscale_mu_coef)
-        mu_pert_neg_rt(i) = newmu(i) * clubb_params(i,iLscale_mu_coef)
+        mu_pert_pos_rt(i) = clubb_params(i,iLscale_mu_entrain) / clubb_params(i,iLscale_mu_coef)
+        mu_pert_neg_rt(i) = clubb_params(i,iLscale_mu_entrain) * clubb_params(i,iLscale_mu_coef)
       end do
       !$acc end parallel loop
 
@@ -1885,16 +1958,14 @@ module mixing_length
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_pos_rt, & ! In
                                   rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,      & ! In
                                   exner, thv_ds_zt, mu_pert_pos_rt, lmin,        & ! In
-                                  saturation_formula,                            & ! In
-                                  l_implemented,                                 & ! In
+                                  saturation_formula, l_implemented,             & ! In
                                   err_info,                                      & ! InOut
                                   Lscale_pert_1, Lscale_up, Lscale_down )          ! Out
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_neg_rt, & ! In
                                   rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,      & ! In
                                   exner, thv_ds_zt, mu_pert_neg_rt, lmin,        & ! In
-                                  saturation_formula,                            & ! In
-                                  l_implemented,                                 & ! In
+                                  saturation_formula, l_implemented,             & ! In
                                   err_info,                                      & ! InOut
                                   Lscale_pert_2, Lscale_up, Lscale_down )          ! Out
 
@@ -1926,13 +1997,25 @@ module mixing_length
     ! rather than the mean length scale.
 
     ! Diagnose CLUBB's turbulent mixing length scale.
-    call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, & ! In
-                                rtm, em, Lscale_max, p_in_Pa,      & ! In
-                                exner, thv_ds_zt, newmu, lmin,     & ! In
-                                saturation_formula,                & ! In
-                                l_implemented,                     & ! In
-                                err_info,                          & ! InOut
-                                Lscale, Lscale_up, Lscale_down )     ! Out
+    select case ( Lscale_method )
+
+    case ( Lscale_direct )
+
+      call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, & ! In
+                                  rtm, em, Lscale_max, p_in_Pa,      & ! In
+                                  exner, thv_ds_zt, clubb_params(:,iLscale_mu_entrain), lmin, & ! In
+                                  saturation_formula, l_implemented, & ! In
+                                  err_info,                          & ! InOut
+                                  Lscale, Lscale_up, Lscale_down )     ! Out
+
+    case default
+
+      write(fstderr,*) err_info%err_header_global
+      write(fstderr,*) "calc_Lscale_directly cannot diagnose Lscale_method=", Lscale_method
+      err_info%err_code = clubb_fatal_error
+      return
+
+    end select
 
     if ( l_avg_Lscale ) then
       if ( l_Lscale_plume_centered ) then
@@ -1973,7 +2056,7 @@ module mixing_length
 
  end subroutine calc_Lscale_directly
 
-  !===============================================================================
+!===============================================================================
 
  subroutine diagnose_Lscale_from_tau( nzm, nzt, ngrdcol, gr, & ! intent in
                         upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, & !intent in
@@ -1996,7 +2079,10 @@ module mixing_length
                         Lscale, Lscale_up, Lscale_down)! intent out
 
 ! Description:
-!     Diagnose inverse damping time scales (invrs_tau_...) and turbulent mixing length (Lscale)
+!     Diagnose inverse damping times and mixing length from surface stress,
+!     momentum-level TKE, shear, and stability profiles (method 2). Return the
+!     separate inverse-time contributions [1/s], bounded time scales [s], and
+!     thermodynamic-level lengths [m]; update statistics and error information.
 ! References:
 !     Guo et al.(2021, JAMES)
 !--------------------------------------------------------------------------------------------------

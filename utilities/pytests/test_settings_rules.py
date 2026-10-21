@@ -63,8 +63,16 @@ def test_range_constraints():
     assert "invalid_saturation_formula" in _codes(parameters={}, flags={"saturation_formula": 9})
 
 
+def test_invalid_lscale_method_is_rejected():
+    """Accept legacy/tau selectors and reject unsupported method values."""
+    assert "invalid_lscale_method" in _codes(parameters={}, flags={"Lscale_method": 3})
+    for method in (1, 2):
+        assert "invalid_lscale_method" not in _codes(parameters={}, flags={"Lscale_method": method})
+
+
 def test_tau_lscale_warning():
-    assert "tau_lscale_parameter_warning" in _codes(parameters={"C1": 2.0}, flags={"l_diag_Lscale_from_tau": True})
+    """Require the tau-method warning when C1 differs from its recommended value of one."""
+    assert "tau_lscale_parameter_warning" in _codes(parameters={"C1": 2.0}, flags={"Lscale_method": 2})
 
 
 def test_richardson_closures_replace_their_tunable_functions():
@@ -75,11 +83,13 @@ def test_richardson_closures_replace_their_tunable_functions():
 
 
 def test_lscale_mode_switches_the_correct_parameter_families():
-    direct = parameter_activity(flags={"l_diag_Lscale_from_tau": False})
+    """Check which legacy and inverse-time parameter families are active for each method.
+    """
+    direct = parameter_activity(flags={"Lscale_method": 1})
     assert all(direct[name][0] == "inactive-mode" for name in (
         "C_invrs_tau_bkgnd", "C_invrs_tau_N2", "C_invrs_tau_wpxp_N2_thresh",
     ))
-    tau = parameter_activity(flags={"l_diag_Lscale_from_tau": True})
+    tau = parameter_activity(flags={"Lscale_method": 2})
     assert all(tau[name][0] == "inactive-mode" for name in (
         "Lscale_mu_coef", "Lscale_pert_coef", "C6rt_Lscale0", "C6thl_Lscale0",
     ))

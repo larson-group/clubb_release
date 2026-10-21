@@ -160,7 +160,7 @@ def _make_args(gr, flags, clubb_params, nu_vert_res_dep, pdf_implicit_coefs_term
         "l_godunov_upwind_wpxp_ta": bool(flags.l_godunov_upwind_wpxp_ta),
         "l_upwind_xm_ma": bool(flags.l_upwind_xm_ma),
         "l_uv_nudge": bool(flags.l_uv_nudge),
-        "l_diag_lscale_from_tau": bool(flags.l_diag_Lscale_from_tau),
+        "l_diag_lscale_from_tau": flags.Lscale_method == 2,
         "l_use_c7_richardson": bool(flags.l_use_C7_Richardson),
         "l_lmm_stepping": bool(flags.l_lmm_stepping),
         "l_enable_relaxed_clipping": bool(flags.l_enable_relaxed_clipping),

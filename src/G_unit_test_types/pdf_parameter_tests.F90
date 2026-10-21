@@ -397,7 +397,7 @@ module pdf_parameter_tests
       sigma_sqd_w       ! Width of individual w plumes (ADG1)             [-]
     
     real( kind = core_rknd ) :: &
-      mixt_frac_max_mag    ! Maximum magnitude of mixture fraction (ADG1)    [-]
+      mixt_frac_max_mag        ! Maximum magnitude of mixture fraction (ADG1) [-]
 
     integer, parameter :: &
       num_sigma_sqd_w = 11  ! Number of diff. values of sigma_sqd_w used (ADG1)
@@ -449,6 +449,7 @@ module pdf_parameter_tests
       penta_solve_method,              & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,            & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,              & ! Integer that stores the saturation formula to be used
+      Lscale_method,                   & ! Mixing-length formulation
       grid_remap_method,               & ! Integer that stores what remapping technique should
                                          ! be used to remap the values from one grid to another
                                          ! (starts at 1, so 0 is an invalid option for this flag)
@@ -540,8 +541,6 @@ module pdf_parameter_tests
                                       ! -(2/3)*em/tau_zm, as in Bougeault (1981)
       l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
-      l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
-                                      ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
@@ -606,6 +605,7 @@ module pdf_parameter_tests
                                              penta_solve_method, &
                                              tridiag_solve_method, &
                                              saturation_formula, &
+                                             Lscale_method, &
                                              grid_remap_method, &
                                              grid_adapt_in_time_method, &
                                              fill_holes_type, &
@@ -640,7 +640,6 @@ module pdf_parameter_tests
                                              l_damp_wp2_using_em, &
                                              l_do_expldiff_rtm_thlm, &
                                              l_Lscale_plume_centered, &
-                                             l_diag_Lscale_from_tau, &
                                              l_use_C7_Richardson, &
                                              l_use_C11_Richardson, &
                                              l_use_shear_Richardson, &

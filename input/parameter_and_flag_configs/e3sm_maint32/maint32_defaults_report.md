@@ -80,7 +80,7 @@ Primary sources checked:
 | `upsilon_precip_frac_rat` | `0.900000` | Found as a source default constant in E3SM `parameters_tunable.F90`. |
 | `lambda0_stability_coef` | `0.03` | Found as a source default constant in E3SM `parameters_tunable.F90`. |
 | `mult_coef` | `1.000000` | Found as a source default constant in E3SM `parameters_tunable.F90` for the non-CLUBBND CAM path. |
-| `mu` | `5.000E-4` | Found as `clubb_mu` with `phys="default"` in E3SM `namelist_defaults_eam.xml`. |
+| `Lscale_mu_entrain` | `5.000E-4` | Called `mu` before this branch's rename; the value comes from `clubb_mu` with `phys="default"` in E3SM `namelist_defaults_eam.xml`. |
 | `Lscale_mu_coef` | `2.0` | Found as a source default constant in E3SM `parameters_tunable.F90`. |
 | `Lscale_pert_coef` | `0.1` | Found as a source default constant in E3SM `parameters_tunable.F90`. |
 | `alpha_corr` | `0.15` | Found as a source default constant in E3SM `parameters_tunable.F90`. |

@@ -368,7 +368,11 @@ def sfc_varnce_check(
 
 
 def length_check(Lscale, Lscale_up, Lscale_down):
-    """Determine whether length_new output variables carry values that are NaNs."""
+    """Report nonfinite combined/upward/downward lengths [m] and return host validity.
+
+    The mixing-length JIT kernel checks finite values with JAX and invokes
+    this diagnostic only inside its host error callback.
+    """
     for name, value in (("Lscale", Lscale), ("Lscale_up", Lscale_up), ("Lscale_down", Lscale_down)):
         if value is not None and np.any(~np.isfinite(np.asarray(value))):
             print(name, " is NaN in ", "compute_mixing_length", file=sys.stderr)

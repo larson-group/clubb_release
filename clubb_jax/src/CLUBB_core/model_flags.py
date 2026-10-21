@@ -150,6 +150,9 @@ saturation_flatau = 3  # Constant for Flatau approximations of saturation
 saturation_lookup = 4  # Use a lookup table for mixing length
                        # saturation vapor pressure calculations
 
+Lscale_direct = 1      # Legacy buoyant-parcel mixing length
+Lscale_tau = 2         # Diagnose mixing length from the dissipation time scale
+
 # -----------------------------------------------------------------------------
 # Options that can be changed at runtime
 # The default values are chosen below and overwritten if desired by the user
@@ -186,6 +189,7 @@ def get_default_config_flags() -> ConfigFlags:
         penta_solve_method=penta_lu,
         tridiag_solve_method=tridiag_lu,
         saturation_formula=saturation_flatau,
+        Lscale_method=Lscale_direct,
         grid_remap_method=ppm_remap,
         grid_adapt_in_time_method=no_grid_adaptation,
         fill_holes_type=sliding_window,
@@ -220,7 +224,6 @@ def get_default_config_flags() -> ConfigFlags:
         l_damp_wp2_using_em=True,
         l_do_expldiff_rtm_thlm=False,
         l_Lscale_plume_centered=False,
-        l_diag_Lscale_from_tau=False,
         l_use_C7_Richardson=True,
         l_use_C11_Richardson=False,
         l_use_shear_Richardson=False,
@@ -256,6 +259,7 @@ def print_clubb_config_flags_api(iunit, clubb_config_flags):
     print('ipdf_call_placement = ', clubb_config_flags.ipdf_call_placement, file=iunit)
     print('penta_solve_method = ', clubb_config_flags.penta_solve_method, file=iunit)
     print('tridiag_solve_method = ', clubb_config_flags.tridiag_solve_method, file=iunit)
+    print('Lscale_method = ', clubb_config_flags.Lscale_method, file=iunit)
     print('grid_remap_method = ', clubb_config_flags.grid_remap_method, file=iunit)
     print('grid_adapt_in_time_method = ', clubb_config_flags.grid_adapt_in_time_method, file=iunit)
     print('l_use_precip_frac = ', clubb_config_flags.l_use_precip_frac, file=iunit)
@@ -289,7 +293,6 @@ def print_clubb_config_flags_api(iunit, clubb_config_flags):
     print('l_damp_wp2_using_em = ', clubb_config_flags.l_damp_wp2_using_em, file=iunit)
     print('l_do_expldiff_rtm_thlm = ', clubb_config_flags.l_do_expldiff_rtm_thlm, file=iunit)
     print('l_Lscale_plume_centered = ', clubb_config_flags.l_Lscale_plume_centered, file=iunit)
-    print('l_diag_Lscale_from_tau = ', clubb_config_flags.l_diag_Lscale_from_tau, file=iunit)
     print('l_use_C7_Richardson = ', clubb_config_flags.l_use_C7_Richardson, file=iunit)
     print('l_use_C11_Richardson = ', clubb_config_flags.l_use_C11_Richardson, file=iunit)
     print('l_use_shear_Richardson = ', clubb_config_flags.l_use_shear_Richardson, file=iunit)

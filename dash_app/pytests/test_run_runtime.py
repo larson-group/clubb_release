@@ -18,7 +18,7 @@ def test_config_update_places_model_flag_inside_clubb_flags():
     base = REPO_ROOT / "input/parameter_and_flag_configs/default/configurable_model_flags.in"
     path = write_temp_namelist(
         base,
-        {"l_diag_Lscale_from_tau": ".true."},
+        {"Lscale_method": "2"},
         "clubb_flags_test_",
     )
     try:
@@ -28,8 +28,8 @@ def test_config_update_places_model_flag_inside_clubb_flags():
         Path(path).unlink(missing_ok=True)
 
     clubb_flags = rendered.split("&configurable_clubb_flags_nl", 1)[1].split("/", 1)[0]
-    assert values["l_diag_Lscale_from_tau"] == ".true."
-    assert "l_diag_Lscale_from_tau = .true." in clubb_flags
+    assert values["Lscale_method"] == "2"
+    assert "Lscale_method = 2" in clubb_flags
 
 
 def test_namelist_updater_rejects_unknown_settings():

@@ -556,7 +556,8 @@ def load_dataset_record(path, record, column=0):
                 "wait for the writer or choose another file."
             )
         record = int(np.clip(record, 0, available_records - 1))
-        mu = _parameter_value(dataset, "mu", column, 1.0e-3)
+        legacy_mu = _parameter_value(dataset, "mu", column, 1.0e-3)
+        mu = _parameter_value(dataset, "Lscale_mu_entrain", column, legacy_mu)
         lmin_coef = _parameter_value(dataset, "lmin_coef", column, 0.5)
         return DatasetRecord(
             path=metadata["path"],

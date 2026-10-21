@@ -47,7 +47,7 @@ PARAMETER_NAMES = tuple(
     nu2 c_K6 nu6 c_K8 nu8 c_K9 nu9 nu10 c_K_hm c_K_hmb K_hm_min_coef nu_hm
     slope_coef_spread_DG_means_w pdf_component_stdev_factor_w
     coef_spread_DG_means_rt coef_spread_DG_means_thl gamma_coef gamma_coefb
-    gamma_coefc mu beta lmin_coef omicron zeta_vrnce_rat
+    gamma_coefc Lscale_mu_entrain beta lmin_coef omicron zeta_vrnce_rat
     upsilon_precip_frac_rat lambda0_stability_coef mult_coef taumin taumax
     Lscale_mu_coef Lscale_pert_coef alpha_corr Skw_denom_coef c_K10 c_K10h
     thlp2_rad_coef thlp2_rad_cloud_frac_thresh up2_sfc_coef Skw_max_mag
@@ -110,7 +110,7 @@ PARAMETER_PRIMARY_OWNERS: dict[str, tuple[str, tuple[str, ...]]] = {
     "mixing length and inverse tau": (
         "src/CLUBB_core/mixing_length.F90",
         (
-            "mu", "lmin_coef", "lambda0_stability_coef", "mult_coef",
+            "Lscale_mu_entrain", "lmin_coef", "lambda0_stability_coef", "mult_coef",
             "taumin", "taumax", "Lscale_mu_coef", "Lscale_pert_coef",
             "C_invrs_tau_bkgnd", "C_invrs_tau_sfc", "C_invrs_tau_shear",
             "C_invrs_tau_N2", "C_invrs_tau_N2_wp2", "C_invrs_tau_N2_xp2",
@@ -175,7 +175,8 @@ CONFIG_FLAG_PRIMARY_OWNERS: dict[str, tuple[str, tuple[str, ...]]] = {
         "src/CLUBB_core/mixing_length.F90",
         (
             "l_stability_correct_Kh_N2_zm", "l_stability_correct_tau_zm",
-            "l_diag_Lscale_from_tau", "l_Lscale_plume_centered",
+            "Lscale_method",
+            "l_Lscale_plume_centered",
             "l_Lscale_vert_avg", "l_use_C7_Richardson", "l_use_C11_Richardson",
             "l_use_shear_Richardson", "l_brunt_vaisala_freq_moist",
             "l_use_thvm_in_bv_freq", "l_prescribed_avg_deltaz",
@@ -213,7 +214,7 @@ CONFIG_FLAG_NAMES = tuple(
     cluster_allocation_strategy fill_holes_type grid_adapt_in_time_method
     grid_remap_method iiPDF_type ipdf_call_placement l_add_dycore_grid
     l_brunt_vaisala_freq_moist l_C2_cloud_frac l_call_pdf_closure_twice
-    l_damp_wp2_using_em l_damp_wp3_Skw_squared l_diag_Lscale_from_tau
+    l_damp_wp2_using_em l_damp_wp3_Skw_squared
     l_diffuse_rtm_and_thlm l_do_expldiff_rtm_thlm l_e3sm_config
     l_enable_relaxed_clipping l_godunov_upwind_wpxp_ta
     l_godunov_upwind_xpyp_ta l_ho_nontrad_coriolis l_ho_trad_coriolis
@@ -223,7 +224,8 @@ CONFIG_FLAG_NAMES = tuple(
     l_Lscale_plume_centered l_Lscale_vert_avg l_max_overlap_in_cloud
     l_min_wp2_from_corr_wx l_min_xp2_from_corr_wx l_modify_limiters_for_cnvg_test
     l_mono_flux_lim_rtm l_mono_flux_lim_spikefix l_mono_flux_lim_thlm
-    l_mono_flux_lim_um l_mono_flux_lim_vm l_partial_upwind_wp3
+    l_mono_flux_lim_um l_mono_flux_lim_vm
+    l_partial_upwind_wp3
     l_predict_upwp_vpwp l_prescribed_avg_deltaz l_random_k_lh_start
     l_rcm_in_cloud_k_lh_start l_rcm_supersat_adj l_smooth_Heaviside_tau_wpxp
     l_stability_correct_Kh_N2_zm l_stability_correct_tau_zm l_standard_term_ta
@@ -233,7 +235,8 @@ CONFIG_FLAG_NAMES = tuple(
     l_use_thvm_in_bv_freq l_use_tke_in_wp2_wp3_K_dfsn
     l_use_tke_in_wp3_pr_turb_term l_use_wp3_lim_with_smth_Heaviside
     l_vary_convect_depth l_vert_avg_closure l_wp2_fill_holes_tke
-    penta_solve_method saturation_formula tridiag_solve_method
+    Lscale_method penta_solve_method saturation_formula
+    tridiag_solve_method
     """.split()
 )
 
@@ -357,6 +360,7 @@ def _with_bounds(
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "C_uu_shr C_uu_buoy C7 C7b C11 C11b upsilon_precip_frac_rat", 0.0, 1.0)
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "slope_coef_spread_DG_means_w pdf_component_stdev_factor_w", _TINY, None)
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "coef_spread_DG_means_rt coef_spread_DG_means_thl", 0.0, _ONE_MINUS_EPS)
+PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "Lscale_mu_entrain", _TINY, None)
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "beta", 0.0, 3.0)
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "omicron", _TINY, 1.0)
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "zeta_vrnce_rat", -1.0 + sys.float_info.epsilon, None)
@@ -647,18 +651,22 @@ def parameter_activity(
                 "RICHARDSON-CLOSURE",
             )
 
-    if _as_bool(normalized.get("l_diag_Lscale_from_tau", False)):
+    try:
+        lscale_method = int(normalized["Lscale_method"])
+    except (KeyError, TypeError, ValueError):
+        lscale_method = None
+    if lscale_method == 2:
         _mark_inactive(
             states,
             DIRECT_LSCALE_ONLY_PARAMETERS,
-            "l_diag_Lscale_from_tau=true uses inverse-tau Lscale instead of this direct-Lscale control.",
+            "Lscale_method=2 uses inverse-tau Lscale instead of this direct-Lscale control.",
             "TAU-LSCALE-MODE",
         )
-    elif "l_diag_Lscale_from_tau" in normalized:
+    elif lscale_method is not None:
         _mark_inactive(
             states,
             INVERSE_TAU_PARAMETERS,
-            "l_diag_Lscale_from_tau=false bypasses inverse-tau Lscale coefficients.",
+            "This Lscale method bypasses inverse-tau Lscale coefficients.",
             "DIRECT-LSCALE-MODE",
         )
 
@@ -1089,6 +1097,9 @@ def validate_clubb_settings(
     saturation_formula = integer_flag("saturation_formula", 1)
     if saturation_formula is not None and not 1 <= saturation_formula <= 4:
         issues.append(ValidationIssue("invalid_saturation_formula", "saturation_formula must be between 1 and 4.", setting="saturation_formula"))
+    lscale_method = integer_flag("Lscale_method", 1)
+    if lscale_method is not None and not 1 <= lscale_method <= 2:
+        issues.append(ValidationIssue("invalid_lscale_method", "Lscale_method must be between 1 and 2.", setting="Lscale_method"))
     call_placement = integer_flag("ipdf_call_placement", 1)
     if call_placement is not None and not 1 <= call_placement <= 3:
         issues.append(ValidationIssue("invalid_pdf_call_placement", "ipdf_call_placement must be between 1 and 3.", setting="ipdf_call_placement"))
@@ -1139,10 +1150,10 @@ def validate_clubb_settings(
     if normalized_microphysics in {"kk", "khairoutdinov_kogan"} and _as_bool(flag("l_predict_Nc")):
         issues.append(ValidationIssue("kk_requires_diagnosed_nc", "KK microphysics requires l_predict_Nc=false.", setting="l_predict_Nc"))
 
-    if _as_bool(flag("l_diag_Lscale_from_tau")):
+    if integer_flag("Lscale_method", 1) == 2:
         for name in ("C1", "C1b", "C2rt", "C2thl", "C2rtthl", "C6rt", "C6rtb", "C6thl", "C6thlb", "C14"):
             if name in values and any(value != 1.0 for value in values[name]):
-                issues.append(ValidationIssue("tau_lscale_parameter_warning", f"{name} should be 1 when l_diag_Lscale_from_tau is true; Fortran currently warns only.", severity="warning", setting=name))
+                issues.append(ValidationIssue("tau_lscale_parameter_warning", f"{name} should be 1 when Lscale_method=2; Fortran currently warns only.", severity="warning", setting=name))
     if l_implemented:
         for name in ("l_rtm_nudge", "l_uv_nudge"):
             if _as_bool(flag(name)):

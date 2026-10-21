@@ -58,10 +58,11 @@ normal task validation without a separate user request for each run. Creating
 or changing Jenkins tests requires a user request; follow
 [Jenkins test authoring](../clubb-jenkins/test-authoring/SKILL.md) for that work.
 
-Do not wait for every Jenkins test before continuing. Short checks can establish
-basic correctness while larger comparisons take hours, especially when many
-jobs share resources. Consider whether a result is needed for the next action
-and whether useful independent work can proceed while it runs.
+During intermediate development, do not wait for every Jenkins test before
+continuing independent work. Short checks can establish basic correctness while
+larger comparisons take hours, especially when many jobs share resources.
+Consider whether a result is needed for the next action and whether useful
+independent work can proceed while it runs.
 
 During intermediate development, start the relevant jobs, wait for fast checks
 that meaningfully exercise the change, then continue work and revisit slower
@@ -69,13 +70,13 @@ results later. Retain queue/build links and tested revisions so pending checks
 are not forgotten; later edits may require another run. Investigate failures
 that undermine the next step's assumptions before relying on those assumptions.
 
-At final validation or PR preparation, waiting for longer relevant tests may
-be appropriate, particularly when their results support the main correctness
-claim or satisfy a required check. Weigh that need against relevance, runtime
-and other remaining work. A fast pass does not replace required broader
-validation. If handing off while jobs are still running, link them as pending
-and state what remains unconfirmed; never report launch or early stages as a
-completed pass.
+For finalization, follow the
+[finalization completion requirement](../clubb-finalization/SKILL.md#confirm-correctness-of-the-version-being-finalized):
+wait for the applicable checks and review their results before declaring the
+branch finalized. A fast pass does not replace required broader validation.
+Any progress handoff or draft PR while jobs are still running must link them
+as pending and state what remains unconfirmed; it is not completed finalization.
+Never report launch or early stages as a completed pass.
 
 ## Verify the recorded evidence
 

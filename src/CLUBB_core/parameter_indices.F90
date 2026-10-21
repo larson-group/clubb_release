@@ -102,7 +102,7 @@ module parameter_indices
     igamma_coef                   = 57, & 
     igamma_coefb                  = 58, & 
     igamma_coefc                  = 59, & 
-    imu                           = 60, & 
+    iLscale_mu_entrain             = 60, &
     ibeta                         = 61, & 
     ilmin_coef                    = 62, &
     iomicron                      = 63, &

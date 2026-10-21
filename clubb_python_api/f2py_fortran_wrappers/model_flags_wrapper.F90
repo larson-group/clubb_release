@@ -1,4 +1,17 @@
-! model_flags_wrapper.F90 — wrappers for CLUBB_core/model_flags.F90 routines
+! model_flags_wrapper.F90
+!
+! Read default CLUBB flags and install a complete flag set for Python callers.
+!
+! Usage:
+!   f2py_set_default_config_flags(): return the core's scalar default values.
+!   f2py_init_config_flags(): pack supplied scalars into stored_config_flags.
+!
+! Understanding:
+!   The binding order is nine integer selectors followed by 57 logical flags,
+!   matching ConfigFlags and its converter in clubb_python/derived_types.
+!   Lscale_method is an integer: 1=legacy parcels, 2=diagnosed from tau.
+!   Integer flags must not be decoded as booleans.
+!   No files are read or written here. model_flags.F90 owns defaults and meanings.
 
 module model_flags_wrapper
 
@@ -15,7 +28,8 @@ contains
 
   subroutine f2py_set_default_config_flags( &
       iiPDF_type, ipdf_call_placement, penta_solve_method, &
-      tridiag_solve_method, saturation_formula, grid_remap_method, &
+      tridiag_solve_method, saturation_formula, Lscale_method, &
+      grid_remap_method, &
       grid_adapt_in_time_method, fill_holes_type, &
       l_use_precip_frac, l_predict_upwp_vpwp, &
       l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
@@ -32,7 +46,7 @@ contains
       l_calc_w_corr, l_const_Nc_in_cloud, &
       l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
       l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
-      l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+      l_Lscale_plume_centered, &
       l_use_C7_Richardson, l_use_C11_Richardson, &
       l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
       l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
@@ -49,14 +63,18 @@ contains
       l_wp2_fill_holes_tke, l_add_dycore_grid) &
     bind(C, name="f2py_set_default_config_flags_")
 
+    ! Description:
+    !   Return default values for every scalar selector/logical flag in binding
+    !   order. All outputs are dimensionless; Lscale_method defaults to 1.
+
     use model_flags, only: set_default_clubb_config_flags_api
 
-    ! 8 integer flags (intent out)
+    ! 9 integer flags (intent out)
     integer, intent(out) :: iiPDF_type, ipdf_call_placement, &
       penta_solve_method, tridiag_solve_method, saturation_formula, &
-      grid_remap_method, grid_adapt_in_time_method, fill_holes_type
+      Lscale_method, grid_remap_method, grid_adapt_in_time_method, fill_holes_type
 
-    ! 59 logical flags (intent out)
+    ! 57 logical flags (intent out)
     logical, intent(out) :: &
       l_use_precip_frac, l_predict_upwp_vpwp, &
       l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
@@ -73,7 +91,7 @@ contains
       l_calc_w_corr, l_const_Nc_in_cloud, &
       l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
       l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
-      l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+      l_Lscale_plume_centered, &
       l_use_C7_Richardson, l_use_C11_Richardson, &
       l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
       l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
@@ -92,7 +110,8 @@ contains
 
     call set_default_clubb_config_flags_api( &
       iiPDF_type, ipdf_call_placement, penta_solve_method, &
-      tridiag_solve_method, saturation_formula, grid_remap_method, &
+      tridiag_solve_method, saturation_formula, Lscale_method, &
+      grid_remap_method, &
       grid_adapt_in_time_method, fill_holes_type, &
       l_use_precip_frac, l_predict_upwp_vpwp, &
       l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
@@ -109,7 +128,7 @@ contains
       l_calc_w_corr, l_const_Nc_in_cloud, &
       l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
       l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
-      l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+      l_Lscale_plume_centered, &
       l_use_C7_Richardson, l_use_C11_Richardson, &
       l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
       l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
@@ -130,7 +149,8 @@ contains
 
   subroutine f2py_init_config_flags( &
       iiPDF_type, ipdf_call_placement, penta_solve_method, &
-      tridiag_solve_method, saturation_formula, grid_remap_method, &
+      tridiag_solve_method, saturation_formula, Lscale_method, &
+      grid_remap_method, &
       grid_adapt_in_time_method, fill_holes_type, &
       l_use_precip_frac, l_predict_upwp_vpwp, &
       l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
@@ -147,7 +167,7 @@ contains
       l_calc_w_corr, l_const_Nc_in_cloud, &
       l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
       l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
-      l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+      l_Lscale_plume_centered, &
       l_use_C7_Richardson, l_use_C11_Richardson, &
       l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
       l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
@@ -164,14 +184,19 @@ contains
       l_wp2_fill_holes_tke, l_add_dycore_grid) &
     bind(C, name="f2py_init_config_flags_")
 
+    ! Description:
+    !   Read every scalar selector/logical flag and replace stored_config_flags
+    !   with the packed core structure. Inputs are dimensionless and follow the
+    !   same order as f2py_set_default_config_flags; no scalar result is returned.
+
     use model_flags, only: initialize_clubb_config_flags_type_api
 
-    ! 8 integer flags
+    ! 9 integer flags
     integer, intent(in) :: iiPDF_type, ipdf_call_placement, &
       penta_solve_method, tridiag_solve_method, saturation_formula, &
-      grid_remap_method, grid_adapt_in_time_method, fill_holes_type
+      Lscale_method, grid_remap_method, grid_adapt_in_time_method, fill_holes_type
 
-    ! 59 logical flags
+    ! 57 logical flags
     logical, intent(in) :: &
       l_use_precip_frac, l_predict_upwp_vpwp, &
       l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
@@ -188,7 +213,7 @@ contains
       l_calc_w_corr, l_const_Nc_in_cloud, &
       l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
       l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
-      l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+      l_Lscale_plume_centered, &
       l_use_C7_Richardson, l_use_C11_Richardson, &
       l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
       l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
@@ -206,7 +231,8 @@ contains
 
     call initialize_clubb_config_flags_type_api( &
       iiPDF_type, ipdf_call_placement, penta_solve_method, &
-      tridiag_solve_method, saturation_formula, grid_remap_method, &
+      tridiag_solve_method, saturation_formula, Lscale_method, &
+      grid_remap_method, &
       grid_adapt_in_time_method, fill_holes_type, &
       l_use_precip_frac, l_predict_upwp_vpwp, &
       l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
@@ -223,7 +249,7 @@ contains
       l_calc_w_corr, l_const_Nc_in_cloud, &
       l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
       l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
-      l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+      l_Lscale_plume_centered, &
       l_use_C7_Richardson, l_use_C11_Richardson, &
       l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
       l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &

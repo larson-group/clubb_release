@@ -163,6 +163,10 @@ module model_flags
     saturation_lookup = 4    ! Use a lookup table for mixing length
                              ! saturation vapor pressure calculations
 
+  integer, parameter, public :: &
+    Lscale_direct = 1,   & ! Legacy buoyant-parcel mixing length
+    Lscale_tau = 2        ! Diagnose mixing length from the dissipation time scale
+
   !-----------------------------------------------------------------------------
   ! Options that can be changed at runtime 
   ! The default values are chosen below and overwritten if desired by the user
@@ -203,6 +207,7 @@ module model_flags
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
+      Lscale_method,                  & ! 1=legacy parcels, 2=tau
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
                                         ! (starts at 1, so 0 is an invalid option for this flag)
@@ -295,8 +300,6 @@ module model_flags
                                       ! -(2/3)*em/tau_zm, as in Bougeault (1981)
       l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
-      l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
-                                      ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
@@ -345,6 +348,7 @@ module model_flags
                                                  penta_solve_method, &
                                                  tridiag_solve_method, &
                                                  saturation_formula, &
+                                                 Lscale_method, &
                                                  grid_remap_method, &
                                                  grid_adapt_in_time_method, &
                                                  fill_holes_type, &
@@ -379,7 +383,6 @@ module model_flags
                                                  l_damp_wp2_using_em, &
                                                  l_do_expldiff_rtm_thlm, &
                                                  l_Lscale_plume_centered, &
-                                                 l_diag_Lscale_from_tau, &
                                                  l_use_C7_Richardson, &
                                                  l_use_C11_Richardson, &
                                                  l_use_shear_Richardson, &
@@ -427,6 +430,7 @@ module model_flags
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
+      Lscale_method,                  & ! 1=legacy parcels, 2=tau
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
       grid_adapt_in_time_method,      & ! Integer that stores how the grid should be adapted every
@@ -518,8 +522,6 @@ module model_flags
                                       ! -(2/3)*em/tau_zm, as in Bougeault (1981)
       l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
-      l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
-                                      ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
@@ -568,6 +570,7 @@ module model_flags
     penta_solve_method = penta_lu
     tridiag_solve_method = tridiag_lu
     saturation_formula = saturation_flatau
+    Lscale_method = Lscale_direct
     grid_remap_method = ppm_remap
     grid_adapt_in_time_method = no_grid_adaptation
     fill_holes_type = sliding_window
@@ -602,7 +605,6 @@ module model_flags
     l_damp_wp2_using_em = .true.
     l_do_expldiff_rtm_thlm = .false.
     l_Lscale_plume_centered = .false.
-    l_diag_Lscale_from_tau = .false.
     l_use_C7_Richardson = .true.
     l_use_C11_Richardson = .false.
     l_use_shear_Richardson = .false.
@@ -639,6 +641,7 @@ module model_flags
                                                      penta_solve_method, &
                                                      tridiag_solve_method, &
                                                      saturation_formula, &
+                                                     Lscale_method, &
                                                      grid_remap_method, &
                                                      grid_adapt_in_time_method, &
                                                      fill_holes_type, &
@@ -673,7 +676,6 @@ module model_flags
                                                      l_damp_wp2_using_em, &
                                                      l_do_expldiff_rtm_thlm, &
                                                      l_Lscale_plume_centered, &
-                                                     l_diag_Lscale_from_tau, &
                                                      l_use_C7_Richardson, &
                                                      l_use_C11_Richardson, &
                                                      l_use_shear_Richardson, &
@@ -722,6 +724,7 @@ module model_flags
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
+      Lscale_method,                  & ! 1=legacy parcels, 2=tau
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
                                         ! (starts at 1, so 0 is an invalid option for this flag)
@@ -814,8 +817,6 @@ module model_flags
                                       ! -(2/3)*em/tau_zm, as in Bougeault (1981)
       l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
-      l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
-                                      ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
@@ -865,11 +866,16 @@ module model_flags
       error stop 'Invalid value for the flag grid_remap_method. Should be greater or equal to 1.'
     end if
 
+    if ( Lscale_method < Lscale_direct .or. Lscale_method > Lscale_tau ) then
+      error stop 'Invalid Lscale_method. Expected an integer from 1 through 2.'
+    end if
+
     clubb_config_flags%iiPDF_type = iiPDF_type
     clubb_config_flags%ipdf_call_placement = ipdf_call_placement
     clubb_config_flags%penta_solve_method = penta_solve_method
     clubb_config_flags%tridiag_solve_method = tridiag_solve_method
     clubb_config_flags%saturation_formula = saturation_formula
+    clubb_config_flags%Lscale_method = Lscale_method
     clubb_config_flags%grid_remap_method = grid_remap_method
     clubb_config_flags%grid_adapt_in_time_method = grid_adapt_in_time_method
     clubb_config_flags%fill_holes_type = fill_holes_type
@@ -904,7 +910,6 @@ module model_flags
     clubb_config_flags%l_damp_wp2_using_em = l_damp_wp2_using_em
     clubb_config_flags%l_do_expldiff_rtm_thlm = l_do_expldiff_rtm_thlm
     clubb_config_flags%l_Lscale_plume_centered = l_Lscale_plume_centered
-    clubb_config_flags%l_diag_Lscale_from_tau = l_diag_Lscale_from_tau
     clubb_config_flags%l_use_C7_Richardson = l_use_C7_Richardson
     clubb_config_flags%l_use_C11_Richardson = l_use_C11_Richardson
     clubb_config_flags%l_use_shear_Richardson = l_use_shear_Richardson
@@ -961,6 +966,7 @@ module model_flags
     write(iunit,*) "ipdf_call_placement = ", clubb_config_flags%ipdf_call_placement
     write(iunit,*) "penta_solve_method = ", clubb_config_flags%penta_solve_method
     write(iunit,*) "tridiag_solve_method = ", clubb_config_flags%tridiag_solve_method
+    write(iunit,*) "Lscale_method = ", clubb_config_flags%Lscale_method
     write(iunit,*) "grid_remap_method = ", &
                     clubb_config_flags%grid_remap_method
     write(iunit,*) "grid_adapt_in_time_method = ", clubb_config_flags%grid_adapt_in_time_method
@@ -997,7 +1003,6 @@ module model_flags
     write(iunit,*) "l_damp_wp2_using_em = ", clubb_config_flags%l_damp_wp2_using_em
     write(iunit,*) "l_do_expldiff_rtm_thlm = ", clubb_config_flags%l_do_expldiff_rtm_thlm
     write(iunit,*) "l_Lscale_plume_centered = ", clubb_config_flags%l_Lscale_plume_centered
-    write(iunit,*) "l_diag_Lscale_from_tau = ", clubb_config_flags%l_diag_Lscale_from_tau
     write(iunit,*) "l_use_C7_Richardson = ", clubb_config_flags%l_use_C7_Richardson
     write(iunit,*) "l_use_C11_Richardson = ", clubb_config_flags%l_use_C11_Richardson
     write(iunit,*) "l_use_shear_Richardson = ", clubb_config_flags%l_use_shear_Richardson

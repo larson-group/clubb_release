@@ -47,6 +47,7 @@ from clubb_jax.src.CLUBB_core.parameter_indices import (
     iup2_sfc_coef,
 )
 from clubb_jax.src.CLUBB_core.model_flags import (
+    Lscale_tau,
     iiPDF_ADG1,
     ipdf_post_advance_fields,
     ipdf_pre_advance_fields,
@@ -142,9 +143,7 @@ def advance_clubb_core(
     ufmin = 0.01  # minimum value of friction velocity [m/s]
 
     # Flag to determine whether invrs_tau_N2_iso is used in C4 terms.
-    # Important! This flag is only in use when l_diag_Lscale_from_tau = true
-    # Setting l_use_invrs_tau_N2_iso = true will not change anything unless
-    # l_diag_Lscale_from_tau is also true
+    # This flag is only used with the tau-based mixing-length method.
     l_use_invrs_tau_N2_iso = False
 
     Kh_zm = jnp.zeros((ngrdcol, nzm))
@@ -457,7 +456,7 @@ def advance_clubb_core(
         ufmin, tau_const, sfc_elevation, clubb_params,
         clubb_config_flags.saturation_formula,
         clubb_config_flags.l_Lscale_plume_centered,
-        clubb_config_flags.l_diag_Lscale_from_tau,
+        clubb_config_flags.Lscale_method,
         clubb_config_flags.l_e3sm_config,
         clubb_config_flags.l_smooth_Heaviside_tau_wpxp,
         clubb_config_flags.l_modify_limiters_for_cnvg_test,
@@ -631,7 +630,7 @@ def advance_clubb_core(
                 clubb_config_flags.l_godunov_upwind_wpxp_ta,
                 clubb_config_flags.l_upwind_xm_ma,
                 clubb_config_flags.l_uv_nudge,
-                clubb_config_flags.l_diag_Lscale_from_tau,
+                clubb_config_flags.Lscale_method == Lscale_tau,
                 clubb_config_flags.l_use_C7_Richardson,
                 clubb_config_flags.l_lmm_stepping,
                 clubb_config_flags.l_enable_relaxed_clipping,

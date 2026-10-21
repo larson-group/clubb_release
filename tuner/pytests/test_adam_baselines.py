@@ -352,7 +352,7 @@ def test_rejected_baseline_is_unavailable_without_stopping_tune(tmp_path):
             "selected_fields": ["cloud_frac"],
             "batch_size": 1,
             "max_workers": 1,
-            "override": "l_diag_Lscale_from_tau=.true.",
+            "override": "Lscale_method=2",
             "strategy": {"name": "random", "options": {"max_samples": 1}},
             "parameter_ranges": [{"name": "C8", "min": 0.0, "max": 1.0}],
         },

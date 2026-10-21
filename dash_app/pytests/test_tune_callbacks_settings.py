@@ -232,7 +232,7 @@ def test_adam_dash_controls_convert_percentages_and_show_derived_cost():
     assert "6 total chain(s)" in adam_layout_summary(8, 5, ["arm", "bomex"], 10, 2)
     assert "252 candidate evaluations" in adam_layout_summary(8, 5, ["arm", "bomex"], 10, 2)
     assert "4 baseline evaluation(s) separately" in adam_layout_summary(
-        8, 5, ["arm", "bomex"], 10, 2, "l_diag_Lscale_from_tau=.true."
+        8, 5, ["arm", "bomex"], 10, 2, "Lscale_method=2"
     )
 
 

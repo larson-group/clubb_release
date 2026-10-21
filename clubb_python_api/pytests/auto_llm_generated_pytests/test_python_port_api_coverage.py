@@ -150,6 +150,12 @@ def _collect_all_clubb_core_cross_module_api_gaps() -> set[tuple[str, str, str, 
                 continue
             if module_name == "mixing_length" and routine.lower() == "calc_lscale":
                 continue
+            # The Python mixing-length wrapper delegates to Fortran, which
+            # owns these internal timers without separate Python API exports.
+            if (fortran_file.name == "mixing_length.F90"
+                    and module_name == "code_timer_module"
+                    and routine in {"timer_start", "timer_stop"}):
+                continue
 
             expected_names = _expected_api_names(routine)
             if any(name in api_defs for name in expected_names):

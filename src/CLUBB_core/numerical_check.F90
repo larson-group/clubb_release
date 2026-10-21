@@ -1259,6 +1259,7 @@ module numerical_check
 
       use model_flags, only: &
           clubb_config_flags_type, & ! Type
+          Lscale_tau, &
           iiPDF_ADG1,       & ! Variable(s)
           iiPDF_ADG2,       &
           iiPDF_3D_Luhar,   &
@@ -1694,10 +1695,10 @@ module numerical_check
          return
       endif
 
-      ! Checking that when the l_diag_Lscale_from_tau is enabled, the
+      ! The tau-based method tunes C_invrs_tau parameters instead of these Cx values.
       ! relevant Cx tunable parameters are all set to a value of 1 (as
       ! you're supposed to tune the C_invrs_tau_ parameters instead).
-      if ( clubb_config_flags%l_diag_Lscale_from_tau ) then
+      if ( clubb_config_flags%Lscale_method == Lscale_tau ) then
 
          ! Note: someday when we can successfully run with all these parameters
          ! having a value of 1, the "Warning" messages should be removed and the
@@ -1705,8 +1706,7 @@ module numerical_check
 
          ! C1 must have a value of 1
          if ( any(params(:,iC1) > one .or. params(:,iC1) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C1 must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C1 must have a value of 1."
             write(fstderr,*) "C1 = ", params(:,iC1)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1716,8 +1716,7 @@ module numerical_check
 
          ! C1b must have a value of 1
          if ( any(params(:,iC1b) > one .or. params(:,iC1b) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C1b must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C1b must have a value of 1."
             write(fstderr,*) "C1b = ", params(:,iC1b)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1727,8 +1726,7 @@ module numerical_check
 
          ! C2rt must have a value of 1
          if ( any(params(:,iC2rt) > one .or. params(:,iC2rt) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C2rt must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C2rt must have a value of 1."
             write(fstderr,*) "C2rt = ", params(:,iC2rt)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1738,8 +1736,7 @@ module numerical_check
 
          ! C2thl must have a value of 1
          if ( any(params(:,iC2thl) > one .or. params(:,iC2thl) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C2thl must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C2thl must have a value of 1."
             write(fstderr,*) "C2thl = ", params(:,iC2thl)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1749,8 +1746,7 @@ module numerical_check
 
          ! C2rtthl must have a value of 1
          if ( any(params(:,iC2rtthl) > one .or. params(:,iC2rtthl) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C2rtthl must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C2rtthl must have a value of 1."
             write(fstderr,*) "C2rtthl = ", params(:,iC2rtthl)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1760,8 +1756,7 @@ module numerical_check
 
          ! C6rt must have a value of 1
          if ( any(params(:,iC6rt) > one .or. params(:,iC6rt) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C6rt must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C6rt must have a value of 1."
             write(fstderr,*) "C6rt = ", params(:,iC6rt)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1771,8 +1766,7 @@ module numerical_check
 
          ! C6rtb must have a value of 1
          if ( any(params(:,iC6rtb) > one .or. params(:,iC6rtb) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C6rtb must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C6rtb must have a value of 1."
             write(fstderr,*) "C6rtb = ", params(:,iC6rtb)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1782,8 +1776,7 @@ module numerical_check
 
          ! C6thl must have a value of 1
          if ( any(params(:,iC6thl) > one .or. params(:,iC6thl) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C6thl must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C6thl must have a value of 1."
             write(fstderr,*) "C6thl = ", params(:,iC6thl)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1793,8 +1786,7 @@ module numerical_check
 
          ! C6thlb must have a value of 1
          if ( any(params(:,iC6thlb) > one .or. params(:,iC6thlb) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C6thlb must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C6thlb must have a value of 1."
             write(fstderr,*) "C6thlb = ", params(:,iC6thlb)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1804,8 +1796,7 @@ module numerical_check
 
          ! C14 must have a value of 1
          if ( any(params(:,iC14) > one .or. params(:,iC14) < one) ) then
-            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
-                             // "enabled, C14 must have a value of 1."
+            write(fstderr,*) "When Lscale_method=2, C14 must have a value of 1."
             write(fstderr,*) "C14 = ", params(:,iC14)
             write(fstderr,*) "Warning in check_clubb_settings_api"
             !write(fstderr,*) "Fatal error in check_clubb_settings_api"
@@ -1813,7 +1804,7 @@ module numerical_check
             !err_info%err_code = clubb_fatal_error
          endif ! C14 check
 
-      endif ! l_diag_Lscale_from_tau
+      endif ! tau-based mixing length
 
       if ( l_implemented ) then
 

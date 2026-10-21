@@ -18,7 +18,7 @@ def test_complete_run_overrides_freezes_effective_values_not_only_deltas():
         {
             "normalized_flags": {
                 "l_predict_upwp_vpwp": True,
-                "l_diag_Lscale_from_tau": False,
+                "Lscale_method": 1,
                 "iiPDF_type": "1",
             },
             "normalized_parameters": {
@@ -32,7 +32,7 @@ def test_complete_run_overrides_freezes_effective_values_not_only_deltas():
     assert overrides == {
         "flags": {
             "l_predict_upwp_vpwp": ".true.",
-            "l_diag_Lscale_from_tau": ".false.",
+            "Lscale_method": "1",
             "iiPDF_type": "1",
         },
         "tunable": {"C8": "0.5"},

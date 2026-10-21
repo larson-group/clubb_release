@@ -76,7 +76,7 @@ PARAM_NAMES: list[str] = [
     "slope_coef_spread_DG_means_w", "pdf_component_stdev_factor_w",
     "coef_spread_DG_means_rt", "coef_spread_DG_means_thl",
     "gamma_coef", "gamma_coefb", "gamma_coefc",
-    "mu", "beta", "lmin_coef",
+    "Lscale_mu_entrain", "beta", "lmin_coef",
     "omicron", "zeta_vrnce_rat", "upsilon_precip_frac_rat",
     "lambda0_stability_coef", "mult_coef",
     "taumin", "taumax",
@@ -127,6 +127,7 @@ for _name in ("slope_coef_spread_DG_means_w", "pdf_component_stdev_factor_w"):
     PARAMETER_HARD_BOUNDS[0, PNAME_IDX[_name]] = _TINY64
 for _name in ("coef_spread_DG_means_rt", "coef_spread_DG_means_thl"):
     PARAMETER_HARD_BOUNDS[1, PNAME_IDX[_name]] = 1.0 - _EPS64
+PARAMETER_HARD_BOUNDS[0, PNAME_IDX["Lscale_mu_entrain"]] = _TINY64
 PARAMETER_HARD_BOUNDS[1, PNAME_IDX["beta"]] = 3.0
 PARAMETER_HARD_BOUNDS[:, PNAME_IDX["omicron"]] = (_TINY64, 1.0)
 PARAMETER_HARD_BOUNDS[0, PNAME_IDX["zeta_vrnce_rat"]] = -1.0 + _EPS64
@@ -160,7 +161,7 @@ _DEFAULTS: dict[str, float] = {
     "slope_coef_spread_DG_means_w": 21.0, "pdf_component_stdev_factor_w": 1.0,
     "coef_spread_DG_means_rt": 0.8, "coef_spread_DG_means_thl": 0.8,
     "gamma_coef": 0.25, "gamma_coefb": 0.25, "gamma_coefc": 5.0,
-    "mu": 1.0e-3, "beta": 1.0, "lmin_coef": 0.5,
+    "Lscale_mu_entrain": 1.0e-3, "beta": 1.0, "lmin_coef": 0.5,
     "omicron": 0.5, "zeta_vrnce_rat": 0.0, "upsilon_precip_frac_rat": 0.55,
     "lambda0_stability_coef": 0.03, "mult_coef": 0.5,
     "taumin": 90.0, "taumax": 3600.0,

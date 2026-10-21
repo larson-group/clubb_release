@@ -193,6 +193,7 @@ module advance_clubb_core_module
 
     use model_flags, only: &
         clubb_config_flags_type, & ! Type
+        Lscale_tau, &
         l_advance_xp3, &
         iiPDF_ADG1, &
         order_xm_wpxp, &
@@ -644,9 +645,7 @@ module advance_clubb_core_module
     logical :: l_samp_stats_in_pdf_call
 
     ! Flag to determine whether invrs_tau_N2_iso is used in C4 terms.
-    ! Important! This flag is only in use when l_diag_Lscale_from_tau = true
-    ! Setting l_use_invrs_tau_N2_iso = true will not change anything unless
-    ! l_diag_Lscale_from_tau is also true
+    ! This flag is only used with the tau-based mixing-length method.
     logical, parameter :: l_use_invrs_tau_N2_iso = .false.
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
@@ -977,7 +976,7 @@ module advance_clubb_core_module
                       ufmin, tau_const, sfc_elevation, clubb_params,                & ! In
                       clubb_config_flags%saturation_formula,                        & ! In
                       clubb_config_flags%l_Lscale_plume_centered,                   & ! In
-                      clubb_config_flags%l_diag_Lscale_from_tau,                    & ! In
+                      clubb_config_flags%Lscale_method,                             & ! In
                       clubb_config_flags%l_e3sm_config,                             & ! In
                       clubb_config_flags%l_smooth_Heaviside_tau_wpxp,               & ! In
                       clubb_config_flags%l_modify_limiters_for_cnvg_test,           & ! In
@@ -1159,7 +1158,7 @@ module advance_clubb_core_module
                               clubb_config_flags%l_godunov_upwind_wpxp_ta,           & ! In
                               clubb_config_flags%l_upwind_xm_ma,                     & ! In
                               clubb_config_flags%l_uv_nudge,                         & ! In
-                              clubb_config_flags%l_diag_Lscale_from_tau,             & ! In
+                              clubb_config_flags%Lscale_method == Lscale_tau,        & ! In
                               clubb_config_flags%l_use_C7_Richardson,                & ! In
                               clubb_config_flags%l_lmm_stepping,                     & ! In
                               clubb_config_flags%l_enable_relaxed_clipping,          & ! In

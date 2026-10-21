@@ -21,7 +21,7 @@ from clubb_python.derived_types.pdf_params import (
 )
 
 
-def _make_grid(ngrdcol=1, nzmax=11, dz=500.0):
+def _make_grid(ngrdcol=2, nzmax=11, dz=500.0):
     """Create a standard test grid."""
     clubb_api.init_err_info(ngrdcol)
     flags = clubb_api.get_default_config_flags()
@@ -117,9 +117,12 @@ def test_calc_lscale_directly_basic(gr):
     clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
     flags = clubb_api.get_default_config_flags()
 
-    # Ensure the underlying stored PDF state is allocated, even though the
-    # current Fortran branch for l_avg_Lscale=.false. does not consume it.
     pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
+    pdf_params.rt_1[:] = 0.01
+    pdf_params.thl_1[:] = 300.0
+    pdf_params.rt_2[:] = 0.01
+    pdf_params.thl_2[:] = 300.0
+    pdf_params.mixt_frac[:] = 0.5
     err_info = ErrInfo(ngrdcol=ngrdcol)
 
     err_info_out, lscale, lscale_up, lscale_down = clubb_api.calc_lscale_directly(
@@ -133,7 +136,6 @@ def test_calc_lscale_directly_basic(gr):
         rtm=np.full((ngrdcol, nzt), 0.01, dtype=np.float64),
         thlm=np.full((ngrdcol, nzt), 300.0, dtype=np.float64),
         thvm=np.full((ngrdcol, nzt), 300.0, dtype=np.float64),
-        newmu=np.full(ngrdcol, 1.0e-3, dtype=np.float64),
         rtp2_zt=np.full((ngrdcol, nzt), 1.0e-6, dtype=np.float64),
         thlp2_zt=np.full((ngrdcol, nzt), 1.0e-4, dtype=np.float64),
         rtpthlp_zt=np.zeros((ngrdcol, nzt), dtype=np.float64),
@@ -145,6 +147,7 @@ def test_calc_lscale_directly_basic(gr):
         clubb_params=clubb_params,
         saturation_formula=int(flags.saturation_formula),
         l_lscale_plume_centered=False,
+        lscale_method=1,
         err_info=err_info,
     )
 
@@ -154,6 +157,9 @@ def test_calc_lscale_directly_basic(gr):
     assert np.all(np.isfinite(lscale))
     assert np.all(np.isfinite(lscale_up))
     assert np.all(np.isfinite(lscale_down))
+    np.testing.assert_array_equal(lscale[0], lscale[1])
+    np.testing.assert_array_equal(lscale_up[0], lscale_up[1])
+    np.testing.assert_array_equal(lscale_down[0], lscale_down[1])
     assert isinstance(err_info_out, ErrInfo)
 
     err = clubb_api.get_err_code(ngrdcol)

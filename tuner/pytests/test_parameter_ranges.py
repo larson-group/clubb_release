@@ -12,6 +12,11 @@ def test_tune_hard_bounds_do_not_require_the_compiled_python_api():
     assert compiled_parameter_hard_bounds() == parameter_hard_bounds()
 
 
+def test_lscale_entrainment_bound_excludes_zero():
+    """Require a strictly positive lower hard bound for the parcel entrainment rate."""
+    assert parameter_hard_bounds()["Lscale_mu_entrain"]["min"] > 0.0
+
+
 def test_fully_bounded_parameter_uses_exact_fortran_interval():
     assert default_range_for_parameter(0.4, {"min": 0.0, "max": 1.0}) == (0.0, 1.0)
 

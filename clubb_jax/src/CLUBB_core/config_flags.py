@@ -18,7 +18,7 @@ _LOGICAL_FLAG_NAMES = [
     'l_calc_w_corr', 'l_const_Nc_in_cloud',
     'l_fix_w_chi_eta_correlations', 'l_stability_correct_tau_zm',
     'l_damp_wp2_using_em', 'l_do_expldiff_rtm_thlm',
-    'l_Lscale_plume_centered', 'l_diag_Lscale_from_tau',
+    'l_Lscale_plume_centered',
     'l_use_C7_Richardson', 'l_use_C11_Richardson',
     'l_use_shear_Richardson', 'l_brunt_vaisala_freq_moist',
     'l_use_thvm_in_bv_freq', 'l_rcm_supersat_adj',
@@ -38,7 +38,7 @@ _LOGICAL_FLAG_NAMES = [
 _INT_FLAG_NAMES = [
     'iiPDF_type', 'ipdf_call_placement',
     'penta_solve_method', 'tridiag_solve_method',
-    'saturation_formula', 'grid_remap_method',
+    'saturation_formula', 'Lscale_method', 'grid_remap_method',
     'grid_adapt_in_time_method', 'fill_holes_type',
 ]
 
@@ -53,6 +53,7 @@ class ConfigFlags(NamedTuple):
     penta_solve_method: int
     tridiag_solve_method: int
     saturation_formula: int
+    Lscale_method: int  # 1=legacy parcels, 2=diagnosed from tau
     grid_remap_method: int
     grid_adapt_in_time_method: int
     fill_holes_type: int
@@ -87,7 +88,6 @@ class ConfigFlags(NamedTuple):
     l_damp_wp2_using_em: bool
     l_do_expldiff_rtm_thlm: bool
     l_Lscale_plume_centered: bool
-    l_diag_Lscale_from_tau: bool
     l_use_C7_Richardson: bool
     l_use_C11_Richardson: bool
     l_use_shear_Richardson: bool

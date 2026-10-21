@@ -28,7 +28,7 @@ from clubb_python.clubb_api import (
     get_default_config_flags, init_config_flags,
     initialize_error_headers, init_err_info, get_err_code,
     setup_grid,
-    init_clubb_params, get_param_names, calc_derived_params,
+    init_clubb_params, get_param_names, get_parameter_hard_bounds, calc_derived_params,
     init_pdf_params, init_pdf_params_zm, init_pdf_implicit, init_pdf_implicit_coefs_terms,
 )
 
@@ -37,7 +37,7 @@ class TestConfigFlags:
     """Test config flag get/set round-trip."""
 
     def test_default_flags_returns_namedtuple(self):
-        """get_default_config_flags returns a ConfigFlags with 66 fields."""
+        """get_default_config_flags returns every named configuration field."""
         flags = get_default_config_flags()
         assert isinstance(flags, ConfigFlags)
         assert len(flags) == 66
@@ -212,6 +212,19 @@ class TestClubbParams:
     def test_parameter_names_are_not_truncated(self):
         """The F2PY character matrix preserves current tunable names."""
         assert "z_displace" in get_param_names()
+        assert "Lscale_mu_entrain" in get_param_names()
+        assert "mu" not in get_param_names()
+
+    def test_default_Lscale_mu_entrain(self):
+        """Parcel entrainment retains its default and must be positive."""
+        names = get_param_names()
+        index = names.index("Lscale_mu_entrain")
+        params = init_clubb_params(1, iunit=10, filename="")
+        bounds = get_parameter_hard_bounds(len(names))[index]
+
+        assert params[0, index] == 1.0e-3
+        assert bounds["min"] == np.finfo(np.float64).tiny
+
 
     def test_multi_column_params(self):
         """Each column gets the same defaults."""

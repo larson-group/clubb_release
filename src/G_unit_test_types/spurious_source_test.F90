@@ -91,7 +91,8 @@ module spurious_source_test
         core_rknd    ! Variable(s)
 
     use model_flags, only: &
-        set_default_clubb_config_flags_api ! Procedure(s)
+        set_default_clubb_config_flags_api, & ! Procedure(s)
+        Lscale_tau
 
     use stats_netcdf, only: &
         stats_type
@@ -381,7 +382,7 @@ module spurious_source_test
 
     real( kind = core_rknd ) :: &
       mixt_frac_max_mag, &
-      lmin    ! Min. value for the length scale    [m]
+      lmin    ! Min. value for the length scale [m]
   
     integer, parameter :: iunit = 10
 
@@ -398,6 +399,7 @@ module spurious_source_test
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
+      Lscale_method,                  & ! Mixing-length formulation
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap the values from one grid to another
                                         ! (starts at 1, so 0 is an invalid option for this flag)
@@ -489,8 +491,6 @@ module spurious_source_test
                                       ! -(2/3)*em/tau_zm, as in Bougeault (1981)
       l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
-      l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
-                                      ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
@@ -539,6 +539,7 @@ module spurious_source_test
                                              penta_solve_method, &
                                              tridiag_solve_method, &
                                              saturation_formula, &
+                                             Lscale_method, &
                                              grid_remap_method, &
                                              grid_adapt_in_time_method, &
                                              fill_holes_type, &
@@ -573,7 +574,6 @@ module spurious_source_test
                                              l_damp_wp2_using_em, &
                                              l_do_expldiff_rtm_thlm, &
                                              l_Lscale_plume_centered, &
-                                             l_diag_Lscale_from_tau, &
                                              l_use_C7_Richardson, &
                                              l_use_C11_Richardson, &
                                              l_use_shear_Richardson, &
@@ -1001,7 +1001,7 @@ module spurious_source_test
                              l_godunov_upwind_wpxp_ta, &
                              l_upwind_xm_ma, &
                              l_uv_nudge, &
-                             l_diag_Lscale_from_tau, &
+                             Lscale_method == Lscale_tau, &
                              l_use_C7_Richardson, &
                              l_lmm_stepping, &
                              l_enable_relaxed_clipping, &

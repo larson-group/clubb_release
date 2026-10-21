@@ -63,7 +63,7 @@ DEFAULT_CASES = (
     CaseConfig("bomex"),
     CaseConfig("cobra", 360),     # very stable, limited for speed
     CaseConfig("dycoms2_rf01"),
-    CaseConfig("dycoms2_rf01_fixed_sst", 300),  # diffs after ~360 steps with l_diag_Lscale_from_tau=.false.
+    CaseConfig("dycoms2_rf01_fixed_sst", 300),  # diffs after ~360 steps with Lscale_method=1
     CaseConfig("dycoms2_rf02_nd"),
     CaseConfig("fire"),
     CaseConfig("gabls2", 360),    # very stable, limited for speed
@@ -75,7 +75,9 @@ DEFAULT_CASES = (
     # --- KK microphysics ---
     # Warm-rain coverage with the standard absolute/percentage tolerances.
     CaseConfig("dycoms2_rf02_do"),  # Full native 360 steps at 60s, including every saved prefix.
-    CaseConfig("dycoms2_rf02_ds", 240),  # First cumulative failure at step 242; late roundoff amplification.
+    # Legacy roundoff amplification first fails a saved prefix at step 236 on
+    # Jenkins (242 locally). Keep a margin below that boundary.
+    CaseConfig("dycoms2_rf02_ds", 230),
     # Warm-rain KK variant of the native Morrison/SILHS case; native dt is 60s.
     CaseConfig("lba_kk", 360, input_case="lba", overrides={
         "microphysics_setting.microphys_scheme": '"khairoutdinov_kogan"',

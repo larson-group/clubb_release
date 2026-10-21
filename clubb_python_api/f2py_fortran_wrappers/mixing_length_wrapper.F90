@@ -1,6 +1,26 @@
-! mixing_length_wrapper.F90 — wrappers extracted from util_wrappers.F90 for module mixing_length
+! mixing_length_wrapper.F90
+!
+! Expose the Fortran mixing-length routines to the compiled Python API.
+!
+! Usage:
+!   f2py_calc_lscale(): complete length/time diagnosis for Lscale_method 1 or 2.
+!   f2py_set_lscale_max(): standalone or host-spacing length cap.
+!   f2py_diagnose_lscale_from_tau(): method 2 and its inverse-time contributions.
+!   f2py_calc_lscale_directly(): legacy parcel method 1.
+!
+! Understanding:
+!   Python's public wrappers populate derived_type_storage before these calls.
+!   Numeric fields retain (ngrdcol,nzt) thermodynamic or (ngrdcol,nzm) momentum
+!   layout. Grid, PDF, statistics, and error objects use shared Fortran storage;
+!   callers must initialize them and retrieve the updated error object afterward.
+!   Lengths are in m, time scales s, and inverse times 1/s. No files are written
+!   by these wrappers. src/CLUBB_core/mixing_length.F90 defines the calculations.
 
 subroutine f2py_set_lscale_max(ngrdcol, l_implemented, host_dx, host_dy, lscale_max)
+
+  ! Description:
+  !   Return per-column length caps [m] from host_dx/host_dy [m], or 100000 m
+  !   when l_implemented is false. No stored derived-type state is needed.
 
   use clubb_precision, only: core_rknd
   use mixing_length, only: set_Lscale_max
@@ -17,15 +37,23 @@ subroutine f2py_set_lscale_max(ngrdcol, l_implemented, host_dx, host_dy, lscale_
 end subroutine f2py_set_lscale_max
 
 subroutine f2py_calc_lscale(nzm, nzt, ngrdcol, l_implemented, host_dx, host_dy, &
-    p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, em, thv_ds_zt, lmin, &
+    p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, em, &
+    thv_ds_zt, lmin, &
     upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
     ufmin, tau_const, sfc_elevation, clubb_params, &
-    saturation_formula, l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+    saturation_formula, l_lscale_plume_centered, lscale_method, &
+    l_e3sm_config, &
     l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso, &
     brunt_vaisala_freq_sqd_smth, &
     invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp3_zt, &
     invrs_tau_c1_zm, invrs_tau_c4_zm, invrs_tau_c6_zm, invrs_tau_c14_zm, &
     tau_max_zm, tau_max_zt, tau_zm, lscale, lscale_zm, lscale_up, lscale_down)
+
+  ! Description:
+  !   Read thermodynamic fields, momentum-level moments/TKE, per-column
+  !   parameters, and method selector 1 or 2. Return length/time profiles and
+  !   update stored_stats/stored_err_info using stored_grid/stored_pdf_params.
+  !   Output suffixes identify grids; lengths are m, times s, inverse times 1/s.
 
   use clubb_precision, only: core_rknd
   use parameter_indices, only: nparams
@@ -36,9 +64,9 @@ subroutine f2py_calc_lscale(nzm, nzt, ngrdcol, l_implemented, host_dx, host_dy, 
   implicit none
 
   integer, intent(in) :: nzm, nzt, ngrdcol
-  integer, intent(in) :: saturation_formula
+  integer, intent(in) :: saturation_formula, lscale_method
   logical, intent(in) :: &
-    l_implemented, l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+    l_implemented, l_lscale_plume_centered, l_e3sm_config, &
     l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso
   real(core_rknd), intent(in) :: lmin, ufmin, tau_const
   real(core_rknd), dimension(ngrdcol), intent(in) :: &
@@ -56,10 +84,12 @@ subroutine f2py_calc_lscale(nzm, nzt, ngrdcol, l_implemented, host_dx, host_dy, 
     invrs_tau_c6_zm, invrs_tau_c14_zm, tau_max_zm, tau_zm, lscale_zm
 
   call calc_Lscale(nzm, nzt, ngrdcol, stored_grid, l_implemented, host_dx, host_dy, &
-    p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, stored_pdf_params, em, &
+    p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, stored_pdf_params, &
+    em, &
     thv_ds_zt, lmin, upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
     ufmin, tau_const, sfc_elevation, clubb_params, saturation_formula, &
-    l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+    l_lscale_plume_centered, lscale_method, &
+    l_e3sm_config, &
     l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, &
     l_use_invrs_tau_n2_iso, brunt_vaisala_freq_sqd_smth, stored_stats, stored_err_info, &
     invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp3_zt, &
@@ -82,6 +112,12 @@ subroutine f2py_diagnose_lscale_from_tau(nzm, nzt, ngrdcol, &
     tau_max_zm, tau_max_zt, tau_zm, tau_zt, &
     lscale, lscale_up, lscale_down)
 
+  ! Description:
+  !   Diagnose method-2 inverse-time contributions [1/s], bounded times [s],
+  !   and lengths [m] from surface stress, TKE, shear, and stability. Use
+  !   stored_grid and update stored_stats/stored_err_info. Directional lengths
+  !   are zero placeholders for this method.
+
   use clubb_precision, only: core_rknd
   use parameter_indices, only: nparams
   use derived_type_storage, only: stored_grid, stored_stats, stored_err_info
@@ -92,6 +128,8 @@ subroutine f2py_diagnose_lscale_from_tau(nzm, nzt, ngrdcol, &
   integer, intent(in) :: nzm, nzt, ngrdcol
   real(core_rknd), dimension(ngrdcol), intent(in) :: upwp_sfc, vpwp_sfc
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: ice_supersat_frac, sqrt_em_zt
+  ! TODO: Remove unused sqrt_em_zt with a coordinated binding/public API update;
+  ! the core computes its own thermodynamic-level TKE interpolation.
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: &
     ddzt_umvm_sqd, em, brunt_vaisala_freq_sqd_smth, ri_zm
   real(core_rknd), intent(in) :: ufmin, tau_const
@@ -123,10 +161,16 @@ subroutine f2py_diagnose_lscale_from_tau(nzm, nzt, ngrdcol, &
 end subroutine f2py_diagnose_lscale_from_tau
 
 subroutine f2py_calc_lscale_directly(ngrdcol, nzm, nzt, &
-    l_implemented, p_in_pa, exner, rtm, thlm, thvm, newmu, &
+    l_implemented, p_in_pa, exner, rtm, thlm, thvm, &
     rtp2_zt, thlp2_zt, rtpthlp_zt, em, thv_ds_zt, lscale_max, lmin, &
     clubb_params, saturation_formula, l_lscale_plume_centered, &
+    lscale_method, &
     lscale, lscale_up, lscale_down)
+
+  ! Description:
+  !   Compute legacy parcel method 1 from environmental/PDF properties, TKE,
+  !   and per-column parameters. Return three thermodynamic-level lengths [m].
+  !   Read stored_grid/stored_pdf_params and update stored_stats/stored_err_info.
 
   use clubb_precision, only: core_rknd
   use parameter_indices, only: nparams
@@ -137,20 +181,23 @@ subroutine f2py_calc_lscale_directly(ngrdcol, nzm, nzt, &
   implicit none
 
   integer, intent(in) :: ngrdcol, nzm, nzt
-  integer, intent(in) :: saturation_formula
-  logical, intent(in) :: l_implemented, l_lscale_plume_centered
+  integer, intent(in) :: saturation_formula, lscale_method
+  logical, intent(in) :: &
+    l_implemented, l_lscale_plume_centered
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
     p_in_pa, exner, rtm, thlm, thvm, rtp2_zt, thlp2_zt, rtpthlp_zt, thv_ds_zt
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: em
-  real(core_rknd), dimension(ngrdcol), intent(in) :: newmu, lscale_max
+  real(core_rknd), dimension(ngrdcol), intent(in) :: lscale_max
   real(core_rknd), intent(in) :: lmin
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: lscale, lscale_up, lscale_down
 
   call calc_lscale_directly(ngrdcol, nzm, nzt, stored_grid, &
-    l_implemented, p_in_pa, exner, rtm, thlm, thvm, newmu, &
-    rtp2_zt, thlp2_zt, rtpthlp_zt, stored_pdf_params, em, thv_ds_zt, lscale_max, lmin, &
+    l_implemented, p_in_pa, exner, rtm, thlm, thvm, &
+    rtp2_zt, thlp2_zt, rtpthlp_zt, stored_pdf_params, em, &
+    thv_ds_zt, lscale_max, lmin, &
     clubb_params, saturation_formula, l_lscale_plume_centered, &
+    lscale_method, &
     stored_stats, stored_err_info, lscale, lscale_up, lscale_down)
 
 end subroutine f2py_calc_lscale_directly

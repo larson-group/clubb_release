@@ -33,6 +33,7 @@ import pytest
 from clubb_jax.src import clubb_loss_driver as loss
 from clubb_jax.src.CLUBB_core.advance_clubb_core_module import advance_clubb_core
 from clubb_jax.src.CLUBB_core.parameters_tunable import PNAME_IDX, init_clubb_params
+from clubb_jax.src.CLUBB_core.parameter_indices import nparams
 from clubb_jax.src.CLUBB_core.stats_netcdf import StatsWriter
 from clubb_jax.src.CLUBB_core.err_info import ErrInfo
 from utilities.create_case_namelist import (
@@ -92,7 +93,7 @@ def prepared_loss(tmp_path_factory):
 def test_repeated_batches_reset_derived_state_and_reuse_jit(prepared_loss):
     path, names, params = prepared_loss
     assert names == ['thlm', 'wp2']
-    assert params.shape == (4, 102)
+    assert params.shape == (4, nparams)
     assert loss.get_loss_time_window_count() == 2
     assert loss.active_request.state['stats_writer']._ncid is None
     baseline = loss.clubb_get_loss_for_params(params)
@@ -222,9 +223,9 @@ def test_lifecycle_and_shape_errors(prepared_loss):
     with pytest.raises(ValueError, match='still active'):
         loss.init_clubb_loss(str(path))
     with pytest.raises(ValueError, match='shape'):
-        loss.clubb_get_loss_for_params(np.ones((2, 101)))
+        loss.clubb_get_loss_for_params(np.ones((2, nparams - 1)))
     loss.finalize_clubb_loss()
     loss.finalize_clubb_loss()
     assert loss.get_loss_time_window_count() == 1
     with pytest.raises(ValueError, match='requires init_clubb_loss'):
-        loss.clubb_get_loss_for_params(np.ones((2, 102)))
+        loss.clubb_get_loss_for_params(np.ones((2, nparams)))

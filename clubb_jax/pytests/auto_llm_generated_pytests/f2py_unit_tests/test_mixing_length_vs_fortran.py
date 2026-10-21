@@ -16,8 +16,9 @@ from clubb_jax.src.CLUBB_core.mixing_length import (
     set_Lscale_max,
     calc_Lscale_directly,
     diagnose_Lscale_from_tau,
-    imu,
 )
+from clubb_jax.src.CLUBB_core.model_flags import Lscale_direct
+from clubb_jax.src.CLUBB_core.parameter_indices import iLscale_mu_entrain
 from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
 from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
 from clubb_jax.src.CLUBB_core.saturation import SATURATION_FLATAU
@@ -54,10 +55,11 @@ def test_calc_Lscale_directly_f2py():
         rtm = rng.uniform(2e-3, 1.4e-2, (ng, nzt)); thvm = thlm * (1.0 + 0.6 * rtm)
         em = rng.uniform(1e-2, 1.0, (ng, nzm)); p = np.sort(rng.uniform(6e4, 1e5, (ng, nzt)), axis=1)[:, ::-1].copy()
         thv_ds = thvm.copy(); Lmax = np.full(ng, 1e5); lmin = 20.0
-        npar = max(imu, 100); cp = np.zeros((ng, npar)); cp[:, imu] = rng.uniform(0.4, 1.0, ng); mu = cp[:, imu]
+        cp = np.array(init_clubb_params(ng, filename=_TUNABLE_PARAMS))
+        cp[:, iLscale_mu_entrain] = rng.uniform(0.4, 1.0, ng)
         z = np.zeros((ng, nzt))
-        common = (False, p, exner, rtm, thlm, thvm, mu, z, z, z)
-        tail = (em, thv_ds, Lmax, lmin, cp, SATURATION_FLATAU, False)
+        common = (False, p, exner, rtm, thlm, thvm, z, z, z)
+        tail = (em, thv_ds, Lmax, lmin, cp, SATURATION_FLATAU, False, Lscale_direct)
         fr = fortran.calc_lscale_directly(ng, nzm, nzt, fgr, *common, fortran_init_pdf_params(nzt, ng), *tail,
                                           FortranErrInfo(ngrdcol=ng))
         jr = calc_Lscale_directly(ng, nzm, nzt, jgr, *common, init_pdf_params(nzt, ng), *tail,

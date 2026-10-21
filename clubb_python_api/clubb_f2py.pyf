@@ -298,7 +298,8 @@ python module clubb_f2py
 
     subroutine f2py_set_default_config_flags( &
         iiPDF_type, ipdf_call_placement, penta_solve_method, &
-        tridiag_solve_method, saturation_formula, grid_remap_method, &
+        tridiag_solve_method, saturation_formula, Lscale_method, &
+        grid_remap_method, &
         grid_adapt_in_time_method, fill_holes_type, &
         l_use_precip_frac, l_predict_upwp_vpwp, &
         l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
@@ -315,7 +316,7 @@ python module clubb_f2py
         l_calc_w_corr, l_const_Nc_in_cloud, &
         l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
         l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
-        l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+        l_Lscale_plume_centered, &
         l_use_C7_Richardson, l_use_C11_Richardson, &
         l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
         l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
@@ -332,7 +333,7 @@ python module clubb_f2py
         l_wp2_fill_holes_tke, l_add_dycore_grid)
       integer, intent(out) :: iiPDF_type, ipdf_call_placement
       integer, intent(out) :: penta_solve_method, tridiag_solve_method
-      integer, intent(out) :: saturation_formula, grid_remap_method
+      integer, intent(out) :: saturation_formula, Lscale_method, grid_remap_method
       integer, intent(out) :: grid_adapt_in_time_method, fill_holes_type
       logical, intent(out) :: l_use_precip_frac, l_predict_upwp_vpwp
       logical, intent(out) :: l_ho_nontrad_coriolis, l_ho_trad_coriolis
@@ -349,7 +350,7 @@ python module clubb_f2py
       logical, intent(out) :: l_calc_w_corr, l_const_Nc_in_cloud
       logical, intent(out) :: l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm
       logical, intent(out) :: l_damp_wp2_using_em, l_do_expldiff_rtm_thlm
-      logical, intent(out) :: l_Lscale_plume_centered, l_diag_Lscale_from_tau
+      logical, intent(out) :: l_Lscale_plume_centered
       logical, intent(out) :: l_use_C7_Richardson, l_use_C11_Richardson
       logical, intent(out) :: l_use_shear_Richardson, l_brunt_vaisala_freq_moist
       logical, intent(out) :: l_use_thvm_in_bv_freq, l_rcm_supersat_adj
@@ -369,7 +370,8 @@ python module clubb_f2py
 
     subroutine f2py_init_config_flags( &
         iiPDF_type, ipdf_call_placement, penta_solve_method, &
-        tridiag_solve_method, saturation_formula, grid_remap_method, &
+        tridiag_solve_method, saturation_formula, Lscale_method, &
+        grid_remap_method, &
         grid_adapt_in_time_method, fill_holes_type, &
         l_use_precip_frac, l_predict_upwp_vpwp, &
         l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
@@ -386,7 +388,7 @@ python module clubb_f2py
         l_calc_w_corr, l_const_Nc_in_cloud, &
         l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm, &
         l_damp_wp2_using_em, l_do_expldiff_rtm_thlm, &
-        l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
+        l_Lscale_plume_centered, &
         l_use_C7_Richardson, l_use_C11_Richardson, &
         l_use_shear_Richardson, l_brunt_vaisala_freq_moist, &
         l_use_thvm_in_bv_freq, l_rcm_supersat_adj, &
@@ -403,7 +405,7 @@ python module clubb_f2py
         l_wp2_fill_holes_tke, l_add_dycore_grid)
       integer, intent(in) :: iiPDF_type, ipdf_call_placement
       integer, intent(in) :: penta_solve_method, tridiag_solve_method
-      integer, intent(in) :: saturation_formula, grid_remap_method
+      integer, intent(in) :: saturation_formula, Lscale_method, grid_remap_method
       integer, intent(in) :: grid_adapt_in_time_method, fill_holes_type
       logical, intent(in) :: l_use_precip_frac, l_predict_upwp_vpwp
       logical, intent(in) :: l_ho_nontrad_coriolis, l_ho_trad_coriolis
@@ -420,7 +422,7 @@ python module clubb_f2py
       logical, intent(in) :: l_calc_w_corr, l_const_Nc_in_cloud
       logical, intent(in) :: l_fix_w_chi_eta_correlations, l_stability_correct_tau_zm
       logical, intent(in) :: l_damp_wp2_using_em, l_do_expldiff_rtm_thlm
-      logical, intent(in) :: l_Lscale_plume_centered, l_diag_Lscale_from_tau
+      logical, intent(in) :: l_Lscale_plume_centered
       logical, intent(in) :: l_use_C7_Richardson, l_use_C11_Richardson
       logical, intent(in) :: l_use_shear_Richardson, l_brunt_vaisala_freq_moist
       logical, intent(in) :: l_use_thvm_in_bv_freq, l_rcm_supersat_adj
@@ -2366,19 +2368,21 @@ python module clubb_f2py
     end subroutine
 
     subroutine f2py_calc_lscale(nzm, nzt, ngrdcol, l_implemented, host_dx, host_dy, &
-        p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, em, thv_ds_zt, lmin, &
+        p_in_pa, exner, rtm, thlm, thvm, thlp2, rtp2, rtpthlp, em, &
+        thv_ds_zt, lmin, &
         upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, ice_supersat_frac, &
         ufmin, tau_const, sfc_elevation, clubb_params, &
-        saturation_formula, l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+        saturation_formula, l_lscale_plume_centered, lscale_method, &
+        l_e3sm_config, &
         l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso, &
         brunt_vaisala_freq_sqd_smth, &
         invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp3_zt, &
         invrs_tau_c1_zm, invrs_tau_c4_zm, invrs_tau_c6_zm, invrs_tau_c14_zm, &
         tau_max_zm, tau_max_zt, tau_zm, lscale, lscale_zm, lscale_up, lscale_down)
       integer, intent(in) :: nzm, nzt, ngrdcol
-      integer, intent(in) :: saturation_formula
+      integer, intent(in) :: saturation_formula, lscale_method
       logical, intent(in) :: &
-        l_implemented, l_lscale_plume_centered, l_diag_lscale_from_tau, l_e3sm_config, &
+        l_implemented, l_lscale_plume_centered, l_e3sm_config, &
         l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso
       double precision, intent(in) :: lmin, ufmin, tau_const
       double precision, dimension(ngrdcol), intent(in) :: &
@@ -2426,17 +2430,18 @@ python module clubb_f2py
     end subroutine
 
     subroutine f2py_calc_lscale_directly(ngrdcol, nzm, nzt, &
-        l_implemented, p_in_pa, exner, rtm, thlm, thvm, newmu, &
+        l_implemented, p_in_pa, exner, rtm, thlm, thvm, &
         rtp2_zt, thlp2_zt, rtpthlp_zt, em, thv_ds_zt, lscale_max, lmin, &
         clubb_params, saturation_formula, l_lscale_plume_centered, &
+        lscale_method, &
         lscale, lscale_up, lscale_down)
       integer, intent(in) :: ngrdcol, nzm, nzt
-      integer, intent(in) :: saturation_formula
+      integer, intent(in) :: saturation_formula, lscale_method
       logical, intent(in) :: l_implemented, l_lscale_plume_centered
       double precision, dimension(ngrdcol, nzt), intent(in) :: &
         p_in_pa, exner, rtm, thlm, thvm, rtp2_zt, thlp2_zt, rtpthlp_zt, thv_ds_zt
       double precision, dimension(ngrdcol, nzm), intent(in) :: em
-      double precision, dimension(ngrdcol), intent(in) :: newmu, lscale_max
+      double precision, dimension(ngrdcol), intent(in) :: lscale_max
       double precision, intent(in) :: lmin
       double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
       double precision, dimension(ngrdcol, nzt), intent(out) :: lscale, lscale_up, lscale_down
