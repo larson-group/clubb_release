@@ -15,7 +15,7 @@ Match the explanation to where someone encounters it:
 | README | Start in very simple, ordinary language: what this is for and what someone can do with it. Introduce implementation terms only when needed. |
 | Top-of-file description | Start simply, then introduce and define the file's terms, using a concrete example when helpful. |
 | Procedure and code comments | Reuse terms introduced in the file description. Give enough local context to understand the purpose; leave calculation details to the code when appropriate. |
-| PR | Begin with a very simple explanation of the change and its reason; give technical details and evidence below. |
+| PR | Begin with the concrete problem or unmet need, then explain how the change addresses it; give technical details and evidence below. |
 | Commit | Use a simple, specific title and a short explanation. Include technical detail when it is important to explain the change or qualify its result. |
 
 Explain what something means or does before describing how to use or compute

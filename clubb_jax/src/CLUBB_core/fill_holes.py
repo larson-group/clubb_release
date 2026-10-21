@@ -644,25 +644,20 @@ def fill_holes_driver_api(
             )
         hydromet_name = hm_metadata.hydromet_list[i]
         if hydromet_name.startswith("r"):
-            # Source calls each column with ngrdcol=1 but passes the full gr%dzt.
-            # Its explicit-shape dz(1,nzt) dummy uses the first nzt elements in
-            # Fortran storage order. Preserve that deliberately retained scalar
-            # grid-metric mapping, including on a multicolumn grid.
-            dz_scalar = gr.dzt.T.reshape(-1)[:nzt][None, :]
             hydromet_filled = jax.vmap(
-                lambda rho_col, hm_col: fill_holes_vertical(
+                lambda dz_col, rho_col, hm_col: fill_holes_vertical(
                     nzt,
                     1,
                     zero_threshold,
                     0,
                     nzt - 1,
-                    dz_scalar,
+                    dz_col[None, :],
                     rho_col[None, :],
                     1,
                     fill_holes_type,
                     hm_col[None, :],
                 )[0]
-            )(rho_ds_zt, hydromet[..., i])
+            )(gr.dzt, rho_ds_zt, hydromet[..., i])
             hydromet = hydromet.at[..., i].set(hydromet_filled)
         stats = stats.finalize_budget(name_hf, hydromet[..., i] / dt)
         stats = stats.begin_budget(name_wvhf, hydromet[..., i] / dt)

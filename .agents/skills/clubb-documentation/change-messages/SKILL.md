@@ -1,6 +1,6 @@
 ---
 name: clubb-change-messages
-description: Write or revise CLUBB commit messages and PR titles/descriptions, with clear purpose, test evidence, and scoped BFB claims when relevant.
+description: Write or revise CLUBB commit messages and PR titles/descriptions, with problem-first explanations, test evidence, and scoped BFB claims when relevant.
 ---
 
 # PRs and commits
@@ -44,19 +44,23 @@ for the body; do not force conventional-commit prefixes.
 
 Use these PR headings:
 
-- **Purpose:** what changes and what kind of change it is.
-- **Motivation:** the concrete problem or goal, and why this change helps.
+- **Motivation and Change:** the concrete problem or unmet need, its cause when
+  known, and how the PR addresses it.
 - **Result:** resulting behavior and measured performance or progress when
   relevant. Discuss BFB only when the change could plausibly affect results.
 - **Testing:** what ran, what it showed, and material failures or gaps.
 - **Additional notes:** optional tradeoffs, follow-up work, or context that
   explains a decision.
 
-A small PR may combine Purpose and Motivation. A commit uses a title, blank
-line, and compact body covering the same facts; headings are optional. Keep
-commits especially simple. Avoid repeating facts between sections, development
-chronology, file inventories, and exhaustive command logs. Put useful links
-beside the claims they support.
+Open Motivation and Change with the problem and why it matters, then explain
+the solution. For a refactor, describe the duplication, unclear ownership or
+other maintenance problem before describing the code movement. Connect the
+implementation details to how they address that problem.
+
+A commit uses a title, blank line, and compact body covering the same facts;
+headings are optional. Keep commits especially simple. Avoid repeating facts
+between sections, development chronology, file inventories, and exhaustive
+command logs. Put useful links beside the claims they support.
 
 ## BFB and evidence
 

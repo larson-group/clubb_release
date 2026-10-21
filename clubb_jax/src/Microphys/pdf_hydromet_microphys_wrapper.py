@@ -82,13 +82,6 @@ def pdf_hydromet_microphys_prep(
     )
     rtphmp_zt = thlphmp_zt = wp2hmp = jnp.zeros_like(hydromet)
     if parameters_microphys.microphys_scheme != "none":
-        # The source standalone passes its (ngrdcol,nparams) array to this
-        # wrapper's rank-one (nparams) dummy. Preserve Fortran sequence association:
-        # the PDF uses the first nparams elements in column-major storage order.
-        # A coordinated source/API change is needed before using per-column values.
-        clubb_params = jnp.broadcast_to(
-            clubb_params.T.reshape(-1)[: clubb_params.shape[1]], clubb_params.shape
-        )
         (
             err_info,
             hydrometp2,
