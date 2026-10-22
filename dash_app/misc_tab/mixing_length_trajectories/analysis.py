@@ -39,6 +39,11 @@ REQUIRED_VARIABLES = (
     "thlm",
     "rtm",
     "thvm",
+    "mixt_frac",
+    "thl_1",
+    "thl_2",
+    "rt_1",
+    "rt_2",
     "p_in_Pa",
     "exner",
     "thv_ds_zt",
@@ -82,7 +87,14 @@ class MixingLengthResult:
 
 @dataclass(frozen=True)
 class DatasetRecord:
-    """One NetCDF record in the state consumed by ``compute_mixing_length``."""
+    """Store one saved column for the legacy and coherent parcel diagnostics.
+
+    Indices are zero-based and time_seconds is in s. Thermodynamic fields use
+    zt; em uses zm. thlm/rtm come from thlm_old/rtm_old, while mean_thlm/mean_rtm
+    retain the saved current means. Heights/lengths are m, temperature K, water
+    kg/kg, pressure Pa, TKE m^2/s^2, and mu 1/m. The three launch/mixing controls
+    are dimensionless. fortran_* vectors retain the saved length curves.
+    """
 
     path: Path
     record: int
@@ -94,6 +106,11 @@ class DatasetRecord:
     rtm: np.ndarray
     mean_thlm: np.ndarray
     mean_rtm: np.ndarray
+    mixt_frac: np.ndarray
+    thl_1: np.ndarray
+    thl_2: np.ndarray
+    rt_1: np.ndarray
+    rt_2: np.ndarray
     thvm: np.ndarray
     pressure: np.ndarray
     exner: np.ndarray
@@ -104,6 +121,9 @@ class DatasetRecord:
     fortran_down: np.ndarray
     mu: float
     lmin: float
+    tke_multiplier: float
+    pdf_launch_frac: float
+    up_weight: float
 
 
 def saturation_mixing_ratio_flatau(pressure, temperature):
@@ -541,7 +561,19 @@ def inspect_dataset(path, *, read_times=True):
 
 
 def load_dataset_record(path, record, column=0):
-    """Load one record plus tunable parameters embedded in the NetCDF file."""
+    """Return a validated NetCDF column/record and its saved parcel parameters.
+
+    Clamp zero-based record/column selections to available bounds. Read parcel
+    thlm/rtm from the *_old fields, and retain saved current means, PDF component
+    properties, and length curves separately. The loader estimates the surface
+    floor as lmin_coef times a fixed 40 m grid scale, not from the file's grid.
+
+    Current parameter names take precedence. Older saved mu and Lscale_up_strength
+    names supply fallbacks; Lscale_survival_fraction converts to mean launch
+    energy/TKE. Missing values use mu=0.001 1/m, multiplier=1, PDF fraction=0,
+    upward weight=0.5, and lmin_coef=0.5. Reading old output does not create
+    aliases accepted by the model's current runtime namelists.
+    """
     metadata = inspect_dataset(path)
     record = int(np.clip(record, 0, metadata["record_count"] - 1))
     column = int(np.clip(column, 0, metadata["column_count"] - 1))
@@ -559,6 +591,25 @@ def load_dataset_record(path, record, column=0):
         legacy_mu = _parameter_value(dataset, "mu", column, 1.0e-3)
         mu = _parameter_value(dataset, "Lscale_mu_entrain", column, legacy_mu)
         lmin_coef = _parameter_value(dataset, "lmin_coef", column, 0.5)
+        tke_multiplier = _parameter_value(
+            dataset, "Lscale_tke_multiplier", column, np.nan
+        )
+        if np.isnan(tke_multiplier):
+            # Preserve the launch energy when inspecting older saved output.
+            survival_fraction = _parameter_value(
+                dataset, "Lscale_survival_fraction", column, 0.25
+            )
+            sqrt_survival = np.sqrt(survival_fraction)
+            tke_multiplier = sqrt_survival / (1.0 - sqrt_survival)
+        pdf_launch_frac = _parameter_value(
+            dataset, "Lscale_pdf_launch_frac", column, 0.0
+        )
+        legacy_up_weight = _parameter_value(
+            dataset, "Lscale_up_strength", column, 0.5
+        )
+        up_weight = _parameter_value(
+            dataset, "Lscale_up_weight", column, legacy_up_weight
+        )
         return DatasetRecord(
             path=metadata["path"],
             record=record,
@@ -570,6 +621,11 @@ def load_dataset_record(path, record, column=0):
             rtm=_profile(dataset["rtm_old"], record, column, "zt"),
             mean_thlm=_profile(dataset["thlm"], record, column, "zt"),
             mean_rtm=_profile(dataset["rtm"], record, column, "zt"),
+            mixt_frac=_profile(dataset["mixt_frac"], record, column, "zt"),
+            thl_1=_profile(dataset["thl_1"], record, column, "zt"),
+            thl_2=_profile(dataset["thl_2"], record, column, "zt"),
+            rt_1=_profile(dataset["rt_1"], record, column, "zt"),
+            rt_2=_profile(dataset["rt_2"], record, column, "zt"),
             thvm=_profile(dataset["thvm"], record, column, "zt"),
             pressure=_profile(dataset["p_in_Pa"], record, column, "zt"),
             exner=_profile(dataset["exner"], record, column, "zt"),
@@ -586,6 +642,9 @@ def load_dataset_record(path, record, column=0):
             ),
             mu=mu,
             lmin=lmin_coef * LMIN_DELTAZ,
+            tke_multiplier=tke_multiplier,
+            pdf_launch_frac=pdf_launch_frac,
+            up_weight=up_weight,
         )
 
 

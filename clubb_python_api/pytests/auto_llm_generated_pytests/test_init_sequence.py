@@ -214,6 +214,9 @@ class TestClubbParams:
         assert "z_displace" in get_param_names()
         assert "Lscale_mu_entrain" in get_param_names()
         assert "mu" not in get_param_names()
+        assert "Lscale_tke_multiplier" in get_param_names()
+        assert "Lscale_pdf_launch_frac" in get_param_names()
+        assert "Lscale_up_weight" in get_param_names()
 
     def test_default_Lscale_mu_entrain(self):
         """Parcel entrainment retains its default and must be positive."""
@@ -225,6 +228,38 @@ class TestClubbParams:
         assert params[0, index] == 1.0e-3
         assert bounds["min"] == np.finfo(np.float64).tiny
 
+    def test_default_Lscale_tke_multiplier(self):
+        """Mean launch energy defaults to TKE, with no upper multiplier bound."""
+        names = get_param_names()
+        index = names.index("Lscale_tke_multiplier")
+        params = init_clubb_params(1, iunit=10, filename="")
+        bounds = get_parameter_hard_bounds(len(names))[index]
+
+        assert params[0, index] == 1.0
+        assert bounds["min"] == np.finfo(np.float64).tiny
+        assert bounds["max"] is None
+
+    def test_default_Lscale_pdf_launch_frac(self):
+        """Parcel launches default to the grid mean."""
+        names = get_param_names()
+        index = names.index("Lscale_pdf_launch_frac")
+        params = init_clubb_params(1, iunit=10, filename="")
+        bounds = get_parameter_hard_bounds(len(names))[index]
+
+        assert params[0, index] == 0.0
+        assert bounds["min"] == 0.0
+        assert bounds["max"] == 1.0
+
+    def test_default_lscale_up_weight(self):
+        """Directional mixing defaults to the existing geometric mean."""
+        names = get_param_names()
+        index = names.index("Lscale_up_weight")
+        params = init_clubb_params(1, iunit=10, filename="")
+        bounds = get_parameter_hard_bounds(len(names))[index]
+
+        assert params[0, index] == 0.5
+        assert bounds["min"] == 0.0
+        assert bounds["max"] == 1.0
 
     def test_multi_column_params(self):
         """Each column gets the same defaults."""

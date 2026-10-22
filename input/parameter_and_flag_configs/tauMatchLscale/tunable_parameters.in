@@ -102,4 +102,7 @@ thlp2_rad_cloud_frac_thresh =      0.10000000000000000555
                    bv_efold =      2.93053386294176210214
                 wpxp_Ri_exp =      0.27718383854372530273
                 z_displace  =     25.0
+Lscale_tke_multiplier = 1.0 ! Mean launch energy/TKE in method 3 [-]
+           Lscale_pdf_launch_frac =      1.00000000000000000000
+            Lscale_up_weight =      0.50000000000000000000
 /

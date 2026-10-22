@@ -102,4 +102,7 @@ Richardson_num_max = 400.0 ! Threshold on Richardson number
 Cx_min = 0.95              ! Threshold on Cx_fnc_Richardson
 Cx_max = 0.6               ! Threshold on Cx_fnc_Richardson
 a_const = 1.8             ! Used for sfc values in sfc_varnce_module, usually =1.8 if l_vary_convect_depth=F, =0.6 if T
+Lscale_tke_multiplier = 1.0 ! Mean launch energy/TKE in method 3 [-]
+Lscale_pdf_launch_frac = 1.0    ! Fraction toward directional PDF-component means in method 3 [-]
+Lscale_up_weight = 0.5  ! Upward exponent in method-3 geometric mixing [-]
 /

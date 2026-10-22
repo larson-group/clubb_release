@@ -7,7 +7,8 @@
 !   The mixing length estimates how far turbulent air motions exchange heat,
 !   water, and momentum. This module computes that distance and the damping
 !   time scales used by the moment equations. Lscale_method selects the
-!   legacy buoyant-parcel method (1) or length diagnosed from a time scale (2).
+!   legacy buoyant-parcel method (1), length diagnosed from a time scale
+!   (2), or the coherence-weighted parcel method (3).
 !
 ! Usage:
 !   Normal timestep:
@@ -17,7 +18,7 @@
 !   Components, when only part of the calculation is needed:
 !     - set_Lscale_max(): set the per-column length cap from host grid spacing,
 !       or use the standalone cap of 100000 m.
-!     - calc_Lscale_directly(): compute method 1 from thermodynamic state
+!     - calc_Lscale_directly(): compute method 1 or 3 from thermodynamic state
 !       and PDF (probability density function) properties. The source constant
 !       l_avg_Lscale controls the optional perturbed-launch calculation.
 !     - diagnose_Lscale_from_tau(): compute method 2 from background, surface,
@@ -31,12 +32,21 @@
 !   statistics, and error structures; no parcel state is kept between calls.
 !   stats and err_info are updated in place by the public calculation routines.
 !
-!   compute_mixing_length() is the private parcel kernel. It accounts for
-!   entrainment and moist buoyancy along upward and downward paths and stops
-!   at the first energy exhaustion. Parcel saturation uses saturation_formula.
-!   Only the combined length is capped and copied to the upper boundary;
-!   directional lengths retain separate boundary values. Method 2 returns
-!   zero directional lengths.
+!   compute_mixing_length() and compute_coherent_mixing_length() are private
+!   parcel kernels. Both account for entrainment and moist buoyancy along
+!   upward and downward paths. Method 1 stops at the first energy exhaustion.
+!   Method 3 integrates a survival weight, includes the first layer with mean
+!   coherence <= 0.01, and then stops. Its source constant overwrite_mode
+!   chooses local reaches, maximum-endpoint extension, or arrival-weighted
+!   averaging; arrival-weighted averaging is selected. This choice is distinct
+!   from the runtime Lscale_method flag.
+!
+!   Method 3 uses sat_mixrat_liq_flatau() directly for its internal parcel
+!   saturation; method 1 uses saturation_formula. In the parcel methods only
+!   the combined length is capped and copied to the upper boundary; directional
+!   lengths retain separate boundary values. Method 2 returns zero directional
+!   lengths. See doc/coherence_mixing_length.md
+!   for equations, parameter meanings, and configuration examples.
 !
 ! References:
 !   Golaz et al. (2002), J. Atmos. Sci., 59, 3540--3551: parcel-method background.
@@ -81,7 +91,7 @@ module mixing_length
     !   Compute CLUBB's mixing length and dissipation time scales, including
     !   Richardson-number-dependent damping terms and Lscale-related stats.
     !   Read thermodynamic fields on nzt levels, moments on nzm levels, and
-    !   per-column tunable parameters; Lscale_method selects methods 1 and 2.
+    !   per-column tunable parameters; Lscale_method selects methods 1--3.
     !   Return lengths [m], time scales [s], and inverse times [1/s], and update
     !   stats and err_info. Grid and PDF state must be initialized by the caller.
     !
@@ -1650,7 +1660,7 @@ module mixing_length
                                     Lscale, Lscale_up, Lscale_down)
 
     ! Description:
-    !   Compute the legacy parcel mixing length (method 1)
+    !   Select the legacy or coherent parcel calculation (methods 1 or 3)
     !   using environmental profiles, momentum-level TKE, PDF properties, and
     !   per-column parameters. Return thermodynamic-level combined, upward,
     !   and downward lengths [m], updating stats and err_info.
@@ -1670,10 +1680,14 @@ module mixing_length
         nparams, &
         iLscale_mu_entrain, &
         iLscale_mu_coef, &
-        iLscale_pert_coef
+        iLscale_pert_coef, &
+        iLscale_tke_multiplier, &
+        iLscale_pdf_launch_frac, &
+        iLscale_up_weight
 
     use model_flags, only: &
-        Lscale_direct
+        Lscale_direct, &
+        Lscale_coherence
 
     use grid_class, only: &
         grid ! Type
@@ -1999,6 +2013,18 @@ module mixing_length
     ! Diagnose CLUBB's turbulent mixing length scale.
     select case ( Lscale_method )
 
+    case ( Lscale_coherence )
+
+      call compute_coherent_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, & ! In
+                                            rtm, pdf_params, em, Lscale_max, p_in_Pa, & ! In
+                                            exner, thv_ds_zt, clubb_params(:,iLscale_mu_entrain), & ! In
+                                            clubb_params(:,iLscale_tke_multiplier), & ! In
+                                            clubb_params(:,iLscale_pdf_launch_frac), & ! In
+                                            clubb_params(:,iLscale_up_weight), & ! In
+                                            lmin, l_implemented, & ! In
+                                            err_info, & ! InOut
+                                            Lscale, Lscale_up, Lscale_down ) ! Out
+
     case ( Lscale_direct )
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, & ! In
@@ -2056,7 +2082,7 @@ module mixing_length
 
  end subroutine calc_Lscale_directly
 
-!===============================================================================
+  !===============================================================================
 
  subroutine diagnose_Lscale_from_tau( nzm, nzt, ngrdcol, gr, & ! intent in
                         upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, & !intent in
@@ -2782,5 +2808,718 @@ module mixing_length
     return
 
   end subroutine diagnose_Lscale_from_tau
+
+  !=============================================================================
+
+  subroutine compute_coherent_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, &
+                                             rtm, pdf_params, em, Lscale_max, p_in_Pa, &
+                                             exner, thv_ds, Lscale_mu_entrain, &
+                                             Lscale_tke_multiplier, &
+                                             Lscale_pdf_launch_frac, &
+                                             Lscale_up_weight, lmin, &
+                                             l_implemented, &
+                                             err_info, &
+                                             Lscale, Lscale_up, Lscale_down )
+
+    ! Description:
+    !   Diagnose mixing length by weighting entraining moist-parcel travel with
+    !   the fraction of assumed launch energies able to cross each energy barrier.
+    !   Read thermodynamic-level environmental and PDF properties, momentum-level
+    !   TKE, positive entrainment rates [1/m], and per-column launch/mixing weights.
+    !   Return combined, upward, and downward lengths on thermodynamic levels [m];
+    !   err_info is passed through unchanged.
+    !
+    !   Analytic layer updates advance each trajectory in path order. With launch
+    !   energy scale E and running adverse-work barrier H [m^2/s^2], endpoint
+    !   coherence is (E/(E+H))^2. Integrate this weight assuming H is linear across
+    !   the layer, include the first layer at mean coherence <= 0.01, then stop.
+    !   A source constant selects local, maximum-endpoint, or arrival-weighted
+    !   directional lengths before floors, geometric mixing, and the final cap.
+    !   Parcel saturation always uses the local Flatau polynomial.
+    !
+    ! References:
+    !   doc/coherence_mixing_length.md: survival law and aggregation equations.
+    !   Golaz et al. (2002), J. Atmos. Sci., 59, 3540--3551: parcel background.
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        Cp, &
+        Rd, &
+        ep, &
+        ep1, &
+        ep2, &
+        Lv, &
+        grav, &
+        zero_threshold, &
+        one, &
+        one_half, &
+        zero
+
+    use grid_class, only: &
+        grid, &
+        zm2zt_api
+
+    use pdf_parameter_module, only: &
+        pdf_parameter
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use err_info_type_module, only: &
+        err_info_type
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    integer, intent(in) :: &
+      nzm,     & ! Number of momentum levels
+      nzt,     & ! Number of thermodynamic levels
+      ngrdcol    ! Number of grid columns
+
+    type(grid), intent(in) :: &
+      gr   ! Grid structure
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params   ! PDF parameters used for directional launch properties
+
+    logical, intent(in) :: &
+      l_implemented   ! True when CLUBB is run within a host model
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      thvm,     & ! Environmental virtual potential temperature [K]
+      thlm,     & ! Environmental liquid-water potential temperature [K]
+      rtm,      & ! Environmental total-water mixing ratio [kg/kg]
+      p_in_Pa,  & ! Pressure [Pa]
+      exner,    & ! Exner function [-]
+      thv_ds      ! Reference-state virtual potential temperature [K]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      em   ! Turbulent kinetic energy on momentum levels [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      Lscale_max,  & ! Maximum allowable mixing length [m]
+      Lscale_mu_entrain,                    & ! Fractional entrainment rate [1/m]
+      Lscale_tke_multiplier, & ! Mean launch energy divided by TKE [-]
+      Lscale_pdf_launch_frac,    & ! PDF departure retained in launch properties [-]
+      Lscale_up_weight           ! Upward weight in directional geometric mixing [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      lmin   ! Surface minimum mixing length [m]
+
+    !----------------------- Input/Output Variables ------------------------
+    type(err_info_type), intent(inout) :: &
+      err_info   ! Error information
+
+    !--------------------------- Output Variables --------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+      Lscale,      & ! Turbulent mixing length [m]
+      Lscale_up,   & ! Upward component of turbulent mixing length [m]
+      Lscale_down    ! Downward component of turbulent mixing length [m]
+
+    !--------------------------- Local Variables ---------------------------
+    integer, parameter :: &
+      no_overwrite = 0,                & ! Retain each locally launched reach
+      legacy_max_overwrite = 1,        & ! Extend the most distant parcel endpoint
+      coherence_average_overwrite = 2, & ! Average remaining reach by arrival coherence
+      overwrite_mode = coherence_average_overwrite ! Selected overwrite method
+
+    real( kind = core_rknd ), parameter :: &
+      zlmin = 0.1_core_rknd,                      & ! Directional floor after aggregation [m]
+      surface_layer_depth = 500._core_rknd,       & ! Depth of surface floor [m]
+      invs_sfclyr_depth = one / surface_layer_depth ! Inverse surface-floor depth [1/m]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      coherence_energy,       & ! Coherent parcel energy scale [m^2/s^2]
+      crossed_length_up,      & ! Upward coherence integral crossing each layer [m]
+      crossed_length_down,    & ! Downward coherence integral crossing each layer [m]
+      arrival_coherence_up,   & ! Upward parcel coherence at each target [-]
+      arrival_coherence_down, & ! Downward parcel coherence at each target [-]
+      layer_retention,        & ! Incoming parcel-property retention factor [-]
+      thl_entrainment,        & ! Environmental contribution to parcel thl [K]
+      rt_entrainment,         & ! Environmental contribution to parcel rt [kg/kg]
+      thl_launch,             & ! Directional parcel launch thl [K]
+      rt_launch,              & ! Directional parcel launch rt [kg/kg]
+      launch_buoyancy,        & ! Directional parcel launch buoyancy [m/s^2]
+      grav_coef,              & ! Gravity divided by environmental thv [m/s^2/K]
+      vapor_coef,             & ! Water-vapor contribution to parcel thv [K]
+      latent_coef               ! Liquid-water contribution to parcel thv [K]
+
+    integer :: &
+      i, j, k, prev_j, & ! Grid indices
+      step,            & ! Paired directional postprocessing step
+      up_k,            & ! Bottom-up target level
+      down_k             ! Top-down target level
+
+    real( kind = core_rknd ) :: &
+      layer_depth,          & ! Distance across the current layer [m]
+      retention,            & ! Incoming parcel-property retention factor [-]
+      response,             & ! Response to a layer-linear environment [-]
+      thl_parcel,           & ! Parcel liquid-water potential temperature [K]
+      rt_parcel,            & ! Parcel total-water mixing ratio [kg/kg]
+      liquid_temperature,   & ! Parcel liquid temperature, then its square [K, K^2]
+      saturation_rt,        & ! Parcel saturation mixing ratio [kg/kg]
+      rc_parcel,            & ! Parcel liquid-water mixing ratio [kg/kg]
+      oriented_buoyancy,    & ! Buoyancy in the path direction [m/s^2]
+      prev_buoyancy,        & ! Oriented buoyancy at the prior point [m/s^2]
+      prev_work,            & ! Cumulative buoyancy work [m^2/s^2]
+      max_barrier,          & ! Largest adverse-work barrier encountered [m^2/s^2]
+      prev_barrier,         & ! Adverse-work barrier at the layer start [m^2/s^2]
+      layer_coherence,      & ! Mean survival weight in the layer [-]
+      endpoint_coherence,   & ! Survival weight at the layer endpoint [-]
+      layer_length,         & ! Coherence integral through the current layer [m]
+      Lscale_tmp,           & ! Coherence-weighted parcel travel distance [m]
+      remaining_length_up,  & ! Total remaining upward reach [m]
+      remaining_length_down, & ! Total remaining downward reach [m]
+      maximum_endpoint,     & ! Highest upward parcel endpoint [m]
+      minimum_endpoint,     & ! Lowest downward parcel endpoint [m]
+      surface_floor,        & ! Height-dependent minimum mixing length [m]
+      liquid_coef             ! Constant in the saturation-excess formula [K^2]
+
+    !----------------------------- Begin Code ------------------------------
+
+    !$acc enter data create( coherence_energy, layer_retention, &
+    !$acc                    thl_entrainment, rt_entrainment, &
+    !$acc                    thl_launch, rt_launch, launch_buoyancy, &
+    !$acc                    grav_coef, vapor_coef, latent_coef )
+
+    if ( overwrite_mode == coherence_average_overwrite ) then
+      !$acc enter data create( crossed_length_up, crossed_length_down, &
+      !$acc                    arrival_coherence_up, arrival_coherence_down )
+    end if
+
+    ! Interpolate launch TKE to thermodynamic levels.
+    coherence_energy = zm2zt_api( nzm, nzt, ngrdcol, gr, em )
+    liquid_coef = ep * Lv**2 / ( Rd * Cp )
+
+    ! Precompute the inverse-square energy scale and buoyancy coefficients.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+
+        ! This is the value we use for the mean of the assumed parcel energy distribution.
+        ! It is a somewhat arbitrary choice, so it was given a scaling parameter
+        coherence_energy(i,k) = coherence_energy(i,k) * Lscale_tke_multiplier(i)
+
+        ! These coefficients reconstruct parcel thv and scale its buoyancy.
+        grav_coef(i,k)   = grav / thvm(i,k)
+        vapor_coef(i,k)  = ep1  * thv_ds(i,k)
+        latent_coef(i,k) = Lv   / ( exner(i,k) * Cp ) - ep2 * thv_ds(i,k)
+
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! The coherence-average mode needs directional crossing sums. At each target,
+    ! its own local launch contributes unit arrival coherence, even at zero TKE.
+    if ( overwrite_mode == coherence_average_overwrite ) then
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          crossed_length_up(i,k)      = zero
+          crossed_length_down(i,k)    = zero
+          arrival_coherence_up(i,k)   = one
+          arrival_coherence_down(i,k) = one
+        end do
+      end do
+      !$acc end parallel loop
+    end if
+
+    !-------------------- Upward calculation ---------------------
+
+    ! Precompute the upward entrainment update for every layer.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do j = gr%k_lb_zt + gr%grid_dir_indx, gr%k_ub_zt, gr%grid_dir_indx
+      do i = 1, ngrdcol
+        prev_j = j - gr%grid_dir_indx
+        layer_depth = abs( gr%zt(i,j) - gr%zt(i,prev_j) )
+
+        ! Integrate entrainment analytically through a layer-linear environment.
+        retention = exp( -Lscale_mu_entrain(i) * layer_depth )
+        response = ( one - retention ) / ( Lscale_mu_entrain(i) * layer_depth )
+
+        layer_retention(i,j) = retention
+        thl_entrainment(i,j) = thlm(i,j) - retention * thlm(i,prev_j) &
+                               - response * ( thlm(i,j) - thlm(i,prev_j) )
+        rt_entrainment(i,j)  = rtm(i,j) - retention * rtm(i,prev_j) &
+                               - response * ( rtm(i,j) - rtm(i,prev_j) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Diagnose every upward launch state and buoyancy in parallel.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+
+        ! Blend toward PDF component 1 to define the upward launch state.
+        ! Using Lscale_pdf_launch_frac > 0 is experimental, and seems to introduce
+        ! a tight feedback loop that can cause instability
+        thl_launch(i,k) = thlm(i,k) + Lscale_pdf_launch_frac(i) &
+                                    * ( pdf_params%thl_1(i,k) - thlm(i,k) )
+        rt_launch(i,k) = rtm(i,k) + Lscale_pdf_launch_frac(i) &
+                                  * ( pdf_params%rt_1(i,k) - rtm(i,k) )
+
+        ! Saturation-adjust the launch state before diagnosing its buoyancy.
+        liquid_temperature = thl_launch(i,k) * exner(i,k)
+        saturation_rt      = sat_mixrat_liq_flatau( p_in_Pa(i,k), liquid_temperature )
+        liquid_temperature = liquid_temperature**2
+
+        rc_parcel = max( ( rt_launch(i,k) - saturation_rt ) * liquid_temperature &
+                       / ( liquid_temperature + liquid_coef * saturation_rt ), &
+                         zero_threshold )
+
+        launch_buoyancy(i,k) = grav_coef(i,k) &
+                             * ( thl_launch(i,k) + vapor_coef(i,k) * rt_launch(i,k) &
+                               + latent_coef(i,k) * rc_parcel ) - grav
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Compute the coherence-weighted upward length for each launch level.
+    !$acc parallel loop collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+
+        Lscale_tmp = zero
+
+        ! Initialize the parcel state and path-integral trackers at launch.
+        thl_parcel  = thl_launch(i,k)
+        rt_parcel   =  rt_launch(i,k)
+
+        prev_buoyancy = launch_buoyancy(i,k)
+        prev_work     = zero
+        prev_barrier  = zero
+
+        ! The upper boundary is outside the active mixing-length domain.
+        do j = k + gr%grid_dir_indx, gr%k_ub_zt - gr%grid_dir_indx, gr%grid_dir_indx
+
+          layer_depth = abs( gr%zt(i,j) - gr%zt(i,j - gr%grid_dir_indx) )
+
+          ! Entrain layer-mean air into the parcel as it rises.
+          thl_parcel  = thl_entrainment(i,j) + layer_retention(i,j) * thl_parcel
+          rt_parcel   = rt_entrainment(i,j) + layer_retention(i,j) * rt_parcel
+
+          ! Diagnose cloud liquid water for the parcel buoyancy calculation.
+          liquid_temperature = thl_parcel * exner(i,j)
+          saturation_rt = sat_mixrat_liq_flatau( p_in_Pa(i,j), liquid_temperature )
+          liquid_temperature = liquid_temperature**2
+          rc_parcel = ( rt_parcel - saturation_rt ) * liquid_temperature &
+                      / ( liquid_temperature + liquid_coef * saturation_rt )
+          rc_parcel = max( rc_parcel, zero_threshold )
+
+          ! Diagnose upward-oriented buoyancy: B = g * ( thv_parcel / thvm - 1 ).
+          oriented_buoyancy = grav_coef(i,j) &
+                            * ( thl_parcel + vapor_coef(i,j) * rt_parcel &
+                              + latent_coef(i,j) * rc_parcel ) - grav
+
+          ! Integrate buoyancy over the layer to update cumulative parcel work.
+          prev_work = prev_work + one_half * ( prev_buoyancy + oriented_buoyancy ) &
+                    * layer_depth
+
+          ! The barrier is the greatest energy deficit encountered along the path.
+          max_barrier = max( prev_barrier, -prev_work )
+
+          ! Integrate survival exactly for a barrier linear between these endpoints.
+          layer_coherence = coherence_energy(i,k)**2 &
+                          / ( ( coherence_energy(i,k) + prev_barrier ) &
+                            * ( coherence_energy(i,k) + max_barrier ) )
+
+          layer_length = layer_coherence * layer_depth
+
+          if ( overwrite_mode == coherence_average_overwrite ) then
+
+            endpoint_coherence = coherence_energy(i,k)**2 &
+                                / ( coherence_energy(i,k) + max_barrier )**2
+
+            ! These sums reconstruct remaining reach without storing trajectories.
+            !$acc atomic update
+            crossed_length_up(i,j) = crossed_length_up(i,j) + layer_length
+            !$acc atomic update
+            arrival_coherence_up(i,j) = arrival_coherence_up(i,j) &
+                                      + endpoint_coherence
+          end if
+
+          ! Accumulate coherence-weighted distance. Coherence is one without a barrier
+          ! and cannot increase because the running barrier cannot decrease.
+          Lscale_tmp = Lscale_tmp + layer_length
+
+          ! Include this layer, then neglect the remaining low-coherence tail.
+          ! This has almost no effect on the result, and reduces the runtime cost
+          if ( layer_coherence <= 0.01 ) exit
+
+          prev_buoyancy = oriented_buoyancy
+          prev_barrier  = max_barrier
+
+        end do
+
+        Lscale_up(i,k) = Lscale_tmp
+
+      end do
+    end do
+    !$acc end parallel loop
+
+    !------------------- Downward calculation --------------------
+
+    ! Reuse the same scratch arrays for the downward layer updates.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do j = gr%k_ub_zt - gr%grid_dir_indx, gr%k_lb_zt, -gr%grid_dir_indx
+      do i = 1, ngrdcol
+        prev_j = j + gr%grid_dir_indx
+        layer_depth = abs( gr%zt(i,j) - gr%zt(i,prev_j) )
+
+        ! Integrate entrainment analytically through a layer-linear environment.
+        retention = exp( -Lscale_mu_entrain(i) * layer_depth )
+        response = ( one - retention ) / ( Lscale_mu_entrain(i) * layer_depth )
+
+        layer_retention(i,j) = retention
+        thl_entrainment(i,j) = thlm(i,j) - retention * thlm(i,prev_j) &
+                             - response * ( thlm(i,j) - thlm(i,prev_j) )
+        rt_entrainment(i,j) = rtm(i,j) - retention * rtm(i,prev_j) &
+                            - response * ( rtm(i,j) - rtm(i,prev_j) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Diagnose every downward launch state and buoyancy in parallel.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+
+        ! Blend toward PDF component 2 to define the downward launch state.
+        ! Using Lscale_pdf_launch_frac > 0 is experimental, and seems to introduce
+        ! a tight feedback loop that can cause instability
+        thl_launch(i,k) = thlm(i,k) + Lscale_pdf_launch_frac(i) &
+                                    * ( pdf_params%thl_2(i,k) - thlm(i,k) )
+        rt_launch(i,k) = rtm(i,k) + Lscale_pdf_launch_frac(i) &
+                                  * ( pdf_params%rt_2(i,k) - rtm(i,k) )
+
+        ! Saturation-adjust the launch state before diagnosing its buoyancy.
+        liquid_temperature = thl_launch(i,k) * exner(i,k)
+        saturation_rt = sat_mixrat_liq_flatau( p_in_Pa(i,k), liquid_temperature )
+        liquid_temperature = liquid_temperature**2
+
+        rc_parcel = max( ( rt_launch(i,k) - saturation_rt ) * liquid_temperature &
+                       / ( liquid_temperature + liquid_coef * saturation_rt ), &
+                         zero_threshold )
+
+        launch_buoyancy(i,k) = grav - grav_coef(i,k) &
+                             * ( thl_launch(i,k) + vapor_coef(i,k) * rt_launch(i,k) &
+                               + latent_coef(i,k) * rc_parcel )
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Compute the coherence-weighted downward length for each launch level.
+    !$acc parallel loop collapse(2) default(present)
+    do k = 1, nzt
+      do i = 1, ngrdcol
+
+        Lscale_tmp = zero
+
+        ! Initialize the parcel state and path-integral trackers at launch.
+        thl_parcel  = thl_launch(i,k)
+        rt_parcel   =  rt_launch(i,k)
+
+        prev_buoyancy = launch_buoyancy(i,k)
+        prev_work     = zero
+        prev_barrier  = zero
+
+        ! Track the parcel from its launch level down to the lower boundary.
+        do j = k - gr%grid_dir_indx, gr%k_lb_zt, -gr%grid_dir_indx
+
+          layer_depth = abs( gr%zt(i,j) - gr%zt(i,j + gr%grid_dir_indx) )
+
+          ! Entrain layer-mean air into the parcel as it descends.
+          thl_parcel = thl_entrainment(i,j) + layer_retention(i,j) * thl_parcel
+          rt_parcel = rt_entrainment(i,j) + layer_retention(i,j) * rt_parcel
+
+          ! Diagnose cloud liquid water for the parcel buoyancy calculation.
+          liquid_temperature = thl_parcel * exner(i,j)
+          saturation_rt = sat_mixrat_liq_flatau( p_in_Pa(i,j), liquid_temperature )
+          liquid_temperature = liquid_temperature**2
+          rc_parcel = max( ( rt_parcel - saturation_rt ) * liquid_temperature &
+                        / ( liquid_temperature + liquid_coef * saturation_rt ), &
+                          zero_threshold )
+
+          ! Reverse the physical buoyancy sign to orient it along the downward path.
+          oriented_buoyancy = grav - grav_coef(i,j) &
+                            * ( thl_parcel + vapor_coef(i,j) * rt_parcel &
+                              + latent_coef(i,j) * rc_parcel )
+
+          ! Integrate oriented buoyancy to update cumulative parcel work.
+          prev_work = prev_work + one_half * ( prev_buoyancy + oriented_buoyancy ) &
+                    * layer_depth
+
+          ! The barrier is the greatest energy deficit encountered along the path.
+          max_barrier = max( prev_barrier, -prev_work )
+
+          ! Integrate survival for a barrier linear between the layer endpoints.
+          layer_coherence = coherence_energy(i,k)**2 &
+                          / ( ( coherence_energy(i,k) + prev_barrier ) &
+                            * ( coherence_energy(i,k) + max_barrier ) )
+
+          layer_length = layer_coherence * layer_depth
+
+          ! Accumulate coherence-weighted distance before testing the tail cutoff.
+          if ( overwrite_mode == coherence_average_overwrite &
+                .and. k /= gr%k_ub_zt ) then
+
+            endpoint_coherence = coherence_energy(i,k)**2 &
+                                / ( coherence_energy(i,k) + max_barrier )**2
+            !$acc atomic update
+            crossed_length_down(i,j) = crossed_length_down(i,j) + layer_length
+            !$acc atomic update
+            arrival_coherence_down(i,j) = arrival_coherence_down(i,j) &
+                                        + endpoint_coherence
+          end if
+
+          Lscale_tmp = Lscale_tmp + layer_length
+
+          ! Include this layer, then neglect the remaining low-coherence tail.
+          ! This has almost no effect on the result, and reduces the runtime cost
+          if ( layer_coherence <= 0.01 ) exit
+
+          prev_buoyancy = oriented_buoyancy
+          prev_barrier  = max_barrier
+
+        end do
+
+        Lscale_down(i,k) = Lscale_tmp
+
+      end do
+    end do
+    !$acc end parallel loop
+
+    !-------------------- Aggregation ---------------------
+
+    ! Do some final smoothing on the result
+    if ( overwrite_mode == legacy_max_overwrite ) then
+
+      ! The legacy_max_overwrite method replaces Lscale values with the
+      ! maximum of all parcels that crossed it. For example, if a parcel
+      ! that starts on k=10 rises to k=20, but one from k=11 only rises
+      ! to k=15, this overwriting method will boost the k=11 result as
+      ! if it rose to k=20.
+
+      ! This was created primarily to boost the final Lscale result,
+      ! but also has a smoothing effect.
+
+      !$acc parallel loop gang default(present)
+      do i = 1, ngrdcol
+        maximum_endpoint = gr%zt(i,gr%k_lb_zt) &
+                         + max( zlmin, Lscale_up(i,gr%k_lb_zt) )
+        minimum_endpoint = gr%zt(i,gr%k_ub_zt) &
+                         - max( zlmin, Lscale_down(i,gr%k_ub_zt) )
+
+        !$acc loop seq
+        do step = 0, nzt - 2
+          up_k = gr%k_lb_zt + step * gr%grid_dir_indx
+          down_k = gr%k_ub_zt - ( step + 1 ) * gr%grid_dir_indx
+
+          Lscale_up(i,up_k) = max( zlmin, Lscale_up(i,up_k) )
+          Lscale_down(i,down_k) = max( zlmin, Lscale_down(i,down_k) )
+
+          ! Match the legacy active bounds at the surface and upper boundary.
+          if ( step > 0 .and. step < nzt - 2 ) then
+            Lscale_up(i,up_k) = max( Lscale_up(i,up_k), &
+                                    maximum_endpoint - gr%zt(i,up_k) )
+            maximum_endpoint = max( maximum_endpoint, &
+                                    gr%zt(i,up_k) + Lscale_up(i,up_k) )
+          end if
+          if ( step < nzt - 2 ) then
+            Lscale_down(i,down_k) = max( Lscale_down(i,down_k), &
+                                        gr%zt(i,down_k) - minimum_endpoint )
+            minimum_endpoint = min( minimum_endpoint, &
+                                    gr%zt(i,down_k) - Lscale_down(i,down_k) )
+          end if
+        end do
+      end do
+      !$acc end parallel loop
+
+    else if ( overwrite_mode == coherence_average_overwrite ) then
+
+      ! The coherence_average_overwrite averages how far arriving parcels can still
+      ! travel, weighted by their coherence at the level.
+      ! For an upward example on an evenly spaced grid, suppose the mixing lengths
+      ! from k=10,11,12,13 would reach k=20, and those from k=14,15 would reach k=18.
+      ! If all arriving parcels have coherence 1 and none from below k=10 arrive,
+      ! the averaged lengths at k=14,15 correspond to reaching
+      ! k=(4/5)*20+(1/5)*18 and k=(4/6)*20+(2/6)*18 respectively.
+
+      !$acc parallel loop gang default(present)
+      do i = 1, ngrdcol
+        remaining_length_up = Lscale_up(i,gr%k_lb_zt)
+        remaining_length_down = Lscale_down(i,gr%k_ub_zt - gr%grid_dir_indx)
+
+        !$acc loop seq
+        do step = 0, nzt - 2
+          up_k = gr%k_lb_zt + step * gr%grid_dir_indx
+          down_k = gr%k_ub_zt - ( step + 1 ) * gr%grid_dir_indx
+
+          if ( step > 0 ) then
+            remaining_length_up = remaining_length_up - crossed_length_up(i,up_k) &
+                                + Lscale_up(i,up_k)
+            remaining_length_down = remaining_length_down &
+                                  - crossed_length_down(i,down_k) &
+                                  + Lscale_down(i,down_k)
+          end if
+          Lscale_up(i,up_k) = max( zlmin, remaining_length_up &
+                                 / arrival_coherence_up(i,up_k) )
+          Lscale_down(i,down_k) = max( zlmin, remaining_length_down &
+                                     / arrival_coherence_down(i,down_k) )
+        end do
+      end do
+      !$acc end parallel loop
+
+    else if ( overwrite_mode == no_overwrite ) then
+
+      ! No overwrite, just ensure zlmin is respected
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          Lscale_up(i,k)   = max( zlmin, Lscale_up(i,k) )
+          Lscale_down(i,k) = max( zlmin, Lscale_down(i,k) )
+        end do
+      end do
+      !$acc end parallel loop
+
+    end if
+
+    ! Apply surface constraints and combine the two directional lengths.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = gr%k_lb_zt, gr%k_ub_zt - gr%grid_dir_indx, gr%grid_dir_indx
+      do i = 1, ngrdcol
+
+        ! The minimum length decays linearly over the lowest 500 m.
+        if ( l_implemented ) then
+          surface_floor = ( surface_layer_depth - ( gr%zt(i,k) - gr%zm(i,gr%k_lb_zm) ) ) &
+                          * lmin * invs_sfclyr_depth
+        else
+          surface_floor = ( surface_layer_depth - gr%zt(i,k) ) &
+                          * lmin * invs_sfclyr_depth
+        end if
+
+        ! Apply the same surface floor before combining the directional lengths.
+        Lscale_up(i,k) = max( surface_floor, Lscale_up(i,k) )
+        Lscale_down(i,k) = max( surface_floor, Lscale_down(i,k) )
+
+        ! Weighted geometric mean between Lscale_up and Lscale_down.
+        Lscale(i,k) = Lscale_up(i,k)**Lscale_up_weight(i) &
+                    * Lscale_down(i,k)**( one - Lscale_up_weight(i) )
+
+        ! Enforce the configured upper bound on the combined mixing length.
+        Lscale(i,k) = min( Lscale(i,k), Lscale_max(i) )
+
+        ! The highest active level also supplies the zero-gradient lid value.
+        if ( k == gr%k_ub_zt - gr%grid_dir_indx ) then
+          Lscale(i,gr%k_ub_zt) = Lscale(i,k)
+        end if
+
+      end do
+    end do
+    !$acc end parallel loop
+
+    if ( overwrite_mode == coherence_average_overwrite ) then
+      !$acc exit data delete( crossed_length_up, crossed_length_down, &
+      !$acc                   arrival_coherence_up, arrival_coherence_down )
+    end if
+
+    !$acc exit data delete( coherence_energy, &
+    !$acc                   layer_retention, &
+    !$acc                   thl_entrainment, rt_entrainment, &
+    !$acc                   thl_launch, rt_launch, launch_buoyancy, &
+    !$acc                   grav_coef, vapor_coef, latent_coef )
+
+    return
+
+  end subroutine compute_coherent_mixing_length
+
+
+  !=============================================================================
+
+  pure function sat_mixrat_liq_flatau( pressure, temperature ) result( saturation_rt )
+  !$acc routine seq
+
+    ! Description:
+    !   Compute liquid saturation mixing ratio using only the Flatau polynomial.
+    !   This compact specialization is colocated with the mixing-length closure
+    !   so the compiler can inline it into parcel trajectories.
+    !
+    !   It is also intentionally the serial method as opposed to the
+    !   complex pipeline / multi-fma unit friendlier version. This was
+    !   to minimize register usage in the complex loop it is used in.
+    !   See saturation.F90 for more details.
+    !
+    ! Note:
+    !   It is usually frowned upon to make custom saturation equations like
+    !   this because it can cause different parts of code to detect cloud
+    !   transitions differently, leading to inconsistent calculations.
+    !   We believe that there is no similar concern in this instance
+    !   because this is used only to compute the behavior of "virtual" parcels
+    !   in the above methods. Virtual in the sense that their lifetime is
+    !   only inside the Lscale calculation, which is already somewhat
+    !   arbitrary, and none of that internal information escapes.
+    !
+    ! Inputs and output:
+    !   pressure [Pa] and temperature [K] are scalar inputs; saturation_rt [kg/kg]
+    !   is returned. Evaluate the polynomial no lower than -85 deg C. If pressure
+    !   minus saturation vapor pressure is less than 1 Pa, return ep (the ratio
+    !   of dry-air to water-vapor gas constants) instead of dividing.
+    !
+    ! References:
+    !   Flatau et al. (1992), J. Appl. Meteor., 31, 1507--1513.
+    !   saturation.F90: shared saturation formulas and polynomial evaluations.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use constants_clubb, only: &
+        ep, &
+        T_freeze_K
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    real( kind = core_rknd ), intent(in) :: &
+      pressure,     & ! Pressure [Pa]
+      temperature    ! Temperature [K]
+
+    !--------------------------- Output Variables --------------------------
+    real( kind = core_rknd ) :: &
+      saturation_rt   ! Saturation mixing ratio [kg/kg]
+
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), parameter :: &
+      minimum_temperature = -85._core_rknd   ! Polynomial lower bound [deg C]
+
+    real( kind = core_rknd ) :: &
+      temperature_celsius, & ! Clipped temperature [deg C]
+      saturation_pressure    ! Saturation vapor pressure [Pa]
+
+    !----------------------------- Begin Code ------------------------------
+    temperature_celsius = max( temperature - T_freeze_K, minimum_temperature )
+
+    saturation_pressure = 100._core_rknd &
+      * ( 6.11583699_core_rknd &
+        + temperature_celsius * ( 0.444606896_core_rknd &
+        + temperature_celsius * ( 0.143177157e-1_core_rknd &
+        + temperature_celsius * ( 0.264224321e-3_core_rknd &
+        + temperature_celsius * ( 0.299291081e-5_core_rknd &
+        + temperature_celsius * ( 0.203154182e-7_core_rknd &
+        + temperature_celsius * ( 0.702620698e-10_core_rknd &
+        + temperature_celsius * ( 0.379534310e-13_core_rknd &
+        - temperature_celsius *   0.321582393e-15_core_rknd ) ) ) ) ) ) ) )
+
+    if ( pressure - saturation_pressure < 1._core_rknd ) then
+      saturation_rt = ep
+    else
+      saturation_rt = ep * saturation_pressure / ( pressure - saturation_pressure )
+    end if
+
+    return
+
+  end function sat_mixrat_liq_flatau
 
 end module mixing_length

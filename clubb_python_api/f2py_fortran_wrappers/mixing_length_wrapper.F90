@@ -3,10 +3,10 @@
 ! Expose the Fortran mixing-length routines to the compiled Python API.
 !
 ! Usage:
-!   f2py_calc_lscale(): complete length/time diagnosis for Lscale_method 1 or 2.
+!   f2py_calc_lscale(): complete length/time diagnosis for Lscale_method 1--3.
 !   f2py_set_lscale_max(): standalone or host-spacing length cap.
 !   f2py_diagnose_lscale_from_tau(): method 2 and its inverse-time contributions.
-!   f2py_calc_lscale_directly(): legacy parcel method 1.
+!   f2py_calc_lscale_directly(): legacy/coherent parcel methods 1 or 3.
 !
 ! Understanding:
 !   Python's public wrappers populate derived_type_storage before these calls.
@@ -51,7 +51,7 @@ subroutine f2py_calc_lscale(nzm, nzt, ngrdcol, l_implemented, host_dx, host_dy, 
 
   ! Description:
   !   Read thermodynamic fields, momentum-level moments/TKE, per-column
-  !   parameters, and method selector 1 or 2. Return length/time profiles and
+  !   parameters, and method selector 1--3. Return length/time profiles and
   !   update stored_stats/stored_err_info using stored_grid/stored_pdf_params.
   !   Output suffixes identify grids; lengths are m, times s, inverse times 1/s.
 
@@ -168,7 +168,7 @@ subroutine f2py_calc_lscale_directly(ngrdcol, nzm, nzt, &
     lscale, lscale_up, lscale_down)
 
   ! Description:
-  !   Compute legacy parcel method 1 from environmental/PDF properties, TKE,
+  !   Select parcel method 1 or 3 from environmental/PDF properties, TKE,
   !   and per-column parameters. Return three thermodynamic-level lengths [m].
   !   Read stored_grid/stored_pdf_params and update stored_stats/stored_err_info.
 

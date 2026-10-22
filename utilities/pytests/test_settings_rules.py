@@ -63,10 +63,10 @@ def test_range_constraints():
     assert "invalid_saturation_formula" in _codes(parameters={}, flags={"saturation_formula": 9})
 
 
-def test_invalid_lscale_method_is_rejected():
-    """Accept legacy/tau selectors and reject unsupported method values."""
-    assert "invalid_lscale_method" in _codes(parameters={}, flags={"Lscale_method": 3})
-    for method in (1, 2):
+def test_removed_lscale_method_is_rejected():
+    """Accept method selectors 1--3 and require a validation error for removed selector 4."""
+    assert "invalid_lscale_method" in _codes(parameters={}, flags={"Lscale_method": 4})
+    for method in (1, 2, 3):
         assert "invalid_lscale_method" not in _codes(parameters={}, flags={"Lscale_method": method})
 
 
@@ -83,11 +83,16 @@ def test_richardson_closures_replace_their_tunable_functions():
 
 
 def test_lscale_mode_switches_the_correct_parameter_families():
-    """Check which legacy and inverse-time parameter families are active for each method.
+    """Check which direct, coherent, and inverse-time parameter families are active for
+    each method.
     """
     direct = parameter_activity(flags={"Lscale_method": 1})
     assert all(direct[name][0] == "inactive-mode" for name in (
         "C_invrs_tau_bkgnd", "C_invrs_tau_N2", "C_invrs_tau_wpxp_N2_thresh",
+    ))
+    coherence = parameter_activity(flags={"Lscale_method": 3})
+    assert all(coherence[name][0] == "active" for name in (
+        "Lscale_tke_multiplier", "Lscale_pdf_launch_frac", "Lscale_up_weight",
     ))
     tau = parameter_activity(flags={"Lscale_method": 2})
     assert all(tau[name][0] == "inactive-mode" for name in (
@@ -120,3 +125,18 @@ def test_microphysics_constraints():
 
 def test_host_constraints():
     assert "host_incompatible_flag" in _codes(parameters={}, flags={"l_rtm_nudge": True}, l_implemented=True)
+
+
+def test_launch_multiplier_is_positive_without_an_upper_bound():
+    """Accept positive/large energy multipliers, reject nonpositive values, and enforce
+    directional weights in [0,1].
+    """
+    for value in (0.1, 1.0, 1000.0):
+        issues = validate_clubb_settings(
+            parameters={"Lscale_tke_multiplier": value}, flags={"Lscale_method": 3}
+        )
+        assert not [issue for issue in issues if issue.setting == "Lscale_tke_multiplier"]
+    for value in (0.0, -1.0):
+        assert "parameter_below_min" in _codes(parameters={"Lscale_tke_multiplier": value})
+    assert "parameter_below_min" in _codes(parameters={"Lscale_up_weight": -0.1})
+    assert "parameter_above_max" in _codes(parameters={"Lscale_up_weight": 1.1})

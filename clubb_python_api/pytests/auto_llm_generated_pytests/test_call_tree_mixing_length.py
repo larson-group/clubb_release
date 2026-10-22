@@ -111,12 +111,14 @@ def test_diagnose_lscale_from_tau_basic(gr):
     assert np.all(err == 0), f"diagnose_lscale_from_tau set err_code={err}"
 
 
-def test_calc_lscale_directly_basic(gr):
+@pytest.mark.parametrize("method", [1, 3])
+def test_calc_lscale_directly_basic(gr, method):
     """calc_lscale_directly should return finite Lscale arrays with nzt shape."""
     ngrdcol, nzm, nzt = gr.ngrdcol, gr.nzm, gr.nzt
     clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
     flags = clubb_api.get_default_config_flags()
 
+    # The coherence closure launches upward from component 1 and downward from 2.
     pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
     pdf_params.rt_1[:] = 0.01
     pdf_params.thl_1[:] = 300.0
@@ -147,7 +149,7 @@ def test_calc_lscale_directly_basic(gr):
         clubb_params=clubb_params,
         saturation_formula=int(flags.saturation_formula),
         l_lscale_plume_centered=False,
-        lscale_method=1,
+        lscale_method=method,
         err_info=err_info,
     )
 
@@ -164,3 +166,296 @@ def test_calc_lscale_directly_basic(gr):
 
     err = clubb_api.get_err_code(ngrdcol)
     assert np.all(err == 0), f"calc_lscale_directly set err_code={err}"
+
+
+def test_coherence_mixing_length_ignores_saturation_formula(gr):
+    """Method 3 uses local Flatau saturation for both directional parcel paths."""
+    ngrdcol, nzm, nzt = gr.ngrdcol, gr.nzm, gr.nzt
+    clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
+    launch_index = clubb_api.get_param_names().index("Lscale_pdf_launch_frac")
+    clubb_params[:, launch_index] = 1.0
+
+    thlm = np.tile(np.linspace(285.0, 300.0, nzt), (ngrdcol, 1))
+    rtm = np.full((ngrdcol, nzt), 0.022)
+    pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
+    pdf_params.thl_1[:] = thlm + 0.5
+    pdf_params.rt_1[:] = rtm + 0.001
+    pdf_params.thl_2[:] = thlm - 0.5
+    pdf_params.rt_2[:] = rtm - 0.001
+    pdf_params.mixt_frac[:] = 0.5
+
+    inputs = dict(
+        ngrdcol=ngrdcol,
+        nzm=nzm,
+        nzt=nzt,
+        gr=gr,
+        l_implemented=True,
+        p_in_pa=np.full((ngrdcol, nzt), 90000.0),
+        exner=np.ones((ngrdcol, nzt)),
+        rtm=rtm,
+        thlm=thlm,
+        thvm=thlm * (1.0 + 0.61 * rtm) + 2.0,
+        rtp2_zt=np.full((ngrdcol, nzt), 1.0e-6),
+        thlp2_zt=np.full((ngrdcol, nzt), 1.0e-4),
+        rtpthlp_zt=np.zeros((ngrdcol, nzt)),
+        pdf_params=pdf_params,
+        em=np.full((ngrdcol, nzm), 2.0),
+        thv_ds_zt=thlm,
+        lscale_max=np.full(ngrdcol, 1.0e5),
+        lmin=1.0,
+        clubb_params=clubb_params,
+        l_lscale_plume_centered=False,
+        lscale_method=3,
+    )
+
+    results = []
+    for saturation_formula in (1, 2, 3, 4):
+        _err_info, *lengths = clubb_api.calc_lscale_directly(
+            **inputs,
+            saturation_formula=saturation_formula,
+            err_info=ErrInfo(ngrdcol=ngrdcol),
+        )
+        assert np.all(clubb_api.get_err_code(ngrdcol) == 0)
+        assert all(np.all(np.isfinite(length)) for length in lengths)
+        results.append(lengths)
+
+    for lengths in results[1:]:
+        for got, expected in zip(lengths, results[0]):
+            np.testing.assert_array_equal(got, expected)
+
+
+def test_Lscale_tke_multiplier_reaches_new_mixing_length(gr):
+    """Positive energy is finite; multipliers above the former cap increase reach."""
+    ngrdcol, nzm, nzt = gr.ngrdcol, gr.nzm, gr.nzt
+    clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
+    multiplier_index = clubb_api.get_param_names().index("Lscale_tke_multiplier")
+    clubb_params[:, multiplier_index] = (0.1, 1000.0)
+
+    flags = clubb_api.get_default_config_flags()
+    stable_thvm = np.tile(np.linspace(302.0, 310.0, nzt), (ngrdcol, 1))
+    pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
+    pdf_params.rt_1[:] = 0.01
+    pdf_params.thl_1[:] = 300.0
+    pdf_params.rt_2[:] = 0.01
+    pdf_params.thl_2[:] = 300.0
+    pdf_params.mixt_frac[:] = 0.5
+
+    _err_info, _lscale, lscale_up, _lscale_down = clubb_api.calc_lscale_directly(
+        ngrdcol=ngrdcol,
+        nzm=nzm,
+        nzt=nzt,
+        gr=gr,
+        l_implemented=True,
+        p_in_pa=np.full((ngrdcol, nzt), 100000.0),
+        exner=np.ones((ngrdcol, nzt)),
+        rtm=np.full((ngrdcol, nzt), 0.01),
+        thlm=np.full((ngrdcol, nzt), 300.0),
+        thvm=stable_thvm,
+        rtp2_zt=np.full((ngrdcol, nzt), 1.0e-6),
+        thlp2_zt=np.full((ngrdcol, nzt), 1.0e-4),
+        rtpthlp_zt=np.zeros((ngrdcol, nzt)),
+        pdf_params=pdf_params,
+        em=np.full((ngrdcol, nzm), 0.2),
+        thv_ds_zt=np.full((ngrdcol, nzt), 300.0),
+        lscale_max=np.full(ngrdcol, 1.0e5),
+        lmin=1.0,
+        clubb_params=clubb_params,
+        saturation_formula=int(flags.saturation_formula),
+        l_lscale_plume_centered=False,
+        lscale_method=3,
+        err_info=ErrInfo(ngrdcol=ngrdcol),
+    )
+
+    assert np.all(np.isfinite(lscale_up))
+    assert np.all(np.isfinite(_lscale))
+    assert np.all(np.isfinite(_lscale_down))
+    assert np.all(lscale_up[1] >= lscale_up[0] - 1.0e-12)
+    assert np.max(lscale_up[1] - lscale_up[0]) > 1.0
+
+
+def test_lscale_up_weight_blends_directional_lengths(gr):
+    """Weight endpoints select the downward and upward lengths exactly."""
+    ngrdcol, nzm, nzt = gr.ngrdcol, gr.nzm, gr.nzt
+    clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
+    weight_index = clubb_api.get_param_names().index("Lscale_up_weight")
+    clubb_params[:, weight_index] = (0.0, 1.0)
+
+    flags = clubb_api.get_default_config_flags()
+    pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
+    pdf_params.rt_1[:] = 0.01
+    pdf_params.thl_1[:] = 300.0
+    pdf_params.rt_2[:] = 0.01
+    pdf_params.thl_2[:] = 300.0
+    pdf_params.mixt_frac[:] = 0.5
+
+    _err_info, lscale, lscale_up, lscale_down = clubb_api.calc_lscale_directly(
+        ngrdcol=ngrdcol,
+        nzm=nzm,
+        nzt=nzt,
+        gr=gr,
+        l_implemented=True,
+        p_in_pa=np.full((ngrdcol, nzt), 100000.0),
+        exner=np.ones((ngrdcol, nzt)),
+        rtm=np.full((ngrdcol, nzt), 0.01),
+        thlm=np.full((ngrdcol, nzt), 300.0),
+        thvm=np.tile(np.linspace(302.0, 310.0, nzt), (ngrdcol, 1)),
+        rtp2_zt=np.full((ngrdcol, nzt), 1.0e-6),
+        thlp2_zt=np.full((ngrdcol, nzt), 1.0e-4),
+        rtpthlp_zt=np.zeros((ngrdcol, nzt)),
+        pdf_params=pdf_params,
+        em=np.full((ngrdcol, nzm), 0.2),
+        thv_ds_zt=np.full((ngrdcol, nzt), 300.0),
+        lscale_max=np.full(ngrdcol, 1.0e5),
+        lmin=1.0,
+        clubb_params=clubb_params,
+        saturation_formula=int(flags.saturation_formula),
+        l_lscale_plume_centered=False,
+        lscale_method=3,
+        err_info=ErrInfo(ngrdcol=ngrdcol),
+    )
+
+    active_levels = slice(0, gr.k_ub_zt)
+    np.testing.assert_allclose(lscale[0, active_levels], lscale_down[0, active_levels])
+    np.testing.assert_allclose(lscale[1, active_levels], lscale_up[1, active_levels])
+
+
+@pytest.mark.parametrize("pdf_launch_frac", [None, 1.0])
+def test_component_one_launch_state_reaches_new_mixing_length(gr, pdf_launch_frac):
+    """Warmer, moister component-1 launches should travel farther upward."""
+    ngrdcol, nzm, nzt = gr.ngrdcol, gr.nzm, gr.nzt
+    clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
+    if pdf_launch_frac is not None:
+        clubb_params[:, clubb_api.get_param_names().index("Lscale_pdf_launch_frac")] = pdf_launch_frac
+    flags = clubb_api.get_default_config_flags()
+    pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
+    pdf_params.rt_1[:] = 0.01
+    pdf_params.thl_1[:] = 300.0
+    pdf_params.rt_2[:] = 0.01
+    pdf_params.thl_2[:] = 300.0
+    pdf_params.mixt_frac[:] = 0.5
+    pdf_params.rt_1[1, :] = 0.015
+    pdf_params.thl_1[1, :] = 304.0
+
+    _err_info, _lscale, lscale_up, _lscale_down = clubb_api.calc_lscale_directly(
+        ngrdcol=ngrdcol,
+        nzm=nzm,
+        nzt=nzt,
+        gr=gr,
+        l_implemented=True,
+        p_in_pa=np.full((ngrdcol, nzt), 100000.0),
+        exner=np.ones((ngrdcol, nzt)),
+        rtm=np.full((ngrdcol, nzt), 0.01),
+        thlm=np.full((ngrdcol, nzt), 300.0),
+        thvm=np.tile(np.linspace(302.0, 310.0, nzt), (ngrdcol, 1)),
+        rtp2_zt=np.full((ngrdcol, nzt), 1.0e-6),
+        thlp2_zt=np.full((ngrdcol, nzt), 1.0e-4),
+        rtpthlp_zt=np.zeros((ngrdcol, nzt)),
+        pdf_params=pdf_params,
+        em=np.full((ngrdcol, nzm), 0.2),
+        thv_ds_zt=np.full((ngrdcol, nzt), 300.0),
+        lscale_max=np.full(ngrdcol, 1.0e5),
+        lmin=1.0,
+        clubb_params=clubb_params,
+        saturation_formula=int(flags.saturation_formula),
+        l_lscale_plume_centered=False,
+        lscale_method=3,
+        err_info=ErrInfo(ngrdcol=ngrdcol),
+    )
+
+    if pdf_launch_frac is None:
+        np.testing.assert_array_equal(lscale_up[1], lscale_up[0])
+    else:
+        assert np.max(lscale_up[1] - lscale_up[0]) > 1.0
+
+
+def test_Lscale_pdf_launch_frac_controls_new_mixing_length(gr):
+    """Increasing the PDF blend should retain more component-1 upward reach."""
+    ngrdcol, nzm, nzt = gr.ngrdcol, gr.nzm, gr.nzt
+    clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
+    scale_index = clubb_api.get_param_names().index("Lscale_pdf_launch_frac")
+    clubb_params[:, scale_index] = (0.0, 1.0)
+
+    flags = clubb_api.get_default_config_flags()
+    pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
+    pdf_params.mixt_frac[:] = 0.5
+    pdf_params.rt_1[:] = 0.015
+    pdf_params.thl_1[:] = 304.0
+    pdf_params.rt_2[:] = 0.01
+    pdf_params.thl_2[:] = 300.0
+
+    _err_info, _lscale, lscale_up, _lscale_down = clubb_api.calc_lscale_directly(
+        ngrdcol=ngrdcol,
+        nzm=nzm,
+        nzt=nzt,
+        gr=gr,
+        l_implemented=True,
+        p_in_pa=np.full((ngrdcol, nzt), 100000.0),
+        exner=np.ones((ngrdcol, nzt)),
+        rtm=np.full((ngrdcol, nzt), 0.01),
+        thlm=np.full((ngrdcol, nzt), 300.0),
+        thvm=np.tile(np.linspace(302.0, 310.0, nzt), (ngrdcol, 1)),
+        rtp2_zt=np.full((ngrdcol, nzt), 1.0e-6),
+        thlp2_zt=np.full((ngrdcol, nzt), 1.0e-4),
+        rtpthlp_zt=np.zeros((ngrdcol, nzt)),
+        pdf_params=pdf_params,
+        em=np.full((ngrdcol, nzm), 0.2),
+        thv_ds_zt=np.full((ngrdcol, nzt), 300.0),
+        lscale_max=np.full(ngrdcol, 1.0e5),
+        lmin=1.0,
+        clubb_params=clubb_params,
+        saturation_formula=int(flags.saturation_formula),
+        l_lscale_plume_centered=False,
+        lscale_method=3,
+        err_info=ErrInfo(ngrdcol=ngrdcol),
+    )
+
+    assert np.max(lscale_up[1] - lscale_up[0]) > 1.0
+
+
+@pytest.mark.parametrize("pdf_launch_frac", [None, 1.0])
+def test_component_two_launch_state_reaches_new_mixing_length(gr, pdf_launch_frac):
+    """Colder, drier component-2 launches should travel farther downward."""
+    ngrdcol, nzm, nzt = gr.ngrdcol, gr.nzm, gr.nzt
+    clubb_params = clubb_api.init_clubb_params(ngrdcol, iunit=10, filename="")
+    if pdf_launch_frac is not None:
+        clubb_params[:, clubb_api.get_param_names().index("Lscale_pdf_launch_frac")] = pdf_launch_frac
+    flags = clubb_api.get_default_config_flags()
+    pdf_params = clubb_api.init_pdf_params(nzt, ngrdcol)
+    pdf_params.rt_1[:] = 0.01
+    pdf_params.thl_1[:] = 300.0
+    pdf_params.rt_2[:] = 0.01
+    pdf_params.thl_2[:] = 302.0
+    pdf_params.mixt_frac[:] = 0.5
+    pdf_params.rt_2[1, :] = 0.005
+    pdf_params.thl_2[1, :] = 296.0
+
+    _err_info, _lscale, _lscale_up, lscale_down = clubb_api.calc_lscale_directly(
+        ngrdcol=ngrdcol,
+        nzm=nzm,
+        nzt=nzt,
+        gr=gr,
+        l_implemented=True,
+        p_in_pa=np.full((ngrdcol, nzt), 100000.0),
+        exner=np.ones((ngrdcol, nzt)),
+        rtm=np.full((ngrdcol, nzt), 0.01),
+        thlm=np.full((ngrdcol, nzt), 300.0),
+        thvm=np.full((ngrdcol, nzt), 300.0),
+        rtp2_zt=np.full((ngrdcol, nzt), 1.0e-6),
+        thlp2_zt=np.full((ngrdcol, nzt), 1.0e-4),
+        rtpthlp_zt=np.zeros((ngrdcol, nzt)),
+        pdf_params=pdf_params,
+        em=np.full((ngrdcol, nzm), 0.2),
+        thv_ds_zt=np.full((ngrdcol, nzt), 300.0),
+        lscale_max=np.full(ngrdcol, 1.0e5),
+        lmin=1.0,
+        clubb_params=clubb_params,
+        saturation_formula=int(flags.saturation_formula),
+        l_lscale_plume_centered=False,
+        lscale_method=3,
+        err_info=ErrInfo(ngrdcol=ngrdcol),
+    )
+
+    if pdf_launch_frac is None:
+        np.testing.assert_array_equal(lscale_down[1], lscale_down[0])
+    else:
+        assert np.max(lscale_down[1] - lscale_down[0]) > 1.0

@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 102 ! Total tunable parameters
+    nparams = 105 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -144,7 +144,10 @@ module parameter_indices
     ia_const                      = 99, &
     ibv_efold                     = 100,&
     iwpxp_Ri_exp                  = 101,&
-    iz_displace                   = 102
+    iz_displace                   = 102,&
+    iLscale_tke_multiplier         = 103,&
+    iLscale_pdf_launch_frac        = 104,&
+    iLscale_up_weight              = 105
 
 end module parameter_indices
 !-----------------------------------------------------------------------

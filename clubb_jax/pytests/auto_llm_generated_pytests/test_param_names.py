@@ -7,7 +7,10 @@ from clubb_jax.src.CLUBB_core import parameter_indices
 
 # Critical zero-based index constants → the PARAM_NAMES entry they must point at.
 _INDEX_CONSTANTS = {
-    "ibeta": "beta", "iLscale_mu_entrain": "Lscale_mu_entrain", "iSkw_denom_coef": "Skw_denom_coef",
+    "ibeta": "beta", "iLscale_mu_entrain": "Lscale_mu_entrain",
+    "iLscale_tke_multiplier": "Lscale_tke_multiplier",
+    "iLscale_pdf_launch_frac": "Lscale_pdf_launch_frac",
+    "iLscale_up_weight": "Lscale_up_weight", "iSkw_denom_coef": "Skw_denom_coef",
     "ilambda0_stability_coef": "lambda0_stability_coef", "iC1": "C1", "iC2rt": "C2rt",
     "iC8": "C8", "iC11": "C11", "iC14": "C14", "igamma_coef": "gamma_coef",
 }

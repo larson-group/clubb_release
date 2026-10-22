@@ -56,7 +56,8 @@ PARAMETER_NAMES = tuple(
     C_invrs_tau_N2_clear_wp3 C_invrs_tau_wpxp_Ri C_invrs_tau_wpxp_N2_thresh
     xp3_coef_base xp3_coef_slope altitude_threshold rtp2_clip_coef Cx_min
     Cx_max Richardson_num_min Richardson_num_max a3_coef_min a_const bv_efold
-    wpxp_Ri_exp z_displace
+    wpxp_Ri_exp z_displace Lscale_tke_multiplier Lscale_pdf_launch_frac
+    Lscale_up_weight
     """.split()
 )
 
@@ -116,7 +117,8 @@ PARAMETER_PRIMARY_OWNERS: dict[str, tuple[str, tuple[str, ...]]] = {
             "C_invrs_tau_N2", "C_invrs_tau_N2_wp2", "C_invrs_tau_N2_xp2",
             "C_invrs_tau_N2_wpxp", "C_invrs_tau_N2_clear_wp3",
             "C_invrs_tau_wpxp_Ri", "C_invrs_tau_wpxp_N2_thresh", "z_displace",
-            "bv_efold",
+            "bv_efold", "Lscale_tke_multiplier", "Lscale_pdf_launch_frac",
+            "Lscale_up_weight",
         ),
     ),
     "PDF and cloud diagnostics": (
@@ -326,6 +328,7 @@ INVERSE_TAU_PARAMETERS = (
 )
 DIRECT_LSCALE_ONLY_PARAMETERS = (
     "Lscale_mu_coef", "Lscale_pert_coef", "C6rt_Lscale0", "C6thl_Lscale0",
+    "Lscale_tke_multiplier", "Lscale_pdf_launch_frac", "Lscale_up_weight",
 )
 
 # These options only enter the indicated scientific branch.  omicron and
@@ -365,6 +368,14 @@ PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "beta", 0.0, 3.0)
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "omicron", _TINY, 1.0)
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "zeta_vrnce_rat", -1.0 + sys.float_info.epsilon, None)
 PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "a3_coef_min", 1.0, 3.0)
+PARAMETER_HARD_BOUNDS = _with_bounds(
+    PARAMETER_HARD_BOUNDS,
+    "Lscale_tke_multiplier",
+    _TINY,
+    None,
+)
+PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "Lscale_pdf_launch_frac", 0.0, 1.0)
+PARAMETER_HARD_BOUNDS = _with_bounds(PARAMETER_HARD_BOUNDS, "Lscale_up_weight", 0.0, 1.0)
 
 
 def parameter_hard_bounds() -> dict[str, dict[str, float | None]]:
@@ -669,7 +680,13 @@ def parameter_activity(
             "This Lscale method bypasses inverse-tau Lscale coefficients.",
             "DIRECT-LSCALE-MODE",
         )
-
+        if lscale_method == 1:
+            _mark_inactive(
+                states,
+                ("Lscale_tke_multiplier", "Lscale_pdf_launch_frac", "Lscale_up_weight"),
+                "Lscale_method=1 uses the legacy direct mixing length.",
+                "LEGACY-LSCALE-MODE",
+            )
     for flag_name, names in BRANCH_ONLY_PARAMETERS.items():
         if flag_name in normalized and not _as_bool(normalized[flag_name]):
             _mark_inactive(
@@ -1098,8 +1115,8 @@ def validate_clubb_settings(
     if saturation_formula is not None and not 1 <= saturation_formula <= 4:
         issues.append(ValidationIssue("invalid_saturation_formula", "saturation_formula must be between 1 and 4.", setting="saturation_formula"))
     lscale_method = integer_flag("Lscale_method", 1)
-    if lscale_method is not None and not 1 <= lscale_method <= 2:
-        issues.append(ValidationIssue("invalid_lscale_method", "Lscale_method must be between 1 and 2.", setting="Lscale_method"))
+    if lscale_method is not None and not 1 <= lscale_method <= 3:
+        issues.append(ValidationIssue("invalid_lscale_method", "Lscale_method must be between 1 and 3.", setting="Lscale_method"))
     call_placement = integer_flag("ipdf_call_placement", 1)
     if call_placement is not None and not 1 <= call_placement <= 3:
         issues.append(ValidationIssue("invalid_pdf_call_placement", "ipdf_call_placement must be between 1 and 3.", setting="ipdf_call_placement"))

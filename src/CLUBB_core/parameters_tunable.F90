@@ -19,7 +19,7 @@ module parameters_tunable
   !-----------------------------------------------------------------------
 
   use constants_clubb, only: &
-    eps, one, zero ! Constants
+    eps, one, one_half, zero ! Constants
 
   use parameter_indices, only: nparams ! Variable(s)
 
@@ -119,7 +119,9 @@ module parameters_tunable
        "Cx_max                      ", "Richardson_num_min          ", &
        "Richardson_num_max          ", "a3_coef_min                 ", &
        "a_const                     ", "bv_efold                    ", &
-       "wpxp_Ri_exp                 ", "z_displace                  "/)
+       "wpxp_Ri_exp                 ", "z_displace                  ", &
+       "Lscale_tke_multiplier       ", "Lscale_pdf_launch_frac      ", &
+       "Lscale_up_weight            "/)
 
   ! Hard configuration bounds in the same order as params_list.
   !
@@ -231,7 +233,10 @@ module parameters_tunable
     zero,                 no_upper_bound, & ! a_const
     zero,                 no_upper_bound, & ! bv_efold
     zero,                 no_upper_bound, & ! wpxp_Ri_exp
-    zero,                 no_upper_bound & ! z_displace
+    zero,                 no_upper_bound, & ! z_displace
+    strictly_positive,    no_upper_bound, & ! Lscale_tke_multiplier
+    zero,                 one, & ! Lscale_pdf_launch_frac
+    zero,                 one & ! Lscale_up_weight
     /), (/ 2, nparams /) )
 
   real( kind = core_rknd ), parameter, private :: &
@@ -265,7 +270,8 @@ module parameters_tunable
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+               Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight )
 
     implicit none
 
@@ -295,7 +301,8 @@ module parameters_tunable
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+      Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight
 
 
     ! NOTE: In CLUBB standalone, as well as some host models, the hardcoded
@@ -354,7 +361,7 @@ module parameters_tunable
     gamma_coef  = 0.250000_core_rknd ! Low Skw.: gamma coef. Skw. Fnct.   [-]
     gamma_coefb = 0.250000_core_rknd ! High Skw.: gamma coef. Skw. Fnct.  [-]
     gamma_coefc = 5.000000_core_rknd ! Deg. Slope: gamma coef. Skw. Fnct. [-]
-    Lscale_mu_entrain          = 1.000E-3_core_rknd ! Fract entrain rate per unit alt  [1/m]
+    Lscale_mu_entrain          = 1.000E-3_core_rknd ! Positive fractional parcel entrainment rate [1/m]
     mult_coef   = 0.500000_core_rknd ! Coef. applied to log(avg dz/thresh)[-]
     taumin      = 90.00000_core_rknd ! Min. allow. value: time-scale tau  [s]
     taumax      = 3600.000_core_rknd ! Max. allow. value: time-scale tau  [s]
@@ -479,6 +486,9 @@ module parameters_tunable
     wpxp_Ri_exp = .5_core_rknd  ! Exponent determining the influence of
                                 ! the Richardson number on invrs_tau_wpxp
     z_displace = 25.0_core_rknd   ! displacement of log law profile above ground   [m]
+    Lscale_tke_multiplier = one ! Mean launch energy/TKE in method 3 [-]
+    Lscale_pdf_launch_frac = zero ! Fraction toward directional PDF-component means in method 3 [-]
+    Lscale_up_weight = one_half ! Upward exponent in method-3 geometric mixing [-]
 
     return
 
@@ -955,7 +965,8 @@ module parameters_tunable
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+      Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight
 
     ! Since we lack a devious way to do this just once, this namelist
     ! must be changed as well when a new parameter is added.
@@ -983,7 +994,8 @@ module parameters_tunable
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+      Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight
 
     !-------------------------- Begin Code --------------------------
 
@@ -1012,7 +1024,8 @@ module parameters_tunable
                 C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                 C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                 Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
+                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+                Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight )
 
     ! If the filename is empty, assume we're using a `working' set of
     ! parameters that are set statically here (handy for host models).
@@ -1053,6 +1066,7 @@ module parameters_tunable
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, & ! intent(in)
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, & ! intent(in)
                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, & ! intent(in)
+               Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight, & ! intent(in)
                clubb_params ) ! intent(out)
 
 !    l_error = .false.
@@ -1195,7 +1209,10 @@ module parameters_tunable
         ia_const, &
         ibv_efold, &
         iwpxp_Ri_exp, &
-        iz_displace
+        iz_displace, &
+        iLscale_tke_multiplier, &
+        iLscale_pdf_launch_frac, &
+        iLscale_up_weight
 
     implicit none
 
@@ -1236,7 +1253,8 @@ module parameters_tunable
       beta_minmax, gamma_coef_minmax, gamma_coefb_minmax, gamma_coefc_minmax, lmin_coef_minmax, &
       omicron_minmax, zeta_vrnce_rat_minmax, upsilon_precip_frac_rat_minmax, &
       lambda0_stability_coef_minmax, mult_coef_minmax, taumin_minmax, taumax_minmax, &
-      Lscale_mu_entrain_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, alpha_corr_minmax, &
+      Lscale_mu_entrain_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, &
+      alpha_corr_minmax, &
       Skw_denom_coef_minmax, c_K10_minmax, c_K10h_minmax, thlp2_rad_coef_minmax, &
       thlp2_rad_cloud_frac_thresh_minmax, up2_sfc_coef_minmax, Skw_max_mag_minmax, &
       xp3_coef_base_minmax, xp3_coef_slope_minmax, altitude_threshold_minmax, &
@@ -1246,7 +1264,8 @@ module parameters_tunable
       C_invrs_tau_wpxp_Ri_minmax, C_invrs_tau_wpxp_N2_thresh_minmax, Cx_min_minmax, &
       Cx_max_minmax, Richardson_num_min_minmax, Richardson_num_max_minmax, &
       wpxp_Ri_exp_minmax, a3_coef_min_minmax, a_const_minmax, bv_efold_minmax, &
-      z_displace_minmax
+      z_displace_minmax, Lscale_tke_multiplier_minmax, Lscale_pdf_launch_frac_minmax, &
+      Lscale_up_weight_minmax
 
     namelist /init_minmax/ &
       C1_minmax, C1b_minmax, C1c_minmax, C2rt_minmax, C2thl_minmax, C2rtthl_minmax, C4_minmax, &
@@ -1263,7 +1282,8 @@ module parameters_tunable
       beta_minmax, gamma_coef_minmax, gamma_coefb_minmax, gamma_coefc_minmax, lmin_coef_minmax, &
       omicron_minmax, zeta_vrnce_rat_minmax, upsilon_precip_frac_rat_minmax, &
       lambda0_stability_coef_minmax, mult_coef_minmax, taumin_minmax, taumax_minmax, &
-      Lscale_mu_entrain_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, alpha_corr_minmax, &
+      Lscale_mu_entrain_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, &
+      alpha_corr_minmax, &
       Skw_denom_coef_minmax, c_K10_minmax, c_K10h_minmax, thlp2_rad_coef_minmax, &
       thlp2_rad_cloud_frac_thresh_minmax, up2_sfc_coef_minmax, Skw_max_mag_minmax, &
       xp3_coef_base_minmax, xp3_coef_slope_minmax, altitude_threshold_minmax, &
@@ -1272,10 +1292,16 @@ module parameters_tunable
       C_invrs_tau_N2_xp2_minmax, C_invrs_tau_N2_wpxp_minmax, C_invrs_tau_N2_clear_wp3_minmax, &
       C_invrs_tau_wpxp_Ri_minmax, C_invrs_tau_wpxp_N2_thresh_minmax, Cx_min_minmax, &
       Cx_max_minmax, Richardson_num_min_minmax, Richardson_num_max_minmax, a3_coef_min_minmax, &
-      a_const_minmax, bv_efold_minmax, wpxp_Ri_exp_minmax, z_displace_minmax
+      a_const_minmax, bv_efold_minmax, wpxp_Ri_exp_minmax, z_displace_minmax, &
+      Lscale_tke_multiplier_minmax, Lscale_pdf_launch_frac_minmax, Lscale_up_weight_minmax
 
 
 ! ----- Begin code -------------
+
+    ! Older tuning files omit new parameters, which means they remain fixed.
+    Lscale_tke_multiplier_minmax = zero
+    Lscale_pdf_launch_frac_minmax = zero
+    Lscale_up_weight_minmax = zero
 
     ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
@@ -1385,6 +1411,9 @@ module parameters_tunable
     params_minmax(:,ibv_efold) = bv_efold_minmax
     params_minmax(:,iwpxp_Ri_exp) = wpxp_Ri_exp_minmax
     params_minmax(:,iz_displace) = z_displace_minmax
+    params_minmax(:,iLscale_tke_multiplier) = Lscale_tke_multiplier_minmax
+    params_minmax(:,iLscale_pdf_launch_frac) = Lscale_pdf_launch_frac_minmax
+    params_minmax(:,iLscale_up_weight) = Lscale_up_weight_minmax
 
     ! Error checks:  if a minimum value is entered, it must have a
     ! corresponding maximum value of greater value; the min and max values
@@ -1552,7 +1581,8 @@ module parameters_tunable
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, clubb_params )
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+               Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight, clubb_params )
 
     ! Description:
     ! Takes the list of scalar variables and puts them into a 1D vector.
@@ -1669,7 +1699,10 @@ module parameters_tunable
         ia_const, &
         ibv_efold, &
         iwpxp_Ri_exp, &
-        iz_displace
+        iz_displace, &
+        iLscale_tke_multiplier, &
+        iLscale_pdf_launch_frac, &
+        iLscale_up_weight
 
     implicit none
 
@@ -1699,7 +1732,8 @@ module parameters_tunable
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+      Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight
 
     !------------------------- Output Variables -------------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nparams) :: &
@@ -1813,6 +1847,9 @@ module parameters_tunable
       clubb_params(i,ibv_efold) = bv_efold(i)
       clubb_params(i,iwpxp_Ri_exp) = wpxp_Ri_exp(i)
       clubb_params(i,iz_displace) = z_displace(i)
+      clubb_params(i,iLscale_tke_multiplier) = Lscale_tke_multiplier(i)
+      clubb_params(i,iLscale_pdf_launch_frac) = Lscale_pdf_launch_frac(i)
+      clubb_params(i,iLscale_up_weight) = Lscale_up_weight(i)
     end do
 
     return
@@ -1844,7 +1881,8 @@ module parameters_tunable
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+               Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight )
 
     ! Description:
     ! Takes the 1D vector and returns the list of scalar variables.
@@ -1962,6 +2000,9 @@ module parameters_tunable
         ibv_efold, &
         iwpxp_Ri_exp, &
         iz_displace, &
+        iLscale_tke_multiplier, &
+        iLscale_pdf_launch_frac, &
+        iLscale_up_weight, &
         nparams
 
     implicit none
@@ -1992,7 +2033,8 @@ module parameters_tunable
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
+      Lscale_tke_multiplier, Lscale_pdf_launch_frac, Lscale_up_weight
 
     C1      = clubb_params(iC1)
     C1b     = clubb_params(iC1b)
@@ -2109,6 +2151,9 @@ module parameters_tunable
     bv_efold = clubb_params(ibv_efold)
     wpxp_Ri_exp = clubb_params(iwpxp_Ri_exp)
     z_displace = clubb_params(iz_displace)
+    Lscale_tke_multiplier = clubb_params(iLscale_tke_multiplier)
+    Lscale_pdf_launch_frac = clubb_params(iLscale_pdf_launch_frac)
+    Lscale_up_weight = clubb_params(iLscale_up_weight)
 
     return
   end subroutine unpack_parameters

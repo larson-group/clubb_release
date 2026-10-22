@@ -165,7 +165,8 @@ module model_flags
 
   integer, parameter, public :: &
     Lscale_direct = 1,   & ! Legacy buoyant-parcel mixing length
-    Lscale_tau = 2        ! Diagnose mixing length from the dissipation time scale
+    Lscale_tau = 2,      & ! Diagnose mixing length from the dissipation time scale
+    Lscale_coherence = 3   ! Coherence-weighted buoyant-parcel mixing length
 
   !-----------------------------------------------------------------------------
   ! Options that can be changed at runtime 
@@ -207,7 +208,7 @@ module model_flags
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
-      Lscale_method,                  & ! 1=legacy parcels, 2=tau
+      Lscale_method,                  & ! 1=legacy parcels, 2=tau, 3=coherent parcels
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
                                         ! (starts at 1, so 0 is an invalid option for this flag)
@@ -430,7 +431,7 @@ module model_flags
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
-      Lscale_method,                  & ! 1=legacy parcels, 2=tau
+      Lscale_method,                  & ! 1=legacy parcels, 2=tau, 3=coherent parcels
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
       grid_adapt_in_time_method,      & ! Integer that stores how the grid should be adapted every
@@ -724,7 +725,7 @@ module model_flags
       penta_solve_method,             & ! Option to set the penta-diagonal matrix solving method
       tridiag_solve_method,           & ! Option to set the tri-diagonal matrix solving method
       saturation_formula,             & ! Integer that stores the saturation formula to be used
-      Lscale_method,                  & ! 1=legacy parcels, 2=tau
+      Lscale_method,                  & ! 1=legacy parcels, 2=tau, 3=coherent parcels
       grid_remap_method,              & ! Integer that stores what remapping technique should
                                         ! be used to remap from one grid to another
                                         ! (starts at 1, so 0 is an invalid option for this flag)
@@ -866,8 +867,8 @@ module model_flags
       error stop 'Invalid value for the flag grid_remap_method. Should be greater or equal to 1.'
     end if
 
-    if ( Lscale_method < Lscale_direct .or. Lscale_method > Lscale_tau ) then
-      error stop 'Invalid Lscale_method. Expected an integer from 1 through 2.'
+    if ( Lscale_method < Lscale_direct .or. Lscale_method > Lscale_coherence ) then
+      error stop 'Invalid Lscale_method. Expected an integer from 1 through 3.'
     end if
 
     clubb_config_flags%iiPDF_type = iiPDF_type

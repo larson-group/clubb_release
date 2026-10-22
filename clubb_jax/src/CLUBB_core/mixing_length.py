@@ -2,19 +2,20 @@
 
 The mixing length estimates how far turbulent air motions exchange heat,
 water, and momentum. This port follows ``src/CLUBB_core/mixing_length.F90``:
-``Lscale_method`` selects the legacy buoyant-parcel method (1) or length
-from a dissipation time scale (2).
+``Lscale_method`` selects the legacy buoyant-parcel method (1), length
+from a dissipation time scale (2), or coherence-weighted parcel travel (3).
 
 Usage:
   - ``calc_Lscale`` computes the complete timestep diagnosis and statistics.
   - ``set_Lscale_max`` returns the length cap from host horizontal grid spacing,
     or 100000 m for standalone runs.
-  - ``calc_Lscale_directly`` computes parcel method 1, including the
+  - ``calc_Lscale_directly`` selects parcel method 1 or 3, including the
     source-controlled optional perturbed-launch calculation.
   - ``diagnose_Lscale_from_tau`` computes method 2 and its individual inverse
     damping-time contributions.
-  - ``compute_mixing_length`` implements the legacy parcel kernel and is
-    private in the Fortran module.
+  - ``compute_mixing_length`` and ``compute_coherent_mixing_length`` implement
+    the parcel kernels; ``sat_mixrat_liq_flatau`` supplies method 3 saturation.
+    These three routines are private in the Fortran module.
 
 Understanding:
   Fields have shape ``(ngrdcol, nzt)`` on thermodynamic levels or
@@ -26,11 +27,12 @@ Understanding:
   callers must retain them. Parcel histories are local to each call.
 
 JAX adaptations:
-  The parcel kernel uses fixed-length scans and masks for source early exits.
+  The parcel kernels use fixed-length scans and masks for source early exits.
   A scan offset counts level moves from launch, not meters. Physical-height
   ordering supports either grid orientation; interpolation retains native
   grid weights. The standalone constructor currently allows ascending grids.
-  Launch grouping evaluates several launch levels together. Local callbacks
+  Launch grouping and GPU prefix sums change floating-point addition order
+  relative to Fortran's atomic updates and serial aggregation. Local callbacks
   implement JAX scan/conditional boundaries; public signatures and routine
   order follow Fortran, with outputs and inout state returned functionally.
   Fatal masks remain per column. Ordered host callbacks reproduce source
@@ -38,7 +40,8 @@ JAX adaptations:
   The enclosing driver supplies the calc_Lscale timing region.
 
 References:
-  Golaz et al. (2002), JAS 59, 3540--3551 gives parcel-method
+  ``doc/coherence_mixing_length.md`` defines the coherent survival law and
+  aggregation. Golaz et al. (2002), JAS 59, 3540--3551 gives parcel-method
   background; Guo et al. (2021, JAMES) describes length diagnosed from tau.
 """
 
@@ -73,6 +76,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     one_fourth,
     one_half,
     one_third,
+    T_freeze_K,
     rt_tol,
     thl_tol,
     two,
@@ -96,14 +100,29 @@ from clubb_jax.src.CLUBB_core.parameter_indices import (
     iLscale_mu_entrain,
     iLscale_mu_coef,
     iLscale_pert_coef,
+    iLscale_tke_multiplier,
+    iLscale_pdf_launch_frac,
+    iLscale_up_weight,
     itaumax,
     iwpxp_Ri_exp,
     iz_displace,
 )
-from clubb_jax.src.CLUBB_core.model_flags import Lscale_direct, Lscale_tau
+from clubb_jax.src.CLUBB_core.model_flags import Lscale_direct, Lscale_tau, Lscale_coherence
 from clubb_jax.src.CLUBB_core.error_code import CLUBB_FATAL_ERROR, clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt, zm2zt2zm, zt2zm
 from clubb_jax.src.CLUBB_core.saturation import sat_mixrat_liq
+
+
+# JAX execution layout, not physics parameters. Zero launch group size batches
+# every launch together. These are read while tracing: change them before JIT,
+# or start a fresh process/recompile after editing. Small CPU batches avoid the
+# serial-group overhead; GPU defaults retain full launch parallelism.
+COHERENT_CPU_LAUNCH_GROUP_SIZE = 8
+COHERENT_CPU_GROUP_MIN_COLUMNS = 5
+COHERENT_CPU_OFFSET_BLOCK_SIZE = 8
+COHERENT_GPU_LAUNCH_GROUP_SIZE = 0
+COHERENT_GPU_GROUP_MIN_COLUMNS = 1
+COHERENT_GPU_OFFSET_BLOCK_SIZE = 16
 
 
 #===============================================================================
@@ -128,7 +147,7 @@ def calc_Lscale(
 
     Read thermodynamic fields on ``nzt`` levels, moments on ``nzm`` levels, and
     per-column parameters. Grid and PDF state must be initialized by the caller.
-    ``Lscale_method`` selects methods 1 and 2. Lengths are
+    ``Lscale_method`` selects methods 1--3. Lengths are
     in m, times in s, and inverse times in 1/s; ``_zt``/``_zm`` name the grids.
 
     Return ``(err_info, invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm,
@@ -835,7 +854,7 @@ def calc_Lscale_directly(
     Lscale_method,
     stats, err_info,
 ):
-    """Compute the legacy parcel mixing length (method 1).
+    """Select the legacy or coherent parcel calculation (methods 1 or 3).
 
     Environmental profiles, momentum-level TKE, PDF properties, and per-column
     parameters supply the launches. Return ``(err_info, Lscale, Lscale_up,
@@ -933,7 +952,18 @@ def calc_Lscale_directly(
 
     # ********** NOTE: **********
     # The mean call must be last, so directional stats describe the mean length.
-    if Lscale_method == Lscale_direct:
+    if Lscale_method == Lscale_coherence:
+        err_info, Lscale, Lscale_up, Lscale_down = compute_coherent_mixing_length(
+            nzm, nzt, ngrdcol, gr, thvm, thlm,  # In
+            rtm, pdf_params, em, Lscale_max, p_in_Pa,  # In
+            exner, thv_ds_zt, clubb_params[:, iLscale_mu_entrain],  # In
+            clubb_params[:, iLscale_tke_multiplier],  # In
+            clubb_params[:, iLscale_pdf_launch_frac],  # In
+            clubb_params[:, iLscale_up_weight],  # In
+            lmin, l_implemented,  # In
+            err_info,  # InOut
+        )
+    elif Lscale_method == Lscale_direct:
         err_info, Lscale, Lscale_up, Lscale_down = compute_mixing_length(
             nzm, nzt, ngrdcol, gr, thvm, thlm,  # In
             rtm, em, Lscale_max, p_in_Pa,  # In
@@ -1298,3 +1328,504 @@ def diagnose_Lscale_from_tau(
         Lscale_down,
         stats,
     )
+
+
+#===============================================================================
+
+def compute_coherent_mixing_length(
+    nzm, nzt, ngrdcol, gr, thvm, thlm,
+    rtm, pdf_params, em, Lscale_max, p_in_Pa,
+    exner, thv_ds, Lscale_mu_entrain,
+    Lscale_tke_multiplier,
+    Lscale_pdf_launch_frac,
+    Lscale_up_weight, lmin,
+    l_implemented,
+    err_info,
+):
+    """Diagnose mixing length by weighting entraining moist-parcel travel with
+    the fraction of assumed launch energies able to cross each energy barrier.
+
+    Read thermodynamic-level environmental/PDF properties, momentum-level TKE
+    [m^2/s^2], positive entrainment rates [1/m], and per-column launch/mixing
+    weights. Return ``(err_info, Lscale, Lscale_up, Lscale_down)`` with lengths
+    shaped ``(ngrdcol, nzt)`` in m; ``err_info`` passes through unchanged.
+    Parcel saturation always uses the local Flatau polynomial.
+
+    Analytic layer updates advance each trajectory in path order. With launch
+    energy scale E and running adverse-work barrier H [m^2/s^2], endpoint
+    coherence is (E/(E+H))^2. Integrate this weight assuming H is linear across
+    the layer, include the first layer at mean coherence <= 0.01, then stop.
+    A source constant selects local, maximum-endpoint, or arrival-weighted
+    directional lengths before floors, geometric mixing, and the final cap.
+
+    JAX adaptation:
+      Fixed-length scans and masks include the first layer at mean coherence
+      <= 0.01, then freeze that launch, even within a partially active block.
+      Each carry holds parcel thl/rt, previous buoyancy/work/barrier, live masks,
+      raw travel distances, crossing/arrival sums, and a group-activity flag.
+      CPU batches of at least five columns default to eight-launch groups for
+      forward speed; smaller batches and GPUs evaluate all launches together.
+      COHERENT_* constants above set this layout. Changing group width to zero
+      improved reverse throughput on the measured wide CPU profiles.
+
+      Grouped scans skip inactive layers and blocks. Ungrouped scans check only
+      block boundaries to avoid per-layer synchronization. Forward working state
+      is O(columns*levels); checkpoints trade recomputation for a smaller reverse
+      tape. CPU aggregation follows the source recurrence; GPU prefix sums and
+      launch grouping change floating-point addition order.
+
+    References:
+      ``doc/coherence_mixing_length.md``: survival and aggregation equations.
+      Golaz et al. (2002), JAS 59, 3540--3551: parcel-method background.
+    """
+    no_overwrite = 0                 # Retain each locally launched reach
+    legacy_max_overwrite = 1         # Extend the most distant parcel endpoint
+    coherence_average_overwrite = 2  # Average remaining reach by arrival coherence
+    overwrite_mode = coherence_average_overwrite  # Selected overwrite method
+    zlmin = 0.1                      # Directional floor after aggregation [m]
+    surface_layer_depth = 500.0      # Depth of surface floor [m]
+    invs_sfclyr_depth = one / surface_layer_depth  # Inverse surface-floor depth [1/m]
+
+    # Interpolate launch TKE to thermodynamic levels.
+    coherence_energy = zm2zt(nzm, nzt, ngrdcol, gr, em)
+    liquid_coef = ep * Lv**2 / (Rd * Cp)
+
+    # Index adaptation: operate in physical bottom-to-top order on either grid.
+    step = gr.grid_dir_indx
+    coherence_energy = coherence_energy[:, ::step]
+    thvm = thvm[:, ::step]
+    thlm = thlm[:, ::step]
+    rtm = rtm[:, ::step]
+    p_in_Pa = p_in_Pa[:, ::step]
+    exner = exner[:, ::step]
+    thv_ds = thv_ds[:, ::step]
+    zt = gr.zt[:, ::step]
+
+    # Precompute the inverse-square energy scale and buoyancy coefficients.
+    # The inverse-square launch distribution has mean energy equal to this scale.
+    coherence_energy = jnp.maximum(coherence_energy, zero) * Lscale_tke_multiplier[:, None]
+    # These coefficients reconstruct parcel thv and scale its buoyancy.
+    grav_coef = grav / thvm
+    vapor_coef = ep1 * thv_ds
+    latent_coef = Lv / (exner * Cp) - ep2 * thv_ds
+    # Zero-energy launches do not enter the path integral. Safe operands prevent
+    # their inactive 0/0 derivative from poisoning the other launch gradients.
+    energy_safe = jnp.where(coherence_energy > zero, coherence_energy, one)
+    k = jnp.arange(nzt)[None, :]
+
+    cpu_backend = jax.default_backend() == "cpu"
+    launch_group_size = COHERENT_CPU_LAUNCH_GROUP_SIZE if cpu_backend else COHERENT_GPU_LAUNCH_GROUP_SIZE
+    group_min_columns = COHERENT_CPU_GROUP_MIN_COLUMNS if cpu_backend else COHERENT_GPU_GROUP_MIN_COLUMNS
+    use_launch_groups = launch_group_size > 0 and ngrdcol >= group_min_columns
+    launch_block = launch_group_size or nzt
+    groups = (nzt + launch_block - 1) // launch_block
+    padding = groups * launch_block - nzt
+    offset_block_size = COHERENT_CPU_OFFSET_BLOCK_SIZE if cpu_backend else COHERENT_GPU_OFFSET_BLOCK_SIZE
+
+    # JAX layout adapter: zero padding disables incomplete launch groups.
+    def pack_launches(a):
+        """Pad column/launch data and return it as (group, column, launch-within-group)."""
+        return jnp.pad(a, ((0, 0), (0, padding))).reshape(
+            a.shape[0], groups, launch_block).transpose(1, 0, 2)
+
+    # The coherence-average mode needs directional crossing sums. At each target,
+    # its own local launch contributes unit arrival coherence, even at zero TKE.
+    # JAX keeps these fixed-shape carries in all three compile-time modes.
+    crossed_length_up = jnp.zeros((ngrdcol, nzt))
+    crossed_length_down = jnp.zeros((ngrdcol, nzt))
+    arrival_coherence_up = jnp.ones((ngrdcol, nzt))
+    arrival_coherence_down = jnp.ones((ngrdcol, nzt))
+
+    # -------------------- Upward calculation ---------------------
+
+    # Precompute the upward entrainment update for every layer.
+    layer_depth = jnp.abs(zt[:, 1:] - zt[:, :-1])
+    # Integrate entrainment analytically through a layer-linear environment.
+    retention = jnp.exp(-Lscale_mu_entrain[:, None] * layer_depth)
+    response = (one - retention) / (Lscale_mu_entrain[:, None] * layer_depth)
+    layer_retention = retention
+    thl_entrainment = thlm[:, 1:] - retention * thlm[:, :-1] \
+        - response * (thlm[:, 1:] - thlm[:, :-1])
+    rt_entrainment = rtm[:, 1:] - retention * rtm[:, :-1] \
+        - response * (rtm[:, 1:] - rtm[:, :-1])
+
+    # Diagnose every upward launch state and buoyancy in parallel.
+    # Blend toward PDF component 1 to define the upward launch state.
+    thl_launch = thlm + Lscale_pdf_launch_frac[:, None] * (pdf_params.thl_1[:, ::step] - thlm)
+    rt_launch = rtm + Lscale_pdf_launch_frac[:, None] * (pdf_params.rt_1[:, ::step] - rtm)
+    # Saturation-adjust the launch state before diagnosing its buoyancy.
+    liquid_temperature = thl_launch * exner
+    saturation_rt = sat_mixrat_liq_flatau(p_in_Pa, liquid_temperature)
+    liquid_temperature = liquid_temperature**2
+    rc_parcel = jnp.maximum((rt_launch - saturation_rt) * liquid_temperature \
+        / (liquid_temperature + liquid_coef * saturation_rt), zero_threshold)
+    launch_buoyancy = grav_coef * (thl_launch + vapor_coef * rt_launch + latent_coef * rc_parcel) - grav
+
+    # With zero launch TKE, skip the path integral and apply the floor afterward.
+    # Initialize the parcel state and path-integral trackers at launch.
+    initial = (thl_launch, rt_launch, launch_buoyancy,
+               jnp.zeros((ngrdcol, nzt)), jnp.zeros((ngrdcol, nzt)),
+               coherence_energy > zero, jnp.zeros((ngrdcol, nzt)))
+
+    def upward_launch_group(accumulated, launch):
+        """Track an upward launch batch and add its target contributions.
+
+        Return updated (crossing-length, arrival-weight) sums and raw launch lengths
+        [m]; accumulated target arrays include contributions from earlier groups.
+        """
+        k, initial, energy_safe = launch
+        if use_launch_groups:
+            energy_safe = jnp.where(energy_safe > zero, energy_safe, one)
+        initial = (*initial, *accumulated, jnp.any(initial[5] & (k < nzt - 2)))
+
+        def upward_layer(state, offset):
+            """Advance the coherent carry at one upward level offset; return carry and
+            no scan output.
+            """
+            thl_parcel, rt_parcel, prev_buoyancy, prev_work, prev_barrier, alive, Lscale_tmp = state[:7]
+            target = k + offset
+            j = jnp.broadcast_to(jnp.minimum(target, nzt - 2), alive.shape)
+            # The upper boundary is outside the active mixing-length domain.
+            active = alive & (target < nzt - 1)
+
+            def advance(_):
+                """Return masked parcel, work, barrier, distance, and upward target-sum updates."""
+                # Entrain layer-mean air into the parcel as it rises.
+                thl_next = jnp.take_along_axis(thl_entrainment, j-1, axis=1) \
+                    + jnp.take_along_axis(layer_retention, j-1, axis=1) * thl_parcel
+                rt_next = jnp.take_along_axis(rt_entrainment, j-1, axis=1) \
+                    + jnp.take_along_axis(layer_retention, j-1, axis=1) * rt_parcel
+                # Diagnose cloud liquid water for the parcel buoyancy calculation.
+                liquid_temperature = thl_next * jnp.take_along_axis(exner, j, axis=1)
+                saturation_rt = sat_mixrat_liq_flatau(jnp.take_along_axis(p_in_Pa, j, axis=1), liquid_temperature)
+                liquid_temperature = liquid_temperature**2
+                rc_parcel = (rt_next - saturation_rt) * liquid_temperature \
+                    / (liquid_temperature + liquid_coef * saturation_rt)
+                rc_parcel = jnp.maximum(rc_parcel, zero_threshold)
+                # Diagnose upward-oriented buoyancy: B = g*(thv_parcel/thvm - 1).
+                oriented_buoyancy = jnp.take_along_axis(grav_coef, j, axis=1) \
+                    * (thl_next + jnp.take_along_axis(vapor_coef, j, axis=1) * rt_next
+                       + jnp.take_along_axis(latent_coef, j, axis=1) * rc_parcel) - grav
+                # Integrate buoyancy over the layer to update cumulative parcel work.
+                work = prev_work + one_half * (prev_buoyancy + oriented_buoyancy) \
+                    * jnp.take_along_axis(layer_depth, j-1, axis=1)
+                # The barrier is the greatest energy deficit encountered along the path.
+                max_barrier = jnp.maximum(prev_barrier, -work)
+                # Integrate survival exactly for a barrier linear between these endpoints.
+                layer_coherence = energy_safe**2 / ((energy_safe + prev_barrier) * (energy_safe + max_barrier))
+                layer_length = jnp.where(active, layer_coherence * jnp.take_along_axis(layer_depth, j-1, axis=1), zero)
+                endpoint_coherence = energy_safe**2 / (energy_safe + max_barrier)**2
+                # These sums reconstruct remaining reach without storing trajectories.
+                crossed = state[7].at[jnp.arange(ngrdcol)[:, None], target].add(layer_length, mode="drop")
+                arrival = state[8].at[jnp.arange(ngrdcol)[:, None], target].add(
+                    jnp.where(active, endpoint_coherence, zero), mode="drop")
+                # Accumulate coherence-weighted distance. Coherence is one without a
+                # barrier and cannot increase because the running barrier cannot decrease.
+                # Include this layer, then neglect the remaining low-coherence tail.
+                has_active_next_layer = (jnp.any(active & (layer_coherence > 0.01)
+                                                    & (k + offset + 1 < nzt - 1))
+                                         if use_launch_groups else state[9])
+                return (
+                    jnp.where(active, thl_next, thl_parcel),
+                    jnp.where(active, rt_next, rt_parcel),
+                    jnp.where(active, oriented_buoyancy, prev_buoyancy),
+                    jnp.where(active, work, prev_work),
+                    jnp.where(active, max_barrier, prev_barrier),
+                    alive & ~(active & (layer_coherence <= 0.01)), Lscale_tmp + layer_length,
+                    crossed, arrival,
+                    has_active_next_layer,
+                ), None
+
+            if use_launch_groups:
+                return jax.lax.cond(state[9], advance, lambda _: (state, None), operand=None)
+            return advance(None)
+
+        def offset_block(state, first):
+            """Scan an upward offset block when any launch is active; return carry and no output."""
+            def advance(s):
+                """Return the coherent carry after the fixed upward offsets beginning at first."""
+                return jax.lax.scan(jax.checkpoint(upward_layer, prevent_cse=False),
+                                    s, first + jnp.arange(offset_block_size))[0]
+            has_active = state[9] if use_launch_groups else jnp.any(state[5] & (k + first < nzt - 1))
+            return jax.lax.cond(has_active, advance, lambda s: s, state), None
+
+        # A launch-group checkpoint already bounds its layer tape. Without
+        # grouping, checkpoint blocks as well to retain only block boundaries.
+        scan_block = offset_block if use_launch_groups else jax.checkpoint(offset_block, prevent_cse=False)
+        final, _ = jax.lax.scan(
+            scan_block, initial, jnp.arange(1, nzt - 1, offset_block_size))
+        return final[7:9], final[6]
+
+    if use_launch_groups:
+        grouped = jax.tree.map(pack_launches, (k, initial, energy_safe))
+        (crossed_length_up, arrival_coherence_up), raw_lengths = jax.lax.scan(
+            jax.checkpoint(upward_launch_group, prevent_cse=False),
+            (crossed_length_up, arrival_coherence_up), grouped)
+        Lscale_up = raw_lengths.transpose(1, 0, 2).reshape(ngrdcol, -1)[:, :nzt]
+    else:
+        (crossed_length_up, arrival_coherence_up), Lscale_up = upward_launch_group(
+            (crossed_length_up, arrival_coherence_up), (k, initial, energy_safe))
+
+    # ------------------- Downward calculation --------------------
+
+    # Reuse the same scratch arrays for the downward layer updates.
+    thl_entrainment = thlm[:, :-1] - retention * thlm[:, 1:] \
+        - response * (thlm[:, :-1] - thlm[:, 1:])
+    rt_entrainment = rtm[:, :-1] - retention * rtm[:, 1:] \
+        - response * (rtm[:, :-1] - rtm[:, 1:])
+    # Diagnose every downward launch state and buoyancy in parallel.
+    # Blend toward PDF component 2 to define the downward launch state.
+    thl_launch = thlm + Lscale_pdf_launch_frac[:, None] * (pdf_params.thl_2[:, ::step] - thlm)
+    rt_launch = rtm + Lscale_pdf_launch_frac[:, None] * (pdf_params.rt_2[:, ::step] - rtm)
+    # Saturation-adjust the launch state before diagnosing its buoyancy.
+    liquid_temperature = thl_launch * exner
+    saturation_rt = sat_mixrat_liq_flatau(p_in_Pa, liquid_temperature)
+    liquid_temperature = liquid_temperature**2
+    rc_parcel = jnp.maximum((rt_launch - saturation_rt) * liquid_temperature \
+        / (liquid_temperature + liquid_coef * saturation_rt), zero_threshold)
+    launch_buoyancy = grav - grav_coef * (thl_launch + vapor_coef * rt_launch + latent_coef * rc_parcel)
+
+    # With zero launch TKE, skip the path integral and apply the floor afterward.
+    # Initialize the parcel state and path-integral trackers at launch.
+    initial = (thl_launch, rt_launch, launch_buoyancy,
+               jnp.zeros((ngrdcol, nzt)), jnp.zeros((ngrdcol, nzt)),
+               coherence_energy > zero, jnp.zeros((ngrdcol, nzt)))
+
+    def downward_launch_group(accumulated, launch):
+        """Track a downward launch batch and add its target contributions.
+
+        Return updated (crossing-length, arrival-weight) sums and raw launch lengths
+        [m]; the top-boundary launch is excluded from the target sums.
+        """
+        k, initial, energy_safe = launch
+        if use_launch_groups:
+            energy_safe = jnp.where(energy_safe > zero, energy_safe, one)
+        initial = (*initial, *accumulated, jnp.any(initial[5] & (k > 0)))
+
+        def downward_layer(state, offset):
+            """Advance the coherent carry at one downward level offset; return carry and
+            no scan output.
+            """
+            thl_parcel, rt_parcel, prev_buoyancy, prev_work, prev_barrier, alive, Lscale_tmp = state[:7]
+            target = k - offset
+            j = jnp.broadcast_to(jnp.maximum(target, 0), alive.shape)
+            active = alive & (target >= 0)
+
+            def advance(_):
+                """Return masked parcel, work, barrier, distance, and downward
+                target-sum updates.
+                """
+                # Entrain layer-mean air into the parcel as it descends.
+                thl_next = jnp.take_along_axis(thl_entrainment, j, axis=1) \
+                    + jnp.take_along_axis(layer_retention, j, axis=1) * thl_parcel
+                rt_next = jnp.take_along_axis(rt_entrainment, j, axis=1) \
+                    + jnp.take_along_axis(layer_retention, j, axis=1) * rt_parcel
+                # Diagnose cloud liquid water for the parcel buoyancy calculation.
+                liquid_temperature = thl_next * jnp.take_along_axis(exner, j, axis=1)
+                saturation_rt = sat_mixrat_liq_flatau(jnp.take_along_axis(p_in_Pa, j, axis=1), liquid_temperature)
+                liquid_temperature = liquid_temperature**2
+                rc_parcel = jnp.maximum((rt_next - saturation_rt) * liquid_temperature \
+                    / (liquid_temperature + liquid_coef * saturation_rt), zero_threshold)
+                # Reverse the physical buoyancy sign to orient it along downward travel.
+                oriented_buoyancy = grav - jnp.take_along_axis(grav_coef, j, axis=1) \
+                    * (thl_next + jnp.take_along_axis(vapor_coef, j, axis=1) * rt_next
+                       + jnp.take_along_axis(latent_coef, j, axis=1) * rc_parcel)
+                # Integrate oriented buoyancy to update cumulative parcel work.
+                work = prev_work + one_half * (prev_buoyancy + oriented_buoyancy) \
+                    * jnp.take_along_axis(layer_depth, j, axis=1)
+                # The barrier is the greatest energy deficit encountered along the path.
+                max_barrier = jnp.maximum(prev_barrier, -work)
+                # Integrate survival for a barrier linear between the layer endpoints.
+                layer_coherence = energy_safe**2 / ((energy_safe + prev_barrier) * (energy_safe + max_barrier))
+                layer_length = jnp.where(active, layer_coherence * jnp.take_along_axis(layer_depth, j, axis=1), zero)
+                endpoint_coherence = energy_safe**2 / (energy_safe + max_barrier)**2
+                # The inactive top-boundary launch is excluded from downward crossing sums.
+                ensemble = active & (k != nzt - 1)
+                scatter_target = jnp.where(target >= 0, target, nzt)
+                crossed = state[7].at[jnp.arange(ngrdcol)[:, None], scatter_target].add(
+                    jnp.where(ensemble, layer_length, zero), mode="drop")
+                arrival = state[8].at[jnp.arange(ngrdcol)[:, None], scatter_target].add(
+                    jnp.where(ensemble, endpoint_coherence, zero), mode="drop")
+                # Include this layer, then neglect the remaining low-coherence tail.
+                has_active_next_layer = (jnp.any(active & (layer_coherence > 0.01)
+                                                    & (k - offset - 1 >= 0))
+                                         if use_launch_groups else state[9])
+                return (
+                    jnp.where(active, thl_next, thl_parcel),
+                    jnp.where(active, rt_next, rt_parcel),
+                    jnp.where(active, oriented_buoyancy, prev_buoyancy),
+                    jnp.where(active, work, prev_work),
+                    jnp.where(active, max_barrier, prev_barrier),
+                    alive & ~(active & (layer_coherence <= 0.01)), Lscale_tmp + layer_length,
+                    crossed, arrival,
+                    has_active_next_layer,
+                ), None
+
+            if use_launch_groups:
+                return jax.lax.cond(state[9], advance, lambda _: (state, None), operand=None)
+            return advance(None)
+
+        def offset_block(state, first):
+            """Scan a downward offset block when any launch is active; return carry and
+            no output.
+            """
+            def advance(s):
+                """Return the coherent carry after the fixed downward offsets beginning at first."""
+                return jax.lax.scan(jax.checkpoint(downward_layer, prevent_cse=False),
+                                    s, first + jnp.arange(offset_block_size))[0]
+            has_active = state[9] if use_launch_groups else jnp.any(state[5] & (k - first >= 0))
+            return jax.lax.cond(has_active, advance, lambda s: s, state), None
+
+        # A launch-group checkpoint already bounds its layer tape. Without
+        # grouping, checkpoint blocks as well to retain only block boundaries.
+        scan_block = offset_block if use_launch_groups else jax.checkpoint(offset_block, prevent_cse=False)
+        final, _ = jax.lax.scan(
+            scan_block, initial, jnp.arange(1, nzt, offset_block_size))
+        return final[7:9], final[6]
+
+    if use_launch_groups:
+        grouped = jax.tree.map(pack_launches, (k, initial, energy_safe))
+        (crossed_length_down, arrival_coherence_down), raw_lengths = jax.lax.scan(
+            jax.checkpoint(downward_launch_group, prevent_cse=False),
+            (crossed_length_down, arrival_coherence_down), grouped)
+        Lscale_down = raw_lengths.transpose(1, 0, 2).reshape(ngrdcol, -1)[:, :nzt]
+    else:
+        (crossed_length_down, arrival_coherence_down), Lscale_down = downward_launch_group(
+            (crossed_length_down, arrival_coherence_down), (k, initial, energy_safe))
+
+    # -------------------- Aggregation ---------------------
+
+    # Apply the selected overwrite to paired bottom-up and top-down levels.
+    if overwrite_mode == legacy_max_overwrite:
+        maximum_endpoint = zt[:, :1] + jnp.maximum(zlmin, Lscale_up[:, :1])
+        minimum_endpoint = zt[:, -1] - jnp.maximum(zlmin, Lscale_down[:, -1])
+
+        def overwrite(state, step):
+            """Extend directional endpoints at paired target levels; return carry and no output."""
+            maximum_endpoint, minimum_endpoint, up, down = state
+            up_k, down_k = step, nzt - 2 - step
+            up_value = jnp.maximum(zlmin, up[:, up_k])
+            down_value = jnp.maximum(zlmin, down[:, down_k])
+            # Match the legacy active bounds at the surface and upper boundary.
+            up_value = jnp.where((step > 0) & (step < nzt - 2),
+                                jnp.maximum(up_value, maximum_endpoint - zt[:, up_k]), up_value)
+            maximum_endpoint = jnp.where((step > 0) & (step < nzt - 2),
+                                        jnp.maximum(maximum_endpoint, zt[:, up_k] + up_value), maximum_endpoint)
+            down_value = jnp.where(step < nzt - 2,
+                                  jnp.maximum(down_value, zt[:, down_k] - minimum_endpoint), down_value)
+            minimum_endpoint = jnp.where(step < nzt - 2,
+                                        jnp.minimum(minimum_endpoint, zt[:, down_k] - down_value), minimum_endpoint)
+            return (maximum_endpoint, minimum_endpoint,
+                    up.at[:, up_k].set(up_value), down.at[:, down_k].set(down_value)), None
+
+        final, _ = jax.lax.scan(overwrite, (maximum_endpoint[:, 0], minimum_endpoint, Lscale_up, Lscale_down),
+                                jnp.arange(nzt - 1))
+        Lscale_up, Lscale_down = final[-2:]
+    elif overwrite_mode == coherence_average_overwrite:
+        if cpu_backend:
+            # The source recurrence subtracts each crossed layer and adds the new
+            # launch's raw reach. Keep its addition order rather than a tree cumsum.
+            def aggregate(state, step):
+                """Pool remaining reach at paired upward/downward targets.
+
+                Return the next remaining-length sums and the two arrival-weighted,
+                numerically floored lengths [m], preserving source recurrence order.
+                """
+                remaining_length_up, remaining_length_down = state
+                up_k, down_k = step, nzt - 2 - step
+                remaining_length_up = jnp.where(step > 0,
+                    remaining_length_up - crossed_length_up[:, up_k] + Lscale_up[:, up_k], remaining_length_up)
+                remaining_length_down = jnp.where(step > 0,
+                    remaining_length_down - crossed_length_down[:, down_k] + Lscale_down[:, down_k], remaining_length_down)
+                up = jnp.maximum(zlmin, remaining_length_up / arrival_coherence_up[:, up_k])
+                down = jnp.maximum(zlmin, remaining_length_down / arrival_coherence_down[:, down_k])
+                return (remaining_length_up, remaining_length_down), (up, down)
+
+            _, (up, down) = jax.lax.scan(aggregate, (Lscale_up[:, 0], Lscale_down[:, -2]), jnp.arange(nzt - 1))
+            Lscale_up = Lscale_up.at[:, :-1].set(up.T)
+            Lscale_down = Lscale_down.at[:, :-1].set(down.T[:, ::-1])
+        else:
+            # The same recurrence is a prefix sum. Parallel device reductions
+            # avoid a serial kernel chain; only floating-point sum order changes.
+            up_increments = Lscale_up[:, :-1] - crossed_length_up[:, :-1]
+            up_increments = up_increments.at[:, 0].set(Lscale_up[:, 0])
+            down_increments = (Lscale_down[:, :-1] - crossed_length_down[:, :-1])[:, ::-1]
+            down_increments = down_increments.at[:, 0].set(Lscale_down[:, -2])
+            remaining_up = jnp.cumsum(up_increments, axis=1)
+            remaining_down = jnp.cumsum(down_increments, axis=1)[:, ::-1]
+            Lscale_up = Lscale_up.at[:, :-1].set(jnp.maximum(zlmin, remaining_up / arrival_coherence_up[:, :-1]))
+            Lscale_down = Lscale_down.at[:, :-1].set(jnp.maximum(zlmin, remaining_down / arrival_coherence_down[:, :-1]))
+    elif overwrite_mode == no_overwrite:
+        Lscale_up = jnp.maximum(zlmin, Lscale_up)
+        Lscale_down = jnp.maximum(zlmin, Lscale_down)
+
+    # Apply surface constraints and combine the two directional lengths.
+    # The minimum length decays linearly over the lowest 500 m.
+    if l_implemented:
+        surface_floor = (surface_layer_depth - (zt[:, :-1] - gr.zm[:, gr.k_lb_zm, None])) * lmin * invs_sfclyr_depth
+    else:
+        surface_floor = (surface_layer_depth - zt[:, :-1]) * lmin * invs_sfclyr_depth
+    # Apply the same surface floor before combining the directional lengths.
+    Lscale_up = Lscale_up.at[:, :-1].set(jnp.maximum(surface_floor, Lscale_up[:, :-1]))
+    Lscale_down = Lscale_down.at[:, :-1].set(jnp.maximum(surface_floor, Lscale_down[:, :-1]))
+    # Weighted geometric mean between Lscale_up and Lscale_down.
+    # Floors make the bases strictly positive, including weights zero and one.
+    Lscale = Lscale_up[:, :-1]**Lscale_up_weight[:, None] \
+        * Lscale_down[:, :-1]**(one - Lscale_up_weight[:, None])
+    # Enforce the configured upper bound on the combined mixing length.
+    Lscale = jnp.minimum(Lscale, Lscale_max[:, None])
+    # The highest active level also supplies the zero-gradient lid value.
+    Lscale = jnp.concatenate((Lscale, Lscale[:, -1:]), axis=1)
+    return err_info, Lscale[:, ::step], Lscale_up[:, ::step], Lscale_down[:, ::step]
+
+
+#===============================================================================
+
+def sat_mixrat_liq_flatau(pressure, temperature):
+    """Compute liquid saturation mixing ratio using only the Flatau polynomial.
+
+    This compact specialization is colocated with the mixing-length closure
+    so the compiler can inline it into parcel trajectories.
+
+    It is also intentionally the serial method as opposed to the
+    complex pipeline / multi-fma unit friendlier version. This was
+    to minimize register usage in the complex loop it is used in.
+    See saturation.py for more details.
+
+    Note:
+      It is usually frowned upon to make custom saturation equations like
+      this because it can cause different parts of code to detect cloud
+      transitions differently, leading to inconsistent calculations.
+      We believe that there is no similar concern in this instance
+      because this is used only to compute the behavior of "virtual" parcels
+      in the above methods. Virtual in the sense that their lifetime is
+      only inside the Lscale calculation, which is already somewhat
+      arbitrary, and none of that internal information escapes.
+
+    Inputs and output:
+      pressure [Pa] and temperature [K] broadcast as JAX arrays; return liquid
+      saturation mixing ratio [kg/kg]. Evaluate the polynomial no lower than
+      -85 deg C. If pressure minus saturation vapor pressure is less than 1 Pa,
+      return ep (the dry-air/water-vapor gas-constant ratio) instead of dividing.
+      Inactive division operands are guarded for finite reverse derivatives.
+
+    References:
+      Flatau et al. (1992), J. Appl. Meteor., 31, 1507--1513.
+      saturation.py: shared saturation formulas and polynomial evaluations.
+      src/CLUBB_core/saturation.F90: underlying Fortran saturation routines.
+    """
+    minimum_temperature = -85.0
+    temperature_celsius = jnp.maximum(temperature - T_freeze_K, minimum_temperature)
+    saturation_pressure = 100.0 * (
+        6.11583699 + temperature_celsius * (
+        0.444606896 + temperature_celsius * (
+        0.143177157e-1 + temperature_celsius * (
+        0.264224321e-3 + temperature_celsius * (
+        0.299291081e-5 + temperature_celsius * (
+        0.203154182e-7 + temperature_celsius * (
+        0.702620698e-10 + temperature_celsius * (
+        0.379534310e-13 - temperature_celsius * 0.321582393e-15))))))))
+    denominator = pressure - saturation_pressure
+    capped = denominator < 1.0
+    saturation_rt = ep * saturation_pressure / jnp.where(capped, one, denominator)
+    return jnp.where(capped, ep, saturation_rt)

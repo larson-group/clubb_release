@@ -53,7 +53,7 @@ class ConfigFlags(NamedTuple):
     penta_solve_method: int
     tridiag_solve_method: int
     saturation_formula: int
-    Lscale_method: int  # 1=legacy parcels, 2=diagnosed from tau
+    Lscale_method: int  # 1=legacy parcels, 2=diagnosed from tau, 3=coherent parcels
     grid_remap_method: int
     grid_adapt_in_time_method: int
     fill_holes_type: int

@@ -105,4 +105,7 @@ a_const = 1.8             ! Used for sfc values in sfc_varnce_module, usually =1
 bv_efold = 5.0            ! Control parameter for inverse e-folding of cloud fraction in the mixed Brunt Vaisala frequency  [-]
 wpxp_Ri_exp = .5          ! Exponent determining the influence of the Richardson number on invrs_tau_wpxp  [-]
 z_displace = 25.0         ! displacement of log law profile above ground  [m]
+Lscale_tke_multiplier = 1.0 ! Mean launch energy/TKE in method 3 [-]
+Lscale_pdf_launch_frac = 0.0 ! Fraction toward directional PDF-component means in method 3 [-]
+Lscale_up_weight = 0.5  ! Upward exponent in method-3 geometric mixing [-]
 /

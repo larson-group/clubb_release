@@ -9,8 +9,8 @@
 ! Understanding:
 !   The binding order is nine integer selectors followed by 57 logical flags,
 !   matching ConfigFlags and its converter in clubb_python/derived_types.
-!   Lscale_method is an integer: 1=legacy parcels, 2=diagnosed from tau.
-!   Integer flags must not be decoded as booleans.
+!   Lscale_method is an integer: 1=legacy parcels, 2=diagnosed from tau,
+!   3=coherent parcels. Integer flags must not be decoded as booleans.
 !   No files are read or written here. model_flags.F90 owns defaults and meanings.
 
 module model_flags_wrapper

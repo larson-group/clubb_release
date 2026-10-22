@@ -4,7 +4,7 @@ Usage:
   - ``calc_lscale`` returns the complete length/time diagnosis for one timestep.
   - ``set_lscale_max`` returns a standalone or host-spacing length cap.
   - ``diagnose_lscale_from_tau`` computes method 2 and its inverse-time terms.
-  - ``calc_lscale_directly`` computes legacy parcel method 1.
+  - ``calc_lscale_directly`` selects parcel method 1 or coherent method 3.
 
 Understanding:
   These wrappers require the compiled Python API. They copy the supplied grid,
@@ -14,10 +14,11 @@ Understanding:
   statistics context; statistics are not an extra Python return value.
   Fields use (ngrdcol,nzt) thermodynamic or (ngrdcol,nzm) momentum axes.
   Lengths are in m, times s, inverse times 1/s, pressure Pa, temperature K,
-  water kg/kg, and TKE m^2/s^2. lscale_method is an integer 1 or 2.
+  water kg/kg, and TKE m^2/s^2. lscale_method is an integer 1/2/3, not a boolean.
 
 References:
-  ``src/CLUBB_core/mixing_length.F90`` is the implementation authority.
+  ``src/CLUBB_core/mixing_length.F90`` is the implementation authority;
+  ``doc/coherence_mixing_length.md`` describes coherent method 3.
 """
 
 import numpy as np
@@ -65,7 +66,7 @@ def calc_lscale(
     brunt_vaisala_freq_sqd_smth,
     err_info: ErrInfo,
 ):
-    """Return mixing lengths and damping times for lscale_method 1 or 2.
+    """Return mixing lengths and damping times for lscale_method 1, 2, or 3.
 
     Read initialized grid/PDF state, environmental profiles, moments, and
     per-column parameters. Return ErrInfo followed by inverse times, bounded
@@ -144,7 +145,7 @@ def calc_lscale_directly(
 ):
     """Return ErrInfo and combined/upward/downward parcel lengths [m].
 
-    Use lscale_method=1 to compute legacy parcel lengths from
+    lscale_method selects legacy method 1 or coherent method 3 from
     thermodynamic profiles, momentum-level TKE, PDF properties, and parameters.
     All lengths have (ngrdcol,nzt) shape. Update shared Fortran grid, PDF,
     error, and statistics contexts.

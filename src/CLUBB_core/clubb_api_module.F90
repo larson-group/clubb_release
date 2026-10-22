@@ -143,7 +143,8 @@ module clubb_api_module
     iC_invrs_tau_N2_wp2, iC_invrs_tau_N2_xp2, iC_invrs_tau_N2_wpxp, &
     iC_invrs_tau_N2_clear_wp3, ialtitude_threshold, irtp2_clip_coef, &
     iRichardson_num_min, iRichardson_num_max, iwpxp_Ri_exp, &
-    ia3_coef_min, ia_const, iCx_min, iCx_max, ibv_efold, iz_displace
+    ia3_coef_min, ia_const, iCx_min, iCx_max, ibv_efold, iz_displace, &
+    iLscale_tke_multiplier, iLscale_pdf_launch_frac, iLscale_up_weight
 
 
   use pdf_parameter_module, only : &
@@ -277,7 +278,8 @@ module clubb_api_module
         iC_invrs_tau_N2_wp2, iC_invrs_tau_N2_xp2, iC_invrs_tau_N2_wpxp, &
         iC_invrs_tau_N2_clear_wp3, ialtitude_threshold, irtp2_clip_coef, &
         iRichardson_num_min, iRichardson_num_max, iwpxp_Ri_exp, &
-        ia3_coef_min, ia_const, iCx_min, iCx_max, ibv_efold, iz_displace
+        ia3_coef_min, ia_const, iCx_min, iCx_max, ibv_efold, iz_displace, &
+        iLscale_tke_multiplier, iLscale_pdf_launch_frac, iLscale_up_weight
 
   public &
         advance_clubb_core_api, &

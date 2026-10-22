@@ -269,29 +269,34 @@ implements all three values of the `Lscale_method` flag:
 | --- | --- |
 | `1` | Legacy buoyant-parcel calculation; the default |
 | `2` | Diagnose length from the dissipation time scale, tau |
+| `3` | Weight parcel travel by the fraction of assumed launch energies able to reach each level |
 
 Select a method through the normal [SCM runner](../run_scripts/run_scm.py),
 from the repository root:
 
 ```bash
 ./run_scripts/run_scm.py -jax bomex
-./run_scripts/run_scm.py -jax -override 'Lscale_method=2' bomex
+./run_scripts/run_scm.py -jax -override 'Lscale_method=3' bomex
 ```
 
-Method 1 uses `Lscale_mu_entrain` for parcel entrainment, formerly named `mu`.
-The integer `Lscale_method` replaces `l_diag_Lscale_from_tau`: use 1 for the
-former false/default setting and 2 for the former true setting.
+Method 3 always uses the module's local `sat_mixrat_liq_flatau` for parcel
+saturation. Its four runtime parameters are `Lscale_mu_entrain`,
+`Lscale_tke_multiplier`, `Lscale_pdf_launch_frac`, and `Lscale_up_weight`.
+See the [method description](../doc/coherence_mixing_length.md) for their
+meaning, defaults, and migration from older parameter names. The entrainment
+rate is also used by method 1. The three source-level aggregation choices
+within method 3 are separate from the three `Lscale_method` values.
 
 ### Measure kernel performance
 
 [`benchmark_mixing_length.py`](tests/benchmark_mixing_length.py) measures
 forward calls and parameter gradients on idealized stratified columns. It
-reports compilation separately from synchronized, warmed execution. Run both
-methods with the default sizes, or select method 1 and save JSON:
+reports compilation separately from synchronized, warmed execution. Run all
+three methods with the default sizes, or select method 3 and save JSON:
 
 ```bash
 python3 clubb_jax/tests/benchmark_mixing_length.py
-python3 clubb_jax/tests/benchmark_mixing_length.py -methods 1 \
+python3 clubb_jax/tests/benchmark_mixing_length.py -methods 3 \
   -columns 1 4 8 32 128 -levels 88 198 -samples 20 \
   -output_file mixing_length_timings.json
 ```
@@ -306,8 +311,29 @@ On a compatible NVIDIA host, select the card's physical index and CUDA profile:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 CLUBB_JAX_ACCELERATOR=cuda13 \
-  python3 clubb_jax/tests/benchmark_mixing_length.py -methods 1 -columns 1 4 32 128
+  python3 clubb_jax/tests/benchmark_mixing_length.py -methods 3 -columns 1 4 32 128
 ```
+
+### Change the coherent launch grouping
+
+CPU batches of at least five columns use groups of eight **parcel launch
+levels**. Every group includes all columns. Smaller CPU batches and GPUs
+evaluate all launch levels together. These defaults favor forward simulation
+speed; grouping can make some CPU reverse passes substantially slower.
+
+The group size is hardcoded near the top of `mixing_length.py`:
+
+```python
+COHERENT_CPU_LAUNCH_GROUP_SIZE = 8
+```
+
+Change `8` to `4` to try groups of four, or to `0` to evaluate all launch
+levels together. Start a fresh process after editing so JAX recompiles the
+kernel. There is no size command-line option. The benchmark records the
+hardcoded layout with its results. The fully batched CPU alternative improved
+reverse throughput on the measured wide profiles; the preferred size depends
+on the profile and operation. GPU defaults were measured in float64 on an
+RTX 2060; other accelerators need their own measurements.
 
 ## Differentiability
 
@@ -327,9 +353,10 @@ inputs, and compiled/eager output agreement. Its file header gives the
 settings and numerical limits. Passing this one-step check does not establish
 long-run or all-configuration differentiability, or validate a tuning objective.
 
-The legacy parcel method uses fixed-length scans with masks that preserve its
-physical stopping rule. This supports reverse differentiation while retaining
-the first energy-exhaustion point. Clipping, floors, and cutoff boundaries can still
+Both parcel methods use fixed-length scans with masks that preserve their
+physical stopping rules. This supports reverse differentiation while retaining
+the first energy-exhaustion point in method 1 and the include-then-stop 1%
+tail cutoff in method 3. Clipping, floors, and cutoff boundaries can still
 change derivatives abruptly. Runtime parameter changes reuse compilation at
 the same shapes and static settings. Standalone grid construction currently
 requires ascending grids; kernel orientation checks do not remove that gate.

@@ -95,8 +95,9 @@ PARAM_NAMES: list[str] = [
     "Cx_min", "Cx_max",
     "Richardson_num_min", "Richardson_num_max",
     "a3_coef_min", "a_const", "bv_efold", "wpxp_Ri_exp", "z_displace",
+    "Lscale_tke_multiplier", "Lscale_pdf_launch_frac", "Lscale_up_weight",
 ]
-assert len(PARAM_NAMES) == 102, f"Expected 102 params, got {len(PARAM_NAMES)}"
+assert len(PARAM_NAMES) == 105, f"Expected 105 params, got {len(PARAM_NAMES)}"
 
 # Case-insensitive lookup: lower-case name → 0-based index
 _NAME_TO_IDX: dict[str, int] = {n.lower(): i for i, n in enumerate(PARAM_NAMES)}
@@ -128,6 +129,9 @@ for _name in ("slope_coef_spread_DG_means_w", "pdf_component_stdev_factor_w"):
 for _name in ("coef_spread_DG_means_rt", "coef_spread_DG_means_thl"):
     PARAMETER_HARD_BOUNDS[1, PNAME_IDX[_name]] = 1.0 - _EPS64
 PARAMETER_HARD_BOUNDS[0, PNAME_IDX["Lscale_mu_entrain"]] = _TINY64
+PARAMETER_HARD_BOUNDS[0, PNAME_IDX["Lscale_tke_multiplier"]] = _TINY64
+PARAMETER_HARD_BOUNDS[1, PNAME_IDX["Lscale_pdf_launch_frac"]] = 1.0
+PARAMETER_HARD_BOUNDS[1, PNAME_IDX["Lscale_up_weight"]] = 1.0
 PARAMETER_HARD_BOUNDS[1, PNAME_IDX["beta"]] = 3.0
 PARAMETER_HARD_BOUNDS[:, PNAME_IDX["omicron"]] = (_TINY64, 1.0)
 PARAMETER_HARD_BOUNDS[0, PNAME_IDX["zeta_vrnce_rat"]] = -1.0 + _EPS64
@@ -181,8 +185,9 @@ _DEFAULTS: dict[str, float] = {
     "Richardson_num_min": 0.25, "Richardson_num_max": 400.0,
     "a3_coef_min": 1.0, "a_const": 1.8, "bv_efold": 5.0,
     "wpxp_Ri_exp": 0.5, "z_displace": 25.0,
+    "Lscale_tke_multiplier": 1.0, "Lscale_pdf_launch_frac": 0.0, "Lscale_up_weight": 0.5,
 }
-assert set(_DEFAULTS.keys()) == set(PARAM_NAMES), "Defaults must cover all 102 parameters"
+assert set(_DEFAULTS.keys()) == set(PARAM_NAMES), "Defaults must cover all 105 parameters"
 
 
 # ---------------------------------------------------------------------------
@@ -190,7 +195,7 @@ assert set(_DEFAULTS.keys()) == set(PARAM_NAMES), "Defaults must cover all 102 p
 # ---------------------------------------------------------------------------
 
 def get_param_names() -> list[str]:
-    """Return the 102 parameter names in canonical Fortran ordering."""
+    """Return the 105 parameter names in canonical Fortran ordering."""
     return list(PARAM_NAMES)
 
 

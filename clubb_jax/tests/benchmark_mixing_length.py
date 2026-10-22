@@ -4,14 +4,14 @@
 Run from the repository root; main() prepares the managed JAX environment:
 
     python3 clubb_jax/tests/benchmark_mixing_length.py
-    python3 clubb_jax/tests/benchmark_mixing_length.py -methods 1 \
+    python3 clubb_jax/tests/benchmark_mixing_length.py -methods 3 \
         -columns 1 8 32 -levels 88 198 -samples 20 -output_file timings.json
 
 Inputs and defaults:
-  Time methods 1/2, 1/4/32 columns, and 88/198 thermodynamic levels, using
+  Time methods 1/2/3, 1/4/32 columns, and 88/198 thermodynamic levels, using
   30 samples per measurement. Columns have a 40 m grid, thlm gradient
   0.002 K/m, rt=0.008 kg/kg, TKE=0.5 m^2/s^2, and entrainment=0.001 1/m.
-  PDF components have controlled departures from the means. The
+  PDF launch fraction is 0.35 with controlled component departures. The
   stratified profiles are artificial; they are not saved model trajectories.
   Debug is -1 and statistics are disabled. The launcher environment selects
   the device; e.g. CLUBB_JAX_ACCELERATOR=cuda13 with CUDA_VISIBLE_DEVICES=0.
@@ -22,8 +22,9 @@ Outputs and interpretation:
   timing includes both loss evaluation and reverse differentiation. After
   three warmups, synchronize every call and report median milliseconds plus
   compiled temporary-memory bytes. Emit one JSON row per measurement and,
-  with -output_file, a combined JSON file including version/device.
-  The file's parent directory must exist.
+  with -output_file, a combined JSON file including version/device/layout.
+  The file's parent directory must exist. Kernel layout constants are read
+  from mixing_length.py; there are no size override options.
 
   main() is the script entry point. Nonfinite results fail an assertion;
   finite results alone establish neither derivative accuracy nor agreement
@@ -49,8 +50,8 @@ def main():
                         help='Column counts (default: 1 4 32).')
     parser.add_argument('-levels', type=int, nargs='+', default=[88, 198],
                         help='Thermodynamic level counts (default: 88 198).')
-    parser.add_argument('-methods', type=int, nargs='+', choices=(1, 2), default=[1, 2],
-                        help='Mixing-length methods to time (default: both).')
+    parser.add_argument('-methods', type=int, nargs='+', choices=(1, 2, 3), default=[1, 2, 3],
+                        help='Mixing-length methods to time (default: all three).')
     parser.add_argument('-samples', type=int, default=30,
                         help='Synchronized timed calls per measurement (default: 30).')
     parser.add_argument('-output_file', type=Path, help='Optional JSON results file.')
@@ -67,11 +68,15 @@ def main():
     from clubb_jax.src.CLUBB_core.error_code import set_debug_level
     from clubb_jax.src.CLUBB_core.grid_class import setup_grid
     from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+    from clubb_jax.src.CLUBB_core import mixing_length
     from clubb_jax.src.CLUBB_core.mixing_length import calc_Lscale
-    from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
+    from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params, PNAME_IDX
     from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
 
     set_debug_level(-1)
+    backend = 'CPU' if jax.default_backend() == 'cpu' else 'GPU'
+    layout = {name: getattr(mixing_length, f'COHERENT_{backend}_{name.upper()}')
+              for name in ('launch_group_size', 'group_min_columns', 'offset_block_size')}
     rows = []
     for ncol in args.columns:
         for nlev in args.levels:
@@ -81,6 +86,7 @@ def main():
             rtm = jnp.full((ncol, nzt), .008)
             exner = jnp.exp(-3e-5*gr.zt)
             cp = jnp.asarray(init_clubb_params(ncol, ''))
+            cp = cp.at[:, PNAME_IDX['Lscale_pdf_launch_frac']].set(.35)
             x = dict(thlm=thlm, rtm=rtm, thvm=thlm*(1.+ep1*rtm),
                      em=jnp.full((ncol, nzm), .5), params=cp,
                      pressure=1e5*exner**3.5, exner=exner)
@@ -132,6 +138,8 @@ def main():
                         operation=operation, compile_seconds=compile_seconds,
                         median_ms=float(np.median(samples)),
                         temporary_bytes=memory.temp_size_in_bytes)
+                    if method == 3:
+                        row['coherent_layout'] = layout
                     rows.append(row)
                     print(json.dumps(row), flush=True)
             jax.clear_caches()
@@ -139,6 +147,7 @@ def main():
         args.output_file.write_text(json.dumps(dict(
             jax_version=jax.__version__, devices=[str(d) for d in jax.devices()],
             device_kinds=[d.device_kind for d in jax.devices()],
+            coherent_layout=layout,
             profile='thlm gradient .002 K/m, rt=.008, dz=40 m, TKE=.5, mu=.001',
             rows=rows), indent=2)+'\n')
 

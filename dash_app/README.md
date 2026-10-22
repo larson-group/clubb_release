@@ -140,8 +140,52 @@ reruns use that saved choice even if the chooser changes later.
 - **Reports tab:** browse saved investigation reports from `doc/reports/`,
   including their figures, data, and provenance.
 - **Misc tab:** open focused diagnostics such as the SAM w–rₜ neighborhood
-  viewer and Mixing Length Trajectories explorer. Setup and implementation
+  viewer, Mixing Length Trajectories explorer, and
+  [Affine Coherence Mixing Length](#examine-coherent-mixing-lengths) diagnostic.
+  Setup and implementation
   notes are in [DEVELOPMENT.md](./DEVELOPMENT.md#misc-subtabs).
+
+### Examine coherent mixing lengths
+
+Open **Misc → Mixing length → Affine Coherence Mixing Length** to see how
+parcel launch properties and energy barriers affect the mixing distance.
+The [diagnostic](misc_tab/affine_mixing_length_trajectories/) recomputes lengths
+from one saved column and compares them with saved CLUBB profiles. The
+[method description](../doc/coherence_mixing_length.md) explains coherence as
+the fraction of assumed launch energies able to reach a level.
+
+To create suitable input, first build Fortran as described in the quick start,
+then run from the repository root:
+
+```bash
+./run_scripts/run_scm.py -stats input/stats/all_stats.in arm
+```
+
+Launch Dash, select that run's **Output directory** and **Case**, then choose
+the grid column and record. **Add file by path → Load** opens a compatible
+NetCDF file outside the discovered output folders. **Refresh** rescans files.
+The loader requires the thermodynamic/PDF fields and saved directional lengths
+listed in [`REQUIRED_VARIABLES`](misc_tab/mixing_length_trajectories/analysis.py);
+a reduced statistics list may omit them.
+
+The plots show parcel energy/buoyancy, the greatest energy deficit encountered
+along each path, survival weights, directional/final lengths, and changes
+between nearby records. In each matrix, launch altitude is horizontal and
+target altitude vertical. A weight is statistical survival, not retained
+parcel material. The energy display continues past deterministic stopping
+points so adverse work remains visible.
+
+The four parcel controls initialize from saved parameters when available.
+The **Overwrite method** control changes how the recomputed trajectories
+are combined: keep local reaches, extend maximum endpoints, or average by
+arrival coherence. This is separate from the model's `Lscale_method` flag.
+Changing **Maximum calculated altitude** creates a shorter calculation with
+a new upper boundary; it does not just zoom the figure.
+
+Controls update the diagnostic, leaving the saved curves and model files as
+recorded. Saved statistics can be time averages, and this reader estimates the
+surface floor using a fixed 40 m grid scale. The comparison therefore helps
+explore behavior; it does not establish numerical parity with a model timestep.
 
 ## Advanced usage
 

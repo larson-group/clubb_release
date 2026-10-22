@@ -30,7 +30,7 @@ IMPORTANT:
   break!
 """
 
-nparams = 102
+nparams = 105
 
 iC1 = 0
 iC1b = 1
@@ -137,3 +137,7 @@ ia_const = 98
 ibv_efold = 99
 iwpxp_Ri_exp = 100
 iz_displace = 101
+
+iLscale_tke_multiplier = 102
+iLscale_pdf_launch_frac = 103
+iLscale_up_weight = 104

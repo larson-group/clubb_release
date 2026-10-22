@@ -1,8 +1,17 @@
-"""Check legacy parcel stopping, grid orientation, errors, and derivatives.
+"""Check JAX parcel stopping, coherent tails, and derivative behavior.
 
-Analytic first-layer roots check energy exhaustion. Legacy and tau checks
-compare forward/reverse derivatives and finite differences at smooth inputs,
-including zero-energy finiteness and runtime parameter reuse.
+Run the provisional checks through the repository owner:
+    bash tests/run_pytests.sh -jax -include_generated -k mixing_length
+
+The coherent reference uses NumPy parcel equations with scalar launch/target
+loops and actual early exits, sharing only the native grid interpolation.
+The legacy first-layer reference is dry and linearly stratified, with an
+analytic stopping distance. Other checks cover all three runtime methods,
+zero energy, finite/JVP/reverse/finite-difference derivatives, compilation
+reuse, grid reversal, column isolation, host caps, and incomplete groups.
+Each test documents its setup and assertions below; fixtures restore debug
+state. No Fortran/F2PY runtime is imported. Whole-driver/Fortran comparisons
+and real-case gradients belong to the separate tests/ workflows.
 """
 import jax
 import jax.numpy as jnp
@@ -10,12 +19,12 @@ import numpy as np
 import pytest
 
 from clubb_jax.src.CLUBB_core import error_code
-from clubb_jax.src.CLUBB_core.constants_clubb import ep1, grav
+from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, Rd, ep, ep1, ep2, grav, zero_threshold
 from clubb_jax.src.CLUBB_core.err_info import ErrInfo
-from clubb_jax.src.CLUBB_core.grid_class import setup_grid
+from clubb_jax.src.CLUBB_core.grid_class import setup_grid, zm2zt
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.mixing_length import (
-    calc_Lscale, compute_mixing_length,
+    calc_Lscale, compute_mixing_length, compute_coherent_mixing_length, sat_mixrat_liq_flatau,
 )
 from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params, PNAME_IDX
 from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
@@ -30,6 +39,35 @@ def restore_debug():
     error_code.set_debug_level(previous)
 
 
+def flatau_numpy(pressure, temperature):
+    """Return a NumPy polynomial saturation reference [kg/kg] for pressure [Pa] and
+    temperature [K].
+    """
+    # Use NumPy's polynomial evaluator as the independent saturation reference.
+    coefficients = [6.11583699, .444606896, .0143177157, .000264224321,
+                    .00000299291081, .0000000203154182, .0000000000702620698,
+                    .0000000000000379534310, -.000000000000000321582393]
+    t = np.maximum(np.asarray(temperature) - 273.15, -85.)
+    vapor_pressure = 100. * np.polynomial.polynomial.polyval(t, coefficients)
+    return ep * vapor_pressure / np.where(pressure - vapor_pressure < 1., vapor_pressure,
+                                         pressure - vapor_pressure)
+
+
+def test_local_flatau_temperature_floor_and_pressure_cap():
+    """Compare clipped/capped saturation values with NumPy and require finite, zero
+    derivatives on the flat branches.
+    """
+    temperature = jnp.array([100., 187., 250., 273.15, 300., 350.])
+    pressure = jnp.array([1e5, 1e5, 1e5, 1e5, 1e5, 10.])
+    actual = jax.jit(sat_mixrat_liq_flatau)(pressure, temperature)
+    expected = flatau_numpy(np.asarray(pressure), np.asarray(temperature))
+    assert actual.shape == expected.shape
+    np.testing.assert_allclose(actual, expected, rtol=2e-12, atol=1e-15)
+    gradient = jax.jit(jax.grad(lambda t: jnp.sum(sat_mixrat_liq_flatau(pressure, t))))(temperature)
+    assert np.isfinite(gradient).all()
+    np.testing.assert_array_equal(gradient[jnp.array([0, 1, 5])], 0.)
+
+
 def fixture():
     """Return a two-column moist/stratified grid, thermodynamics, PDF departures, and
     dynamic test inputs.
@@ -40,9 +78,100 @@ def fixture():
     exner = jnp.exp(-3e-5 * gr.zt)
     pdf = init_pdf_params(gr.nzt, 2).replace(
         thl_1=thlm + .7, thl_2=thlm - .4, rt_1=rt + .001, rt_2=rt - .0005)
-    cp = jnp.asarray(init_clubb_params(2, ''))
+    cp = jnp.asarray(init_clubb_params(2, '')).at[:, PNAME_IDX['Lscale_pdf_launch_frac']].set(.35)
+    cp = cp.at[:, PNAME_IDX['Lscale_up_weight']].set(jnp.array([.25, .8]))
     inputs = dict(thlm=thlm, rtm=rt, em=jnp.full((2, gr.nzm), .4), clubb_params=cp)
     return gr, exner, 1e5 * exner**3.5, thlm * (1. + ep1 * rt), pdf, inputs
+
+
+def coherent_numpy(gr, thvm, thlm, rt, pdf, em, pressure, exner, mu, multiplier, frac, weight):
+    """Return serial coherent lengths and the number of actual tail cutoffs.
+
+    Use ascending grid fields with the same units as the production routine;
+    mu, multiplier, fraction, and weight are per-column vectors. Reconstruct
+    arrival-weighted reaches without the production scan/grouping control flow.
+    The surface floor and cap are omitted; tests choose a zero floor and a
+    nonbinding cap for these comparisons.
+    """
+    z = np.asarray(gr.zt)
+    ncol, nlev = z.shape
+    energy = np.maximum(np.asarray(zm2zt(gr.nzm, gr.nzt, ncol, gr, em)), 0.) * multiplier[:, None]
+    directional = []
+    cutoff_count = 0
+    for sign, component in [(1, 1), (-1, 2)]:
+        raw = np.zeros_like(z)
+        crossed = np.zeros_like(z)
+        arrival = np.ones_like(z)
+        for i in range(ncol):
+            def buoyancy(thl_parcel, rt_parcel, j):
+                """Return path-oriented moist buoyancy [m/s^2] at target j for one column."""
+                t = thl_parcel * exner[i, j]
+                rs = flatau_numpy(pressure[i, j], t)
+                rc = max((rt_parcel - rs) * t*t / (t*t + ep*Lv*Lv/(Rd*Cp)*rs), zero_threshold)
+                thv = thl_parcel + ep1 * thlm[i, j] * rt_parcel + (Lv/(exner[i, j]*Cp) - ep2*thlm[i, j])*rc
+                return sign * (grav/thvm[i, j]*thv - grav)
+            for k in range(nlev):
+                if energy[i, k] <= 0.:
+                    continue
+                thl_parcel = thlm[i, k] + frac[i] * (np.asarray(getattr(pdf, f'thl_{component}'))[i, k] - thlm[i, k])
+                rt_parcel = rt[i, k] + frac[i] * (np.asarray(getattr(pdf, f'rt_{component}'))[i, k] - rt[i, k])
+                previous_buoyancy = buoyancy(thl_parcel, rt_parcel, k)
+                work = barrier = 0.
+                targets = range(k+1, nlev-1) if sign == 1 else range(k-1, -1, -1)
+                for j in targets:
+                    previous = j-sign
+                    depth = abs(z[i, j] - z[i, previous])
+                    retention = np.exp(-mu[i]*depth)
+                    response = (1.-retention)/(mu[i]*depth)
+                    thl_parcel = thlm[i, j] + retention*(thl_parcel-thlm[i, previous]) - response*(thlm[i, j]-thlm[i, previous])
+                    rt_parcel = rt[i, j] + retention*(rt_parcel-rt[i, previous]) - response*(rt[i, j]-rt[i, previous])
+                    current_buoyancy = buoyancy(thl_parcel, rt_parcel, j)
+                    work += .5*(previous_buoyancy + current_buoyancy)*depth
+                    next_barrier = max(barrier, -work)
+                    coherence = energy[i, k]**2 / ((energy[i, k]+barrier)*(energy[i, k]+next_barrier))
+                    length = coherence*depth
+                    raw[i, k] += length
+                    if sign == 1 or k != nlev-1:
+                        crossed[i, j] += length
+                        arrival[i, j] += energy[i, k]**2/(energy[i, k]+next_barrier)**2
+                    if coherence <= .01:
+                        cutoff_count += 1
+                        break
+                    previous_buoyancy, barrier = current_buoyancy, next_barrier
+            order = range(nlev-1) if sign == 1 else range(nlev-2, -1, -1)
+            remaining = raw[i, 0 if sign == 1 else nlev-2]
+            for position, k in enumerate(order):
+                if position:
+                    remaining += raw[i, k] - crossed[i, k]
+                raw[i, k] = max(.1, remaining/arrival[i, k])
+        directional.append(raw)
+    up, down = directional
+    result = up[:, :-1]**weight[:, None] * down[:, :-1]**(1.-weight[:, None])
+    return (np.concatenate((result, result[:, -1:]), axis=1), up, down), cutoff_count
+
+
+@pytest.mark.parametrize('energy', [.4, .0001, 0.])
+def test_coherent_matches_serial_early_exit_oracle(energy):
+    """Compare both moist columns with the serial oracle at ordinary, cutoff-triggering,
+    and zero launch energies.
+    """
+    gr, exner, pressure, thvm, pdf, x = fixture()
+    em = jnp.full_like(x['em'], energy)
+    mu, multiplier = jnp.array([.001, .002]), jnp.array([1., .7])
+    frac, weight = jnp.array([.35, 1.]), jnp.array([0., 1.])
+    actual = jax.jit(lambda e: compute_coherent_mixing_length(
+        gr.nzm, gr.nzt, 2, gr, thvm, x['thlm'], x['rtm'], pdf, e,
+        jnp.full((2,), 1e5), pressure, exner, x['thlm'], mu, multiplier,
+        frac, weight, 0., False, ErrInfo.initialized(2)))(em)
+    expected, cutoffs = coherent_numpy(gr, np.asarray(thvm), np.asarray(x['thlm']),
+        np.asarray(x['rtm']), pdf, em, np.asarray(pressure), np.asarray(exner),
+        np.asarray(mu), np.asarray(multiplier), np.asarray(frac), np.asarray(weight))
+    assert not actual[0].is_fatal()
+    for result, reference in zip(actual[1:], expected):
+        assert result.shape == reference.shape == (2, gr.nzt)
+        np.testing.assert_allclose(result, reference, rtol=2e-10, atol=2e-9)
+    if energy == .0001:
+        assert cutoffs > 0  # This oracle actually exercises the masked tail.
 
 
 def test_legacy_first_layer_root_and_debug_predicate():
@@ -72,12 +201,12 @@ def test_legacy_first_layer_root_and_debug_predicate():
         np.testing.assert_allclose(result, reference, rtol=2e-10, atol=1e-10)
 
 
-@pytest.mark.parametrize('method', [1, 2])
-def test_methods_gradients_and_runtime_parameter_reuse(method):
+@pytest.mark.parametrize('method', [1, 2, 3])
+def test_three_methods_gradients_and_runtime_parameter_reuse(method):
     """Check each method's gradients and compilation reuse on two moist columns.
 
     Require finite zero-energy derivatives, JVP/reverse/finite-difference
-    agreement at smooth inputs, and runtime parameter reuse.
+    agreement at smooth inputs, and nonzero coherent-parameter sensitivities.
     """
     gr, exner, pressure, thvm, pdf, x = fixture()
     stats = JaxStats.empty(l_sample=False, names=(), ncol=2, max_nlev=gr.nzm)
@@ -101,7 +230,9 @@ def test_methods_gradients_and_runtime_parameter_reuse(method):
     assert all(np.isfinite(g).all() for g in gradient.values())
     direction = dict(thlm=jnp.cos(gr.zt)*.01, rtm=jnp.ones_like(x['rtm'])*1e-6,
                      em=jnp.ones_like(x['em'])*.01, clubb_params=jnp.zeros_like(x['clubb_params']))
-    direction['clubb_params'] = direction['clubb_params'].at[:, PNAME_IDX['Lscale_mu_entrain']].set(1e-5)
+    for name, amount in [('Lscale_mu_entrain', 1e-5), ('Lscale_tke_multiplier', .02),
+                         ('Lscale_pdf_launch_frac', .01), ('Lscale_up_weight', .01)]:
+        direction['clubb_params'] = direction['clubb_params'].at[:, PNAME_IDX[name]].set(amount)
     scalar = lambda values: loss(values)[0]
     _, tangent = jax.jit(lambda x, d: jax.jvp(scalar, (x,), (d,)))(x, direction)
     reverse = sum(jnp.vdot(gradient[k], direction[k]) for k in x)
@@ -115,6 +246,10 @@ def test_methods_gradients_and_runtime_parameter_reuse(method):
     cache_size = compiled._cache_size()
     compiled(plus)
     assert compiled._cache_size() == cache_size
+    if method == 3:
+        for name in ('Lscale_mu_entrain', 'Lscale_tke_multiplier', 'Lscale_pdf_launch_frac', 'Lscale_up_weight'):
+            assert np.any(np.asarray(gradient['clubb_params'][:, PNAME_IDX[name]]) != 0.), name
+
     # Exact zero launch energy is a clipping boundary. Its chosen derivative
     # must remain finite even though inactive path formulas contain divisions.
     at_zero = dict(x, em=jnp.zeros_like(x['em']))
@@ -123,7 +258,7 @@ def test_methods_gradients_and_runtime_parameter_reuse(method):
     assert all(np.isfinite(g).all() for g in gradient.values())
 
 
-@pytest.mark.parametrize('method', [1])
+@pytest.mark.parametrize('method', [1, 3])
 def test_parcel_orientation_stretched_grid_host_floor_and_cap(method):
     """Compare physical lengths after native grid reversal, enforce host caps, and check
     parameter-column isolation.
@@ -137,12 +272,12 @@ def test_parcel_orientation_stretched_grid_host_floor_and_cap(method):
     thl = 298. + .003*gr.zt
     rt = jnp.full_like(thl, .008)
     pdf = init_pdf_params(gr.nzt, 2).replace(thl_1=thl+.5, thl_2=thl-.3, rt_1=rt+.001, rt_2=rt-.001)
-    cp = jnp.asarray(init_clubb_params(2, ''))
+    cp = jnp.asarray(init_clubb_params(2, '')).at[:, PNAME_IDX['Lscale_pdf_launch_frac']].set(.3)
     em = jnp.broadcast_to(jnp.array([[.01], [1.]]), (2, gr.nzm))
     stats = JaxStats.empty(l_sample=False, names=(), ncol=2, max_nlev=gr.nzt)
 
     def calculate(grid, thl, rt, em, pdf, cp):
-        """Return legacy outputs on the supplied native grid with host floors
+        """Return direct/coherent outputs on the supplied native grid with host floors
         and per-column caps.
         """
         exner = jnp.exp(-3e-5*grid.zt)
@@ -239,3 +374,97 @@ def test_cpu_launch_groups_match_single_columns_and_transpose():
     h = 1e-4
     finite_difference = (evaluate(mu+h*direction)-evaluate(mu-h*direction))/(2*h)
     np.testing.assert_allclose(reverse, finite_difference, rtol=2e-5, atol=1e-7)
+
+
+@pytest.mark.parametrize('descending', [False, True])
+def test_coherent_partial_launch_groups_preserve_columns_and_derivatives(descending):
+    """Compare a nine-column coherent batch with serial and singleton references.
+
+    Use partial launch/offset blocks, mixed moisture and energy, real early
+    cutoffs, both grid orientations, column-isolated changes, and JVP/reverse/
+    finite-difference checks to detect padding or masking errors.
+    """
+    # A partial final launch group and offset block must not contribute padded
+    # parcels. Mixed moisture/energy columns include zero energy, early cutoffs,
+    # and long trajectories; the serial NumPy oracle uses actual early exits.
+    ncol = 9
+    gr = setup_grid(ngrdcol=ncol, deltaz=80., zm_init=0., zm_top=2960.)
+    thlm = 298. + .003*gr.zt + jnp.arange(ncol)[:, None]*.03
+    rt = jnp.broadcast_to(jnp.linspace(.008, .018, ncol)[:, None], thlm.shape)
+    em = jnp.broadcast_to(jnp.linspace(.1, .8, ncol)[:, None], (ncol, gr.nzm))
+    em = em.at[0].set(0.).at[1].set(.0001)
+    cp = jnp.asarray(init_clubb_params(ncol, ''))
+    cp = cp.at[:, PNAME_IDX['Lscale_mu_entrain']].set(jnp.linspace(.0007, .002, ncol))
+    cp = cp.at[:, PNAME_IDX['Lscale_pdf_launch_frac']].set(jnp.linspace(0., 1., ncol))
+    cp = cp.at[:, PNAME_IDX['Lscale_up_weight']].set(jnp.linspace(0., 1., ncol))
+    exner = jnp.exp(-3e-5*gr.zt)
+    pdf = init_pdf_params(gr.nzt, ncol).replace(
+        thl_1=thlm+.7, thl_2=thlm-.4, rt_1=rt+.001, rt_2=rt-.0005)
+    expected, cutoffs = coherent_numpy(gr, np.asarray(thlm*(1.+ep1*rt)),
+        np.asarray(thlm), np.asarray(rt), pdf, np.asarray(em),
+        np.asarray(1e5*exner**3.5), np.asarray(exner),
+        np.asarray(cp[:, PNAME_IDX['Lscale_mu_entrain']]),
+        np.asarray(cp[:, PNAME_IDX['Lscale_tke_multiplier']]),
+        np.asarray(cp[:, PNAME_IDX['Lscale_pdf_launch_frac']]),
+        np.asarray(cp[:, PNAME_IDX['Lscale_up_weight']]))
+    assert cutoffs > 0
+    if descending:
+        gr = gr.replace(
+            **{name: -getattr(gr, name)[:, ::-1]
+               for name in ('dzm', 'dzt', 'invrs_dzm', 'invrs_dzt')},
+            zm=gr.zm[:, ::-1], zt=gr.zt[:, ::-1],
+            weights_zm2zt=gr.weights_zm2zt[:, ::-1, ::-1],
+            weights_zt2zm=gr.weights_zt2zm[:, ::-1, ::-1],
+            grid_dir=-1., grid_dir_indx=-1, k_lb_zm=gr.nzm-1, k_ub_zm=0,
+            k_lb_zt=gr.nzt-1, k_ub_zt=0)
+        thlm, rt, em = thlm[:, ::-1], rt[:, ::-1], em[:, ::-1]
+        expected = [a[:, ::-1] for a in expected]
+    x = dict(thlm=thlm, rt=rt, em=em, params=cp)
+
+    def calculate(grid, values):
+        """Return coherent outputs from dynamic state/parameters on the supplied native grid."""
+        ng = grid.ngrdcol
+        thl, rt = values['thlm'], values['rt']
+        exner = jnp.exp(-3e-5*grid.zt)
+        params = values['params']
+        pdf = init_pdf_params(grid.nzt, ng).replace(
+            thl_1=thl+.7, thl_2=thl-.4, rt_1=rt+.001, rt_2=rt-.0005)
+        return compute_coherent_mixing_length(grid.nzm, grid.nzt, ng, grid,
+            thl*(1.+ep1*rt), thl, rt, pdf, values['em'], jnp.full((ng,), 1e5),
+            1e5*exner**3.5, exner, thl,
+            params[:, PNAME_IDX['Lscale_mu_entrain']],
+            params[:, PNAME_IDX['Lscale_tke_multiplier']],
+            params[:, PNAME_IDX['Lscale_pdf_launch_frac']],
+            params[:, PNAME_IDX['Lscale_up_weight']], 0., False, ErrInfo.initialized(ng))
+
+    run = jax.jit(calculate)
+    batch = run(gr, x)
+    assert not batch[0].is_fatal()
+    for actual, reference in zip(batch[1:], expected):
+        assert actual.shape == reference.shape == (ncol, gr.nzt)
+        np.testing.assert_allclose(actual, reference, rtol=2e-10, atol=2e-9)
+    for i in range(ncol):
+        one_grid = jax.tree.map(lambda a: a[i:i+1], gr).replace(ngrdcol=1)
+        single = run(one_grid, {k: a[i:i+1] for k, a in x.items()})
+        for actual, reference in zip(batch[1:], single[1:]):
+            assert reference.shape == (1, gr.nzt)
+            np.testing.assert_allclose(actual[i:i+1], reference, rtol=2e-10, atol=2e-9)
+    changed = run(gr, dict(x, params=cp.at[4, PNAME_IDX['Lscale_mu_entrain']].set(.003)))
+    for actual, reference in zip(changed[1:], batch[1:]):
+        np.testing.assert_array_equal(np.delete(actual, 4, axis=0), np.delete(reference, 4, axis=0))
+
+    loss = lambda values: jnp.sum(calculate(gr, values)[1] * jnp.linspace(.5, 1.5, gr.nzt))
+    gradient = jax.jit(jax.grad(loss))(x)
+    assert all(np.isfinite(g).all() for g in gradient.values())
+    direction = dict(thlm=jnp.cos(gr.zt)*.01, rt=jnp.ones_like(rt)*1e-6,
+                     em=jnp.ones_like(em).at[0].set(0.)*.001, params=jnp.zeros_like(cp))
+    direction['params'] = direction['params'].at[:, PNAME_IDX['Lscale_mu_entrain']].set(1e-5)
+    _, tangent = jax.jit(lambda x, d: jax.jvp(loss, (x,), (d,)))(x, direction)
+    reverse = sum(jnp.vdot(gradient[k], direction[k]) for k in x)
+    np.testing.assert_allclose(tangent, reverse, rtol=2e-9, atol=1e-8)
+    evaluate = jax.jit(loss)
+    h = 1e-4
+    plus = {k: x[k]+h*direction[k] for k in x}
+    minus = {k: x[k]-h*direction[k] for k in x}
+    finite_difference = (evaluate(plus)-evaluate(minus))/(2*h)
+    np.testing.assert_allclose(reverse, finite_difference, rtol=5e-5, atol=1e-6)

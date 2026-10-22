@@ -152,6 +152,7 @@ saturation_lookup = 4  # Use a lookup table for mixing length
 
 Lscale_direct = 1      # Legacy buoyant-parcel mixing length
 Lscale_tau = 2         # Diagnose mixing length from the dissipation time scale
+Lscale_coherence = 3   # Coherence-weighted buoyant-parcel mixing length
 
 # -----------------------------------------------------------------------------
 # Options that can be changed at runtime

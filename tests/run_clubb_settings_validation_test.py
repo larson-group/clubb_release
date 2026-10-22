@@ -160,6 +160,7 @@ def run_test() -> None:
     _assert_case_matches(clubb_api, ErrInfo, "valid baseline")
     _assert_case_matches(clubb_api, ErrInfo, "hard upper bound", param_updates={"C_uu_shr": 1.01})
     _assert_case_matches(clubb_api, ErrInfo, "hard lower bound", param_updates={"C_uu_shr": -0.01})
+    _assert_case_matches(clubb_api, ErrInfo, "zero launch energy multiplier", param_updates={"Lscale_tke_multiplier": 0.0}, flag_updates={"Lscale_method": 3})
     _assert_case_matches(clubb_api, ErrInfo, "linked parameter equality", param_updates={"C6rt": 2.0, "C6thl": 1.0})
     _assert_case_matches(clubb_api, ErrInfo, "EM damping relation", param_updates={"C1": 2.0, "C14": 1.0}, flag_updates={"l_damp_wp2_using_em": True})
     _assert_case_matches(clubb_api, ErrInfo, "EM damping stability flag", flag_updates={"l_damp_wp2_using_em": True, "l_stability_correct_tau_zm": True})
