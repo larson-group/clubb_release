@@ -259,88 +259,12 @@ This option applies only to NVIDIA CUDA. See
 [Advanced GPU Options](#advanced-gpu-options) for device selection details
 and memory trade-offs.
 
-## Mixing-length methods
-
-The mixing length sets a distance for turbulent mixing and helps determine
-turbulence damping times. [`mixing_length.py`](src/CLUBB_core/mixing_length.py)
-implements all three values of the `Lscale_method` flag:
-
-| Value | Method |
-| --- | --- |
-| `1` | Legacy buoyant-parcel calculation; the default |
-| `2` | Diagnose length from the dissipation time scale, tau |
-| `3` | Weight parcel travel by the fraction of assumed launch energies able to reach each level |
-
-Select a method through the normal [SCM runner](../run_scripts/run_scm.py),
-from the repository root:
-
-```bash
-./run_scripts/run_scm.py -jax bomex
-./run_scripts/run_scm.py -jax -override 'Lscale_method=3' bomex
-```
-
-Method 3 always uses the module's local `sat_mixrat_liq_flatau` for parcel
-saturation. Its four runtime parameters are `Lscale_mu_entrain`,
-`Lscale_tke_multiplier`, `Lscale_pdf_launch_frac`, and `Lscale_up_weight`.
-See the [method description](../doc/coherence_mixing_length.md) for their
-meaning, defaults, and migration from older parameter names. The entrainment
-rate is also used by method 1. The three source-level aggregation choices
-within method 3 are separate from the three `Lscale_method` values.
-
-### Measure kernel performance
-
-[`benchmark_mixing_length.py`](tests/benchmark_mixing_length.py) measures
-forward calls and parameter gradients on idealized stratified columns. It
-reports compilation separately from synchronized, warmed execution. Run all
-three methods with the default sizes, or select method 3 and save JSON:
-
-```bash
-python3 clubb_jax/tests/benchmark_mixing_length.py
-python3 clubb_jax/tests/benchmark_mixing_length.py -methods 3 \
-  -columns 1 4 8 32 128 -levels 88 198 -samples 20 \
-  -output_file mixing_length_timings.json
-```
-
-Rows printed to the terminal and saved in JSON identify the method, shape,
-operation, compilation time, median execution time, and temporary memory.
-The script prepares its managed JAX environment. It measures the full
-`calc_Lscale` kernel with statistics disabled; whole-model runtime also
-includes the other physics, statistics, and host work.
-
-On a compatible NVIDIA host, select the card's physical index and CUDA profile:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 CLUBB_JAX_ACCELERATOR=cuda13 \
-  python3 clubb_jax/tests/benchmark_mixing_length.py -methods 3 -columns 1 4 32 128
-```
-
-### Change the coherent launch grouping
-
-CPU batches of at least five columns use groups of eight **parcel launch
-levels**. Every group includes all columns. Smaller CPU batches and GPUs
-evaluate all launch levels together. These defaults favor forward simulation
-speed; grouping can make some CPU reverse passes substantially slower.
-
-The group size is hardcoded near the top of `mixing_length.py`:
-
-```python
-COHERENT_CPU_LAUNCH_GROUP_SIZE = 8
-```
-
-Change `8` to `4` to try groups of four, or to `0` to evaluate all launch
-levels together. Start a fresh process after editing so JAX recompiles the
-kernel. There is no size command-line option. The benchmark records the
-hardcoded layout with its results. The fully batched CPU alternative improved
-reverse throughput on the measured wide profiles; the preferred size depends
-on the profile and operation. GPU defaults were measured in float64 on an
-RTX 2060; other accelerators need their own measurements.
-
 ## Differentiability
 
 [`run_jax_timestep_gradient_test.py`](tests/run_jax_timestep_gradient_test.py)
 checks forward and reverse derivatives of one normal driver timestep for
-BOMEX and ATEX, using an artificial scalar loss and the configured default
-mixing-length method. Run both cases or select one, from the repository root:
+BOMEX and ATEX, using an artificial scalar loss. Run both cases or select one,
+from the repository root:
 
 ```bash
 python3 clubb_jax/tests/run_jax_timestep_gradient_test.py
@@ -352,14 +276,6 @@ derivatives, finite differences away from clipping boundaries, unchanged
 inputs, and compiled/eager output agreement. Its file header gives the
 settings and numerical limits. Passing this one-step check does not establish
 long-run or all-configuration differentiability, or validate a tuning objective.
-
-Both parcel methods use fixed-length scans with masks that preserve their
-physical stopping rules. This supports reverse differentiation while retaining
-the first energy-exhaustion point in method 1 and the include-then-stop 1%
-tail cutoff in method 3. Clipping, floors, and cutoff boundaries can still
-change derivatives abruptly. Runtime parameter changes reuse compilation at
-the same shapes and static settings. Standalone grid construction currently
-requires ascending grids; kernel orientation checks do not remove that gate.
 
 ## Testing
 
@@ -456,7 +372,6 @@ separate from the focused Jenkins pytest stage.
 | --- | --- |
 | SILHS initialization, feedback modes and multicolumn sampling | `python3 clubb_jax/tests/run_silhs_driver_test.py` |
 | BOMEX/ATEX driver gradients, JVPs and finite differences | `python3 clubb_jax/tests/run_jax_timestep_gradient_test.py` |
-| Mixing-length forward and parameter-gradient kernel timings | `python3 clubb_jax/tests/benchmark_mixing_length.py` |
 | Neutral/ARM initialization and timesteps with binding imports blocked | `python3 clubb_jax/tests/run_standalone_no_bindings_test.py` |
 | Morrison eager/JIT species interfaces and compiled fatal diagnostics | `python3 clubb_jax/tests/run_morrison_interface_test.py` |
 | Mixed-moment PDF integrals against large Monte Carlo samples | `python3 clubb_jax/tests/run_pdf_monte_carlo_test.py` |
