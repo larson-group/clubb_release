@@ -1,0 +1,381 @@
+commit 267581277ad2bf981f221a9cba256d28dba85291
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Oct 21 22:20:01 2026 -0500
+
+    Remove mixing-length benchmark and README internals
+    
+    The general JAX README includes mixing-length options and implementation
+    details that belong with the method documentation. Remove that material,
+    the manual kernel benchmark and its references.
+    
+    Reviewed the diff, references and whitespace. Runtime and Jenkins tests
+    were not rerun, as requested.
+
+commit 90d060891ccd2e1173383927f6b28510a231ae9d
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 21 21:49:20 2026 -0500
+
+    Add coherent parcel mixing length in Fortran and JAX (#1344)
+    
+    * New mixing length code, still somewhat experimental
+    
+    * Small improvements - making one unified new version with different final overwriting methods
+    
+    * Little cleanup - small kernel merges, and division precalc
+    
+    * Newish pdf launch method - seems to be about the same but more physically informed. Also making Lscale_method flag to choose method in general via integer
+    
+    * Little changes - computing wp4 directly rather than trying to reverse interpolate, also changing defaults to things that basically make them inactive in the new mixing length
+    
+    * Remove moment-informed mixing length method
+    
+    * Removing accidentally added param configs
+    
+    * Little change to make a parameter function more direct and understandable - Lscale_survival_fraction turned into Lscale_survival_fraction, since it's easier to interpret as just a multiplier on the assumed mean tke of rising parcels
+    
+    * Improving mixing length documentation - still could use some work
+    
+    * Use local Flatau saturation in coherent mixing length
+    
+    * Port mixing-length methods to differentiable JAX
+    
+    Implement all three methods with fixed scans and masked parcel stopping.
+    Use measured CPU launch grouping and GPU batching for coherent parcels,
+    and retain the source interfaces, parameter bounds and column failure status.
+    Integrate master's direct diagnostics and timing support.
+    
+    Update the method documentation, trajectory diagnostics and focused checks.
+    The 14 mixing-length cases, seven diagnostic checks and parameter-index check
+    pass locally after the merge. Intel O2 builds and source checks pass.
+    Jenkins validation and the full-run timing comparison are pending.
+    
+    * Restore legacy mixing length as the default
+    
+    Keep the standard case and Tune configurations on legacy parcels while comparing legacy and coherent methods. All 11 Tune preset checks pass with the restored default.
+    
+    * Use configured mixing length in driver derivative checks
+    
+    Remove method overrides from the general timestep autodiff check and keep run instructions out of the scientific method note. Exclude the native mixing-length routine's internal timers from Python API-export requirements.
+    
+    BOMEX and ATEX default-method gradient, JVP, finite-difference and eager/JIT checks pass. The focused cross-module API audit passes with its other expectations retained.
+    
+    * Align JAX microphysics with per-column Fortran inputs
+    
+    Pass each column’s parameters into PDF preparation and its own grid spacing into hydrometeor hole filling after the master multi-column fix. The previous scalar remapping disagreed with current Fortran from step 2.
+    
+    Six focused eager/JIT checks pass, covering column independence, conserved mass and derivatives. Both regressions detect the retained pre-fix adapters; full case comparisons are in progress.
+    
+    * Keep the legacy DYCOMS comparison below its roundoff-sensitive interval
+    
+    Reduce the dycoms2_rf02_ds curated limit from 240 to the requested 230 steps. Historical Jenkins runs first fail the cumulative comparison at step 236; matched local runs fail at 242. Tolerances and saved fields stay unchanged.
+    
+    A one-ULP entrainment perturbation in Fortran alone produces a similar late failure. Identical-input parcel checks agree within 6.3e-9 m, and the matched historical coherent run agrees through 360 steps. This evidence concerns the pre-master multi-column configuration; corrected-master validation is in progress.
+    
+    * Require completed validation before branch finalization
+    
+    Treat urgency as approval to proceed without routine review pauses while
+    preserving the stop for substantive unaccepted issues. Require reviewed test
+    results, including relevant Jenkins jobs, before completion, with a narrow
+    trivial-prose exception and owner checks where no Jenkins job applies.
+    
+    Both skill validators and relative-link checks pass.
+    
+    * Require positive launch-energy scaling and clarify parcel averaging
+    
+    Reject zero Lscale_tke_multiplier consistently in Fortran, JAX and the
+    settings validator. Remove redundant nonnegative-TKE handling from the
+    coherent parcel calculation and retain the reviewed explanatory cleanup.
+    
+    The settings-rule checks (19 tests), native/Python bounds parity and
+    public native/JAX startup checks pass, including zero and negative inputs.
+    Full Jenkins branch validation follows the master merge.
+    
+    * Update restored legacy mixing-length reference calls
+    
+    Master restored a reference test using the removed imu/newmu interface.
+    Use the current parameter index, initialized parameter count and explicit
+    legacy method selector. Keep the sampled states and comparison tolerance.
+    
+    This is a validation checkpoint for the Jenkins rerun; no physics changes.
+    
+    * Align API multiplier tests with positive bounds
+    
+    Use a valid positive launch multiplier in the reach comparison and expect the strictly positive hard bound. Startup validation retains explicit rejection coverage for zero. Both affected API tests pass; rerun the Python Jenkins job on this checkpoint.
+    
+    * Make legacy mixing length differentiable and migrate its selector
+    
+    The value-dependent JAX parcel loops prevented reverse differentiation and
+    serialized independent launches. Use fixed scans with masks, batched launch
+    levels and per-column error state while preserving Fortran stopping rules.
+    Port the remaining legacy/tau branches and use the configured method in
+    driver derivative checks.
+    
+    Replace the logical tau switch with Lscale_method (1=legacy, 2=tau), and
+    rename mu to Lscale_mu_entrain throughout core, bindings, inputs and validation.
+    Keep 102 tunable parameters; coherent physics is a separate follow-up.
+    
+    Local GNU Debug/API build, source checks, 447 unit checks and 240 API checks
+    pass. Integrated Jenkins validation follows this checkpoint.
+    
+    * Read renamed entrainment parameters in Dash trajectories
+    
+    Saved output now names parcel entrainment Lscale_mu_entrain. Prefer that
+    parameter while retaining support for older files saved with mu. Update
+    Dash test settings to use the integer mixing-length selector.
+    
+    The local Dash suite passes 552 checks.
+    
+    * Require completed tests before branch finalization
+    
+    Requests to finalize immediately still require applicable Jenkins jobs to
+    finish and their results to be reviewed. Distinguish validation checkpoints
+    from a completed handoff, and report relevant stages of baseline-failing jobs.
+    
+    * Remove inline mixing-length selector comments
+    
+    Remove the method enumeration from the six model-flag namelists. Preserve selector values and existing assignment spacing.
+    
+    * Clarify the coherent mixing-length method note
+    
+    The probability and barrier notation was harder to follow than necessary. Apply the documentation review, remove stale launch-energy descriptions, and add sketches of the running barrier and expected travel distance.
+
+commit b2a6a9ceab12125d4a2542da4e20736039f3a744
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Oct 21 15:41:22 2026 -0500
+
+    The previous commit changed flags, which will now break the BFB tests even when the bit changing message is included, so now we need to have RESOLVED:dfa3b53697658b3f5f24cb5ae83c8e11fe0c0d65 messsages or enable temporary backwards compatibility.
+
+commit dfa3b53697658b3f5f24cb5ae83c8e11fe0c0d65
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 21 15:34:50 2026 -0500
+
+    Port differentiable legacy mixing length and migrate its selector (#1408)
+    
+    * Make legacy mixing length differentiable and migrate its selector
+    
+    The value-dependent JAX parcel loops prevented reverse differentiation and
+    serialized independent launches. Use fixed scans with masks, batched launch
+    levels and per-column error state while preserving Fortran stopping rules.
+    Port the remaining legacy/tau branches and use the configured method in
+    driver derivative checks.
+    
+    Replace the logical tau switch with Lscale_method (1=legacy, 2=tau), and
+    rename mu to Lscale_mu_entrain throughout core, bindings, inputs and validation.
+    Keep 102 tunable parameters; coherent physics is a separate follow-up.
+    
+    Local GNU Debug/API build, source checks, 447 unit checks and 240 API checks
+    pass. Integrated Jenkins validation follows this checkpoint.
+    
+    * Read renamed entrainment parameters in Dash trajectories
+    
+    Saved output now names parcel entrainment Lscale_mu_entrain. Prefer that
+    parameter while retaining support for older files saved with mu. Update
+    Dash test settings to use the integer mixing-length selector.
+    
+    The local Dash suite passes 552 checks.
+    
+    * Require completed tests before branch finalization
+    
+    Requests to finalize immediately still require applicable Jenkins jobs to
+    finish and their results to be reviewed. Distinguish validation checkpoints
+    from a completed handoff, and report relevant stages of baseline-failing jobs.
+
+commit 82c8fdb39580f015d26f9cb021b8376696d96b7f
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Oct 20 21:22:23 2026 -0500
+
+    Fix per-column inputs in JAX microphysics (#1407)
+    
+    * Align JAX microphysics with per-column Fortran inputs
+    
+    Pass each column’s parameters into PDF preparation and its own grid spacing into hydrometeor hole filling after the master multi-column fix. The previous scalar remapping disagreed with current Fortran from step 2.
+    
+    Six focused eager/JIT checks pass, covering column independence, conserved mass and derivatives. Both regressions detect the retained pre-fix adapters; full case comparisons are in progress.
+    
+    (cherry picked from commit 7fc8280d9ce3fe0ec51bf5e7f3cfd3a0e7c8838a)
+    
+    * Explain PR problems before describing their solutions
+    
+    Change-first PR openings make their motivation harder to follow. Use
+    Motivation and Change to describe the problem first, then its cause and
+    the proposed solution; align the language guidance with that order.
+    
+    Both documentation skills validate, and relative-link checks pass.
+
+commit bb08268b3348ef71f7eec35eb0fb5ee4eb10197d
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Tue Oct 20 14:57:07 2026 -0500
+
+    Restore jax fortran oracle tests (#1404)
+    
+    Restored clubb_jax vs clubb_f2py fortran bindings tests that compare the outputs of clubb_jax functions directly to their compiled fortran counterparts.
+    
+    clubb_jax changes are minimal:
+    
+    Use hardcoded pi that matches the pi used in fortran instead of jnp.pi
+    remove the clubb_release hardcoded path from the gases_ckd_data.py parser.
+
+commit 8369512fcc6487603491e12ac13376de2aec2a0b
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Mon Oct 19 21:23:25 2026 -0500
+
+    Clubb params 1d to 2d fix (#1392)
+    
+    * Fix: clubb params is a shape (ngrdcol,nparams) that is passed into subroutines that expect a 1d array
+    
+    Also fixed dependent other places in code and changed the python api. This is BIT_CHANGING for multicol.
+    If a 2d array is passed into a function that expects the arr to be 1d fortran just passes the first col of the arr.
+    Therefore the changes dont affect single col runs. For multicol runs other indexing is needed
+    
+    * fill_holes_vertical_api expects the passed gr%dzt to have shape(ngrdcol,nz) but the code passes the whole gr%dzt array although each column is traversed one by one.
+    So ngrdcol=1 is passed each time.
+    
+    No effect on single col, as with ngrdcol = 1, gr%dzt and gr%dzt(1:1,:) are the same.
+    Affects multicol if l_hole_fill = .true. and the hydrometeor is a mixing ratio (name starts with r) and
+    some value is actually negative
+    
+    Therefore BIT_CHANGING
+
+commit ec5e8070d3173282a6317b067f8673a657a1eb6f
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sun Oct 18 17:34:12 2026 -0500
+
+    Add JAX timing and profiling (#1393)
+    
+    * Add JAX timing and persistent benchmark workers
+    
+    Write Fortran-format CPU timing summaries and optional XProf/Perfetto traces
+    from JAX driver phases. Use synchronized persistent workers for full-case
+    warmups and repetitions across Fortran, Python and JAX. Retain compiled JAX
+    programs when initialization settings are unchanged.
+    
+    Validation: 243 focused checks and CPU case workflows passed. Repeated
+    five-step BOMEX/RICO_SILHS numeric outputs matched fresh controls exactly.
+    The two-column BOMEX JAX/Fortran comparison passed 1e-7 absolute and percent
+    thresholds. BFB against the parent is not established by these comparisons.
+    GPU and GPTL execution remain untested.
+    
+    * Making jax timer use wall clock time instead of cpu/process time
+    
+    * Keep JAX timing separate from reusable runners
+    
+    Move process persistence, cache reuse and Python timing adapters to the
+    case-runner branch. Keep JAX wall-clock summaries, optional deep profiles,
+    driver instrumentation and the parser change that reads their clock label.
+    
+    The timing-only shared suite and a three-step CPU BOMEX run pass. BFB
+    against master is not established; physics expressions are unchanged.
+    
+    * Add reusable case runners for timing and tuning
+    
+    Share runtime selection and persistent standalone sessions between SCM,
+    timing and tuning. Support namelist replacement and empty model reruns,
+    plus parameter matrices for loss sessions. Synchronize timing cohorts and
+    record retained-model initialization separately. Use executable loss
+    workers for native tuning instead of requiring F2PY.
+    
+    Restore microphysics defaults between cases (BIT_CHANGING for sessions
+    that previously inherited settings). Short native/CPU JAX sessions match
+    fresh same-backend stats values exactly; broader BFB is not established.
+    Native build, focused suites and repeated loss/tuner/timing workflows pass.
+    
+    * Use F2PY for reusable Fortran loss runs
+    
+    Run persistent Fortran loss sessions through the existing Python API.
+    Restore the native loss standalone and remove its parameter namelist reader
+    and result writers. Python workers pass arrays directly into F2PY; ordinary
+    standalone persistence and JAX execution remain available.
+    
+    Fifteen native loss metric arrays match saved results exactly. Native and
+    CPU JAX repeated loss/tuning workflows, tuner shutdown, the native build,
+    454 shared checks and four API checks pass. Broader BFB is not established.
+    
+    * Keep case runners persistent without retaining model state
+    
+    Run each ordinary request through full initialization, advancement and
+    cleanup while keeping the process alive for in-memory JIT reuse. Remove
+    retained-model commands, transport, timing/UI options and extra bindings.
+    Restore tuning and loss frontends to their existing allocation-reusing APIs.
+    
+    The native build, 445 shared checks, 121 focused JAX checks and 85 Dash
+    checks pass. Short native/JAX/Python reused-process stats match fresh
+    controls exactly; tuning and synchronized timing sweeps pass. Two full
+    16-column JAX repeats log no new compilations. These comparisons do not
+    establish blanket BFB.
+    
+    * Separate microphysics initialization fixes from case runners
+    
+    Move native default resets to their own branch/PR and keep the runner focused
+    on shared runtime selection and full-case process reuse. Record the mixed-case
+    native test's dependency on that fix. Refresh the timing base and master,
+    and clarify runner, driver and test documentation under the current skills.
+    
+    The shared checks pass, including output drainage, cancellation, synchronized
+    warmup/repetition barriers and CLI forwarding. Python AST checks confirm the
+    remaining audit edits change only documentation. Jenkins validation follows
+    this published checkpoint.
+    
+    * Complete case-runner procedure descriptions
+    
+    Describe the remaining changed CLI, test and profile routines under the current
+    documentation standards. Executable Python ASTs are unchanged from f66ccf2ff,
+    the revision running in Jenkins; existing validation still applies.
+    
+    * Separate JAX timing from case runner changes
+    
+    Keep runtime selection and process reuse independent so the case runner
+    can merge into master before JAX timing. Shared runner/CLI/timing
+    checks pass (445 tests, including provisional coverage).
+    
+    * Add JAX timing after the case runner
+    
+    Restore the audited wall-clock summaries and optional execution tracing
+    on top of the independent case runner. Keep the existing implementation
+    and review history while reversing the PR merge order.
+    
+    * Add a JAX profiling option and viewer commands
+    
+    Enable captures with -jax=profile and print commands after cleanup.
+    Keep capture export in the timer and viewing in view_profile.py.
+    
+    181 focused checks pass. CPU BOMEX captures preserve numeric stats;
+    both viewers were verified in-browser. Large full-Python Perfetto
+    exports can truncate; XProf retained all five tested timesteps.
+    
+    * Clarify JAX timing usage and cleanup
+    
+    Document the timer lifecycle, failure handling and Dash wall-time comparison metric. Executable Python AST is unchanged.
+
+commit 4f8368a377989b649fc0ed53c26957e193d21067
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sun Oct 18 14:06:59 2026 -0500
+
+    Add reusable case runners for timing (#1400)
+    
+    We have multiple entry points now for clubb standalone (fortran,python,jax), and there's additional logic that chooses which fortran installation to use (gfortran,ifort,nvhpc,etc). All of this has historically (~1 year) been done by run_scm.py, but we have a number of other scripts that need this same kind of logic, so instead of making run_scm.py more complicated and letting other scripts import it's pieces, we've made a `clubb_case_runner`.
+    
+    `clubb_case_runner` is a python object that abstracts the backend decisions. The "flow" is roughly:
+    - high level script wants to run a clubb case some how
+    - generates one or more case namelists (arm.in, bomex.in, etc)
+    - creates a `clubb_case_runner` by passing it whatever runtime options (-jax/-python/-exe) the user requested
+    - runs a case by passing this `clubb_case_runner` whatever namelists it wants to run.
+    
+    In addition to deduplicating runtime setting logic, this allows python scripts to create these high level `clubb_case_runner` objects and use those to do things that usually requires duplicate multiprocessesing and error code parsing logic.
+
+commit ccafe4f166f956eed26b91f7fdacd5600f60f5b2
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Sun Oct 18 12:27:44 2026 -0500
+
+    Define when to declare bit-changing commits (#1403)
+    
+    * Define conservative bit-change declarations
+    
+    Centralize the policy around intentional Fortran numerical answer changes, with named affected BFB tests or precise untested conditions. Preserve standalone coverage and the current JAX parity boundary, keep declarations sparse, and separate answer-changing edits from preserving cleanup.
+    
+    Route message writing, validation and branch finalization to one owner. Skill schemas, local links, heading anchors, parser examples and manual decision scenarios were checked; no model or CI code changes.
+    
+    * Define the optimization level for bitwise preservation
+    
+    Use -O0 as the normal preservation standard. Differences confined to optimized builds do not require an answer-change declaration when -O0 is verified BFB; report known optimized-only differences and their configuration in the PR.
+    
+    The changed skill schema and whitespace checks pass. Inspected current debug compile flags and manually reviewed the optimized-only decision scenario; documentation only, no numerical rerun.
