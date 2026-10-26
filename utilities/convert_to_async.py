@@ -118,6 +118,10 @@ def process_directive(
     pending_wait_end_keyword: str | None = None,
 ) -> tuple[list[str], str | None]:
     """Modify one OpenACC directive when async/wait rules apply."""
+    # Atomic updates do not accept data-motion wait clauses.
+    if contains_keyword(directive_lines, "atomic"):
+        return directive_lines, pending_wait_end_keyword
+
     # Sequential loops are intentionally synchronous regions. Leaving async on
     # them can change ordering assumptions in scalar or dependency-sensitive code.
     if contains_keyword(directive_lines, "seq"):
