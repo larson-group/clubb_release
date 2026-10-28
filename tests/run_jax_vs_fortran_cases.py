@@ -382,7 +382,6 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
         common_args += ["-max_iters", str(task.config.max_iters)]
     if task.config.dt_main is not None and _forwarded_value(task.run_scm_args, "-dt_main") is None:
         common_args += ["-dt_main", str(task.config.dt_main)]
-    common_args += task.run_scm_args
 
     #A subdirectory for each flagset is created to store the .nc output from that flagset.
     # The output directory will look like this:
@@ -393,15 +392,17 @@ def _run_case_w_flags(task: TaskCtx) -> CaseResult:
     jax_run_out_dir.mkdir(parents=True, exist_ok=True)
     f90_run_out_dir.mkdir(parents=True, exist_ok=True)
 
-    jax_cmd = [sys.executable, *common_args, "-jax", "-output_dir", str(jax_run_out_dir)]
-    f90_cmd = [sys.executable, *common_args, "-output_dir", str(f90_run_out_dir)]
-
     # Explicit flag-set overrides take precedence over the curated case setup.
     overrides = {**(task.config.overrides or {}), **(task.flag_data.flag_dict or {})}
     override_arg = build_override_arg(overrides)
     if override_arg is not None:
-        jax_cmd += ["-override", override_arg]
-        f90_cmd += ["-override", override_arg]
+        common_args += ["-override", override_arg]
+
+    # User overrides apply last, after the curated case and flag-set settings.
+    common_args += task.run_scm_args
+
+    jax_cmd = [sys.executable, *common_args, "-jax", "-output_dir", str(jax_run_out_dir)]
+    f90_cmd = [sys.executable, *common_args, "-output_dir", str(f90_run_out_dir)]
 
     jax_cmd.append(task.config.source_case)
     f90_cmd.append(task.config.source_case)
@@ -554,7 +555,7 @@ def parse_args(argv=None) -> argparse.Namespace:
         parser.error("-workers must be positive")
     # These options belong to the comparison, not to either individual model.
     reserved = {"-jax", "-python", "-exe", "-driver_test", "-gdb",
-                "-output_dir", "-multicol", "-override", "-install_dir"}
+                "-output_dir", "-multicol", "-install_dir"}
     for argument in forwarded:
         option = argument.split("=", 1)[0]
         if option.startswith("--"):

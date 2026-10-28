@@ -326,9 +326,12 @@ so the two output roots can be compared directly with
 `DEFAULT_CASES` in the script defines the case list and any per-case overrides.
 Pass `run_scm.py` options such as `-max_iters`, `-dt_main`, `-stats`, and
 `-debug` directly; they apply to both models and override curated case settings.
-Effective step and timestep settings and forwarded options are recorded in the
-results JSON. The harness controls driver selection, output paths, columns, and
-case/flag overrides.
+Case step/timestep limits and forwarded options are recorded in the
+results JSON. The harness controls driver selection, output paths and columns.
+User `-override` settings apply to both models after the curated case and flag-set
+settings, so user values win. Assignments, inline JSON and JSON/JSONC files use
+the shared input parser; repeated `-override` arguments apply in order, with
+later values taking precedence.
 
 Examples:
 

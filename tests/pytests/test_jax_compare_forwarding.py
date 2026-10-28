@@ -21,7 +21,7 @@ def test_single_dash_options_forward_without_a_separator(monkeypatch):
     ]
 
 
-@pytest.mark.parametrize("option", ["-output_dir", "-jax", "-override"])
+@pytest.mark.parametrize("option", ["-output_dir", "-jax"])
 def test_comparison_owned_model_options_are_rejected(monkeypatch, option):
     monkeypatch.setattr(sys, "argv", ["run_jax_vs_fortran_cases.py", "-cases", "rico", option, "value"])
     with pytest.raises(SystemExit) as exc:
