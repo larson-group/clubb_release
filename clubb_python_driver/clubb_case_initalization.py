@@ -736,6 +736,12 @@ def init_clubb_case(namelist_path: str) -> dict:
         )
         edsclrm[:, :, :edsclr_dim] = np.tile(edsclr_zt[None, :, :], (ngrdcol, 1, 1))
 
+    # Testing of passive scalars (initialize_clubb_variables).
+    if iisclr_thl > 0:
+        sclrm[:, :, iisclr_thl - 1] = thlm
+    if iiedsclr_thl > 0:
+        edsclrm[:, :, iiedsclr_thl - 1] = thlm
+
     # ── 11. Read surface file ───────────────────────────────────────────
     sfc_path = None
     try:
