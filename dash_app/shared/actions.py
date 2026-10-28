@@ -47,7 +47,7 @@ from dash_app.compile_tab.runtime import (
     start_compile_job,
     start_rebuild_job,
 )
-from dash_app.run_tab.namelist import cleanup_temp_files
+from dash_app.run_tab.settings import cleanup_temp_files
 from dash_app.run_tab.runtime import (
     get_proc,
     record_case_finish,
@@ -122,7 +122,7 @@ from tuner.taylor_metrics import (
     normalize_aggregation_weights,
 )
 from tuner.tuning_strategy import VALID_STRATEGY_NAMES
-from utilities.create_case_namelist import (
+from input.scripts.create_case_namelist import (
     available_case_names, normalize_override_string, parse_override_pairs, resolve_case_model_input,
 )
 from utilities.output_paths import resolve_output_dir
@@ -134,7 +134,7 @@ from utilities.clubb_settings_validation import (
 )
 from dash_app.shared.stats import load_stats_choices, stats_input_path, validate_stats_selection
 from dash_app.run_tab.state import NO_STATS_NAME
-from dash_app.shared.tunable_configs import canonical_tunable_parameter_name, tunable_config_file
+from dash_app.shared.tunable_configs import canonical_tunable_parameter_name, config_entries
 from dash_app.services import (
     ArtifactStore,
     CompileRequest,
@@ -1217,15 +1217,15 @@ def _canonical_scm_request(request: ScmRunRequest) -> tuple[ScmRunRequest, dict[
     the normal namelist builder remains the authority for non-settings values,
     while known flags and tunables are resolved here.
     """
-    from dash_app.run_tab.namelist import is_bool_value, is_true, read_namelist_entries
+    from dash_app.run_tab.settings import is_bool_value, is_true
 
     runtime_selection(
         request.jax_profile if request.implementation == "jax" else "cpu",
         device=request.jax_gpu, prealloc_gpu_mem=request.jax_xla_prealloc,
     )
     config = _valid_tune_config(request.config)
-    flag_entries = read_namelist_entries(tunable_config_file(config, "configurable_model_flags.in"))
-    parameter_entries = read_namelist_entries(tunable_config_file(config, "tunable_parameters.in"))
+    flag_entries = config_entries(config, "flags")
+    parameter_entries = config_entries(config, "tunable")
     flags = {
         entry["name"]: is_true(entry["value"]) if is_bool_value(entry["value"]) else entry["value"]
         for entry in flag_entries
@@ -1330,9 +1330,9 @@ def _run_common_manifest_inputs(stats_file: str, config: str) -> dict[str, Any]:
     """Checksum batch-wide SCM inputs once."""
     paths = {
         "stats": stats_input_path(stats_file),
-        "clubb_params": tunable_config_file(config, "tunable_parameters.in"),
-        "model_flags": tunable_config_file(config, "configurable_model_flags.in"),
-        "silhs_params": tunable_config_file(config, "silhs_parameters.in"),
+        "clubb_params": REPO_ROOT / "input/clubb_params.jsonc",
+        "model_flags": REPO_ROOT / "input/clubb_config_flags.jsonc",
+        "silhs_params": REPO_ROOT / "input/clubb_params.jsonc",
     }
     return {
         name: {"path": str(path), "sha256": sha256_file(Path(path))}
@@ -2271,7 +2271,7 @@ def resolve_clubb_settings_request(
 ) -> dict[str, Any]:
     """Resolve a proposed settings subset for agent/UI preflight inspection."""
     selected_config = _valid_tune_config(config)
-    from dash_app.run_tab.namelist import is_bool_value, is_true, read_namelist_entries
+    from dash_app.run_tab.settings import is_bool_value, is_true
 
     base_flags = {
         entry["name"]: (
@@ -2279,7 +2279,7 @@ def resolve_clubb_settings_request(
             if is_bool_value(entry["value"])
             else entry["value"]
         )
-        for entry in read_namelist_entries(tunable_config_file(selected_config, "configurable_model_flags.in"))
+        for entry in config_entries(selected_config, "flags")
     }
     base_flags.update(dict(flags or {}))
     return {

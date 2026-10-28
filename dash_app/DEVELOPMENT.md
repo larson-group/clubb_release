@@ -304,7 +304,7 @@ available devices, the resolved selection and runtime readiness. Dash and the
 tuner forward settings rather than constructing GPU environment variables.
 The launcher delegates device visibility and memory settings to its backends
 before inspection or importing JAX. Rerun parameter/physics override precedence
-is shared through `utilities/create_case_namelist.py`.
+is shared through `input/scripts/create_case_namelist.py`.
 
 ## Profile results
 

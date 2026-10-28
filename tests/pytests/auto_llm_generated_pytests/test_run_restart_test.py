@@ -42,7 +42,7 @@ def test_final_comparison_checks_every_column(tmp_path, monkeypatch):
 def test_cli_selects_both_runners_and_uses_effective_duration(tmp_path, monkeypatch, argv, option):
     output = tmp_path / "output"
     restart = tmp_path / "restart"
-    model = tmp_path / "input" / "case_setups" / "bomex_model.in"
+    model = tmp_path / "input" / "case_data" / "bomex_model.in"
     model.parent.mkdir(parents=True)
     model.write_text("time_initial=0.\ntime_final=21600.\n")
     monkeypatch.setattr(runner, "CLUBB_ROOT", tmp_path)

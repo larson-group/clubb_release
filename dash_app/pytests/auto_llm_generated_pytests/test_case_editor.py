@@ -7,7 +7,7 @@ import subprocess
 import pytest
 
 from dash_app.run_tab import cases
-from utilities.case_json_to_namelist import load_case_catalog, resolved_case_settings
+from input.scripts.case_json_to_namelist import load_case_catalog, resolved_case_settings
 
 
 def test_logical_values_never_render_as_text_or_number_inputs():
@@ -27,6 +27,7 @@ def test_logical_values_never_render_as_text_or_number_inputs():
 
 def run_draft(trigger, *, value="30", logical=0, array="[1e-9]", name="bomex", repeat=False,
               missing_bool=False, source_change=False, measure_paints=False):
+    """Exercise the shipped browser callback with a catalog-derived field schema."""
     node = shutil.which("node")
     if not node:
         pytest.skip("Node is required to exercise the shipped case editor callback")
@@ -34,8 +35,8 @@ def run_draft(trigger, *, value="30", logical=0, array="[1e-9]", name="bomex", r
                                                                        "sclr_tol_nl": [0.01, 1e-8]},
                                            "stats_setting": {"fname_prefix": "bomex"}, "gfdl_activation_setting": {}}}
     paths = ["model_setting.dt_main", "model_setting.l_restart", "model_setting.sclr_tol_nl", "stats_setting.fname_prefix"]
-    schema = {path: {"kind": kind, "readonly": index == 3}
-              for index, (path, kind) in enumerate(zip(paths, ["number", "logical", "array", "text"]))}
+    definitions = cases.field_schema(base["namelists"])
+    schema = {path: definitions[path] for path in paths}
     if missing_bool:
         base["namelists"]["model_setting"].pop("l_restart")
     args = [[value, logical, array, "bomex"], base, name,
@@ -62,7 +63,7 @@ if (data.source_change) {
   data.args[1] = JSON.parse(JSON.stringify(data.args[1]));
   data.args[1].key = data.args[2] = 'rico';
   data.args[1].namelists.model_setting.dt_main = 90;
-  delete data.args[1].namelists.model_setting.l_restart;
+  data.args[1].namelists.model_setting.l_restart = false;
   data.args[1].namelists.model_setting.sclr_tol_nl = [0.001];
   data.args[1].namelists.stats_setting.fname_prefix = 'rico';
   window.dash_clientside.callback_context.triggered_id = 'run-case-baseline';
@@ -84,24 +85,24 @@ def test_browser_draft_keeps_false_and_replaces_array_values():
     assert result[0]["errors"] == [] and result[3] is False
 
 
-def test_blank_cells_are_omitted_without_field_specific_requirements():
+def test_blank_cells_restore_catalog_defaults():
+    """Cleared inherited numbers and arrays keep their explicit catalog values."""
     result = run_draft({"type": "run-case-value", "path": "model_setting.sclr_tol_nl"}, array="")
-    assert "sclr_tol_nl" not in result[0]["namelists"]["model_setting"]
+    defaults = cases.load_case_catalog()["defaults"]["model_setting"]
+    assert result[0]["namelists"]["model_setting"]["sclr_tol_nl"] == defaults["sclr_tol_nl"]
     empty = run_draft({"type": "run-case-value", "path": "model_setting.dt_main"}, value="")
-    assert "dt_main" not in empty[0]["namelists"]["model_setting"]
+    assert empty[0]["namelists"]["model_setting"]["dt_main"] == defaults["dt_main"]
     assert empty[0]["errors"] == [] and empty[3] is False
 
 
 @pytest.mark.parametrize("missing_bool", [False, True])
-@pytest.mark.parametrize("position, expected", [(0, False), (1, None), (2, True)])
-def test_boolean_slider_sets_false_unset_or_true(position, expected, missing_bool):
+@pytest.mark.parametrize("position, expected", [(0, False), (1, False), (2, True)])
+def test_boolean_slider_sets_false_catalog_default_or_true(position, expected, missing_bool):
+    """The inherited boolean's middle position restores its catalog default."""
     result = run_draft({"type": "run-case-value", "path": "model_setting.l_restart"},
                        missing_bool=missing_bool, logical=position)
     model = result[0]["namelists"]["model_setting"]
-    if expected is None:
-        assert "l_restart" not in model
-    else:
-        assert model["l_restart"] is expected
+    assert model["l_restart"] is expected
     assert result[0]["errors"] == []
 
 
@@ -111,8 +112,10 @@ def test_new_case_name_updates_output_identity_without_changing_physical_case():
     assert result[0]["namelists"]["model_setting"]["dt_main"] == 30.0
 
 
-def test_invalid_array_blocks_save_and_reports_the_entry():
-    result = run_draft({"type": "run-case-value", "path": "model_setting.sclr_tol_nl"}, array="[invalid]")
+@pytest.mark.parametrize("array", ["[invalid]", "[1, null]"])
+def test_invalid_array_blocks_save_and_reports_the_entry(array):
+    """Reject malformed arrays and null elements before a draft can be saved."""
+    result = run_draft({"type": "run-case-value", "path": "model_setting.sclr_tol_nl"}, array=array)
     assert result[3] is True
     assert "model_setting.sclr_tol_nl" in result[2]
 
@@ -127,19 +130,20 @@ def test_typing_keeps_unchanged_controls_and_summaries_mounted():
 
 
 def test_source_change_replaces_cached_cells_and_clears_previous_errors():
+    """Loading another resolved case replaces controls and clears stale draft errors."""
     result = run_draft({"type": "run-case-value", "path": "model_setting.sclr_tol_nl"},
                        array="[invalid]", source_change=True)
     model = result[0]["namelists"]["model_setting"]
-    assert model == {"dt_main": 90, "sclr_tol_nl": [0.001]}
+    assert model == {"dt_main": 90, "l_restart": False, "sclr_tol_nl": [0.001]}
     assert result[0]["errors"] == [] and result[0]["changed"] == []
-    assert result[4] == ["90", 1, "[0.001]", "rico"]
+    assert result[4] == ["90", "NO_UPDATE", "[0.001]", "rico"]
 
 
 @pytest.mark.parametrize("new_field", [False, True])
 def test_source_changes_reuse_controls_until_the_json_fields_change(monkeypatch, new_field):
     from types import SimpleNamespace
     from dash import Dash, no_update
-    from utilities.case_json_to_namelist import case_definition_record
+    from input.scripts.case_json_to_namelist import case_definition_record
     app = Dash(__name__, suppress_callback_exceptions=True)
     cases.register_case_callbacks(app)
     load = next(entry["callback"].__wrapped__ for entry in app.callback_map.values()
@@ -161,7 +165,7 @@ def test_source_changes_reuse_controls_until_the_json_fields_change(monkeypatch,
 
 def test_saved_case_buttons_stay_selectable_below_catalog_cases(monkeypatch):
     from dash_app.run_tab import layout
-    monkeypatch.setattr(layout, "load_case_catalog", lambda: {"cases": {"bomex": {}}})
+    monkeypatch.setattr(layout, "load_case_catalog", lambda: {"presets": {"bomex": {}}})
     buttons = layout.build_case_buttons(["bomex_copy", "bomex"])
     assert buttons[0].id == {"type": "run-case-button", "name": "bomex"}
     custom = layout.build_case_buttons(["bomex_copy", "bomex"], custom=True)
@@ -174,7 +178,7 @@ def test_every_catalog_case_round_trips_through_the_actual_cell_parser():
         pytest.skip("Node is required to exercise the shipped case editor callback")
     catalog = load_case_catalog()
     samples = []
-    for name in catalog["cases"]:
+    for name in catalog["presets"]:
         settings = resolved_case_settings(name)
         schema = cases.field_schema(settings, catalog)
         actual = dict(cases.setting_leaves(settings))

@@ -26,7 +26,7 @@ from .runtime import (
     stop_tuning_job,
 )
 from dash_app.shared.tunable_configs import canonical_tunable_parameter_name
-from utilities.create_case_namelist import normalize_override_string
+from input.scripts.create_case_namelist import normalize_override_string
 
 from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,

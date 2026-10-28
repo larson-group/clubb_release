@@ -15,7 +15,7 @@ from dash_app.shared.netcdf import (
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from utilities.benchmark_converter import (
+from input.scripts.benchmark_converter import (
     CONVERTER_VERSION,
     convert_benchmark_file,
     supported_fields,

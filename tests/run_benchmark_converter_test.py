@@ -27,7 +27,7 @@ CLUBB_ROOT = TESTS_DIR.parent
 if str(CLUBB_ROOT) not in sys.path:
     sys.path.insert(0, str(CLUBB_ROOT))
 
-from utilities.benchmark_converter import convert_benchmark_file  # noqa: E402
+from input.scripts.benchmark_converter import convert_benchmark_file  # noqa: E402
 from utilities.les_chi_moments import derive_chi_moments  # noqa: E402
 
 

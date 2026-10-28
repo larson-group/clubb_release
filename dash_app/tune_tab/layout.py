@@ -759,7 +759,7 @@ def build_config_buttons(configs, selected_config):
                 label,
                 id={"type": "tune-config-button", "name": value},
                 n_clicks=0,
-                title=f"Use input/parameter_and_flag_configs/{value}",
+                title=f"Use the {value} parameter and flag presets",
                 style=config_button_style(selected=value == selected_config),
             )
         )

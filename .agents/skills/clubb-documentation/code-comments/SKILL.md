@@ -41,6 +41,14 @@ comments that merely repeat an assignment or function name. When an equation
 helps explain a scientific calculation, introduce what it computes and define
 its symbols.
 
+In JSONC catalogs, prefer end-of-line comments for notes about a specific
+setting. Align wrapped continuation comments beneath the first comment. Keep
+section descriptions, guidance covering several settings and inactive
+alternatives without a corresponding setting as standalone blocks.
+Check that copied notes apply to the selected configuration before relocating
+them. Remove redundant or inapplicable template comments, and keep shared
+definitions once rather than repeating them on every override.
+
 ## Driver and other high-level code
 
 Code that coordinates calls and stages needs more detailed commentary. Give

@@ -56,6 +56,7 @@ to run_scm.py, run_scm_loss.py, or both.
 from __future__ import annotations
 
 import argparse
+import json
 from datetime import datetime
 import math
 import os
@@ -81,9 +82,8 @@ from tuner.presets import apply_preset, list_presets  # noqa: E402
 from tuner.status import read_json_or_default  # noqa: E402
 from tuner.system_defaults import default_max_workers  # noqa: E402
 from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE  # noqa: E402
-from utilities.create_case_namelist import (  # noqa: E402
+from input.scripts.create_case_namelist import (  # noqa: E402
     filter_tuned_overrides,
-    resolve_tunable_config_dir,
 )
 
 
@@ -553,23 +553,8 @@ def brief_error_message(message: str) -> str:
 
 
 def read_default_tunable_params(config: str = "default") -> list[tuple[str, float]]:
-    params = []
-    params_path = Path(resolve_tunable_config_dir(config or "default")) / "tunable_parameters.in"
-    for raw_line in params_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.split("!", 1)[0].strip()
-        if not line or line.startswith("&") or line.startswith("/"):
-            continue
-        if "=" not in line:
-            continue
-        name, value_text = line.split("=", 1)
-        name = name.strip()
-        value_text = value_text.split(",", 1)[0].strip()
-        try:
-            value = float(value_text.replace("D", "E").replace("d", "e"))
-        except ValueError:
-            continue
-        params.append((name, value))
-    return params
+    from tuner.parameter_ranges import tunable_parameter_defaults
+    return list(tunable_parameter_defaults(config).items())
 
 
 def write_top_params_file(results: list[dict], top_n: int, output_dir: Path, config: str = "default") -> Path:
@@ -587,21 +572,17 @@ def write_top_params_file(results: list[dict], top_n: int, output_dir: Path, con
 
     output_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    params_path = output_dir / f"tuner_top_{timestamp}_{os.getpid()}_params.in"
-    with open(params_path, "w", encoding="utf-8") as dst:
-        if len(param_sets) > 1:
-            dst.write("&multicol_def\n")
-            dst.write(f"ngrdcol = {len(param_sets)}\n")
-            dst.write(f"batch_size = {len(param_sets)}\n")
-            dst.write("/\n\n")
-        dst.write("&clubb_params_nl\n")
-        for name, default_value in defaults:
-            values = [
-                float(param_set.get(name, default_value))
-                for param_set in param_sets
-            ]
-            dst.write(f"{name} = {', '.join(f'{value:.15g}' for value in values)}\n")
-        dst.write("/\n")
+    from input.scripts.parameters_json_to_namelist import parameter_settings
+    settings = parameter_settings(config=config)
+    params_path = output_dir / f"tuner_top_{timestamp}_{os.getpid()}_params.json"
+    settings["model"] = {
+        name: [float(param_set.get(name, default_value)) for param_set in param_sets]
+        if len(param_sets) > 1 else float(param_sets[0].get(name, default_value))
+        for name, default_value in defaults
+    }
+    if len(param_sets) > 1:
+        settings["multicol"] = {"ngrdcol": len(param_sets), "batch_size": len(param_sets)}
+    params_path.write_text(json.dumps(settings, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     return params_path
 
 
@@ -787,7 +768,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "-config",
         default=None,
-        help="Tunable config name under input/parameter_and_flag_configs, or a config directory. Default: default.",
+        help="Shared JSON preset name. Default: default.",
     )
     parser.add_argument("-override", default=None, help="Optional comma-separated CLUBB key=value overrides.")
     parser.add_argument(

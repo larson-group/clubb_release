@@ -27,7 +27,7 @@ from tuner.request import load_request
 from tuner.job_runtime import TunerJob
 from tuner import status as status_module
 from tuner.status import atomic_write_json, renew_keepalive, should_stop, stop_reason, write_control
-from utilities.create_case_namelist import build_tuner_namelist
+from input.scripts.create_case_namelist import build_loss_settings
 from tuner.enhanced_simann_strategy import EnhancedSimulatedAnnealingStrategy
 from tuner.tuning_strategy import (
     RandomUniformStrategy,
@@ -457,8 +457,8 @@ def test_load_request_rejects_les_stats_file_case_config_override(tmp_path, monk
         raise AssertionError("expected les_stats_file override to be rejected")
 
 
-def test_build_tuner_namelist_uses_num_time_windows_only():
-    text = build_tuner_namelist(
+def test_build_loss_settings_uses_num_time_windows_only():
+    text = build_loss_settings(
         {
             "les_stats_file": "benchmark.nc",
             "altitude_comparison_range": [0.0, 1000.0],
@@ -468,8 +468,8 @@ def test_build_tuner_namelist_uses_num_time_windows_only():
         num_time_windows=1,
     )
 
-    assert "time_window_mode" not in text
-    assert "num_time_windows = 1" in text
+    assert "time_window_mode" not in text["tuner_loss_nl"]
+    assert text["tuner_loss_nl"]["num_time_windows"] == 1
 
 
 def test_random_uniform_strategy_fills_pending_queue_in_bounds():

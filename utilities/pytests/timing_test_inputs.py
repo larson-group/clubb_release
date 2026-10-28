@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from utilities.clubb_case_runner import clubb_case_runner
-from utilities.create_case_namelist import case_namelist_command
+from input.scripts.create_case_namelist import case_namelist_command
 
 
 def fake_runner_factory(path, cwd):

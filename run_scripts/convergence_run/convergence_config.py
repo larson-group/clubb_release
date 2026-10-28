@@ -11,8 +11,9 @@
 #######################################################################
 import argparse
 import os
-import shutil
 import sys
+import json
+import subprocess
 from pathlib import Path
 
 if __name__ == "__main__":
@@ -23,6 +24,8 @@ if __name__ == "__main__":
 
 import numpy as np
 from convergence_function import modify_ic_profile
+from input.scripts.create_case_namelist import create_case_settings, write_case_namelist, override_value
+from input.scripts.namelist import parse_value
 
 # check that Python 3 is being used
 if (sys.version_info.major < 3):
@@ -31,11 +34,9 @@ if (sys.version_info.major < 3):
 # get CLUBB root directory (assumed to be two above the CWD) and set directories
 clubb_dir = os.path.join(os.getcwd(),'..')
 output_dir = os.path.join(clubb_dir, 'output')
-case_dir = os.path.join(clubb_dir, 'input', 'case_setups')
+case_dir = os.path.join(clubb_dir, 'input', 'case_data')
 grid_dir = os.path.join(clubb_dir, 'input', 'grid')
-tunable_dir = os.path.join(clubb_dir, 'input', 'parameter_and_flag_configs', 'default')
-stats_dir = os.path.join(clubb_dir, 'input', 'stats')
-bin_dir = os.path.join(clubb_dir, 'bin')
+bin_dir = os.path.join(clubb_dir, 'install', 'latest')
 res_dir = os.path.join(clubb_dir, 'restart_ic') 
 
 # remind user to load modules if this is Quartz
@@ -107,113 +108,9 @@ for key, val in parameters.items():
 for key in unset_keys:
   del parameters[key]
 
-# concatenate all other input namelist files to one file
-line_collections = []
-# "parameter" file
-input_file = open(os.path.join(tunable_dir, 'tunable_parameters.in'), 'r')
-line_collections.append(input_file.readlines())
-input_file.close()
-# "SILHS_PARAMS" file
-input_file = open(os.path.join(tunable_dir, 'silhs_parameters.in'), 'r')
-line_collections.append(input_file.readlines())
-input_file.close()
-# "FLAGS" file
-input_file = open(os.path.join(tunable_dir, 'configurable_model_flags.in'), 'r')
-input_lines = input_file.readlines()
-input_file.close()
-for line in input_lines:
-  if (not line.strip().startswith('!')):
-    ind = line.find('!')
-    if (ind != -1):
-      line = line[0:ind] + '\n'
-    line_collections.append(line)
-    if (line.startswith('tridiag_solve_method')):
-      if ('smoothed_tau' in parameters):
-        if (not any('l_smooth_Heaviside_tau_wpxp' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_smooth_Heaviside_tau_wpxp = .false.,' + '\n'
-          line_collections.append(lnew)
-          print('append line '+lnew)
-      if ('modified_BVF_Ri_limiter' in parameters):
-        if (not any('l_modify_limiters_for_cnvg_test' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_modify_limiters_for_cnvg_test = .false.,' + '\n'
-          line_collections.append(lnew)
-          print('append line '+lnew)
-      if ('modified_wp3_clip' in parameters):
-        if (not any('l_use_wp3_lim_with_smth_Heaviside' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_use_wp3_lim_with_smth_Heaviside = .false.,' + '\n'
-          line_collections.append(lnew)
-          print('append line '+lnew)
-# "MOD_MODEL" file
+# Resolve the input catalogs before applying convergence-specific JSON edits.
+model_config = create_case_settings(parameters['case'], output_dir)
 model_file_name = parameters['case'] + '_model.in'
-input_file = open(os.path.join(case_dir, model_file_name), 'r')
-input_lines = input_file.readlines()
-input_file.close()
-for line in input_lines:
-  if (not line.strip().startswith('!')):
-    ind = line.find('!')
-    if (ind != -1):
-      line = line[0:ind] + '\n'
-    line_collections.append(line)
-    if (line.startswith('runtype')):
-      if (not any('nzmax' in tmpstr for tmpstr in line_collections)):
-        lnew = 'nzmax = 999' + '\n'
-        line_collections.append(lnew)
-        print('append line '+lnew)
-      if ('modified_ic' in parameters):
-        if (not any('l_modify_ic_with_cubic_int' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_modify_ic_with_cubic_int = .false.,' + '\n'
-          line_collections.append(lnew)
-          print('append line '+lnew)
-      if ('modified_bc' in parameters):
-        if (not any('l_modify_bc_for_cnvg_test' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_modify_bc_for_cnvg_test = .false.,' + '\n'
-          line_collections.append(lnew)
-          print('append line '+lnew)
-    elif (line.startswith('rad_scheme')):
-      if (not any('l_calc_thlp2_rad' in tmpstr for tmpstr in input_lines)):
-        lnew = 'l_calc_thlp2_rad = .true.,' + '\n'
-        if (line.split()[2] == '"none",'):
-          lnew = 'l_calc_thlp2_rad = .false.,' + '\n'
-        line_collections.append(lnew)
-        print('append line '+lnew)
-      if (not any('l_rad_above_cloud' in tmpstr for tmpstr in input_lines)):
-        lnew = 'l_rad_above_cloud = .true.,' + '\n'
-        if (line.split()[2] == '"none",'):
-          lnew = 'l_rad_above_cloud = .false.,' + '\n'
-        line_collections.append(lnew)
-        print('append line '+lnew)
-    elif (line.startswith('microphys_scheme')):
-      if (not any('l_var_covar_src' in tmpstr for tmpstr in input_lines)):
-        lnew = 'l_var_covar_src = .true.' + '\n'
-        if (line.split()[2] == '"none"'):
-          lnew = 'l_var_covar_src = .false.' + '\n'
-        line_collections.append(lnew)
-        print('append line '+lnew)
-      if (not any('l_cloud_sed' in tmpstr for tmpstr in input_lines)):
-        lnew = 'l_cloud_sed = .true.' + '\n'
-        if (line.split()[2] == '"none"'):
-          lnew = 'l_cloud_sed = .false.' + '\n'
-        line_collections.append(lnew)
-        print('append line '+lnew)
-# "stats" file
-input_file = open(os.path.join(stats_dir,'standard_stats.in'), 'r')
-line_collections.append(input_file.readlines())
-input_file.close()
-# write out to namelist file
-out_file_name = parameters['case'] + '_default.in' 
-namelist_file = open(out_file_name, 'w')
-for line_collection in line_collections:
-  for line in line_collection:
-    ind = line.find('!')
-    if (ind != -1):
-      line = line[0:ind] + '\n'
-    namelist_file.write(line)
-namelist_file.close()
-
-# read the default namelist setup and modify it for convergence test 
-model_file      = open(out_file_name, 'r')
-model_config    = model_file.readlines()
-model_file.close()
 # create a file to save the modified namelist 
 # use concatenated model file name from specified parameters
 # unless user specified their own name
@@ -239,7 +136,6 @@ else:
 
 # create modified configuration model file
 model_file_name += '.in'
-model_file = open(model_file_name, 'w')
 
 # create dictionary of configuration strings from parameters
 config_strings = {}
@@ -360,18 +256,11 @@ if ('dz' in parameters):
 
 # if refinement specified, create grid file and set appropriate file name
 if ('refine' in parameters):
-  # read namelist file to obtain model height in case setup 
   config_strings['grid_type'] = '2'
-  tmp_file_name = parameters['case'] + '_model.in' 
-  input_file = open(os.path.join(case_dir, tmp_file_name), 'r')
-  input_lines = input_file.readlines()
-  input_file.close()
-  height = -999.0 
-  for line in input_lines:
-    if ('zm_top' in line):
-      height = float(line.split()[2])
-  if (height == -999.0): 
-    sys.exit('Model height are not prescribed in namelist, space refinement failed...') 
+  model_values = model_config['model_setting']
+  height = float(model_values.get('zm_top_nl', model_values.get('zm_top', -999.0)))
+  if height == -999.0:
+    sys.exit('Model height is not prescribed; space refinement failed')
   #generate refined grid 
   refine = int(parameters['refine'])
   grid128 = np.loadtxt(os.path.join(grid_dir,'deep_convection_128lev_27km_zt_grid.grd'))
@@ -416,35 +305,17 @@ if ('Tsfc' in parameters):
   print("         this needs to be done in " + parameters['case'] + "_sounding.in")
   input("Press Enter to acknowledge")
 
-modified_lines = []
-for line in model_config:
-  modified = False
-  # Apply changes in model configurations 
-  if (not line.strip().startswith('!')):
-    for key, val in config_strings.items():
-      # adjust values
-      if (line.startswith(key)):
-        if (line.split()[0] == key): 
-          default_value = line.split()[2]
-          line = line.replace(default_value, val)
-          modified = True
-          print(f'Setting {key} to {val}')
-          print(line)
-
-  # write line to model configuration (and record if modified)
-  if (not line.strip().startswith('!')):
-    model_file.write(line)
-  if (modified):
-    modified_lines.append(line)
-
-model_file.close()
-
-print('Wrote ' + model_file_name + ' file with the following modified lines:\n')
-for line in modified_lines:
-  print(line),
-
-# execute CLUBB
-shutil.copy(model_file_name, 'clubb.in')
-if ('skip_check' not in parameters):
+# Choose owning groups for optional convergence settings omitted by a case.
+model_options = {'l_modify_ic_with_cubic_int', 'l_modify_bc_for_cnvg_test',
+                 'l_ignore_forcings', 'l_restart', 'restart_path', 'time_restart'}
+for key, value in config_strings.items():
+  if not any(key in group for group in model_config.values()):
+    group = 'model_setting' if key in model_options or key in {'deltaz', 'time_initial', 'time_final'} else 'configurable_clubb_flags_nl'
+    model_config.setdefault(group, {})[key] = parse_value(value)
+model_config = override_value(','.join(f'{key}={value}' for key, value in config_strings.items()), model_config, parameters['case'])
+print(json.dumps(model_config, indent=2))
+if 'skip_check' not in parameters:
   input('Press Enter to run CLUBB...')
-os.system(os.path.join(bin_dir, 'clubb_standalone'))
+# Serialization happens only when the top-level native entry point is ready.
+namelist_path = write_case_namelist(model_config, model_file_name)
+raise SystemExit(subprocess.run([os.path.join(bin_dir, 'clubb_standalone'), str(namelist_path)]).returncode)

@@ -1,5 +1,6 @@
 """Column reversal and failure detection for the standalone mirror test."""
 from pathlib import Path
+import json
 import platform
 import shlex
 import shutil
@@ -14,9 +15,7 @@ from tests import check_mirrored_multi_col_output as mirror
 
 
 def read_params(path):
-    text = Path(path).read_text().split('&clubb_params_nl\n')[1].split('/')[0]
-    return {name.strip(): np.array([float(v) for v in values.split(',')])
-            for name, values in (line.split('=', 1) for line in text.splitlines() if '=' in line)}
+    return {name: np.array(values) for name, values in json.loads(Path(path).read_text())["model"].items()}
 
 
 def write_stats(path, values, name='rtm'):
@@ -29,12 +28,12 @@ def write_stats(path, values, name='rtm'):
 
 
 def test_reverse_generated_hypergrid_exactly(tmp_path):
-    base = tmp_path / 'base.in'
-    base.write_text('&clubb_params_nl\nC8=0.3\nC11=1.0\nC1=2.0\n/\n')
+    base = tmp_path / 'base.json'
+    base.write_text(json.dumps({'model': {'C8': 0.3, 'C11': 1.0, 'C1': 2.0}, 'silhs': {}}))
     forward, reverse = mirror.generate_parameter_files(tmp_path, 'C8/0.2:0.8/4,C11/1:2/3', base)
     a, b = read_params(forward), read_params(reverse)
     assert len(a['C8']) == 12
-    assert 'ngrdcol = 12' in reverse.read_text()
+    assert json.loads(reverse.read_text())['multicol']['ngrdcol'] == 12
     assert set(a) == set(b)
     for key in a:
         assert a[key].tobytes() == b[key][::-1].tobytes()
@@ -101,8 +100,8 @@ def test_runner_detects_first_column_state_leak(tmp_path, monkeypatch, capsys, d
 
 
 def test_hypergrid_display_shows_actual_column_order(tmp_path, capsys):
-    base = tmp_path / 'base.in'
-    base.write_text('&clubb_params_nl\nC8=0.3\nC6rt=1.0\nC6thl=1.0\n/\n')
+    base = tmp_path / 'base.json'
+    base.write_text(json.dumps({'model': {'C8': 0.3, 'C6rt': 1.0, 'C6thl': 1.0}, 'silhs': {}}))
     spec = 'C8/0.2:0.8/3,C6rt=C6thl/1:2/2'
     forward, reverse = mirror.generate_parameter_files(tmp_path, spec, base)
     mirror.print_run_parameters(forward, spec)

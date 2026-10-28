@@ -21,8 +21,8 @@ from netCDF4 import Dataset
 from clubb_jax.src import advance_clubb_to_end as driver
 from clubb_jax.src import clubb_loss_driver as loss
 from clubb_jax.src.CLUBB_core import error_code
-from utilities.create_case_namelist import (
-    create_case_namelist_file, prune_clubb_stats_namelist, set_stats_string, set_stats_value,
+from input.scripts.create_case_namelist import (
+    create_case_settings, write_case_namelist, build_loss_settings, prune_clubb_stats_namelist, set_stats_string, set_stats_value,
 )
 
 
@@ -41,23 +41,18 @@ def test_real_silhs_loss_penalizes_only_failed_microphysics_column(tmp_path, mon
             300. + heights[None, :] * .004 + times[:, None] * .00001
         )[:, :, None, None]
         ds['thlm'].units = 'K'
-    path = create_case_namelist_file(
+    text = create_case_settings(
         'rico_silhs', tmp_path, multicol='C8/0.2:0.8/2', debug='-1',
         max_iters=4, dt_main=60, dt_rad=60,
     )
-    text = prune_clubb_stats_namelist(path.read_text(), ['thlm'])
+    text = prune_clubb_stats_namelist(text, ['thlm'])
     text = set_stats_string(text, 'stats_output_filename', '')
     for name, value in dict(stats_tstart=0, stats_tend=240, stats_tout=120, stats_tsamp=60).items():
         text = set_stats_value(text, name, str(value))
-    text += f'''\n&tuner_loss_nl
- les_stats_file="{benchmark}"
- clubb_var_names(1)="thlm"
- benchmark_var_name(1)="thlm"
- altitude_comparison_range=20,2940
- time_average_range=0,240
- num_time_windows=2
-/\n'''
-    path.write_text(text)
+    text.update(build_loss_settings({"les_stats_file": str(benchmark),
+                "altitude_comparison_range": [20, 2940], "time_average_range": [0, 240]},
+                ['thlm'], num_time_windows=2))
+    path = write_case_namelist(text, tmp_path / "rico_silhs.in")
     try:
         _, params = loss.init_clubb_loss(str(path), True)
         expected = loss.clubb_get_loss_for_params(params)

@@ -15,7 +15,7 @@ from clubb_jax.src.CLUBB_core.interpolation import zlinterp_fnc
 from clubb_jax.src.Radiation.parameters_radiation import initialize_radiation_parameters
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
-_FORCINGS = os.path.join(_ROOT, "input", "case_setups", "lba_forcings")
+_FORCINGS = os.path.join(_ROOT, "input", "case_data", "lba_forcings")
 
 
 def _ref_radhtz(time, krad):

@@ -13,7 +13,7 @@ Usage:
     - run_case(namelist_path, l_stdout=True): run the full lifecycle.
 
 Understanding:
-    Generate aggregate inputs with utilities/create_case_namelist.py; a model
+    Generate aggregate inputs with input/scripts/create_case_namelist.py; a model
     fragment alone does not include parameter, physics and stats settings.
     Workers print CLUBB_WORKER_READY once and CLUBB_WORKER_DONE after each
     successful case's output closes. Exceptions exit without acknowledging
@@ -45,7 +45,7 @@ def main():
     """Parse frontend options and select one complete case or the filename loop."""
     if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'):
         print("Usage: python -m clubb_python_driver.clubb_standalone <namelist_path> [--quiet]")
-        print("  namelist_path: path to *_model.in file")
+        print("  namelist_path: path to the complete runner namelist")
         print("  -worker: read full-case namelist paths from stdin until EOF")
         print("  --quiet: suppress per-timestep output")
         sys.exit(0 if '--help' in sys.argv else 1)

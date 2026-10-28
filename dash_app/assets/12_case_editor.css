@@ -24,6 +24,7 @@
 .run-case-bool-labels { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3,1fr); align-items: center; text-align: center; pointer-events: none; z-index: 1; font-size: 11px; }
 .run-case-bool[data-state="false"] span:nth-child(1),
 .run-case-bool[data-state="unset"] span:nth-child(2),
+.run-case-bool[data-state="default"] span:nth-child(2),
 .run-case-bool[data-state="true"] span:nth-child(3) { color: white; font-weight: 650; }
 #app-root .run-case-bool input[type="range"] { appearance: none; display: block; width: 100%; height: 28px; padding: 0; margin: 0; background: transparent; border: 0; cursor: pointer; }
 .run-case-bool input::-webkit-slider-runnable-track { height: 28px; background: transparent; }

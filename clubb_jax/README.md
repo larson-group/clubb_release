@@ -51,23 +51,23 @@ accepted, case-insensitively.
 The statistics registry controls which model fields are collected and written.
 Statistics are particularly expensive in JAX, so selecting only the output a
 run needs can substantially reduce its runtime. The default is
-`input/stats/standard_stats.in`, which provides broad output coverage.
+`standard`, which provides broad output coverage.
 
 ```bash
 # Faster: retain a small set of important multi-column fields.
-./run_scripts/run_scm.py -jax -stats input/stats/multi_col_stats.in arm
+./run_scripts/run_scm.py -jax -stats multi_col_stats arm
 
 # Fastest: run without collecting or writing statistics.
 ./run_scripts/run_scm.py -jax -stats none arm
 
 # Most comprehensive: collect every registered statistic.
-./run_scripts/run_scm.py -jax -stats input/stats/all_stats.in arm
+./run_scripts/run_scm.py -jax -stats all arm
 ```
 
-`multi_col_stats.in` retains 15 central state and turbulence fields and is
+`multi_col_stats` retains 15 central state and turbulence fields and is
 substantially faster than the default. `none` has the lowest overhead but
 produces no statistics output, so it is useful for timing rather than validating
-model results. `all_stats.in` gives maximal output coverage at the highest cost.
+model results. `all` gives maximal output coverage at the highest cost.
 
 Debug checks also affect performance. Many cases default to `debug_level = 2`;
 passing `-debug 0` typically saves about 10% of runtime and is appropriate when
@@ -77,7 +77,7 @@ more permissive, so use it only when a partial run is sufficient:
 
 ```bash
 ./run_scripts/run_scm.py -jax \
-  -stats input/stats/multi_col_stats.in -debug 0 -max_iters 120 arm
+  -stats multi_col_stats -debug 0 -max_iters 120 arm
 ```
 
 ### Reusable case processes
@@ -297,7 +297,7 @@ report under `output/tests/jax_driver_test_results/`.
 
 ### Comparison Options
 
-The harness defaults to `standard_stats.in`. Single-dash `run_scm.py` options
+The harness defaults to `standard`. Single-dash `run_scm.py` options
 such as `-stats`, `-debug`, `-max_iters`, and `-dt_main` are forwarded to both
 model runs, so JAX and Fortran use the same settings.
 As with a normal run, reducing the statistics registry or debug level can make
@@ -316,7 +316,7 @@ example, this runs two shortened cases in parallel with faster model settings:
 ```bash
 ./tests/run_jax_vs_fortran_cases.py \
   -cases arm bomex -workers 2 \
-  -stats input/stats/multi_col_stats.in -debug 0 -max_iters 120
+  -stats multi_col_stats -debug 0 -max_iters 120
 ```
 
 `-bindiff_threshold` changes the numerical difference threshold and
@@ -381,7 +381,7 @@ The Morrison and Monte Carlo checks can take several minutes. They retain the
 expensive validation removed from focused pytest; they are manual checks and
 are not added to the nightly Jenkins job.
 
-The Rico check requires fresh `all_stats` output from a ten-step Fortran Rico
+The Rico check requires fresh `all` output from a ten-step Fortran Rico
 run; it does not generate the reference run. Missing input or a failed
 numerical assertion fails the check. The gradient check's settings and limits
 are described in [Differentiability](#differentiability).
@@ -571,9 +571,10 @@ Select one CUDA device for a job using the identifier returned by
 `./clubb_jax/run_jax.py -profile=gpu -info=json`:
 
 ```bash
+python3 input/scripts/create_case_namelist.py bomex -output_dir /tmp/bomex_input
 ./clubb_jax/run_jax.py \
   -options=gpu,device=GPU-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,prealloc_gpu_mem=false \
-  input/case_setups/bomex_model.in
+  /tmp/bomex_input/bomex.in
 ```
 
 Replace the example identifier with a full GPU UUID from the report. The same

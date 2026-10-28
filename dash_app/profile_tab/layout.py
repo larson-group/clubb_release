@@ -252,7 +252,7 @@ def _benchmark_controls(initial_state: dict[str, object]):
                     ),
                 ]
             ),
-            tooltip="Value forwarded with -config. It chooses a named parameter_and_flag_configs directory for the benchmark.",
+            tooltip="Value forwarded with -config. It selects matching JSON presets for the benchmark.",
             compact=True,
         ),
         _field(

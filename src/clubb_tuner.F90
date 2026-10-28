@@ -15,7 +15,7 @@ program clubb_tuner
   use error, only:  & 
     tuner_init,                                    & ! Subroutines 
     write_results,                                 & ! Subroutine
-    output_nml_standalone, output_nml_tuner,       & ! Subroutines
+    output_json_standalone, output_json_tuner,       & ! Subroutines
     param_vals_matrix, anneal_temp,                & ! Variables
     l_results_stdout, l_save_tuning_run,           & ! Variables
     l_results_file, tune_type, f_tol, ndim,        & ! Variables
@@ -165,24 +165,24 @@ program clubb_tuner
 
   end do ! user_response /= 'y', 'Y' or 'yes'
 
-  ! Final namelist file output 
+  ! Final JSON result output
 
   if ( l_results_file ) then 
 
-    ! Tuner namelist
+    ! Tuner diagnostic JSON
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
       action="write", position="append")
-    call write_text( "Generating new error.in file...", l_save_tuning_run, file_unit )
+    call write_text( "Generating tuner results JSON...", l_save_tuning_run, file_unit )
     if( l_save_tuning_run ) close(unit=file_unit)
 
     results_f = "../input/error_"//current_date//'_' & 
-      //current_time(1:4)//".in" 
+      //current_time(1:4)//".json"
 
     ! Note:
     ! The first column of param_vals_matrix is the optimized result, which
     ! is swapped in by amoeba.
-    call output_nml_tuner( results_f, param_vals_matrix(1,1:ndim) )
+    call output_json_tuner( results_f, param_vals_matrix(1,1:ndim) )
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
       action="write", position="append")
@@ -190,14 +190,14 @@ program clubb_tuner
 
   end if
 
-  ! Parameters namelist
-  call write_text( "Generating new tunable_parameters.in file...", l_save_tuning_run, file_unit )
+  ! Parameter JSON
+  call write_text( "Generating parameter JSON...", l_save_tuning_run, file_unit )
   if( l_save_tuning_run ) close(unit=file_unit)
 
-  results_f = "../input/parameter_and_flag_configs/default/tunable_parameters_"//current_date//'_' &
-    //current_time(1:4)//".in" 
+  results_f = "../input/tunable_parameters_"//current_date//'_' &
+    //current_time(1:4)//".json"
 
-  call output_nml_standalone( results_f,  & 
+  call output_json_standalone( results_f,  &
                               param_vals_matrix(1,1:ndim) )
   ! Save tuning results in file if specified
   if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
@@ -527,7 +527,7 @@ subroutine logical_flags_driver( current_date, current_time )
   logical, dimension(ndim) :: model_flags_default
 
   character(len=128) :: &
-    filename_nml, &  ! Namelist file name
+    filename_json, &  ! Flag JSON file name
     filename_csv     ! Comma seperated values filename
 
   integer(kind=i8) :: bit_string, bit_iter
@@ -674,27 +674,6 @@ subroutine logical_flags_driver( current_date, current_time )
     l_wp2_fill_holes_tke,         & ! Turn on additional hole-filling for wp2
                                     ! that takes TKE from up2 and vp2, if necessary
     l_add_dycore_grid               ! Turn on remapping values from the dycore grid
-
-  namelist /configurable_clubb_flags_nl/ &
-    iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-    saturation_formula, Lscale_method, grid_remap_method, &
-    grid_adapt_in_time_method, fill_holes_type, &
-    l_upwind_xpyp_ta, l_upwind_xm_ma, &
-    l_vert_avg_closure, l_standard_term_ta, &
-    l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
-    l_use_cloud_cover, l_rcm_supersat_adj, &
-    l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
-    l_predict_upwp_vpwp, l_ho_nontrad_coriolis, l_ho_trad_coriolis, &
-    l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson, &
-    l_use_precip_frac, l_do_expldiff_rtm_thlm, &
-    l_use_C11_Richardson, l_use_shear_Richardson, l_prescribed_avg_deltaz, &
-    l_diffuse_rtm_and_thlm, l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, &
-    l_trapezoidal_rule_zm, l_call_pdf_closure_twice, l_Lscale_plume_centered, &
-    l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
-    l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
-    l_use_tke_in_wp2_wp3_K_dfsn, l_use_wp3_lim_with_smth_Heaviside, &
-    l_smooth_Heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_host_applies_sfc_fluxes, &
-    l_wp2_fill_holes_tke, l_add_dycore_grid
 
   ! ---- Begin Code ----
 
@@ -874,7 +853,7 @@ subroutine logical_flags_driver( current_date, current_time )
   close(unit=iunit)
   write(fstdout,*) "Results of tuning model flags written to: ", trim( filename_csv )
 
-  ! Generate namelist file of the optimal result
+  ! Generate JSON overrides for the optimal result
   if ( l_results_file ) then
     l_godunov_upwind_wpxp_ta = model_flags_array(1,1)
     l_godunov_upwind_xpyp_ta = model_flags_array(1,2)
@@ -895,15 +874,111 @@ subroutine logical_flags_driver( current_date, current_time )
       l_call_pdf_closure_twice = .false.
     end if
 
-    filename_nml = "../input/parameter_and_flag_configs/default/configurable_model_flags_"//current_date//'_' &
-      //current_time(1:4)//".in"
+    filename_json = "../input/configurable_model_flags_"//current_date//'_' &
+      //current_time(1:4)//".json"
 
-    ! Write namelist to file
-    open(unit=iunit, file=trim( filename_nml ), status='unknown', action='write')
-    write(unit=iunit, nml=configurable_clubb_flags_nl)
+    ! Save model flag overrides; SILHS retains the input catalog defaults.
+    open(unit=iunit, file=trim( filename_json ), status="replace", action="write")
+    write(iunit,'(A)') '{"model": {'
+    write(iunit,'(A,I0,A)') '"iiPDF_type": ', iiPDF_type, ','
+    write(iunit,'(A,I0,A)') '"ipdf_call_placement": ', ipdf_call_placement, ','
+    write(iunit,'(A,I0,A)') '"penta_solve_method": ', penta_solve_method, ','
+    write(iunit,'(A,I0,A)') '"tridiag_solve_method": ', tridiag_solve_method, ','
+    write(iunit,'(A,I0,A)') '"saturation_formula": ', saturation_formula, ','
+    write(iunit,'(A,I0,A)') '"Lscale_method": ', Lscale_method, ','
+    write(iunit,'(A,I0,A)') '"grid_remap_method": ', grid_remap_method, ','
+    write(iunit,'(A,I0,A)') '"grid_adapt_in_time_method": ', grid_adapt_in_time_method, ','
+    write(iunit,'(A,I0,A)') '"fill_holes_type": ', fill_holes_type, ','
+    write(iunit,'(A)') '"l_upwind_xpyp_ta": '// &
+      trim(merge('true ', 'false', l_upwind_xpyp_ta))//','
+    write(iunit,'(A)') '"l_upwind_xm_ma": '// &
+      trim(merge('true ', 'false', l_upwind_xm_ma))//','
+    write(iunit,'(A)') '"l_vert_avg_closure": '// &
+      trim(merge('true ', 'false', l_vert_avg_closure))//','
+    write(iunit,'(A)') '"l_standard_term_ta": '// &
+      trim(merge('true ', 'false', l_standard_term_ta))//','
+    write(iunit,'(A)') '"l_partial_upwind_wp3": '// &
+      trim(merge('true ', 'false', l_partial_upwind_wp3))//','
+    write(iunit,'(A)') '"l_godunov_upwind_wpxp_ta": '// &
+      trim(merge('true ', 'false', l_godunov_upwind_wpxp_ta))//','
+    write(iunit,'(A)') '"l_godunov_upwind_xpyp_ta": '// &
+      trim(merge('true ', 'false', l_godunov_upwind_xpyp_ta))//','
+    write(iunit,'(A)') '"l_use_cloud_cover": '// &
+      trim(merge('true ', 'false', l_use_cloud_cover))//','
+    write(iunit,'(A)') '"l_rcm_supersat_adj": '// &
+      trim(merge('true ', 'false', l_rcm_supersat_adj))//','
+    write(iunit,'(A)') '"l_damp_wp3_Skw_squared": '// &
+      trim(merge('true ', 'false', l_damp_wp3_Skw_squared))//','
+    write(iunit,'(A)') '"l_min_wp2_from_corr_wx": '// &
+      trim(merge('true ', 'false', l_min_wp2_from_corr_wx))//','
+    write(iunit,'(A)') '"l_min_xp2_from_corr_wx": '// &
+      trim(merge('true ', 'false', l_min_xp2_from_corr_wx))//','
+    write(iunit,'(A)') '"l_C2_cloud_frac": '// &
+      trim(merge('true ', 'false', l_C2_cloud_frac))//','
+    write(iunit,'(A)') '"l_predict_upwp_vpwp": '// &
+      trim(merge('true ', 'false', l_predict_upwp_vpwp))//','
+    write(iunit,'(A)') '"l_ho_nontrad_coriolis": '// &
+      trim(merge('true ', 'false', l_ho_nontrad_coriolis))//','
+    write(iunit,'(A)') '"l_ho_trad_coriolis": '// &
+      trim(merge('true ', 'false', l_ho_trad_coriolis))//','
+    write(iunit,'(A)') '"l_stability_correct_tau_zm": '// &
+      trim(merge('true ', 'false', l_stability_correct_tau_zm))//','
+    write(iunit,'(A)') '"l_damp_wp2_using_em": '// &
+      trim(merge('true ', 'false', l_damp_wp2_using_em))//','
+    write(iunit,'(A)') '"l_use_C7_Richardson": '// &
+      trim(merge('true ', 'false', l_use_C7_Richardson))//','
+    write(iunit,'(A)') '"l_use_precip_frac": '// &
+      trim(merge('true ', 'false', l_use_precip_frac))//','
+    write(iunit,'(A)') '"l_do_expldiff_rtm_thlm": '// &
+      trim(merge('true ', 'false', l_do_expldiff_rtm_thlm))//','
+    write(iunit,'(A)') '"l_use_C11_Richardson": '// &
+      trim(merge('true ', 'false', l_use_C11_Richardson))//','
+    write(iunit,'(A)') '"l_use_shear_Richardson": '// &
+      trim(merge('true ', 'false', l_use_shear_Richardson))//','
+    write(iunit,'(A)') '"l_prescribed_avg_deltaz": '// &
+      trim(merge('true ', 'false', l_prescribed_avg_deltaz))//','
+    write(iunit,'(A)') '"l_diffuse_rtm_and_thlm": '// &
+      trim(merge('true ', 'false', l_diffuse_rtm_and_thlm))//','
+    write(iunit,'(A)') '"l_stability_correct_Kh_N2_zm": '// &
+      trim(merge('true ', 'false', l_stability_correct_Kh_N2_zm))//','
+    write(iunit,'(A)') '"l_trapezoidal_rule_zt": '// &
+      trim(merge('true ', 'false', l_trapezoidal_rule_zt))//','
+    write(iunit,'(A)') '"l_trapezoidal_rule_zm": '// &
+      trim(merge('true ', 'false', l_trapezoidal_rule_zm))//','
+    write(iunit,'(A)') '"l_call_pdf_closure_twice": '// &
+      trim(merge('true ', 'false', l_call_pdf_closure_twice))//','
+    write(iunit,'(A)') '"l_Lscale_plume_centered": '// &
+      trim(merge('true ', 'false', l_Lscale_plume_centered))//','
+    write(iunit,'(A)') '"l_brunt_vaisala_freq_moist": '// &
+      trim(merge('true ', 'false', l_brunt_vaisala_freq_moist))//','
+    write(iunit,'(A)') '"l_use_thvm_in_bv_freq": '// &
+      trim(merge('true ', 'false', l_use_thvm_in_bv_freq))//','
+    write(iunit,'(A)') '"l_lmm_stepping": '// &
+      trim(merge('true ', 'false', l_lmm_stepping))//','
+    write(iunit,'(A)') '"l_e3sm_config": '// &
+      trim(merge('true ', 'false', l_e3sm_config))//','
+    write(iunit,'(A)') '"l_vary_convect_depth": '// &
+      trim(merge('true ', 'false', l_vary_convect_depth))//','
+    write(iunit,'(A)') '"l_use_tke_in_wp3_pr_turb_term": '// &
+      trim(merge('true ', 'false', l_use_tke_in_wp3_pr_turb_term))//','
+    write(iunit,'(A)') '"l_use_tke_in_wp2_wp3_K_dfsn": '// &
+      trim(merge('true ', 'false', l_use_tke_in_wp2_wp3_K_dfsn))//','
+    write(iunit,'(A)') '"l_use_wp3_lim_with_smth_Heaviside": '// &
+      trim(merge('true ', 'false', l_use_wp3_lim_with_smth_Heaviside))//','
+    write(iunit,'(A)') '"l_smooth_Heaviside_tau_wpxp": '// &
+      trim(merge('true ', 'false', l_smooth_Heaviside_tau_wpxp))//','
+    write(iunit,'(A)') '"l_modify_limiters_for_cnvg_test": '// &
+      trim(merge('true ', 'false', l_modify_limiters_for_cnvg_test))//','
+    write(iunit,'(A)') '"l_host_applies_sfc_fluxes": '// &
+      trim(merge('true ', 'false', l_host_applies_sfc_fluxes))//','
+    write(iunit,'(A)') '"l_wp2_fill_holes_tke": '// &
+      trim(merge('true ', 'false', l_wp2_fill_holes_tke))//','
+    write(iunit,'(A)') '"l_add_dycore_grid": '// &
+      trim(merge('true ', 'false', l_add_dycore_grid))//''
+    write(iunit,'(A)') '}, "silhs": {}}'
     close(unit=iunit)
 
-    write(fstdout,*) "New namelist of tuning model flags written to: ", trim( filename_nml )
+    write(fstdout,*) "New JSON of tuning model flags written to: ", trim( filename_json )
   end if
 
   deallocate( model_flags_array )

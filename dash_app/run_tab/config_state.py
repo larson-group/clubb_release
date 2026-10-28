@@ -3,7 +3,7 @@
 from dash_app.shared.tunable_configs import (
     available_tunable_configs,
     default_tunable_config_name,
-    tunable_config_file,
+    config_entries,
     tunable_config_names,
 )
 from utilities.clubb_settings_validation import (
@@ -13,7 +13,7 @@ from utilities.clubb_settings_validation import (
 )
 
 from .layout import build_flag_controls, build_param_sections, compute_width_hints
-from .namelist import is_bool_value, is_true, normalize_numeric_display, read_namelist_entries
+from .settings import is_bool_value, is_true, normalize_numeric_display
 
 
 def _format_range_value(value):
@@ -33,11 +33,11 @@ def _select_config_name(config_name=None, configs=None):
 def build_tunable_config_state(config_name=None, configs=None):
     """Collect config-dependent run-tab defaults, controls, and parameter metadata."""
     selected_config = _select_config_name(config_name, configs)
-    flag_entries = read_namelist_entries(tunable_config_file(selected_config, "configurable_model_flags.in"))
+    flag_entries = config_entries(selected_config, "flags")
     flag_bools = [entry for entry in flag_entries if is_bool_value(entry["value"])]
     flag_params = [entry for entry in flag_entries if entry not in flag_bools]
-    tunable_entries = read_namelist_entries(tunable_config_file(selected_config, "tunable_parameters.in"))
-    silhs_entries = read_namelist_entries(tunable_config_file(selected_config, "silhs_parameters.in"))
+    tunable_entries = config_entries(selected_config, "tunable")
+    silhs_entries = config_entries(selected_config, "silhs")
 
     flag_names = [entry["name"] for entry in flag_bools]
     all_config_names = (

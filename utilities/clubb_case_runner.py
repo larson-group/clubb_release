@@ -38,7 +38,7 @@ Understanding:
     Runtime options are an argparse Namespace or a mapping using parser field
     names: for example, {"jax": True, "jax_options": "cpu"}. Selection defaults
     to the native install/selected tree if present, otherwise install/latest.
-    Namelist creation belongs to utilities/create_case_namelist.py; run() needs
+    Namelist creation belongs to input/scripts/create_case_namelist.py; run() needs
     a file path, not a case name or parameter array.
 
     Persistent workers exchange one absolute namelist path and a completion
@@ -301,16 +301,16 @@ def parse_case_arguments(argv):
     and reject incompatible options through argparse. No case is generated and
     no runtime starts here; help or malformed input exits through argparse.
     """
-    from utilities.create_case_namelist import add_namelist_arguments
+    from input.scripts.create_case_namelist import add_namelist_arguments, normalize_case_selection
 
     parser = argparse.ArgumentParser(description="Run the standalone CLUBB model",
                                      add_help=False, allow_abbrev=False)
     parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
     add_runner_arguments(parser.add_argument_group("Runtime options"))
     add_namelist_arguments(parser.add_argument_group("Model settings"))
-    parser.add_argument("case_name", help="Name of the case to run")
+    parser.add_argument("case_name", nargs="?", help="Case preset or JSON override file")
     normalized, value, occurrences = extract_jax_options(argv)
-    args = parser.parse_args(normalized)
+    args = normalize_case_selection(parser.parse_args(normalized), parser)
     args.jax_options = value
     if occurrences > 1:
         parser.error("-jax may be specified only once.")

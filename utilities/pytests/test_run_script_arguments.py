@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from tuner import system_defaults
-from utilities.create_case_namelist import add_namelist_arguments, parse_forwarded_args
+from input.scripts.create_case_namelist import add_namelist_arguments, parse_forwarded_args
 from run_scripts import run_clubb_w_varying_flags as flags
 import importlib.util
 import sys
@@ -102,15 +102,15 @@ def test_branch_comparison_translates_only_option_tokens_for_old_clones(tmp_path
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("import argparse\np = argparse.ArgumentParser()\n" +
                         "\n".join(f"p.add_argument({name!r})" for name in declarations))
-    arguments = ["-flag_config_file", "flags.json", "-priority_cases", "-workers=2",
+    arguments = ["-flag_config_file", "clubb_config_flags.jsonc", "-priority_cases", "-workers=2",
                  "-params_file", "parameters.in", "-output_dir=/tmp/output",
                  "-override", '{"name":"-workers"}']
     assert branch.clone_arguments(tmp_path, arguments, scripts) == [
-        "--flag-config-file", "flags.json", "--priority-cases", "-nproc=2",
+        "--flag-config-file", "clubb_config_flags.jsonc", "--priority-cases", "-nproc=2",
         "-params", "parameters.in", "-out_dir=/tmp/output", "-override", '{"name":"-workers"}',
     ]
     current = Path(__file__).resolve().parents[2]
-    assert branch.clone_arguments(current, arguments, [*scripts, "utilities/create_case_namelist.py"]) == arguments
+    assert branch.clone_arguments(current, arguments, [*scripts, "input/scripts/create_case_namelist.py"]) == arguments
 
 
 def test_python_comparison_rejects_empty_explicit_case_list():

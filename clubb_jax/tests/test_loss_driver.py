@@ -36,8 +36,8 @@ from clubb_jax.src.CLUBB_core.parameters_tunable import PNAME_IDX, init_clubb_pa
 from clubb_jax.src.CLUBB_core.parameter_indices import nparams
 from clubb_jax.src.CLUBB_core.stats_netcdf import StatsWriter
 from clubb_jax.src.CLUBB_core.err_info import ErrInfo
-from utilities.create_case_namelist import (
-    create_case_namelist_file, prune_clubb_stats_namelist, set_stats_string, set_stats_value,
+from input.scripts.create_case_namelist import (
+    create_case_settings, write_case_namelist, build_loss_settings, prune_clubb_stats_namelist, set_stats_string, set_stats_value,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,25 +64,18 @@ def prepared_loss(tmp_path_factory):
             .05 + z[None, :] * .00004 + times[:, None] * .000005)[:, :, None, None]
         ds['thlm'].units = 'K'
         ds['wp2'].units = 'm^2/s^2'
-    path = create_case_namelist_file(
-        'bomex', tmp_path, stats=str(ROOT / 'input/stats/standard_stats.in'),
+    text = create_case_settings(
+        'bomex', tmp_path, stats='standard',
         multicol='4', batch_size=2, debug='-1', max_iters=10,
     )
-    text = prune_clubb_stats_namelist(path.read_text(), ['thlm', 'wp2'])
+    text = prune_clubb_stats_namelist(text, ['thlm', 'wp2'])
     text = set_stats_string(text, 'stats_output_filename', '')
     for name, value in dict(stats_tstart=0, stats_tend=600, stats_tout=300, stats_tsamp=60).items():
         text = set_stats_value(text, name, str(value))
-    text += f'''\n&tuner_loss_nl
- les_stats_file="{benchmark}"
- clubb_var_names(1)="thlm"
- clubb_var_names(2)="wp2"
- benchmark_var_name(1)="thlm"
- benchmark_var_name(2)="wp2"
- altitude_comparison_range=20,2940
- time_average_range=0,600
- num_time_windows=2
-/\n'''
-    path.write_text(text)
+    text.update(build_loss_settings({"les_stats_file": str(benchmark),
+                "altitude_comparison_range": [20, 2940], "time_average_range": [0, 600]},
+                ['thlm', 'wp2'], num_time_windows=2))
+    path = write_case_namelist(text, tmp_path / "bomex.in")
     names, params = loss.init_clubb_loss(str(path), True)
     yield path, names, params
     loss.finalize_clubb_loss()

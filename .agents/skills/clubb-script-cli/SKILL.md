@@ -28,7 +28,7 @@ harness controls.
 | CLUBB options | One dash and descriptive snake_case, e.g. `-output_dir`. |
 | Independent process/case concurrency | `-workers`; default half the available logical CPUs, at least one. Reuse `tuner.system_defaults.default_max_workers`. |
 | Destination paths | `-output_dir`, `-output_file`, `-output_root` as appropriate, rather than `-out_dir` or vague `-out`. |
-| Parameter inputs | `-params_file`, `-param_ranges`, or the existing specific name (`-silhs_params_file`, `-flag_config_file`). |
+| Parameter inputs | `-params NAME|JSON` (`-params_file` is retained for existing callers); `-param_ranges` remains tuner search ranges. |
 | Multi-column generation | `-multicol NUM_OR_SPEC` through the canonical namelist utilities. |
 | Model/tuner batch width | `-batch_size`; this is model columns/candidates, not worker-process concurrency. |
 | Other parallelism | `-threads` is OpenMP threads; `-process_counts` is a benchmark sweep. Neither is an alias for workers. |
@@ -53,7 +53,7 @@ when it explains a GPU/resource constraint.
 
 ## One owner for shared behavior
 
-`utilities/create_case_namelist.py` owns namelist options and interpretation.
+`input/scripts/create_case_namelist.py` owns namelist options and interpretation.
 Reuse `add_namelist_arguments()` and `parse_forwarded_args()`; wrapper scripts own
 only their own orchestration options and forward namelist/run options to the
 existing owner. The same applies to JAX selection/runtime setup: SCM wrappers

@@ -22,7 +22,7 @@ from .state import (
 from tuner.job_runtime import TunerJob, tuner_worker_env, tuner_runtime_settings
 from tuner.status import atomic_write_json, write_control
 from tuner.workspaces import create_workspace, replace_draft_request, workspace_display_name
-from utilities.create_case_namelist import filter_tuned_overrides, normalize_override_string, resolve_tunable_config_dir
+from input.scripts.create_case_namelist import filter_tuned_overrides, normalize_override_string
 from dash_app.run_tab.runtime import append_launch_target
 
 
@@ -127,29 +127,12 @@ def start_draft_tuning_job(workspace_id, revision_id, request_payload):
 
 def _read_default_tunable_params(config="default"):
     """Return scalar CLUBB tunable parameter defaults in file order for a config."""
-    params = []
-    pattern = re.compile(r"^\s*([A-Za-z]\w*)\s*=\s*([^!,/]+)")
-    config_dir = Path(resolve_tunable_config_dir(config or "default"))
-    params_path = config_dir / "tunable_parameters.in"
-    with open(params_path, encoding="utf-8") as src:
-        for raw_line in src:
-            line = raw_line.split("!", 1)[0].strip()
-            if not line or line.startswith("&") or line.startswith("/"):
-                continue
-            match = pattern.match(line)
-            if not match:
-                continue
-            name = match.group(1)
-            try:
-                value = float(match.group(2).strip().replace("D", "E").replace("d", "e"))
-            except ValueError:
-                continue
-            params.append((name, value))
-    return params
+    from tuner.parameter_ranges import tunable_parameter_defaults
+    return list(tunable_parameter_defaults(config).items())
 
 
-def write_loss_params_file(work_dir, param_sets, filename="loss_params.in", config="default"):
-    """Write a params namelist whose only changes are the supplied tuned parameters."""
+def write_loss_params_file(work_dir, param_sets, filename="loss_params.json", config="default"):
+    """Write parameter JSON whose only changes are the supplied tuned parameters."""
     defaults = _read_default_tunable_params(config)
     default_names = {name for name, _value in defaults}
     override_names = sorted({name for params in param_sets for name in (params or {})})
@@ -159,19 +142,14 @@ def write_loss_params_file(work_dir, param_sets, filename="loss_params.in", conf
 
     ngrdcol = len(param_sets)
     params_path = Path(work_dir) / filename
-    with open(params_path, "w", encoding="utf-8") as dst:
-        if ngrdcol > 1:
-            dst.write("&multicol_def\n")
-            dst.write(f"ngrdcol = {ngrdcol}\n")
-            dst.write(f"batch_size = {ngrdcol}\n")
-            dst.write("/\n\n")
-        dst.write("&clubb_params_nl\n")
-        for name, default_value in defaults:
-            values = []
-            for params in param_sets:
-                values.append(float((params or {}).get(name, default_value)))
-            dst.write(f"{name} = {', '.join(f'{value:.15g}' for value in values)}\n")
-        dst.write("/\n")
+    from input.scripts.parameters_json_to_namelist import parameter_settings
+    settings = parameter_settings(config=config)
+    settings["model"] = {name: [float((params or {}).get(name, default)) for params in param_sets]
+                         if ngrdcol > 1 else float((param_sets[0] or {}).get(name, default))
+                         for name, default in defaults}
+    if ngrdcol > 1:
+        settings["multicol"] = {"ngrdcol": ngrdcol, "batch_size": ngrdcol}
+    params_path.write_text(json.dumps(settings, indent=2, allow_nan=False) + "\n")
     return params_path
 
 
@@ -256,7 +234,7 @@ def start_loss_run(
     params_path = write_loss_params_file(
         work_dir,
         param_sets,
-        f"{run_id}_loss_params.in",
+        f"{run_id}_loss_params.json",
         config=config,
     )
 

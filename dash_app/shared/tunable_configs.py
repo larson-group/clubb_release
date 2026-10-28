@@ -7,32 +7,31 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-TUNABLE_CONFIG_ROOT = REPO_ROOT / "input" / "parameter_and_flag_configs"
-REQUIRED_TUNABLE_CONFIG_FILES = (
-    "tunable_parameters.in",
-    "configurable_model_flags.in",
-    "silhs_parameters.in",
-)
-
+TUNABLE_CONFIG_ROOT = REPO_ROOT / "input"
 TUNABLE_PARAMETER_RENAMES: dict[str, str] = {}
-
-from utilities.create_case_namelist import resolve_tunable_config_dir  # noqa: E402
-
-
-def _complete_tunable_config(path: Path) -> bool:
-    """Return whether a tunable config directory has all files needed by run_scm."""
-    return path.is_dir() and all((path / filename).is_file() for filename in REQUIRED_TUNABLE_CONFIG_FILES)
 
 
 def available_tunable_configs():
-    """Return complete named tunable configs available to Dash tabs."""
-    configs = []
-    if TUNABLE_CONFIG_ROOT.is_dir():
-        for path in sorted(TUNABLE_CONFIG_ROOT.iterdir(), key=lambda item: item.name):
-            if _complete_tunable_config(path):
-                configs.append({"label": path.name, "value": path.name, "path": str(path.resolve())})
-    configs.sort(key=lambda item: (item["value"] != "default", item["value"]))
-    return configs
+    """List the built-in baseline and parameter/flag preset names."""
+    from input.scripts.create_case_namelist import DEFAULT_CONFIG, load_catalog
+    names = {DEFAULT_CONFIG} | set(load_catalog("parameters")["presets"]) | set(load_catalog("flags")["presets"])
+    return [{"label": name, "value": name, "path": str(TUNABLE_CONFIG_ROOT)}
+            for name in sorted(names, key=lambda name: (name != "default", name))]
+
+
+def config_settings(config_name, kind):
+    """Return resolved JSON for a shared config and input kind."""
+    from input.scripts.create_case_namelist import resolve_input_settings
+    return resolve_input_settings(kind, config=config_name or "default")
+
+
+def config_entries(config_name, section):
+    """Return editable entries from parameter/flag JSON, preserving catalog order."""
+    from input.scripts.namelist import setting_entries
+    kind = "flags" if section == "flags" else "parameters"
+    values = config_settings(config_name, kind)
+    values = {**values["model"], **values["silhs"]} if section == "flags" else values["silhs" if section == "silhs" else "model"]
+    return setting_entries(values)
 
 
 def default_tunable_config_name(configs=None):
@@ -51,21 +50,6 @@ def tunable_config_names(configs=None):
         for config in (configs or available_tunable_configs())
         if str(config.get("value", "")).strip()
     }
-
-
-def tunable_config_dir(config_name=None):
-    """Return the resolved config directory for a config name or directory."""
-    return Path(resolve_tunable_config_dir(config_name or "default"))
-
-
-def tunable_config_file(config_name=None, filename="tunable_parameters.in"):
-    """Return a file path inside the resolved config directory."""
-    return str(tunable_config_dir(config_name) / os.fspath(filename))
-
-
-def tunable_params_file_for_config(config_name=None):
-    """Return the tunable parameter file for a config name or directory."""
-    return tunable_config_file(config_name, "tunable_parameters.in")
 
 
 def canonical_tunable_parameter_name(name, available_names):

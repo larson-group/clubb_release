@@ -1,5 +1,7 @@
 """Check mixing_length.F90 ports against Fortran."""
 
+from input.scripts.create_case_namelist import create_case_namelist_file
+
 import os
 
 import numpy as np
@@ -24,7 +26,7 @@ from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
 from clubb_jax.src.CLUBB_core.saturation import SATURATION_FLATAU
 
 _ROOT = str(_REPO_ROOT)
-_TUNABLE_PARAMS = os.path.join(_ROOT, "input", "parameter_and_flag_configs", "default", "tunable_parameters.in")
+_TUNABLE_PARAMS = str(create_case_namelist_file("bomex"))
 
 _NG, _DZ, _ZTOP = 2, 40.0, 1600.0
 

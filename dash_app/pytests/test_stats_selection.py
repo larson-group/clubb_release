@@ -13,7 +13,7 @@ from dash_app.run_tab import stats
 from dash_app.shared import stats as stats_service
 from dash_app.run_tab.runtime import build_case_command
 from dash_app.services.models import ScmRunBatchRequest, ScmRunRequest
-from utilities.stats_json_to_namelist import load_stats_categories, select_stats_entries, stats_json_to_namelist
+from input.scripts.stats_json_to_namelist import load_stats_categories, select_stats_entries, stats_json_to_namelist
 
 
 @pytest.mark.parametrize("selection", ["all", "standard", "core", "standard/radiation", "core+wp2_budgets", "var:rtm,var:wp2", "none"])
@@ -28,15 +28,15 @@ def test_saved_lists_are_discoverable_portable_and_never_overwritten(tmp_path, m
     monkeypatch.setattr(stats_service, "STATS_DIR", str(tmp_path))
     selection = "core+standard/radiation"
     saved = stats_service.save_stats_config("core_radiation", selection)
-    assert saved == "custom/core_radiation.in"
+    assert saved == "core_radiation.stats.json"
     assert saved in stats_service.list_stats_files()
-    assert (tmp_path / saved).read_text() == stats_json_to_namelist(selection)
-    assert stats_service.stats_cli_argument(saved) == "input/stats/custom/core_radiation.in"
+    assert json.loads((tmp_path / saved).read_text()) == [entry["name"] for entry in select_stats_entries(selection)]
+    assert stats_service.stats_cli_argument(saved) == "input/core_radiation.stats.json"
     assert stats_service.stats_selection_names(saved) == {entry["name"] for entry in select_stats_entries(selection)}
     assert ScmRunRequest(request_id="saved-stats-test", case="bomex", stats_file=saved).stats_file == saved
     with pytest.raises(ValueError, match="already exists"):
         stats_service.save_stats_config("core_radiation", "all")
-    assert (tmp_path / saved).read_text() == stats_json_to_namelist(selection)
+    assert json.loads((tmp_path / saved).read_text()) == [entry["name"] for entry in select_stats_entries(selection)]
     for name in ("../escape", "/absolute", "has spaces", ""):
         with pytest.raises(ValueError):
             stats_service.save_stats_config(name, selection)
@@ -190,21 +190,10 @@ def test_individual_variable_removal_applies_and_saves_exact_subset(tmp_path, mo
     monkeypatch.setattr(stats, "callback_context", SimpleNamespace(triggered_id="run-stats-save"))
     feedback, options = callbacks["save_selection"](1, 1, "partial_core", result.draft)
     assert feedback.className == "run-stats-feedback-success"
-    assert {option["value"] for option in options} == {"custom/partial_core.in"}
-    assert stats_service.stats_selection_names("custom/partial_core.in") == expected
-    restored = edit_tree(callbacks, monkeypatch, "run-stats-custom-open", "custom/partial_core.in")
+    assert "partial_core.stats.json" in {option["value"] for option in options}
+    assert stats_service.stats_selection_names("partial_core.stats.json") == expected
+    restored = edit_tree(callbacks, monkeypatch, "run-stats-custom-open", "partial_core.stats.json")
     assert set(restored.draft) == expected
-
-
-def test_legacy_partial_category_restores_exact_variables(monkeypatch):
-    callbacks = registered_callbacks()
-    categories = load_stats_categories()
-    result = edit_tree(callbacks, monkeypatch, "run-stats-custom-open", "fire_stats.in")
-    names = stats_service.stats_selection_names("fire_stats.in")
-    assert set(result.draft) == names
-    for path, values in zip(stats.leaf_paths(categories), result.variables):
-        assert set(values) == {entry["name"] for entry in categories[path]} & names
-    assert not any(component["props"].get("className") == "run-stats-feedback-warning" for component in result.preview)
 
 
 def test_bulk_selection_clear_and_duplicate_updates(monkeypatch):
@@ -232,9 +221,10 @@ def test_toggles_and_preview_have_no_server_callback(monkeypatch):
 
 def test_unknown_legacy_names_warn_when_opening(tmp_path, monkeypatch):
     monkeypatch.setattr(stats_service, "STATS_DIR", tmp_path)
-    (tmp_path / "extra.in").write_text('&clubb_stats_nl\nentry(1) = "outside_catalog | zt | m | test"\n/\n')
+    (tmp_path / "custom").mkdir()
+    (tmp_path / "extra.stats.json").write_text(json.dumps(["outside_catalog"]))
     callbacks = registered_callbacks()
-    result = edit_tree(callbacks, monkeypatch, "run-stats-custom-open", "extra.in")
+    result = edit_tree(callbacks, monkeypatch, "run-stats-custom-open", "extra.stats.json")
     assert not result.draft
     assert result.preview[-1]["props"]["className"] == "run-stats-feedback-warning"
     assert "outside_catalog" in result.preview[-1]["props"]["children"]

@@ -13,7 +13,7 @@ from netCDF4 import Dataset
 
 from clubb_jax.src.Input_fields import input_fields
 from clubb_jax.src.clubb_case_initalization import init_clubb_case
-from utilities.create_case_namelist import create_case_namelist_file, set_stats_string
+from input.scripts.create_case_namelist import create_case_namelist_file, create_case_settings, write_case_namelist, set_stats_string
 
 
 def _write_profile(path, data, units="K", heights=(0.0, 10.0), dims=("time", "zt", "col")):
@@ -118,11 +118,11 @@ def test_initialization_preserves_reference_when_output_path_collides(tmp_path, 
             output.symlink_to(reference)
         else:
             output.hardlink_to(reference)
-    path = create_case_namelist_file(
+    settings = create_case_settings(
         "bomex", tmp_path, max_iters=10, debug="0",
         override=f"l_restart=.true.,time_restart=60.,restart_path_case='{tmp_path / 'bomex'}'",
     )
-    path.write_text(set_stats_string(path.read_text(), 'stats_output_filename', output.name))
+    path = write_case_namelist(set_stats_string(settings, 'stats_output_filename', output.name), tmp_path / 'bomex.in')
     with pytest.raises(ValueError, match="must use different paths"):
         init_clubb_case(str(path))
     assert reference.read_bytes() == original

@@ -6,12 +6,11 @@ import os
 import re
 
 from dash_app.run_tab.discovery import load_available_cases
-from dash_app.run_tab.namelist import read_namelist_entries
 from dash_app.shared.tunable_configs import (
     available_tunable_configs as _available_tunable_configs,
     default_tunable_config_name as _default_tunable_config_name,
     tunable_config_names as _tunable_config_names,
-    tunable_params_file_for_config,
+    config_entries,
 )
 
 from .state import REPO_ROOT
@@ -29,23 +28,16 @@ from tuner.case_defaults import (  # noqa: E402
     load_case_defaults as load_tuner_case_defaults,
 )
 from tuner.parameter_ranges import default_parameter_ranges  # noqa: E402
-from utilities.benchmark_converter import supported_fields  # noqa: E402
+from input.scripts.benchmark_converter import supported_fields  # noqa: E402
 
 
-TUNING_STATS_FILE = os.path.join(REPO_ROOT, "input", "stats", "all_tuning_stats.in")
+TUNING_STATS_FILE = "all_tuning_stats"
 
 
 def read_tuning_stats_fields():
-    """Return CLUBB fields present in the tuner stats namelist."""
-    if not os.path.isfile(TUNING_STATS_FILE):
-        return []
-    text = open(TUNING_STATS_FILE, "r", encoding="utf-8").read()
-    fields = []
-    for entry_text in re.findall(r'(?im)^\s*entry\(\d+\)\s*=\s*"([^"]+)"\s*$', text):
-        field_name = entry_text.split("|", 1)[0].strip()
-        if field_name:
-            fields.append(field_name)
-    return fields
+    """Return the fields selected by the tuner's JSON stats preset."""
+    from input.scripts.stats_json_to_namelist import select_stats_entries
+    return [entry["name"] for entry in select_stats_entries(TUNING_STATS_FILE)]
 
 
 def available_tuning_fields():
@@ -80,7 +72,7 @@ def load_case_defaults():
 
 def load_tunable_names(config_name=None):
     """Return tunable parameter names from the selected tunable namelist."""
-    return [entry["name"] for entry in read_namelist_entries(tunable_params_file_for_config(config_name))]
+    return [entry["name"] for entry in config_entries(config_name, "tunable")]
 
 
 def _format_tune_range_value(value):

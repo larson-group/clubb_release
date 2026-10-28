@@ -10,12 +10,12 @@ Purpose:
   procedures are also outside the scope of this document
 
 1. Required files
-  a. input/case_setups/<runtype>_model.in
-     See the README for descriptions all the variables contained within this
-     file.
+  a. A case preset in input/case_definitions.jsonc, or a custom case JSON file.
+     Set the physical case name in model_setting.runtype. See input/README.md
+     for catalog defaults, overrides and required experiment settings.
 
-  b. input/case_setups/<runtype>_sounding.in
-     See the case setups directory for examples of these.  This provides the
+  b. input/case_data/<runtype>_sounding.in
+     See the case_data directory for examples of these.  This provides the
      initial profiles of moisture temperature, and wind.
 
 2. Modifications to the CLUBB code
@@ -32,26 +32,19 @@ Purpose:
      The use of l_t_dependent = .true. is the preferred method
      for doing this for new cases. It requires 2 additional text files:
 
-     1) input/case_setups/<runtype>_surface.in
-     2) input/case_setups/<runtype>_forcings.in
+     1) input/case_data/<runtype>_sfc.in
+     2) input/case_data/<runtype>_forcings.in
 
      These can be generated prior to the simulation by hand using the case 
      specification or using using a short program (See the arm_forcings_code 
      directory for an example).
 
-     To add a surface.in and forcings.in file to a case, perform the following 
+     To add a sfc.in and forcings.in file to a case, perform the following
      steps.
 
-     1) In the case's model.in file ( input/case_setups/), add a line as follows
-
-     ! Flag used to indicate that this case uses
-     ! a forcings.in and surface.in file for
-     ! time dependent input
-     l_t_dependent = .true. ! Flag for time dependent input 
-
-     Although it is not crucial, for the sake of consistency these lines should
-     be placed after the variables sfctype, Tsfc, psfc, SE, LE, fcor, T0, 
-     ts_nudge, and forcings_file_path (only a few of these may be present).
+     1) Set "l_t_dependent": true in the case's model_setting object in
+     input/case_definitions.jsonc or its custom JSON definition. This enables
+     time-dependent surface and forcing input.
 
      2) In the initialize_t_dependent_surface subroutine in the 
      time_dependent_input module, make sure that a variable exists for each
@@ -62,7 +55,7 @@ Purpose:
      in src/Benchmark_cases/ for the arm case) as well. Use newer case files 
      as a guide.
 
-3.  Adding a new column to the <runtype>_surface.in file
+3.  Adding a new column to the <runtype>_sfc.in file
 
   a. First check the input_names module to see if the variable you want to 
      add already exists. If not, create it.
@@ -86,7 +79,7 @@ Purpose:
   a. input/grid/*.grd
     Various stretched grid types can be defined and used in this directory.
 
-  b. input/stats/*.in
-    New statistical output must be setup in the code and then added to one of
-    these files to be used. The file all_stats.in is generally used by
-    default.
+  b. input/stats.jsonc
+    Define new statistical output in the code and add its metadata to the
+    appropriate catalog category. Select all output with -stats all; the
+    default selection is the standard category.

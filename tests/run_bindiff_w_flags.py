@@ -302,7 +302,7 @@ def build_varying_flags_command(clone_dir, args):
 
     command.extend(args.run_args)
     scripts = ["run_scripts/run_clubb_w_varying_flags.py", "run_scripts/run_scm.py",
-               "utilities/create_case_namelist.py"]
+               "input/scripts/create_case_namelist.py"]
     return command[:2] + clone_arguments(clone_dir, command[2:], scripts)
 
 

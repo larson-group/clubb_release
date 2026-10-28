@@ -146,7 +146,7 @@ def test_run_process_receives_uuid(monkeypatch, tmp_path, prealloc):
         assert any(arg.startswith("-jax=gpu,") for arg in command)
         return SimpleNamespace(pid=123)
 
-    monkeypatch.setattr(runtime, "write_temp_namelist", lambda *args: None)
+    monkeypatch.setattr(runtime, "write_temp_settings", lambda *args: None)
     monkeypatch.setattr(runtime, "run_child_env", lambda: {"CUDA_VISIBLE_DEVICES": "0", "XLA_PYTHON_CLIENT_PREALLOCATE": "true"})
     monkeypatch.setattr(runtime, "mark_case_started", lambda proc: None)
     monkeypatch.setattr(runtime.subprocess, "Popen", launch)

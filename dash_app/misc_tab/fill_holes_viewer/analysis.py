@@ -80,7 +80,7 @@ def inspect_dataset(path: str | Path) -> dict:
         if not available:
             raise ValueError(
                 "This file has no dedicated CLUBB hole-filling snapshots. "
-                "Rebuild CLUBB and rerun the case with the updated all_stats.in."
+                "Rebuild CLUBB and rerun the case with the updated all."
             )
         times = _as_float(dataset.variables["time"][:]).reshape(-1)
         column_count = len(dataset.dimensions.get("col", ()))

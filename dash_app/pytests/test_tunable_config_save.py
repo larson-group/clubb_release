@@ -2,37 +2,41 @@
 
 from pathlib import Path
 import shutil
+from input.scripts.namelist import load_json
 from types import SimpleNamespace
 
 import pytest
 from dash import Dash, dcc
 
 from dash_app.run_tab import callbacks_settings
-from dash_app.run_tab.namelist import read_namelist_entries
 from dash_app.run_tab.callbacks_settings import register_settings_callbacks, settings_resolution_for_save
 from dash_app.run_tab.config_state import build_tunable_config_state
 from dash_app.run_tab.layout import build_config_save_dialog, build_run_config_buttons
-from utilities.save_tunable_config import build_tuned_config_overrides, save_tunable_config
+from input.scripts.save_tunable_config import build_tuned_config_overrides, save_tunable_config
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOURCE_CONFIG_ROOT = REPO_ROOT / "input" / "parameter_and_flag_configs"
+SOURCE_CONFIG_ROOT = REPO_ROOT / "input"
 
 
 @pytest.fixture
 def config_root(tmp_path):
     root = tmp_path / "configs"
     root.mkdir()
-    shutil.copytree(SOURCE_CONFIG_ROOT / "default", root / "default")
+    for name in ("clubb_params.jsonc", "clubb_config_flags.jsonc"):
+        shutil.copyfile(SOURCE_CONFIG_ROOT / name, root / name)
     return root
 
 
-def _value(path, setting):
-    values = {entry["name"]: entry["value"] for entry in read_namelist_entries(path)}
-    return values[setting]
+def _value(path, setting, preset="default"):
+    from input.scripts.create_case_namelist import CATALOG_FILES, resolve_input_settings
+    kind = next(kind for kind, filename in CATALOG_FILES.items() if filename == path.name)
+    values = resolve_input_settings(kind, config=preset, json_file=path)
+    value = next(values[category][setting] for category in ("model", "silhs") if setting in values[category])
+    return ".true." if value is True else ".false." if value is False else str(value)
 
 
-def test_save_clones_config_applies_overrides_and_writes_readme(config_root):
+def test_save_clones_config_applies_overrides_and_records_provenance(config_root):
     result = save_tunable_config(
         "default",
         {
@@ -44,16 +48,16 @@ def test_save_clones_config_applies_overrides_and_writes_readme(config_root):
         config_root=config_root,
     )
 
-    saved = config_root / "my_config"
+    saved = config_root
     assert result["name"] == "my_config"
-    assert _value(saved / "configurable_model_flags.in", "l_use_cloud_cover") == ".true."
-    assert _value(saved / "tunable_parameters.in", "C4") == "2.5"
-    assert _value(config_root / "default" / "tunable_parameters.in", "C4") == "2.000000"
-    readme = (saved / "README.md").read_text(encoding="utf-8")
-    assert "Cloned from: `default`" in readme
-    assert "ARM experiment" in readme
-    assert "CLUBB commit:" in readme
-    assert "`tunable_parameters.in:C4`" in readme
+    assert _value(saved / "clubb_config_flags.jsonc", "l_use_cloud_cover", "my_config") == ".true."
+    assert _value(saved / "clubb_params.jsonc", "C4", "my_config") == "2.5"
+    assert _value(config_root / "clubb_params.jsonc", "C4") == "2.0"
+    metadata = load_json(saved / "clubb_params.jsonc")["preset_metadata"]["my_config"]
+    assert metadata["source"] == "default"
+    assert metadata["note"] == "ARM experiment"
+    assert metadata["commit"]
+    assert any(edit[0:2] == ["clubb_params.jsonc", "C4"] for edit in metadata["edits"])
 
 
 def test_tuned_config_overrides_apply_candidate_after_scm_override(config_root):
@@ -70,9 +74,9 @@ def test_tuned_config_overrides_apply_candidate_after_scm_override(config_root):
         config_root=config_root,
     )
 
-    saved = config_root / "tuned"
-    assert _value(saved / "configurable_model_flags.in", "l_use_cloud_cover") == ".true."
-    assert _value(saved / "tunable_parameters.in", "C4") == "3.25"
+    saved = config_root
+    assert _value(saved / "clubb_config_flags.jsonc", "l_use_cloud_cover", "tuned") == ".true."
+    assert _value(saved / "clubb_params.jsonc", "C4", "tuned") == "3.25"
 
 
 def test_tuned_config_rejects_overrides_not_stored_in_named_configs(config_root):
@@ -99,7 +103,7 @@ def test_overwrite_requires_force(config_root):
         config_root=config_root,
     )
     assert result["overwritten"] is True
-    assert _value(config_root / "saved" / "tunable_parameters.in", "C4") == "3.0"
+    assert _value(config_root / "clubb_params.jsonc", "C4", "saved") == "3.0"
 
     save_tunable_config(
         "saved",
@@ -108,7 +112,7 @@ def test_overwrite_requires_force(config_root):
         force=True,
         config_root=config_root,
     )
-    assert _value(config_root / "saved" / "tunable_parameters.in", "C4") == "4.0"
+    assert _value(config_root / "clubb_params.jsonc", "C4", "saved") == "4.0"
 
 
 @pytest.mark.parametrize("name", ["", "../escape", "two words", ".hidden", "name/child"])

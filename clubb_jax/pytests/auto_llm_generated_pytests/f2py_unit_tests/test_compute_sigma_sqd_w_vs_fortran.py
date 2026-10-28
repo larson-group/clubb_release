@@ -1,6 +1,8 @@
 """Check the JAX compute_sigma_sqd_w port (sigma_sqd_w_module.F90)
 against Fortran."""
 
+from input.scripts.create_case_namelist import create_case_namelist_file
+
 import os
 
 import numpy as np
@@ -12,7 +14,7 @@ from utilities.output_paths import REPO_ROOT
 from clubb_jax.pytests.f2py_unit_test_helpers import max_abs_diff, setup_matching_grids
 from clubb_jax.src.CLUBB_core.sigma_sqd_w_module import compute_sigma_sqd_w
 
-_TUNABLE_PARAMS = os.path.join(REPO_ROOT, "input", "parameter_and_flag_configs", "default", "tunable_parameters.in")
+_TUNABLE_PARAMS = str(create_case_namelist_file("bomex"))
 
 
 _NG, _DZ, _ZTOP = 2, 40.0, 1200.0

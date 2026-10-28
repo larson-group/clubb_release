@@ -52,7 +52,7 @@ do
     shift
 done
 
-MODEL_FILE="$CLUBB_DIR/input/case_setups/""$CASE_NAME""_model.in"
+MODEL_FILE="$CLUBB_DIR/input/case_data/""$CASE_NAME""_model.in"
 
 # Use absolute paths so this script can be run from any working directory.
 OUTPUT_DIR=`readlink -m "$OUTPUT_DIR"`

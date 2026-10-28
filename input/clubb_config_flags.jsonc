@@ -1,0 +1,324 @@
+{
+  // Model options for CLUBB and its SILHS subcolumn sampler.
+  //
+  // Flags switch algorithms on or off; integer selectors choose among methods.
+  // "defaults" holds the shared starting choices, split into "model" and
+  // "silhs" groups. Each named "presets" entry lists its overrides. Empty presets
+  // add no overrides and can accompany parameter-only configurations.
+  //
+  // Run a configuration from the repository root, for example:
+  //   python3 run_scripts/run_scm.py -cases bomex -config compatible_r8029
+  // -config selects matching presets across the input catalogs. Use -flags NAME
+  // to select just a flag preset, or provide a JSON/JSONC override file.
+  // Flags resolve in order: defaults, a matching -config preset, then the
+  // explicit -flags selection. Direct run overrides apply last.
+  //
+  // Keep shared flag explanations beside their defaults, including the meanings
+  // of integer choices. Explain configuration-specific decisions with the preset.
+  // Changing a default affects every preset that inherits it; check those
+  // configurations before changing shared choices. Add new flags here and update
+  // compatible_r8029 to preserve its intended behavior.
+  //
+  // Keep reset values explicit even when they match a shared default, so they
+  // still override another -config. Omitted flags inherit; null values are
+  // rejected, including in custom overrides. Nested groups combine.
+  // Experiment setup belongs in case_definitions.jsonc and coefficients in clubb_params.jsonc.
+  // See input/README.md for input formats and examples, and the flag definitions
+  // in src/CLUBB_core/model_flags.F90 and src/SILHS/parameters_silhs.F90.
+
+  //================================= DEFAULTS =================================
+  "defaults": {
+    "model": {
+      //================================= PDF, solvers and grids =================================
+      "iiPDF_type":                        1,           // Velocity/scalar probability density function (PDF): 1=ADG1,
+                                                        // 2=ADG2, 3=3D Luhar, 4=new PDF, 5=TSDADG, 6=Lewellen-Yoh
+                                                        // (1993), 7=new hybrid. Options 2 and 3 require input fields.
+      "ipdf_call_placement":               2,           // Call the PDF closure 1=before advancing fields, 2=after,
+                                                        // 3=both before and after.
+      "penta_solve_method":                2,           // Five-band solver: 1=LAPACK, 2=specialized LU, 3=BiCGSTAB.
+      "tridiag_solve_method":              2,           // Three-band solver: 1=LAPACK, 2=specialized LU.
+      "saturation_formula":                3,           // Saturation vapor pressure: 1=Bolton, 2=GFDL, 3=Flatau,
+                                                        // 4=lookup table.
+      "grid_remap_method":                 1,           // Grid remapping: 1=Ullrich conservative remapping, 2=piecewise
+                                                        // parabolic (PPM).
+      "grid_adapt_in_time_method":         0,           // Grid adaptation: 0=fixed grid, 1=adapt using mixing length
+                                                        // and vertical-velocity variance.
+      "fill_holes_type":                   2,           // Below-minimum field repair: 1=global, 2=sliding window,
+                                                        // 3=widening windows, 4=smart window, 5=smoothed smart window,
+                                                        // 6=parallel fill.
+
+      //================================= Advection and PDF averaging =================================
+      "l_godunov_upwind_wpxp_ta":          false,       // Use Godunov upwinding for turbulent advection of vertical
+                                                        // scalar fluxes.
+      "l_upwind_xpyp_ta":                  true,        // Use upwind turbulent advection for variances and scalar
+                                                        // covariances.
+      "l_godunov_upwind_xpyp_ta":          false,       // Use Godunov upwinding for turbulent advection of variances
+                                                        // and scalar covariances.
+      "l_upwind_xm_ma":                    true,        // Use upwind differencing for mean advection instead of
+                                                        // centered differencing.
+      "l_vert_avg_closure":                false,       // Standalone shortcut: enable both trapezoidal rules and two
+                                                        // PDF calls.
+      "l_standard_term_ta":                false,       // Use the standard turbulent-advection discretization; false
+                                                        // moves PDF coefficients outside derivatives.
+      "l_partial_upwind_wp3":              false,       // Upwind the implicit part of third-moment turbulent advection.
+                                                        // Requires ADG1 and l_standard_term_ta.
+
+      //================================= Clouds and moment closures =================================
+      "l_use_cloud_cover":                 false,       // Use layer cloud cover and liquid water to increase diagnosed
+                                                        // cloudiness on coarse grids.
+      "l_rcm_supersat_adj":                true,        // Convert excess supersaturated vapor to mean cloud liquid
+                                                        // water.
+      "l_damp_wp3_Skw_squared":            true,        // Damp the vertical-velocity third moment using skewness
+                                                        // squared instead of its fourth power.
+      "l_min_wp2_from_corr_wx":            false,       // Raise vertical-velocity variance as needed to bound
+                                                        // velocity/scalar correlations.
+      "l_min_xp2_from_corr_wx":            true,        // Raise scalar variances as needed to bound velocity/scalar
+                                                        // correlations.
+      "l_C2_cloud_frac":                   false,       // Adjust scalar-moment dissipation coefficients using cloud
+                                                        // fraction.
+      "l_predict_upwp_vpwp":               true,        // Predict vertical momentum fluxes; false diagnoses them with
+                                                        // eddy diffusivity.
+      "l_ho_nontrad_coriolis":             false,       // Include nontraditional Coriolis terms in moment equations.
+      "l_ho_trad_coriolis":                false,       // Include traditional Coriolis terms in vertical momentum-flux
+                                                        // equations.
+
+      //================================= Mixing length and diffusion =================================
+      "Lscale_method":                     1,           // Mixing length: 1=legacy parcels, 2=dissipation time scale,
+                                                        // 3=coherent parcels.
+      "l_stability_correct_tau_zm":        false,       // Apply a stability correction to scalar-flux pressure
+                                                        // relaxation.
+      "l_damp_wp2_using_em":               true,        // Dissipate vertical-velocity variance using total turbulent
+                                                        // kinetic energy (TKE).
+      "l_use_C7_Richardson":               true,        // Make the scalar-flux pressure coefficient C7 depend on
+                                                        // Richardson number.
+      "l_use_precip_frac":                 true,        // Diagnose precipitation fraction; false uses full grid-box
+                                                        // coverage.
+      "l_do_expldiff_rtm_thlm":            false,       // Diffuse mean water and temperature through the
+                                                        // eddy-diffusivity scalar path.
+      "l_use_C11_Richardson":              false,       // Make the third-moment pressure coefficient C11 depend on
+                                                        // Richardson number.
+      "l_use_shear_Richardson":            false,       // Use wind shear when calculating the Richardson number for
+                                                        // closure coefficients.
+      "l_prescribed_avg_deltaz":           false,       // Use prescribed grid spacing when scaling background
+                                                        // diffusivities.
+      "l_diffuse_rtm_and_thlm":            false,       // Add direct diffusion to mean total water and liquid-water
+                                                        // potential temperature.
+      "l_stability_correct_Kh_N2_zm":      false,       // Reduce the mean-scalar diffusivity by a stability factor.
+      "l_trapezoidal_rule_zt":             false,       // Vertically average thermodynamic-level PDF outputs with the
+                                                        // trapezoidal rule.
+      "l_trapezoidal_rule_zm":             false,       // Vertically average momentum-level buoyancy moments with the
+                                                        // trapezoidal rule.
+      "l_call_pdf_closure_twice":          false,       // Evaluate the PDF on both thermodynamic and momentum levels
+                                                        // instead of interpolating momentum-level outputs.
+      "l_Lscale_plume_centered":           false,       // Center mixing-length perturbations on the PDF plumes when
+                                                        // averaging parcel lengths. Requires source constant
+                                                        // l_avg_Lscale to be enabled.
+      "l_brunt_vaisala_freq_moist":        false,       // Use the moist Brunt-Vaisala frequency in saturated air.
+      "l_use_thvm_in_bv_freq":             false,       // Use virtual potential temperature in the dry Brunt-Vaisala
+                                                        // frequency.
+
+      //================================= Time stepping and surface turbulence =================================
+      "l_lmm_stepping":                    false,       // Use linear multistep time integration.
+      "l_e3sm_config":                     false,       // Use E3SM-specific dissipation-timescale formulas.
+      "l_vary_convect_depth":              false,       // Diagnose convective depth and adjust surface-variance
+                                                        // velocity scales.
+      "l_use_tke_in_wp3_pr_turb_term":     true,        // Use TKE in the turbulent pressure-transport term for the
+                                                        // vertical-velocity third moment.
+      "l_use_tke_in_wp2_wp3_K_dfsn":       false,       // Use TKE in diffusivities for vertical-velocity variance and
+                                                        // third moment.
+
+      //================================= Limiters and host coupling =================================
+      "l_use_wp3_lim_with_smth_Heaviside": false,       // Smooth the vertical-velocity third-moment limiter with a
+                                                        // Heaviside function.
+      "l_smooth_Heaviside_tau_wpxp":       true,        // Smooth the stability switch in scalar-flux inverse
+                                                        // timescales.
+      "l_modify_limiters_for_cnvg_test":   false,       // Modify limiters for numerical convergence tests.
+      "l_enable_relaxed_clipping":         false,       // Relax scalar-flux clipping by raising the variance used to
+                                                        // calculate its bounds.
+      "l_linearize_pbl_winds":             false,       // Linearize planetary boundary-layer winds using perturbation
+                                                        // momentum variables.
+      "l_mono_flux_lim_thlm":              true,        // Apply a monotonic turbulent-flux limiter to liquid-water
+                                                        // potential temperature.
+      "l_mono_flux_lim_rtm":               true,        // Apply a monotonic turbulent-flux limiter to total water.
+      "l_mono_flux_lim_um":                true,        // Apply a monotonic turbulent-flux limiter to the zonal wind.
+      "l_mono_flux_lim_vm":                true,        // Apply a monotonic turbulent-flux limiter to the meridional
+                                                        // wind.
+      "l_mono_flux_lim_spikefix":          true,        // Suppress spurious drying spikes in the water-flux limiter.
+      "l_host_applies_sfc_fluxes":         false,       // Skip CLUBB surface-flux contributions when the host already
+                                                        // applies them.
+      "l_wp2_fill_holes_tke":              true,        // Repair low vertical-velocity variance by borrowing energy
+                                                        // from horizontal variances.
+      "l_add_dycore_grid":                 false        // Remap mean fields and forcing between CLUBB and a separate
+                                                        // dynamical-core grid.
+    },
+
+    "silhs": {
+      //================================= SILHS sampling method =================================
+      "cluster_allocation_strategy":       3,           // Sample clusters: 1=eight cloud/precipitation/PDF categories,
+                                                        // 2=four cloud/PDF groups, 3=cloud-or-precipitation versus
+                                                        // neither.
+      "l_lh_importance_sampling":          true,        // Use importance sampling to reduce noise. Requires
+                                                        // sequence_length=1.
+      "l_Lscale_vert_avg":                 false,       // Deprecated vertical averaging of mixing length; enabling this
+                                                        // currently stops the model.
+      "l_lh_straight_mc":                  false,       // Use ordinary Monte Carlo draws without Latin hypercube or
+                                                        // importance sampling.
+      "l_lh_clustered_sampling":           true,        // Allocate importance samples using prescribed probabilities
+                                                        // for category clusters.
+
+      //================================= SILHS starting level and overlap =================================
+      "l_rcm_in_cloud_k_lh_start":         true,        // Start sampling at the level of maximum in-cloud liquid water.
+      "l_random_k_lh_start":               false,       // Randomize the start between maxima of grid-mean and in-cloud
+                                                        // liquid water.
+      "l_max_overlap_in_cloud":            true,        // Use maximum vertical overlap where cloud liquid water exceeds
+                                                        // its threshold.
+
+      //================================= SILHS tendencies and weights =================================
+      "l_lh_instant_var_covar_src":        true,        // Use instantaneous microphysical variance/covariance sources,
+                                                        // omitting finite-timestep corrections.
+      "l_lh_limit_weights":                true,        // Limit importance-sampling weights for numerical stability.
+      "l_lh_var_frac":                     false,       // Allocate category probabilities from prescribed variance
+                                                        // fractions instead of fixed probabilities.
+      "l_lh_normalize_weights":            true         // Normalize sample weights so their sum equals the number of
+                                                        // samples.
+    }
+  },
+
+  //================================= PRESETS =================================
+  "presets": {
+
+    //================================= Lscale =================================
+    "Lscale": {
+      "model": {
+        "penta_solve_method":              1,
+        "tridiag_solve_method":            1,
+        "l_smooth_Heaviside_tau_wpxp":     false,
+        "saturation_formula":              3,
+        "grid_remap_method":               2,
+        "grid_adapt_in_time_method":       0,
+        "fill_holes_type":                 2,
+        "l_ho_nontrad_coriolis":           false,
+        "l_ho_trad_coriolis":              false,
+        "l_host_applies_sfc_fluxes":       false,
+        "l_add_dycore_grid":               false
+      }
+    },
+
+    //================================= compatible_r8029 =================================
+    // Update this preset whenever a flag is added. Choose its compatibility
+    // value explicitly so a new shared default cannot silently change this
+    // configuration.
+    "compatible_r8029": {
+      "model": {
+        "ipdf_call_placement":             1,
+        "penta_solve_method":              1,
+        "tridiag_solve_method":            1,
+        "l_vert_avg_closure":              true,
+        "l_use_cloud_cover":               true,
+        "l_rcm_supersat_adj":              false,
+        "l_damp_wp3_Skw_squared":          false,
+        "l_min_xp2_from_corr_wx":          false,
+        "l_predict_upwp_vpwp":             false,
+        "l_stability_correct_tau_zm":      true,
+        "l_damp_wp2_using_em":             false,
+        "l_use_C7_Richardson":             false,
+        "l_use_precip_frac":               false,
+        "l_use_tke_in_wp3_pr_turb_term":   false,
+        "l_enable_relaxed_clipping":       true,
+        "saturation_formula":              3,
+        "grid_remap_method":               2,
+        "grid_adapt_in_time_method":       0,
+        "l_ho_nontrad_coriolis":           false,
+        "l_ho_trad_coriolis":              false,
+        "l_use_wp3_lim_with_smth_Heaviside": false,
+        "l_smooth_Heaviside_tau_wpxp":     false,
+        "l_modify_limiters_for_cnvg_test": false,
+        "l_linearize_pbl_winds":           false,
+        "l_host_applies_sfc_fluxes":       false,
+        "l_add_dycore_grid":               false
+      },
+      "silhs": {
+        "l_lh_normalize_weights":          false
+      }
+    },
+
+    //================================= e3sm =================================
+    "e3sm": {
+      "model": {
+        "ipdf_call_placement":             1,
+        "l_min_wp2_from_corr_wx":          true,
+        "Lscale_method":                   2,
+        "l_use_shear_Richardson":          true,
+        "l_use_tke_in_wp3_pr_turb_term":   false,
+        "penta_solve_method":              2,
+        "tridiag_solve_method":            2,
+        "saturation_formula":              3,
+        "grid_remap_method":               2,
+        "grid_adapt_in_time_method":       0,
+        "fill_holes_type":                 2,
+        "l_ho_nontrad_coriolis":           false,
+        "l_ho_trad_coriolis":              false,
+        "l_use_wp3_lim_with_smth_Heaviside": false,
+        "l_smooth_Heaviside_tau_wpxp":     false,
+        "l_modify_limiters_for_cnvg_test": false,
+        "l_enable_relaxed_clipping":       false,
+        "l_linearize_pbl_winds":           false,
+        "l_host_applies_sfc_fluxes":       false,
+        "l_wp2_fill_holes_tke":            true,
+        "l_add_dycore_grid":               false
+      }
+    },
+
+    //================================= e3sm_maint32 =================================
+    "e3sm_maint32": {
+      "model": {
+        "l_vert_avg_closure":              true,
+        "l_use_cloud_cover":               true,
+        "l_rcm_supersat_adj":              false,
+        "l_damp_wp3_Skw_squared":          false,
+        "l_min_xp2_from_corr_wx":          false,
+        "l_predict_upwp_vpwp":             false,
+        "l_stability_correct_tau_zm":      true,
+        "l_damp_wp2_using_em":             false,
+        "l_use_C7_Richardson":             false,
+        "l_trapezoidal_rule_zt":           true,
+        "l_trapezoidal_rule_zm":           true,
+        "l_call_pdf_closure_twice":        true,
+        "l_use_tke_in_wp3_pr_turb_term":   false,
+        "l_smooth_Heaviside_tau_wpxp":     false,
+        "l_mono_flux_lim_thlm":            false,
+        "l_mono_flux_lim_rtm":             false,
+        "l_mono_flux_lim_um":              false,
+        "l_mono_flux_lim_vm":              false,
+        "l_mono_flux_lim_spikefix":        false,
+        "l_wp2_fill_holes_tke":            false
+      }
+    },
+
+    //================================= tauMatchLscale =================================
+    "tauMatchLscale": {
+      "model": {
+        "ipdf_call_placement":             1,
+        "l_min_wp2_from_corr_wx":          true,
+        "Lscale_method":                   2,
+        "l_use_tke_in_wp3_pr_turb_term":   false,
+        "penta_solve_method":              2,
+        "tridiag_solve_method":            2,
+        "saturation_formula":              3,
+        "grid_remap_method":               2,
+        "grid_adapt_in_time_method":       0,
+        "fill_holes_type":                 2,
+        "l_ho_nontrad_coriolis":           false,
+        "l_ho_trad_coriolis":              false,
+        "l_use_wp3_lim_with_smth_Heaviside": false,
+        "l_smooth_Heaviside_tau_wpxp":     false,
+        "l_modify_limiters_for_cnvg_test": false,
+        "l_enable_relaxed_clipping":       false,
+        "l_linearize_pbl_winds":           false,
+        "l_host_applies_sfc_fluxes":       false,
+        "l_wp2_fill_holes_tke":            true,
+        "l_add_dycore_grid":               false
+      }
+    }
+  }
+}

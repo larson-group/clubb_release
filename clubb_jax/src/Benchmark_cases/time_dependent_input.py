@@ -89,9 +89,9 @@ l_input_xpwp_sfc = False
 l_ignore_forcings = False
 l_sfc_already_initialized = False
 
-# Resolve the source's ../input/case_setups/ relative path independently of the
+# Resolve the source's ../input/case_data/ relative path independently of the
 # process working directory at this host file-I/O boundary.
-input_path = Path(__file__).parents[3] / "input" / "case_setups"
+input_path = Path(__file__).parents[3] / "input" / "case_data"
 forcings_path = "_forcings.in"
 sfc_path = "_sfc.in"
 

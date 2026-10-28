@@ -18,7 +18,7 @@ restoreDir=`pwd`
 # Change directories to the one the script is located in
 cd $scriptPath
 
-model_file='../input/case_setups/'${!#}'_model.in'
+case_name=${!#}
 
 TEST_TIMESTEP[0]=300      # Time step of output to disk 
                                  # and longest computational time step tested
@@ -37,25 +37,14 @@ TEST_TIMESTEP[12]=0.3  # 60 minute (one hour) time step.
 TEST_TIMESTEP[13]=0.2  # 60 minute (one hour) time step.
 TEST_TIMESTEP[14]=0.1  # 60 minute (one hour) time step.
 
-# Set the time interval of disk output
-sed -i -e 's/stats_tsamp\s*=\s*.*/stats_tsamp = '${TEST_TIMESTEP[0]}'/g' \
-       -e 's/stats_tout\s*=\s*.*/stats_tout = '${TEST_TIMESTEP[0]}'/g' $model_file
 echo -e "\nOutputting to disk at a "${TEST_TIMESTEP[0]}"-second time step."
 
 for (( x=0; x < "${#TEST_TIMESTEP[@]}"; x++ )); do
    echo -e "\nRunning a case at a "${TEST_TIMESTEP[$x]}"-second time step."
 
-   # Set computational time step
-   sed -i -e 's/dt_main\s*=\s*.*/dt_main = '${TEST_TIMESTEP[$x]}' /g' \
-          -e 's/dt_rad\s*=\s*.*/dt_rad =   '${TEST_TIMESTEP[$x]}' /g' \
-          $model_file
-   # Convert decimal portion so that we can use time step in the output file names
-   #integer_timestep=${TEST_TIMESTEP[$x]%.*}
    integer_timestep=${TEST_TIMESTEP[$x]/./p}
-   sed -i -r 's/fname_prefix\s*=\s*"(.*?)"/fname_prefix = "'${!#}'_'$integer_timestep'" /g' \
-          $model_file
-
-   python3 ../run_scripts/run_scm.py ${!#} 2>&1 >/dev/null
+   python3 ../run_scripts/run_scm.py "$case_name" -override \
+       "dt_main=${TEST_TIMESTEP[$x]},dt_rad=${TEST_TIMESTEP[$x]},stats_tsamp=${TEST_TIMESTEP[0]},stats_tout=${TEST_TIMESTEP[0]},fname_prefix='${case_name}_${integer_timestep}',stats_output_filename='${case_name}_${integer_timestep}_stats.nc'"
 done
 
 cd $restoreDir

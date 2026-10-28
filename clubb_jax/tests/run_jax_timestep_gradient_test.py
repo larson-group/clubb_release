@@ -43,7 +43,7 @@ if __name__ == "__main__":
 import jax
 import jax.numpy as jnp
 import numpy as np
-from utilities.create_case_namelist import create_case_namelist_file
+from input.scripts.create_case_namelist import create_case_namelist_file
 from clubb_jax.src.clubb_case_initalization import init_clubb_case, clean_up_clubb
 from clubb_jax.src.advance_clubb_to_end import advance_clubb_to_end
 from clubb_jax.src.CLUBB_core.parameter_indices import iC1, iC1b, iC_invrs_tau_shear

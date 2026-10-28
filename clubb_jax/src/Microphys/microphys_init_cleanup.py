@@ -358,7 +358,7 @@ def init_microphys(
         hmp2_ip_on_hmm2_ip_slope_type(**slope),        # In
         hmp2_ip_on_hmm2_ip_intrcpt_type(**intercept),  # In
     )
-    corr_input_path = Path(__file__).resolve().parents[3] / "input/case_setups"
+    corr_input_path = Path(__file__).resolve().parents[3] / "input/case_data"
     corr_file_path_cloud = corr_input_path / f"{runtype}_corr_array_cloud.in"
     corr_file_path_below = corr_input_path / f"{runtype}_corr_array_below.in"
     if corr_file_path_cloud.exists() and corr_file_path_below.exists():

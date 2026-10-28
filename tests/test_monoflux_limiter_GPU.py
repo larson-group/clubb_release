@@ -43,18 +43,17 @@ from pathlib import Path
 TESTS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = TESTS_DIR.parent
 RUN_SCRIPTS = REPO_ROOT / "run_scripts"
-UTILITIES = REPO_ROOT / "utilities"
 
 # File paths (cmake workflow version)
 TOOLCHAIN_FILE = REPO_ROOT / "cmake" / "toolchains" / "linux_x86_64_nvhpc.cmake"
 SOURCE_FILE = REPO_ROOT / "src" / "CLUBB_core" / "mono_flux_limiter.F90"
-PARAMS_FILE = REPO_ROOT / "input" / "parameter_and_flag_configs" / "default" / "tunable_parameters.in"
-MULTICOL_PARAMS = RUN_SCRIPTS / "clubb_params_multi_col.in"
+PARAMS_FILE = REPO_ROOT / "input/clubb_params.jsonc"
+MULTICOL_PARAMS = RUN_SCRIPTS / "clubb_params_multi_col.json"
 
 # Script paths
 COMPILE_SCRIPT = REPO_ROOT / "compile.py"
 RUN_SCM_SCRIPT = RUN_SCRIPTS / "run_scm.py"
-MULTICOL_SCRIPT = UTILITIES / "create_multi_col_params.py"
+MULTICOL_SCRIPT = REPO_ROOT / "input" / "scripts" / "create_multi_col_params.py"
 
 # Case setup
 RUN_CASE = "mc3e"      # unstable/noisy case is required

@@ -47,7 +47,7 @@ HR_SPEC = "C8/0.2:0.8/4" # used to run multicol mode by varying C8
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tuner.system_defaults import default_max_workers as default_workers
-from utilities.create_case_namelist import parse_forwarded_args
+from input.scripts.create_case_namelist import parse_forwarded_args
 from run_scripts.run_scm_all import positive_int, split_values
 
 @dataclass
@@ -236,7 +236,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     )
     parser.add_argument(
         '-stats', dest='stats',
-        default="input/stats/all_stats.in",
+        default="all",
         help="Stats file passed to run_scm.py.",
     )
     parser.add_argument(
@@ -299,10 +299,13 @@ def main() -> int:
     results_root = (repo_root / RESULTS_DIRNAME).resolve()
     py_output_root = results_root / PYTHON_OUTPUT_DIRNAME
     f90_output_root = results_root / FORTRAN_OUTPUT_DIRNAME
-    stats_file = (repo_root / args.stats).resolve()
+    stats_file = (repo_root / args.stats).resolve() if args.stats.endswith(".json") else args.stats
 
-    if not stats_file.exists():
-        print(f"ERROR: stats file not found: {stats_file}")
+    from input.scripts.stats_json_to_namelist import select_stats_entries
+    try:
+        select_stats_entries(str(stats_file))
+    except (OSError, ValueError) as exc:
+        print(f"ERROR: {exc}")
         return 2
 
     run_scm = repo_root / "run_scripts" / "run_scm.py"

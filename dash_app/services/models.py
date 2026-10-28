@@ -60,7 +60,7 @@ class ScmRunRequest(JaxDeviceOptions):
     case: str = Field(pattern=r"^[A-Za-z0-9_]+$")
     implementation: Literal["fortran", "python", "jax"] = "fortran"
     jax_profile: Literal["cpu", "gpu"] = "cpu"
-    stats_file: str = "standard_stats.in"
+    stats_file: str = "standard"
     config: str = Field(default="default", pattern=r"^[A-Za-z0-9_.-]+$")
     overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
     run_options: ScmRunOptions = Field(default_factory=ScmRunOptions)
@@ -79,7 +79,7 @@ class ScmRunBatchRequest(JaxDeviceOptions):
     cases: list[str] = Field(min_length=1, max_length=64)
     implementation: Literal["fortran", "python", "jax"] = "fortran"
     jax_profile: Literal["cpu", "gpu"] = "cpu"
-    stats_file: str = "standard_stats.in"
+    stats_file: str = "standard"
     config: str = Field(default="default", pattern=r"^[A-Za-z0-9_.-]+$")
     overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
     run_options: ScmRunOptions = Field(default_factory=ScmRunOptions)

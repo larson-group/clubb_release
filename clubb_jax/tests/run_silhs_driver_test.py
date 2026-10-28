@@ -18,7 +18,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from netCDF4 import Dataset
-from utilities.create_case_namelist import create_case_namelist_file
+from input.scripts.create_case_namelist import create_case_namelist_file
 from clubb_jax.src.clubb_case_initalization import init_clubb_case, clean_up_clubb
 from clubb_jax.src.advance_clubb_to_end import advance_clubb_to_end
 
@@ -54,7 +54,7 @@ def check_silhs_output_coordinates_initialized_without_sample_fields(mode, stats
             assert len(ds.dimensions["lh_sample_number"]) == num_samples
             np.testing.assert_array_equal(ds.variables["lh_zt"][:], zt)
             assert ds.variables["lh_zt"].units == "m"
-        elif stats == "input/stats/multi_col_stats.in":
+        elif stats == "multi_col_stats":
             assert "lh_zt" not in ds.variables
         assert not any(name.startswith(("lh_nl_", "lh_u_")) for name in ds.variables)
 
@@ -138,7 +138,7 @@ def check_multicol_sequence_and_all_stats(tmp_path):
     path = create_case_namelist_file(
         "rico_silhs",
         tmp_path,
-        stats="input/stats/all_stats.in",
+        stats="all",
         debug="2",
         max_iters=3,
         tout=300,
@@ -159,7 +159,7 @@ def check_multicol_sequence_and_all_stats(tmp_path):
 
 def main():
     checks = []
-    for stats in ('input/stats/multi_col_stats.in', 'input/stats/standard_stats.in', 'none'):
+    for stats in ('multi_col_stats', 'standard', 'none'):
         for mode in ('disabled', 'interactive'):
             checks.append((f'coordinates: {mode}, {stats}',
                            check_silhs_output_coordinates_initialized_without_sample_fields, (mode, stats)))

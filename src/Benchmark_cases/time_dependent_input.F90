@@ -89,7 +89,7 @@ module time_dependent_input
 !$omp threadprivate( l_sfc_already_initialized )
 
   ! File path constants
-  character(len=*), private, parameter :: input_path = "../input/case_setups/"
+  character(len=*), private, parameter :: input_path = "../input/case_data/"
 
   character(len=*), private, parameter :: forcings_path = "_forcings.in"
 
@@ -1278,7 +1278,7 @@ module time_dependent_input
             ! If times are not increasing then they aren't sorted properly.
             write(fstderr,*) "In subroutine time_select:"
             write(fstderr,*) "times are not sorted. Check (case)_sfc.in "
-            write(fstderr,*) "and (case)_forcings.in, located in input/case_setups."
+            write(fstderr,*) "and (case)_forcings.in, located in input/case_data."
             error stop
 
         end if 

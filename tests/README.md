@@ -33,7 +33,7 @@ bash tests/run_pytests.sh -jax -include_generated
 bash tests/run_pytests.sh -jax_f2py_unit_tests -include_generated
 ```
 
-`-unit` selects utilities, tuner and `tests/pytests` harness contracts. `-dash`
+`-unit` selects input, utilities, tuner and `tests/pytests` harness contracts. `-dash`
 prepares the shared Python environment with Dash dependencies. Its browser
 callback checks also use Node. Provide Node 22 on `PATH`; Jenkins workers use
 an installation in the Jenkins account's `$HOME/.local/bin`, prepared once
@@ -59,7 +59,7 @@ does not apply the wrappers' environment setup or generated-test exclusion.
 
 | Pytest owner | Jenkins production job | Provisional coverage |
 | --- | --- | --- |
-| `utilities/pytests`, `tuner/pytests`, `tests/pytests` | `clubb_python` unit stage | Set `INCLUDE_GENERATED_PYTESTS` for a review build |
+| `input/pytests`, `utilities/pytests`, `tuner/pytests`, `tests/pytests` | `clubb_python` unit stage | Set `INCLUDE_GENERATED_PYTESTS` for a review build |
 | `clubb_python_api/pytests` | `clubb_python` F2PY stage | Explicitly included during the initial migration |
 | `clubb_jax/pytests` (except `f2py_unit_tests`) | `clubb_jax` first testing stage | Explicitly included during the initial migration |
 | `clubb_jax/pytests/**/f2py_unit_tests` | `clubb_jax` JAX F2PY unit tests stage | Explicitly included while the restored tests are reviewed |
@@ -240,7 +240,7 @@ Examples:
 
 Checks that the real JAX-versus-Fortran comparison can detect model errors.
 Runs BOMEX for four 60-second timesteps and four columns, using
-`input/stats/multi_col_stats.in` and the comparison harness's default tolerances.
+`multi_col_stats` and the comparison harness's default tolerances.
 The numerical mutations use independent physical-signal checks with the
 effective tolerances in the comparison report.
 `CASE` and `TIMESTEPS_TO_RUN` are configured near the top of the script;
@@ -421,7 +421,7 @@ Examples:
 - `python3 tests/run_silhs_test.py -case rico_silhs -n_small 8 -n_large 1000`
   Runs an explicit case and sample-count pair.
 
-- `python3 tests/run_silhs_test.py -stats input/stats/all_stats.in -show_output`
+- `python3 tests/run_silhs_test.py -stats all -show_output`
   Uses an explicit stats file and prints the underlying `run_scm.py` output.
 
 - `python3 tests/run_silhs_test.py -keep_outputs`
@@ -437,7 +437,7 @@ Examples:
 - `python3 tests/run_stats_output_consistency.py`
   Runs the default BOMEX stats-output consistency suite.
 
-- `python3 tests/run_stats_output_consistency.py arm -stats input/stats/standard_stats.in`
+- `python3 tests/run_stats_output_consistency.py arm -stats standard`
   Runs the suite for `arm` with an explicit stats registry.
 
 - `python3 tests/run_stats_output_consistency.py bomex -batch_sizes 4,2,1 -coarse_touts 300,600`

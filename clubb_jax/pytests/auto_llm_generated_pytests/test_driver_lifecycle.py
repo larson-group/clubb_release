@@ -25,8 +25,8 @@ from clubb_jax.src.CLUBB_core.parameters_tunable import (
 )
 from clubb_jax.src.CLUBB_core.stats_netcdf import StatsWriter
 from clubb_jax.src.Input_fields import namelist
-from utilities.create_case_namelist import (
-    create_case_namelist_file, prune_clubb_stats_namelist, set_stats_string,
+from input.scripts.create_case_namelist import (
+    create_case_settings, write_case_namelist, prune_clubb_stats_namelist, set_stats_string,
 )
 
 
@@ -305,13 +305,13 @@ def test_batched_silhs_source_output_guard(tmp_path, monkeypatch, write_netcdf):
     # in batch mode, including when optional sample fields are switched off.
     root = Path(initialization.__file__).resolve().parents[2]
     monkeypatch.setattr(error_code, '_debug_level', error_code._debug_level)
-    path = create_case_namelist_file(
+    text = create_case_settings(
         'rico_silhs', tmp_path, multicol='4', batch_size=2,
-        stats=str(root / 'input/stats/standard_stats.in'), debug='-1', max_iters=1,
+        stats='standard', debug='-1', max_iters=1,
     )
-    text = prune_clubb_stats_namelist(path.read_text(), ['thlm'])
+    text = prune_clubb_stats_namelist(text, ['thlm'])
     text = set_stats_string(text, 'stats_output_filename', 'case_stats.nc' if write_netcdf else '')
-    path.write_text(text)
+    path = write_case_namelist(text, tmp_path / "rico_silhs.in")
     try:
         if write_netcdf:
             with pytest.raises(ValueError, match='Batch-mode stats NetCDF output'):

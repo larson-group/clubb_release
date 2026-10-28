@@ -94,7 +94,7 @@ from utilities.timing_profiles import (
 
 
 from utilities.clubb_case_runner import clubb_case_runner, parse_case_arguments
-from utilities.create_case_namelist import create_case_namelist_from_args
+from input.scripts.create_case_namelist import create_case_namelist_from_args
 
 
 REQUIRED_TIMER = "advance_clubb_to_end"

@@ -169,7 +169,6 @@ def _resolve_stats_registry_path(namelist_path: str, cfg: dict) -> Path:
     Priority:
       1) explicit namelist key `stats_registry`
       2) the runfile itself, if it contains `&clubb_stats_nl`
-      3) repository default `input/stats/standard_stats.in`
     """
     configured = str(cfg.get('stats_registry', '')).strip()
     if configured:
@@ -178,12 +177,7 @@ def _resolve_stats_registry_path(namelist_path: str, cfg: dict) -> Path:
             p = Path(namelist_path).resolve().parent / p
         return p.resolve()
 
-    runfile = Path(namelist_path).resolve()
-    if '&clubb_stats_nl' in runfile.read_text().lower():
-        return runfile
-
-    repo_root = Path(__file__).resolve().parents[1]
-    return repo_root / "input" / "stats" / "standard_stats.in"
+    return Path(namelist_path).resolve()
 
 
 def _resolve_case_input_path(namelist_dir: Path, runtype: str, suffix: str) -> Path:
@@ -193,7 +187,7 @@ def _resolve_case_input_path(namelist_dir: Path, runtype: str, suffix: str) -> P
         return candidate
 
     repo_root = Path(__file__).resolve().parents[1]
-    fallback = repo_root / "input" / "case_setups" / f"{runtype}{suffix}"
+    fallback = repo_root / "input" / "case_data" / f"{runtype}{suffix}"
     if fallback.exists():
         return fallback
 

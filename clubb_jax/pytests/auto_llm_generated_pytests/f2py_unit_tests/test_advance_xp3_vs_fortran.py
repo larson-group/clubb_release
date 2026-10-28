@@ -4,6 +4,8 @@ advance_xp3_simplified is private in the Fortran module, so it is checked
 through advance_xp3, which calls it for rtp3, thlp3 and each scalar.
 """
 
+from input.scripts.create_case_namelist import create_case_namelist_file
+
 import os
 
 import jax.numpy as jnp
@@ -17,8 +19,7 @@ from clubb_jax.pytests.f2py_unit_test_helpers import max_abs_diff, no_stats, set
 from clubb_jax.src.CLUBB_core.advance_xp3_module import advance_xp3
 from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
 
-_TUNABLE_PARAMS = os.path.join(REPO_ROOT, "input", "parameter_and_flag_configs", "default",
-                               "tunable_parameters.in")
+_TUNABLE_PARAMS = str(create_case_namelist_file("bomex"))
 _NG, _DZ, _ZTOP = 2, 40.0, 1200.0
 _DT = 60.0
 _SCLR_TOL = np.array([1e-8, 1e-2])

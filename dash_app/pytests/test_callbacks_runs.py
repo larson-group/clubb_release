@@ -155,12 +155,12 @@ def test_multicol_rejects_two_rows_for_one_linked_coordinate():
 def test_run_command_uses_snapshotted_python_or_jax_build():
     python_command = build_case_command(
         "arm",
-        "standard_stats.in",
+        "standard",
         {"implementation": "python", "install_dir": "/tmp/build one"},
     )
     jax_command = build_case_command(
         "bomex",
-        "standard_stats.in",
+        "standard",
         {
             "implementation": "jax",
             "jax_profile": "gpu",
@@ -219,7 +219,7 @@ def test_prepared_run_submission_preserves_frozen_settings():
     result = submit_prepared_run(
         {
             "cases": ["arm", "bomex"],
-            "stats": "standard_stats.in",
+            "stats": "standard",
             "config": "default",
             "overrides": {"flags": {"l_uv_nudge": ".true."}},
             "typed_overrides": {"l_uv_nudge": ".true."},

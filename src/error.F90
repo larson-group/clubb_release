@@ -18,13 +18,13 @@ module error
 !   subroutine write_results :
 !   Prints the results of tuning to the terminal or to a file.
 
-!   subroutine output_nml_tuner :
-!   Generates the error.in file using the current constants.
+!   subroutine output_json_tuner :
+!   Writes tuning controls, bounds and the optimum as diagnostic JSON.
 
-!   subroutine output_nml_standalone :
-!   Generates the standalone.in file using the current constants.
+!   subroutine output_json_standalone :
+!   Writes model parameter JSON overrides using the current constants.
 !   Standalone CLUBB is only configured to run a single model, and so only
-!   the first model is used to make the namelist.
+!   the first model is used to write the overrides.
 
 !-----------------------------------------------------------------------
   use parameter_indices, only: nparams ! Variable(s)
@@ -86,13 +86,13 @@ module error
     tune_type = iesa, &   ! Toggle for downhill simplex of simulated annealing
     c_total = 0, &        ! Total number of simulation cases to tune over
     v_total = 0, &        ! Total number of variables to tune over
-    max_iters_in = 2000         ! Max number of iteration steps for tuner. Read from error*.in
+    max_iters_in = 2000         ! Max number of iteration steps for tuner. Read from the generated error.in
 
   logical, public :: & 
     l_results_stdout = .false.,    & ! Whether to print tuning results to the terminal
-    l_results_file = .false.,      & ! Whether to generate a new error.in based on
+    l_results_file = .false.,      & ! Whether to generate diagnostic JSON based on
                                      ! the new tuning constants
-    l_stdout_on_invalid = .false., & ! Generate a new error.in when the simulation crashes
+    l_stdout_on_invalid = .false., & ! Generate diagnostic JSON when the simulation crashes
     l_keep_params_equal = .false.    ! Whether to keep parameters like C1, C1b,
                                      ! etc. equal throughout tuning run
 
@@ -178,7 +178,7 @@ module error
 
   ! Procedures
   public :: tuner_init, min_les_clubb_diff, write_results, & 
-    output_nml_standalone, output_nml_tuner
+    output_json_standalone, output_json_tuner
 
   private ! Default Scope
 
@@ -898,8 +898,8 @@ module error
 
       if ( l_stdout_on_invalid ) then
         inv_count = modulo( inv_count, 3 ) + 1 ! 1,2,3,1,2,3...
-        errorfile = "error_crash_"// achar( inv_count+48 ) // ".in" ! Known magic number
-        call output_nml_tuner( errorfile,  & 
+        errorfile = "error_crash_"// achar( inv_count+48 ) // ".json" ! Known magic number
+        call output_json_tuner( errorfile,  &
                                param_vals_vector(1:ndim) )
       end if
 
@@ -1222,204 +1222,57 @@ module error
   end subroutine write_results
   !-----------------------------------------------------------------------
 
-  subroutine output_nml_tuner( results_f, param_vals_vector )
-
+  function json_quote( value ) result( quoted )
 ! Description:
-!   Output namelists to a formatted text file
-
-! References:
-!   None
-
-! Notes:
-!   You can do the same thing with
-!   write(unit=<UNIT>,nml=<NAMELIST>), but at the time I wrote this
-!   I was more ambitious and didn't like that fact that it came out
-!   in all caps on pgf90. -dschanen 28 July 2006
-!-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+!   Escape a character string for the native tuner's JSON result files.
     implicit none
+    character(len=*), intent(in) :: value ! Unescaped text
+    character(len=:), allocatable :: quoted ! JSON string including quotes
+    integer :: i, code ! Character position and ASCII value
+    character(len=6) :: escaped ! Escaped control character
 
-    ! External
-    intrinsic :: achar, trim
-
-    ! Parameter Constants
-    character(len=1), parameter :: dbqt = '"'
-
-    ! Input Variables
-    character(len=*), intent(in) ::  & 
-    results_f ! Name of the results file to write to
-
-    real( kind = core_rknd ), intent(in), dimension(:) ::  & 
-    param_vals_vector ! The current tuning parameters
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(nparams) :: params_local
-
-    integer :: i, j, & ! loop variable
-               iunit   ! file unit
-
-    character :: i_c   ! loop variable in ASCII
-    
-    iunit = 20
-
-    ! Open a new file
-    open(unit=iunit, file=results_f,  & 
-         action="write", access="sequential")
-
-    ! Write variables to results file
-    ! All this is based on the previous namelists in error.in,
-    ! except for the constants parameters for CLUBB
-
-    write(unit=iunit,fmt=*) "! Parameter file " // results_f
-    write(unit=iunit,fmt=*) "&stats"
-    write(unit=iunit,fmt=*) "f_tol = ", f_tol
-    if (l_results_stdout) then
-      write(unit=iunit,fmt=*) "l_results_stdout = " // ".true."
-    else
-      write(unit=iunit,fmt=*) "l_results_stdout = " // ".false."
-    end if
-    if (l_results_file) then
-      write(unit=iunit,fmt=*) "l_results_file = " // ".true."
-    else
-      write(unit=iunit,fmt=*) "l_results_file = " // ".false."
-    end if
-    if (l_stdout_on_invalid) then
-      write(unit=iunit,fmt=*) "l_stdout_on_invalid = " // ".true."
-    else
-      write(unit=iunit,fmt=*) "l_stdout_on_invalid = " // ".false."
-    end if
-    write(unit=iunit,fmt=*) "t_variables = "
-    do i=1, v_total
-      write(unit=iunit,fmt=*) dbqt, hoc_v(i), dbqt, ",",  & 
-        dbqt, les_v(i), dbqt, ","
+    quoted = '"'
+    do i = 1, len_trim(value)
+      code = iachar(value(i:i))
+      if ( code == 34 .or. code == 92 ) then
+        quoted = quoted // achar(92) // value(i:i)
+      else if ( code < 32 ) then
+        write(escaped,'(A,Z4.4)') achar(92)//'u', code
+        quoted = quoted // escaped
+      else
+        quoted = quoted // value(i:i)
+      end if
     end do
-    write(unit=iunit,fmt=*) "weight_var_nl = ", weight_var
-    write(unit=iunit,fmt=*) "anneal_temp = " , anneal_temp
-    write(unit=iunit,fmt=*) "max_final_temp = " , max_final_temp
-    write(unit=iunit,fmt=*) "anneal_iter = " , anneal_iter
-    write(unit=iunit,fmt=*) "tune_type   = " , tune_type
-    write(unit=iunit,fmt=*) "/"
-
-    write(unit=iunit,fmt=*) "&cases"
-    do i = 1, c_total
-      i_c = achar( i + 48 )
-      write(unit=iunit,fmt=*) "les_stats_file_nl("// i_c //") = ",  & 
-        dbqt, trim( les_stats_file(i) ), dbqt
-      write(unit=iunit,fmt=*) "hoc_stats_file_nl("// i_c //") = ",  & 
-        dbqt, trim( hoc_stats_file(i) ), dbqt
-      write(unit=iunit,fmt=*) "run_file_nl("// i_c //") = ",  & 
-        dbqt, trim( run_file(i) ), dbqt
-      write(unit=iunit,fmt=*) "z_i_nl("// i_c //")  = " , z_i(i)
-      write(unit=iunit,fmt=*) "z_f_nl("// i_c //")  = " ,  z_f(i)
-      write(unit=iunit,fmt=*) "weight_case_nl("// i_c //") = " ,  & 
-        weight_case(i)
-      write(unit=iunit,fmt=*) "timestep_intvls_nl("// i_c //",:)  = " , timestep_intvls(i,:)
-    end do
-    write(unit=iunit,fmt=*) "/"
-
-    write(unit=iunit,fmt=*) "&clubb_params_nl"
-
-    ! Copy simplex into a vector of all possible CLUBB parameters
-    do i=1, nparams, 1
-      ! If the variable isn't in the simplex, leave it as is
-      params_local(i) = clubb_params(1,i)
-      do j=1, ndim, 1
-        if ( i == params_index(j) ) then
-          ! Copy variable from param_vals_vector argument
-          params_local(i) = param_vals_vector(j)
-          exit
-        else
-          cycle
-        end if
-      end do
-    end do
-
-    ! Output optimal values and all possible CLUBB parameters
-    do i=1, nparams, 1
-      write(unit=iunit,fmt='(A30,F27.20)') & 
-        trim( params_list(i) )//" = ", params_local(i)
-    end do
-    write(unit=iunit,fmt=*) "/"
-
-    write(unit=iunit,fmt=*) "&initmax"
-    ! Copy the max values into a vector of all possible CLUBB parameters
-    do i=1, nparams, 1
-      ! If the variable isn't being changed, set it to zero
-      params_local(i) = 0.0_core_rknd
-      do j=1, ndim, 1
-        if ( i == params_index(j) ) then
-          ! Copy variable from param_vals_vector argument
-          params_local(i) = param_vals_minmax(2,j)
-          exit
-        else
-          cycle
-        end if
-      end do
-    end do
-
-    ! Output the amount each variable was changed for the simplex
-    do i=1, nparams, 1
-      write(unit=iunit,fmt='(a30,f12.5)') & 
-        trim( params_list(i) )//" = ", params_local(i)
-    end do
-    write(unit=iunit,fmt=*) "/"
-
-    ! Close new namelist file
-    close(unit=iunit)
-
-    return
-  end subroutine output_nml_tuner
+    quoted = quoted // '"'
+  end function json_quote
 
 !-----------------------------------------------------------------------
-  subroutine output_nml_standalone ( results_f,  & 
-                                     param_vals_vector )
-
+  function json_real( value ) result( text )
 ! Description:
-!   Output namelists to a formatted file
-
-! References:
-!   None
-
-! Notes:
-!   See note for output_nml_tuner, above. dschanen 28 July 2006
-!-----------------------------------------------------------------------
-
+!   Write a round-trip decimal number; invalid diagnostic values become null.
+    use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
     implicit none
+    real(kind=core_rknd), intent(in) :: value ! Parameter or tuning value [units vary]
+    character(len=32) :: text ! JSON number or null
 
-    ! External
-    intrinsic :: achar, trim
+    if ( ieee_is_finite(value) ) then
+      write(text,'(ES26.17E3)') value
+      text = adjustl(text)
+    else
+      text = 'null'
+    end if
+  end function json_real
 
-    ! Input variables
-    character(len=*), intent(in) :: & 
-      results_f ! Results file to write to
+!-----------------------------------------------------------------------
+  subroutine write_json_model( iunit, param_vals_vector )
+! Description:
+!   Expand the optimum and its linked parameters into a model/SILHS JSON override.
+    implicit none
+    integer, intent(in) :: iunit ! Open output unit
+    real(kind=core_rknd), intent(in) :: param_vals_vector(ndim) ! Tuned values [units vary]
+    real(kind=core_rknd) :: params_local(nparams) ! Full optimum [units vary]
+    integer :: i, j ! Parameter and simplex indices
 
-    real( kind = core_rknd ), intent(in), dimension(ndim) :: & 
-      param_vals_vector ! the current constants
-
-    ! Local variables
-    real( kind = core_rknd ), dimension(nparams) :: params_local
-
-    integer   :: i, j  ! loop variables
-
-    integer :: iunit ! file unit
-
-    ! ---- Begin Code ---
-    write(6,*) "Writing parameters for namelist to "//results_f
-
-    iunit = 20
-    ! Open new file
-    open(unit=iunit, file=results_f,  & 
-         action="write", access="sequential")
-
-    ! Write variables to namelist for standalone CLUBB.
-    ! All this is based on the previous error.in, except the constants
-
-    write(unit=iunit,fmt=*) "! Parameter file " // results_f
-
-    write(unit=iunit,fmt=*) "&clubb_params_nl"
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't in the simplex, leave it as is
@@ -1446,18 +1299,92 @@ module error
       end do
     end if
 
-    ! Output optimal values and all possible CLUBB parameters
-    do i=1, nparams, 1
-      write(unit=iunit,fmt='(A30,F27.20)') & 
-        trim( params_list(i) )//" = ", params_local(i)
+    write(iunit,'(A)') '{"model": {'
+    do i = 1, nparams
+      write(iunit,'(A)',advance='no') '  '//json_quote(trim(params_list(i)))//': '//trim(json_real(params_local(i)))
+      if ( i < nparams ) then
+        write(iunit,'(A)') ','
+      else
+        write(iunit,'(A)') ''
+      end if
     end do
-    write(unit=iunit,fmt=*) "/"
+    write(iunit,'(A)') '}, "silhs": {}}'
+  end subroutine write_json_model
 
-    ! Close new file
-    close(unit=iunit)
+!-----------------------------------------------------------------------
+  subroutine output_json_tuner( results_f, param_vals_vector )
+! Description:
+!   Save native tuning controls, case windows, parameter bounds and the optimum as JSON.
+    implicit none
+    character(len=*), intent(in) :: results_f ! Diagnostic result path
+    real(kind=core_rknd), intent(in) :: param_vals_vector(:) ! Tuned values [units vary]
+    integer :: iunit, i, j ! Output unit and case/parameter indices
 
-    return
-  end subroutine output_nml_standalone
+    open(newunit=iunit, file=results_f, status='replace', action='write')
+    write(iunit,'(A)') '{"parameters":'
+    call write_json_model( iunit, param_vals_vector(1:ndim) ) ! In
+    write(iunit,'(A)') ', "stats": {'
+    write(iunit,'(A)') '"f_tol": '//trim(json_real(f_tol))//','
+    write(iunit,'(A)') '"l_results_stdout": '//trim(merge('true ', 'false', l_results_stdout))//','
+    write(iunit,'(A)') '"l_results_file": '//trim(merge('true ', 'false', l_results_file))//','
+    write(iunit,'(A)') '"l_stdout_on_invalid": '//trim(merge('true ', 'false', l_stdout_on_invalid))//','
+    write(iunit,'(A)') '"l_keep_params_equal": '//trim(merge('true ', 'false', l_keep_params_equal))//','
+    write(iunit,'(A)') '"anneal_temp": '//trim(json_real(anneal_temp))//','
+    write(iunit,'(A)') '"max_final_temp": '//trim(json_real(max_final_temp))//','
+    write(iunit,'(A,I0,A)') '"anneal_iter": ', anneal_iter, ','
+    write(iunit,'(A,I0,A)') '"tune_type": ', tune_type, ', "variables": ['
+    do i = 1, v_total
+      write(iunit,'(A)',advance='no') '['//json_quote(hoc_v(i))//','//json_quote(les_v(i))//',' &
+        //trim(json_real(weight_var(i)))//']'
+      if ( i < v_total ) write(iunit,'(A)',advance='no') ','
+    end do
+    write(iunit,'(A)') ']}, "cases": ['
+    do i = 1, c_total
+      write(iunit,'(A)') '{"les_stats_file": '//json_quote(les_stats_file(i))//','
+      write(iunit,'(A)') '"hoc_stats_file": '//json_quote(hoc_stats_file(i))//','
+      write(iunit,'(A)') '"run_file": '//json_quote(run_file(i))//','
+      write(iunit,'(A,I0,A,I0,A)') '"z_i": ', z_i(i), ', "z_f": ', z_f(i), ','
+      write(iunit,'(A)') '"weight_case": '//trim(json_real(weight_case(i)))//', "timestep_intervals": ['
+      do j = 1, size(timestep_intvls,2)
+        write(iunit,'(I0)',advance='no') timestep_intvls(i,j)
+        if ( j < size(timestep_intvls,2) ) write(iunit,'(A)',advance='no') ','
+      end do
+      write(iunit,'(A)',advance='no') ']}'
+      if ( i < c_total ) write(iunit,'(A)',advance='no') ','
+    end do
+    if ( size(param_vals_minmax,1) == 2 ) then
+      ! ESA stores lower/upper bounds; simplex methods store one step width.
+      write(iunit,'(A)') '], "parameter_ranges": {'
+      do j = 1, ndim
+        write(iunit,'(A)',advance='no') json_quote(trim(params_list(params_index(j))))//': [' &
+          //trim(json_real(param_vals_minmax(1,j)))//','//trim(json_real(param_vals_minmax(2,j)))//']'
+        if ( j < ndim ) write(iunit,'(A)',advance='no') ','
+      end do
+    else
+      write(iunit,'(A)') '], "parameter_steps": {'
+      do j = 1, ndim
+        write(iunit,'(A)',advance='no') json_quote(trim(params_list(params_index(j))))//': ' &
+          //trim(json_real(param_vals_minmax(1,j)))
+        if ( j < ndim ) write(iunit,'(A)',advance='no') ','
+      end do
+    end if
+    write(iunit,'(A)') '}}'
+    close(iunit)
+  end subroutine output_json_tuner
+
+!-----------------------------------------------------------------------
+  subroutine output_json_standalone( results_f, param_vals_vector )
+! Description:
+!   Save the optimum as parameter overrides accepted by run_scm -params.
+    implicit none
+    character(len=*), intent(in) :: results_f ! Parameter JSON output path
+    real(kind=core_rknd), intent(in) :: param_vals_vector(ndim) ! Tuned values [units vary]
+    integer :: iunit ! Output unit
+
+    open(newunit=iunit, file=results_f, status='replace', action='write')
+    call write_json_model( iunit, param_vals_vector ) ! In
+    close(iunit)
+  end subroutine output_json_standalone
 
 !-----------------------------------------------------------------------
   real( kind = core_rknd ) function mean_sqr_diff & 

@@ -860,7 +860,7 @@ def test_process_launch_and_rebuild_use_the_durable_broker_lifecycle(tmp_path, m
     )
     launched = actions._launch_scm_process(
         "arm",
-        "standard_stats.in",
+        "standard",
         "default",
         {"flags": {"l_test": ".true."}, "tunable": {}, "silhs": {}},
         {"max_iters": "2", "extra_args": ["-override", "iiPDF_type=1"]},

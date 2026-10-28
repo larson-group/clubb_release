@@ -5,7 +5,7 @@ import pytest
 from dash_app.tune_tab.callbacks_runs import build_request_payload
 from dash_app.tune_tab.runtime import write_loss_params_file
 from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE
-from utilities.create_case_namelist import normalize_override_string, override_value
+from input.scripts.create_case_namelist import normalize_override_string, override_value
 
 
 def test_tune_request_keeps_a_generic_scm_override():
@@ -73,9 +73,10 @@ def test_tune_request_keeps_linked_physical_targets(monkeypatch):
 
 def test_top_result_namelist_preserves_all_linked_physical_assignments(tmp_path):
     path = write_loss_params_file(tmp_path, [{"C6rt": 2.5, "C6thl": 2.5}])
-    rendered = path.read_text(encoding="utf-8")
-    assert "C6rt = 2.5" in rendered
-    assert "C6thl = 2.5" in rendered
+    import json
+    rendered = json.loads(path.read_text(encoding="utf-8"))["model"]
+    assert rendered["C6rt"] == 2.5
+    assert rendered["C6thl"] == 2.5
 
 
 def test_override_value_accepts_the_optional_cli_prefix():
@@ -86,4 +87,4 @@ def test_override_value_accepts_the_optional_cli_prefix():
 
 def test_override_value_rejects_a_setting_outside_all_namelists():
     with pytest.raises(ValueError, match="could not be matched"):
-        override_value("missing_flag=.true.", "&configurable_clubb_flags_nl\n/\n")
+        override_value("missing_flag=.true.", {"configurable_clubb_flags_nl": {}})

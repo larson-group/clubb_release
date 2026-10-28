@@ -39,10 +39,10 @@ from run_scripts.run_scm_all import (
     positive_int,
 )
 
-from utilities.flag_sets import build_override_arg, get_flag_sets, read_flag_settings  # noqa: E402
+from input.scripts.flag_sets import build_override_arg, get_flag_sets, read_flag_settings  # noqa: E402
 
 from tuner.system_defaults import default_max_workers as default_workers
-from utilities.create_case_namelist import parse_forwarded_args
+from input.scripts.create_case_namelist import parse_forwarded_args
 
 DEFAULT_MAX_WORKERS = default_workers()
 DEFAULT_FLAG_CONFIG_FILE = REPO_ROOT / "input" / "flag_sets" / "run_bindiff_w_flags_config_core_flags.json"

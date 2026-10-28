@@ -53,20 +53,24 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
       };
       ids.forEach((id, index) => {
         const spec = schema[id.path], before = get(baseline.namelists, id.path);
+        const hasDefault = Object.hasOwn(spec, 'default');
         let value = values[index];
         let present = value !== null && value !== '';
         try {
           if (spec.kind === 'logical') {
             const state = Number(value);
-            if (![0, 1, 2].includes(state)) throw new Error('Choose false, unset or true');
-            logicalStates[id.path] = ['false', 'unset', 'true'][state];
-            present = state !== 1;
-            value = state === 2;
+            if (![0, 1, 2].includes(state)) throw new Error('Choose false, default/unset or true');
+            logicalStates[id.path] = ['false', hasDefault ? 'default' : 'unset', 'true'][state];
+            present = state !== 1 || hasDefault;
+            value = state === 1 && hasDefault ? spec.default : state === 2;
           }
-          if (present) {
+          if (!present && hasDefault) {
+            value = JSON.parse(JSON.stringify(spec.default));
+            present = true;
+          } else if (present) {
             if (spec.kind === 'array') {
               value = JSON.parse(value);
-              const numeric = item => item === null || (typeof item === 'number' && Number.isFinite(item))
+              const numeric = item => (typeof item === 'number' && Number.isFinite(item))
                 || (Array.isArray(item) && item.every(numeric));
               if (value === null || !numeric(value)) throw new Error('Use a number or JSON array of numbers');
             } else if (spec.kind === 'number') {

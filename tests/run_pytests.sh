@@ -56,7 +56,7 @@ run_unit() {
         [[ "$venv" == /* ]] || venv="$REPO_ROOT/$venv"
         python_bin="$venv/bin/python"
     fi
-    run_pytest "$python_bin" utilities/pytests tuner/pytests tests/pytests
+    run_pytest "$python_bin" input/pytests utilities/pytests tuner/pytests tests/pytests
 }
 
 run_dash() {

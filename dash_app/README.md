@@ -34,9 +34,12 @@ To run a case:
 The Run tab's **Create Case** button in the **Custom cases** row opens a model-settings editor.
 Choose **Defaults**, a catalog case or a saved case in **Start from**, then
 enter a case name. Edit the name/value rows under each namelist heading;
-booleans use a **false | unset | true** slider. Orange markers show changes from the starting point.
-Blank cells omit optional settings; enter `""` for an explicit empty string and
-JSON notation for arrays. **Unset** omits a boolean setting and uses the model
+booleans use a **false | default | true** slider when a catalog default exists,
+and **false | unset | true** otherwise. Orange markers show changes from the starting point.
+Blank cells restore catalog defaults or omit fields without a catalog default;
+enter `""` for an explicit empty string and JSON notation for arrays.
+**Default** restores the catalog's explicit value.
+**Unset** omits an optional boolean that has no catalog default and uses the model
 default; **false** and **true** explicitly set it. Click or drag between the three
 positions, or use the arrow keys while the slider is focused.
 The optional **Namelist preview → Update preview** displays the generated input.
@@ -45,10 +48,9 @@ model validation happens downstream when you run.
 **Close** keeps the current draft ready for reopening. Selecting a different
 starting point replaces it; reloading the page clears unsaved edits.
 
-**Save case** creates a complete JSON snapshot in
-`input/case_setups/custom/<name>.json`, an ignored local directory, and selects
-it for the next run. Changing the original case or catalog defaults later does
-not change the copy. Saved copies appear in the **Custom cases** row below the
+**Save case** writes overrides relative to the catalog defaults in
+`input/<name>.case.json`, an ignored local file, and selects it for the next run.
+Saved copies inherit later changes to shared defaults. They appear in the **Custom cases** row below the
 catalog buttons. To replace a catalog or saved case, use its existing name
 and confirm the before/after values in the replacement popup. Catalog replacement
 updates that case's overrides; other cases and shared defaults are preserved.
@@ -62,9 +64,8 @@ copies retain their source comparison defaults while the physical runtype stays
 the same. Copies with a changed runtype require comparison configuration before
 they can be tuned against a benchmark.
 
-Normal runs look for `NAME_model.in` first, then use saved custom JSON or the
-catalog. Dash edits and saves JSON; duplicate legacy/JSON definitions are not
-synchronized during the transition. Case settings are resolved when a queued
+Normal runs resolve cases solely from saved custom JSON or the
+catalog. Dash edits and saves JSON; native namelists are generated for each run. Case settings are resolved when a queued
 run starts, so edits made while waiting affect that run. The generated namelist
 is retained with its output. Reload other already-open workflow tabs after
 creating cases to refresh their case dropdowns.
@@ -72,7 +73,7 @@ creating cases to refresh their case dropdowns.
 ### Choosing statistics
 
 The Run tab offers **All**, **Standard**, and **Core** from
-[`input/stats/stats.json`](../input/stats/stats.json). **Custom…** opens its
+[`input/stats.jsonc`](../input/stats.jsonc). **Custom…** opens its
 checkbox tree, with all branches initially collapsed. Expand a category to
 choose individual variables. Each compact row shows the variable, units, grid
 (thermo, momentum or surface), and long name; long rows scroll horizontally.
@@ -90,20 +91,21 @@ opening and closing branches uses native disclosures. Apply and Save use the
 shared Python stats helpers.
 **Clear all**, then **Use selection**, disables statistics.
 
-**Saved & legacy lists** selects an existing namelist. In the custom editor,
-**Save stats config** writes a new snapshot to `input/stats/custom/<name>.in`
+**Saved lists & presets** selects a named JSON preset or saved snapshot. In the custom editor,
+**Save stats config** writes a new variable-name list to `input/<name>.stats.json`
 and adds it to that list. These local snapshots are ignored by Git.
 Names may contain letters, numbers, underscores and
 hyphens; existing files are never overwritten. Snapshots retain their exact
 variables even if the catalog changes, and can also be passed to `-stats` on
 the command line. Reload the dashboard after editing the JSON hierarchy or
-changing a saved/legacy list outside the app.
+changing a saved/named preset outside the app.
 
 MCP `stats_file` accepts category expressions, individual `var:NAME` selectors
 (including qualified paths and comma/plus unions), `none`, or a relative
-saved/legacy list name. Its
-existing default remains `standard_stats.in`; the Run tab defaults to the
-named **Standard** category.
+saved/named preset name. MCP and the Run tab default to the **Standard** category.
+Presets select only their own fields; combining a preset and category selects
+their union, with each variable emitted once. Shared `-config` settings do not
+change the selected stats.
 
 ### Choosing CPU or GPU for JAX
 
@@ -158,7 +160,7 @@ To create suitable input, first build Fortran as described in the quick start,
 then run from the repository root:
 
 ```bash
-./run_scripts/run_scm.py -stats input/stats/all_stats.in arm
+./run_scripts/run_scm.py -stats all arm
 ```
 
 Launch Dash, select that run's **Output directory** and **Case**, then choose
@@ -521,7 +523,7 @@ This includes the bounded MCP stdio protocol regression; it does not run SCM
 cases or launch the full dashboard workflow.
 
 For the manual parcel-trajectory comparison, supply fresh Fortran ARM
-`all_stats` output from 625 timesteps, including saved record 612:
+`all` output from 625 timesteps, including saved record 612:
 
 ```bash
 python3 dash_app/tests/run_dash_mixing_length_test.py \

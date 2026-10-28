@@ -104,7 +104,7 @@ The normal Dash tuning path is:
    initialization. Each initial worker evaluates the CLUBB-default baseline and,
    when an override exists, the config-plus-override default baseline before
    opening its reusable candidate session.
-6. Each worker uses `utilities/create_case_namelist.py` to build the
+6. Each worker uses `input/scripts/create_case_namelist.py` to build the
    case-specific loss namelist and normalized LES benchmark file in its worker
    directory.
 7. Workers initialize the selected reusable loss driver (Fortran through
@@ -194,7 +194,7 @@ bracketed locked group with one shared range.
 
 Workers do not pass raw SAM or COAMPS variable names to the loss driver. Before a
 worker initializes its loss session, the shared loss-namelist builder calls
-`utilities.benchmark_converter.convert_benchmark_file` to create a normalized
+`input.scripts.benchmark_converter.convert_benchmark_file` to create a normalized
 NetCDF file in the worker directory. The generated `&tuner_loss_nl` then uses the
 selected CLUBB field names for both `clubb_var_names` and `benchmark_var_name`.
 

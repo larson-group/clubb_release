@@ -140,7 +140,7 @@ def test_saved_jax_replay_uses_launcher_and_winning_columns(tmp_path, monkeypatc
     assert saved["runtime"]["implementation"] == "jax"
     assert saved["runtime"]["jax_profile"] == "cpu"
     assert json.loads(saved["override"])["bomex"] == {"C11": "0.4"}
-    assert "C8 = 0.7, 0.5" in Path(result["params_path"]).read_text()
+    assert json.loads(Path(result["params_path"]).read_text())["model"]["C8"] == [0.7, 0.5]
 
 
 @pytest.mark.parametrize("mode", ["window", "complete"])

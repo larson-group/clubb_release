@@ -20,7 +20,7 @@ SAM_ROOT = Path(
     "JULY_2017_3D_RECREATIONS"
 )
 RUNS_DIR = REPO_ROOT / "output_pdf_bakeoff/pdf9_parcel_runs"
-STATS_FILE = REPO_ROOT / "input/stats/les_advance_stats.in"
+STATS_FILE = "les_advance_stats"
 CACHE_DIR = REPO_ROOT / "output_pdf_bakeoff/pdf9_parcel_ensemble_lab"
 
 

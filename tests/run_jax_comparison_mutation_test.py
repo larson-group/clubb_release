@@ -149,7 +149,7 @@ def make_snapshot(destination: Path) -> None:
 def run_comparison(snapshot: Path, timeout: float) -> int:
     command = [sys.executable, str(snapshot / HARNESS),
                "-cases", CASE, "-workers", "1", "-max_iters", str(TIMESTEPS_TO_RUN),
-               "-dt_main", "60", "-stats", "input/stats/multi_col_stats.in"]
+               "-dt_main", "60", "-stats", "multi_col_stats"]
     (snapshot / "command.json").write_text(json.dumps(command, indent=2) + "\n")
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
     # Use the copied package, even if the invoking shell has a repo PYTHONPATH.
@@ -352,7 +352,7 @@ def print_summary(report: dict, output: Path) -> None:
     rule = "=" * 78
     print(f"\n{rule}\nExpected failure test: {labels[report['status']]}\n{rule}")
     print(f"Case: {report['case']} | {report['timesteps']} timesteps x 60 s | 4 columns | CPU/double")
-    print("Statistics: input/stats/multi_col_stats.in")
+    print("Statistics: multi_col_stats")
     print("Tolerances: JAX-versus-Fortran harness defaults", end="")
     if "thresholds" in report:
         limits = report["thresholds"]
@@ -420,7 +420,7 @@ def main() -> int:
     print(f"Mutation test artifacts: {output}", flush=True)
     selected = [m for m in MUTATIONS if args.mutations is None or m.name in args.mutations]
     report = {"status": "failed", "case": CASE, "timesteps": TIMESTEPS_TO_RUN,
-              "stats": "input/stats/multi_col_stats.in", "control_status": "not_run",
+              "stats": "multi_col_stats", "control_status": "not_run",
               "mutations": [
                   {"name": m.name, "description": m.description, "kind": m.kind,
                    "field": m.field, "status": "not_run", "target": str(m.target),

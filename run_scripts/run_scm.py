@@ -29,7 +29,7 @@ if CLUBB_ROOT not in sys.path:
     sys.path.insert(0, CLUBB_ROOT)
 
 from utilities.clubb_case_runner import clubb_case_runner, parse_case_arguments  # noqa: E402
-from utilities.create_case_namelist import create_case_namelist_from_args  # noqa: E402
+from input.scripts.create_case_namelist import create_case_namelist_from_args  # noqa: E402
 from utilities.output_paths import resolve_output_dir  # noqa: E402
 
 

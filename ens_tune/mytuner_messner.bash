@@ -22,7 +22,7 @@
 # Note: MEMBERMAX needs to be a multiple of your total nodes!
 MEMBERMAX=6
 NODES=( tom15 tom16 tom17 )
-HOC=$HOME/current/hoc_v2.2_tuner
+HOC=$HOME/clubb
 CASE=combined_001
 ARCHIVE=$HOME/archive/ensemble
 EXPERIMENTS=( bomex dycoms2_rf01 )
@@ -39,38 +39,31 @@ function tune ( ) {
 
 	# Create directory & copy files
 	rsh $tom "mkdir -p $HOC/ens_tune"
-	$RCP error*.in "$tom:$HOC/ens_tune/error.in"
-	$RCP *_model.in *_stat*.in "$tom:$HOC/ens_tune"
 
 	# Create random seed data
-	rsh $tom "$HOC/bin/int2txt /dev/random > $HOC/ens_tune/rand_seed.dat"
+	rsh $tom "$HOC/install/latest/int2txt /dev/random > $HOC/ens_tune/rand_seed.dat"
 
-	# Create hoc.in file
-	for EXP in "${EXPERIMENTS[@]}"; do
-		rsh $tom "cat $HOC/ens_tune/${EXP}_model.in $HOC/ens_tune/${EXP}_stats_tune.in > $HOC/ens_tune/${EXP}_hoc.in"
-	done
+	# Each remote checkout resolves model JSON and legacy tuner controls at launch.
+	rsh $tom "python3 $HOC/run_scripts/run_tuner.py -prepare_only -controls $CASE -run_type multiple -model_mult ${EXPERIMENTS[*]} -output_dir $HOC/ens_tune"
 
 	# Execute tuning run
 	echo Tuning ensemble member $member on $tom
-	rsh $tom "cd $HOC/ens_tune && echo no | ../bin/hoc_tuner &> tune.log"
+	rsh $tom "cd $HOC/ens_tune && echo no | ../install/latest/clubb_tuner &> tune.log"
 
 	# Delete GrADS files from tuning run
 	rsh $tom "rm -f $HOC/ens_tune/*_zt.??? $HOC/ens_tune/*_zm.??? $HOC/ens_tune/*_sfc.???"
 
-	# Run standalone HOC
 	for EXP in "${EXPERIMENTS[@]}"; do
-		rsh $tom "cat $HOC/ens_tune/${EXP}_model.in $HOC/ens_tune/${EXP}_stats.in > $HOC/standalone/hoc.in"
-		rsh $tom "cat $HOC/standalone/standalone_*.in > $HOC/standalone/standalone.in"
-		rsh $tom "cd $HOC/standalone && ../bin/hoc_standalone >> ../ens_tune/tune.log"
+        rsh $tom "python3 $HOC/run_scripts/run_scm.py -params \$(ls -t $HOC/input/tunable_parameters_*.json | head -1) $EXP >> $HOC/ens_tune/tune.log"
 	done
 
 	# Move results data
 	rsh $tom "mv $HOC/ens_tune $HOC/ens_tune_$member";
-	rsh $tom "mv $HOC/standalone/standalone_*.in  $HOC/ens_tune_$member";
+	rsh $tom "mv $HOC/input/tunable_parameters_*.json  $HOC/ens_tune_$member";
 	# for GrADS output
 	#rsh $tom "mv $HOC/standalone/*_*.???  $HOC/ens_tune_$member";
 	# for NetCDF output
-	rsh $tom "mv $HOC/standalone/*_*.nc  $HOC/ens_tune_$member";
+	rsh $tom "mv $HOC/output/*_*.nc  $HOC/ens_tune_$member";
 }
 
 ################################################################################
@@ -80,13 +73,13 @@ function tune ( ) {
 for node in "${NODES[@]}"; do 
 	echo "Copying files to $node"
  	rsh $node "mkdir -p $HOC/les_data"
-	rsh $node "mkdir -p $HOC/bin"
+	rsh $node "mkdir -p $HOC/install/latest"
 	rsh $node "mkdir -p $HOC/standalone"
 
-	# Copy hoc_tuner executable and ens_tune namelists
-	$RCP $HOC"/bin/hoc_tuner" $node":$HOC/bin"
-	$RCP $HOC"/bin/hoc_standalone" $node":$HOC/bin"
-	$RCP $HOC"/bin/int2txt" $node":$HOC/bin"
+	# Copy current CLUBB executables; JSON catalogs come from the remote checkout
+	$RCP $HOC"/install/latest/clubb_tuner" $node":$HOC/install/latest"
+	$RCP $HOC"/install/latest/clubb_standalone" $node":$HOC/install/latest"
+	$RCP $HOC"/install/latest/int2txt" $node":$HOC/install/latest"
 
 	for EXP in "${EXPERIMENTS[@]}"; do
 		# Copy GrADS data for LES simulations to tom node

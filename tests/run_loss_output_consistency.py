@@ -35,6 +35,7 @@ independent NetCDF recomputation and comparison thresholds.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -60,14 +61,13 @@ if CLUBB_ROOT not in sys.path:
 
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults  # noqa: E402
 from utilities.loss_metrics import calculate_column_loss_metrics  # noqa: E402
-from utilities.create_case_namelist import read_model_times, resolve_tunable_config_dir  # noqa: E402
+from input.scripts.create_case_namelist import resolve_case_model_input  # noqa: E402
 from utilities.clubb_case_runner import extract_jax_options  # noqa: E402
 
 
 DEFAULT_OUT_ROOT = os.path.join(CLUBB_ROOT, "output", "loss_output_consistency")
-DEFAULT_CONFIG_DIR = resolve_tunable_config_dir("default")
-DEFAULT_STATS_FILE = os.path.join(CLUBB_ROOT, "input", "stats", "all_tuning_stats.in")
-CREATE_MULTI_COL_PARAMS = os.path.join(CLUBB_ROOT, "utilities", "create_multi_col_params.py")
+DEFAULT_STATS_FILE = "all_tuning_stats"
+CREATE_MULTI_COL_PARAMS = os.path.join(CLUBB_ROOT, "input", "scripts", "create_multi_col_params.py")
 RUN_SCM = os.path.join(RUN_SCRIPTS, "run_scm.py")
 RUN_SCM_LOSS = os.path.join(RUN_SCRIPTS, "run_scm_loss.py")
 
@@ -119,20 +119,6 @@ def parse_csv_values(values: list[str] | None, label: str) -> list[str]:
     return parsed
 
 
-def abs_path(path: str | None) -> str | None:
-    """Return an absolute path when the user provided one."""
-    return os.path.abspath(path) if path else None
-
-
-def config_arg(value: str | None) -> str | None:
-    """Return a path config as absolute while preserving bare config names."""
-    if not value:
-        return None
-    if os.path.isabs(value) or os.sep in value or (os.altsep and os.altsep in value):
-        return os.path.abspath(value)
-    return value
-
-
 def run_subprocess(cmd: list[str], *, cwd: str | None = None) -> None:
     """Run a child process and fail if it exits nonzero."""
     print(f"+ {' '.join(cmd)}", flush=True)
@@ -150,20 +136,22 @@ def clear_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
-def resolve_base_params(args: argparse.Namespace) -> str:
-    """Choose the scalar tunable-parameter file used to seed the 4 columns."""
-    if args.params:
-        return args.params
-    return os.path.join(args.config_dir, "tunable_parameters.in")
+def resolve_base_params(args: argparse.Namespace, output_dir: str) -> str:
+    """Write resolved parameter JSON into output_dir to seed the four columns."""
+    from input.scripts.parameters_json_to_namelist import parameter_settings
+    path = Path(output_dir) / "base_parameters.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(parameter_settings(args.params, config=args.config), indent=2) + "\n")
+    return str(path)
 
 
 def build_shared_multicol_params(args: argparse.Namespace, out_root: str) -> str:
     """Create the shared multicol parameter file used by both runners."""
-    params_file = resolve_base_params(args)
+    params_file = resolve_base_params(args, out_root)
     if not os.path.isfile(params_file):
         raise RuntimeError(f"Base params file not found: {params_file}")
 
-    shared_params = os.path.join(out_root, f"{args.case_name}_shared_multicol_params.in")
+    shared_params = os.path.join(out_root, f"{args.case_name}_shared_multicol_params.json")
     cmd = [
         sys.executable,
         CREATE_MULTI_COL_PARAMS,
@@ -195,8 +183,8 @@ def loss_window(case_name: str) -> tuple[float, float]:
 
 def case_dt_main(case_name: str) -> float:
     """Read the model timestep used by the loss-driver namelist builder."""
-    model_file = os.path.join(CLUBB_ROOT, "input", "case_setups", f"{case_name}_model.in")
-    values = read_model_times(model_file)
+    model_file = case_name
+    values = resolve_case_model_input(case_name)["model_setting"]
     dt_main = values.get("dt_main")
     if dt_main is None:
         raise RuntimeError(f"Could not determine dt_main from {model_file}")
@@ -774,19 +762,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-config",
         help=(
-            "Optional config name or directory forwarded to run_scm.py/run_scm_loss.py. "
-            "Its tunable_parameters.in seeds the shared multicol params unless "
+            "Optional shared JSON preset name forwarded to run_scm.py/run_scm_loss.py. "
+            "Its JSON parameters seed the shared multicol params unless "
             "-params_file is also supplied."
         ),
     )
     parser.add_argument(
-        '-params_file', dest='params',
-        help="Optional scalar tunable parameters file used to seed the shared params.",
+        '-params', '-params_file', dest='params',
+        help="Parameter preset or JSON override used to seed the shared params.",
         metavar='FILE',
     )
     parser.add_argument(
         "-flags",
-        help="Optional configurable_model_flags.in file forwarded to both runners.",
+        help="Flag preset or JSON override forwarded to both runners.",
     )
     parser.add_argument(
         "-fields",
@@ -806,19 +794,9 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args(argv)
     args.jax_options = jax_options
 
-    args.config = config_arg(args.config)
-    args.params = abs_path(args.params)
-    args.flags = abs_path(args.flags)
-    try:
-        args.config_dir = resolve_tunable_config_dir(args.config)
-    except RuntimeError as exc:
-        parser.error(str(exc))
-    if args.params and not os.path.isfile(args.params):
-        parser.error(f"params file not found: {args.params}")
-    if args.flags and not os.path.isfile(args.flags):
-        parser.error(f"flags file not found: {args.flags}")
-    if not os.path.isfile(DEFAULT_STATS_FILE):
-        parser.error(f"stats file not found: {DEFAULT_STATS_FILE}")
+    from input.scripts.create_case_namelist import normalize_input_selection
+    args.params = normalize_input_selection(args.params) if args.params else None
+    args.flags = normalize_input_selection(args.flags) if args.flags else None
     return args
 
 

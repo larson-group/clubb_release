@@ -1,6 +1,8 @@
 """Check JAX advance_helper_module ports (smoothing, Richardson/stability, averaging,
 radiative-variance and splat helpers) against Fortran."""
 
+from input.scripts.create_case_namelist import create_case_namelist_file
+
 import os
 
 import jax.numpy as jnp
@@ -30,7 +32,7 @@ from clubb_jax.src.CLUBB_core.parameter_indices import ilambda0_stability_coef
 from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
 
 _ROOT = str(_REPO_ROOT)
-_TUNABLE_PARAMS = os.path.join(_ROOT, "input", "parameter_and_flag_configs", "default", "tunable_parameters.in")
+_TUNABLE_PARAMS = str(create_case_namelist_file("bomex"))
 _NG, _DZ, _ZTOP = 2, 40.0, 1200.0
 
 

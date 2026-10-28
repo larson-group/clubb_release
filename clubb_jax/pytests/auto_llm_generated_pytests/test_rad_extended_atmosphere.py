@@ -21,7 +21,7 @@ from clubb_jax.src.Input_fields.sounding import (
     read_sounding, convert_pressure_sounding_to_z, read_ozone_sounding, convert_snd2extended_atm)
 from clubb_jax.src.CLUBB_core.constants_clubb import p0, kappa
 
-_CASE = _ROOT + "/input/case_setups/cgils_s11"
+_CASE = _ROOT + "/input/case_data/cgils_s11"
 _P_SFC, _SAT = 1.02078e5, 3
 
 

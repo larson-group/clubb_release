@@ -13,7 +13,7 @@ import math
 from pathlib import Path
 import re
 
-from utilities.create_case_namelist import resolve_tunable_config_dir
+from input.scripts.parameters_json_to_namelist import parameter_settings
 from utilities.clubb_settings_validation import default_range_for_value, parameter_hard_bounds
 
 
@@ -30,18 +30,8 @@ def _numeric(value: str) -> float | None:
 
 def tunable_parameter_defaults(config: str | None = None) -> dict[str, float]:
     """Read scalar default values from a selected tunable namelist."""
-    path = Path(resolve_tunable_config_dir(config or "default")) / "tunable_parameters.in"
-    defaults: dict[str, float] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.lstrip().startswith("!"):
-            continue
-        match = _ASSIGNMENT.match(line)
-        if not match:
-            continue
-        value = _numeric(match.group(2))
-        if value is not None:
-            defaults[match.group(1)] = value
-    return defaults
+    return {name: float(value) for name, value in parameter_settings(config=config)["model"].items()
+            if not isinstance(value, list)}
 
 
 def compiled_parameter_hard_bounds() -> dict[str, dict[str, float | None]]:

@@ -2,59 +2,48 @@ from pathlib import Path
 
 import pytest
 
-from dash_app.run_tab.namelist import (
-    apply_updates_to_lines,
-    read_namelist_entries,
-    write_temp_namelist,
+from dash_app.run_tab.settings import (
+    write_temp_settings,
 )
 from dash_app.shared.runtime import read_file_tail, read_latest_run_progress
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_ROOT = REPO_ROOT / "input/parameter_and_flag_configs"
+CONFIG_ROOT = REPO_ROOT / "input"
 
 
 def test_config_update_places_model_flag_inside_clubb_flags():
-    base = REPO_ROOT / "input/parameter_and_flag_configs/default/configurable_model_flags.in"
-    path = write_temp_namelist(
-        base,
-        {"Lscale_method": "2"},
-        "clubb_flags_test_",
-    )
+    import json
+    from input.scripts.flags_json_to_namelist import flag_settings
+    base = flag_settings()
+    path = write_temp_settings(base, {"Lscale_method": "2"}, "clubb_flags_test_")
     try:
-        values = {entry["name"]: entry["value"] for entry in read_namelist_entries(path)}
-        rendered = Path(path).read_text(encoding="utf-8")
+        values = json.loads(Path(path).read_text())
     finally:
         Path(path).unlink(missing_ok=True)
-
-    clubb_flags = rendered.split("&configurable_clubb_flags_nl", 1)[1].split("/", 1)[0]
-    assert values["Lscale_method"] == "2"
-    assert "Lscale_method = 2" in clubb_flags
+    assert values["model"]["Lscale_method"] == 2
+    assert "Lscale_method" not in values["silhs"]
 
 
 def test_namelist_updater_rejects_unknown_settings():
     with pytest.raises(ValueError, match="not present"):
-        apply_updates_to_lines(["&example\n", "/\n"], {"unknown_setting": "1"})
+        write_temp_settings({"model": {}, "silhs": {}}, {"unknown_setting": "1"}, "clubb_flags_test_")
 
 
-@pytest.mark.parametrize(
-    "tunable_path",
-    sorted(CONFIG_ROOT.glob("*/tunable_parameters.in")),
-    ids=lambda path: path.parent.name,
-)
-def test_all_configs_accept_common_tunable_parameter(tunable_path):
-    """Every selectable config supports a common tunable parameter."""
-    path = write_temp_namelist(
-        tunable_path,
-        {"C8": "0.4"},
-        "tunable_parameters_test_",
-    )
+from input.scripts.create_case_namelist import available_configs
+
+
+@pytest.mark.parametrize("config", available_configs())
+def test_all_configs_accept_common_tunable_parameter(config):
+    """Every selectable JSON config supports a typed parameter edit."""
+    import json
+    from input.scripts.parameters_json_to_namelist import parameter_settings
+    base = parameter_settings(config=config)
+    path = write_temp_settings(base, {"C8": "0.4"}, "clubb_params_test_")
     try:
-        values = {entry["name"]: entry["value"] for entry in read_namelist_entries(path)}
+        assert json.loads(Path(path).read_text())["model"]["C8"] == 0.4
     finally:
         Path(path).unlink(missing_ok=True)
-
-    assert values["C8"] == "0.4"
 
 
 def test_latest_progress_reads_only_the_last_iteration_in_a_log_tail(tmp_path):

@@ -1,6 +1,8 @@
 """Check the new-hybrid PDF driver port (new_hybrid_pdf_main.F90)
 against Fortran."""
 
+from input.scripts.create_case_namelist import create_case_namelist_file
+
 import os
 
 import numpy as np
@@ -33,7 +35,7 @@ def _inputs(rng):
 def _sclr(rng):
     return dict(sclrm=rng.uniform(0, 1, (NG, NZ, SD)), sclrp2=rng.uniform(1e-3, 1e-2, (NG, NZ, SD)),
                 wpsclrp=rng.uniform(-1e-2, 1e-2, (NG, NZ, SD)), Sksclr=rng.uniform(-3, 3, (NG, NZ, SD)))
-_TUNABLE_PARAMS = os.path.join(REPO_ROOT, "input", "parameter_and_flag_configs", "default", "tunable_parameters.in")
+_TUNABLE_PARAMS = str(create_case_namelist_file("bomex"))
 _ORDER = ['Skrt', 'Skthl', 'Sku', 'Skv', 'Sksclr', 'mu_w_1', 'mu_w_2', 'mu_rt_1', 'mu_rt_2',
           'mu_thl_1', 'mu_thl_2', 'mu_u_1', 'mu_u_2', 'mu_v_1', 'mu_v_2', 'sigma_w_1_sqd', 'sigma_w_2_sqd',
           'sigma_rt_1_sqd', 'sigma_rt_2_sqd', 'sigma_thl_1_sqd', 'sigma_thl_2_sqd', 'sigma_u_1_sqd',

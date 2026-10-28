@@ -475,51 +475,31 @@ In order to do this, when you re-compile, build with the '-fresh' flag.
    <CLUBB BASE DIRECTORY> refers to the directory where clubb is installed.
    <CASE NAME> refers to the cloud case, e.g. arm, atex, bomex, etc.
 
-1. cd <CLUBB BASE DIRECTORY>/input/case_setups
+1. From <CLUBB BASE DIRECTORY>, run a predefined case:
 
-2. Edit <CASE NAME>_model.in for each case you wish to run, or just leave 
-   them as is.  This file contains inputs such as model timestep, vertical
-   grid spacing, options for microphysics and radiation schemes, and so forth.  
-   See the KK_microphys code for a description of Khairoutdinov and Kogan
-   drizzle parameterization.
-   See BUGSrad description below for a description of the interactive
-   radiation scheme.
-   Enabling radiation or microphysics parameterizations may increase runtime 
-   considerably.
+   $ python3 run_scripts/run_scm.py bomex
 
-3. cd <CLUBB BASE DIRECTORY>/input/stats
-   Edit a stats file you would like to use, if you would like to output to
-   disk a variable that is not currently output.  A complete list of all 
-   computable statistics is found in all_stats.in.
+2. Select presets or custom JSON overrides for the four input sections:
 
-4. $ cd <CLUBB BASE DIRECTORY>/input/parameter_and_flag_configs/default
-   Edit tunable_parameters.in if you are an expert and wish to try to optimize 
-   the solution accuracy.  The file tunable_parameters.in contains values of the
-   physical parameters that are embedded in parameterized terms in CLUBB's
-   equation set.  They are neither constants of nature, nor are they configuration
-   specifications such as paths to input files.  They are specified constants
-   found in the model equation set (for example, C5, C8, etc.; see the CLUBB
-   model equation set in ./doc/CLUBBeqns.pdf for more detail).  The default
-   parameter values in tunable_parameters.in have been tested extensively and
-   will work with all the current cases.
+   $ python3 run_scripts/run_scm.py -cases arm -config e3sm -flags custom_flags.json
+   $ python3 run_scripts/run_scm.py bomex -params custom_parameters.json -stats custom_stats.json
 
-5. Within folder input/parameter_and_flag_configs/default, edit configurable_model_flags.in
-   if you are an expert and you want to try different options within CLUBB.
+   input/case_definitions.jsonc, input/clubb_params.jsonc, input/clubb_config_flags.jsonc and input/stats.jsonc
+   define the input selections. Cases, parameters and flags use defaults and
+   sparse presets; stats use categories and complete variable-name lists.
+   For cases, parameters and flags, apply defaults, matching -config settings,
+   explicit section selections and direct overrides in that order. Stats are
+   selected independently. See input/README.md for examples and details.
 
-6. $ cd <CLUBB BASE DIRECTORY>/run_scripts
-   $ ./run_scm.py <CASE NAME> 
+3. Use -output_dir to choose a result directory, -max_iters for a short run,
+   and -help for the full option list:
 
-            or
+   $ python3 run_scripts/run_scm.py bomex -max_iters 10 -output_dir bomex_short
+   $ python3 run_scripts/run_scm.py -help
 
-   $ ./run_scm.py <CASE NAME> -params <PARAMETER FILE> -stats <STATS FILE>
-
-   Where the parameter file and stats file are optional arguments. The default
-   is standard_stats.in and tunable_parameters.in.
-
-   For a complete list of options type:
-   $ ./run_scm.py --help
-
-   The resulting data will be written in the directory clubb/output.
+   The default output directory is clubb/output. Preparation tools keep settings
+   in JSON; input/scripts/create_case_namelist.py writes the final namelist
+   passed to the native, Python, JAX or loss entry point.
 
 -----------------------------------------------------------------------
 - (2.2) Explanation of CLUBB's output and input files
@@ -549,26 +529,22 @@ Timing output:
 Input:
 -----
 
-Input values of parameters and flags can be set in various namelists, described below.
-NOTE: DEFAULT VALUES OF PARAMETERS AND FLAGS SET IN SOURCE CODE MAY BE OVERWRITTEN
-BY NAMELIST VALUES!!!
+The authoritative input definitions are JSON catalogs in input/:
 
-Note that at the beginning of a run the run scripts combine all the namelist
-files into one file, named clubb.in, which is then fed into the CLUBB main code.
-  
-The namelist files:
+  input/case_definitions.jsonc               Case/model setup defaults and preset overrides
+  input/clubb_params.jsonc        Model and SILHS parameter defaults and overrides
+  input/clubb_config_flags.jsonc  Model and SILHS configurable flags and selectors
+  input/stats.jsonc               Stats metadata, the default selection and named lists
 
-  input/case_setups/<CASE NAME>_model.in
-  These files specify the standard CLUBB model parameters.  Usually these 
-  do not need to be modified unless a new case is being set up.
-
-  input/stats/all_stats.in, nobudgets_stats.in, etc.
-  These files specify statistics output for each simulation.  See
-  all_stats.in for a complete list of the all variables that can be output.
+Run scripts pass selections to input/scripts/create_case_namelist.py. It
+resolves all settings in JSON and creates one complete namelist for the model
+entry point.
+The detailed namelist-variable descriptions below describe that final interface;
+use input/README.md to edit/select the corresponding JSON definitions.
 
 The surface files:
 
-  input/case_setups/<CASE NAME>_sfc.in
+  input/case_data/<CASE NAME>_sfc.in
   These files contain the time-dependent surface fluxes and conditions for a case. 
   The variables that can be included here are Time[s], thlm[k], rt[kg/kg],
   latent_ht[W/m^2], sens_ht[W/m^2], CO2[umol/m^2/s], upwp_sfc[(m/s)^2],
@@ -583,7 +559,7 @@ The surface files:
 
 The forcings files:
 
-  input/case_setups/<CASE NAME>_forcings.in
+  input/case_data/<CASE NAME>_forcings.in
   These files contain the time-dependent forcing data for a case. 
 
   Not all cases have a _forcings.in file. Some case compute forcings
@@ -593,7 +569,7 @@ The forcings files:
 
 The sounding files:
 
-  input/case_setups/<CASE NAME>_sounding.in, <CASE NAME>_sclr_sounding.in,
+  input/case_data/<CASE NAME>_sounding.in, <CASE NAME>_sclr_sounding.in,
     <CASE NAME>_edsclr_sounding.in, <CASE NAME>_ozone_sounding.in
   These files contain the sounding data by level for a case.
 
@@ -688,7 +664,7 @@ number of columns to run with (`ngrdcol`).
 
 There is a tool in utilities used to generate a multiple column
 parameter set along with this extra namelist, here is an example use:
-`utilities/create_multi_col_params.py -n 32`
+`input/scripts/create_multi_col_params.py -multicol 32`
 - This will create a new param file with the default name "clubb_params_multi_col.in"
 - This file will contain 32 copies of the default parameter set
 - It will also contain the namelist setting `ngrdcol=32`
@@ -754,17 +730,15 @@ Currently, we have only tested the code with data from COAMPS and SAM-LES.  Data
 from CLUBB also works, but should result in similar results to not 
 using input_fields and so is less useful.
 
-The relevant namelist files are in the input/case_setups/<Model Case>_model.in files.
+Edit the case preset in input/case_definitions.jsonc, or supply a custom case JSON file.
 To execute an input fields run:
-1.  Set the variable 'l_input_fields' to .true.
-2.  Configure a separate namelist call '&setfields', which controls the data and variables
-    that are read in. 
-        a.  Set the 'datafile' variable in the '&setfields' namelist to the location of 
-            the data files
-        b.  Set 'input_type' to "clubb", "coamps_les", "sam", or "rams_les" depending on the 
-            type of data you want to read in. 
-        c.  Set 'l_input_<varname>' to .true. for those fields for which you want to use a 
-            fixed value from the LES dataset at the beginning of each timestep.  
+1.  Set model_setting.l_input_fields to true.
+2.  Configure the setfields object, which controls the data and variables read in.
+        a.  Set datafile to the location of the data files.
+        b.  Set input_type to "clubb", "coamps_les", "sam", or "rams_les" depending on
+            the type of data you want to read in.
+        c.  Set l_input_<varname> to true for fields whose values should come from
+            the LES dataset at the beginning of each timestep.
 3.  Change your directory to run_scripts and execute the run_scm.py as you would usually.
 
 Nota bene:  When 'l_input_fields = .true.', it is critical that stats_tout (statistics output 
@@ -806,9 +780,9 @@ In general, this change will likely not be bit-changing since it will only affec
 in extreme cases.
 Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
 
-4. Edit input_misc/tuner/error_<CASE NAME>.in or select an existing one. Note that
-   there are two tuning subroutines, specified by tune_type in the 
-   error_<CASE NAME>.in.
+4. Edit the legacy control file input_misc/tuner/error_CASE.in. The native
+   tuner retains namelist controls as an exception to the JSON model catalogs.
+   The tune_type value in &stats selects the optimization algorithm.
    If tune_type = 0, then the amoeba subroutine, which implements the downhill 
    simplex algorithm, will be used.  If tune_type is 1, then amebsa, 
    a variant of amoeba which uses simulated annealing instead, is used.  A complete 
@@ -817,28 +791,26 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
    The current default is tune_type = iesa = 2 and l_esa_siarry = .false.,
    which runs a variant of simulated annealing developed by Gunther Huebler.
    The parameters whose values are adjusted by the tuner 
-   are the non-zero entries in namelist initmax.
+   are selected by nonzero entries in initmax or init_minmax, depending on
+   the optimization algorithm.
    Sometimes the names of the optimized variable in the CLUBB and LES output
    will differ.  Note that when tuning against netCDF data, the file will
    need to have a .nc extension for the clubb_tuner to correctly identify
    the file as being in netCDF format.  
    For more information on the tuning parameters go to input_misc/tuner/README.
 
-5. You may also wish to set the debug_level to 0 in the file
-   input/case_setups/<CASE_NAME>_model.in to speed up tuning.
+5. You may also wish to set model_setting.debug_level to 0 in the case preset
+   in input/case_definitions.jsonc to speed up tuning.
    Doing this will also help make the output match the nightly tuning run. 
    You may need to set stats_tout to 60.0 in order to match the
    time interval of LES output data.  The tuner also supports 
    setting l_input_fields to .true. for the purposes of `fixing' 
    variables such as um or vm for the purposes of isolating model errors.
 
-6. Edit run_scripts/run_tuner.py to use your namelists.  Note that run_tuner.py uses
-   a customized stats file for tuning and a (possibly different) stats file 
-   to run CLUBB with the optimized parameters.  The stats file used while 
-   tuning is input/stats/all_tuning_stats.in and contains the CLUBB stats
-   variables that can be compared against normalized benchmark fields.
-   Therefore, if you add a new benchmark-converter field, you must also add a
-   matching CLUBB stats entry to all_tuning_stats.in.
+6. Select stats presets or custom JSON lists using -stats_tune and -stats_opt.
+   The defaults are tuning_stats for tuning and the standard category for optimized
+   standalone runs. Both selections live in input/stats.jsonc. Include the matching
+   CLUBB variable in the chosen stats list when adding a benchmark-converter field.
 
 7. Ensure that `input/les_and_clubb_benchmark_runs` points to the benchmark
    data directory. By default it is a symlink to
@@ -846,15 +818,19 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
    resolve it without extra setup. If the archive is mounted somewhere else,
    retarget `input/les_and_clubb_benchmark_runs` locally. This
    directory should contain the benchmark LES output that CLUBB is trying
-   to match. Using this output, along with setting debug_level to 0,
-   will produce identical output to the nightly tests tuning run.
+   to match.
 
-8. Go to the run_scripts directory and execute ./run_tuner.py 
-   (You may have to do 'python3 run_tuner.py' if not executable)
+8. From the repository root, run:
 
-NOTE: In previous versions the run_tuner.py script executed pre-tuning CLUBB standalone runs.
-Those runs are now by default disabled and can be re-enabled by adding the *-i/--initial-output* 
-option when executing run_script.py.  
+   $ python3 run_scripts/run_tuner.py -run_case fire
+   $ python3 run_scripts/run_tuner.py -run_case fire -initial_output -stats_opt core
+
+   Historical presets retain their original options, including obsolete ones;
+   see input/README.md for the JSON interface and this limitation.
+
+Pre-tuning standalone runs are disabled by default. Use -initial_output to save
+those outputs. The native tuner writes optimized parameters and flags as JSON,
+which can be passed directly to run_scm.py using -params or -flags.
 
 -----------------------------------------------------------------------
 - (3.3.1) Executing an ensemble tuning run:
@@ -957,8 +933,8 @@ The scalars in the code provide a generalized way of simulating a
 passive scalar in the atmosphere (e.g. carbon dioxide) 
 
 By default CLUBB is configured to run without any passive scalars.  To use 
-this option, you must modify the input/case_setups/<CASE NAME>_model.in
-so that sclr_dim is equal to the number of passive scalars.  You will also 
+this option, set model_setting.sclr_dim in the case preset in input/case_definitions.jsonc
+to the number of passive scalars.  You will also
 need to set variable ii<SCALAR NAME> to be the index of the array which 
 contains the passive scalar.  For example, iisclr_CO2 is setup in the COBRA
 case to be the index containing carbon dioxide.  New passive scalars with
@@ -967,8 +943,8 @@ The initial sounding can be done at run time in <CASE NAME>_sclr_sounding
 file, but large scale forcing and surface fluxes for these passive scalars 
 must be configured in the clubb_driver code and handled at compile time.
 To output the scalar fields from a CLUBB simulation, be sure to include 
-sclr1m, sclr1p2, etc. in your stats file. See input/stats/all_stats.in for a
-complete list (commented out by default).
+sclr1m, sclr1p2, etc. in your stats selection. See the all metadata tree in
+input/stats.jsonc for the available variables.
 
 Currently the code contains eddy-diffusivity scalar code (edsclr1m, edsclr2m)
 and the more sophisticated high-order scalars (sclr1m, sclr2m).  Both use two
@@ -984,12 +960,11 @@ added with a small number of modifications.
 The Namelists:
 
 Within the existing <CASE NAME>_sclr_sounding.in for each run, a sounding for 
-the scalar variable must be added.  See input/case_setups/cobra_sclr_sounding.in
+the scalar variable must be added.  See input/case_data/cobra_sclr_sounding.in
 for an example.
 
-Finally, if you wish to see the results of your calculations, you will need to
-append the names of variables to the vars_zt and var_zm portion of the 
-&stats namelist.  The file scalars_stats.in has this done already.
+Select -stats scalars to output scalar diagnostics, or -stats standard to
+include them alongside the other standard output categories.
 The variables follow the convention of having the index number appended after 
 the sclr portion of their name.  For example, the first scalar mean is 'sclr1m',
 and the second is 'sclr2m'.  These and their forcings are all that occurs in
@@ -1013,8 +988,8 @@ an example of how to do this.
   on 2004/07/10.
   When enabled, the radiation will be calculated using this interactive scheme rather
   than an analytic computation or prescribed radiation scheme (to prevent double counting).
-  BUGSrad is enabled in the input/case_setups/<CASE NAME>_model.in file by setting the
-  variable rad_scheme = "bugsrad" in namelist &radiation_setting.
+  Enable BUGSrad in the case preset in input/case_definitions.jsonc by setting
+  radiation_setting.rad_scheme to "bugsrad".
   
   Some important pre-processor directives for BUGSrad follow:
 
@@ -1148,7 +1123,7 @@ the Morrison microphysics are as follows:
 
   The Morrison and Khairoutdinov Kogan microphysics is also configured to allow
   for Subgrid Importance Latin Hypercube sampling.  See the file 
-  input/case_setups/README for more information on this.
+  input/case_data/ADDING_A_NEW_CASE for more information on this.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

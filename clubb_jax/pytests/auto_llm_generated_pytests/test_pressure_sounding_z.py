@@ -24,7 +24,7 @@ from clubb_jax.src.Input_fields.sounding import read_sounding, convert_pressure_
 from clubb_jax.src.Input_fields.hydrostatic_module import inverse_hydrostatic, calc_ref_z_linear_thvm
 from clubb_jax.src.CLUBB_core.constants_clubb import p0, kappa, ep2
 
-_CGILS = _ROOT + "/input/case_setups/cgils_s11_sounding.in"
+_CGILS = _ROOT + "/input/case_data/cgils_s11_sounding.in"
 _P_SFC, _ZM_INIT, _SAT = 1.02078e5, 0.0, 3   # cgils p_sfc≈sfc value; flatau saturation formula = 3
 
 

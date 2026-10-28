@@ -207,7 +207,7 @@ module microphys_init_cleanup
       l_write_to_file = .true. ! If true, will write case information to a file.
 
     character(len=*), parameter :: &
-      corr_input_path = "../input/case_setups/", & ! Path to correlation files
+      corr_input_path = "../input/case_data/", & ! Path to correlation files
       cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
       below_file_ext  = "_corr_array_below.in"
 

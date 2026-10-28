@@ -1,62 +1,67 @@
 """Category selections and portable stats lists shared by Dash and MCP."""
 
 import os
+import json
 import re
 from pathlib import Path
 
-from utilities.stats_json_to_namelist import DEFAULT_STATS_JSON, load_stats_categories, select_stats_entries, stats_json_to_namelist
+from input.scripts.stats_json_to_namelist import DEFAULT_STATS_JSON, load_stats_categories, select_stats_entries
+from input.scripts.namelist import load_json
 
 STATS_DIR = DEFAULT_STATS_JSON.parent
 
 
 def list_stats_files():
-    """Return legacy and saved namelists relative to input/stats."""
+    """Return named JSON presets and saved JSON snapshots relative to input."""
     root = Path(STATS_DIR).resolve()
-    return sorted(
-        path.relative_to(root).as_posix()
-        for path in root.rglob("*.in")
-        if path.is_file() and path.resolve().is_relative_to(root)
-    )
+    saved = sorted(path.relative_to(root).as_posix() for path in [*root.glob("*.stats.json"), *root.glob("*.stats.jsonc")]
+                   if path.is_file() and path.resolve().is_relative_to(root))
+    presets = load_json(DEFAULT_STATS_JSON).get("presets", {})
+    return [*presets, *saved]
 
 
 def load_stats_choices():
-    """Offer the three quick selections and reusable custom/legacy lists."""
+    """Offer quick category selections and reusable JSON presets/snapshots."""
     return ["all", "standard", "core", *list_stats_files()]
 
 
 def validate_stats_selection(value):
-    """Validate categories or a namelist contained in the local stats directory."""
+    """Validate categories, presets or a contained JSON snapshot."""
     value = str(value).strip()
-    if value.lower() == "none":
-        return "none"
     if value in list_stats_files():
+        select_stats_entries(str(Path(STATS_DIR) / value) if value.endswith((".json", ".jsonc")) else value)
         return value
+    if value.endswith((".in", ".json", ".jsonc")):
+        raise ValueError("Choose a saved JSON stats list inside input/")
     select_stats_entries(value)
     return value
 
 
 def stats_cli_argument(value, *, absolute=False):
-    """Keep category expressions intact; root local list names for the SCM CLI."""
+    """Keep named selections intact and resolve saved JSON snapshots for the CLI."""
     value = validate_stats_selection(value)
-    if value in list_stats_files():
-        root = STATS_DIR if absolute else os.path.join("input", "stats")
+    if value.endswith((".json", ".jsonc")):
+        root = STATS_DIR if absolute else "input"
         return os.path.join(root, value)
     return value
 
 
 def stats_input_path(value):
-    """Identify the actual registry/catalog for run provenance."""
+    """Identify the authoritative JSON definition for run provenance."""
     if str(value).lower() == "none":
         return None
-    return Path(STATS_DIR) / value if value in list_stats_files() else DEFAULT_STATS_JSON
+    return Path(STATS_DIR) / value if value.endswith((".json", ".jsonc")) else DEFAULT_STATS_JSON
 
 
 def stats_selection_names(value):
-    """Read names for a category selection or a saved/legacy registry preview."""
-    if value in list_stats_files():
-        text = (Path(STATS_DIR) / value).read_text(encoding="utf-8")
-        return set(re.findall(r'entry\s*\(\s*\d+\s*\)\s*=\s*[\"\']\s*([^|\"\']+?)\s*\|', text, re.I))
-    return {entry["name"] for entry in select_stats_entries(value)}
+    """Return variable names from a category, preset or saved JSON snapshot."""
+    if value in list_stats_files() and value.endswith((".json", ".jsonc")):
+        names = load_json(Path(STATS_DIR) / value)
+        if not isinstance(names, list) or any(not isinstance(name, str) for name in names):
+            raise ValueError("Stats overrides must be a list of variable names")
+        return set(names)
+    source = value
+    return {entry["name"] for entry in select_stats_entries(source)}
 
 
 def stats_selection_expression(names, categories=None):
@@ -84,20 +89,20 @@ def stats_selection_expression(names, categories=None):
 def stats_list_options():
     """Label stored custom lists separately from the old registries."""
     return [
-        {"label": f"{'Saved' if name.startswith('custom/') else 'Legacy'} · {Path(name).stem}", "value": name}
+        {"label": f"{'Saved' if name.endswith(('.stats.json', '.stats.jsonc')) else 'Preset'} · {Path(name).stem}", "value": name}
         for name in list_stats_files()
     ]
 
 
 def save_stats_config(name, selection):
-    """Save a new portable namelist; never overwrite an existing list."""
+    """Save a new portable JSON snapshot; never overwrite an existing list."""
     name = str(name or "").strip()
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", name):
         raise ValueError("Use a name with letters, numbers, underscores or hyphens.")
-    content = stats_json_to_namelist(selection)
-    if not content:
+    content = json.dumps([entry["name"] for entry in select_stats_entries(selection)], indent=2, allow_nan=False) + "\n"
+    if not select_stats_entries(selection):
         raise ValueError("Choose at least one variable before saving.")
-    path = Path(STATS_DIR) / "custom" / f"{name}.in"
+    path = Path(STATS_DIR) / f"{name}.stats.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with path.open("x", encoding="utf-8") as output:

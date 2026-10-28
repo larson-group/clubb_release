@@ -11,13 +11,13 @@ from tests.pytests.jax_comparison_inputs import run_comparison
 def test_single_dash_options_forward_without_a_separator(monkeypatch):
     monkeypatch.setattr(sys, "argv", [
         "run_jax_vs_fortran_cases.py", "-cases", "rico", "-workers", "2",
-        "-max_iters", "3", "-dt_main", "60", "-stats", "input/stats/standard_stats.in",
+        "-max_iters", "3", "-dt_main", "60", "-stats", "standard",
     ])
     args = harness.parse_args()
     assert args.cases == ["rico"]
     assert args.jobs == 2
     assert args.run_scm_args == [
-        "-max_iters", "3", "-dt_main", "60", "-stats", "input/stats/standard_stats.in"
+        "-max_iters", "3", "-dt_main", "60", "-stats", "standard"
     ]
 
 

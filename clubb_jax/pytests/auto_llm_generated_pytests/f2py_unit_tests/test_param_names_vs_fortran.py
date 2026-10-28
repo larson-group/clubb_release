@@ -1,5 +1,7 @@
 """Check JAX tunable-parameter names, bounds, defaults and derived parameters against Fortran."""
 
+from input.scripts.create_case_namelist import create_case_namelist_file
+
 import os
 
 import numpy as np
@@ -45,7 +47,7 @@ def test_param_values_match_fortran():
     char-arg). ngrdcol=1 to avoid the binding's col>0 broadcast quirk (it doesn't replicate every param across columns;
     the JAX correctly does — col0 matches exactly either way)."""
     from clubb_python import clubb_api
-    fn = os.path.join(_ROOT, "input", "parameter_and_flag_configs", "default", "tunable_parameters.in")
+    fn = str(create_case_namelist_file("bomex"))
     if not os.path.exists(fn):
         raise AssertionError("  param-values vs Fortran: required input missing (tunable_parameters.in absent)")
     from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
@@ -63,7 +65,7 @@ def test_calc_derived_params_f2py():
     `f2py_calc_derived_params`."""
     from clubb_python.CLUBB_core.parameters_tunable import calc_derived_params as fortran_calc_derived_params
     from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
-    fn = os.path.join(_ROOT, "input", "parameter_and_flag_configs", "default", "tunable_parameters.in")
+    fn = str(create_case_namelist_file("bomex"))
     if not os.path.exists(fn):
         raise AssertionError("  f2py calc_derived_params: required input missing (tunable_parameters.in absent)")
     from clubb_jax.src.CLUBB_core.grid_class import setup_grid

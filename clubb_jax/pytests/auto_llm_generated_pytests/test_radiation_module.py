@@ -34,9 +34,9 @@ def radiation_state(request):
                 microphys_scheme="none", lh_microphys_type="disabled",
             ),
         )
-        state = clubb_case_initalization.init_clubb_case(
-            f"input/case_setups/{request.param}_model.in"
-        )
+        from input.scripts.create_case_namelist import create_case_namelist_file
+        model_path = create_case_namelist_file(request.param, "output/radiation_pytests")
+        state = clubb_case_initalization.init_clubb_case(str(model_path))
     state["_jax_stats"] = JaxStats.empty(
         l_sample=True,
         names=("radht", "Frad"),

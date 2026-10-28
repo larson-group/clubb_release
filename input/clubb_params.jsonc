@@ -1,0 +1,445 @@
+{
+  // Tunable parameters for CLUBB and SILHS.
+  //
+  // "defaults" holds the shared starting values. "model" contains CLUBB's
+  // closure parameters; "silhs" contains parameters for its subcolumn sampling.
+  // Each entry under "presets" supplies an alternative set of parameter choices
+  // by listing only its differences from the defaults.
+  //
+  // Select a parameter preset independently of the simulation case, for example:
+  //   python3 run_scripts/run_scm.py -cases atex_long -params atex_long
+  // Use -config NAME to select matching presets across the input catalogs.
+  // Parameters resolve in order: defaults, a matching -config preset, then the
+  // explicit -params preset or override file. Direct run overrides apply last.
+  //
+  // To add a tuning, copy a similar preset and keep only the values it changes.
+  // Explain shared parameters beside their defaults, including units; [-] means
+  // dimensionless. Keep notes about a particular tuning with that preset.
+  // Changing a default affects every preset that inherits it, so check those
+  // configurations before changing shared values.
+  //
+  // Nested groups combine and lists replace the whole inherited list. Keep
+  // parameter resets explicit in presets. Omitted parameters inherit; null
+  // values are rejected, including in custom overrides.
+  // Multicolumn values use lists with matching "multicol" dimensions. See
+  // input/README.md for input formats and examples.
+
+  //================================= DEFAULTS =================================
+  "defaults": {
+    "model": {
+      "C1":      1.0,                           // Low Skewness in C1 Skewness Function. Units [-]
+      "C1b":     1.0,                           // High Skewness in C1 Skewness Function. Units [-]
+      "C1c":     1.0,                           // Degree of Slope of C1 Skewness Function. Units [-]
+      "C2rt":    2.0,                           // C2 constant associated with rtp2 dissipation term. Units [-]
+      "C2thl":   2.0,                           // C2 constant associated with thlp2 dissipation term. Units [-]
+      "C2rtthl": 2.0,                           // C2 constant associated with rtpthlp dissipation term. Units [-]
+      "C4":      2.0,                           // Return to isotropy term in wp2/up2/vp2. Units [-]
+      "C_uu_shr":  0.4,                         // Constant for shear terms in wp2 pressure term 2. Units [-]
+      "C_uu_buoy": 0.3,                         // Constant for buoyancy terms in wp2 pressure term 2. Units [-]
+      "C6rt":    2.0,                           // Low Skewness in C6rt Skewness Function. Units [-]
+      "C6rtb":   2.0,                           // High Skewness in C6rt Skewness Function. Units [-]
+      "C6rtc":   1.0,                           // Degree of Slope of C6rt Skewness Function. Units [-]
+      "C6thl":   2.0,                           // Low Skewness in C6thl Skewness Function. Units [-]
+      "C6thlb":  2.0,                           // High Skewness in C6thl Skewness Function. Units [-]
+      "C6thlc":  1.0,                           // Degree of Slope of C6thl Skewness Function. Units [-]
+      "C7":      0.5,                           // Low Skewness in C7 Skewness Function. Units [-]
+      "C7b":     0.5,                           // High Skewness in C7 Skewness Function. Units [-]
+      "C7c":     0.5,                           // Degree of Slope of C7 Skewness Function. Units [-]
+      "C8":      0.5,                           // Coefficient #1 in C8 Skewness Equation. Units [-]
+      "C8b":     0.02,                          // Coefficient #2 in C8 Skewness Equation. Units [-]
+      // C10         = 3.300000 ! Currently Not Used in the Model. Units [-]
+      "C11":     0.4,                           // Low Skewness in C11 Skewness Function. Units [-]
+      "C11b":    0.4,                           // High Skewness in C11 Skewness Function. Units [-]
+      "C11c":    0.5,                           // Degree of Slope of C11 Skewness Function. Units [-]
+      "C12":     1.0,                           // Constant applied to vertical velocity diffusion. Units [-]
+      // C13         = 0.100000 ! Not currently used in model. Units [-]
+      "C14":     1.0,                           // Constant applied to up2 and vp2. Units [-]
+      "C_wp2_pr_dfsn": 0.0,                     // Constant applied to wp2_pr_dfsn. Units [-]
+      "C_wp3_pr_tp":   0.0,                     // Constant applied to wp3_pr_tp. Units [-]
+      "C_wp3_pr_turb": 1.0,                     // Constant applied to wp3_pr_turb. Units [-]
+      "C_wp3_pr_dfsn": 0.0,                     // Constant applied to wp3_pr_dfsn. Units [-]
+      "C_wp2_splat":   0.0,                     // Pre-factor for vertical compression of eddies [-]
+      "C6rt_Lscale0":  14.0,                    // Used to damp C6rt as a function of Lscale Units [-]
+      "C6thl_Lscale0": 14.0,                    // Used to damp C6thl as a function of Lscale Units [-]
+      "C7_Lscale0":    0.85,                    // Used to damp C7 as a function of Lscale Units [-]
+      "wpxp_L_thresh": 60.0,                    // Lscale threshold for damping C6 and C7 coefficients Units [m]
+      // c_K         = 0.548000 ! From Duynkerke and Driedonks (1987). Units [-]
+      "c_K":    0.2,                            // Tuned by Michael Falk for new wp2 formulation. Units [-]
+      "c_K1":   0.2,                            // Coefficient of Eddy Diffusion for wp2. Units [-]
+      "nu1":    20.0,                           // Background Coefficient of Eddy Diffusion for wp2. Units [m^2/s]
+      "c_K2":   0.025,                          // Coefficient of Eddy Diffusion for xp2. Units [-]
+      "nu2":    1.0,                            // Background Coefficient of Eddy Diffusion for xp2. Units [m^2/s]
+      "c_K6":   0.375,                          // Coefficient of Eddy Diffusion for wpthlp and wprtp. Units [-]
+      "nu6":    5.0,                            // Background Coefficient of Eddy Diffusion for wpxp. Units [m^2/s]
+      "c_K8":   5.0,                            // Coefficient of Eddy Diffusion for wp3. Units [-]
+      "nu8":    20.0,                           // Background Coefficient of Eddy Diffusion for wp3. Units [m^2/s]
+      "c_K9":   0.1,                            // Coefficient of Eddy Diffusion for up2 and vp2. Units [-]
+      "nu9":    10.0,                           // Background Coef. of Eddy Diffusion for up2 and vp2. Units [m^2/s]
+      "nu10":   0.0,                            // Background Coef. of Eddy Dfsn for edsclrm, um, vm, upwp, vpwp
+                                                // (disabled) Units [m^2/s]
+      "c_K_hm":  0.75,                          // Coefficient of Eddy Diffusion for hydrometeors. Units [-]
+      "c_K_hmb": 0.75,                          // Coefficient of Eddy Diffusion for hydrometeors. Units [-]
+      "K_hm_min_coef":    0.1,                  // Min. Non-Local Factor of Eddy Diffusion for hydrometeors. Units [-]
+      "nu_hm":   1.5,                           // Background Coefficient of Eddy Diffusion for hydrometeors. Units
+                                                // [m^2/s]
+      "slope_coef_spread_DG_means_w": 21.0,     // Slope coef.: spread btwn. PDF comp. means; w. Units [-]
+      "pdf_component_stdev_factor_w": 1.0,      // Param.: adjust PDF comp. standard devs.; w. Units [-]
+      "coef_spread_DG_means_rt":  0.8,          // Coef.: spread btwn. PDF comp. means; rt. Units [-]
+      "coef_spread_DG_means_thl": 0.8,          // Coef.: spread btwn. PDF comp. means; thl. Units [-]
+      "beta": 1.0,                              // Constant related to "plume" variance of thlp2 and rtp2. Units [-]
+      "gamma_coef":  0.25,                      // Low Skewness in gamma coefficient Skewness Function. Units [-]
+      "gamma_coefb": 0.25,                      // High Skewness in gamma coefficient Skewness Function. Units [-]
+      "gamma_coefc": 5.0,                       // Degree of Slope of gamma coefficient Skewness Function. Units [-]
+      // taumin      = 90.00000 ! Not currently used in model. Minimum allowable value of time-scale tau. Units [s]
+      "taumax":   3600.0,                       // Maximum allowable value of time-scale tau. Units [s]
+      "lmin_coef":    0.5,                      // Coefficient used for the minimum allowable Lscale. Units [-]
+      "omicron":  0.5,                          // Hydromet comp. width vs. spread-of-means param. Units [-]
+      "zeta_vrnce_rat":   0.0,                  // Param. for sigma_hm_1^2/mu_hm_1^2 / sigma_hm_2^2/mu_hm_2^2. Units [-]
+      "upsilon_precip_frac_rat":  0.55,         // Ratio mixt_frac*precip_frac_1/precip_frac  [-]
+      "lambda0_stability_coef":   0.03,         // Intensity of stability correction applied to C1 and C6 [-]
+      "mult_coef":    0.5,                      // Coefficient applied to log( avg dz / threshold ) Units [-]
+      "Lscale_mu_entrain":    0.001,            // Positive fractional parcel entrainment rate [1/m]
+      "Lscale_mu_coef":   2.0,                  // Entrainment perturbation factor for averaged method 1 [-]
+      "Lscale_pert_coef": 0.1,                  // Coefficient to perturb thlm and rtm for an average calculation of
+                                                // Lscale. Units [-]
+      "Lscale_tke_multiplier":  1.0,            // Mean launch energy/TKE in coherent method 3 [-]
+      "Lscale_pdf_launch_frac": 0.0,            // Fraction toward directional PDF-component means [0,1]
+      "Lscale_up_weight":       0.5,            // Upward exponent in method-3 geometric mixing [0,1]
+      "alpha_corr":   0.15,                     // Coefficient for the correlation diagnosis algorithm. Units [-]
+      "Skw_denom_coef":   4.0,                  // Factor to decrease sensitivity in the denominator of Skw calculation.
+                                                // Units [-]
+      "c_K10":  1.0,                            // Coefficient of momentum diffusivity, Km_zm. Units [-]
+      "c_K10h": 1.0,                            // Coefficient of thermo   diffusivity, Kmh_zm. Units [-]
+      "thlp2_rad_coef":   1.0,                  // Coefficient of thlp2_rad. Units [-]
+      "thlp2_rad_cloud_frac_thresh":  0.1,      // Minimum cloud fraction for computation of thlp2_rad. Units [-]
+      "up2_sfc_coef": 4.0,                      // Coefficient of up2_sfc and vp2_sfc    [-]
+      "Skw_max_mag":  10.0,                     // Max magnitude of skewness     [-]
+      "C_invrs_tau_bkgnd": 1.1,                 // Coefficient of inverse tau term contributed by background constant
+                                                // value [-]
+      "C_invrs_tau_sfc":   0.1,                 // Coefficient of inverse tau term contributed by surface log law [-]
+      "C_invrs_tau_shear": 0.15,                // Coefficient of inverse tau term contributed by vertical wind shear
+                                                // [-]
+      "C_invrs_tau_N2":    0.4,                 // Coefficient of inverse tau term contributed by Brunt Vaisala
+                                                // frequency [-]
+      "C_invrs_tau_N2_wp2":  0.2,               // Coefficient of inverse tau term contributed by Brunt Vaisala
+                                                // frequency but for wp3_wp2 [-]
+      "C_invrs_tau_N2_xp2":  0.05,              // Coefficient of inverse tau term contributed by Brunt Vaisala
+                                                // frequency but for xp2_wpxp [-]
+      "C_invrs_tau_N2_wpxp": 0.0,               // Coefficient of inverse tau term contributed by Brunt Vaisala
+                                                // frequency but for xm_wpxp [-]
+      "C_invrs_tau_N2_clear_wp3":   1.0,        // Coefficient of inverse tau term contributed by Brunt Vaisala
+                                                // frequency but for wp3 [-]
+      "C_invrs_tau_wpxp_Ri": 0.35,              // Coefficient of the "Ri_zm term" for invrs_tau_wpxp
+      "C_invrs_tau_wpxp_N2_thresh": 0.00033,    // Brunt-Vaisala freq. threshold value for invrs_tau_wpxp "Ri_zm term"
+      "xp3_coef_base":    0.25,                 // "Base" value of xp3_coef in simple eqn  [-]
+      "xp3_coef_slope":   0.01,                 // Slope in regards to Brunt-Vaisla freq.  [-]
+      "altitude_threshold":   100.0,            // Altitude above which damping should occur for wpxp [m]
+      "rtp2_clip_coef":   0.5,                  // Coef applied to the clipping thresh on rtp2 [-]
+      "Richardson_num_min":   0.25,             // Threshold on Richardson number
+      "Richardson_num_max":   400.0,            // Threshold on Richardson number
+      "Cx_min":   0.33,                         // Threshold on Cx_fnc_Richardson
+      "Cx_max":   0.95,                         // Threshold on Cx_fnc_Richardson
+      "a3_coef_min":  1.0,                      // Minimum threshold on the a3 coefficient  [-]
+      "a_const":  1.8,                          // Used for sfc values in sfc_varnce_module, usually =1.8 if
+                                                // l_vary_convect_depth=F, =0.6 if T
+      "bv_efold": 5.0,                          // Control parameter for inverse e-folding of cloud fraction in the
+                                                // mixed Brunt Vaisala frequency  [-]
+      "wpxp_Ri_exp":  0.5,                      // Exponent determining the influence of the Richardson number on
+                                                // invrs_tau_wpxp  [-]
+      "z_displace":   25.0                      // displacement of log law profile above ground  [m]
+    },
+    "silhs": {
+      "importance_prob_thresh":   1e-08,        // Minimum category probability for importance sampling [-]
+      "vert_decorr_coef": 0.03                  // Vertical decorrelation coefficient [-]
+    }
+  },
+
+  //================================= PRESETS =================================
+  "presets": {
+
+    //================================= Lscale =================================
+    "Lscale": {
+      "model": {
+        "C2rt":    1.0,
+        "C2thl":   1.0,
+        "C4":      1.0,
+        "C_uu_shr":  0.3,
+        "C6rt":    4.0,
+        "C6rtb":   6.0,
+        "C6thl":   4.0,
+        "C6thlb":  6.0,
+        "C7b":     0.8,
+        "C8":      3.0,
+        "C_wp3_pr_turb": 0.4,
+        "C_wp2_splat":   3.0,
+        "c_K1":   0.75,
+        "c_K2":   0.125,
+        "nu2":    5.0,
+        "c_K8":   1.25,
+        "beta": 2.4,
+        "gamma_coef":  0.32,
+        "gamma_coefb": 0.32,
+        "C_invrs_tau_shear": 0.02,
+        "C_invrs_tau_N2_wp2":  0.1,
+        "C_invrs_tau_wpxp_Ri": 0.35,
+        "C_invrs_tau_wpxp_N2_thresh": 0.00033,
+
+        "Lscale_pdf_launch_frac": 1.0
+      }
+    },
+
+    //================================= atex_long =================================
+    "atex_long": {
+      "model": {
+        "C1":      0.67,
+        "C1b":     0.67,
+        "C4":      0.67,
+        "C14":     0.67,
+        "gamma_coef":  0.36,
+        "gamma_coefb": 0.36,
+        "up2_sfc_coef": 24.0,
+        "C_invrs_tau_sfc":   0.3,
+        "C_invrs_tau_N2":    0.24,
+        "C_invrs_tau_N2_wp2":  0.12,
+        "C_invrs_tau_N2_xp2":  0.03,
+        "C_invrs_tau_N2_clear_wp3":   0.6,
+        "C_invrs_tau_wpxp_Ri": 0.21,
+        "a_const":  0.3,
+        "z_displace":   5.0
+      }
+    },
+
+    //================================= compatible_r8029 =================================
+    // Update this preset whenever a tunable variable is added. Set the value
+    // needed to maintain r8029 compatibility so a new shared default cannot
+    // silently change this configuration.
+    "compatible_r8029": {
+      "model": {
+        "C2rt":    1.0,
+        "C2thl":   1.0,
+        "C4":      5.2,
+        "C_uu_shr":  0.3,
+        "C6rt":    4.0,
+        "C6rtb":   6.0,
+        "C6thl":   4.0,
+        "C6thlb":  6.0,
+        "C7b":     0.8,
+        "C8":      3.0,
+        "C8b":     0.0,
+        "C11":     0.8,
+        "C11b":    0.35,
+        "C_wp3_pr_turb": 0.4,
+        "c_K1":   0.75,
+        "c_K2":   0.125,
+        "nu2":    5.0,
+        "c_K8":   1.25,
+        "c_K9":   0.25,
+        "nu9":    20.0,
+        "beta": 2.4,
+        "gamma_coef":  0.32,
+        "gamma_coefb": 0.32,
+        "up2_sfc_coef": 2.0,
+        "Skw_max_mag":  4.5,
+        "C_invrs_tau_shear": 0.02,
+        "C_invrs_tau_N2_wp2":  0.1,
+        "a3_coef_min":  1.6,
+        "bv_efold": 5.0,
+        "wpxp_Ri_exp":  0.5,
+        "z_displace":   25.0,
+
+        "Lscale_pdf_launch_frac": 1.0,
+        "Lscale_tke_multiplier":  1.0,
+        "Lscale_up_weight":       0.5
+      }
+    },
+
+    //================================= coriolis_test =================================
+    "coriolis_test": {
+      "model": {
+        "C1":      0.0,
+        "C1b":     0.0,
+        "C1c":     0.0,
+        "C4":      0.0,
+        "C6rt":    2e-06,
+        "C6rtb":   2e-06,
+        "C6rtc":   1e-06,
+        "C6thl":   2e-06,
+        "C6thlb":  2e-06,
+        "C6thlc":  1e-06,
+        "C7":      0.0,
+        "C7b":     0.0,
+        "C7c":     0.0,
+        "C8":      5.0,
+        "C8b":     0.2,
+        "C14":     0.0,
+        "c_K":    0.0,
+        "c_K1":   0.0,
+        "nu1":    0.0,
+        "c_K6":   0.0,
+        "nu6":    0.0,
+        "c_K9":   0.0,
+        "nu9":    0.0,
+        "C_invrs_tau_sfc":   0.0
+      }
+    },
+
+    //================================= e3sm =================================
+    "e3sm": {
+      "model": {
+        "C2rt":    1.0,
+        "C2thl":   1.0,
+        "C2rtthl": 1.0,
+        "C_uu_shr":  0.3,
+        "C7":      0.7,
+        "C7b":     0.7,
+        "C11":     0.5,
+        "C11b":    0.5,
+        "C_wp3_pr_turb": 0.0,
+        "C_wp2_splat":   2.0,
+        "beta": 2.0,
+        "gamma_coef":  0.3,
+        "gamma_coefb": 0.3,
+        "c_K10":  0.5,
+        "c_K10h": 0.35,
+        "C_invrs_tau_shear": 0.02,
+        "C_invrs_tau_N2_wp2":  0.1,
+        "C_invrs_tau_wpxp_Ri": 3.0,
+        "Richardson_num_min":   100.0,
+        "Cx_min":   0.95,
+        "Cx_max":   0.6,
+        "a3_coef_min":  1.0,
+        "bv_efold": 5.0,
+        "wpxp_Ri_exp":  0.5,
+        "z_displace":   25.0,
+
+        "Lscale_pdf_launch_frac": 1.0
+      }
+    },
+
+    //================================= e3sm_maint32 =================================
+    "e3sm_maint32": {
+      "model": {
+        "C1":      2.4,
+        "C1b":     2.8,
+        "C1c":     0.75,
+        "C2rt":    1.75,
+        "C2thl":   1.75,
+        "C2rtthl": 2.275,
+        "C4":      5.2,
+        "C_uu_shr":  0.3,
+        "C6rt":    4.0,
+        "C6rtb":   7.5,
+        "C6rtc":   0.5,
+        "C6thl":   4.0,
+        "C6thlb":  7.5,
+        "C6thlc":  0.5,
+        "C8":      5.2,
+        "C8b":     0.0,
+        "C11":     0.7,
+        "C11b":    0.2,
+        "C11c":    0.85,
+        "C14":     2.5,
+        "C_wp3_pr_turb": 0.0,
+        "wpxp_L_thresh": 100.0,
+        "c_K1":   0.75,
+        "c_K2":   0.125,
+        "nu2":    5.0,
+        "c_K8":   1.25,
+        "c_K9":   0.25,
+        "nu9":    20.0,
+        "c_K_hmb": 0.1,
+        "pdf_component_stdev_factor_w": 6.5,
+        "beta": 2.4,
+        "gamma_coef":  0.12,
+        "gamma_coefb": 0.28,
+        "gamma_coefc": 1.2,
+        "lmin_coef":    0.1,
+        "omicron":  0.8,
+        "upsilon_precip_frac_rat":  0.9,
+        "mult_coef":    1.0,
+        "Lscale_mu_entrain":    0.0005,
+        "Skw_denom_coef":   0.0,
+        "c_K10":  0.35,
+        "c_K10h": 0.35,
+        "up2_sfc_coef": 2.0,
+        "Skw_max_mag":  4.5,
+        "C_invrs_tau_bkgnd": 1.0,
+        "C_invrs_tau_shear": 0.02,
+        "C_invrs_tau_N2":    0.1,
+        "C_invrs_tau_N2_wp2":  0.1,
+        "C_invrs_tau_N2_xp2":  0.1,
+        "C_invrs_tau_N2_wpxp": 0.1,
+        "C_invrs_tau_N2_clear_wp3":   0.1,
+        "C_invrs_tau_wpxp_Ri": 0.0,
+        "Cx_min":   0.333333,
+        "z_displace":   20.0,
+
+        "Lscale_pdf_launch_frac": 1.0
+      }
+    },
+
+    //================================= ekman =================================
+    "ekman": {
+      "model": {
+        "C1":      0.5,
+        "C1b":     0.5,
+        "C1c":     0.5,
+        "C4":      1.0,
+        "C_uu_shr":  0.2,
+        "C14":     0.5,
+        "C_wp3_pr_turb": 0.125,
+        "nu8":    2.5,
+        "up2_sfc_coef": 5.8,
+        "C_invrs_tau_bkgnd": 0.44,
+        "C_invrs_tau_sfc":   0.04,
+        "C_invrs_tau_shear": 0.06,
+        "a_const":  0.6,
+        "z_displace":   50.0
+      }
+    },
+
+    //================================= tauMatchLscale =================================
+    // Tuned values originally saved as tunable_parameters_20231025_1748.in.
+    "tauMatchLscale": {
+      "model": {
+        "C2rt":    1.0,
+        "C2thl":   1.0,
+        "C4":      1.0,
+        "C_uu_shr":  0.3,
+        "C6rt":    4.0,
+        "C6rtb":   6.0,
+        "C6thl":   4.0,
+        "C6thlb":  6.0,
+        "C7b":     0.8,
+        "C8":      1.0,
+        "c10":     3.3,
+        "c13":     0.1,
+        "C_wp3_pr_turb": 0.4,
+        "C_wp2_splat":   0.25,
+        "c_K1":   0.75,
+        "c_K2":   0.125,
+        "nu2":    5.0,
+        "c_K8":   1.25,
+        "gamma_coef":  0.32,
+        "gamma_coefb": 0.32,
+        "beta": 2.4,
+        "taumin":   90.0,
+        "C_invrs_tau_bkgnd": 1.5,
+        "C_invrs_tau_sfc":   0.2,
+        "C_invrs_tau_shear": 0.05,
+        "C_invrs_tau_N2":    0.20179820007382718,
+        "C_invrs_tau_N2_wp2":  0.34180814333605064,
+        "C_invrs_tau_N2_xp2":  0.3354719640447406,
+        "C_invrs_tau_N2_wpxp": 0.4269719050276348,
+        "C_invrs_tau_N2_clear_wp3":   0.0,
+        "C_invrs_tau_wpxp_Ri": 0.2534671940914832,
+        "C_invrs_tau_wpxp_N2_thresh": 0.0,
+        "altitude_threshold":   3.564069181662966,
+        "bv_efold": 2.930533862941762,
+        "wpxp_Ri_exp":  0.2771838385437253,
+
+        "Lscale_pdf_launch_frac": 1.0
+      }
+    }
+  }
+}

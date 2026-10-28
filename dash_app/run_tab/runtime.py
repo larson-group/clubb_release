@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from .namelist import write_temp_namelist
+from .settings import write_temp_settings
 from dash_app.shared.stats import stats_cli_argument
 from .state import (
     CUDA_MPS_LOG_DIR,
@@ -25,7 +25,7 @@ from .state import (
     RUN_PROCS,
     set_child_stack_limit,
 )
-from dash_app.shared.tunable_configs import tunable_config_file
+from dash_app.shared.tunable_configs import config_settings
 from clubb_jax.run_jax import runtime_arguments
 from utilities.output_paths import resolve_output_dir
 
@@ -231,18 +231,18 @@ def start_case_process(case_name, stats_name, overrides, cli_options=None, confi
     stats_arg = stats_cli_argument(stats_value, absolute=True)
 
     config_value = clean_cli_option(config_name) or "default"
-    params_path = write_temp_namelist(
-        tunable_config_file(config_value, "tunable_parameters.in"),
+    params_path = write_temp_settings(
+        config_settings(config_value, "parameters"),
         overrides.get("tunable"),
         "clubb_params_",
     )
-    flags_path = write_temp_namelist(
-        tunable_config_file(config_value, "configurable_model_flags.in"),
+    flags_path = write_temp_settings(
+        config_settings(config_value, "flags"),
         overrides.get("flags"),
         "clubb_flags_",
     )
-    silhs_path = write_temp_namelist(
-        tunable_config_file(config_value, "silhs_parameters.in"),
+    silhs_path = write_temp_settings(
+        config_settings(config_value, "parameters"),
         overrides.get("silhs"),
         "clubb_silhs_",
     )

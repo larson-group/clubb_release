@@ -17,7 +17,7 @@ from tuner.loss_backend import load_loss_backend, parameter_metadata
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from utilities.create_case_namelist import create_loss_case_namelist  # noqa: E402
+from input.scripts.create_case_namelist import create_loss_case_namelist  # noqa: E402
 
 
 def _actionable_error_message(exc: BaseException) -> str:

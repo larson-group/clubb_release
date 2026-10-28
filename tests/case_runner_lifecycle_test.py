@@ -50,7 +50,7 @@ from utilities.clubb_case_runner import (
     parse_case_arguments,
     validate_runtime_options,
 )
-from utilities.create_case_namelist import create_case_namelist_from_args
+from input.scripts.create_case_namelist import create_case_namelist_from_args
 
 
 def compare_stats(actual_path, expected_path):

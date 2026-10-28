@@ -5,9 +5,9 @@ import resource
 import threading
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-CASE_DIR = os.path.join(REPO_ROOT, "input", "case_setups")
-STATS_DIR = os.path.join(REPO_ROOT, "input", "stats")
-DEFAULT_STATS_NAME = "standard_stats.in"
+CASE_DIR = os.path.join(REPO_ROOT, "input", "case_data")
+STATS_DIR = os.path.join(REPO_ROOT, "input")
+DEFAULT_STATS_NAME = "standard"
 NO_STATS_NAME = "none"
 RUN_SCM_ALL = os.path.join(REPO_ROOT, "run_scripts", "run_scm_all.py")
 RUN_PROCS = {}

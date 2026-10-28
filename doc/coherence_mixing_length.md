@@ -951,7 +951,7 @@ The runtime flag [`Lscale_method`](../src/CLUBB_core/model_flags.F90) selects 1 
 separate [time-scale-based method of Guo et al. (2021)](https://doi.org/10.1029/2020MS002278),
 or 3 for the coherent method. The shipped default selects
 method 1. The following defaults come from the
-[`default` parameter file](../input/parameter_and_flag_configs/default/tunable_parameters.in)
+[`default` parameter file](../input/clubb_params.jsonc)
 and [`parameters_tunable.F90`](../src/CLUBB_core/parameters_tunable.F90);
 other configurations can choose different values. `Lscale_mu_entrain` is shared with
 method 1; the other three parameters affect method 3.

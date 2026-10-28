@@ -208,7 +208,6 @@ def _resolve_stats_registry_path(namelist_path: str, cfg: dict) -> Path:
     Priority:
       1) explicit namelist key `stats_registry`
       2) the runfile itself, if it contains `&clubb_stats_nl`
-      3) repository default `input/stats/standard_stats.in`
     """
     configured = str(cfg.get('stats_registry', '')).strip()
     if configured:
@@ -217,11 +216,7 @@ def _resolve_stats_registry_path(namelist_path: str, cfg: dict) -> Path:
             p = Path(namelist_path).resolve().parent / p
         return p.resolve()
 
-    runfile = Path(namelist_path).resolve()
-    if '&clubb_stats_nl' in runfile.read_text().lower():
-        return runfile
-
-    return _repo_root() / "input" / "stats" / "standard_stats.in"
+    return Path(namelist_path).resolve()
 
 
 def _resolve_case_input_path(namelist_dir: Path, runtype: str, suffix: str) -> Path:
@@ -230,7 +225,7 @@ def _resolve_case_input_path(namelist_dir: Path, runtype: str, suffix: str) -> P
     if candidate.exists():
         return candidate
 
-    fallback = _repo_root() / "input" / "case_setups" / f"{runtype}{suffix}"
+    fallback = _repo_root() / "input" / "case_data" / f"{runtype}{suffix}"
     if fallback.exists():
         return fallback
 
@@ -1111,7 +1106,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         )
 
     if runtype == 'mpace_a':
-        mpace_a_init(0, _repo_root() / 'input' / 'case_setups' / 'mpace_a_forcings')
+        mpace_a_init(0, _repo_root() / 'input' / 'case_data' / 'mpace_a_forcings')
 
     if bool(cfg.get('l_restart', False)):
         # initialize_clubb includes reference-profile setup as well as sounding

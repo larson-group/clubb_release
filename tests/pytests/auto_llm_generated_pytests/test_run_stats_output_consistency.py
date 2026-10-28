@@ -61,7 +61,8 @@ def test_payload_mismatch_produces_a_failed_test(monkeypatch, tmp_path, capsys):
     ])
     monkeypatch.setattr(harness, "clear_dir", lambda _path: None)
     monkeypatch.setattr(harness, "run_subprocess", lambda _cmd, **_kwargs: None)
-    monkeypatch.setattr(harness.os.path, "isfile", lambda _path: True)
+    actual_isfile = harness.os.path.isfile
+    monkeypatch.setattr(harness.os.path, "isfile", lambda path: str(path).endswith(".nc") or actual_isfile(path))
     monkeypatch.setattr(harness, "compare_exact_stats", lambda *_args, **_kwargs: (
         ["thlm: payload mismatch"], "different model data",
     ))

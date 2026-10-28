@@ -33,6 +33,7 @@ if __name__ == "__main__":
 import numpy as np
 from netCDF4 import Dataset
 from utilities.clubb_case_runner import extract_jax_options
+from input.scripts.create_case_namelist import resolve_case_model_input, create_case_settings
 
 
 TESTS_DIR = Path(__file__).resolve().parent
@@ -41,23 +42,6 @@ RUN_SCRIPTS = CLUBB_ROOT / "run_scripts"
 RUN_SCM = RUN_SCRIPTS / "run_scm.py"
 OUTPUT_DIR = CLUBB_ROOT / "output"
 RESTART_DIR = CLUBB_ROOT / "restart"
-
-
-def _read_model_times(model_file: Path) -> tuple[float, float]:
-    values: dict[str, float] = {}
-    line_re = re.compile(r"^\s*([a-zA-Z_]\w*)\s*=\s*([-+0-9.eEdD]+)")
-    with model_file.open(encoding="utf-8") as f:
-        for line in f:
-            m = line_re.match(line.split("!")[0])
-            if m:
-                key, val = m.groups()
-                try:
-                    values[key.lower()] = float(val.replace("D", "E").replace("d", "e"))
-                except ValueError:
-                    pass
-    if "time_initial" not in values or "time_final" not in values:
-        raise ValueError(f"Could not parse time_initial/time_final from {model_file}")
-    return values["time_initial"], values["time_final"]
 
 
 def _saved_restart_time(case_name: str, time_initial: float, time_final: float) -> float:
@@ -171,14 +155,10 @@ def main() -> int:
     if args.jax:
         extra_opts.insert(0, "-jax" if jax_options is None else f"-jax={jax_options}")
 
-    model_file = CLUBB_ROOT / "input" / "case_setups" / f"{args.case_name}_model.in"
-    if not model_file.is_file():
-        print(f"{model_file} does not exist")
-        return 1
-
     try:
-        time_initial, time_final = _read_model_times(model_file)
-    except ValueError as exc:
+        settings = resolve_case_model_input(args.case_name)["model_setting"]
+        time_initial, time_final = float(settings["time_initial"]), float(settings["time_final"])
+    except (OSError, ValueError) as exc:
         print(str(exc))
         return 1
     halfway_time = 0.5 * (time_initial + time_final)
@@ -196,11 +176,16 @@ def main() -> int:
             return 1
         print("Done!")
 
-        # run_scm writes the effective namelist, including forwarded timestep,
-        # duration and override settings. Use its times for shortened tests too.
-        generated_input = OUTPUT_DIR / f"{args.case_name}.in"
-        if generated_input.is_file():
-            time_initial, time_final = _read_model_times(generated_input)
+        # Resolve effective times from JSON using the same forwarded options.
+        from utilities.clubb_case_runner import parse_case_arguments
+        from input.scripts.create_case_namelist import add_namelist_arguments
+        effective = parse_case_arguments([*extra_opts, args.case_name])
+        parser = argparse.ArgumentParser(add_help=False)
+        add_namelist_arguments(parser)
+        options = {action.dest: getattr(effective, action.dest) for action in parser._actions
+                   if action.dest not in {"out_dir", "case_selector"}}
+        settings = create_case_settings(args.case_name, OUTPUT_DIR, **options)["model_setting"]
+        time_initial, time_final = float(settings["time_initial"]), float(settings["time_final"])
         try:
             halfway_time = _saved_restart_time(args.case_name, time_initial, time_final)
         except (OSError, KeyError, ValueError) as exc:

@@ -9,7 +9,7 @@ from dash_app.shared.components import styled_dropdown
 from .state import MAX_RUN_PROCS
 from .stats import build_stats_editor
 from .cases import build_case_editor
-from utilities.case_json_to_namelist import load_case_catalog
+from input.scripts.case_json_to_namelist import load_case_catalog
 
 
 def field_style(changed, disabled=False):
@@ -115,7 +115,7 @@ def build_select_actions(case_groups):
 
 def build_case_buttons(cases, *, custom=False):
     """Render either catalog or saved case buttons with shared selection IDs."""
-    catalog_names = load_case_catalog()["cases"]
+    catalog_names = load_case_catalog()["presets"]
     def button(case_name):
         return html.Button(
             case_name,
@@ -152,7 +152,7 @@ def build_run_config_buttons(configs, selected_config):
                 label,
                 id={"type": "run-config-button", "name": value},
                 n_clicks=0,
-                title=f"Use input/parameter_and_flag_configs/{value}",
+                title=f"Use the {value} parameter and flag presets",
                 style=run_config_button_style(selected=value == selected_config),
             )
         )
@@ -604,7 +604,7 @@ def build_left_header(case_groups, case_buttons, stats_buttons, custom_case_butt
                     html.Div(stats_buttons, className="run-stats-buttons"),
                     html.Div(id="run-stats-summary", className="run-stats-summary", role="status"),
                     html.Div(
-                        [html.Label("Saved & legacy lists", htmlFor="run-stats-list"),
+                        [html.Label("Saved lists & presets", htmlFor="run-stats-list"),
                          styled_dropdown(
                              id="run-stats-list", options=[], value=None,
                              placeholder="Choose a reusable custom list…", clearable=False)],

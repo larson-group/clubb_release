@@ -225,7 +225,7 @@ module nov11
 ! NOTE:
 ! The constant subsidence profile has been moved to a forcings specification
 ! in the input directory.
-! Please check input/case_setups/nov11_altocu_forcings.in for the subsidence
+! Please check input/case_data/nov11_altocu_forcings.in for the subsidence
 ! profile. This code is now obsolete.
 ! ~EIHoppe/20110104
 !-----------------------------------------------------------------------

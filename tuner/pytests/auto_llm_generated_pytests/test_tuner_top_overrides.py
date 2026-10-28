@@ -13,7 +13,7 @@ import re
 import pytest
 
 from run_scripts import run_tuner_job as cli
-from utilities.create_case_namelist import override_value
+from input.scripts.create_case_namelist import override_value
 
 
 @pytest.mark.parametrize("jax_backend", [False, True])
@@ -58,8 +58,10 @@ def test_top_reruns_preserve_tuned_columns_and_other_overrides(
 
     def capture_rerun(command, **kwargs):
         params_index = command.index("-params_file") + 1
-        text = Path(command[params_index]).read_text()
-        text += "\n&configurable_model_flags\nl_diag_Lscale_from_tau=.false.\n/\n"
+        from input.scripts.parameters_json_to_namelist import parameter_settings
+        from input.scripts.namelist import namelists_to_text
+        settings = {"clubb_params_nl": parameter_settings(command[params_index])["model"],
+                    "configurable_model_flags": {"l_diag_Lscale_from_tau": False}}
         overrides = [
             command[index + 1]
             for index, token in enumerate(command) if token == "-override"
@@ -69,7 +71,7 @@ def test_top_reruns_preserve_tuned_columns_and_other_overrides(
             if "-cases" in command else [command[params_index + 1]]
         )
         for case_name in selected_cases:
-            effective_inputs.append((case_name, override_value(overrides, text, case_name)))
+            effective_inputs.append((case_name, namelists_to_text(override_value(overrides, settings, case_name))))
         return 0
 
     monkeypatch.setattr(cli, "run_command", capture_rerun)

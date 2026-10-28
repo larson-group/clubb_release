@@ -13,7 +13,7 @@ Most model-running scripts expect CLUBB to have already been compiled with
 
 Runs one CLUBB case with native Fortran, the Python SCM or JAX. It builds the
 aggregate namelist with
-[`create_case_namelist.py`](../utilities/create_case_namelist.py), then runs the
+[`create_case_namelist.py`](../input/scripts/create_case_namelist.py), then runs the
 selected standalone. Output includes the generated input, a console log and
 configured statistics under `output/` or `-output_dir`.
 
@@ -30,12 +30,11 @@ Examples:
 - `python3 run_scripts/run_scm.py -stats none -debug 0 bomex`
   Runs `bomex` without stats output and with debug checks disabled.
 
-- `python3 run_scripts/run_scm.py -stats input/stats/nightly_stats.in arm`
-  Runs `arm` with a non-default stats field list.
+- `python3 run_scripts/run_scm.py -stats core+radiation arm`
+  Runs `arm` with the union of the core and radiation stats categories.
 
 - `python3 run_scripts/run_scm.py -config compatible_r8029 arm`
-  Runs `arm` with the `compatible_r8029` parameter and flag config from
-  `input/parameter_and_flag_configs/compatible_r8029`.
+  Runs `arm` with the `compatible_r8029` presets in the parameter and flag JSON catalogs.
 
 - `python3 run_scripts/run_scm.py -zm_grid input/grid/31_level_zm_grid.grd -nzmax 31 arm`
   Runs `arm` on a specified `zm` grid with the matching vertical level count.
@@ -204,7 +203,16 @@ Examples:
 ### `run_tuner.py`
 
 Runs the older CLUBB tuner executable with Python setup and cleanup around the
-input files it needs.
+input files it needs. Its legacy controls are
+[error_NAME.in namelists](../input_misc/tuner/README); model cases, parameters
+and flags still come from the current JSON catalogs. Optimized results remain
+JSON for standalone reruns and archiving.
+
+Use `-controls NAME|IN` to select a control name or an explicit namelist path.
+`-params NAME|JSON` supplies the initial parameter set. `-prepare_only` writes
+the final inputs without launching a model; `-output_dir` selects their
+destination in that mode. Executed runs use the legacy `run_scripts` working
+directory and require a compiled `install/latest/clubb_tuner`.
 
 Examples:
 
@@ -219,6 +227,12 @@ Examples:
 
 - `python3 run_scripts/run_tuner.py -nightly -run_case fire`
   Runs in nightly mode and copies tuner artifacts to `~/tuner_output`.
+
+- `python3 run_scripts/run_tuner.py -prepare_only -run_case fire -output_dir /tmp/native_tuner`
+  Prepares `error.in` and `fire_hoc.in` without requiring a tuner executable.
+
+- `python3 run_scripts/run_tuner.py -prepare_only -controls combined_001 -run_type multiple -model_mult bomex dycoms2_rf01 -params ~/previous_optimum.json -output_dir /tmp/ensemble`
+  Prepares ensemble inputs from legacy controls and a JSON parameter set.
 
 ### `run_tuner_job.py`
 
@@ -378,7 +392,9 @@ Tuner destinations are `-output_job_dir` and `-output_run_dir`; its internal
 scheduler's `-job_dir` selects an existing job. Relative-path resolution follows
 each script's documented behavior. Case lists accept commas and spaces.
 Model options pass through wrappers to the SCM runner; namelist definitions and
-JSON `-override` resolution are shared in `create_case_namelist.py`.
+JSON `-override` resolution are shared in [input/scripts/create_case_namelist.py](../input/scripts/create_case_namelist.py).
+The [input guide](../input/README.md) describes defaults, shared `-config` settings
+and explicit case/parameter/flag/stats presets or files.
 
 JAX runtime settings travel in the existing opaque `-jax=VALUE` selection,
 for example `-jax=gpu,device=DEVICE,prealloc_gpu_mem=false`.

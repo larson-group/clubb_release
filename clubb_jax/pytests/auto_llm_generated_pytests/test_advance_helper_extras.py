@@ -1,3 +1,4 @@
+from input.scripts.create_case_namelist import create_case_namelist_file
 #!/usr/bin/env python3
 """validate the JAX smooth_min + calc_xpwp ports (advance_helper_module)."""
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
@@ -13,7 +14,7 @@ import jax.numpy as jnp
 from clubb_jax.src.CLUBB_core.advance_helper_module import smooth_min as _smooth_min, calc_xpwp as _calc_xpwp
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
-_TUNABLE_PARAMS = os.path.join(_ROOT, "input", "parameter_and_flag_configs", "default", "tunable_parameters.in")
+_TUNABLE_PARAMS = str(create_case_namelist_file("bomex"))
 
 _NG, _DZ, _ZTOP = 2, 40.0, 1200.0
 

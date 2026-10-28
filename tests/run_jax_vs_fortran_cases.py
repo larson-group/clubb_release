@@ -25,11 +25,11 @@ if str(CLUBB_ROOT) not in sys.path:
     sys.path.insert(0, str(CLUBB_ROOT))
 
 from clubb_jax.run_jax import ensure_environment  # noqa: E402
-from utilities.flag_sets import build_override_arg, format_override_value, get_flag_sets, read_flag_settings  # noqa: E402
+from input.scripts.flag_sets import build_override_arg, format_override_value, get_flag_sets, read_flag_settings  # noqa: E402
 
 
 from tuner.system_defaults import default_max_workers as default_workers
-from utilities.create_case_namelist import parse_forwarded_args
+from input.scripts.create_case_namelist import parse_forwarded_args
 from run_scripts.run_scm_all import positive_int, split_values
 
 @dataclass(frozen=True)
@@ -686,7 +686,7 @@ def _run_comparisons(args, supervisor) -> int:
 
     print("\nRun settings:")
     print(f"  Output: {results_root}")
-    print(f"  Statistics: {_forwarded_value(args.run_scm_args, '-stats') or 'input/stats/standard_stats.in'}")
+    print(f"  Statistics: {_forwarded_value(args.run_scm_args, '-stats') or 'standard'}")
     print(f"  Debug: {_forwarded_value(args.run_scm_args, '-debug') or 'case default'}")
     if args.run_scm_args:
         print(f"  Forwarded to both runs: {shlex.join(args.run_scm_args)}")

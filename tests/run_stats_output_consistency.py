@@ -31,7 +31,7 @@ The workflow has four checks:
    manually reconstruct that windowed/coarse output from the full fine-output
    reference.
 
-The default configuration uses BOMEX, standard_stats.in, and four deterministic
+The default configuration uses BOMEX, the standard category, and four deterministic
 multicol columns. By default it uses the case's own time_initial/time_final;
 -max_iters can shorten each run. The windowing checks derive a middle-of-run
 window from the effective case time range unless -window_start/-window_end
@@ -79,9 +79,8 @@ RUN_SCM = os.path.join(RUN_SCRIPTS, "run_scm.py")
 #
 # - bomex is the default because it is small, common, deterministic, and has a
 #   60 s dt_main in the checked-in model file.
-# - standard_stats.in keeps the default stats registry compact while still
-#   exercising both zt and zm profile output. Use -stats to broaden coverage
-#   with standard_stats.in or another registry.
+# - standard exercises both zt and zm profile output. Use -stats all to broaden
+#   coverage to every catalog variable.
 # - C8/0.2:0.8/4 creates four deterministic parameter columns, which is enough
 #   to exercise stats batching without making the test large.
 # - DEFAULT_BATCH_SIZES is ordered: the first value is the reference batch size,
@@ -93,7 +92,7 @@ RUN_SCM = os.path.join(RUN_SCRIPTS, "run_scm.py")
 #   for deriving the automatic stats window alignment.
 DEFAULT_CASE = "bomex"
 DEFAULT_OUT_ROOT = os.path.join(CLUBB_ROOT, "output", "stats_output_consistency")
-DEFAULT_STATS_FILE = os.path.join(CLUBB_ROOT, "input", "stats", "standard_stats.in")
+DEFAULT_STATS_FILE = "standard"
 DEFAULT_MULTICOL = "C8/0.2:0.8/4"
 DEFAULT_BATCH_SIZES = "4,2,1"
 DEFAULT_FINE_TOUT = 60
@@ -180,33 +179,18 @@ def config_arg(value: str | None) -> str | None:
     return value
 
 
-def model_file_path(case_name: str) -> str:
-    """Return the default model file path for one SCM case."""
-    return os.path.join(CLUBB_ROOT, "input", "case_setups", f"{case_name}_model.in")
-
-
 def read_model_timing(case_name: str) -> dict[str, int]:
-    """Read integer-valued time settings from a case model namelist."""
-    path = model_file_path(case_name)
-    if not os.path.isfile(path):
-        raise RuntimeError(f"Case model file not found: {path}")
+    """Read integer-valued case timing from the authoritative JSON definition."""
+    from input.scripts.create_case_namelist import resolve_case_model_input
 
-    content = open(path, encoding="utf-8").read()
-    values: dict[str, int] = {}
+    settings = resolve_case_model_input(case_name)["model_setting"]
+    values = {}
     for key in ("time_initial", "time_final", "dt_main"):
-        match = re.search(rf"(?im)^\s*{key}\s*=\s*([-+]?\d+(?:\.\d*)?(?:[eEdD][-+]?\d+)?)", content)
-        if not match:
-            raise RuntimeError(f"Could not find {key} in {path}")
-
-        raw_value = float(match.group(1).replace("D", "E").replace("d", "e"))
+        raw_value = float(settings[key])
         int_value = int(round(raw_value))
         if not math.isclose(raw_value, int_value, abs_tol=1.0e-8, rel_tol=0.0):
-            raise RuntimeError(
-                f"{key}={raw_value} in {path} is not integer-valued. "
-                "Pass an explicit aligned stats window or use integer case timing."
-            )
+            raise RuntimeError(f"{key}={raw_value} for {case_name} is not integer-valued")
         values[key] = int_value
-
     return values
 
 
@@ -321,7 +305,7 @@ def build_run_command(args: argparse.Namespace, spec: RunSpec) -> list[str]:
         sys.executable,
         RUN_SCM,
         "-stats",
-        os.path.abspath(args.stats),
+        args.stats,
         "-output_dir",
         spec.output_dir,
         "-multicol",
@@ -1101,15 +1085,18 @@ def parse_args() -> argparse.Namespace:
     args.coarse_touts = parse_csv_ints(args.coarse_touts, "-coarse_touts")
     if args.fine_tout <= 0:
         parser.error("-fine_tout must be positive")
-    args.stats = abs_path(args.stats)
+    args.stats = os.path.abspath(args.stats) if args.stats.endswith(".json") else args.stats
     args.config = config_arg(args.config)
     args.params = abs_path(args.params)
     args.flags = abs_path(args.flags)
     args.silhs_params = abs_path(args.silhs_params)
     args.exe = abs_path(args.exe)
 
-    if not os.path.isfile(args.stats):
-        parser.error(f"stats file not found: {args.stats}")
+    from input.scripts.stats_json_to_namelist import select_stats_entries
+    try:
+        select_stats_entries(args.stats)
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
     return args
 
 

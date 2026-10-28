@@ -25,7 +25,7 @@ from utilities.clubb_settings_validation import (
     values_by_name,
     values_by_setting_key,
 )
-from utilities.save_tunable_config import normalize_config_name, save_tunable_config
+from input.scripts.save_tunable_config import normalize_config_name, save_tunable_config
 
 from .config_state import build_tunable_config_state
 from .layout import (
@@ -35,7 +35,7 @@ from .layout import (
     build_tunable_controls,
     compute_width_hints,
 )
-from .namelist import normalize_numeric_display
+from .settings import normalize_numeric_display
 
 
 def blank_multicol_row(row_id):

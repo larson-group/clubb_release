@@ -27,6 +27,7 @@ from pathlib import Path
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from input.scripts.create_case_namelist import parse_forwarded_args
 from utilities.clubb_case_runner import extract_jax_options
 from utilities.output_paths import resolve_output_dir
 
@@ -75,7 +76,9 @@ def parse_args() -> argparse.Namespace:
         help="Use JAX; an attached -jax=VALUE is forwarded unchanged to the launcher",
     )
     argv, jax_options, jax_occurrences = extract_jax_options(sys.argv[1:])
-    args = parser.parse_args(argv)
+    args, forwarded = parse_forwarded_args(parser, argv)
+    if forwarded:
+        parser.error(f"unrecognized arguments: {' '.join(forwarded)}")
     if jax_occurrences > 1:
         parser.error("-jax may be specified only once")
     args.jax_options = jax_options

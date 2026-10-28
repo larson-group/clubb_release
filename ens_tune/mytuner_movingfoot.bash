@@ -17,7 +17,8 @@
 MEMBERMAX=2 # Total number of ensemble members
 CLUBB=$HOME/clubb
 ENSEMBLE_DIR=`dirname $0` # Directory with this script
-CASE=combined_001 # This plus _error.in is the name of tuner namelist file.
+CASE=combined_001 # Legacy controls in input_misc/tuner/error_combined_001.in.
+CURRENT_PARAMS=""
 ARCHIVE=$HOME/archive/ensemble # Directory for the output
 EXPERIMENTS=( bomex dycoms2_rf01 ) # Add additional simulations here
 
@@ -28,25 +29,26 @@ function tune ( ) {
 	local member=$1
 
 	# Create random seed data
-	$CLUBB/bin/int2txt /dev/urandom > $CLUBB/ens_tune/rand_seed.dat
+	$CLUBB/install/latest/int2txt /dev/urandom > $CLUBB/ens_tune/rand_seed.dat
 
-	# Create model namelist files
-	for EXP in "${EXPERIMENTS[@]}"; do
-		cat $CLUBB/input/case_setups/${EXP}_model.in | sed 's/debug_level\s*=\s*.*/debug_level = 0/g' > $CLUBB/ens_tune/${EXP}_hoc.in
-		cat $CLUBB/ens_tune/${EXP}_stats_tune.in >> $CLUBB/ens_tune/${EXP}_hoc.in
-	done
+	local params_args=()
+	if [[ -n "$CURRENT_PARAMS" ]]; then
+		params_args=(-params "$CURRENT_PARAMS")
+	fi
+
+	python3 "$CLUBB/run_scripts/run_tuner.py" -prepare_only -controls "$CASE" \
+        -run_type multiple -model_mult "${EXPERIMENTS[@]}" "${params_args[@]}" \
+        -stats_tune tuning_stats -override debug_level=0 -output_dir "$ENSEMBLE_DIR"
 	# Execute tuning run
 	echo Tuning ensemble member $member on `hostname` at `date +"%R %D"` | tee $CLUBB/ens_tune/tuner.log 
-	cd $ENSEMBLE_DIR && echo no | ../bin/clubb_tuner &> tune.log
+	cd $ENSEMBLE_DIR && echo no | ../install/latest/clubb_tuner &> tune.log
 
 	# Delete GrADS files from tuning run
 	rm -f $CLUBB/output/*_zt.??? $CLUBB/output/*_zm.??? $CLUBB/output/*_sfc.???
 
-	# Run standalone CLUBB with the new parameter values
+	TUNED_PARAMS=$(ls -t "$CLUBB"/input/tunable_parameters_*.json | head -1)
 	for EXP in "${EXPERIMENTS[@]}"; do
-		cat $CLUBB/input/case_setups/${EXP}_model.in $CLUBB/input/stats/standard_stats.in > clubb.in
-		cat $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters_*.in >> clubb.in
-		../bin/clubb_standalone >> $ENSEMBLE_DIR/tune.log
+        python3 "$CLUBB/run_scripts/run_scm.py" -params "$TUNED_PARAMS" "$EXP" >> "$ENSEMBLE_DIR/tune.log"
 	done
 
 	# Move results data
@@ -55,8 +57,7 @@ function tune ( ) {
 	# Move foot if current cost is less than previous cost
         currCost=$(grep -i '\$' tune.log | tr -d '$''[:blank:]')
         if [ `echo "$currCost < $prevCost" |bc ` == 1 ] ; then
-                PREVTUNER=`ls $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters_*.in`
-                cat "error_"$CASE".in" $PREVTUNER &> "error.in"
+                CURRENT_PARAMS="$ARCHIVE/$CASE/ens_tune_$member/$(basename "$TUNED_PARAMS")"
                 echo -en '\E[47;34m'"\033[1mRecreating error.in with new parameter values\033[0m\n"
                 prevCost=$currCost
                 counter=0
@@ -65,12 +66,12 @@ function tune ( ) {
         if [ $counter -gt 15 ]; then
                 counter=0
                 prevCost=1
-                cat "error_"$CASE".in" $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters.in &> "error.in"
+                CURRENT_PARAMS=""
                 echo -en '\E[47;34m'"\033[1mReverting to original parameter values\033[0m\n"
 
         fi
 
-	mv $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters_*.in  $ARCHIVE/$CASE/ens_tune_$member
+	mv "$TUNED_PARAMS" "$ARCHIVE/$CASE/ens_tune_$member/"
 	mv $ENSEMBLE_DIR/tune.log  $ARCHIVE/$CASE/ens_tune_$member
 	# for NetCDF output
 	mv $CLUBB/output/*_*.nc  $ARCHIVE/$CASE/ens_tune_$member
@@ -89,8 +90,7 @@ if [ ! -e $ARCHIVE/$CASE ]; then
 #	cp average.bash $ARCHIVE
 fi
 
-# Create tuner namelist
-cat "error_"$CASE".in" $CLUBB/input/parameter_and_flag_configs/default/tunable_parameters.in > "error.in"
+# Input conversion occurs immediately before each native tuner launch.
 
 cd $ENSEMBLE_DIR
 

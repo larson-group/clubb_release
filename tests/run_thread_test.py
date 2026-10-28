@@ -6,6 +6,9 @@ import subprocess
 import argparse
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from input.scripts.create_case_namelist import create_case_namelist_file
+
 # -----------------------------------------------------------------------------
 # Description:
 #   Python script to run the test whether CLUBB is still threadsafe.
@@ -23,14 +26,8 @@ SCRIPT_DIR = REPO_ROOT / "run_scripts"
 INPUT_DIR = REPO_ROOT / "input"
 OUTPUT_DIR = REPO_ROOT / "output"
 
-DEFAULT_TUNABLE_CONFIG_DIR = INPUT_DIR / "parameter_and_flag_configs" / "default"
-FLAGS_FILE = DEFAULT_TUNABLE_CONFIG_DIR / "configurable_model_flags.in"
-PARAMS_FILE = DEFAULT_TUNABLE_CONFIG_DIR / "tunable_parameters.in"
-SILHS_PARAMS_FILE = DEFAULT_TUNABLE_CONFIG_DIR / "silhs_parameters.in"
-STATS_FILE = INPUT_DIR / "stats" / "standard_stats.in"
 SERIAL = OUTPUT_DIR / "serial"
 PARALLEL = OUTPUT_DIR / "parallel"
-AGGREGATE_FILES = [PARAMS_FILE, SILHS_PARAMS_FILE, FLAGS_FILE]
 
 EXEC_NAME_STANDALONE = "clubb_standalone"
 EXEC_NAME_THREAD_TEST = "clubb_thread_test"
@@ -105,11 +102,8 @@ def run_serial(clubb_standalone: Path, run_env):
     print("Running CLUBB in serial... ", end="", flush=True)
     l_failed = False
     for case in RUN_CASES:
-        model_file = INPUT_DIR / "case_setups" / f"{case}_model.in"
-        write_aggregate_namelist(
-            SCRIPT_DIR / "clubb.in",
-            [*AGGREGATE_FILES, model_file, STATS_FILE],
-        )
+        generated = create_case_namelist_file(case, OUTPUT_DIR)
+        shutil.copyfile(generated, SCRIPT_DIR / "clubb.in")
 
         strip_comments(SCRIPT_DIR / "clubb.in")
         result = subprocess.run([str(clubb_standalone)], cwd=SCRIPT_DIR, env=run_env)
@@ -131,14 +125,11 @@ def run_parallel(clubb_thread_test: Path, run_env):
         (OUTPUT_DIR / f"{case}_setup.txt").touch(exist_ok=True)
 
     for case, namelist in zip(RUN_CASES, NAMELISTS):
-        model_file = INPUT_DIR / "case_setups" / f"{case}_model.in"
+        generated = create_case_namelist_file(case, OUTPUT_DIR)
         namelist_path = SCRIPT_DIR / namelist
-        write_aggregate_namelist(
-            namelist_path,
-            [*AGGREGATE_FILES, model_file, STATS_FILE],
-        )
+        shutil.copyfile(generated, namelist_path)
 
-        print(f"Configuring file: {model_file.name}")
+        print(f"Configuring case: {case}")
         strip_comments(namelist_path)
 
     print("Checking existence of clubb_thread_test")

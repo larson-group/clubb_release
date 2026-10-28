@@ -31,7 +31,7 @@ module readiopdata_module
     ! Module level
     logical :: masterproc = .true.
     logical :: scamiop_from_global_cam = .false.
-    character(len=120) :: iopfilepath = "../input/case_setups/BOMEX_5day_4scam.nc"
+    character(len=120) :: iopfilepath = "../input/case_data/BOMEX_5day_4scam.nc"
 
     ! Loading flags
     logical :: l_dims = .false.

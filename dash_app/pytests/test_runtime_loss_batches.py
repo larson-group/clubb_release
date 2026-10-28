@@ -41,8 +41,8 @@ def test_loss_replay_uses_one_multicol_run_for_every_parameter_row(tmp_path, mon
     assert Path(run["output_dir"]) == result_dir
     assert len(started) == 1
     params_text = Path(run["params_path"]).read_text(encoding="utf-8")
-    assert "ngrdcol = 16" in params_text
-    assert "batch_size = 16" in params_text
+    import json
+    assert json.loads(params_text)["multicol"] == {"ngrdcol": 16, "batch_size": 16}
     assert "batch_002" not in params_text
 
     updated, any_running = runtime.poll_loss_runs({"window": run})

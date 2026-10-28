@@ -23,16 +23,14 @@ Example: `l_diffuse_rtm_and_thlm = .true.` adds an extra diffusion term for `rtm
 `saturation_formula = 1` or `2` switches to a different saturation vapor pressure formula.
 
 In the namelist, flags and parameters are plain entries in different namelist groups.
-Their defaults live in separate files in `input/parameter_and_flag_configs/<config>/`:
+Their defaults and named overrides live in the input catalogs:
 
-| File                          | Namelist groups                                                  |
-|-------------------------------|------------------------------------------------------------------|
-| `configurable_model_flags.in` | `&configurable_clubb_flags_nl`, `&configurable_silhs_flags_nl`   |
-| `tunable_parameters.in`       | `&clubb_params_nl`                                               |
-| `silhs_parameters.in`         | `&silhs_params_nl`                                               |
+| Catalog | Generated namelist groups |
+| --- | --- |
+| [clubb_config_flags.jsonc](../clubb_config_flags.jsonc) | `&configurable_clubb_flags_nl`, `&configurable_silhs_flags_nl` |
+| [clubb_params.jsonc](../clubb_params.jsonc) | `&clubb_params_nl`, `&silhs_params_nl` |
 
-These files are only the source files.
-Before a run they are combined into one namelist file (see below).
+Before a run, the selected catalog settings are written into one namelist file (see below).
 Fortran reads each group from that one file with `read(unit, nml=<group>)`.
 
 In Fortran, flags end up in `clubb_config_flags_type` (`src/CLUBB_core/model_flags.F90`).
@@ -43,15 +41,15 @@ Overrides from a flag set work the same way for both kinds.
 ## How flags get to the model
 
 1. `run_scripts/run_clubb_w_varying_flags.py -flag_config_file <file>.json` (or `tests/run_jax_vs_fortran_cases.py -flag_config_file <file>.json`)
-   reads the JSON with `utilities/flag_sets.py`.
+   reads the JSON with `input/scripts/flag_sets.py`.
    An unmodified `default` run is always added by the JAX comparison harness.
    The varying-flags runner can omit it with `-skip_default_flags`; `default`
    cannot be used as a custom flag set name.
    Each flag set becomes one `-override` string, e.g. `l_diffuse_rtm_and_thlm=.true.,saturation_formula=2`.
 2. For every (flag set, case) pair it calls `run_scripts/run_scm.py -override ... <case>`, writing to `output/<flag_set_name>/`.
-3. `run_scm.py` calls `utilities/create_case_namelist.py`, which builds one combined `<case>.in` namelist.
-   It pastes together the text of the three config files above, `input/case_setups/<case>_model.in` and the stats file.
-   Then it find-and-replaces each override key in that combined text.
+3. `run_scm.py` calls `input/scripts/create_case_namelist.py`, which builds one combined `<case>.in` namelist.
+   It resolves the case from [case_definitions.jsonc](../case_definitions.jsonc) or a custom JSON file,
+   resolves parameters, flags and stats, then applies typed overrides before serialization.
    An override key that doesn't match an entry is an error.
 4. That namelist is passed to the executable: `clubb_standalone` (Fortran) by default, or the JAX driver with `-jax`.
 

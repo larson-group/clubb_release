@@ -107,7 +107,8 @@ def test_profile_field_scale_defaults_to_log_and_can_be_linear(tmp_path):
 
 
 def test_all_stats_registers_complete_diagnostics_for_clubb_moments():
-    text = (Path(__file__).resolve().parents[2] / "input" / "stats" / "all_stats.in").read_text()
+    from input.scripts.stats_json_to_namelist import stats_json_to_namelist
+    text = stats_json_to_namelist("all")
     for moment in ("wp2", "rtp2", "thlp2", "up2", "vp2", "rtm", "thlm"):
         for suffix in ("_before_hf", "_after_hf"):
             assert f'"{moment}{suffix}' in text

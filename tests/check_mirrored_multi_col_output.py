@@ -37,6 +37,7 @@
 # =============================================================================
 
 import argparse
+import json
 import io
 import os
 import platform
@@ -62,8 +63,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 BUILD_DIR = REPO_ROOT / "build" / "column_mirror"
 sys.path.insert(0, str(REPO_ROOT))
 
-from utilities.create_case_namelist import resolve_tunable_config_dir, parse_forwarded_args
-from utilities.create_multi_col_params import parse_hypergrid_range_spec
+from input.scripts.create_case_namelist import parse_forwarded_args
+from input.scripts.create_multi_col_params import parse_hypergrid_range_spec
 from utilities.output_paths import resolve_output_dir
 from run_scripts.run_scm_all import STANDARD_CASES, positive_int, split_values
 
@@ -245,47 +246,37 @@ def compare_directories(forward_directory, reverse_directory, tolerance=0.0, ver
 
 def generate_parameter_files(run_dir, spec, base_params):
     """Generate once, then reverse complete columns without resampling the ranges."""
-    forward = run_dir / "params_forward.in"
-    reverse = run_dir / "params_reverse.in"
+    forward = run_dir / "params_forward.json"
+    reverse = run_dir / "params_reverse.json"
     log_path = run_dir / "params.log"
     with log_path.open("w") as log:
         result = subprocess.run([
-            sys.executable, str(REPO_ROOT / "utilities/create_multi_col_params.py"),
+            sys.executable, str(REPO_ROOT / "input/scripts/create_multi_col_params.py"),
             "-multicol", spec, "-params_file", str(base_params), "-output_file", str(forward),
         ], stdout=log, stderr=subprocess.STDOUT)
     if result.returncode:
         raise RuntimeError(f"Parameter generation failed; see {log_path}")
-    lines = []
-    in_params = False
-    for line in forward.read_text().splitlines():
-        if line.strip().lower() == "&clubb_params_nl":
-            in_params = True
-        elif line.strip() == "/":
-            in_params = False
-        elif in_params and "=" in line:
-            name, values = line.split("=", 1)
-            # The generator writes one comma-separated parameter array per line.
-            line = name + "= " + ", ".join(reversed([v.strip() for v in values.split(",")]))
-        lines.append(line)
-    reverse.write_text("\n".join(lines) + "\n")
+    import json
+    settings = json.loads(forward.read_text())
+    settings["model"] = {name: list(reversed(values)) for name, values in settings["model"].items()}
+    reverse.write_text(json.dumps(settings, indent=2) + "\n")
     return forward, reverse
 
 
 def print_run_parameters(param_file, spec):
     """Display sampled parameters from the actual input, including hypergrid order."""
     targets = {target for item in parse_hypergrid_range_spec(spec) for target in item["targets"]}
-    for line in param_file.read_text().splitlines():
-        if "=" not in line:
+    import json
+    settings = json.loads(param_file.read_text())
+    for name, column_values in settings["model"].items():
+        if name not in targets:
             continue
-        name, values = line.split("=", 1)
-        if name.strip() not in targets:
-            continue
-        values = [f"{float(value):.6g}" for value in values.split(",")]
+        values = [f"{float(value):.6g}" for value in column_values]
         count = len(values)
         if count > 12:
             values = values[:4] + ["..."] + values[-4:]
         suffix = f" ({count} columns; full list in {param_file.name})" if count > 12 else ""
-        print(f"  {name.strip()} = [{', '.join(values)}]{suffix}", flush=True)
+        print(f"  {name} = [{', '.join(values)}]{suffix}", flush=True)
 
 
 def parse_args(argv=None):
@@ -308,8 +299,8 @@ def parse_args(argv=None):
     cases.add_argument("-cases", nargs="+", help="Case names separated by spaces or commas.")
     parser.add_argument("-multicol", default="3", metavar="NUM|SPEC",
                         help="Column count for C8 in 0.2:0.8, or an explicit parameter grid (default: 3).")
-    parser.add_argument('-params_file', dest='params', help="Base single-column parameter file (default: from -config)", metavar='FILE')
-    parser.add_argument("-config", help="Tunable configuration name or directory (default: default)")
+    parser.add_argument('-params', '-params_file', dest='params', help="Base single-column parameter file (default: from -config)", metavar='FILE')
+    parser.add_argument("-config", help="Shared JSON preset name (default: default)")
     parser.add_argument('-output_root', dest='out_dir', default="column_mirror_test",
                         help="Output parent; a fresh run directory is retained inside it", metavar='DIR')
     parser.add_argument('-workers', dest='nproc', type=positive_int, default=default_workers(), help="Concurrent cases for a case list (default: half the available logical CPUs)", metavar='N')
@@ -352,7 +343,7 @@ def parse_args(argv=None):
         parser.error("parameter range endpoints must be finite")
     if not any(s["npoints"] > 1 and s["min"] != s["max"] for s in specs):
         parser.error("the test needs at least two distinct parameter columns")
-    reserved = {"-params_file", "-config", "-output_dir", "-multicol", "-batch_size", "-override",
+    reserved = {"-params", "-params_file", "-config", "-output_dir", "-multicol", "-batch_size", "-override",
                 "-max_iters", "-workers", "-cases", "-all", "-min_cases", "-short_cases", "-priority_cases"}
     if any(token.split("=", 1)[0] in reserved for token in forwarded):
         parser.error("parameter generation, output paths, overrides, and case selection must use test-runner options before --")
@@ -411,12 +402,13 @@ def prepare_runtime(forwarded, log_path):
 
 
 def run_test(args, forwarded):
-    config_dir = Path(resolve_tunable_config_dir(args.config))
-    base_params = Path(args.params).resolve() if args.params else config_dir / "tunable_parameters.in"
     output_parent = resolve_output_dir(args.out_dir)
     output_parent.mkdir(parents=True, exist_ok=True)
     run_dir = Path(tempfile.mkdtemp(prefix="run_", dir=output_parent))
     print(f"Logs and output: {run_dir}", flush=True)
+    from input.scripts.parameters_json_to_namelist import parameter_settings
+    base_params = run_dir / "base_parameters.json"
+    base_params.write_text(json.dumps(parameter_settings(args.params, config=args.config), indent=2) + "\n")
     params = generate_parameter_files(run_dir, args.spec, base_params)
     forwarded = prepare_runtime(forwarded, run_dir / "build.log")
     override = ",".join(filter(None, [args.override, "l_lh_straight_mc=.true."]))
@@ -429,7 +421,7 @@ def run_test(args, forwarded):
         print(f"  Grid: -multicol {args.spec}" + (" (columns reversed)" if order == "reverse" else ""), flush=True)
         print_run_parameters(param_file, args.spec)
         command = [sys.executable, str(REPO_ROOT / "run_scripts" / script), *forwarded,
-                   "-config", str(config_dir), "-params_file", str(param_file),
+                   "-config", str(args.config or "default"), "-params_file", str(param_file),
                    "-output_dir", str(run_dir / order), "-max_iters", str(args.max_iters),
                    "-override", override]
         if args.case:

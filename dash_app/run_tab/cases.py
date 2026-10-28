@@ -5,9 +5,9 @@ import json
 from dash import ALL, ClientsideFunction, Input, Output, State, callback_context, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 
-from utilities.case_json_to_namelist import (
+from input.scripts.case_json_to_namelist import (
     available_case_names, case_definition_record, load_case_catalog,
-    namelists_to_text, save_case_definition,
+    save_case_definition,
 )
 from dash_app.shared.components import styled_dropdown
 
@@ -26,14 +26,16 @@ def setting_leaves(settings, prefix=()):
 
 
 def field_schema(baseline, catalog=None):
+    """Describe editable case fields and their inherited catalog defaults."""
     catalog = catalog if catalog is not None else load_case_catalog()
     definitions = [catalog["defaults"], baseline]
-    definitions.extend(catalog["cases"].values())
+    definitions.extend(catalog["presets"].values())
     values = {}
     for definition in definitions:
         for path, value in setting_leaves(definition):
             if value is not None:
                 values.setdefault(path, []).append(value)
+    defaults = dict(setting_leaves(catalog["defaults"]))
     schema = {}
     for path, samples in values.items():
         kind = ("array" if any(isinstance(value, list) for value in samples) else
@@ -41,6 +43,8 @@ def field_schema(baseline, catalog=None):
                 "number" if all(isinstance(value, (int, float)) for value in samples) else "text")
         schema[path] = {"kind": kind,
                         "readonly": path in {"stats_setting.fname_prefix", "stats_setting.stats_output_filename"}}
+        if path in defaults:
+            schema[path]["default"] = defaults[path]
     return schema
 
 
@@ -55,6 +59,7 @@ def field_value(value, spec):
 
 
 def render_fields(baseline, schema):
+    """Render case controls, distinguishing inherited defaults from optional omissions."""
     actual = dict(setting_leaves(baseline))
     groups = {}
     paths = sorted(schema, key=lambda path: (path.split('.')[0] != 'model_setting', path != 'model_setting.runtype'))
@@ -64,11 +69,12 @@ def render_fields(baseline, schema):
         props = {"id": {"type": "run-case-value", "path": path},
                  "value": field_value(actual.get(path), spec)}
         if spec["kind"] == "logical":
+            middle = "default" if "default" in spec else "unset"
             control = html.Div([
-                html.Div([html.Span("false"), html.Span("unset"), html.Span("true")],
+                html.Div([html.Span("false"), html.Span(middle), html.Span("true")],
                          className="run-case-bool-labels", **{"aria-hidden": "true"}),
                 dcc.Input(**props, type="range", min=0, max=2, step=1, debounce=False),
-            ], className="run-case-bool", **{"data-state": ("false", "unset", "true")[props["value"]]})
+            ], className="run-case-bool", **{"data-state": ("false", middle, "true")[props["value"]]})
         else:
             control = dcc.Input(**props, type="text", disabled=spec["readonly"],
                                 debounce=False, placeholder="Not specified")
@@ -86,6 +92,7 @@ def render_fields(baseline, schema):
 
 
 def build_case_editor():
+    """Build the draft, preview and save controls for custom case definitions."""
     return html.Div([
         dcc.Store(id="run-case-baseline"), dcc.Store(id="run-case-schema"),
         dcc.Store(id="run-case-draft"), dcc.Store(id="run-case-saved"), dcc.Store(id="run-case-pending"),
@@ -103,10 +110,10 @@ def build_case_editor():
                          className="run-case-source-note run-stats-editor-note"),
             ], className="run-case-top"),
             html.Div([
-                html.Div('Blank values use model defaults; enter "" for an empty string.', className="run-case-table-note"),
+                html.Div('Blank values use catalog defaults. Fields without a catalog default are omitted; enter "" for an empty string.', className="run-case-table-note"),
                 html.Div(id="run-case-fields", className="run-case-fields"),
                 html.Details([
-                    html.Summary("Namelist preview"),
+                    html.Summary("JSON preview"),
                     html.Button("Update preview", id="run-case-preview", n_clicks=0),
                     html.Pre("Preview your resolved model settings here.", id="run-case-preview-text"),
                 ], className="run-case-preview"),
@@ -158,7 +165,7 @@ def register_case_callbacks(app):
         catalog = load_case_catalog()
         names = available_case_names()
         options = [{"label": "Defaults", "value": "__defaults__"}] + [
-            {"label": f"{'Case' if name in catalog['cases'] else 'Saved'} · {name}", "value": name} for name in names]
+            {"label": f"{'Case' if name in catalog['presets'] else 'Saved'} · {name}", "value": name} for name in names]
         record = (case_definition_record(source) if source != "__defaults__" else
                   {"namelists": copy.deepcopy(catalog["defaults"]), "benchmark_case": None})
         baseline = {"key": source, **record}
@@ -184,7 +191,7 @@ def register_case_callbacks(app):
         try:
             if not draft or draft.get("errors"):
                 raise ValueError("Complete the highlighted entries first")
-            return namelists_to_text(draft["namelists"])
+            return json.dumps(draft["namelists"], indent=2)
         except (ValueError, OSError) as exc:
             return str(exc)
 

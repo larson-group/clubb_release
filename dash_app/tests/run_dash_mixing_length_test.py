@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT))
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__, add_help=False)
     parser.add_argument('-help', '-h', action='help')
-    parser.add_argument('-stats_file', type=Path, required=True, help='ARM all_stats NetCDF output')
+    parser.add_argument('-stats_file', type=Path, required=True, help='ARM all NetCDF output')
     parser.add_argument('-record', type=int, default=612, help='Zero-based saved record (default: 612)')
     args = parser.parse_args()
     if not args.stats_file.is_file():

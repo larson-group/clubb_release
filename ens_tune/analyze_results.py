@@ -22,6 +22,7 @@
 ###############################################################################
 
 import os
+import json
 import glob
 import re
 from pylab import *
@@ -56,16 +57,12 @@ topResultsName = ones((numCases,500))
 # Arguments: String, file to be read
 ##############################################################
 def readParameterFile(file):
-	input = []
-	list([values.pop() for z in xrange(len(values))])	#Clear the array
-	currFile = open(file)
-
-	for line in currFile:
-		input = re.split('=',line)
-		if len(input) == 2:
-			name.append(input[0].replace(' ','')) 
-			values.append(float(input[1]))
-	currFile.close()
+	values[:] = []
+	with open(file) as stream:
+		parameters = json.load(stream)["model"]
+	for key, value in parameters.items():
+		name.append(key)
+		values.append(float(value))
 
 
 ##############################################################
@@ -159,7 +156,7 @@ def fileReading():
 		for fold in folders[runs]:					#For each folder find:
 			fileNum=re.sub('.+/.+_','',fold)			
 			allNames[runs][index]=fileNum				#the name
-			files[runs].append(glob.glob(fold+'/tunable_parameters*.in')[0]) #the locatin of tunable_parameters.in
+			files[runs].append(glob.glob(fold+'/tunable_parameters*.json')[0]) #the locatin of tunable_parameters.in
 			readCostFunction(fold)					#the cost function
 			for p in range(0,(len(costFunc))):			#Append cost function to all cost functions
 				allCost[runs][p]=costFunc[p]

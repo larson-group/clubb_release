@@ -70,17 +70,11 @@ def modify_ic_profile(clubb_dir, case_dir, grid_dir, case, dz, refine):
     output_file.close()
 
   else: # case == "dycoms2_rf02"
-    # read namelist file to obtain model height in case setup 
-    model_file_name = case + '_nd_model.in'
-    input_file = open(os.path.join(case_dir, model_file_name), 'r')
-    input_lines = input_file.readlines()
-    input_file.close()
-    for line in input_lines:
-      if ('zm_top' in line):
-        height =  float(line.split()[2])
-        htop   = height + 150.0 
-      if ('zm_init' in line):
-        hgtlow =  float(line.split()[2])
+    from input.scripts.create_case_namelist import resolve_case_model_input
+    settings = resolve_case_model_input(case + '_nd')['model_setting']
+    height = float(settings['zm_top_nl'])
+    htop = height + 150.0
+    hgtlow = float(settings['zm_init_nl'])
 
     # if refinement specified, create grid file and set appropriate file name
     if (refine != -9999):

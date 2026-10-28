@@ -17,7 +17,7 @@ import psutil
 from clubb_jax.run_jax import runtime_arguments, runtime_selection
 
 from utilities.time_clubb import REQUIRED_TIMER, parse_positive_int_list
-from utilities.create_case_namelist import available_case_names
+from input.scripts.create_case_namelist import available_case_names
 from utilities.timing_profiles import (
     discover_profiles,
     load_profiles,

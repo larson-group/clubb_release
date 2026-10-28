@@ -3,7 +3,7 @@
 from dash import ALL, ClientsideFunction, Input, Output, State, callback_context, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 
-from utilities.stats_json_to_namelist import load_stats_categories
+from input.scripts.stats_json_to_namelist import load_stats_categories
 from dash_app.shared.stats import list_stats_files, save_stats_config, stats_list_options, stats_selection_expression, stats_selection_names
 
 HIDDEN = "shared-notecard-overlay run-stats-modal--hidden"
@@ -113,7 +113,7 @@ def build_stats_editor():
                         html.Label("Save for later", htmlFor="run-stats-save-name"),
                         dcc.Input(id="run-stats-save-name", value="", placeholder="e.g. core_radiation", type="text"),
                         html.Button("Save stats config", id="run-stats-save", n_clicks=0),
-                        html.Div("Saved lists appear alongside the legacy lists and can be reused from the CLI.",
+                        html.Div("Saved lists appear alongside the named presets and can be reused from the CLI.",
                                  className="run-stats-editor-note"),
                         html.Div(id="run-stats-save-feedback", role="status"),
                     ], className="run-stats-save-form"),
@@ -202,7 +202,7 @@ def register_stats_callbacks(app):
             saved = save_stats_config(name, stats_selection_expression(names or []))
         except (ValueError, OSError) as exc:
             return html.Div(str(exc), className="run-stats-feedback-error"), no_update
-        return html.Div(f"Saved {saved.rsplit('/', 1)[-1]}. Choose it in Saved & legacy lists.",
+        return html.Div(f"Saved {saved.rsplit('/', 1)[-1]}. Choose it in Saved lists & presets.",
                         className="run-stats-feedback-success"), stats_list_options()
 
     app.clientside_callback(

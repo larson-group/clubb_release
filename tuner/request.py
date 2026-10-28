@@ -11,7 +11,7 @@ from functools import lru_cache
 from tuner.case_defaults import read_case_defaults
 from tuner.job_runtime import tuner_runtime_settings
 from tuner.presets import apply_preset
-from utilities.benchmark_converter import supported_fields
+from input.scripts.benchmark_converter import supported_fields
 from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
     DEFAULT_AGGREGATION_WEIGHTS,
@@ -27,7 +27,7 @@ from tuner.taylor_metrics import (
     normalize_aggregation_weights,
 )
 from tuner.tuning_strategy import normalize_strategy_config
-from utilities.create_case_namelist import normalize_override_string, parse_override_pairs, resolve_tunable_config_dir
+from input.scripts.create_case_namelist import normalize_override_string, parse_override_pairs
 from utilities.clubb_settings_validation import (
     build_settings_schema,
     canonical_flag_name,
@@ -35,13 +35,6 @@ from utilities.clubb_settings_validation import (
     evaluate_settings,
     is_independently_tunable,
     setting_key,
-)
-
-
-REQUIRED_TUNABLE_CONFIG_FILES = (
-    "tunable_parameters.in",
-    "configurable_model_flags.in",
-    "silhs_parameters.in",
 )
 
 
@@ -231,15 +224,9 @@ def load_request(request_path: Path) -> dict:
 def _normalize_config(raw_config) -> str:
     """Validate and normalize the tunable config name/path in a tuning request."""
     config = str(raw_config or "default").strip() or "default"
-    try:
-        config_dir = Path(resolve_tunable_config_dir(config))
-    except RuntimeError as exc:
-        raise RuntimeError(str(exc)) from exc
-    missing = [filename for filename in REQUIRED_TUNABLE_CONFIG_FILES if not (config_dir / filename).is_file()]
-    if missing:
-        raise RuntimeError(
-            f"Tunable config '{config}' is missing required file(s): " + ", ".join(missing)
-        )
+    from input.scripts.create_case_namelist import available_configs
+    if config not in available_configs():
+        raise RuntimeError(f"Unknown config {config!r}")
     return config
 
 
@@ -250,19 +237,11 @@ def _tunable_parameter_names(config: str) -> set[str]:
     early checked-in-config validation gives CLI/Dash users a useful error
     before a worker process is created.
     """
-    params_path = Path(resolve_tunable_config_dir(config)) / "tunable_parameters.in"
-    pattern = re.compile(r"^\s*([A-Za-z][A-Za-z0-9_]*)\s*=")
-    names = set()
-    for line in params_path.read_text(encoding="utf-8").splitlines():
-        match = pattern.match(line)
-        if match:
-            names.add(match.group(1))
-    if not names:
-        raise RuntimeError(f"Tunable config '{config}' has no readable parameter names")
-    return names
+    from input.scripts.parameters_json_to_namelist import parameter_settings
+    return set(parameter_settings(config=config)["model"])
 
 
-def _parse_namelist_value(raw: str):
+def _parse_setting_value(raw: str):
     """Parse the scalar config values relevant to resolver decisions."""
     text = str(raw).strip().rstrip(",")
     if text.lower() in {".true.", "true", "t"}:
@@ -275,40 +254,18 @@ def _parse_namelist_value(raw: str):
         return text
 
 
-def _read_namelist_assignments(path: Path) -> dict[str, str]:
-    """Read simple scalar namelist assignments without importing Dash."""
-    assignment = re.compile(r"^\s*([A-Za-z_]\w*)\s*=\s*([^!,/]+)")
-    values = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        match = assignment.match(line)
-        if match:
-            values[match.group(1)] = match.group(2).strip()
-    return values
-
-
-def _is_bool_literal(value: str) -> bool:
-    """Return whether a namelist scalar is a standard logical literal."""
-    return str(value).strip().lower() in {".true.", "true", "t", ".false.", "false", "f"}
-
-
 @lru_cache(maxsize=None)
 def settings_schema_for_tune_config(config: str) -> dict:
     """Load one checked-in config into the shared UI-neutral settings schema."""
-    config_dir = Path(resolve_tunable_config_dir(config))
-    config_values = _read_namelist_assignments(config_dir / "configurable_model_flags.in")
-    flag_defaults = {
-        name: _parse_namelist_value(value)
-        for name, value in config_values.items()
-        if _is_bool_literal(value)
-    }
+    from input.scripts.parameters_json_to_namelist import parameter_settings
+    from input.scripts.flags_json_to_namelist import flag_settings
+    params, flags = parameter_settings(config=config), flag_settings(config=config)
+    config_values = {**flags["model"], **flags["silhs"]}
+    flag_defaults = {name: value for name, value in config_values.items() if type(value) is bool}
     parameter_defaults = {
-        "flags": {
-            name: value
-            for name, value in config_values.items()
-            if not _is_bool_literal(value)
-        },
-        "tunable": _read_namelist_assignments(config_dir / "tunable_parameters.in"),
-        "silhs": _read_namelist_assignments(config_dir / "silhs_parameters.in"),
+        "flags": {name: str(value) for name, value in config_values.items() if type(value) is not bool},
+        "tunable": {name: str(value) for name, value in params["model"].items()},
+        "silhs": {name: str(value) for name, value in params["silhs"].items()},
     }
     metadata = [
         {"file": file_name, "name": name}
@@ -329,7 +286,7 @@ def evaluate_tune_settings(config: str, override: str = "") -> dict:
         flag_name = canonical_flag_name(raw_name)
         parameter_name = canonical_parameter_name(raw_name)
         if flag_name in flag_defaults:
-            override_flags[flag_name] = _parse_namelist_value(value)
+            override_flags[flag_name] = _parse_setting_value(value)
             continue
         for file_name, defaults in parameter_defaults.items():
             if parameter_name in dict(defaults or {}):

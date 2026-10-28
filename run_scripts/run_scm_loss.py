@@ -35,7 +35,7 @@ CLUBB_ROOT = str(Path(__file__).resolve().parents[1])
 if CLUBB_ROOT not in sys.path:
     sys.path.insert(0, CLUBB_ROOT)
 
-from utilities.create_case_namelist import (
+from input.scripts.create_case_namelist import (
     create_loss_case_namelist,
     validate_multicol,
 )
@@ -109,6 +109,8 @@ def build_loss_case_namelist(args, output_dir, case_name, fields):
             config=args.config,
             params=args.params,
             flags=args.flags,
+            stats=getattr(args, "stats", None) or "all_tuning_stats",
+            silhs_params=getattr(args, "silhs_params", None),
             multicol=args.multicol,
             batch_size=args.batch_size,
             disable_stats_storage=args.disable_stats_storage or args.driver_test,
@@ -137,6 +139,8 @@ def run_loss_case(args, case_name, fields, output_dir):
     )
 
     # Loss frontends own one complete evaluation; reusable tuning stays in the API.
+    from input.scripts.create_case_namelist import case_run_name
+    case_name = case_run_name(case_name)
     print(f"=================== Running {case_name} loss ===================")
     disable_stats_storage = args.disable_stats_storage or args.driver_test
     try:
@@ -160,14 +164,8 @@ def main():
     """Parse loss inputs, run the selected cases, and exit nonzero if any frontend fails."""
     parser = argparse.ArgumentParser(description="Run the in-memory CLUBB loss driver.", add_help=False, allow_abbrev=False)
     parser.add_argument("-h", "-help", action="help", help="Show this help and exit.")
-    parser.add_argument("-config", metavar="[NAME|DIR]",
-        help=("Tunable config name under input/parameter_and_flag_configs, or a directory containing "
-              "tunable_parameters.in, configurable_model_flags.in, and silhs_parameters.in. "
-              "Defaults to default."))
-    parser.add_argument('-params_file', dest='params', metavar="[FILE]",
-        help="Define the tunable parameters. Used to override params file selected by -config")
-    parser.add_argument("-flags", metavar="[FILE]",
-        help="Model flags file. Used to override flags file selected by -config")
+    from input.scripts.create_case_namelist import add_input_arguments
+    add_input_arguments(parser, cases=False)
     parser.add_argument('-output_dir', dest='out_dir', metavar="[DIR]",
         help=(
             "Output directory for generated namelists, logs, and stats. Bare names are "

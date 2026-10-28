@@ -53,7 +53,7 @@ SHORT_CASES = [
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tuner.system_defaults import default_max_workers as default_workers
-from utilities.create_case_namelist import parse_forwarded_args
+from input.scripts.create_case_namelist import parse_forwarded_args
 
 
 def positive_int(value: str) -> int:

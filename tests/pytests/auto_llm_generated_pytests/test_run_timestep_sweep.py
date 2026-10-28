@@ -97,7 +97,10 @@ def test_output_labels_use_the_shared_output_owner(monkeypatch, value):
     assert harness.parse_args().out_root == harness.CLUBB_ROOT / "output" / "timestep-audit"
 
 
-@pytest.mark.parametrize("options", [["-output_root", "../outside"], ["-time", "60"]])
+@pytest.mark.parametrize("options", [
+    ["-output_root", "../outside"], ["-time", "60"], ["-time=60"],
+    ["-stats", "none"], ["--", "-stats", "none"],
+])
 def test_invalid_paths_and_abbreviated_options_are_rejected(monkeypatch, options):
     monkeypatch.setattr(sys, "argv", ["run_timestep_sweep.py", *options])
     with pytest.raises(SystemExit) as exc:

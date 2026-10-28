@@ -188,12 +188,12 @@ module sounding
 
     ! Determine which files exist ahead of time to allow for a graceful exit if
     ! one is missing.
-    inquire(file="../input/case_setups/"//trim( runtype )//"_sounding.in", exist=l_sounding_exists)
+    inquire(file="../input/case_data/"//trim( runtype )//"_sounding.in", exist=l_sounding_exists)
 
-    inquire(file="../input/case_setups/"//trim( runtype )//"_sclr_sounding.in", &
+    inquire(file="../input/case_data/"//trim( runtype )//"_sclr_sounding.in", &
       exist=l_sclr_sounding_exists)
 
-    inquire(file="../input/case_setups/"//trim( runtype )//"_edsclr_sounding.in", &
+    inquire(file="../input/case_data/"//trim( runtype )//"_edsclr_sounding.in", &
       exist=l_edsclr_sounding_exists)
 
     !---------------------------------------------------------------------------------------------
@@ -676,7 +676,7 @@ module sounding
     ! ---- Begin Code ----
 
     call read_one_dim_file( iunit, n_snd_var, &
-    '../input/case_setups/'//trim( runtype )//'_sounding.in', retVars )
+    '../input/case_data/'//trim( runtype )//'_sounding.in', retVars )
 
     call fill_blanks_one_dim_vars( n_snd_var, retVars )
 
@@ -762,7 +762,7 @@ module sounding
     integer :: sclr
 
     call read_one_dim_file( iunit, sclr_dim, &
-      '../input/case_setups/'//trim( runtype )//'_sclr_sounding.in', retVars )
+      '../input/case_data/'//trim( runtype )//'_sclr_sounding.in', retVars )
 
 !    call fill_blanks_one_dim_vars( sclr_dim, retVars )
 
@@ -840,7 +840,7 @@ module sounding
     !--------------------- Begin Code ---------------------
 
     call read_one_dim_file( iunit, edsclr_dim, &
-      '../input/case_setups/'//trim( runtype )//'_edsclr_sounding.in', retVars )
+      '../input/case_data/'//trim( runtype )//'_edsclr_sounding.in', retVars )
 
  !   call fill_blanks_one_dim_vars( edsclr_dim, retVars )
 
@@ -1095,7 +1095,7 @@ module sounding
 
     ! Read in radiation scalars sounding (currently it only holds O3)
     call read_one_dim_file( iunit, n_rad_scalars, & ! In
-      '../input/case_setups/'//trim( runtype )//'_ozone_sounding.in', & ! In
+      '../input/case_data/'//trim( runtype )//'_ozone_sounding.in', & ! In
       extended_rad_scalars ) ! Out
 
     ! Set the array holding the values of o3l (ozone)

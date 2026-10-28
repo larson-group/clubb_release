@@ -27,8 +27,8 @@ REPO_ROOT = TESTS_DIR.parent
 RUN_SCRIPTS = REPO_ROOT / "run_scripts"
 RUN_SCM_PY = RUN_SCRIPTS / "run_scm.py"
 OUTPUT_DIR = REPO_ROOT / "output"
-# all_stats.in includes the LH microphysics fields needed by this test.
-DEFAULT_STATS_FILE = REPO_ROOT / "input" / "stats" / "all_stats.in"
+# The all category includes the SILHS microphysics fields needed by this test.
+DEFAULT_STATS_FILE = "all"
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '-stats', dest='stats',
         default=str(DEFAULT_STATS_FILE),
-        help="Stats file passed to run_scm.py (default: input/stats/all_stats.in).",
+        help="Stats file passed to run_scm.py (default: all).",
     )
     parser.add_argument(
         '-show_output', dest='verbose',
@@ -182,17 +182,19 @@ def main() -> int:
         print("n-small and n-large must be positive integers.")
         return 1
 
-    case_model = REPO_ROOT / "input" / "case_setups" / f"{args.case}_model.in"
-    if not case_model.exists():
-        print(f"Case model file not found: {case_model}")
+    from input.scripts.create_case_namelist import resolve_case_model_input
+    from input.scripts.stats_json_to_namelist import select_stats_entries
+
+    try:
+        resolve_case_model_input(args.case)
+        select_stats_entries(args.stats)
+    except (OSError, ValueError) as exc:
+        print(str(exc))
         return 1
     if not RUN_SCM_PY.exists():
         print(f"Missing script: {RUN_SCM_PY}")
         return 1
-    stats_file = Path(args.stats).resolve()
-    if not stats_file.exists():
-        print(f"Stats file not found: {stats_file}")
-        return 1
+    stats_file = args.stats
 
     output_small = OUTPUT_DIR / "small"
     output_large = OUTPUT_DIR / "large"

@@ -4,7 +4,7 @@ import ast
 import os
 
 from .state import RUN_SCM_ALL
-from utilities.create_case_namelist import available_case_names
+from input.scripts.create_case_namelist import available_case_names
 
 
 def list_cases():
