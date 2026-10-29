@@ -571,7 +571,7 @@ module model_flags
     penta_solve_method = penta_lu
     tridiag_solve_method = tridiag_lu
     saturation_formula = saturation_flatau
-    Lscale_method = Lscale_direct
+    Lscale_method = Lscale_coherence
     grid_remap_method = ppm_remap
     grid_adapt_in_time_method = no_grid_adaptation
     fill_holes_type = sliding_window

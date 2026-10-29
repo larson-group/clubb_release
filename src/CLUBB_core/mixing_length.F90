@@ -3077,7 +3077,7 @@ module mixing_length
 
     ! Compute the coherence-weighted upward length for each launch level.
     !$acc parallel loop collapse(2) default(present)
-    do k = 1, nzt
+    do k = gr%k_lb_zt, gr%k_ub_zt, gr%grid_dir_indx
       do i = 1, ngrdcol
 
         Lscale_tmp = zero
@@ -3211,7 +3211,7 @@ module mixing_length
 
     ! Compute the coherence-weighted downward length for each launch level.
     !$acc parallel loop collapse(2) default(present)
-    do k = 1, nzt
+    do k = gr%k_lb_zt, gr%k_ub_zt, gr%grid_dir_indx
       do i = 1, ngrdcol
 
         Lscale_tmp = zero

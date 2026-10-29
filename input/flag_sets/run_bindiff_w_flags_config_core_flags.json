@@ -8,6 +8,7 @@
         "fill_holes_type": 4
     },
     "flag2": {
+        "Lscale_method": 1,
         "saturation_formula": 1,
         "l_godunov_upwind_xpyp_ta": true,
         "l_lh_importance_sampling": false,

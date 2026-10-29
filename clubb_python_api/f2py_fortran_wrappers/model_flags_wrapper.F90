@@ -65,7 +65,7 @@ contains
 
     ! Description:
     !   Return default values for every scalar selector/logical flag in binding
-    !   order. All outputs are dimensionless; Lscale_method defaults to 1.
+    !   order. All outputs are dimensionless.
 
     use model_flags, only: set_default_clubb_config_flags_api
 

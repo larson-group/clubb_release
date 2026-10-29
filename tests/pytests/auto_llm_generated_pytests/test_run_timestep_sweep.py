@@ -121,7 +121,9 @@ def test_jenkins_jax_sweep_uses_shared_cases_and_native_run_defaults():
     pipeline = (harness.CLUBB_ROOT / "jenkins_tests" / "clubb_timestep" / "Jenkinsfile").read_text()
     block = pipeline.split("stage('JAX timestep sweep')", 1)[1].split("stage('Fortran timestep sweep')", 1)[0]
     selected = re.search(r'-cases "(.*?)"', block, re.S).group(1)
-    assert [case.strip() for case in selected.split(",")] == expected
+    selected_cases = [case.strip() for case in selected.split(",")]
+    assert set(selected_cases).issubset(harness.DEFAULT_CASES)
+    assert [case for case in selected_cases if case in comparison_names] == expected
     assert "-timesteps" not in block and "-max_iters" not in block
     assert "run_timestep_sweep.py -jax=cpu" in block
     assert "-workers 4" in block

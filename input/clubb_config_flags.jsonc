@@ -83,7 +83,7 @@
                                                         // equations.
 
       //================================= Mixing length and diffusion =================================
-      "Lscale_method":                     1,           // Mixing length: 1=legacy parcels, 2=dissipation time scale,
+      "Lscale_method":                     3,           // Mixing length: 1=legacy parcels, 2=dissipation time scale,
                                                         // 3=coherent parcels.
       "l_stability_correct_tau_zm":        false,       // Apply a stability correction to scalar-flux pressure
                                                         // relaxation.
@@ -190,6 +190,7 @@
     //================================= Lscale =================================
     "Lscale": {
       "model": {
+        "Lscale_method":                   1,
         "penta_solve_method":              1,
         "tridiag_solve_method":            1,
         "l_smooth_Heaviside_tau_wpxp":     false,
@@ -210,6 +211,7 @@
     // configuration.
     "compatible_r8029": {
       "model": {
+        "Lscale_method":                   1,
         "ipdf_call_placement":             1,
         "penta_solve_method":              1,
         "tridiag_solve_method":            1,
@@ -272,6 +274,7 @@
     //================================= e3sm_maint32 =================================
     "e3sm_maint32": {
       "model": {
+        "Lscale_method":                   1,
         "l_vert_avg_closure":              true,
         "l_use_cloud_cover":               true,
         "l_rcm_supersat_adj":              false,

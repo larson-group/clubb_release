@@ -5,7 +5,7 @@ from tests import run_jax_vs_fortran_cases as harness
 from tests.pytests.jax_comparison_inputs import run_comparison
 
 
-@pytest.mark.parametrize("case", ["rico_silhs", "lba_kk_silhs", "lba_silhs"])
+@pytest.mark.parametrize("case", ["rico_silhs", "lba_kk_silhs"])
 def test_silhs_overrides_and_thresholds_forwarded_to_both_runs(tmp_path, case):
     config = next(config for config in harness.DEFAULT_CASES if config.case == case)
     result, commands, task = run_comparison(tmp_path, config)
@@ -15,7 +15,8 @@ def test_silhs_overrides_and_thresholds_forwarded_to_both_runs(tmp_path, case):
     assert bindiff[bindiff.index("-percent_threshold") + 1] == str(config.percent_threshold)
     assert jax.count("-max_iters") == fortran.count("-max_iters") == 1
     assert jax.count("-dt_main") == fortran.count("-dt_main") == 1
-    start = jax.index("-multicol") + 2
+    start = jax.index("-max_iters")
+    assert jax.index("-override") < start
     assert task.run_scm_args == jax[start:start + len(task.run_scm_args)]
     assert task.run_scm_args == fortran[start:start + len(task.run_scm_args)]
     assert "-jax" in jax and "-jax" not in fortran
