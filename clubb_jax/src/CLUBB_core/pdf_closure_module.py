@@ -1912,6 +1912,9 @@ def pdf_closure_driver(
     if l_use_cloud_cover:
         cloud_frac = cloud_cover
         rcm = rcm_in_layer
+        # rcm_in_layer divides rcm by the vertical cloud fraction at a cloud top
+        # or base, so it can exceed rtm.  Clip rcm again so that rvm >= 0.
+        rcm = clip_rcm(nzt, ngrdcol, rtm, "rtm < rcm_in_layer after pdf_closure", rcm)
     cloud_frac = jnp.minimum(1.0, cloud_frac)
     ice_supersat_frac = jnp.minimum(1.0, ice_supersat_frac)
 

@@ -4348,6 +4348,12 @@ module pdf_closure_module
         end do
       end do
       !$acc end parallel loop
+
+      ! rcm_in_layer divides rcm by the vertical cloud fraction at a cloud top
+      ! or base, so it can exceed rtm.  Clip rcm again so that rvm >= 0.
+      call clip_rcm( nzt, ngrdcol, rtm,                      & ! intent(in)
+                     'rtm < rcm_in_layer after pdf_closure', & ! intent(in)
+                     rcm )                                     ! intent(inout)
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
