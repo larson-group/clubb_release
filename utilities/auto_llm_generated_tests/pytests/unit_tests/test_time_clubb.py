@@ -1,0 +1,528 @@
+import argparse
+import csv
+import json
+import multiprocessing
+import os
+import signal
+import sys
+import threading
+import time
+from pathlib import Path
+
+import pytest
+
+import utilities.time_clubb as time_clubb
+from utilities.time_clubb import (
+    BenchmarkOptions,
+    TimerParseError,
+    _restore_sigint_handler,
+    parse_arguments,
+    parse_positive_int_list,
+    parse_timer_text,
+    run_benchmark,
+    run_process_group,
+)
+from utilities.timing_profiles import load_profiles, write_profile_manifest
+
+
+CPU_TIMING = """
+========================= CLUBB TIMER SUMMARY =========================
+Backend: cpu_time
+                                           Timer      Calls   Inclusive(s)   Exclusive(s)     Avg Inc(s)   Excl Pct
+------------------------------------------------ ---------- -------------- -------------- -------------- ----------
+                            initialize_clubb          1       0.250000       0.100000       0.250000      20.00
+                        advance_clubb_to_end          4       1.500000       1.200000       0.375000      80.00
+----------------------------------------------------------------------
+Total exclusive timed cpu_time seconds:       1.300000
+=======================================================================
+"""
+
+GPTL_TIMING = """
+GPTL timing results
+Stats for thread 0:
+                                  Called  Recurse     Wall      max      min
+  initialize_clubb                     1        -    0.200000 0.200000 0.200000
+    advance_clubb_to_end               4        -     1.25e+0  1.25e+0  1.25e+0
+
+Stats for thread 1:
+                                  Called  Recurse     Wall      max      min
+advance_clubb_to_end                   4        0    1.100000 1.100000 1.100000
+"""
+
+
+from utilities.auto_llm_generated_tests.pytests.timing_test_inputs import (
+    make_fake_standalone, fake_runner_factory, prepare_fake_case,
+)
+
+
+def make_options(tmp_path: Path, **changes) -> BenchmarkOptions:
+    values = {
+        "case_name": "arm",
+        "processes": (1,),
+        "batch_sizes": (1,),
+        "warmups": 0,
+        "repetitions": 1,
+        "output": tmp_path / "timing",
+        "name": "test run",
+        "timeout": None,
+        "continue_on_error": False,
+    }
+    values.update(changes)
+    return BenchmarkOptions(**values)
+
+
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def run_cancellable_group_from_ignoring_parent(
+    options: BenchmarkOptions,
+    group_dir: Path,
+    fake_runner: Path,
+    invocation_cwd: Path,
+) -> None:
+    """Exercise the signal state inherited by a wrapper launched by Dash."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    _restore_sigint_handler()
+    try:
+        run_process_group(
+            options=options,
+            forwarded=["-override", "SLEEP=30", "-stats", "none", "-debug", "0"],
+            process_count=1,
+            batch_size=1,
+            group_dir=group_dir,
+            runner_factory=fake_runner_factory(fake_runner, invocation_cwd),
+            prepare_case=prepare_fake_case,
+        )
+    except KeyboardInterrupt:
+        raise SystemExit(130) from None
+
+
+def process_exists(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def test_parse_positive_int_list():
+    assert parse_positive_int_list("1,4,16") == (1, 4, 16)
+    with pytest.raises(argparse.ArgumentTypeError):
+        parse_positive_int_list("1,0")
+    with pytest.raises(argparse.ArgumentTypeError):
+        parse_positive_int_list("2,2")
+    with pytest.raises(argparse.ArgumentTypeError):
+        parse_positive_int_list("1,")
+
+
+def test_parse_arguments_forwards_run_scm_options_and_adds_defaults(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    options, forwarded = parse_arguments(
+        [
+            "arm",
+            "-process_counts",
+            "2,4",
+            "-batch_sizes",
+            "8,16",
+            "-output_root",
+            "results",
+            "-overwrite",
+            "-config",
+            "paper",
+            "-override",
+            "C2=2",
+            "-exe",
+            "/tmp/clubb",
+        ]
+    )
+
+    assert options.processes == (2, 4)
+    assert options.batch_sizes == (8, 16)
+    assert options.output == tmp_path / "results"
+    assert options.overwrite
+    assert forwarded == [
+        "-config",
+        "paper",
+        "-override",
+        "C2=2",
+        "-exe",
+        "/tmp/clubb",
+        "-stats",
+        "none",
+        "-debug",
+        "0",
+    ]
+
+
+@pytest.mark.parametrize("option", ["-multicol", "-batch_size", "-output_dir"])
+def test_parse_arguments_rejects_managed_run_scm_options(option):
+    with pytest.raises(SystemExit):
+        parse_arguments(["arm", option, "2"])
+
+
+def test_parse_arguments_rejects_configurable_required_timer():
+    with pytest.raises(SystemExit):
+        parse_arguments(["arm", "-primary_timer", "some_timer"])
+
+
+def test_parse_arguments_preserves_explicit_stats_and_debug():
+    _, forwarded = parse_arguments(["arm", "-stats", "custom.in", "-debug", "2"])
+    assert forwarded == ["-stats", "custom.in", "-debug", "2"]
+
+
+def test_parse_arguments_rejects_timing_disabled_debug_level():
+    with pytest.raises(SystemExit):
+        parse_arguments(["arm", "-debug", "-1"])
+
+
+def test_main_restores_sigint_handler_before_running(monkeypatch):
+    observed: list[object] = []
+    previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    monkeypatch.setattr(time_clubb, "parse_arguments", lambda _argv: (object(), []))
+    monkeypatch.setattr(
+        time_clubb,
+        "run_benchmark",
+        lambda _options, _forwarded: observed.append(signal.getsignal(signal.SIGINT)) or 0,
+    )
+    try:
+        assert time_clubb.main([]) == 0
+        assert observed == [signal.default_int_handler]
+    finally:
+        signal.signal(signal.SIGINT, previous)
+
+
+def test_parse_builtin_cpu_timer_summary():
+    records = parse_timer_text(CPU_TIMING)
+
+    assert [(record.timer_name, record.calls) for record in records] == [
+        ("initialize_clubb", 1),
+        ("advance_clubb_to_end", 4),
+    ]
+    assert records[1].backend == "cpu_time"
+    assert records[1].time_basis == "cpu_time"
+    assert records[1].inclusive_seconds == pytest.approx(1.5)
+    assert records[1].exclusive_seconds == pytest.approx(1.2)
+
+
+def test_parse_gptl_timer_summary_with_threads():
+    records = parse_timer_text(GPTL_TIMING)
+
+    advance = [record for record in records if record.timer_name == "advance_clubb_to_end"]
+    assert [record.thread for record in advance] == [0, 1]
+    assert [record.inclusive_seconds for record in advance] == pytest.approx([1.25, 1.1])
+    assert all(record.backend == "gptl" for record in records)
+    assert [record.exclusive_seconds for record in advance] == pytest.approx([1.25, 1.1])
+
+
+def test_parse_gptl_derives_exclusive_costs_and_deduplicates_multiple_parents():
+    text = """
+Stats for thread 0:
+                                  Called  Recurse     Wall      max      min
+  parent_one                         1     -       2.0      2.0      2.0
+*   shared_child                     2     -       0.5      0.3      0.2
+* shared_child                       2     -       0.5      0.3      0.2
+  parent_two                         1     -       1.0      1.0      1.0
+Overhead sum = 0 wallclock seconds
+"""
+
+    records = parse_timer_text(text)
+
+    assert [record.timer_name for record in records].count("shared_child") == 1
+    parent = next(record for record in records if record.timer_name == "parent_one")
+    child = next(record for record in records if record.timer_name == "shared_child")
+    assert parent.exclusive_seconds == pytest.approx(1.5)
+    assert child.exclusive_seconds == pytest.approx(0.5)
+
+
+def test_parse_timer_rejects_unknown_text():
+    with pytest.raises(TimerParseError):
+        parse_timer_text("not a timing file")
+
+
+def test_fake_runner_is_concurrent_and_writes_isolated_csv_rows(tmp_path):
+    """Run synthetic peers concurrently and require isolated inputs, logs, CSV rows and profile metadata."""
+    fake_runner = make_fake_standalone(tmp_path)
+    options = make_options(tmp_path, processes=(2,), batch_sizes=(3,))
+
+    result = run_benchmark(
+        options,
+        ["-config", "paper", "-stats", "none", "-debug", "0"],
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
+    )
+
+    assert result == 0
+    run_dir = next(options.output.iterdir())
+    manifest = json.loads((run_dir / "profile.json").read_text(encoding="utf-8"))
+    assert manifest["format"] == "clubb-timing-profile"
+    assert manifest["format_version"] == 2
+    assert manifest["status"] == "complete"
+    assert manifest["benchmark"]["vertical_levels"] == 11
+    assert manifest["build"]["resolved_executable"] == str(Path(sys.executable).resolve())
+    batches = read_csv(run_dir / "batches.csv")
+    timings = read_csv(run_dir / "timings.csv")
+    assert batches[0]["batch_size"] == "3"
+    assert batches[0]["total_batch_size"] == "6"
+    assert {row["process"] for row in timings if row["timer"] == "advance_clubb_to_end"} == {"0", "1"}
+    summaries, processes = load_profiles(options.output, [manifest["run_id"]])
+    assert summaries[0]["total_columns"] == 6
+    assert summaries[0]["timer_max_seconds"] == pytest.approx(0.3)
+    assert summaries[0]["throughput_columns_per_second"] == pytest.approx(20.0)
+    assert len(processes) == 2
+    log_dir = run_dir / "logs" / "p0002_b000003"
+    assert {path.name for path in log_dir.iterdir()} == {"arm.in", "arm_setup.txt", "arm.log", "arm.timing"}
+    assert (log_dir / "arm.log").read_text(encoding="utf-8") == "model log"
+    assert not (options.output / "profile_catalog.csv").exists()
+    assert not list(run_dir.glob("**/invocation.json"))
+    invocations = [json.loads(path.read_text(encoding="utf-8")) for path in tmp_path.glob("trace_process_*.json")]
+    assert len(invocations) == 2
+    assert max(item["started"] for item in invocations) < min(item["finished"] for item in invocations)
+    assert all(item["argv"][item["argv"].index("-multicol") + 1] == "3" for item in invocations)
+    assert all(item["argv"][item["argv"].index("-batch_size") + 1] == "3" for item in invocations)
+
+
+def test_benchmark_overwrites_named_profile_without_creating_a_version(tmp_path):
+    """Repeat a named sweep and require the existing profile to be replaced without a version suffix."""
+    fake_runner = make_fake_standalone(tmp_path)
+    options = make_options(tmp_path, name="replace me", overwrite=True)
+    old_profile = options.output / "replace_me"
+    old_profile.mkdir(parents=True)
+    write_profile_manifest(
+        old_profile,
+        {"run_id": "replace_me", "label": "replace me", "case_name": "arm"},
+    )
+    (old_profile / "old-result.txt").write_text("old", encoding="utf-8")
+
+    result = run_benchmark(
+        options,
+        ["-stats", "none", "-debug", "0"],
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
+    )
+
+    assert result == 0
+    assert [path.name for path in options.output.iterdir()] == ["replace_me"]
+    assert not (old_profile / "old-result.txt").exists()
+    manifest = json.loads((old_profile / "profile.json").read_text(encoding="utf-8"))
+    assert manifest["status"] == "complete"
+
+
+def test_live_results_have_workload_metadata_before_benchmark_finishes(tmp_path):
+    """Read a live synthetic sweep and require workload coordinates before its model run finishes."""
+    fake_runner = make_fake_standalone(tmp_path)
+    options = make_options(tmp_path, repetitions=3)
+    outcome: dict[str, int] = {}
+
+    def run() -> None:
+        """Execute the synthetic sweep while the test reads its flushed live results."""
+        outcome["returncode"] = run_benchmark(
+            options,
+            ["-stats", "none", "-debug", "0"],
+            runner_factory=fake_runner_factory(fake_runner, tmp_path),
+            prepare_case=prepare_fake_case,
+        )
+
+    worker = threading.Thread(target=run)
+    worker.start()
+    live_rows = []
+    observed_while_running = False
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and worker.is_alive():
+        profiles = list(options.output.iterdir()) if options.output.exists() else []
+        if profiles:
+            run_id = profiles[0].name
+            live_rows, _process_rows = load_profiles(options.output, [run_id])
+            if live_rows:
+                observed_while_running = worker.is_alive()
+                break
+        time.sleep(0.01)
+
+    worker.join(timeout=5)
+
+    assert not worker.is_alive()
+    assert outcome == {"returncode": 0}
+    assert observed_while_running
+    assert live_rows
+    assert live_rows[0]["process_count"] == 1
+    assert live_rows[0]["columns_per_process"] == 1
+    assert live_rows[0]["total_columns"] == 1
+
+
+def test_failure_preserves_completed_and_failed_points(tmp_path, capsys):
+    """Fail a later workload and require successful observations and failure diagnostics to survive."""
+    fake_runner = make_fake_standalone(tmp_path)
+    options = make_options(tmp_path, batch_sizes=(1, 2))
+
+    result = run_benchmark(
+        options,
+        ["-override", "FAIL_COLUMNS=2", "-stats", "none", "-debug", "0"],
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
+    )
+
+    assert result == 1
+    run_dir = next(options.output.iterdir())
+    batches = read_csv(run_dir / "batches.csv")
+    timings = read_csv(run_dir / "timings.csv")
+    assert [row["status"] for row in batches] == ["complete", "partial"]
+    assert [row["status"] for row in timings if row["timer"] != "__process_group_wall__"] == ["success", "failed"]
+    failed = next(row for row in timings if row["status"] == "failed" and not row["timer"])
+    assert failed["return_code"] == "9"
+    assert (run_dir / "logs" / "p0001_b000002" / "arm.log").is_file()
+    saved = run_dir / "logs" / "p0001_b000002" / "measured_001_process_000_failed.log"
+    assert "Synthetic child failure" in saved.read_text()
+    assert "model log" in saved.read_text()
+    console = capsys.readouterr().err
+    assert "Synthetic child failure" in console
+    assert f"Full failure log: {saved}" in console
+
+
+def test_failure_console_includes_namelist_error_without_launching_model(tmp_path, capsys):
+    """Reject invalid generated inputs before model launch and preserve the namelist diagnostic."""
+    executable = tmp_path / "model-must-not-run"
+    executable.write_text("#!/bin/sh\nexit 99\n")
+    executable.chmod(0o700)
+    options = make_options(tmp_path, warmups=1, name="invalid_override")
+    assert run_benchmark(
+        options,
+        ["-exe", str(executable), "-override", "missing_profile_flag=.true.", "-stats", "none", "-debug", "0"],
+    ) == 1
+    console = capsys.readouterr().err
+    assert "key 'missing_profile_flag' could not be matched" in console
+    assert "Process 0:" in console
+    saved = options.output / options.name / "logs" / "p0001_b000001" / "warmup_001_process_000_failed.log"
+    assert saved.is_file()
+    assert "key 'missing_profile_flag' could not be matched" in saved.read_text()
+    assert str(saved) in console
+
+
+def test_failure_report_uses_failed_sibling_and_bounds_console_output(tmp_path, capsys):
+    success_log = tmp_path / "success" / "run_scm.log"
+    failure_log = tmp_path / "failure" / "run_scm.log"
+    for log in (success_log, failure_log):
+        log.parent.mkdir()
+    success_log.write_text("success")
+    failure_log.write_text("early diagnostic\n" + "progress\n" * 1000 + "runner error\n")
+    (failure_log.parent / "arm_log").write_text("native model error\n")
+    results = [
+        time_clubb.ProcessResult(0, 0, "success", [], None, success_log),
+        time_clubb.ProcessResult(1, 9, "failed", [], None, failure_log, "exit 9"),
+    ]
+    time_clubb.report_failed_group(results, tmp_path / "profile", "b1", "arm", "measured", 2)
+    console = capsys.readouterr().err
+    assert "1/2 processes failed. Process 1: exit 9" in console
+    assert "runner error" in console
+    assert "native model error" in console
+    assert "early diagnostic" not in console
+    assert len(console.splitlines()) <= 42
+    saved = tmp_path / "profile" / "logs" / "b1" / "measured_002_process_001_failed.log"
+    assert "early diagnostic" in saved.read_text()
+    assert "native model error" in saved.read_text()
+
+
+def test_continue_on_error_completes_remaining_sweep_points(tmp_path):
+    """Fail one synthetic workload and require the next workload to run without retrying the failure."""
+    fake_runner = make_fake_standalone(tmp_path)
+    options = make_options(tmp_path, batch_sizes=(1, 2, 3), continue_on_error=True)
+
+    result = run_benchmark(
+        options,
+        ["-override", "FAIL_COLUMNS=2", "-stats", "none", "-debug", "0"],
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
+    )
+
+    assert result == 1
+    run_dir = next(options.output.iterdir())
+    batches = read_csv(run_dir / "batches.csv")
+    assert [(row["batch_size"], row["status"]) for row in batches] == [
+        ("1", "complete"),
+        ("2", "partial"),
+        ("3", "complete"),
+    ]
+
+
+def test_warmups_are_aggregated_and_dash_ignores_them(tmp_path):
+    """Keep warmup observations in raw CSV while requiring Dash summaries to use measured rows."""
+    fake_runner = make_fake_standalone(tmp_path)
+    options = make_options(tmp_path, warmups=1)
+
+    result = run_benchmark(
+        options,
+        ["-stats", "none", "-debug", "0"],
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
+    )
+
+    assert result == 0
+    run_dir = next(options.output.iterdir())
+    timing_rows = read_csv(run_dir / "timings.csv")
+    assert {row["phase"] for row in timing_rows} == {"startup", "warmup", "measured"}
+    assert sum(row["timer"] == "advance_clubb_to_end" for row in timing_rows) == 2
+    summaries, processes = load_profiles(options.output, [run_dir.name])
+    assert len(summaries) == 2
+    assert len(processes) == 1
+
+
+def test_timeout_terminates_group_and_reports_status(tmp_path):
+    """Timeout sleeping synthetic peers and require child cleanup and recorded timeout status."""
+    fake_runner = make_fake_standalone(tmp_path)
+    options = make_options(tmp_path, timeout=0.05)
+
+    results, elapsed = run_process_group(
+        options=options,
+        forwarded=["-override", "SLEEP=5", "-stats", "none", "-debug", "0"],
+        process_count=1,
+        batch_size=1,
+        group_dir=tmp_path / "timeout",
+        runner_factory=fake_runner_factory(fake_runner, tmp_path),
+        prepare_case=prepare_fake_case,
+    )
+
+    assert elapsed < 2
+    assert results[0].status == "timeout"
+    assert results[0].return_code is not None
+
+
+def test_sigint_from_ignoring_parent_terminates_child_group(tmp_path):
+    """Restore inherited interrupt handling and require SIGINT to release the child process group."""
+    fake_runner = make_fake_standalone(tmp_path)
+    options = make_options(tmp_path)
+    group_dir = tmp_path / "cancelled"
+    invocation_path = group_dir / "process_000" / "invocation.json"
+    context = multiprocessing.get_context("spawn")
+    wrapper = context.Process(
+        target=run_cancellable_group_from_ignoring_parent,
+        args=(options, group_dir, fake_runner, tmp_path),
+    )
+    child_pid = 0
+    wrapper.start()
+    try:
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and wrapper.is_alive():
+            if invocation_path.is_file():
+                child_pid = int(json.loads(invocation_path.read_text(encoding="utf-8"))["pid"])
+                break
+            time.sleep(0.02)
+
+        assert child_pid
+        assert wrapper.pid is not None
+        os.kill(wrapper.pid, signal.SIGINT)
+        wrapper.join(timeout=5)
+
+        assert not wrapper.is_alive()
+        assert wrapper.exitcode == 130
+        assert not process_exists(child_pid)
+    finally:
+        if wrapper.is_alive():
+            wrapper.kill()
+            wrapper.join(timeout=2)
+        if child_pid and process_exists(child_pid):
+            try:
+                os.killpg(child_pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass

@@ -15,7 +15,7 @@ pipeline {
         sh '''
           # Allow the large Fortran automatic arrays used by these cases.
           ulimit -s 8388608
-          tests/run_thread_test.py
+          human_reviewed_tests/run_thread_test.py
         '''
       }
     }

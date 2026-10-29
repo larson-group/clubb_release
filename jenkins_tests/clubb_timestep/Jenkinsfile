@@ -14,7 +14,7 @@ pipeline {
               sh '''
                 # Native cases shared with the JAX/Fortran comparison list.
                 # Keep the sweep's default timesteps and full case durations.
-                python3 tests/run_timestep_sweep.py -jax=cpu -workers 4 \
+                python3 human_reviewed_tests/run_timestep_sweep.py -jax=cpu -workers 4 \
                   -cases "arm,atex,bomex,clex9_oct14,
                     dycoms2_rf01,dycoms2_rf01_fixed_sst,
                     dycoms2_rf02_do,dycoms2_rf02_ds,dycoms2_rf02_nd,
@@ -35,7 +35,7 @@ pipeline {
             '''
 
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''tests/run_timestep_sweep.py'''
+              sh '''human_reviewed_tests/run_timestep_sweep.py'''
             }
           }
         }
@@ -49,7 +49,7 @@ pipeline {
             '''
 
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''python tests/run_clubb_conv_test.py'''
+              sh '''python human_reviewed_tests/run_clubb_conv_test.py'''
             }
           }
         }

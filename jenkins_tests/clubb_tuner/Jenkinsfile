@@ -14,7 +14,7 @@ pipeline {
     stage('Loss Driver Test') {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-          sh '''python tests/run_loss_metrics_test.py'''
+          sh '''python human_reviewed_tests/run_loss_metrics_test.py'''
           sh '''
             # Allow the large Fortran automatic arrays used by these cases.
             ulimit -s 8388608
@@ -87,7 +87,7 @@ pipeline {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''
-            python tests/analyze_tuner_sample_history.py \
+            python human_reviewed_tests/analyze_tuner_sample_history.py \
               output/tuner/new_tuner_test \
               -metric scaled_rmse \
               -min_samples 2 \

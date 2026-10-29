@@ -2,9 +2,9 @@
 // run the SCM cases and verify their budgets.
 // From the repository root, with GCC and NetCDF Fortran modules available:
 //   ./compile.py
-//   bash tests/run_pytests.sh -unit -include_generated -k 'budget_balance or budget_runner' -q
-//   python3 tests/check_budget_balance.py .
-// The focused tests include provisional coverage and temporary NetCDF files.
+//   bash human_reviewed_tests/run_pytests.sh -unit -k 'budget_balance or budget_runner' -q
+//   python3 human_reviewed_tests/check_budget_balance.py .
+// The focused tests are auto-LLM-generated and use temporary NetCDF files.
 pipeline {
   agent any
   stages {
@@ -19,12 +19,12 @@ pipeline {
     }
     stage('Run budget pytests') {
       steps {
-        sh '''bash tests/run_pytests.sh -unit -include_generated -k 'budget_balance or budget_runner' -q'''
+        sh '''bash human_reviewed_tests/run_pytests.sh -unit -k 'budget_balance or budget_runner' -q'''
       }
     }
     stage('Run check_budget_balance') {
       steps {
-        sh '''python3 tests/check_budget_balance.py .'''
+        sh '''python3 human_reviewed_tests/check_budget_balance.py .'''
       }
     }
   }

@@ -18,7 +18,7 @@ The option contract is owned by [run_scripts/README.md](../../../run_scripts/REA
 check that section and the relevant script help instead of maintaining a second
 option inventory here. [utilities/README.md](../../../utilities/README.md) documents
 shared namelist behavior; [setup_python_venv.py](../../../utilities/setup_python_venv.py)
-owns the bootstrap. [tests/README.md](../../../tests/README.md) documents comparison
+owns the bootstrap. [human_reviewed_tests/README.md](../../../human_reviewed_tests/README.md) documents comparison
 harness controls.
 
 ## Public option names and meanings

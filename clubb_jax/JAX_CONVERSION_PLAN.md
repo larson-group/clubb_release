@@ -18,7 +18,7 @@ The supported standalone path is fully JAX-backed:
 
 - [`clubb_jax/`](./) provides a runnable SCM path through
   `./run_scripts/run_scm.py -jax ...`.
-- [`run_jax_vs_fortran_cases.py`](../tests/run_jax_vs_fortran_cases.py)
+- [`run_jax_vs_fortran_cases.py`](../human_reviewed_tests/run_jax_vs_fortran_cases.py)
   compares the independent Fortran and JAX standalone outputs.
 - `src/advance_clubb_to_end.py` owns the Python lifecycle around the jitted
   `advance_clubb_core` entry point.
@@ -167,7 +167,7 @@ retain their existing feature gates.
 
 The recurring regression workflow should be:
 
-- Run [`run_jax_vs_fortran_cases.py`](../tests/run_jax_vs_fortran_cases.py)
+- Run [`run_jax_vs_fortran_cases.py`](../human_reviewed_tests/run_jax_vs_fortran_cases.py)
   after each meaningful incremental conversion.
 - Use `./run_scripts/run_scm.py -jax <case>` for targeted case-level debugging.
 - Treat any new mismatch as a likely bug first, even if only one or two cases

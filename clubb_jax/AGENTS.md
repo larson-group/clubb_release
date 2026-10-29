@@ -11,7 +11,9 @@ standalone is JAX-owned; do not introduce Fortran/F2PY fallbacks. Scope an
 explicitly approved numerical-core rewrite separately from its public interface.
 
 For pytest additions, maintenance and CI coverage, read the
-[pytest workflow](../.agents/skills/clubb-pytests/SKILL.md). Focused checks live in
-`pytests/`; new coverage goes in `pytests/auto_llm_generated_pytests/` pending
-human review. JAX-specific real case runs/whole-driver workflows live in
-this directory's `tests/`; shared comparisons remain in root `tests/`.
+[pytest workflow](../.agents/skills/clubb-pytests/SKILL.md). New agent tests go in
+`auto_llm_generated_tests/`: focused checks in `pytests/unit_tests/`, checks
+against Fortran through the Python API in `pytests/f2py_unit_tests/`, and
+JAX-specific real case runs/whole-driver workflows in `integration_tests/`.
+`human_reviewed_tests/` holds tests a human has reviewed; shared comparisons
+remain in the root `human_reviewed_tests/`.

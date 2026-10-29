@@ -261,14 +261,14 @@ and memory trade-offs.
 
 ## Differentiability
 
-[`run_jax_timestep_gradient_test.py`](tests/run_jax_timestep_gradient_test.py)
+[`run_jax_timestep_gradient_test.py`](auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py)
 checks forward and reverse derivatives of one normal driver timestep for
 BOMEX and ATEX, using an artificial scalar loss. Run both cases or select one,
 from the repository root:
 
 ```bash
-python3 clubb_jax/tests/run_jax_timestep_gradient_test.py
-python3 clubb_jax/tests/run_jax_timestep_gradient_test.py -cases bomex
+python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py
+python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py -cases bomex
 ```
 
 The test checks finite gradients, agreement between forward and reverse
@@ -305,7 +305,7 @@ comparisons faster. Do not use `-stats none` for numerical validation because
 it leaves no statistics output to compare.
 
 The case list and per-case settings are defined in
-[`DEFAULT_CASES`](../tests/run_jax_vs_fortran_cases.py). Comparisons may override
+[`DEFAULT_CASES`](../human_reviewed_tests/run_jax_vs_fortran_cases.py). Comparisons may override
 native case settings; the effective overrides are logged and recorded in the
 results JSON. Forwarded `-max_iters` and `-dt_main` override the configured
 step limit and main timestep for both models.
@@ -326,20 +326,35 @@ multiple processes do not contend for the same device.
 
 ### Focused Python Tests
 
-Focused checks live in `pytests/auto_llm_generated_pytests/` pending human
-review. The first testing stage of the CPU Jenkins job `clubb_jax` explicitly
-runs this provisional coverage in the JAX environment, without Python API or
-F2PY bindings. Independent analytic/NumPy references and focused runtime,
+Tests in this directory are sorted by review status:
+[`human_reviewed_tests/`](human_reviewed_tests/) holds tests a human has
+reviewed, and [`auto_llm_generated_tests/`](auto_llm_generated_tests/) holds
+agent-written tests that have not been reviewed yet.
+
+The human-reviewed
+[`test_file_name_parity.py`](human_reviewed_tests/test_file_name_parity.py)
+checks that every file under `clubb_jax/src/` mirrors a same-named Fortran file
+under `src/`; it lists each mismatch and has its own "File-name parity" stage
+in the `clubb_jax` Jenkins job. It needs only pytest from the JAX environment:
+
+```bash
+python3 clubb_jax/run_jax.py -profile=cpu -init_env
+.venv-jax/bin/python -m pytest -v clubb_jax/human_reviewed_tests/test_file_name_parity.py
+```
+
+Generated focused checks live in `auto_llm_generated_tests/pytests/unit_tests/`.
+The `clubb_jax` Jenkins stage "Auto-LLM-generated JAX pytests" runs them in the
+JAX environment, without Python API or F2PY bindings. Independent analytic/NumPy references and focused runtime,
 conservation, derivative and error-path checks complement the separate
 Fortran executable comparisons.
 From the repo root:
 
 ```bash
-bash tests/run_pytests.sh -jax -include_generated --durations=15
+bash human_reviewed_tests/run_pytests.sh -jax --durations=15
 ```
 
 Routine-level ground truth lives in
-`pytests/auto_llm_generated_pytests/f2py_unit_tests/`: each check calls a JAX
+`auto_llm_generated_tests/pytests/f2py_unit_tests/`: each check calls a JAX
 routine and the same Fortran routine through the Python API (`clubb_python`)
 with identical inputs, and asserts matching shapes and values. The exception is
 `diagnose_upxp`, which is private in Fortran; its check evaluates the Fortran
@@ -348,7 +363,7 @@ instead of skipping when the build is missing:
 
 ```bash
 ./compile.py -debug -python
-bash tests/run_pytests.sh -jax_f2py_unit_tests -include_generated
+bash human_reviewed_tests/run_pytests.sh -jax_f2py_unit_tests
 ```
 
 Set `CLUBB_F2PY_DIR` to use a build other than `install/latest/python`.
@@ -357,25 +372,26 @@ The runner executes these tests as one pytest session, and `-jax` ignores them, 
 any Fortran routine that reads that storage through its `clubb_python` wrapper,
 which sets the storage from its arguments on every call; raw `clubb_f2py` calls
 are for routines that read no stored state. The wrappers also loop over
-single-column routines. `pytests/f2py_unit_test_helpers.py` builds matching JAX
+single-column routines. `auto_llm_generated_tests/pytests/f2py_unit_test_helpers.py` builds matching JAX
 and Fortran grids and compares outputs with shape checks.
 
-See [tests/README.md](../tests/README.md) for admission and Jenkins ownership.
+See [human_reviewed_tests/README.md](../human_reviewed_tests/README.md) for the test layout and Jenkins ownership.
 
 ### Manual component checks
 
-JAX-specific case checks live in this directory's `tests/` folder. Run them
-explicitly from the repository root; they prepare the JAX environment and are
-separate from the focused Jenkins pytest stage.
+JAX-specific case checks live in
+[`auto_llm_generated_tests/integration_tests/`](auto_llm_generated_tests/integration_tests/).
+Run them explicitly from the repository root; they prepare the JAX environment
+and are separate from the focused Jenkins pytest stages.
 
 | Check | Command |
 | --- | --- |
-| SILHS initialization, feedback modes and multicolumn sampling | `python3 clubb_jax/tests/run_silhs_driver_test.py` |
-| BOMEX/ATEX driver gradients, JVPs and finite differences | `python3 clubb_jax/tests/run_jax_timestep_gradient_test.py` |
-| Neutral/ARM initialization and timesteps with binding imports blocked | `python3 clubb_jax/tests/run_standalone_no_bindings_test.py` |
-| Morrison eager/JIT species interfaces and compiled fatal diagnostics | `python3 clubb_jax/tests/run_morrison_interface_test.py` |
-| Mixed-moment PDF integrals against large Monte Carlo samples | `python3 clubb_jax/tests/run_pdf_monte_carlo_test.py` |
-| Rico microphysics and precipitation against Fortran statistics | `python3 clubb_jax/tests/run_rico_microphysics_oracle_test.py -stats_file output/tests/rico_oracle/rico_stats.nc` |
+| SILHS initialization, feedback modes and multicolumn sampling | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_silhs_driver_test.py` |
+| BOMEX/ATEX driver gradients, JVPs and finite differences | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_jax_timestep_gradient_test.py` |
+| Neutral/ARM initialization and timesteps with binding imports blocked | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_standalone_no_bindings_test.py` |
+| Morrison eager/JIT species interfaces and compiled fatal diagnostics | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_morrison_interface_test.py` |
+| Mixed-moment PDF integrals against large Monte Carlo samples | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_pdf_monte_carlo_test.py` |
+| Rico microphysics and precipitation against Fortran statistics | `python3 clubb_jax/auto_llm_generated_tests/integration_tests/run_rico_microphysics_oracle_test.py -stats_file output/tests/rico_oracle/rico_stats.nc` |
 
 The Morrison and Monte Carlo checks can take several minutes. They retain the
 expensive validation removed from focused pytest; they are manual checks and
@@ -409,15 +425,19 @@ python3 run_scripts/run_bindiff_all.py output/driver_test/standalone_jax \
 ```
 
 The `clubb_driver` Jenkins job runs BOMEX and ATEX with distinct C8 columns and
-two-column runtime batches alongside the native driver checks. Its additional
-JAX-only window/batch assertions are runnable with
-`python3 clubb_jax/tests/run_driver_extensions_test.py`. Restart input and
+two-column runtime batches alongside the native driver checks. It also runs
+the human-reviewed
+[`run_driver_extensions_test.py`](human_reviewed_tests/run_driver_extensions_test.py),
+which checks that splitting a run into successive windows (as the loss driver
+does) gives bit-identical results and that selecting a runtime batch loads the
+right parameter sets:
+`python3 clubb_jax/human_reviewed_tests/run_driver_extensions_test.py`. Restart input and
 loss/tuning interfaces are separate functionality changes.
 
 ## Restarts
 
-Use `python3 tests/run_restart_test.py bomex -jax -multicol 4` or
-`python3 tests/run_restart_test.py rico_silhs -jax` to test the existing NetCDF
+Use `python3 human_reviewed_tests/run_restart_test.py bomex -jax -multicol 4` or
+`python3 human_reviewed_tests/run_restart_test.py rico_silhs -jax` to test the existing NetCDF
 restart format through JAX. Initialization restores source-selected state and
 absolute iteration/seeds, including retained SILHS permutations. Jenkins adds
 separate normal and sequence-restart CPU stages. See
@@ -433,14 +453,14 @@ calls, import `clubb_jax.src.clubb_loss_driver` directly. Its five arrays have s
 (window, field, candidate). Runtime batches reuse initialized state and
 compiled shapes. Shared tuner orchestration is a separate functionality PR.
 
-Run `python3 tests/run_loss_output_consistency.py bomex -jax -fields thlm wp2`
+Run `python3 human_reviewed_tests/run_loss_output_consistency.py bomex -jax -fields thlm wp2`
 for saved-profile and independently recomputed metric checks. Jenkins adds this
 CPU check alongside the native stats/loss workflows. The explicit native-oracle
 workflow requires `CLUBB_TEST_LOSS_EXE` or the installed loss executable:
 
 ```bash
-.venv-jax/bin/python -m pytest -q clubb_jax/tests/test_loss_driver.py \
-  clubb_jax/tests/test_silhs_loss_driver.py
+.venv-jax/bin/python -m pytest -q clubb_jax/auto_llm_generated_tests/integration_tests/test_loss_driver.py \
+  clubb_jax/auto_llm_generated_tests/integration_tests/test_silhs_loss_driver.py
 ```
 
 See [TUNER_PORT.md](./TUNER_PORT.md) for loss-window and batch restrictions.

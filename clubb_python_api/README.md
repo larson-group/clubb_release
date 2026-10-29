@@ -122,7 +122,7 @@ in practice, but it currently exercises only a limited portion of the full API
 surface.
 
 For broader and more comprehensive examples, see the API tests under
-[tests/](./tests/). Those tests cover much more of the wrapper surface and
+[auto_llm_generated_tests/pytests/unit_tests/](./auto_llm_generated_tests/pytests/unit_tests/). Those tests cover much more of the wrapper surface and
 return behavior, but they are written to isolate individual routines and
 for testing rather than to set up a physically realistic CLUBB run.
 
@@ -151,7 +151,8 @@ Run the reusable lifecycle workflow with:
 python run_scripts/run_scm_loss.py -python -driver_test -cases bomex
 ```
 
-That command launches [tests/clubb_loss_driver_test.py](./tests/clubb_loss_driver_test.py),
+That command launches
+[auto_llm_generated_tests/integration_tests/clubb_loss_driver_test.py](./auto_llm_generated_tests/integration_tests/clubb_loss_driver_test.py),
 adapted from `src/clubb_loss_driver_test.F90`. It checks one-shot/reusable
 agreement, repeated evaluations, parameter changes and reinitialization.
 
@@ -164,7 +165,10 @@ clubb_python_api/
 │   ├── CLUBB_core/
 │   └── derived_types/
 ├── f2py_fortran_wrappers/
-├── tests/
+├── auto_llm_generated_tests/
+│   ├── pytests/unit_tests/
+│   └── integration_tests/
+├── human_reviewed_tests/
 ├── clubb_f2py.pyf
 └── run_pytests.sh
 ```
@@ -333,13 +337,15 @@ Use the repository pytest entry point to run API checks from the repo root:
 
 ```bash
 ./compile.py -debug -python
-bash tests/run_pytests.sh -api -include_generated
+bash human_reviewed_tests/run_pytests.sh -api
 ```
 
-The API suite currently lives in `pytests/auto_llm_generated_pytests/`, pending
-human review. Default runs select admitted tests only; `-include_generated`
-includes provisional coverage without promoting it. See the
-[pytest suite guide](../tests/README.md#pytest-suites) for admission and CI ownership.
+The API pytests are auto-LLM-generated and live in
+`auto_llm_generated_tests/pytests/unit_tests/`; they have not been reviewed by
+a human yet. The human-reviewed argument-contract audit lives in
+[`human_reviewed_tests/argument_contract_audit.py`](./human_reviewed_tests/argument_contract_audit.py). See the
+[pytest suite guide](../human_reviewed_tests/README.md#pytest-suites) for the
+test layout and CI ownership.
 
 The wrapper delegates to `clubb_python_api/run_pytests.sh`, which prepares the
 shared Python environment and import paths, preloads the selected F2PY
@@ -353,8 +359,8 @@ Ordinary pytest options, such as `-q` and `-v`, are forwarded unchanged.
 The API-specific wrapper also accepts individual test targets:
 
 ```bash
-bash clubb_python_api/run_pytests.sh -include_generated \
-  pytests/auto_llm_generated_pytests/test_udt_roundtrip.py -q
+bash clubb_python_api/run_pytests.sh \
+  auto_llm_generated_tests/pytests/unit_tests/test_udt_roundtrip.py -q
 ```
 
 The test suite covers a few different kinds of checks:

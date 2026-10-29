@@ -16,7 +16,7 @@ pipeline {
           TEST_BRANCH="${BRANCH:-${GIT_BRANCH#origin/}}"
           TEST_BRANCH="${TEST_BRANCH:-${GIT_BRANCH##*/}}"
 
-          python3 tests/run_bindiff_w_flags.py \
+          python3 human_reviewed_tests/run_bindiff_w_flags.py \
             -overwrite_existing \
             -compile_arg=-debug \
             -branches master,${TEST_BRANCH} \

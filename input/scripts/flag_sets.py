@@ -5,7 +5,7 @@ A flag config maps flag-set names to namelist overrides, for example::
     {"flag1": {"saturation_formula": 2, "l_diffuse_rtm_and_thlm": true}}
 
 Shared by run_scripts/run_clubb_w_varying_flags.py and
-tests/run_jax_vs_fortran_cases.py so both render overrides identically.
+human_reviewed_tests/run_jax_vs_fortran_cases.py so both render overrides identically.
 """
 
 import json

@@ -4,16 +4,13 @@
 #
 # Usage:
 #   bash clubb_python_api/run_pytests.sh
-#     Run admitted tests under clubb_python_api/pytests/.
+#     Run the tests under clubb_python_api/auto_llm_generated_tests/pytests/.
 #
 #   bash clubb_python_api/run_pytests.sh -q
 #     Run with quieter pytest output.
 #
 #   bash clubb_python_api/run_pytests.sh -v
 #     Run with more verbose pytest output.
-#
-#   bash clubb_python_api/run_pytests.sh -include_generated -v
-#     Include provisional agent-written tests without promoting them.
 #
 set -euo pipefail
 
@@ -62,10 +59,6 @@ export PYTHONPATH="$F2PY_DIR:$REPO_ROOT:$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 PYTEST_ARGS=()
 has_test_target=false
 for arg in "$@"; do
-  if [[ "$arg" == -include_generated ]]; then
-    export CLUBB_PYTEST_INCLUDE_GENERATED=1
-    continue
-  fi
   target="${arg%%::*}"
   # Accept suite-relative targets while running file-reading checks from the repo root.
   if [[ "$arg" != -* && ! -e "$target" && -e "$SCRIPT_DIR/$target" ]]; then
@@ -78,30 +71,15 @@ for arg in "$@"; do
   fi
 done
 if [[ "$has_test_target" == false ]]; then
-  PYTEST_ARGS=("$SCRIPT_DIR/pytests/" ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"})
-fi
-
-# Keep provisional checks out of suite discovery until explicitly requested.
-if [[ "${CLUBB_PYTEST_INCLUDE_GENERATED:-0}" != 1 ]]; then
-  PYTEST_ARGS+=(--ignore-glob='*/auto_llm_generated_pytests')
+  PYTEST_ARGS=("$SCRIPT_DIR/auto_llm_generated_tests/pytests/" ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"})
 fi
 
 # Load the selected extension before pytest can add source paths to sys.path.
 "$PYTHON_BIN" -c '
-import os
-from pathlib import Path
 import sys
 sys.path.insert(0, sys.argv[1])
 import netCDF4
 import clubb_f2py
 import pytest
-# An empty admitted suite is expected immediately after human-review migration.
-if Path(sys.argv[2]).resolve() == Path("clubb_python_api/pytests").resolve() and os.environ.get("CLUBB_PYTEST_INCLUDE_GENERATED") != "1":
-    admitted = [p for p in Path("clubb_python_api/pytests").rglob("*.py")
-                if "auto_llm_generated_pytests" not in p.parts
-                and (p.name.startswith("test_") or p.name.endswith("_test.py"))]
-    if not admitted:
-        print("No admitted API pytests; no tests executed. Use -include_generated for provisional coverage.")
-        raise SystemExit(0)
 raise SystemExit(pytest.main(sys.argv[2:]))
 ' "$F2PY_DIR" ${PYTEST_ARGS[@]+"${PYTEST_ARGS[@]}"}

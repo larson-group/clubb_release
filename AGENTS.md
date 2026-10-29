@@ -37,7 +37,7 @@ requirements; selecting a child does not automatically load its parent.
 | **Declare Bit-Changing Commits**: decide whether to mark a Fortran answer change, identify affected BFB tests/options, or split preserving and changing edits. | [Bit-change policy](.agents/skills/clubb-bit-changing/SKILL.md) |
 | **Choose Validation or Report Test Results**: plan relevant checks or summarize evidence in a PR, commit or response. | [Testing and reporting](.agents/skills/clubb-testing-and-reporting/SKILL.md) |
 | **Finalize a Branch for Merge**: audit all branch changes, confirm current validation, stop for substantive unaccepted issues, then commit, push and create/update a draft PR. | [Finalization](.agents/skills/clubb-finalization/SKILL.md) |
-| **Add or Review Pytests**: focused checks, generated-test admission, test pruning, or pytest CI coverage. | [Pytest workflow](.agents/skills/clubb-pytests/SKILL.md) |
+| **Add or Review Pytests**: focused checks, test placement and review status, test pruning, or pytest CI coverage. | [Pytest workflow](.agents/skills/clubb-pytests/SKILL.md) |
 | **Learn From a Session**: review recent corrections/decisions and improve their AGENTS, skill, shortcut or documentation owner. | [Session retrospective](.agents/skills/clubb-session-retrospective/SKILL.md) |
 | **Work Through CLUBB Dash**: connect/use/open/control Dash; compile/run, show profiles/contours/plots/console, tune, navigate pages, or create/update/view an investigation report. | [Dash workflow](.agents/skills/clubb-dash/SKILL.md) |
 
@@ -58,11 +58,12 @@ requirements; selecting a child does not automatically load its parent.
   descriptive options, `output_*`, and `-workers` for process concurrency with
   a half-logical-CPU default. Keep worker counts distinct from batch width and
   preserve external-tool flags and documented GPU/plotting exceptions.
-- Follow [clubb-pytests](.agents/skills/clubb-pytests/SKILL.md): fast specific
-  checks belong in `pytests/`; new agent coverage goes in
-  `auto_llm_generated_pytests/` pending human review. Real cases/full workflows
-  belong in their component's `tests/`; reserve root `tests/` for shared
-  workflows and keep Jenkins additions within the requested scope.
+- Follow [clubb-pytests](.agents/skills/clubb-pytests/SKILL.md): new agent
+  tests go in the component's `auto_llm_generated_tests/`, with fast specific
+  checks in `pytests/unit_tests/` and real cases/full workflows in
+  `integration_tests/`. Only a human moves a test into `human_reviewed_tests/`;
+  change human-reviewed tests only when the user asks. Keep Jenkins additions
+  within the requested scope.
 - Reuse the existing utility/parser/state owner. Keep UI/runner adapters thin;
   justify a new abstraction by actual shared behavior. Remove obsolete paths
   in the authorized change instead of adding silent fallback/retry machinery.

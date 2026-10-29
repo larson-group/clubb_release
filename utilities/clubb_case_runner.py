@@ -196,8 +196,9 @@ def choose_run_command(args, *, loss=False, report=print):
         install_dir, install_source = choose_install_dir(args)
         f2py_runtime_dir = python_runtime_dir_from_install(install_dir)
         if loss and getattr(args, "driver_test", False):
-            module_name = "clubb_python_api.tests.clubb_loss_driver_test"
-            python_driver = os.path.join(CLUBB_ROOT, "clubb_python_api", "tests", "clubb_loss_driver_test.py")
+            module_name = "clubb_python_api.auto_llm_generated_tests.integration_tests.clubb_loss_driver_test"
+            python_driver = os.path.join(CLUBB_ROOT, "clubb_python_api", "auto_llm_generated_tests",
+                                         "integration_tests", "clubb_loss_driver_test.py")
         elif loss:
             module_name = "clubb_python.clubb_standalone_loss"
             python_driver = os.path.join(f2py_runtime_dir, "clubb_python", "clubb_standalone_loss.py")

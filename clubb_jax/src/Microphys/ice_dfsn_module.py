@@ -11,7 +11,7 @@ mass-dependent rates live in the scan.
 
 The last axis is vertical; leading column axes are batched. Grid spacing is taken independently
 for each column. Stats and output tendencies are returned in order. Pure jnp → differentiable.
-Validated in `tests/test_ice_dfsn.py` against a literal NumPy transcription (rel ~1e-14),
+Validated in `clubb_jax/auto_llm_generated_tests/pytests/unit_tests/test_ice_dfsn.py` against a literal NumPy transcription (rel ~1e-14),
 conservation of the rcm/thlm tendency coupling, the in-cloud/below-freezing branch, the
 over-depletion cap, and a finite `jax.grad`.
 """

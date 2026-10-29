@@ -12,8 +12,8 @@ and absolute iteration number. No compiled Fortran library or new checkpoint
 format is required.
 
 ```bash
-python3 tests/run_restart_test.py bomex -jax -multicol 4
-python3 tests/run_restart_test.py rico_silhs -jax
+python3 human_reviewed_tests/run_restart_test.py bomex -jax -multicol 4
+python3 human_reviewed_tests/run_restart_test.py rico_silhs -jax
 ```
 
 The script runs an uninterrupted case and another from the saved interior
@@ -92,7 +92,7 @@ use the resulting absolute iteration without changing their formulas.
 
 ## Validation
 
-The shared `tests/run_restart_test.py` is the real-case restart test for both
+The shared `human_reviewed_tests/run_restart_test.py` is the real-case restart test for both
 backends. It compares the selected final-timestep statistic bit for bit; JAX
 checks every column, while Fortran retains its existing first-column check.
 Broader all-statistics/all-record comparisons are deferred to a future shared
@@ -106,7 +106,7 @@ The `clubb_restart` Jenkins job adds two JAX variants beside its native tests:
   length three. Restart from step 37, so step 38 reuses a retained permutation.
   Importance sampling is disabled for this focused sequence check.
 
-Focused provisional pytests cover the host reader and initialization boundary:
+Focused auto-LLM-generated pytests cover the host reader and initialization boundary:
 raw zeros, units, dimension order, date offsets, saved records, split/unified
 files, interpolation, single-column broadcasting, invalid dtype/units, clock
 validation and protection against overwriting the reference file. CLI checks

@@ -13,7 +13,7 @@ JAX adaptations: a state dictionary replaces driver globals, exceptions retain
 cleanup through try/finally, and successful execution returns the native code
 6. The labeled output-batch loop extends the native program to write every
 requested parameter column. Additional window/batch assertions are kept
-separately in clubb_jax/tests/run_driver_extensions_test.py.
+separately in clubb_jax/human_reviewed_tests/run_driver_extensions_test.py.
 """
 
 import sys

@@ -12,7 +12,7 @@ pipeline {
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
               sh '''
                 # Different batch sizes may make JIT optimize differently, causing tiny rounding differences.
-                python3 tests/run_stats_output_consistency.py bomex -jax=cpu -jax_tolerance 3e-9
+                python3 human_reviewed_tests/run_stats_output_consistency.py bomex -jax=cpu -jax_tolerance 3e-9
               '''
             }
           }
@@ -22,7 +22,7 @@ pipeline {
           steps {
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
               sh '''
-                python3 tests/run_loss_output_consistency.py bomex -jax -fields thlm wp2 \
+                python3 human_reviewed_tests/run_loss_output_consistency.py bomex -jax -fields thlm wp2 \
                   -output_root output/jax_loss_consistency
               '''
             }
@@ -37,10 +37,10 @@ pipeline {
               ./compile.py -debug
             '''
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh 'python tests/run_stats_output_consistency.py bomex'
+              sh 'python human_reviewed_tests/run_stats_output_consistency.py bomex'
             }
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh 'python tests/run_loss_output_consistency.py bomex'
+              sh 'python human_reviewed_tests/run_loss_output_consistency.py bomex'
             }
           }
         }
@@ -53,10 +53,10 @@ pipeline {
               ./compile.py -debug
             '''
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh 'python tests/run_stats_output_consistency.py atex'
+              sh 'python human_reviewed_tests/run_stats_output_consistency.py atex'
             }
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh 'python tests/run_loss_output_consistency.py atex'
+              sh 'python human_reviewed_tests/run_loss_output_consistency.py atex'
             }
           }
         }
@@ -69,10 +69,10 @@ pipeline {
               ./compile.py -debug
             '''
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh 'python tests/run_stats_output_consistency.py wangara'
+              sh 'python human_reviewed_tests/run_stats_output_consistency.py wangara'
             }
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh 'python tests/run_loss_output_consistency.py wangara'
+              sh 'python human_reviewed_tests/run_loss_output_consistency.py wangara'
             }
           }
         }

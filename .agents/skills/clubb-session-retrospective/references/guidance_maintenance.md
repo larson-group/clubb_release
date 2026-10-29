@@ -37,4 +37,4 @@ Do not add a permanent benchmark framework for every wording edit.
 
 For a user-requested review of a recent session, use the
 [session retrospective](../SKILL.md). For test-level decisions,
-provisional admission and CI ownership, use the [pytest workflow](../../clubb-pytests/SKILL.md).
+test placement, review status and CI ownership, use the [pytest workflow](../../clubb-pytests/SKILL.md).

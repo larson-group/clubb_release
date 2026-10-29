@@ -78,7 +78,7 @@ Do the work in this order:
    - Use:
 
      ```bash
-     bash clubb_python_api/run_pytests.sh -include_generated
+     bash clubb_python_api/run_pytests.sh
      ```
 
    - Some negative-path tests may print expected Fortran fatal-error text. Trust the pytest result, not just the log noise.
@@ -114,10 +114,10 @@ Do the work in this order:
    - Use serial jobs first:
 
      ```bash
-     ./tests/run_python_vs_fortran_cases.py -cases bomex -workers 1
-     ./tests/run_python_vs_fortran_cases.py -cases atex -workers 1
-     ./tests/run_jax_vs_fortran_cases.py -cases bomex -workers 1
-     ./tests/run_jax_vs_fortran_cases.py -cases atex -workers 1
+     ./human_reviewed_tests/run_python_vs_fortran_cases.py -cases bomex -workers 1
+     ./human_reviewed_tests/run_python_vs_fortran_cases.py -cases atex -workers 1
+     ./human_reviewed_tests/run_jax_vs_fortran_cases.py -cases bomex -workers 1
+     ./human_reviewed_tests/run_jax_vs_fortran_cases.py -cases atex -workers 1
      ```
 
    - `-workers 1` makes JAX comparison logs easier to inspect; the Python comparison script still uses `-workers 1`.
@@ -126,8 +126,8 @@ Do the work in this order:
    - The work is complete only when these pass, or any remaining differences are understood, documented, and explicitly accepted:
 
      ```bash
-     ./tests/run_python_vs_fortran_cases.py -workers 1
-     ./tests/run_jax_vs_fortran_cases.py -workers 1
+     ./human_reviewed_tests/run_python_vs_fortran_cases.py -workers 1
+     ./human_reviewed_tests/run_jax_vs_fortran_cases.py -workers 1
      ```
 
 Debugging techniques and common failure modes:
@@ -164,10 +164,10 @@ purpose of supplemental local comparisons or focused checks.
 Expected final state for the full API/driver task:
 
 - `./compile.py -python` succeeds.
-- `bash clubb_python_api/run_pytests.sh -include_generated` passes.
+- `bash clubb_python_api/run_pytests.sh` passes.
 - Short `run_scm.py` Python-vs-Fortran bindiffs pass for representative cases.
-- `./tests/run_python_vs_fortran_cases.py -workers 1` passes.
-- `./tests/run_jax_vs_fortran_cases.py -workers 1` passes.
+- `./human_reviewed_tests/run_python_vs_fortran_cases.py -workers 1` passes.
+- `./human_reviewed_tests/run_jax_vs_fortran_cases.py -workers 1` passes.
 
 ## Scope boundaries
 

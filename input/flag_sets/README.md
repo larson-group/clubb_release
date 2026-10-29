@@ -40,7 +40,7 @@ Overrides from a flag set work the same way for both kinds.
 
 ## How flags get to the model
 
-1. `run_scripts/run_clubb_w_varying_flags.py -flag_config_file <file>.json` (or `tests/run_jax_vs_fortran_cases.py -flag_config_file <file>.json`)
+1. `run_scripts/run_clubb_w_varying_flags.py -flag_config_file <file>.json` (or `human_reviewed_tests/run_jax_vs_fortran_cases.py -flag_config_file <file>.json`)
    reads the JSON with `input/scripts/flag_sets.py`.
    An unmodified `default` run is always added by the JAX comparison harness.
    The varying-flags runner can omit it with `-skip_default_flags`; `default`
@@ -53,7 +53,7 @@ Overrides from a flag set work the same way for both kinds.
    An override key that doesn't match an entry is an error.
 4. That namelist is passed to the executable: `clubb_standalone` (Fortran) by default, or the JAX driver with `-jax`.
 
-`tests/run_bindiff_w_flags.py` wraps step 1 for several git refs and bindiffs the per-flag-set outputs.
+`human_reviewed_tests/run_bindiff_w_flags.py` wraps step 1 for several git refs and bindiffs the per-flag-set outputs.
 
 
 ## Notes

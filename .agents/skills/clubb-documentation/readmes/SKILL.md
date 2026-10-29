@@ -22,7 +22,7 @@ when it already covers the work. Do not create one for every script or helper.
 Start with a concise explanation of what this README covers and what it helps
 someone do. Then choose the structure for that area:
 
-- **Broad script directories, such as `run_scripts/` or `tests/`:** give a few
+- **Broad script directories, such as `run_scripts/` or `human_reviewed_tests/`:** give a few
   sentences of overview, then describe each user entry point with its uses
   and examples.
 - **A coherent feature, such as the tuner or Dash:** explain its purpose and

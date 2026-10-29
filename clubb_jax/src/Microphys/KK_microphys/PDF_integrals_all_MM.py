@@ -14,7 +14,7 @@ unroll at trace time; alpha_exp/beta_exp are float exponents. Pure jnp → diffe
 
 FULL port (8/8): the trivariate family (`trivar_NNL_MM` + const-x1/x2/x1x2, x2>0) and the quadrivariate family
 (`quadrivar_NNLL_MM` + const-x1/x2/x1x2, x2<0 subsaturated, x3,x4 lognormal). Validated in
-`tests/test_pdf_integrals_all_mm.py`: the a=b=0 base cases reduce analytically to the x2>0/x2<0 probability mass
+`clubb_jax/auto_llm_generated_tests/pytests/unit_tests/test_pdf_integrals_all_mm.py`: the a=b=0 base cases reduce analytically to the x2>0/x2<0 probability mass
 Phi(±mu_x2/sigma_x2), a=2,b=0 reduces to a normal central moment × Phi, and every general/const form matches a
 truncated-domain Monte-Carlo (the quadrivar forms use a complex principal-branch power for the x2<0 region,
 matching `_signed_pow`; the const-x2/x1x2 forms are guarded to mu_x2<=0, where the x2 delta lies in x2<0).

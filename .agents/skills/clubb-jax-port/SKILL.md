@@ -50,6 +50,16 @@ their strict interface or waive numerical coverage.
 
 - Mirror source-tree/file layout under `clubb_jax/src/`; keep routine names,
   order, arguments, meaningful comments, dividers and readable spacing.
+  `clubb_jax/human_reviewed_tests/test_file_name_parity.py` enforces the
+  file-for-file mirror; it is human-maintained ground truth. When you add,
+  move, rename or remove a JAX source file, run
+  `.venv-jax/bin/python -m pytest clubb_jax/human_reviewed_tests/test_file_name_parity.py`
+  (after `python3 clubb_jax/run_jax.py -init_env`) before and after your
+  change. Fix any new failure caused
+  by a rename, merge or split you introduced by changing the JAX files. Do not
+  edit the test, including its allowlists. If your change makes an allowlist
+  entry stale or needs a new exception, stop and report the test output to the
+  user so a human can update the test or revise the change.
 - Use current JAX state/types/grid infrastructure and same-named source types.
   Reuse shared infrastructure rather than creating per-file conversion layers.
 - Keep physics array math in JAX. Use fixed shapes, functional updates, masks
@@ -90,8 +100,8 @@ without making the limitation explicit and getting acceptance where required.
 For example, from the repo root:
 
 ```bash
-./tests/run_jax_vs_fortran_cases.py -cases bomex -workers 1 -max_iters 20
-./tests/run_jax_vs_fortran_cases.py -cases bomex -workers 1
+./human_reviewed_tests/run_jax_vs_fortran_cases.py -cases bomex -workers 1 -max_iters 20
+./human_reviewed_tests/run_jax_vs_fortran_cases.py -cases bomex -workers 1
 ```
 
 The second command removes only the iterative cap; the curated case itself may
@@ -120,8 +130,9 @@ Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) for final
 check selection and reporting Jenkins links, extra local coverage and failures.
 
 Finish with the faithful-port completion audit, including comments, spacing,
-argument grouping and every new helper. Report structural and numerical results
-separately, remaining support gates and untested configurations. Do not declare
+argument grouping, every new helper and no new failures of the filename-parity test.
+Report structural and numerical results separately, remaining support gates
+and untested configurations. Do not declare
 complete while known in-scope structural defects remain. Do not redesign output,
 optimize hardware performance, or refactor unrelated files just to polish a port.
 

@@ -14,25 +14,40 @@ pipeline {
         '''
       }
     }
-    stage('Run JAX pytests') {
+    stage('File-name parity') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            # Human-reviewed check that clubb_jax/src mirrors src/ file for file.
+            # The test itself uses only the standard library; the JAX environment
+            # is prepared only because it provides pytest.
+            python3 clubb_jax/run_jax.py -profile=cpu -init_env
+            .venv-jax/bin/python -m pytest -v clubb_jax/human_reviewed_tests/test_file_name_parity.py \
+              --junitxml="$WORKSPACE/output/tests/pytests/jax_file_name_parity.xml"
+          '''
+        }
+      }
+    }
+    // Auto-LLM-generated pytests; comment out a stage to skip that suite.
+    stage('Auto-LLM-generated JAX pytests') {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
-            bash tests/run_pytests.sh -jax -include_generated -v --durations=15 \
+            bash human_reviewed_tests/run_pytests.sh -jax -v --durations=15 \
               --junitxml="$WORKSPACE/output/tests/pytests/jax.xml"
           '''
         }
       }
     }
-    stage('JAX F2PY unit tests') {
+    stage('Auto-LLM-generated JAX F2PY unit tests') {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
-            bash tests/run_pytests.sh -jax_f2py_unit_tests -include_generated -v --durations=15 \
+            bash human_reviewed_tests/run_pytests.sh -jax_f2py_unit_tests -v --durations=15 \
               --junitxml="$WORKSPACE/output/tests/pytests/jax_f2py_unit_tests.xml"
           '''
         }
@@ -45,7 +60,7 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            python3 tests/run_jax_comparison_mutation_test.py
+            python3 human_reviewed_tests/run_jax_comparison_mutation_test.py
           '''
         }
       }
@@ -69,7 +84,7 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            python3 tests/run_jax_vs_fortran_cases.py -debug 0 -max_iters 5 -workers 8 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json
+            python3 human_reviewed_tests/run_jax_vs_fortran_cases.py -debug 0 -max_iters 5 -workers 8 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json
           ''' // Bound the varying-flag sweep to five timesteps per case.
         }
       }

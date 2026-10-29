@@ -32,7 +32,7 @@ guard; the _dp variants drop it). Inputs use the ratio sigma2_on_mu2 = sigma_x^2
 mean_L2N, stdev_L2N, corr_NN2NL, corr_NN2LL, calc_corr_chi_x, calc_corr_eta_x are bit-to-bit
 verifiable against the f2py API; corr_NL2NN/corr_LL2NN (not exposed) are checked vs Monte-Carlo
 and calc_corr_rt_x/calc_corr_thl_x via the chi/eta<->rt/thl round-trip.
-See tests/test_pdf_utilities.py. All functions are jnp and differentiable.
+See clubb_jax/auto_llm_generated_tests/pytests/unit_tests/test_pdf_utilities.py. All functions are jnp and differentiable.
 """
 import jax.numpy as jnp
 

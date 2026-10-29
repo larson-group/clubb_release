@@ -13,7 +13,7 @@ pipeline {
     }
     stage('Run test_fire_tuner') {
       steps {
-        sh '''python3 tests/test_fire_tuner.py .'''
+        sh '''python3 human_reviewed_tests/test_fire_tuner.py .'''
       }
     }
   }

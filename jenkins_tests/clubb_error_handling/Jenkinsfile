@@ -6,7 +6,7 @@ pipeline {
         sh '''
           source /etc/profile.d/larson-group.sh
           module load gcc netcdf-fortran
-          python tests/test_fatal_error_handling.py
+          python human_reviewed_tests/test_fatal_error_handling.py
         '''
       }
     }

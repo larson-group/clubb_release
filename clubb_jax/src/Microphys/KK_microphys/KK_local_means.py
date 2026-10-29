@@ -10,7 +10,7 @@ disabled). Power laws with the `parameters_KK.F90` exponents:
   mvr  = coef * rr^(1/3) * max(Nr,Nr_tol)^(-1/3)
 
 Completeness port (the gated KK path uses the upscaled means in `KK_upscaled_means.py`); no f2py oracle for
-the local-mean variants, so validated analytically (`tests/test_kk_local_means.py`). Pure jnp; the `mean_s`
+the local-mean variants, so validated analytically (`clubb_jax/auto_llm_generated_tests/pytests/unit_tests/test_kk_local_means.py`). Pure jnp; the `mean_s`
 base is clamped with `max(·,0)` inside the masked branches so a negative-base fractional power can't NaN the
 gradient (forward-identical to the Fortran's `if`-guarded evaluation).
 """

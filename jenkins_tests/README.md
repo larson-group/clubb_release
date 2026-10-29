@@ -18,7 +18,7 @@ For example, [clubb_python/Jenkinsfile](clubb_python/Jenkinsfile) runs the
 Python API, shared unit checks and Python/Fortran comparisons.
 [clubb_basic_full_run/Jenkinsfile](clubb_basic_full_run/Jenkinsfile) runs the
 standard cases with two compilers in separate parallel branches. See the
-[test harness README](../tests/README.md) for the underlying test commands and
+[test harness README](../human_reviewed_tests/README.md) for the underlying test commands and
 [run-script README](../run_scripts/README.md) for ordinary case execution.
 
 ## Set up an agent's HTTPS access
@@ -73,7 +73,7 @@ For example, the commands in
 source /etc/profile.d/larson-group.sh
 module load gcc netcdf-fortran
 ./compile.py
-python3 tests/check_budget_balance.py .
+python3 human_reviewed_tests/check_budget_balance.py .
 ```
 
 This example uses the UWM workers' environment setup. Elsewhere, prepare the

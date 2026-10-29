@@ -17,7 +17,7 @@ For a reporting-only request, inspect recorded results rather than launching
 new tests. For execution, stay within the task's authorized validation scope;
 this skill does not require a full Jenkins suite for every change. Use
 [Jenkins access](../clubb-jenkins/SKILL.md) for live jobs and
-[pytest guidance](../clubb-pytests/SKILL.md) for focused suite ownership/admission.
+[pytest guidance](../clubb-pytests/SKILL.md) for focused suite ownership and test placement.
 
 ## Choose checks that exercise the change
 

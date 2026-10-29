@@ -209,7 +209,7 @@ badges so they do not overwrite the official color meaning.
 The cards are a curated quick-reference view of `doc/CLUBBeqns.tex`, not a
 second independent equation source. When a branch changes an equation, update
 the guide metadata, its displayed source routine, and the focused test in
-`dash_app/pytests/test_equations.py` together.
+`dash_app/auto_llm_generated_tests/pytests/unit_tests/test_equations.py` together.
 
 ## ADG1 Explorer Teaching Model
 
@@ -224,7 +224,7 @@ focused diagnostics. Each visible Misc page owns one direct subdirectory under
 `dash_app/misc_tab/` (for example, `sam_w_rt_neighborhood/`). Its package registers a `SubtabSpec`, and the Misc shell
 discovers those packages automatically for the persistent vertical directory.
 Keep each subtab's data loading, callbacks, generation helpers, and focused
-focused tests in `dash_app/pytests/`.
+focused tests in `dash_app/auto_llm_generated_tests/pytests/unit_tests/`.
 
 Use the small layout builders in `dash_app/shared/reporting.py` for report
 headers, fact grids, sections, and intentional empty states. They are shared

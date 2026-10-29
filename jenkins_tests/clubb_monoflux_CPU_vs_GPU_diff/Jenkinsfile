@@ -10,7 +10,7 @@ pipeline {
           sh '''
             source /etc/profile.d/larson-group.sh
             module load nvhpc netcdf-fortran
-            python tests/test_monoflux_limiter_GPU.py
+            python human_reviewed_tests/test_monoflux_limiter_GPU.py
           '''
         }
       }

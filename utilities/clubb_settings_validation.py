@@ -11,7 +11,7 @@ parameter order and hard rejection limits, while ``numerical_check.F90`` and
 the scientific owner modules decide whether an actual run may proceed.  This
 module is the dependency-free mirror used to make tooling responsive before a
 Python API build exists.  The compiled test in
-``tests/run_clubb_settings_validation_test.py`` checks the common rejecting
+``human_reviewed_tests/run_clubb_settings_validation_test.py`` checks the common rejecting
 cases and all parameter bounds after ``./compile.py -python``.
 
 The audit is intentionally split into two readable parts:

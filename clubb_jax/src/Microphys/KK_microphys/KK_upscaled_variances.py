@@ -4,7 +4,7 @@ Mirrors `variance_KK_mvr`: `Var(R_vr) = E[R_vr^2] - E[R_vr]^2` for `R_vr = coef 
 2-component, in-precip bivariate-lognormal rain PDF. `E[R_vr^2]` is assembled from the already-ported
 `bivar_LL_mean_eq` (the `<r_r^a N_r^b>` integral) with the exponents DOUBLED (2*alpha, 2*beta); `E[R_vr]` is the
 precomputed `KK_mean_vol_rad` input. Pure jnp → differentiable. Validated against an independent closed-form
-lognormal-moment computation + a Monte-Carlo sample (`tests/test_kk_upscaled_variances.py`).
+lognormal-moment computation + a Monte-Carlo sample (`clubb_jax/auto_llm_generated_tests/pytests/unit_tests/test_kk_upscaled_variances.py`).
 """
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import bivar_LL_mean_eq
 

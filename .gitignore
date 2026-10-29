@@ -25,6 +25,7 @@ run_scripts/tmp_dup_params.in
 .venv*/
 
 /worklog.md
+.claude/skills/backlog/
 
 .clubb-jax-tools
 .clubb-python-tools/

@@ -145,10 +145,10 @@ Parameter arrays and retained allocations remain in the tuner's existing F2PY
 or JAX loss API (`init_clubb_loss`, `clubb_get_loss_for_params`,
 `finalize_clubb_loss`). They do not pass through this ordinary case interface.
 
-The [case runner lifecycle test](../tests/case_runner_lifecycle_test.py) checks
+The [case runner lifecycle test](../human_reviewed_tests/case_runner_lifecycle_test.py) checks
 process reuse and exact numeric stats against fresh-process controls. It runs
 Fortran, Python and CPU JAX in the first `clubb_driver` Jenkins stage. See the
-[test instructions](../tests/README.md#case_runner_lifecycle_testpy) for the
+[test instructions](../human_reviewed_tests/README.md#case_runner_lifecycle_testpy) for the
 case sequence, build requirements and standalone commands.
 
 ### Timing sweeps

@@ -38,7 +38,7 @@ def compiled_parameter_hard_bounds() -> dict[str, dict[str, float | None]]:
     """Return Fortran-validated hard bounds without importing the F2PY API.
 
     The public function name is retained for callers that previously used the
-    compiled lookup. ``tests/run_clubb_settings_validation_test.py`` verifies
+    compiled lookup. ``human_reviewed_tests/run_clubb_settings_validation_test.py`` verifies
     this mirror agrees with the compiled Fortran table.
     """
     return parameter_hard_bounds()

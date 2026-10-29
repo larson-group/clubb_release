@@ -1,18 +1,16 @@
-// Run the focused Dash pytest suite.
+// Run the auto-LLM-generated Dash pytest suite.
 pipeline {
   agent any
   stages {
-    stage('Run Dash pytests') {
+    stage('Auto-LLM-generated Dash pytests') {
       steps {
-        withEnv(["PYTEST_GENERATED_ARG=${params.INCLUDE_GENERATED_PYTESTS ? '-include_generated' : ''}"]) {
-          sh '''
-            # Use the Node runtime provisioned once for the Jenkins account on each worker.
-            export PATH="$HOME/.local/bin:$PATH"
-            node --version
-            bash tests/run_pytests.sh -dash $PYTEST_GENERATED_ARG \
-              --junitxml="$WORKSPACE/output/tests/pytests/dash.xml" --durations=10
-          '''
-        }
+        sh '''
+          # Use the Node runtime provisioned once for the Jenkins account on each worker.
+          export PATH="$HOME/.local/bin:$PATH"
+          node --version
+          bash human_reviewed_tests/run_pytests.sh -dash \
+            --junitxml="$WORKSPACE/output/tests/pytests/dash.xml" --durations=10
+        '''
       }
     }
   }

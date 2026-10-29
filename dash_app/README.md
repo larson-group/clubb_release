@@ -516,7 +516,7 @@ Compile tab source-check log; plot-family help text is centralized in
 Run the Dash test suite with the dashboard environment:
 
 ```bash
-bash tests/run_pytests.sh -dash
+bash human_reviewed_tests/run_pytests.sh -dash
 ```
 
 This includes the bounded MCP stdio protocol regression; it does not run SCM
@@ -526,7 +526,7 @@ For the manual parcel-trajectory comparison, supply fresh Fortran ARM
 `all` output from 625 timesteps, including saved record 612:
 
 ```bash
-python3 dash_app/tests/run_dash_mixing_length_test.py \
+python3 dash_app/auto_llm_generated_tests/integration_tests/run_dash_mixing_length_test.py \
   -stats_file output/tests/dash_arm/arm_stats.nc
 ```
 

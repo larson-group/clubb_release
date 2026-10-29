@@ -14,9 +14,9 @@
 //   module load gcc netcdf-fortran
 //   ./compile.py -debug -python
 //   ulimit -s 8388608
-//   python3 tests/case_runner_lifecycle_test.py -output_dir output/driver_test/case_runner_native
-//   python3 tests/case_runner_lifecycle_test.py -python -output_dir output/driver_test/case_runner_python
-//   python3 tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/driver_test/case_runner_jax
+//   python3 human_reviewed_tests/case_runner_lifecycle_test.py -output_dir output/driver_test/case_runner_native
+//   python3 human_reviewed_tests/case_runner_lifecycle_test.py -python -output_dir output/driver_test/case_runner_python
+//   python3 human_reviewed_tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/driver_test/case_runner_jax
 // Elsewhere, provide the GNU/NetCDF build environment described in BUILD.md.
 // Python dependencies and the JAX CPU environment use the existing bootstraps.
 // Record independent failures while allowing manual aborts to stop the pipeline.
@@ -35,7 +35,7 @@ pipeline {
             module load gcc netcdf-fortran
             ./compile.py -debug -python
             ulimit -s 8388608
-            python3 tests/case_runner_lifecycle_test.py -output_dir output/driver_test/case_runner_native
+            python3 human_reviewed_tests/case_runner_lifecycle_test.py -output_dir output/driver_test/case_runner_native
           '''
         }
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
@@ -43,12 +43,12 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            python3 tests/case_runner_lifecycle_test.py -python -output_dir output/driver_test/case_runner_python
+            python3 human_reviewed_tests/case_runner_lifecycle_test.py -python -output_dir output/driver_test/case_runner_python
           '''
         }
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''
-            python3 tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/driver_test/case_runner_jax
+            python3 human_reviewed_tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/driver_test/case_runner_jax
           '''
         }
       }
@@ -81,8 +81,9 @@ pipeline {
             }
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
               sh '''
-                # JAX-only assertions beyond src/clubb_driver_test.F90.
-                python3 clubb_jax/tests/run_driver_extensions_test.py
+                # Human-reviewed JAX checks beyond src/clubb_driver_test.F90: split-window
+                # bit equality (used by the loss driver) and runtime-batch parameter selection.
+                python3 clubb_jax/human_reviewed_tests/run_driver_extensions_test.py
               '''
             }
           }

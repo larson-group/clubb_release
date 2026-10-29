@@ -12,7 +12,7 @@ from typing import Any
 
 RUNTIME_FINGERPRINT_SCOPE = "dash_app,tuner,utilities:non-test-python"
 _RUNTIME_ROOTS = ("dash_app", "tuner", "utilities")
-_RUNTIME_EXCLUDED_PARTS = {"__pycache__", "pytests", "tests"}
+_RUNTIME_EXCLUDED_PARTS = {"__pycache__", "auto_llm_generated_tests", "human_reviewed_tests"}
 
 
 def sha256_file(path: Path) -> str | None:
