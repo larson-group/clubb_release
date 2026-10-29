@@ -207,7 +207,7 @@ follow the following steps:
   - `./run_scm.py bomex`
     (in the clubb/run_scripts directory)
 - Run pyplotgen to create plots of the output from the benchmark case simulation
-  - `python3 ./pyplotgen.py -c ~/clubb/output -o ~/plots`
+  - `python3 ./pyplotgen.py -clubb ~/clubb/output -output_dir ~/plots`
     (in the clubb/postprocessing/pyplotgen directory, assuming CLUBB is checked
      out to ~/clubb)
 - View the pyplotgen plots using a web browser
