@@ -1,3 +1,10 @@
+// Check budget validation and case-runner behavior with focused pytests, then
+// run the SCM cases and verify their budgets.
+// From the repository root, with GCC and NetCDF Fortran modules available:
+//   ./compile.py
+//   bash tests/run_pytests.sh -unit -include_generated -k 'budget_balance or budget_runner' -q
+//   python3 tests/check_budget_balance.py .
+// The focused tests include provisional coverage and temporary NetCDF files.
 pipeline {
   agent any
   stages {
@@ -8,6 +15,11 @@ pipeline {
           module load gcc netcdf-fortran
           ./compile.py
         '''
+      }
+    }
+    stage('Run budget pytests') {
+      steps {
+        sh '''bash tests/run_pytests.sh -unit -include_generated -k 'budget_balance or budget_runner' -q'''
       }
     }
     stage('Run check_budget_balance') {

@@ -47,6 +47,10 @@ def main() -> int:
         default=None,
         help="Path to CLUBB source root (default: derived from this script location).",
     )
+    parser.add_argument(
+        "-workers", metavar="N",
+        help="Maximum concurrent cases (default: half the available logical CPUs).",
+    )
     args = parser.parse_args()
 
     clubb_source = Path(args.clubb_source).resolve() if args.clubb_source else DEFAULT_CLUBB_ROOT.resolve()
@@ -54,32 +58,33 @@ def main() -> int:
     env["LAPACK"] = "/usr/lib64"
 
     run_scripts_dir = clubb_source / "run_scripts"
-    run_scm_py = run_scripts_dir / "run_scm.py"
+    run_scm_all_py = run_scripts_dir / "run_scm_all.py"
     budget_dir = clubb_source / "postprocessing" / "check_budgets_balance"
-    if not run_scm_py.exists():
-        raise SystemExit(f"Missing run_scm.py at: {run_scm_py}")
+    if not run_scm_all_py.exists():
+        raise SystemExit(f"Missing run_scm_all.py at: {run_scm_all_py}")
     if not budget_dir.exists():
         raise SystemExit(f"Missing budget check directory: {budget_dir}")
 
-    for case in CASES:
-        run_cmd(
-            [
-                sys.executable,
-                str(run_scm_py),
-                "-dt_main",
-                "300",
-                "-dt_rad",
-                "300",
-                "-tout",
-                "300",
-                # Keep l_lmm_stepping disabled and ensure sampling cadence matches output cadence.
-                "-override",
-                "l_lmm_stepping=.false.,stats_tsamp=300.0",
-                case,
-            ],
-            cwd=str(run_scripts_dir),
-            env=env,
-        )
+    run_cmd(
+        [
+            sys.executable,
+            str(run_scm_all_py),
+            *(["-workers", args.workers] if args.workers is not None else []),
+            "-dt_main",
+            "300",
+            "-dt_rad",
+            "300",
+            "-tout",
+            "300",
+            # Keep l_lmm_stepping disabled and match sampling to output cadence.
+            "-override",
+            "l_lmm_stepping=.false.,stats_tsamp=300.0",
+            "-cases",
+            ",".join(CASES),
+        ],
+        cwd=str(run_scripts_dir),
+        env=env,
+    )
 
     result = subprocess.run(
         [sys.executable, "checkBudget.py", "all", "0"],

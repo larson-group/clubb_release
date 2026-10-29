@@ -111,110 +111,71 @@ def checkNetcdfBudgets(fileName, iteration):
         sys.stderr.write("Error parsing timestep\n")
         sys.exit(1)
 
-    # Find number of variables (VARS)
-    try:
-        numVars = len(list(ncFile.variables.keys()))
-    except Exception:
-        sys.stderr.write("Error parsing number of variables\n")
-        sys.exit(1)
-    
     # Check that user entered a valid iteration
     if iteration > numIterations:
         sys.stderr.write(fileName + " only indicates " + str(numIterations) + " iterations\n")
         sys.exit(1)
     
-    #Prep for finding budget variables
-    varList =  list(ncFile.variables.keys())
-    varList.sort()
-    
-    
-    # Check the budgets for errors. Loop through all timesteps if iteration <= 0, otherwise
-    # just test the specified timestep
-    if iteration <= 0:
-        for t in range(1,numIterations+1):
-            testSuccess = findNetcdfErrorsAtTimestep(t, ncFile, numVars, varList, numLevels, \
-                                                     timestep, numIterations, testSuccess)
-    else:
-        testSuccess = findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, \
-                                                 timestep, numIterations, testSuccess)
-    #print(varList)
-    #print(numVars)
-    ncFile.close()
-    return testSuccess
-
-#--------------------------------------------------------------------------------------------------
-def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, timestep, numIterations, testSuccess):
-    """
-    Looks through a list of variables in alphabetical order for budget variables (ending in _bt)
-    
-    Input: iteration: The value of t
-           ncFile: File object representing NetCDF file
-           numVars: number of variables
-           varList: A list of all the variables in alphabetical order
-           numLevels: number of z levels
-           numIterations: number of iterations
-           testSuccess: Whether the test is succeeding or failing
-    """
-    
-    rightHandValue = None # RHS of budget equation. Each z level is treated separately
-    # Find a budget variable (_bt)
+    # Discover the budgets once, then read only their data and state variables.
+    varList = sorted(ncFile.variables)
+    budgets = []
+    required = set()
     for varName in varList:
-        try:
-            # If varName is not budget var, exception will be thrown and next var checked
-            budgetVarName = re.match(r"\w+_bt", varName).group()
-            
-            budgetVar = ncFile.variables[varName]
-            budgetUnits = inferBudgetUnits(ncFile, varList, budgetVarName, budgetVar.units)
-            leftHandValue = extractNetcdfProfileAtIteration(budgetVar, iteration)
-            
-            # Can't do completeness check when iteration is 1
-            if iteration != 1 and COMPLETENESS_TEST == True:
-                if budgetVarName[:-3] == "rtm" or budgetVarName[:-3] == "thlm": #TODO Ignore completeness test failures except for rtm and thlm. See ticket 153
-                    # Check that the budget is consistent with previous and next time iterations
-                    testSuccess = checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
-                                  budgetVarName[:-3], varList, budgetUnits, timestep, leftHandValue, testSuccess)
-            
-            # Find components of the budget variable
-            for variableName in varList:
-                try:
-                    varPrefix = re.match(r"\w+?_", variableName).group()
-                    if varPrefix == budgetVarName[:-2] and variableName[-2:] != "bt":
-                            var = ncFile.variables[variableName]
-                            
-                            # Vars in the budget have descriptions that include eg. "thlm budget:"
-                            if var.long_name.find("budget:") != -1:
-                                componentValue = extractNetcdfProfileAtIteration(var, iteration)
-                                if rightHandValue is None:
-                                    rightHandValue = zeros_like(leftHandValue)
-                                rightHandValue = rightHandValue + componentValue
-                        
-                except AttributeError:
-                    pass
-                    
-            # All component terms have been summed up
-            errorDifference = leftHandValue - rightHandValue
-            allowedTolerance = calcTolerance(budgetUnits, TIME_SCALE_DENOMINATOR, budgetVarName[0:-3])
+        match = re.match(r"\w+_bt", varName)
+        if not match:
+            continue
+        budgetName = match.group()
+        budgetVar = ncFile.variables[varName]
+        components = []
+        for name in varList:
+            prefix = re.match(r"\w+?_", name)
+            if prefix and prefix.group() == budgetName[:-2] and name[-2:] != "bt":
+                var = ncFile.variables[name]
+                if "budget:" in getattr(var, "long_name", ""):
+                    components.append(name)
+        units = inferBudgetUnits(ncFile, varList, budgetName, budgetVar.units)
+        state = budgetName[:-3] if budgetName[:-3] in ("rtm", "thlm") else None
+        if state not in ncFile.variables:
+            state = None
+        budgets.append((varName, budgetName, units, "zt" in budgetVar.dimensions, components, state))
+        required.add(varName)
+        required.update(components)
+        if state:
+            required.add(state)
 
-            # Ignore zt(1) since it is below ground. Still use zm(1) however
-            if "zt" in budgetVar.dimensions:
-                zLevel = 1
-                errorDifference = errorDifference[1:]
-            else:
-                zLevel = 0
+    profiles = {}
+    for name in required:
+        variable = ncFile.variables[name]
+        if len(variable.shape) == 3:
+            profiles[name] = array(variable[:, :, 0])
+        elif len(variable.shape) == 2:
+            profiles[name] = array(variable[:, :])
+        else:
+            raise ValueError("Expected 2D or 3D stats variable, got shape {}".format(variable.shape))
+    ncFile.close()
 
-            testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, iteration, zLevel, budgetVarName[:-3], \
-                budgetUnits, testSuccess)
-            #print(varName)
-            #set_printoptions(threshold=sys.maxsize)
-            #print(errorDifference)
-            
-    
-            # Clear old data
-            rightHandValue = None
-           
-        except AttributeError:
-            pass
-        
+    iterations = range(1, numIterations + 1) if iteration <= 0 else (iteration,)
+    for t in iterations:
+        for varName, budgetName, units, on_zt, components, state in budgets:
+            left = profiles[varName][t-1]
+            if t != 1 and COMPLETENESS_TEST and state:
+                right = (profiles[state][t-1] - profiles[state][t-2]) / timestep
+                tolerance = calcTolerance(units, timestep, state)
+                testSuccess = dispError(left, right, left - right, tolerance, t, 0,
+                                        state + " completeness test", units, testSuccess)
+
+            right = None
+            for name in components:
+                if right is None:
+                    right = zeros_like(left)
+                right = right + profiles[name][t-1]
+            difference = left - right
+            tolerance = calcTolerance(units, TIME_SCALE_DENOMINATOR, budgetName[:-3])
+            zLevel = 1 if on_zt else 0
+            if on_zt:
+                difference = difference[1:]
+            testSuccess = dispError(left, right, difference, tolerance, t, zLevel,
+                                    budgetName[:-3], units, testSuccess)
     return testSuccess
 
 #--------------------------------------------------------------------------------------------------
@@ -237,60 +198,6 @@ def inferBudgetUnits(ncFile, varList, budgetVarName, budgetUnits):
     return budgetUnits
 
 #--------------------------------------------------------------------------------------------------
-def checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
-                              termName, varList, termUnits, timestep, leftHandValue, testSuccess):
-    """
-    Check that the budgets are complete with the equation (using rtm as an example):
-    rtm_bt = (rtm_after - rtm_before) / timestep
-    This cannot run when t = 1 as rtm_before does not exist in this case.
-    Input: ncFile: The NetCDF data file
-           numLevels: Number of z levels in data file
-           iteration: Value of t
-           numVars: Number of variables in data file
-           termName: Name of variable
-           varList: List of variables in data file
-           termUnits: Units of variable, used for deciding error tolerance
-           timestep: time in model that passes before variables are updated
-           leftHandValue: value of budget term
-           testSuccess: Whether the test is succeeding or failing
-    """
-    for varName in varList:
-        # Look through list of variables for main stats variable related to budget variable
-        if termName == varName:
-        
-            statVar = ncFile.variables[varName]
-            varAfter = extractNetcdfProfileAtIteration(statVar, iteration)
-            varBefore = extractNetcdfProfileAtIteration(statVar, iteration-1)
-
-            rightHandValue = (varAfter - varBefore) / timestep
-
-            errorDifference = leftHandValue - rightHandValue
-            #print(varName)
-            #set_printoptions(threshold=sys.maxsize)
-            #print(errorDifference.flatten())
-            allowedTolerance = calcTolerance(termUnits, timestep, termName)
-            
-            # Specify that this is the completeness test when printing to stdout
-            varName = varName + " completeness test"
-            
-            zLevel = 0
-            testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, iteration, zLevel, varName, termUnits, testSuccess)
-                    
-    return testSuccess
-
-#--------------------------------------------------------------------------------------------------
-def extractNetcdfProfileAtIteration(variable, iteration):
-    """
-    Extract a 1D profile from stats output using the first column.
-    Assumes stats output uses (time, z, col) for profile variables.
-    """
-    if len(variable.shape) == 3:
-        return array(variable[iteration-1, :, 0]).flatten()
-    if len(variable.shape) == 2:
-        return array(variable[iteration-1, :]).flatten()
-    raise ValueError("Expected 2D or 3D stats variable, got shape {}".format(variable.shape))
-    
-#--------------------------------------------------------------------------------------------------
 def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, iteration, zLevel, termName, termUnits, testSuccess):
     """
     Find and display any budget failures to stdout
@@ -305,28 +212,30 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
     """
     global numFails
 
-    for value in errorDifference:
-        zLevel += 1
-        if(zLevel > 1): #TODO: Hides errors at z level 1. See ticket 360 for more info.
-            # Check to make sure tolerance is not smaller than a values precision   
+    # Each level uses its own magnitude rather than inheriting earlier tolerances.
+    start = builtins.max(zLevel, 1)
+    left = leftHandValue[start:]
+    right = rightHandValue[start:]
+    if not all(isfinite(left)) or not all(isfinite(right)):
+        raise ValueError("Non-finite value in {} at iteration {}".format(termName, iteration))
+    magnitude = minimum(where(left == 0, 1e-40, abs(left)),
+                        where(right == 0, 1e-40, abs(right)))
+    with errstate(divide="ignore", under="ignore"):
+        precision = power(10.0, floor(log10(magnitude)))
+    tolerance = maximum(abs(allowedTolerance), abs(precision))
+    percentError = calcPercentError(left, right, tolerance)
+    for index in flatnonzero(abs(percentError) >= TEST_LENIENCY):
+        level = start + index + 1
+        value = errorDifference[level - zLevel - 1]
+        testSuccess = False
+        numFails += 1
+        print(" ".join([termName, "fails at t=", str(iteration), "and z=", str(level),
+                        "with a difference of", "%e" % value, termUnits, "and error",
+                        "%.9f" % percentError[index], "%"]))
+        if numFails >= MAX_FAILURES:
+            print("Too many failures: exiting test. (Change MAX_FAILURES variable to view more)")
+            sys.exit(1)
 
-            valuePrecision = calcPrecision(leftHandValue[zLevel-1], rightHandValue[zLevel-1])
-            allowedTolerance = builtins.max( abs(allowedTolerance), abs(valuePrecision) )
-            
-            percentError = calcPercentError(leftHandValue, rightHandValue, allowedTolerance)
-            
-            # Display failure message for each error difference thats greater than the tolerance
-            if abs(percentError[zLevel-1]) >= TEST_LENIENCY: # [zLevel-1] because array starts at 0
-                testSuccess = False
-                numFails += 1
-                print(" ".join([ termName, "fails at t=", \
-                    str(iteration), "and z=", str(zLevel), "with a difference of", "%e" % value, \
-                    termUnits, "and error", "%.9f" % percentError[zLevel-1], "%" ]))
-                
-                if numFails >= MAX_FAILURES:
-                    print("Too many failures: exiting test. (Change MAX_FAILURES variable to view more)")
-                    sys.exit(1)
-                
     return testSuccess
     
 #--------------------------------------------------------------------------------------------------
@@ -427,36 +336,6 @@ def calcTolerance(termUnits, timestep, termName):
         sys.exit(1)
     
     return tol / timestep
-    
-#--------------------------------------------------------------------------------------------------
-def calcPrecision(value1, value2):
-    """
-    Finds the smallest precision of a given list of numbers and
-    returns the smallest representable number with the same precision.
-    
-    Input: value1: Floating point number
-           value2: A second floating point number
-    """
-    retVal = 0
-    
-    # Force use of tolerance instead of precision for allowed tolerance if at least one value is 0.
-    # Otherwise we get errors.
-    if value1 == 0:
-        value1 = 1e-40
-    if value2 == 0:
-        value2 = 1e-40
-    
-    # Convert the number in scientific notation to a string,
-    # then substring the last three digits to obtain the precision.
-    valueStr1 = '%e' %(value1)
-    valuePrecision1 = int(valueStr1[-3:])
-        
-    valueStr2 = '%e' %(value2)
-    valuePrecision2 = int(valueStr2[-3:])
-    
-    retVal = builtins.min(valuePrecision1, valuePrecision2)
-    
-    return 10**(retVal)
     
 #--------------------------------------------------------------------------------------------------
 # Allows this module to be run as a script

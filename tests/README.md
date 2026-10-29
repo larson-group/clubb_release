@@ -131,15 +131,26 @@ runs native and Python checks from that build, and runs CPU JAX independently.
 ### `check_budget_balance.py`
 
 Runs a fixed list of SCM cases and then checks CLUBB budget closure with
-`postprocessing/check_budgets_balance/checkBudget.py`.
+[`checkBudget.py`](../postprocessing/check_budgets_balance/checkBudget.py).
+Cases run concurrently with up to half the available logical CPUs by default;
+`-workers` changes the maximum number of concurrent cases.
 
 Examples:
 
 - `python3 tests/check_budget_balance.py`
   Runs the budget-balance suite for the current checkout.
 
-- `python3 tests/check_budget_balance.py /path/to/clubb`
-  Runs the same suite against an explicit CLUBB source tree.
+- `python3 tests/check_budget_balance.py /path/to/clubb -workers 4`
+  Runs the same suite against an explicit CLUBB source tree with four workers.
+
+The budget Jenkins job also runs focused pytests for the checker and case runner.
+These include a balanced synthetic NetCDF control and checks that an altered
+budget component and an inconsistent state change are reported as failures.
+Run these provisional checks independently with:
+
+```sh
+bash tests/run_pytests.sh -unit -include_generated -k 'budget_balance or budget_runner' -q
+```
 
 ### `check_mirrored_multi_col_output.py`
 
