@@ -1,0 +1,388 @@
+commit f933cf4808771e19121f3277b9abce0023de1231
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Thu Oct 29 18:32:40 2026 -0500
+
+    File name jax f90 compare test (#1409)
+    
+    * file name test added
+    
+    * Move JAX file-name parity test into clubb_jax/pytests
+    
+    Run it in the existing clubb_jax pytest stage instead of a separate Jenkins
+    job, and refresh its allowlists for files ported since it was written. It
+    fails until the remaining renames, merges and splits are fixed. The JAX port
+    skill now asks agents to keep the test current.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Tighten file-name parity allowlists
+    
+    Drop exceptions for files whose code is split or merged from Fortran sources
+    (stat_file_module, namelist, stats_metadata, jax_stats) and for the unused
+    tracer_numpy, so the test lists them. Clarify the clubb_api_module and mt95
+    reasons.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Keep agents from editing the file-name parity test
+    
+    Per review: agents fix drift they introduce in the JAX files, but report
+    stale or needed allowlist entries to the user instead of editing the test.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Sort tests into human-reviewed and auto-LLM-generated folders
+    
+    Most tests in the repo were written by agents, but the pytests/ and tests/
+    folder names did not say which ones a human had reviewed. Each component
+    now has human_reviewed_tests/ and auto_llm_generated_tests/ (pytests/
+    unit_tests, f2py_unit_tests and integration_tests). The root tests/ becomes
+    human_reviewed_tests/; the parity test, run_driver_extensions_test.py, the
+    API argument-contract audit and the pyplotgen tests are human reviewed.
+    
+    The -include_generated opt-in is removed. Each generated pytest suite has
+    its own Jenkins stage, and clubb_jax gets a "File-name parity" stage.
+    
+    All five pytest suites collect the same tests as before and pass, except 3
+    Dash test_affine_mixing_length_trajectories failures that also fail on the
+    parent. The moved driver extension, no-bindings and Python loss
+    -driver_test workflows pass.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * changed some naming
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit d56d76087d68c6f41c7f2d1fd88cd69ec9d163da
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Oct 29 14:16:35 2026 -0500
+
+    The budget checking test had a quirk where it parsed numbers from strings, and that was detecting 1e-307 as being 1e307. Now we handle things purely numerically. Also making the script use run_scm_all so cases can be parallelized and making the script check netcdf faster by not reloading it and vectorizing the calcualtions. Also adding pytests that check this script to make sure it fails properly.
+
+commit 906f7f47604c26684adf0a80651934e242ad6e2c
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Thu Oct 29 09:00:25 2026 -0500
+
+    Clip rcm after l_use_cloud_cover replaces it with rcm_in_layer (#1421)
+    
+    * Clip rcm after l_use_cloud_cover replaces it with rcm_in_layer
+    
+    With l_use_cloud_cover=.true., pdf_closure_driver overwrites rcm with
+    rcm_in_layer after clip_rcm has already run. At a cloud top or base,
+    rcm_in_layer is rcm divided by the vertical cloud fraction, so it can
+    exceed rtm. The resulting rvm = rtm - rcm < 0 stops the run in the
+    radiation input check. mc3e with flag10 of
+    run_bindiff_w_flags_config_core_flags.json failed this way at level 61
+    after 3983 steps (rcm_in_layer = 1.17e-5, rtm = 9.09e-6 kg/kg).
+    
+    Call clip_rcm again after the replacement. mc3e now completes its full
+    12960 steps with flag10 and with l_use_cloud_cover=.true. alone.
+    
+    BIT_CHANGING only when l_use_cloud_cover=.true. and rcm_in_layer > rtm
+    at some level; then rcm is clipped to just below rtm. Default runs are unaffected.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Mirror the rcm_in_layer clip in JAX pdf_closure_driver
+    
+    Match the Fortran fix: with l_use_cloud_cover, clip rcm again after it is
+    replaced by rcm_in_layer, which can exceed rtm at a cloud top or base.
+    
+    JAX and Fortran match on dycoms2_rf01 (240 steps) with
+    l_use_cloud_cover=.true. in run_jax_vs_fortran_cases.py. That run does
+    not show whether the new clip changed any values.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: shellwitz <shellwitz@thinkpad-E590.local>
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit fe20df28ececcf8cf7975b59eaae3204c359081e
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Thu Oct 29 08:59:46 2026 -0500
+
+    Update stale pyplotgen flags in the READMEs (#1419)
+    
+    The quick-start command in the root README and the two-directory example
+    in the pyplotgen README still used -c and -o. Those options were renamed
+    to -clubb and -output_dir in #1373, so the documented commands now fail
+    with "unrecognized arguments".
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit a38fd30f47c037cf365bd63a46d5464d75ef336e
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 28 22:04:00 2026 -0500
+
+    Use coherent mixing length by default (#1411)
+    
+    This changes the default mixing length to the new coherent one. Because this changes a default parameter value, it is technically BIT_CHANGING.
+    
+    * Retain legacy mixing length in LAPACK flag coverage
+    
+    Select Lscale_method=1 in core flag1 alongside penta_solve_method=1 and
+    tridiag_solve_method=1, so the legacy calculation remains exercised after
+    the default changes. Other flag sets retain their existing settings.
+    
+    Flag JSON parsed and diff whitespace reviewed.
+    
+    * Use coherent parcel mixing length by default
+    
+    Select method 3 in the default standalone configuration and the Fortran
+    and JAX fallback flags. Update the Python API wrapper's default comment.
+    Historical and host-specific presets retain their explicit selections.
+    
+    BIT_CHANGING when Lscale_method is not explicitly overridden: coherent
+    parcel lengths replace the legacy stopping-distance calculation and change
+    downstream fields. Default and affected core-flag branch/master BFB
+    comparisons are therefore expected to change.
+    
+    The existing JAX configurable-flag coverage check passes. Requested Jenkins
+    and full-case LES/plot comparisons will exercise this published checkpoint.
+    
+    * Little comment fix
+    
+    * Bound comparison coverage before roundoff amplification
+    
+    Cap DYCOMS RF02 DO at 270 steps and RICO at 360. Disable the four
+    roundoff-sensitive Morrison comparison configurations, retaining KK
+    and sampled-KK coverage.
+    
+    Update existing SILHS forwarding checks for the current override order
+    and retain valid additional cases in the independent timestep sweep.
+    
+    All 35 affected parser, SILHS and timestep checks pass. Full model
+    comparisons and Jenkins were not rerun for this update.
+    
+    * Preserve coherent parcel accumulation order across grid directions
+    
+    Arrival-weighted sums visited launch levels in array order, reversing
+    physical addition order on descending grids and breaking exact grid
+    comparisons. Visit both launch loops from the physical lower boundary
+    to the upper boundary using grid_dir_indx.
+    
+    BIT_CHANGING when Lscale_method=3 on a descending vertical grid with
+    arrival-weighted averaging: crossing and arrival sums now use the same
+    physical order as ascending grids. Ascending results are unchanged in
+    90 captured GNU -O0 snapshots; flipped combined/directional lengths now
+    agree exactly. Existing generalized-grid #19 failed before this fix;
+    full Jenkins validation follows this checkpoint.
+    
+    * Exercise legacy mixing length in core flag set 2
+    
+    Core flag set 1 already reproduces an MC3E Morrison overflow with legacy
+    mixing length. Move its explicit Lscale_method=1 selection to flag set 2,
+    letting flag set 1 exercise the coherent default while retaining legacy
+    coverage elsewhere.
+    
+    Only the test configuration changes. JSON parsing and an exact semantic
+    diff check pass; generalized-grid and branch/master reruns follow.
+    
+    * Correct the documented mixing-length default
+    
+    The configuration section still named method 1 as the shipped default. State method 3 to match the Fortran, JAX and standalone settings.
+
+commit a02d0ed97db1c97459272ea845b66df285561d23
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Oct 28 13:40:31 2026 -0500
+
+    Allow user overrides in JAX/Fortran comparisons (#1420)
+    
+    * Allow user overrides in JAX/Fortran comparisons
+    
+    Accept -override and forward user settings after curated case/flag-set
+    overrides to both comparison backends, using the shared namelist parser.
+    
+    Four regression forms reproduce the rejection on master; all 10 focused
+    forwarding/input-resolution checks pass with the fix.
+    
+    * Remove added override regression test
+    
+    Keep the harness change and existing test adjustment. Six existing
+    parser and forwarding checks pass.
+
+commit de0ab41662fa601c96dffe4a01212ef41041b6d5
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Oct 27 23:42:53 2026 -0500
+
+    Initialize Python and JAX temperature scalars from theta_l (#1418)
+    
+    COBRA leaves its temperature eddy scalar at the raw sounding value in the Python and JAX drivers. Match initialize_clubb_variables by copying converted thlm into each configured passive or eddy temperature scalar after reading the scalar soundings.
+    
+    Keep other scalar profiles, Fortran, interfaces and comparison settings unchanged. The existing Python Jenkins regression will validate this checkpoint.
+
+commit 40c4b86136dacbd959273978b3a9caaff55c26c4
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Oct 27 22:02:57 2026 -0500
+
+    Define CLUBB inputs in JSONC and select stats by hierarchy (#1410)
+    
+    * Define CLUBB inputs only in JSON
+    
+    Remove duplicate model and stats source namelists, preserve the old stats
+    lists as ordered JSON presets, and consolidate parameter and flag configs
+    into separate catalogs with model/SILHS categories. Keep dedicated converters
+    beside their JSON and update runners, tuning, Dash and test callers.
+    
+    All 49 case definitions, 24 parameter/flag groups and 12 stats presets match
+    their parsed originals. Native gfortran debug output is BFB in eight
+    three-step scenarios covering SILHS, scalars, multicolumn and e3sm flags.
+    456 shared tests pass; Dash has only the six CUDA-device failures also
+    present on master. The native FIRE tuner has the same obsolete mu_minmax
+    input failure on both revisions. Jenkins validation follows this checkpoint.
+    
+    * Resolve JSON inputs before writing runner namelists
+    
+    Apply catalog defaults, shared config settings, and explicit preset/file overrides centrally. Keep JSON throughout preparation and write complete namelists only for top-level SCM, loss, and native tuner entry points.
+    
+    Move input catalogs and transformations into input/, remove generated config fragments, and write native tuner results as JSON. Local shared-input tests pass, and eight short native cases match the PR base bit for bit. Jenkins validation follows this checkpoint.
+    
+    * Write native tuner steps and bounds with their stored shape
+    
+    Simplex methods store a step-width row, while ESA stores lower and upper bounds. Emit parameter_steps or parameter_ranges accordingly in diagnostic JSON. A compiled fixture verifies both shapes, optimized and linked values, escaped strings, and case windows.
+    
+    * Wrap native flag JSON output within Fortran line limits
+    
+    Keep JSON writer expressions within 132 columns for Jenkins' gfortran compiler. The output values are unchanged. Checked locally with an explicit 132-column limit and rebuilt the Debug targets.
+    
+    * Finish JSON selection in shared test adapters
+    
+    Resolve loss-consistency parameters inside the case output directory, preserve preset names while normalizing JSON paths, and keep forwarded -params from replacing mirror-test columns. Three bounded parser/generator checks pass with the shared unit suite.
+    
+    Update the root input instructions and historical remote ensemble executable paths.
+    
+    * Keep input ownership references with the moved scripts
+    
+    Remove moved tools from the utilities inventory, use the current benchmark-converter link, and describe the JSON helpers beside the final serializer. Documentation only; runtime sources match the tested checkpoint.
+    
+    * Update remaining input instructions for JSON presets
+    
+    Replace references to deleted tuner fragments and source namelist edits with the JSON catalogs and current runner options. The documented tuner options and stats selections were checked through the actual parser and selector. This commit changes documentation only.
+    
+    * Fix remaining JSON input paths and native tuner bounds
+    
+    Use the shared exact-option parser for timestep sweeps, update moved converter paths, and initialize all supported native tuner bounds without the obsolete mu_minmax name. The new bounds check compares resolved presets with the actual Fortran reader. All 467 shared unit checks pass; the short Jenkins batch will verify the published checkpoint.
+    
+    * Preserve input comments in JSONC catalogs
+    
+    Keep the old namelist guidance readable beside shared defaults and relevant
+    case overrides. Read JSONC, preserve comments when saving presets, update
+    catalog paths, and continue accepting ordinary JSON overrides.
+    
+    Correct the paper stats list's obsolete rrm_cond/Nrm_cond names to the current
+    evaporation names. Keep closing braces visible when resetting a commented
+    nested override to its default.
+    
+    Validation: 482 shared unit checks passed, including the reset regression;
+    39 focused Dash checks passed, with 24 browser checks skipped because Node
+    is unavailable. All 106 default/preset namelists match ad5c77ff1. Jenkins was
+    not run for this checkpoint.
+    
+    * Clean up JSONC catalogs and input preparation
+    
+    Clarify catalog defaults and case exceptions, remove duplicate description
+    metadata, and reject null settings during resolution, saving and namelist
+    serialization. Case-editor resets now use explicit catalog defaults.
+    
+    Rename the parameter and flag catalogs and move input preparation modules
+    under input/scripts, updating imports and launch paths. Keep legacy native
+    tuner controls as namelists and restore the historical Latin-hypercube
+    plotting workflow. Improve JSONC comments and metadata alignment without
+    changing the current stats selections.
+    
+    Validation: 502 unit checks and 176 focused Dash checks passed, including
+    input resolution, strict null handling, saves, editors and runner adapters.
+    All 76 stats selections emit unchanged namelists after formatting. The full
+    Dash run recorded three NetCDF fixture failures reproduced on master; they
+    remain outside this cleanup.
+    
+    * Finish JSONC catalogs and independent statistics selection
+    
+    Resolve baseline inputs without empty presets and keep statistics independent
+    of shared configurations. Select stats from the hierarchy or complete lists,
+    move pyplotgen dependencies into standard, and remove the accepted obsolete
+    presets. Preserve comments and move case data/catalogs to their final names.
+    
+    Update native, Python, JAX, Dash and runner paths, including ensemble baseline
+    selection and the E3SM provenance report location.
+    
+    Local validation: shared unit suite 509 passed; focused Dash 142 passed with
+    14 Node-dependent skips; JAX case-data checks 9 passed. All 207 moved data
+    files match their original hashes. Jenkins validation follows this checkpoint.
+    
+    * Include restart fields in standard statistics
+    
+    Default output omitted nine fields read by native and JAX restarts. Move
+    those existing definitions into standard without changing registry metadata
+    or preset membership, and check the native restart read contract.
+    
+    The regression failed with the nine missing fields before this change.
+    Shared Python unit checks pass (510 tests); Jenkins restart/48 exposed the
+    integration failure and will be rerun against this checkpoint:
+    https://carson.math.uwm.edu/jenkins/job/clubb_branch_restart/48/
+    
+    Also correct the root README description of independent stats selection
+    and whitespace on lines introduced by the JSONC migration.
+    
+    * Remove obsolete parameter_file entries from case definitions
+    
+    The case serializer passed three stale file selectors into model_setting,
+    where native Fortran rejects them. Remove them from atex_long, coriolis_test
+    and ekman; their parameter presets already live in clubb_params.jsonc.
+    
+    Generated inputs reproduced the unsupported-key error before deletion.
+    All three now complete one native timestep with their named JSONC parameters;
+    510 shared unit checks pass.
+    
+    * Keep additional diagnostics outside standard statistics
+    
+    Move the 31 definitions absent from the legacy standard list into non-standard SILHS, cloud, microphysics and scalar categories. Standard retains 623 definitions and native restart inputs; all 901 metadata definitions and the three preset namelists are preserved.
+    
+    Replace the all-Pyplotgen-fields policy check with explicit optional-selection coverage and document how to enable these diagnostics. Focused shared stats/restart checks pass (55 checks, including provisional coverage); Jenkins restart and output-consistency validation will use this checkpoint.
+    
+    * Restore input_misc exactly from master
+    
+    Restore the original legacy tuner controls and README from master, including their comments and formatting. Remove the branch-only combined_001 control instead of retaining regenerated equivalents.
+    
+    No tests run, as requested. Verified that input_misc matches master exactly.
+
+commit 43653c66ee6428534dae7e961724e45d00315705
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Tue Oct 27 09:39:22 2026 -0500
+
+    Add a thl eddy scalar to cobra so it runs with l_do_expldiff_rtm_thlm (#1415)
+    
+    With l_do_expldiff_rtm_thlm=.true., check_clubb_settings_api requires
+    separate rt and thl eddy-diffusivity scalars. Cobra only defined CO2 and
+    rt, so every cobra run with that flag stopped before the first timestep.
+    This is why cobra failed in both JAX and Fortran with flag11 in the
+    "Run Jax Python vs Fortran cases w varying flags" stage of clubb_jax
+    (build #16).
+    
+    cobra_edsclr_sounding.in already has a thm[K] column, so set
+    edsclr_dim = 3 and iiedsclr_thl = 3.
+    
+    A full default cobra run (debug build) writes a byte-identical
+    cobra_stats.nc before and after. With run_jax_vs_fortran_cases.py
+    (-debug 0 -max_iters 5) over all 18 flag sets, cobra with flag11 now
+    matches; the other cobra results are unchanged from build #16.
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit 181ae0f2b148c28133366aa3d11e015815cf9353
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Oct 26 18:34:06 2026 -0500
+
+    Restore native tuner bounds after the entrainment rename (#1416)
+    
+    Rename mu_minmax to Lscale_mu_entrain_minmax in the 19 native tuner
+    input templates so they match the current init_minmax reader. Keep
+    all bounds values unchanged.
+    
+    Local schema checks accept every bounds entry and confirm that only
+    the renamed assignments changed. Full FIRE tuning validation pending.
