@@ -289,7 +289,7 @@ Compile Fortran, then compare one case:
 
 ```bash
 ./compile.py
-./tests/run_jax_vs_fortran_cases.py -cases arm
+./human_reviewed_tests/run_jax_vs_fortran_cases.py -cases arm
 ```
 
 The harness writes its logs, separate JAX and Fortran outputs, and final bindiff
@@ -314,7 +314,7 @@ Harness-specific options select cases and control parallelism or bindiff. For
 example, this runs two shortened cases in parallel with faster model settings:
 
 ```bash
-./tests/run_jax_vs_fortran_cases.py \
+./human_reviewed_tests/run_jax_vs_fortran_cases.py \
   -cases arm bomex -workers 2 \
   -stats multi_col_stats -debug 0 -max_iters 120
 ```

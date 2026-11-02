@@ -192,7 +192,7 @@ These are curated comparison durations, not full native-duration LBA runs.
 Native random-stream parity remains untested.
 
 Run these cases with
-`./tests/run_jax_vs_fortran_cases.py -cases rico_silhs lba_kk_silhs lba_silhs -workers 1`.
+`./human_reviewed_tests/run_jax_vs_fortran_cases.py -cases rico_silhs lba_kk_silhs lba_silhs -workers 1`.
 Fortran reports a tiny negative incoming `rtm` in RICO at debug level 2,
 but explicitly clears that input error and continues normally. RICO's native
 300-second timestep completes 60 steps but its `Nrp2` comparison exceeds
@@ -278,7 +278,7 @@ generated-pytest stage. The real-case workflow above is a manual check. The
 `clubb_python` unit stage runs the generated SILHS command-forwarding checks.
 
 The ordinary comparison harness remains applicable to disabled-SILHS runs:
-`./tests/run_jax_vs_fortran_cases.py -cases bomex rico lba -max_iters 5 -workers 1`.
+`./human_reviewed_tests/run_jax_vs_fortran_cases.py -cases bomex rico lba -max_iters 5 -workers 1`.
 Keep its existing
 standard-statistics selection and case-specific thresholds when reproducing
 this short regression check.

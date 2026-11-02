@@ -47,7 +47,7 @@ against the generated aggregate case namelist. In other words, `-python` keeps t
 From the repo root:
 
 ```bash
-./tests/run_python_vs_fortran_cases.py
+./human_reviewed_tests/run_python_vs_fortran_cases.py
 ```
 
 This runs selected SCM cases through both:
