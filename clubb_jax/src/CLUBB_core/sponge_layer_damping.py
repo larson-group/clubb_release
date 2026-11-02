@@ -134,8 +134,6 @@ def sponge_damp_xp2(dt, zm, xp2, x_tol_sqd, tau, sponge_layer_depth):
 
     References:
     """
-    zm = jnp.asarray(zm, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    tau = jnp.asarray(tau, dtype=jnp.float64)
     zm_top = zm[:, -1:]
     in_sponge = (zm_top - zm) < sponge_layer_depth
     # Calculate the damped value of <x'^2>.
@@ -183,8 +181,7 @@ def sponge_damp_xp3(dt, z, zm, xp3, tau, sponge_layer_depth):
 
     References:
     """
-    z = jnp.asarray(z, dtype=jnp.float64); zm = jnp.asarray(zm, dtype=jnp.float64)
-    xp3 = jnp.asarray(xp3, dtype=jnp.float64); tau = jnp.asarray(tau, dtype=jnp.float64)
+    tau = jnp.asarray(tau)
     zm_top = zm[:, -1:]
     in_sponge = (zm_top - z) < sponge_layer_depth
     # Calculate the damped value of <x'^3>.

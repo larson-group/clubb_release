@@ -32,8 +32,6 @@ from functools import partial
 import jax
 import sys
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import calc_wp3_on_wp2
@@ -455,7 +453,7 @@ def advance_xp2_xpyp(
             wprtp ** 2 / (wp2 * max_mag_correlation_flux ** 2),
         )
     else:
-        threshold_array = jnp.full((ngrdcol, nzm), rt_tol ** 2, dtype=jnp.float64)
+        threshold_array = jnp.full((ngrdcol, nzm), rt_tol ** 2)
     rtp2, stats = clip_variance(
         nzm, ngrdcol, gr, xp2_xpyp_rtp2, dt, threshold_array, stats, rtp2,
     )
@@ -474,12 +472,12 @@ def advance_xp2_xpyp(
             wpthlp ** 2 / (wp2 * max_mag_correlation_flux ** 2),
         )
     else:
-        threshold_array = jnp.full((ngrdcol, nzm), thl_tol ** 2, dtype=jnp.float64)
+        threshold_array = jnp.full((ngrdcol, nzm), thl_tol ** 2)
     thlp2, stats = clip_variance(
         nzm, ngrdcol, gr, xp2_xpyp_thlp2, dt, threshold_array, stats, thlp2,
     )
 
-    threshold_array = jnp.full((ngrdcol, nzm), w_tol_sqd, dtype=jnp.float64)
+    threshold_array = jnp.full((ngrdcol, nzm), w_tol_sqd)
     up2, stats = clip_variance(
         nzm, ngrdcol, gr, xp2_xpyp_up2, dt, threshold_array, stats, up2,
     )
@@ -527,7 +525,7 @@ def advance_xp2_xpyp(
 
         for sclr in range(sclr_dim):
             threshold_array = jnp.full(
-                (ngrdcol, nzm), sclr_tol[sclr] ** 2, dtype=jnp.float64,
+                (ngrdcol, nzm), sclr_tol[sclr] ** 2,
             )
             sclrp2_s, stats = clip_variance(
                 nzm, ngrdcol, gr, clip_sclrp2, dt,
@@ -538,7 +536,7 @@ def advance_xp2_xpyp(
         for sclr in range(sclr_dim):
             if int(sclr_idx.iisclr_rt) == sclr + 1:
                 threshold_array = jnp.full(
-                    (ngrdcol, nzm), sclr_tol[sclr] * rt_tol, dtype=jnp.float64,
+                    (ngrdcol, nzm), sclr_tol[sclr] * rt_tol,
                 )
                 sclrprtp_s, stats = clip_variance(
                     nzm, ngrdcol, gr, clip_sclrprtp, dt,
@@ -554,7 +552,7 @@ def advance_xp2_xpyp(
         for sclr in range(sclr_dim):
             if int(sclr_idx.iisclr_thl) == sclr + 1:
                 threshold_array = jnp.full(
-                    (ngrdcol, nzm), sclr_tol[sclr] * thl_tol, dtype=jnp.float64,
+                    (ngrdcol, nzm), sclr_tol[sclr] * thl_tol,
                 )
                 sclrpthlp_s, stats = clip_variance(
                     nzm, ngrdcol, gr, clip_sclrpthlp, dt,
@@ -716,7 +714,7 @@ def solve_xp2_xpyp_with_single_lhs(
     lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2x, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
     lhs = xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta, lhs_ma, lhs_diff, lhs_dp1)
-    rhs = jnp.zeros((ngrdcol, nzm, 3 + 3 * sclr_dim), dtype=jnp.float64)
+    rhs = jnp.zeros((ngrdcol, nzm, 3 + 3 * sclr_dim))
 
     rhs_s, stats = xp2_xpyp_rhs(
         nzm, nzt, ngrdcol, gr, xp2_xpyp_rtp2, dt,
@@ -739,7 +737,7 @@ def solve_xp2_xpyp_with_single_lhs(
 
     if l_scalar_calc:
         for sclr in range(sclr_dim):
-            sclrp2_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            sclrp2_forcing = jnp.zeros((ngrdcol, nzm))
             rhs_s, stats = xp2_xpyp_rhs(
                 nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrp2, dt,
                 wpsclrp[:, :, sclr], wpsclrp[:, :, sclr],
@@ -754,7 +752,7 @@ def solve_xp2_xpyp_with_single_lhs(
                 sclrprtp_forcing = rtp2_forcing
                 threshold = rt_tol ** 2
             else:
-                sclrprtp_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                sclrprtp_forcing = jnp.zeros((ngrdcol, nzm))
                 threshold = zero_threshold
             rhs_s, stats = xp2_xpyp_rhs(
                 nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrprtp, dt,
@@ -769,7 +767,7 @@ def solve_xp2_xpyp_with_single_lhs(
                 sclrpthlp_forcing = thlp2_forcing
                 threshold = thl_tol ** 2
             else:
-                sclrpthlp_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                sclrpthlp_forcing = jnp.zeros((ngrdcol, nzm))
                 threshold = zero_threshold
             rhs_s, stats = xp2_xpyp_rhs(
                 nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrpthlp, dt,
@@ -987,7 +985,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
 
         if iiPDF_type != iiPDF_ADG1:
             for sclr in range(sclr_dim):
-                sclrp2_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                sclrp2_forcing = jnp.zeros((ngrdcol, nzm))
                 lhs = xp2_xpyp_lhs(
                     nzm, ngrdcol, dt, gr, lhs_ta_wpsclrp2[:, :, :, sclr],
                     lhs_ma, lhs_diff, lhs_dp1,
@@ -1029,7 +1027,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     sclrprtp_forcing = rtp2_forcing
                     threshold = rt_tol ** 2
                 else:
-                    sclrprtp_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                    sclrprtp_forcing = jnp.zeros((ngrdcol, nzm))
                     threshold = zero_threshold
                 lhs = xp2_xpyp_lhs(
                     nzm, ngrdcol, dt, gr, lhs_ta_wprtpsclrp[:, :, :, sclr],
@@ -1071,7 +1069,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     sclrpthlp_forcing = thlp2_forcing
                     threshold = thl_tol ** 2
                 else:
-                    sclrpthlp_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                    sclrpthlp_forcing = jnp.zeros((ngrdcol, nzm))
                     threshold = zero_threshold
                 lhs = xp2_xpyp_lhs(
                     nzm, ngrdcol, dt, gr, lhs_ta_wpthlpsclrp[:, :, :, sclr],
@@ -1113,9 +1111,9 @@ def solve_xp2_xpyp_with_multiple_lhs(
                 nzm, ngrdcol, dt, gr, lhs_ta_wpsclrp2[:, :, :, 0],
                 lhs_ma, lhs_diff, lhs_dp1,
             )
-            sclr_rhs = jnp.zeros((ngrdcol, nzm, 3 * sclr_dim), dtype=jnp.float64)
+            sclr_rhs = jnp.zeros((ngrdcol, nzm, 3 * sclr_dim))
             for sclr in range(sclr_dim):
-                sclrp2_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                sclrp2_forcing = jnp.zeros((ngrdcol, nzm))
                 rhs_s, stats = xp2_xpyp_rhs(
                     nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrp2, dt,
                     wpsclrp[:, :, sclr], wpsclrp[:, :, sclr],
@@ -1130,7 +1128,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     sclrprtp_forcing = rtp2_forcing
                     threshold = rt_tol ** 2
                 else:
-                    sclrprtp_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                    sclrprtp_forcing = jnp.zeros((ngrdcol, nzm))
                     threshold = zero_threshold
                 rhs_s, stats = xp2_xpyp_rhs(
                     nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrprtp, dt,
@@ -1145,7 +1143,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     sclrpthlp_forcing = thlp2_forcing
                     threshold = thl_tol ** 2
                 else:
-                    sclrpthlp_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                    sclrpthlp_forcing = jnp.zeros((ngrdcol, nzm))
                     threshold = zero_threshold
                 rhs_s, stats = xp2_xpyp_rhs(
                     nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrpthlp, dt,
@@ -1200,7 +1198,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
 
 @partial(jax.jit, static_argnames=("nzm", "ngrdcol"))
 def xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta, lhs_ma, lhs_diff, lhs_dp1):
-    lhs = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
+    lhs = jnp.zeros((ndiags3, ngrdcol, nzm))
     interior = slice(1, nzm - 1)
     lhs = lhs.at[0, :, interior].set(
         lhs_diff[0, :, interior]
@@ -1362,20 +1360,20 @@ def stats_finalize_xp2_xpyp_terms(
     km1 = slice(1 - grid_dir, nzm - 1 - grid_dir)
     kp1 = slice(1 + grid_dir, nzm - 1 + grid_dir)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    stats_tmp = jnp.zeros((ngrdcol, nzm))
     stats_tmp = stats_tmp.at[:, interior].set(
         -lhs_dp1[:, interior] * xapxbp[:, interior]
     )
     stats = stats.finalize_budget(name_dp1, stats_tmp)
 
     if solve_type in (xp2_xpyp_up2, xp2_xpyp_vp2):
-        stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        stats_tmp = jnp.zeros((ngrdcol, nzm))
         stats_tmp = stats_tmp.at[:, interior].set(
             -lhs_dp1_pr1[:, interior] * xapxbp[:, interior]
         )
         stats = stats.finalize_budget(name_pr1, stats_tmp)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    stats_tmp = jnp.zeros((ngrdcol, nzm))
     stats_tmp = stats_tmp.at[:, interior].set(
         (-gamma_over_implicit_ts * lhs_ta[1 + grid_dir, :, interior]) * xapxbp[:, km1]
         + (-gamma_over_implicit_ts * lhs_ta[1, :, interior]) * xapxbp[:, interior]
@@ -1383,7 +1381,7 @@ def stats_finalize_xp2_xpyp_terms(
     )
     stats = stats.finalize_budget(name_ta, stats_tmp)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    stats_tmp = jnp.zeros((ngrdcol, nzm))
     stats_tmp = stats_tmp.at[:, interior].set(
         (-lhs_diff[1 + grid_dir, :, interior]) * xapxbp[:, km1]
         + (-lhs_diff[1, :, interior]) * xapxbp[:, interior]
@@ -1391,7 +1389,7 @@ def stats_finalize_xp2_xpyp_terms(
     )
     stats = stats.update(name_dp2, stats_tmp)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    stats_tmp = jnp.zeros((ngrdcol, nzm))
     stats_tmp = stats_tmp.at[:, interior].set(
         (-lhs_ma[1 + grid_dir, :, interior]) * xapxbp[:, km1]
         + (-lhs_ma[1, :, interior]) * xapxbp[:, interior]
@@ -1427,7 +1425,7 @@ def xp2_xpyp_uv_rhs(
     km1 = slice(1 - grid_dir, nzm - 1 - grid_dir)
     kp1 = slice(1 + grid_dir, nzm - 1 + grid_dir)
 
-    rhs = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    rhs = jnp.zeros((ngrdcol, nzm))
 
     rhs_pr1 = term_pr1(nzm, ngrdcol, C4, C14, xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm)
     rhs_pr2 = term_pr2(
@@ -1458,17 +1456,17 @@ def xp2_xpyp_uv_rhs(
 
     if l_sample:
         stats_pr1 = term_pr1(
-            nzm, ngrdcol, C4, jnp.zeros((ngrdcol,), dtype=jnp.float64), xbp2, wp2,
+            nzm, ngrdcol, C4, jnp.zeros((ngrdcol,)), xbp2, wp2,
             invrs_tau_C4_zm, invrs_tau_C14_zm,
         )
         stats_pr2 = term_pr1(
-            nzm, ngrdcol, jnp.zeros((ngrdcol,), dtype=jnp.float64), C14, xbp2, wp2,
+            nzm, ngrdcol, jnp.zeros((ngrdcol,)), C14, xbp2, wp2,
             invrs_tau_C4_zm, invrs_tau_C14_zm,
         )
 
         if bool(l_sample and stats.var_on_stats_list(name_ta)):
-            stats_zm_begin = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-            stats_zm_mod = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_zm_begin = jnp.zeros((ngrdcol, nzm))
+            stats_zm_mod = jnp.zeros((ngrdcol, nzm))
             stats_zm_begin = stats_zm_begin.at[:, interior].set(-rhs_ta[:, interior])
             stats_zm_mod = stats_zm_mod.at[:, interior].set(
                 (one - gamma_over_implicit_ts)
@@ -1482,8 +1480,8 @@ def xp2_xpyp_uv_rhs(
             stats = stats.update_budget(name_ta, stats_zm_mod)
 
         if bool(l_sample and stats.var_on_stats_list(name_pr1)):
-            stats_zm_begin = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-            stats_zm_mod = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_zm_begin = jnp.zeros((ngrdcol, nzm))
+            stats_zm_mod = jnp.zeros((ngrdcol, nzm))
             stats_zm_begin = stats_zm_begin.at[:, interior].set(-stats_pr1[:, interior])
             stats_zm_mod = stats_zm_mod.at[:, interior].set(
                 (one - gamma_over_implicit_ts)
@@ -1493,8 +1491,8 @@ def xp2_xpyp_uv_rhs(
             stats = stats.update_budget(name_pr1, stats_zm_mod)
 
         if bool(l_sample and stats.var_on_stats_list(name_dp1)):
-            stats_zm_begin = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-            stats_zm_mod = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_zm_begin = jnp.zeros((ngrdcol, nzm))
+            stats_zm_mod = jnp.zeros((ngrdcol, nzm))
             stats_zm_begin = stats_zm_begin.at[:, interior].set(-stats_pr2[:, interior])
             stats_zm_mod = stats_zm_mod.at[:, interior].set(
                 (one - gamma_over_implicit_ts)
@@ -1503,17 +1501,17 @@ def xp2_xpyp_uv_rhs(
             stats = stats.begin_budget(name_dp1, stats_zm_begin)
             stats = stats.update_budget(name_dp1, stats_zm_mod)
 
-        stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        stats_tmp = jnp.zeros((ngrdcol, nzm))
         stats_tmp = stats_tmp.at[:, 1:nzm - 1].set(rhs_pr2[:, 1:nzm - 1])
         stats = stats.update(name_pr2, stats_tmp)
 
-        stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        stats_tmp = jnp.zeros((ngrdcol, nzm))
         stats_tmp = stats_tmp.at[:, 1:nzm - 1].set(
             (one - C_uu_shr)[:, None] * rhs_term_tp[:, 1:nzm - 1]
         )
         stats = stats.update(name_tp, stats_tmp)
 
-        stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        stats_tmp = jnp.zeros((ngrdcol, nzm))
         stats_tmp = stats_tmp.at[:, 1:nzm - 1].set(
             one_half * lhs_splat_wp2[:, 1:nzm - 1] * wp2[:, 1:nzm - 1]
         )
@@ -1556,7 +1554,7 @@ def xp2_xpyp_rhs(
     rhs_term_tp = term_tp_rhs(nzm, nzt, ngrdcol, xam, xbm, wpxbp, wpxap, gr.invrs_dzm)
     rhs_term_dp1 = term_dp1_rhs(nzm, ngrdcol, Cn, invrs_tau_zm, threshold)
     lhs_term_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, Cn, invrs_tau_zm)
-    rhs = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    rhs = jnp.zeros((ngrdcol, nzm))
 
     rhs = rhs.at[:, interior].set(
         rhs_ta[:, interior]
@@ -1575,8 +1573,8 @@ def xp2_xpyp_rhs(
     )
 
     if l_sample:
-        xm_zeros = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-        wpxp_zeros = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        xm_zeros = jnp.zeros((ngrdcol, nzt))
+        wpxp_zeros = jnp.zeros((ngrdcol, nzm))
         stats_tp1 = term_tp_rhs(nzm, nzt, ngrdcol, xm_zeros, xbm, wpxp_zeros, wpxap, gr.invrs_dzm)
         stats_tp2 = term_tp_rhs(nzm, nzt, ngrdcol, xam, xm_zeros, wpxbp, wpxp_zeros, gr.invrs_dzm)
 
@@ -1588,8 +1586,8 @@ def xp2_xpyp_rhs(
         l_f_stats = bool(l_sample and stats.var_on_stats_list(name_f))
 
         if l_ta_stats:
-            stats_ta_begin = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-            stats_ta_mod = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_ta_begin = jnp.zeros((ngrdcol, nzm))
+            stats_ta_mod = jnp.zeros((ngrdcol, nzm))
             stats_ta_begin = stats_ta_begin.at[:, interior].set(-rhs_ta[:, interior])
             stats_ta_mod = stats_ta_mod.at[:, interior].set(
                 (one - gamma_over_implicit_ts)
@@ -1603,8 +1601,8 @@ def xp2_xpyp_rhs(
             stats = stats.update_budget(name_ta, stats_ta_mod)
 
         if l_dp1_stats:
-            stats_dp1_begin = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-            stats_dp1_mod = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_dp1_begin = jnp.zeros((ngrdcol, nzm))
+            stats_dp1_mod = jnp.zeros((ngrdcol, nzm))
             stats_dp1_begin = stats_dp1_begin.at[:, interior].set(
                 -rhs_term_dp1[:, interior]
             )
@@ -1616,19 +1614,19 @@ def xp2_xpyp_rhs(
             stats = stats.update_budget(name_dp1, stats_dp1_mod)
 
         if l_tp_stats:
-            stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_tmp = jnp.zeros((ngrdcol, nzm))
             stats_tmp = stats_tmp.at[:, 1:nzm - 1].set(rhs_term_tp[:, 1:nzm - 1])
             stats = stats.update(name_tp, stats_tmp)
         if l_tp1_stats:
-            stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_tmp = jnp.zeros((ngrdcol, nzm))
             stats_tmp = stats_tmp.at[:, 1:nzm - 1].set(stats_tp1[:, 1:nzm - 1])
             stats = stats.update(name_tp1, stats_tmp)
         if l_tp2_stats:
-            stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_tmp = jnp.zeros((ngrdcol, nzm))
             stats_tmp = stats_tmp.at[:, 1:nzm - 1].set(stats_tp2[:, 1:nzm - 1])
             stats = stats.update(name_tp2, stats_tmp)
         if l_f_stats:
-            stats_tmp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            stats_tmp = jnp.zeros((ngrdcol, nzm))
             stats_tmp = stats_tmp.at[:, 1:nzm - 1].set(xpyp_forcing[:, 1:nzm - 1])
             stats = stats.update(name_f, stats_tmp)
 
@@ -1663,54 +1661,54 @@ def calc_xp2_xpyp_ta_terms(
     l_godunov_upwind_xpyp_ta, stats,
 ):
     l_sample = stats.l_sample
-    lhs_ta_wprtp2 = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    lhs_ta_wpthlp2 = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    lhs_ta_wprtpthlp = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    lhs_ta_wpup2 = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    lhs_ta_wpvp2 = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wprtp2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wpthlp2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wprtpthlp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wpup2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wpvp2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    lhs_ta_wprtp2 = jnp.zeros((ndiags3, ngrdcol, nzm))
+    lhs_ta_wpthlp2 = jnp.zeros((ndiags3, ngrdcol, nzm))
+    lhs_ta_wprtpthlp = jnp.zeros((ndiags3, ngrdcol, nzm))
+    lhs_ta_wpup2 = jnp.zeros((ndiags3, ngrdcol, nzm))
+    lhs_ta_wpvp2 = jnp.zeros((ndiags3, ngrdcol, nzm))
+    rhs_ta_wprtp2 = jnp.zeros((ngrdcol, nzm))
+    rhs_ta_wpthlp2 = jnp.zeros((ngrdcol, nzm))
+    rhs_ta_wprtpthlp = jnp.zeros((ngrdcol, nzm))
+    rhs_ta_wpup2 = jnp.zeros((ngrdcol, nzm))
+    rhs_ta_wpvp2 = jnp.zeros((ngrdcol, nzm))
 
-    lhs_ta_wpsclrp2 = jnp.zeros((ndiags3, ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
-    lhs_ta_wprtpsclrp = jnp.zeros((ndiags3, ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
-    lhs_ta_wpthlpsclrp = jnp.zeros((ndiags3, ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
-    rhs_ta_wpsclrp2 = jnp.zeros((ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
-    rhs_ta_wprtpsclrp = jnp.zeros((ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
-    rhs_ta_wpthlpsclrp = jnp.zeros((ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
+    lhs_ta_wpsclrp2 = jnp.zeros((ndiags3, ngrdcol, nzm, sclr_dim))
+    lhs_ta_wprtpsclrp = jnp.zeros((ndiags3, ngrdcol, nzm, sclr_dim))
+    lhs_ta_wpthlpsclrp = jnp.zeros((ndiags3, ngrdcol, nzm, sclr_dim))
+    rhs_ta_wpsclrp2 = jnp.zeros((ngrdcol, nzm, sclr_dim))
+    rhs_ta_wprtpsclrp = jnp.zeros((ngrdcol, nzm, sclr_dim))
+    rhs_ta_wpthlpsclrp = jnp.zeros((ngrdcol, nzm, sclr_dim))
 
-    coef_wprtp2_implicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    term_wprtp2_explicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    coef_wpthlp2_implicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    term_wpthlp2_explicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    coef_wprtpthlp_implicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    term_wprtpthlp_explicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    coef_wpup2_implicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    term_wpup2_explicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    coef_wpvp2_implicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    term_wpvp2_explicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    coef_wprtp2_implicit = jnp.zeros((ngrdcol, nzt))
+    term_wprtp2_explicit = jnp.zeros((ngrdcol, nzt))
+    coef_wpthlp2_implicit = jnp.zeros((ngrdcol, nzt))
+    term_wpthlp2_explicit = jnp.zeros((ngrdcol, nzt))
+    coef_wprtpthlp_implicit = jnp.zeros((ngrdcol, nzt))
+    term_wprtpthlp_explicit = jnp.zeros((ngrdcol, nzt))
+    coef_wpup2_implicit = jnp.zeros((ngrdcol, nzt))
+    term_wpup2_explicit = jnp.zeros((ngrdcol, nzt))
+    coef_wpvp2_implicit = jnp.zeros((ngrdcol, nzt))
+    term_wpvp2_explicit = jnp.zeros((ngrdcol, nzt))
 
-    coef_wprtp2_implicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    term_wprtp2_explicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    coef_wpthlp2_implicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    term_wpthlp2_explicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    coef_wprtpthlp_implicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    term_wprtpthlp_explicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    coef_wpup2_implicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    term_wpup2_explicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    coef_wpvp2_implicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    term_wpvp2_explicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    coef_wprtp2_implicit_zm = jnp.zeros((ngrdcol, nzm))
+    term_wprtp2_explicit_zm = jnp.zeros((ngrdcol, nzm))
+    coef_wpthlp2_implicit_zm = jnp.zeros((ngrdcol, nzm))
+    term_wpthlp2_explicit_zm = jnp.zeros((ngrdcol, nzm))
+    coef_wprtpthlp_implicit_zm = jnp.zeros((ngrdcol, nzm))
+    term_wprtpthlp_explicit_zm = jnp.zeros((ngrdcol, nzm))
+    coef_wpup2_implicit_zm = jnp.zeros((ngrdcol, nzm))
+    term_wpup2_explicit_zm = jnp.zeros((ngrdcol, nzm))
+    coef_wpvp2_implicit_zm = jnp.zeros((ngrdcol, nzm))
+    term_wpvp2_explicit_zm = jnp.zeros((ngrdcol, nzm))
 
-    sgn_t_vel_rtp2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    sgn_t_vel_thlp2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    sgn_t_vel_rtpthlp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    sgn_t_vel_up2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    sgn_t_vel_vp2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    sgn_t_vel_rtp2_zt = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    sgn_t_vel_thlp2_zt = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    sgn_t_vel_rtpthlp_zt = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    sgn_t_vel_rtp2 = jnp.zeros((ngrdcol, nzm))
+    sgn_t_vel_thlp2 = jnp.zeros((ngrdcol, nzm))
+    sgn_t_vel_rtpthlp = jnp.zeros((ngrdcol, nzm))
+    sgn_t_vel_up2 = jnp.zeros((ngrdcol, nzm))
+    sgn_t_vel_vp2 = jnp.zeros((ngrdcol, nzm))
+    sgn_t_vel_rtp2_zt = jnp.zeros((ngrdcol, nzt))
+    sgn_t_vel_thlp2_zt = jnp.zeros((ngrdcol, nzt))
+    sgn_t_vel_rtpthlp_zt = jnp.zeros((ngrdcol, nzt))
 
     a1_coef = one / (one - sigma_sqd_w)
     a1_coef_zt = jnp.maximum(zm2zt(nzm, nzt, ngrdcol, gr, a1_coef), zero_threshold)
@@ -1760,9 +1758,9 @@ def calc_xp2_xpyp_ta_terms(
 
         if l_scalar_calc:
             for sclr in range(sclr_dim):
-                term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                sgn = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                term_s = jnp.zeros((ngrdcol, nzt))
+                term_s_zm = jnp.zeros((ngrdcol, nzm))
+                sgn = jnp.zeros((ngrdcol, nzm))
                 if l_upwind_xpyp_ta:
                     term_s_zm = zt2zm(nzm, nzt, ngrdcol, gr, wpsclrp2[:, :, sclr])
                     sgn = jnp.where(term_s_zm * sclrp2[:, :, sclr] < zero, -one, one)
@@ -1775,8 +1773,8 @@ def calc_xp2_xpyp_ta_terms(
                 )
                 rhs_ta_wpsclrp2 = rhs_ta_wpsclrp2.at[:, :, sclr].set(rhs_s)
 
-                term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                term_s = jnp.zeros((ngrdcol, nzt))
+                term_s_zm = jnp.zeros((ngrdcol, nzm))
                 if l_upwind_xpyp_ta:
                     term_s_zm = zt2zm(nzm, nzt, ngrdcol, gr, wpsclrprtp[:, :, sclr])
                     sgn = jnp.where(term_s_zm * sclrprtp[:, :, sclr] < zero, -one, one)
@@ -1789,8 +1787,8 @@ def calc_xp2_xpyp_ta_terms(
                 )
                 rhs_ta_wprtpsclrp = rhs_ta_wprtpsclrp.at[:, :, sclr].set(rhs_s)
 
-                term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                term_s = jnp.zeros((ngrdcol, nzt))
+                term_s_zm = jnp.zeros((ngrdcol, nzm))
                 if l_upwind_xpyp_ta:
                     term_s_zm = zt2zm(nzm, nzt, ngrdcol, gr, wpsclrpthlp[:, :, sclr])
                     sgn = jnp.where(term_s_zm * sclrpthlp[:, :, sclr] < zero, -one, one)
@@ -1843,8 +1841,8 @@ def calc_xp2_xpyp_ta_terms(
                 term_wpthlp2_explicit = wp_coef_zt * wpthlp_zt ** 2
                 term_wprtpthlp_explicit = wp_coef_zt * wprtp_zt * wpthlp_zt
             else:
-                wprtp_zt = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                wpthlp_zt = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+                wprtp_zt = jnp.zeros((ngrdcol, nzt))
+                wpthlp_zt = jnp.zeros((ngrdcol, nzt))
 
             if l_upwind_xpyp_ta:
                 term_wprtp2_explicit_zm = wp_coef * wprtp ** 2
@@ -1899,24 +1897,24 @@ def calc_xp2_xpyp_ta_terms(
 
             if l_scalar_calc:
                 if not l_upwind_xpyp_ta:
-                    wpsclrp_zt = jnp.zeros((ngrdcol, nzt, sclr_dim), dtype=jnp.float64)
+                    wpsclrp_zt = jnp.zeros((ngrdcol, nzt, sclr_dim))
                     for sclr in range(sclr_dim):
                         wpsclrp_s = zm2zt(
                             nzm, nzt, ngrdcol, gr, wpsclrp[:, :, sclr],
                         )
                         wpsclrp_zt = wpsclrp_zt.at[:, :, sclr].set(wpsclrp_s)
                 else:
-                    wpsclrp_zt = jnp.zeros((ngrdcol, nzt, sclr_dim), dtype=jnp.float64)
+                    wpsclrp_zt = jnp.zeros((ngrdcol, nzt, sclr_dim))
 
                 for sclr in range(sclr_dim):
                     if l_upwind_xpyp_ta:
                         term_s_zm = wp_coef * wpsclrp[:, :, sclr] ** 2
                         sgn = jnp.where(wp3_on_wp2 < zero, -one, one)
-                        term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+                        term_s = jnp.zeros((ngrdcol, nzt))
                     else:
                         term_s = wp_coef_zt * wpsclrp_zt[:, :, sclr] ** 2
-                        term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                        sgn = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                        term_s_zm = jnp.zeros((ngrdcol, nzm))
+                        sgn = jnp.zeros((ngrdcol, nzm))
                     if not l_godunov_upwind_xpyp_ta:
                         rhs_s = xpyp_term_ta_pdf_rhs(
                             nzm, nzt, ngrdcol, gr, term_s,
@@ -1936,11 +1934,11 @@ def calc_xp2_xpyp_ta_terms(
                     if l_upwind_xpyp_ta:
                         term_s_zm = wp_coef * wpsclrp[:, :, sclr] * wprtp
                         sgn = jnp.where(wp3_on_wp2 < zero, -one, one)
-                        term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+                        term_s = jnp.zeros((ngrdcol, nzt))
                     else:
                         term_s = wp_coef_zt * wpsclrp_zt[:, :, sclr] * wprtp_zt
-                        term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                        sgn = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                        term_s_zm = jnp.zeros((ngrdcol, nzm))
+                        sgn = jnp.zeros((ngrdcol, nzm))
                     if not l_godunov_upwind_xpyp_ta:
                         rhs_s = xpyp_term_ta_pdf_rhs(
                             nzm, nzt, ngrdcol, gr, term_s,
@@ -1960,11 +1958,11 @@ def calc_xp2_xpyp_ta_terms(
                     if l_upwind_xpyp_ta:
                         term_s_zm = wp_coef * wpsclrp[:, :, sclr] * wpthlp
                         sgn = jnp.where(wp3_on_wp2 < zero, -one, one)
-                        term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+                        term_s = jnp.zeros((ngrdcol, nzt))
                     else:
                         term_s = wp_coef_zt * wpsclrp_zt[:, :, sclr] * wpthlp_zt
-                        term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                        sgn = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                        term_s_zm = jnp.zeros((ngrdcol, nzm))
+                        sgn = jnp.zeros((ngrdcol, nzm))
                     if not l_godunov_upwind_xpyp_ta:
                         rhs_s = xpyp_term_ta_pdf_rhs(
                             nzm, nzt, ngrdcol, gr, term_s,
@@ -2179,11 +2177,11 @@ def calc_xp2_xpyp_ta_terms(
 
             if l_scalar_calc:
                 for sclr in range(sclr_dim):
-                    coef_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                    term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                    coef_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                    term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                    sgn = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                    coef_s = jnp.zeros((ngrdcol, nzt))
+                    term_s = jnp.zeros((ngrdcol, nzt))
+                    coef_s_zm = jnp.zeros((ngrdcol, nzm))
+                    term_s_zm = jnp.zeros((ngrdcol, nzm))
+                    sgn = jnp.zeros((ngrdcol, nzm))
                     if (not l_upwind_xpyp_ta) or l_sample:
                         coef_s = pdf_implicit_coefs_terms.coef_wpsclrp2_implicit[:, :, sclr]
                         term_s = pdf_implicit_coefs_terms.term_wpsclrp2_explicit[:, :, sclr]
@@ -2216,11 +2214,11 @@ def calc_xp2_xpyp_ta_terms(
                     lhs_ta_wpsclrp2 = lhs_ta_wpsclrp2.at[:, :, :, sclr].set(lhs_s)
                     rhs_ta_wpsclrp2 = rhs_ta_wpsclrp2.at[:, :, sclr].set(rhs_s)
 
-                    coef_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                    term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                    coef_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                    term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                    sgn = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                    coef_s = jnp.zeros((ngrdcol, nzt))
+                    term_s = jnp.zeros((ngrdcol, nzt))
+                    coef_s_zm = jnp.zeros((ngrdcol, nzm))
+                    term_s_zm = jnp.zeros((ngrdcol, nzm))
+                    sgn = jnp.zeros((ngrdcol, nzm))
                     if (not l_upwind_xpyp_ta) or l_sample:
                         coef_s = pdf_implicit_coefs_terms.coef_wprtpsclrp_implicit[:, :, sclr]
                         term_s = pdf_implicit_coefs_terms.term_wprtpsclrp_explicit[:, :, sclr]
@@ -2253,11 +2251,11 @@ def calc_xp2_xpyp_ta_terms(
                     lhs_ta_wprtpsclrp = lhs_ta_wprtpsclrp.at[:, :, :, sclr].set(lhs_s)
                     rhs_ta_wprtpsclrp = rhs_ta_wprtpsclrp.at[:, :, sclr].set(rhs_s)
 
-                    coef_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                    term_s = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-                    coef_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                    term_s_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-                    sgn = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+                    coef_s = jnp.zeros((ngrdcol, nzt))
+                    term_s = jnp.zeros((ngrdcol, nzt))
+                    coef_s_zm = jnp.zeros((ngrdcol, nzm))
+                    term_s_zm = jnp.zeros((ngrdcol, nzm))
+                    sgn = jnp.zeros((ngrdcol, nzm))
                     if (not l_upwind_xpyp_ta) or l_sample:
                         coef_s = pdf_implicit_coefs_terms.coef_wpthlpsclrp_implicit[:, :, sclr]
                         term_s = pdf_implicit_coefs_terms.term_wpthlpsclrp_explicit[:, :, sclr]
@@ -2359,7 +2357,7 @@ def term_tp_rhs(nzm, nzt, ngrdcol, xam, xbm, wpxbp, wpxap, invrs_dzm):
     invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
     """
     del nzt
-    rhs = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    rhs = jnp.zeros((ngrdcol, nzm))
     interior = slice(1, nzm - 1)
     rhs = rhs.at[:, interior].set(
         -wpxbp[:, interior]
@@ -2384,7 +2382,7 @@ def term_dp1_lhs(nzm, ngrdcol, gr, Cn, invrs_tau_zm):
     are the same variable), the term is damped to a certain positive
     threshold.
     """
-    lhs = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    lhs = jnp.zeros((ngrdcol, nzm))
     interior = slice(1, nzm - 1)
     # Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
     lhs = lhs.at[:, interior].set(Cn[:, interior] * invrs_tau_zm[:, interior])
@@ -2421,7 +2419,7 @@ def term_pr1(nzm, ngrdcol, C4, C14, xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm
     function "term_dp1_lhs" above, where "( 2*C_4 + C_14 ) / 3" is sent in
     as "C_n".
     """
-    rhs = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    rhs = jnp.zeros((ngrdcol, nzm))
     interior = slice(1, nzm - 1)
     rhs = rhs.at[:, interior].set(
         one_third
@@ -2454,7 +2452,7 @@ def term_pr2(
     C_uu_buoy for buoyancy terms.
     """
     del nzt
-    rhs_pr2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    rhs_pr2 = jnp.zeros((ngrdcol, nzm))
     interior = slice(1, nzm - 1)
     rhs_pr2_interior = two_thirds * (
         C_uu_buoy[:, None]
@@ -2538,7 +2536,7 @@ def update_xp2_mc(
     exner = exner
     rrm_evap = rrm_evap
 
-    precip_frac_double_delta = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    precip_frac_double_delta = jnp.zeros((ngrdcol, nzt))
     precip_frac_double_delta = precip_frac_double_delta.at[:, gr.k_ub_zt].set(zero)
     step = -int(gr.grid_dir_indx)
     start = int(gr.k_ub_zt) - int(gr.grid_dir_indx)
@@ -2556,7 +2554,7 @@ def update_xp2_mc(
 
     _, precip_cols = jax.lax.scan(
         precip_frac_step,
-        jnp.zeros((ngrdcol,), dtype=jnp.float64),
+        jnp.zeros((ngrdcol,)),
         ks,
     )
     precip_frac_double_delta = precip_frac_double_delta.at[:, ks].set(

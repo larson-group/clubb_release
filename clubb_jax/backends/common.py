@@ -7,6 +7,7 @@ from dataclasses import dataclass
 PYTHON_NAMES = ("python3.14", "python3.13", "python3.12", "python3.11", "python3", "python")
 PYTHON_REQUIREMENT = "Python 3.11+"
 MIN_PYTHON = (3, 11)
+SINGLE_PRECISION_NAMES = ("single", "float32", "f32", "32", "real4", "sp")
 
 
 class LauncherError(RuntimeError):
@@ -23,6 +24,11 @@ def jax_version(python_version: tuple[int, int]) -> str:
 
 def expected_packages(required_jax: str) -> dict[str, str]:
     return {"jax": required_jax, "jaxlib": required_jax}
+
+
+def precision_name(value: str | None) -> str:
+    """Return "single" or "double" for a CLUBB_JAX_PRECISION value; unset means double."""
+    return "single" if (value or "double").strip().lower() in SINGLE_PRECISION_NAMES else "double"
 
 
 def first_error_line(value: str) -> str:

@@ -4,7 +4,6 @@
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.new_tsdadg_pdf import calc_L_x_Skx_fnc, calc_setter_parameters, calc_respnder_parameters

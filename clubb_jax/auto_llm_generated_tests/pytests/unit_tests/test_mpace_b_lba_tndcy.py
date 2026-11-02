@@ -8,7 +8,6 @@ cooling, wm_zm boundary conditions) + a finite jax.grad. lba_tndcy is identicall
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.Benchmark_cases.mpace_b import mpace_b_tndcy

@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.adg1_adg2_3d_luhar_pdf import close_Luhar_pdf
 

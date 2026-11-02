@@ -13,7 +13,6 @@ drop per unit mass), and a finite jax.grad. Oracle-independent; never SKIPs. (it
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Microphys.KK_microphys.KK_Nrm_tendencies import (
     KK_Nrm_auto_mean, KK_Nrm_evap_local_mean)

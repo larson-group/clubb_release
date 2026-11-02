@@ -21,13 +21,11 @@ Observed Fortran differences retained in this diagnostic pass:
 """
 import os
 import sys
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 import jax
 import jax.numpy as jnp
-
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 
 _ITERMAX = 10      # matrix_operations.F90:137
 _D_COEF = 0.1      # matrix_operations.F90:139
@@ -50,11 +48,9 @@ def mirror_lower_triangular_matrix(matrix):
     References:
       None
     """
-    m = jnp.asarray(matrix, dtype=jnp.float64)
-
     #----- Begin Code -----
-    lower = jnp.tril(m)
-    return lower + jnp.tril(m, -1).T
+    lower = jnp.tril(matrix)
+    return lower + jnp.tril(matrix, -1).T
 
 
 def _portable_cholesky(matrix):
@@ -83,9 +79,8 @@ def Cholesky_factor(a_input):
       <http://www.netlib.org/lapack/explore-html/a00860.html> dpoequ
       <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
     """
-    a = jnp.asarray(a_input, dtype=jnp.float64)
-    n = a.shape[0]
-    diag = jnp.diagonal(a)
+    n = a_input.shape[0]
+    diag = jnp.diagonal(a_input)
 
     # ---- Begin code ----
 
@@ -98,15 +93,15 @@ def Cholesky_factor(a_input):
     amin = jnp.min(diag)
     scond = jnp.sqrt(amin / amax)
 
-    fi = jnp.finfo(jnp.float64)
+    fi = jnp.finfo(core_rknd)
     small, large = fi.tiny, 1.0 / fi.tiny
 
     # Apply scaling to a_input, using Lapack routine slaqsy for single precision,
     # or dlaqsy for double precision
     l_scaled = ~((scond >= _THRESH) & (amax >= small) & (amax <= large))
 
-    a_scaled = a_scaling[:, None] * a * a_scaling[None, :]
-    a_work = jnp.where(l_scaled, a_scaled, a)
+    a_scaled = a_scaling[:, None] * a_input * a_scaling[None, :]
+    a_work = jnp.where(l_scaled, a_scaled, a_input)
 
     mask = _lower_mask(n)
 
@@ -129,7 +124,7 @@ def Cholesky_factor(a_input):
                     print(" ".join(f"{value:10.3g}" for value in values[i, :i+1]), file=sys.stderr)
         jax.lax.cond(
             jnp.any(jnp.isnan(jnp.diagonal(a_cholesky))),
-            lambda _: jax.debug.callback(print_cholesky_error, a, a_cholesky, ordered=True),
+            lambda _: jax.debug.callback(print_cholesky_error, a_input, a_cholesky, ordered=True),
             lambda _: None, operand=None,
         )
     # TODO: Skip LAPACK argument/minor info and eigenvalue/correlation dumps;

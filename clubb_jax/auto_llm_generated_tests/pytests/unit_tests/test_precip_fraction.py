@@ -1,8 +1,5 @@
 """Focused synthetic precipitation fraction assertion contracts; real Rico checks live in integration_tests/."""
 import numpy as np
-import jax
-
-jax.config.update("jax_enable_x64", True)
 
 
 from clubb_jax.auto_llm_generated_tests.pytests.microphysics_test_inputs import precip_fraction_from_fields

@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.new_pdf_main import calc_F_x_zeta_x_setter
 

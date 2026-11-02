@@ -27,10 +27,10 @@ REPO_ROOT = SCRIPT_DIR.parent
 RUNTIME_INFO = SCRIPT_DIR / "runtime_info.py"
 if __package__:
     from . import backends
-    from .backends.common import LauncherError, fail
+    from .backends.common import LauncherError, fail, precision_name
 else:
     import backends
-    from backends.common import LauncherError, fail
+    from backends.common import LauncherError, fail, precision_name
 
 
 def usage() -> str:
@@ -335,11 +335,7 @@ def runtime_configuration(
     if not tools_dir.is_absolute():
         tools_dir = REPO_ROOT / tools_dir
     env = _runtime_environment(values, accelerator, profile, tools_dir)
-    precision_value = env.get("CLUBB_JAX_PRECISION", "double").strip().lower()
-    precision = (
-        "single" if precision_value in {"single", "float32", "f32", "32", "real4", "sp"}
-        else "double"
-    )
+    precision = precision_name(env.get("CLUBB_JAX_PRECISION"))
     environment_keys = (
         "CUDA_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
         "CLUBB_JAX_ACCELERATOR", "CLUBB_JAX_PRECISION", "CLUBB_JAX_VENV",

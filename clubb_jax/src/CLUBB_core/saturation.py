@@ -145,7 +145,6 @@ def sat_vapor_press_liq(T_in_K, saturation_formula: int):
     References:
       None
     """
-    T_in_K = jnp.asarray(T_in_K, dtype=jnp.float64)
     # Saturation Vapor Pressure, esat, can be found to be approximated
     # in many different ways.
     if saturation_formula == saturation_flatau:
@@ -170,8 +169,6 @@ def sat_mixrat_liq(p_in_Pa, T_in_K, saturation_formula: int):
     References:
       Formula from Emanuel 1994, 4.4.14
     """
-    p_in_Pa = jnp.asarray(p_in_Pa, dtype=jnp.float64)
-    T_in_K = jnp.asarray(T_in_K, dtype=jnp.float64)
     # Calculate the SVP for water vapor.
     esat = sat_vapor_press_liq(T_in_K, saturation_formula)
 
@@ -193,8 +190,6 @@ def sat_mixrat_ice(p_in_Pa, T_in_K):
     References:
       Formula from Emanuel 1994, 4.4.15
     """
-    p_in_Pa = jnp.asarray(p_in_Pa, dtype=jnp.float64)
-    T_in_K = jnp.asarray(T_in_K, dtype=jnp.float64)
     # Determine deg K - 273.15
     T_in_C = jnp.maximum(T_in_K - T_freeze_K, _FLATAU_ICE_MIN_T_C)
     a = _FLATAU_ICE_A
@@ -253,11 +248,6 @@ def rcm_sat_adj(thlm, rtm, p_in_Pa, exner, saturation_formula: int):
     References:
       None
     """
-    thlm = jnp.asarray(thlm, dtype=jnp.float64)
-    rtm = jnp.asarray(rtm, dtype=jnp.float64)
-    p_in_Pa = jnp.asarray(p_in_Pa, dtype=jnp.float64)
-    exner = jnp.asarray(exner, dtype=jnp.float64)
-
     tolerance = 0.001
     zero_threshold = 0.0
 

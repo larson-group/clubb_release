@@ -22,10 +22,9 @@ from functools import partial
 import jax
 import sys
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.advance_helper_module import smooth_heaviside_peskin
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.constants_clubb import (
@@ -57,7 +56,7 @@ wpthlp_cl_max = 3  # Number of wpthlp clipping events per timestep
 upwp_cl_max = 3    # Number of upwp clipping events per timestep
 vpwp_cl_max = 3    # Number of vpwp clipping events per timestep
 
-_F64_EPS = jnp.finfo(jnp.float64).eps
+_CORE_EPS = jnp.finfo(core_rknd).eps
 
 
 @partial(jax.jit, static_argnames=("nzm", "ngrdcol", "solve_type"))
@@ -511,6 +510,6 @@ def clip_rcm(nzt: int, ngrdcol: int, rtm, message: str, rcm):
     # radiation, and we do not want to bother recomputing it. 6 Aug 2009.
     return jnp.where(
         rtm < rcm,
-        jnp.maximum(zero_threshold, rtm - _F64_EPS),
+        jnp.maximum(zero_threshold, rtm - _CORE_EPS),
         rcm,
     )

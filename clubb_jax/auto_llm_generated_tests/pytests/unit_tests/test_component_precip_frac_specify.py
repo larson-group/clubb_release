@@ -17,7 +17,6 @@ upsilon==1 branch (so that branch is now exercised — a crash/NaN there is caug
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.precipitation_fraction import component_precip_frac_specify

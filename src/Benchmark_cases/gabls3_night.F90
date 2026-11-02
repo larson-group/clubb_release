@@ -197,8 +197,8 @@ module gabls3_night
 
     pii=acos(-1._core_rknd)/2._core_rknd
 
-    fm1 = 2._core_rknd*real(alog((1.+real(x))/2.), kind = core_rknd)+ &
-      real(alog((1.+real(x*x))/2.), kind = core_rknd)-2._core_rknd*atan(x)+pii
+    fm1 = 2._core_rknd*log((1._core_rknd+x)/2._core_rknd)+ &
+      log((1._core_rknd+x*x)/2._core_rknd)-2._core_rknd*atan(x)+pii
 
   end function fm1
 
@@ -212,7 +212,7 @@ module gabls3_night
     real( kind = core_rknd ), intent(in) :: x
 
 
-    fh1 = 2._core_rknd*real(alog((1.+0.74*real(x))/2.0), kind = core_rknd)
+    fh1 = 2._core_rknd*log((1._core_rknd+0.74_core_rknd*x)/2.0_core_rknd)
 
   end function fh1
 
@@ -259,7 +259,7 @@ module gabls3_night
     integer iter
 
 
-    zody=real(alog(real(h)/real(z0)), kind = core_rknd)
+    zody=log(h/z0)
 
     vel = sqrt(max(0.5_core_rknd,uh**2+vh**2))
     r=9.81_core_rknd/ts*(th*(1._core_rknd+ep1*qh)-ts*(1._core_rknd+ep1*qs))*h/vel**2
@@ -301,7 +301,7 @@ module gabls3_night
       d=sqrt(b*b-4._core_rknd*a*c)
       xsi1=(-b+d)/a/2._core_rknd
       xsi2=(-b-d)/a/2._core_rknd
-      xsi=real(amax1(real(xsi1),real(xsi2)), kind = core_rknd)
+      xsi=max(xsi1,xsi2)
       fm=zody+4.8_core_rknd*xsi
       fh=1.00_core_rknd*(zody+7.8_core_rknd*xsi)
 !  	a=4._core_rknd7*4._core_rknd7*r-0._core_rknd74*6._core_rknd35
@@ -333,10 +333,10 @@ module gabls3_night
     xlmo = h/xsi
 !------ Modification of GABLS3_night
     shf = ( 0.4_core_rknd * ustar * (ts-th) ) / &
-             ( real(alog(real(h)/0.25), kind = core_rknd) - psi_h(h, xlmo) &
+             ( log(h/0.25_core_rknd) - psi_h(h, xlmo) &
                  + psi_h(0.25_core_rknd, xlmo) )
     lhf = ( 0.4_core_rknd * ustar * (qs-qh) ) / &
-             ( real(alog(real(h)/0.25), kind = core_rknd) - psi_h(h, xlmo) &
+             ( log(h/0.25_core_rknd) - psi_h(h, xlmo) &
                  + psi_h(0.25_core_rknd, xlmo) )
 !-----------------------------
     return

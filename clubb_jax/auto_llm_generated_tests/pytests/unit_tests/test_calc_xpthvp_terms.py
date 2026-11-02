@@ -15,8 +15,6 @@ buoyancy production but was validated only end-to-end. This pins the on-zt assem
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.constants_clubb import ep1, ep2, Lv, Cp

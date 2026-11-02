@@ -18,7 +18,6 @@ import io
 from types import SimpleNamespace
 from unittest.mock import patch
 import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 import numpy as np
 from clubb_jax.src.Microphys.morrison_microphys_module import morrison_microphys_driver

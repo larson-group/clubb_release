@@ -407,8 +407,6 @@ def zt2zm(nzm: int, nzt: int, ngrdcol: int, gr, azt, zm_min=None):
     entire azt array and outputs the results as an azm array.  The
     formulation used is compatible with a stretched (unevenly-spaced) grid.
     """
-    azt = jnp.asarray(azt, dtype=jnp.float64)
-
     # Interpolate the value of a thermodynamic-level variable to the central
     # momentum level, k, between two successive thermodynamic levels using
     # linear interpolation.
@@ -450,7 +448,6 @@ def zm2zt(nzm: int, nzt: int, ngrdcol: int, gr, azm, zt_min=None):
     entire azm array and outputs the results as an azt array.  The formulation
     used is compatible with a stretched (unevenly-spaced) grid.
     """
-    azm = jnp.asarray(azm, dtype=jnp.float64)
     # Interpolate the value of a momentum-level variable to the central
     # thermodynamic level, k, between two successive momentum levels using
     # linear interpolation.
@@ -491,14 +488,12 @@ def zm2zt2zm(nzm: int, nzt: int, ngrdcol: int, gr, azm, zm_min=None):
 
 def ddzm(nzm: int, nzt: int, ngrdcol: int, gr, azm):
     """2D version of gradzm."""
-    azm = jnp.asarray(azm, dtype=jnp.float64)
     # Vertical derivative of azm (thermo. levs.) [units vary / m]
     return (azm[:, 1:nzm] - azm[:, :nzt]) * gr.invrs_dzt
 
 
 def ddzt(nzm: int, nzt: int, ngrdcol: int, gr, azt):
     """2D version of gradzt."""
-    azt = jnp.asarray(azt, dtype=jnp.float64)
     # Vertical derivative of azt (mom.levs.) [units vary / m]
     interior = (azt[:, 1:nzt] - azt[:, :nzt - 1]) * gr.invrs_dzm[:, 1:nzm - 1]
     return jnp.concatenate([interior[:, :1], interior, interior[:, -1:]], axis=1)

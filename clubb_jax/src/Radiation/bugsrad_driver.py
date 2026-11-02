@@ -17,10 +17,8 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 import functools
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.Radiation.BUGSrad.bugs_rad import bugs_rad
 # The Fortran driver (bugsrad_driver.F90:357) passes constants_clubb grav/Cp to bugs_rad for the heating
 # rate (heat_fac = grav·0.01/cp), NOT BUGSrad's own physconst (9.80665/1004.0) — a uniform 3.26e-4 factor.
@@ -93,7 +91,7 @@ def compute_bugsrad_radiation(setup, T_in_K, rcm, rtm, rsm, rim, cloud_frac, ice
     ice_supersat_frac, p_in_Pa, exner. (ncol,nzm): p_in_Pam, rho_zm. Scalars: amu0, slr, surface albedos,
     sol_const. Returns dict(radht, radht_SW, radht_LW, Frad, Frad_SW_up/down, Frad_LW_up/down) on the CLUBB
     zt/zm grid (surface→top)."""
-    a = lambda x: jnp.asarray(x, dtype=jnp.float64)
+    a = lambda x: jnp.asarray(x, dtype=core_rknd)
     T_in_K, rcm, rtm, rsm, rim = a(T_in_K), a(rcm), a(rtm), a(rsm), a(rim)
     cloud_frac, ice_supersat_frac = a(cloud_frac), a(ice_supersat_frac)
     p_in_Pa, p_in_Pam, rho_zm, exner = a(p_in_Pa), a(p_in_Pam), a(rho_zm), a(exner)

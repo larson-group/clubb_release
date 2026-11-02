@@ -465,10 +465,10 @@ def pdf_closure(
             varnce_sclr1 = sclrp2
             varnce_sclr2 = sclrp2
     else:
-        sclr1 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        sclr2 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        varnce_sclr1 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        varnce_sclr2 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
+        sclr1 = jnp.zeros((ngrdcol, nz, 0))
+        sclr2 = jnp.zeros((ngrdcol, nz, 0))
+        varnce_sclr1 = jnp.zeros((ngrdcol, nz, 0))
+        varnce_sclr2 = jnp.zeros((ngrdcol, nz, 0))
 
     # Calculate the PDF component correlations of rt and thl.
     corr_rt_thl_1, corr_rt_thl_2 = calc_comp_corrs_binormal(
@@ -578,12 +578,12 @@ def pdf_closure(
                 out_axes=-1,
             )(wpsclrp, sclrm, sclr1, sclr2, varnce_sclr1, varnce_sclr2)
     else:
-        corr_sclr_thl_1 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        corr_sclr_thl_2 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        corr_sclr_rt_1 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        corr_sclr_rt_2 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        corr_w_sclr_1 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        corr_w_sclr_2 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
+        corr_sclr_thl_1 = jnp.zeros((ngrdcol, nz, 0))
+        corr_sclr_thl_2 = jnp.zeros((ngrdcol, nz, 0))
+        corr_sclr_rt_1 = jnp.zeros((ngrdcol, nz, 0))
+        corr_sclr_rt_2 = jnp.zeros((ngrdcol, nz, 0))
+        corr_w_sclr_1 = jnp.zeros((ngrdcol, nz, 0))
+        corr_w_sclr_2 = jnp.zeros((ngrdcol, nz, 0))
 
     mf = adg1["mixt_frac"]
     zero_pdf = jnp.zeros_like(mf)
@@ -913,12 +913,12 @@ def pdf_closure(
             + rc_coef[:, :, None] * sclrprcp
         )
     else:
-        wp2sclrp = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        wpsclrp2 = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        wpsclrprtp = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        wpsclrpthlp = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        sclrprcp = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
-        sclrpthvp = jnp.zeros((ngrdcol, nz, 0), dtype=jnp.float64)
+        wp2sclrp = jnp.zeros((ngrdcol, nz, 0))
+        wpsclrp2 = jnp.zeros((ngrdcol, nz, 0))
+        wpsclrprtp = jnp.zeros((ngrdcol, nz, 0))
+        wpsclrpthlp = jnp.zeros((ngrdcol, nz, 0))
+        sclrprcp = jnp.zeros((ngrdcol, nz, 0))
+        sclrpthvp = jnp.zeros((ngrdcol, nz, 0))
 
     if iiPDF_type in (iiPDF_ADG1, iiPDF_ADG2, iiPDF_new_hybrid):
         # Calculate mean cloudy updraft speed.
@@ -1537,8 +1537,7 @@ def calc_w_up_in_cloud(mixt_frac, cloud_frac_1, cloud_frac_2,
     (w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, cloudy_downdraft_frac).
     """
     def _component(w, varnce):
-        w = jnp.asarray(w, dtype=jnp.float64)
-        stdev = jnp.sqrt(jnp.asarray(varnce, dtype=jnp.float64))
+        stdev = jnp.sqrt(jnp.asarray(varnce))
         all_up = w > max_num_stdevs * stdev
         all_down = w < -max_num_stdevs * stdev
         ratio = w / (sqrt_2 * jnp.maximum(eps, stdev))
@@ -1560,20 +1559,22 @@ def calc_w_up_in_cloud(mixt_frac, cloud_frac_1, cloud_frac_2,
         df = 1.0 - uf   # holds in all three branches (Fortran: 1, 0, 1-uf_mid)
         return w_up, uf, w_down, df
 
-    a = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    cf1 = jnp.asarray(cloud_frac_1, dtype=jnp.float64); cf2 = jnp.asarray(cloud_frac_2, dtype=jnp.float64)
     w_up_1, uf_1, w_down_1, df_1 = _component(w_1, varnce_w_1)
     w_up_2, uf_2, w_down_2, df_2 = _component(w_2, varnce_w_2)
 
     # Calculate the total cloudy updraft fraction.
-    cloudy_updraft_frac = a * cf1 * uf_1 + (1.0 - a) * cf2 * uf_2
+    cloudy_updraft_frac = (mixt_frac * cloud_frac_1 * uf_1
+                           + (1.0 - mixt_frac) * cloud_frac_2 * uf_2)
     # Calculate the total cloudy downdraft fraction.
-    cloudy_downdraft_frac = a * cf1 * df_1 + (1.0 - a) * cf2 * df_2
+    cloudy_downdraft_frac = (mixt_frac * cloud_frac_1 * df_1
+                             + (1.0 - mixt_frac) * cloud_frac_2 * df_2)
     # Calculate the mean vertical velocity found in a cloudy updraft.
-    w_up_in_cloud = ((a * cf1 * w_up_1 + (1.0 - a) * cf2 * w_up_2)
+    w_up_in_cloud = ((mixt_frac * cloud_frac_1 * w_up_1
+                      + (1.0 - mixt_frac) * cloud_frac_2 * w_up_2)
                      / jnp.maximum(eps, cloudy_updraft_frac))
     # Calculate the mean vertical velocity found in a cloudy downdraft.
-    w_down_in_cloud = ((a * cf1 * w_down_1 + (1.0 - a) * cf2 * w_down_2)
+    w_down_in_cloud = ((mixt_frac * cloud_frac_1 * w_down_1
+                        + (1.0 - mixt_frac) * cloud_frac_2 * w_down_2)
                        / jnp.maximum(eps, cloudy_downdraft_frac))
     return w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, cloudy_downdraft_frac
 
@@ -1709,11 +1710,11 @@ def pdf_closure_driver(
             -1,
         )
     else:
-        wpsclrp_zt = jnp.zeros((ngrdcol, nzt, 0), dtype=jnp.float64)
-        sclrprtp_zt = jnp.zeros((ngrdcol, nzt, 0), dtype=jnp.float64)
-        sclrpthlp_zt = jnp.zeros((ngrdcol, nzt, 0), dtype=jnp.float64)
-        sclrp2_zt = jnp.zeros((ngrdcol, nzt, 0), dtype=jnp.float64)
-        Sksclr_zt = jnp.zeros((ngrdcol, nzt, 0), dtype=jnp.float64)
+        wpsclrp_zt = jnp.zeros((ngrdcol, nzt, 0))
+        sclrprtp_zt = jnp.zeros((ngrdcol, nzt, 0))
+        sclrpthlp_zt = jnp.zeros((ngrdcol, nzt, 0))
+        sclrp2_zt = jnp.zeros((ngrdcol, nzt, 0))
+        Sksclr_zt = jnp.zeros((ngrdcol, nzt, 0))
 
     # Interpolate hydrometeor mixed moments to momentum levels.
     if hydromet_dim > 0:
@@ -1725,7 +1726,7 @@ def pdf_closure_driver(
             -1,
         )
     else:
-        wphydrometp_zt = jnp.zeros((ngrdcol, nzt, 0), dtype=jnp.float64)
+        wphydrometp_zt = jnp.zeros((ngrdcol, nzt, 0))
 
     #----------------------------------------------------------------
     # Call closure scheme
@@ -1770,8 +1771,8 @@ def pdf_closure_driver(
     )
     del wphydrometp_zt
 
-    zero_zt = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    zero_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    zero_zt = jnp.zeros((ngrdcol, nzt))
+    zero_zm = jnp.zeros((ngrdcol, nzm))
 
     wp4 = zt2zm(nzm, nzt, ngrdcol, gr, wp4_zt, zero_threshold)
     wp4 = wp4.at[:, gr.k_lb_zm].set(0.0).at[:, gr.k_ub_zm].set(0.0)
@@ -1828,10 +1829,10 @@ def pdf_closure_driver(
     wp2thvp_zm = zero_zm
     wp2up_zm = zero_zm
     wp2rcp_zm = zero_zm
-    wpsclrprtp_zm = jnp.zeros((ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
-    wpsclrp2_zm = jnp.zeros((ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
-    wpsclrpthlp_zm = jnp.zeros((ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
-    wp2sclrp_zm = jnp.zeros((ngrdcol, nzm, sclr_dim), dtype=jnp.float64)
+    wpsclrprtp_zm = jnp.zeros((ngrdcol, nzm, sclr_dim))
+    wpsclrp2_zm = jnp.zeros((ngrdcol, nzm, sclr_dim))
+    wpsclrpthlp_zm = jnp.zeros((ngrdcol, nzm, sclr_dim))
+    wp2sclrp_zm = jnp.zeros((ngrdcol, nzm, sclr_dim))
 
     if l_call_pdf_closure_twice:
         if l_rtm_nudge:
@@ -2143,9 +2144,9 @@ def pdf_closure_driver_zm(
             -1,
         )
     else:
-        rtphmp = jnp.zeros((ngrdcol, nzm, 0), dtype=jnp.float64)
-        thlphmp = jnp.zeros((ngrdcol, nzm, 0), dtype=jnp.float64)
-        wp2hmp_zm = jnp.zeros((ngrdcol, nzm, 0), dtype=jnp.float64)
+        rtphmp = jnp.zeros((ngrdcol, nzm, 0))
+        thlphmp = jnp.zeros((ngrdcol, nzm, 0))
+        wp2hmp_zm = jnp.zeros((ngrdcol, nzm, 0))
 
     um_zm = zt2zm(nzm, nzt, ngrdcol, gr, um)
     vm_zm = zt2zm(nzm, nzt, ngrdcol, gr, vm)
@@ -2183,9 +2184,9 @@ def pdf_closure_driver_zm(
             -1,
         )
     else:
-        sclrm_zm = jnp.zeros((ngrdcol, nzm, 0), dtype=jnp.float64)
-        sclrp3_zm = jnp.zeros((ngrdcol, nzm, 0), dtype=jnp.float64)
-        Sksclr_zm = jnp.zeros((ngrdcol, nzm, 0), dtype=jnp.float64)
+        sclrm_zm = jnp.zeros((ngrdcol, nzm, 0))
+        sclrp3_zm = jnp.zeros((ngrdcol, nzm, 0))
+        Sksclr_zm = jnp.zeros((ngrdcol, nzm, 0))
 
     if iiPDF_type in (iiPDF_new, iiPDF_new_hybrid):
         pdf_implicit_coefs_terms_zm = init_pdf_implicit_coefs_terms_api(
@@ -2555,8 +2556,8 @@ def compute_cloud_cover(gr, nzt, ngrdcol, pdf_params, cloud_frac, rcm):
         # First let the cloud fill the entire grid box, then overwrite
         # vert_cloud_frac_upper(k) and/or vert_cloud_frac_lower(k)
         # for a cloud top, cloud base, or one-point cloud.
-        upper = jnp.full((ngrdcol,), 0.5, dtype=jnp.float64)
-        lower = jnp.full((ngrdcol,), 0.5, dtype=jnp.float64)
+        upper = jnp.full((ngrdcol,), 0.5)
+        lower = jnp.full((ngrdcol,), 0.5)
 
         # Cloud top
         top = rcm[:, kp1] < rc_tol

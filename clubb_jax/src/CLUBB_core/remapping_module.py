@@ -21,9 +21,6 @@ import jax
 import sys
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 from clubb_jax.src.CLUBB_core.constants_clubb import grav
 
 _CONS_ULLRICH_REMAP = 1    # model_flags.F90 cons_ullrich_remap
@@ -76,9 +73,6 @@ def calc_mass_over_grid_intervals(rho_lin_spline_vals, rho_lin_spline_levels, gr
     Returns:
         mass_per_interval: (ngrdcol, nlev-1) mass over each cell [kg/m^2 per unit area].
     """
-    rv = jnp.asarray(rho_lin_spline_vals, dtype=jnp.float64)
-    rl = jnp.asarray(rho_lin_spline_levels, dtype=jnp.float64)
-    gl = jnp.asarray(grid_levels, dtype=jnp.float64)
     # Note:  The lin_spline_rho_levels and lin_spline_rho_vals need to be arranged from
     #        lowest to highest in altitude
     #--------------------- Begin Code ---------------------
@@ -87,7 +81,7 @@ def calc_mass_over_grid_intervals(rho_lin_spline_vals, rho_lin_spline_levels, gr
     # find all spline connection points between the level_below and the next grid level
     # in grid_levels and add up their masses, finally the rho value on the next grid level is
     # interpolated and the last part of mass added to the total mass of that interval
-    return jax.vmap(_calc_mass_1col)(rv, rl, gl)
+    return jax.vmap(_calc_mass_1col)(rho_lin_spline_vals, rho_lin_spline_levels, grid_levels)
 
 
 #-------------------------------------------------------------------------------
@@ -118,9 +112,6 @@ def remapping_matrix(levels_source, levels_target):
     Returns:
         R_ij: (ngrdcol, nt-1, ns-1).
     """
-    ls = jnp.asarray(levels_source, dtype=jnp.float64)
-    lt = jnp.asarray(levels_target, dtype=jnp.float64)
-
     def _one(ls_i, lt_i):
         #--------------------- Begin Code ---------------------
         tgt_lo = lt_i[:-1][:, None]; tgt_hi = lt_i[1:][:, None]      # (nt-1, 1)
@@ -130,7 +121,7 @@ def remapping_matrix(levels_source, levels_target):
         omega = jnp.where(omega_upper < omega_lower, jnp.abs(omega_upper - omega_lower), 0.0)
         return omega / jnp.abs(tgt_hi - tgt_lo)
 
-    return jax.vmap(_one)(ls, lt)
+    return jax.vmap(_one)(levels_source, levels_target)
 
 
 def matrix_vector_mult(x_vectors, A_matrices):
@@ -145,16 +136,13 @@ def matrix_vector_mult(x_vectors, A_matrices):
     Returns:
         y_vectors: (ngrdcol, dim_output).
     """
-    x = jnp.asarray(x_vectors, dtype=jnp.float64)
-    A = jnp.asarray(A_matrices, dtype=jnp.float64)
     #--------------------- Begin Code ---------------------
     # matrix vector multiplication
-    return jnp.einsum('ikj,ij->ik', A, x)
+    return jnp.einsum('ikj,ij->ik', A_matrices, x_vectors)
 
 
 def _pressure_levels(mass_on_cells, p_sfc):
     """Hydrostatic pressure at each grid level: p[0]=p_sfc; p[k]=p[k-1] − mass[k-1]·grav. Vectorized over cols."""
-    p_sfc = jnp.asarray(p_sfc, dtype=jnp.float64)
     # Calculate pressure levels from altitudes and densities
     dp = mass_on_cells * grav                                        # (ngrdcol, ncell)
     return p_sfc[:, None] - jnp.concatenate(
@@ -406,14 +394,11 @@ def remap_vals_ppm(levels_source, levels_target, source_values, iv, kord=4):
     """This is a wrapper function for E3SM's subroutine implementing the
     Piecewise Parabolic Method (PPM) that takes in the pressure levels from surface to top
     """
-    ls = jnp.asarray(levels_source, dtype=jnp.float64)
-    lt = jnp.asarray(levels_target, dtype=jnp.float64)
-    sv = jnp.asarray(source_values, dtype=jnp.float64)
     # the pressure levels and values are flipped, since map1_ppm takes in the grids
     # from top to surface instead of surface to top, like CLUBB does
-    pe1 = ls[:, ::-1]                                           # top→surface (increasing pressure)
-    pe2 = lt[:, ::-1]
-    q1 = sv[:, ::-1]
+    pe1 = jnp.asarray(levels_source)[:, ::-1]                   # top→surface (increasing pressure)
+    pe2 = jnp.asarray(levels_target)[:, ::-1]
+    q1 = jnp.asarray(source_values)[:, ::-1]
     # remap values using E3SM's PPM implementation
     q2 = map1_ppm(pe1, q1, pe2, iv, kord)
     # flip output values back so they correspond to the surface to top ordering in CLUBB's grid
@@ -478,8 +463,6 @@ def remap_vals_to_target_same_grid(source_values, zm, zt, rho_lin_spline_vals, r
     Returns:
         target_values: (ngrdcol, ncell), same shape as source_values.
     """
-    zm = jnp.asarray(zm, dtype=jnp.float64)
-    zt = jnp.asarray(zt, dtype=jnp.float64)
     if l_zt_variable:
         # if variable is given on the zt levels, just take the surrounding zm levels to build
         # the corresponding grid cell

@@ -92,18 +92,13 @@ def calc_coef_wp2xp_implicit(wp2, mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma
     ! In the special case that F_w = 0, <w'x'> must have a value of 0, in which
     ! case mu_x_1 - <x> = mu_x_2 - <x> = 0, and <w'^2 x'> = 0.
     """
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    F = jnp.asarray(F_w, dtype=jnp.float64)
-    c1 = jnp.asarray(coef_sigma_w_1_sqd, dtype=jnp.float64)
-    c2 = jnp.asarray(coef_sigma_w_2_sqd, dtype=jnp.float64)
-    omf = 1.0 - mf
-    F_safe = jnp.where(F > 0.0, F, 1.0)
+    omf = 1.0 - mixt_frac
+    F_safe = jnp.where(F_w > 0.0, F_w, 1.0)
     # Calculate coef_wp2xp_implicit.
-    coef = (sqrt_clipped(mf * omf)
-            * (F * (omf / mf - mf / omf) + c1 - c2)
+    coef = (sqrt_clipped(mixt_frac * omf)
+            * (F_w * (omf / mixt_frac - mixt_frac / omf) + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd)
             * sqrt_clipped(wp2 / F_safe))
-    return jnp.where(F > 0.0, coef, 0.0)
+    return jnp.where(F_w > 0.0, coef, 0.0)
 
 
 # --- new_hybrid_pdf.F90 aliases (Griffin & Larson 2020) ---
@@ -141,12 +136,9 @@ def calculate_w_params(wm, wp2, Skw, F_w, zeta_w):
     ! References:
     ! Griffin and Larson (2020)
     """
-    wm = jnp.asarray(wm, dtype=jnp.float64); wp2 = jnp.asarray(wp2, dtype=jnp.float64)
-    Skw = jnp.asarray(Skw, dtype=jnp.float64); F_w = jnp.asarray(F_w, dtype=jnp.float64)
-    zeta = jnp.asarray(zeta_w, dtype=jnp.float64)
 
     # Calculate the mixture fraction.
-    mixt_frac = calculate_mixture_fraction(Skw, F_w, zeta)
+    mixt_frac = calculate_mixture_fraction(Skw, F_w, zeta_w)
     valid = (mixt_frac > 0.0) & (mixt_frac < 1.0)
     mf = jnp.where(valid, mixt_frac, 0.5)          # avoid div-by-zero in the invalid branch
     omf = 1.0 - mf
@@ -158,13 +150,13 @@ def calculate_w_params(wm, wp2, Skw, F_w, zeta_w):
     # Calculate the standard deviation of w in the 1st PDF component.
     # sigma_w_1 = sqrt( ( ( zeta_w + 1 ) * ( 1 - F_w ) )
     #                   / ( ( zeta_w + 2 ) * mixt_frac ) * <w'^2> )
-    c1_v = ((zeta + 1.0) * (1.0 - F_w)) / ((zeta + 2.0) * mf)
+    c1_v = ((zeta_w + 1.0) * (1.0 - F_w)) / ((zeta_w + 2.0) * mf)
     # Calculate the standard deviation of w in the 2nd PDF component.
     # sigma_w_2 = sqrt( ( mixt_frac * sigma_w_1^2 )
     #                   / ( ( 1 - mixt_frac ) * ( 1 + zeta_w ) ) )
     #           = sqrt( ( 1 - F_w )
     #                   / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ) * <w'^2> )
-    c2_v = (1.0 - F_w) / ((zeta + 2.0) * omf)
+    c2_v = (1.0 - F_w) / ((zeta_w + 2.0) * omf)
     sig1_v = sqrt_clipped(c1_v * wp2); sig2_v = sqrt_clipped(c2_v * wp2)
 
     # The mixture fraction produced is invalid.  This should only happen in
@@ -192,11 +184,7 @@ def calculate_responder_params(xm, xp2, Skx, wpxp, wp2, F_w, mixt_frac):
     ! References:
     ! Griffin and Larson (2020)
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    Skx = jnp.asarray(Skx, dtype=jnp.float64); wpxp = jnp.asarray(wpxp, dtype=jnp.float64)
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); F_w = jnp.asarray(F_w, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
     gate = jnp.abs(wpxp) > 0.0
     # Note:  when |<w'x'>| > 0, F_w, <w'^2>, and <x'^2> must all have values
@@ -206,9 +194,9 @@ def calculate_responder_params(xm, xp2, Skx, wpxp, wp2, F_w, mixt_frac):
     den_safe = jnp.where(gate, 3.0 * F_w * wp2 * xp2, 1.0)
 
     # Calculate the mean of x in the 1st PDF component.
-    mu_x_1_v = xm + sqrt_clipped(omf / mf) * wpxp / sqrt_clipped(fw_wp2_safe)
+    mu_x_1_v = xm + sqrt_clipped(omf / mixt_frac) * wpxp / sqrt_clipped(fw_wp2_safe)
     # Calculate the mean of x in the 2nd PDF component.
-    mu_x_2_v = xm - sqrt_clipped(mf / omf) * wpxp / sqrt_clipped(fw_wp2_safe)
+    mu_x_2_v = xm - sqrt_clipped(mixt_frac / omf) * wpxp / sqrt_clipped(fw_wp2_safe)
     # Calculate the variance of x in the 1st PDF component.
     # sigma_x_1^2
     # = ( 1 + sqrt( ( 1 - mixt_frac ) / mixt_frac )
@@ -216,8 +204,8 @@ def calculate_responder_params(xm, xp2, Skx, wpxp, wp2, F_w, mixt_frac):
     #     - ( ( 1 + mixt_frac ) / mixt_frac )
     #       * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ) )
     #   * <x'^2>
-    c1_v = (1.0 + sqrt_clipped(omf / mf) * Skx * sqrt_clipped(fw_wp2_safe * xp2) / (3.0 * wpxp_safe)
-            - ((1.0 + mf) / mf) * wpxp ** 2 / den_safe)
+    c1_v = (1.0 + sqrt_clipped(omf / mixt_frac) * Skx * sqrt_clipped(fw_wp2_safe * xp2) / (3.0 * wpxp_safe)
+            - ((1.0 + mixt_frac) / mixt_frac) * wpxp ** 2 / den_safe)
     # Mathematically, the value of coef_sigma_x_1_sqd cannot be less than 0.
     # Numerically, this can happen when numerical round off error causes an
     # epsilon-sized negative value.  When this happens, reset the value of
@@ -230,8 +218,8 @@ def calculate_responder_params(xm, xp2, Skx, wpxp, wp2, F_w, mixt_frac):
     #     + ( ( mixt_frac - 2 ) / ( 1 - mixt_frac ) )
     #       * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ) )
     #   * <x'^2>
-    c2_v = (1.0 - sqrt_clipped(mf / omf) * Skx * sqrt_clipped(fw_wp2_safe * xp2) / (3.0 * wpxp_safe)
-            + ((mf - 2.0) / omf) * wpxp ** 2 / den_safe)
+    c2_v = (1.0 - sqrt_clipped(mixt_frac / omf) * Skx * sqrt_clipped(fw_wp2_safe * xp2) / (3.0 * wpxp_safe)
+            + ((mixt_frac - 2.0) / omf) * wpxp ** 2 / den_safe)
     # Mathematically, the value of coef_sigma_x_2_sqd cannot be less than 0.
     # Numerically, this can happen when numerical round off error causes an
     # epsilon-sized negative value.  When this happens, reset the value of
@@ -265,18 +253,15 @@ def calc_coefs_wpxp2_semiimpl(wp2, wpxp, mixt_frac, F_w, coef_sigma_x_1_sqd, coe
     !
     ! <w'x'^2> = coef_wpxp2_implicit * <x'^2> + term_wpxp2_explicit;
     """
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); wpxp = jnp.asarray(wpxp, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64); F_w = jnp.asarray(F_w, dtype=jnp.float64)
-    cx1 = jnp.asarray(coef_sigma_x_1_sqd, dtype=jnp.float64); cx2 = jnp.asarray(coef_sigma_x_2_sqd, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
     # Calculate coef_wpxp2_implicit and term_wpxp2_explicit.
     vary = (F_w > 0.0) & (wp2 > 0.0)
     sFwwp2 = sqrt_clipped(F_w * wp2)
     sFwwp2_safe = jnp.where(sFwwp2 > 0.0, sFwwp2, 1.0)
-    base = sqrt_clipped(mf * omf)
-    coef = base * sFwwp2 * (cx1 - cx2)
-    term = base * wpxp ** 2 / sFwwp2_safe * (omf / mf - mf / omf)
+    base = sqrt_clipped(mixt_frac * omf)
+    coef = base * sFwwp2 * (coef_sigma_x_1_sqd - coef_sigma_x_2_sqd)
+    term = base * wpxp ** 2 / sFwwp2_safe * (omf / mixt_frac - mixt_frac / omf)
     return jnp.where(vary, coef, 0.0), jnp.where(vary, term, 0.0)
 
 
@@ -298,17 +283,15 @@ def calc_coefs_wpxpyp_semiimpl(wp2, wpxp, wpyp, mixt_frac, F_w,
     !
     ! There are also special cases for the above equations.
     """
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); wpxp = jnp.asarray(wpxp, dtype=jnp.float64)
-    wpyp = jnp.asarray(wpyp, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64); F_w = jnp.asarray(F_w, dtype=jnp.float64)
-    cx1 = jnp.asarray(coef_sigma_x_1_sqd, dtype=jnp.float64); cx2 = jnp.asarray(coef_sigma_x_2_sqd, dtype=jnp.float64)
-    cy1 = jnp.asarray(coef_sigma_y_1_sqd, dtype=jnp.float64); cy2 = jnp.asarray(coef_sigma_y_2_sqd, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
     # Calculate coef_wpxpyp_implicit and term_wpxpyp_explicit.
-    s1 = sqrt_clipped(cx1 * cy1); s2 = sqrt_clipped(cx2 * cy2)
-    xy_vary = ((cx1 * cy1 > 0.0) | (cx2 * cy2 > 0.0)) & (F_w > 0.0) & (wp2 > 0.0)
-    denom = mf * s1 + omf * s2
+    s1 = sqrt_clipped(coef_sigma_x_1_sqd * coef_sigma_y_1_sqd)
+    s2 = sqrt_clipped(coef_sigma_x_2_sqd * coef_sigma_y_2_sqd)
+    xy_vary = (((coef_sigma_x_1_sqd * coef_sigma_y_1_sqd > 0.0)
+                | (coef_sigma_x_2_sqd * coef_sigma_y_2_sqd > 0.0))
+               & (F_w > 0.0) & (wp2 > 0.0))
+    denom = mixt_frac * s1 + omf * s2
     denom_safe = jnp.where(denom > 0.0, denom, 1.0)
     # coefs_factor_xy
     # = ( sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
@@ -320,11 +303,11 @@ def calc_coefs_wpxpyp_semiimpl(wp2, wpxp, wpyp, mixt_frac, F_w,
 
     sFwwp2 = sqrt_clipped(F_w * wp2)
     sFwwp2_safe = jnp.where(sFwwp2 > 0.0, sFwwp2, 1.0)
-    base = sqrt_clipped(mf * omf)
+    base = sqrt_clipped(mixt_frac * omf)
 
     coef_vary = base * sFwwp2 * f_xy
-    term_vary = base * wpxp * wpyp / sFwwp2_safe * (omf / mf - mf / omf - f_xy)
-    coef_else = jnp.where(F_w > 0.0, base * sFwwp2 * (omf / mf - mf / omf), 0.0)
+    term_vary = base * wpxp * wpyp / sFwwp2_safe * (omf / mixt_frac - mixt_frac / omf - f_xy)
+    coef_else = jnp.where(F_w > 0.0, base * sFwwp2 * (omf / mixt_frac - mixt_frac / omf), 0.0)
 
     coef = jnp.where(xy_vary, coef_vary, coef_else)
     term = jnp.where(xy_vary, term_vary, 0.0)

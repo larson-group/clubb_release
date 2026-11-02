@@ -25,9 +25,6 @@ from clubb_jax.src.SILHS.transform_to_pdf_module import (
     multiply_Cholesky,
 )
 from clubb_jax.src.SILHS.latin_hypercube_driver_module import compute_arb_overlap
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-
-configure_jax_precision()
 
 
 def test_stratification_reproducibility_and_sequence_reuse():

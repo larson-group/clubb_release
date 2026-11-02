@@ -9,9 +9,6 @@ accumulating direct+diffuse fluxes and the surface visible/near-IR net radiation
 import jax.numpy as jnp
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 from clubb_jax.src.Radiation.BUGSrad.rayle import rayle
 from clubb_jax.src.Radiation.BUGSrad.cloudg import cloudg
 from clubb_jax.src.Radiation.BUGSrad.comscp1 import comscp1
@@ -35,7 +32,7 @@ def bugs_swr(ts, amu0, slr, alvdf, alndf, alvdr, alndr, ppl, dp, tt, rmix,
     (daylight frac), alvdf/alndf/alvdr/alndr (visible/near-IR diffuse/direct surface albedo). (ncol,
     nlm): ppl/dp/tt/rmix/cwrho/cirho/o3mix; pp=(ncol,nlm+1). Returns (fdsw, fusw, fdswcl, fuswcl,
     radvbc, radvbccl, radvdc, radvdccl, radnbc, radnbccl, radndc, radndccl)."""
-    a = lambda x: jnp.asarray(x, dtype=jnp.float64)
+    a = jnp.asarray
     ts, amu0, slr = a(ts), a(amu0), a(slr)
     ppl, dp, tt, rmix = a(ppl), a(dp), a(tt), a(rmix)
     cwrho, cirho, o3mix, pp = a(cwrho), a(cirho), a(o3mix), a(pp)

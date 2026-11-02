@@ -4,7 +4,6 @@
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_xp3_module import term_tp_rhs, term_ac_rhs

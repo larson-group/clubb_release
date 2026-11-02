@@ -7,8 +7,6 @@ import os
 _ROOT = str(_REPO_ROOT)
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import smooth_min as _smooth_min, calc_xpwp as _calc_xpwp

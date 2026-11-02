@@ -3,14 +3,11 @@ form the final clear/all-sky single-scattering albedos (capped at 0.999999) — 
 """
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 
 def comscp2(tg, fwcld, fwclr, tccld1, tcclr1):
     """Add gas absorption `tg` and form the final SSAs (comscp2.F). Returns (tccld, tcclr, wccld,
     wcclr); SSAs capped at 0.999999."""
-    a = lambda x: jnp.asarray(x, dtype=jnp.float64)
+    a = jnp.asarray
     tg, fwcld, fwclr, tccld1, tcclr1 = a(tg), a(fwcld), a(fwclr), a(tccld1), a(tcclr1)
     tcclr = tcclr1 + tg
     tccld = tccld1 + tg

@@ -20,8 +20,6 @@ from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_driver_api
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.Microphys import pdf_hydromet_microphys_wrapper as wrapper
 
-jax.config.update("jax_enable_x64", True)
-
 
 @pytest.mark.parametrize("compiled", [False, True])
 def test_pdf_preparation_preserves_per_column_parameters(monkeypatch, compiled):

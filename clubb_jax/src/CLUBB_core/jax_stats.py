@@ -17,10 +17,9 @@ import warnings
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.stats_metadata import GRID_ORDER, StatsLayout
 
-configure_jax_precision()
 import jax.numpy as jnp
 import numpy as np
 
@@ -117,7 +116,7 @@ class JaxStats:
             )
         grid_counts = tuple(sum(grid == key for grid in grids) for key in GRID_ORDER)
         buffers = tuple(
-            jnp.zeros((count, int(ncol), int(nlev)), dtype=jnp.float64)
+            jnp.zeros((count, int(ncol), int(nlev)))
             for count, nlev in zip(grid_counts, grid_nlev)
         )
         nsamples = tuple(
@@ -252,7 +251,7 @@ class JaxStats:
         bank = buffers[bank_id]
         count_bank = nsamples[bank_id]
         nlev = self.grid_nlev[bank_id]
-        arr = jnp.asarray(values, dtype=jnp.float64)
+        arr = jnp.asarray(values, dtype=core_rknd)
         if arr.ndim > 2:
             raise ValueError(f"Stats values must have rank <= 2; got rank {arr.ndim}.")
 

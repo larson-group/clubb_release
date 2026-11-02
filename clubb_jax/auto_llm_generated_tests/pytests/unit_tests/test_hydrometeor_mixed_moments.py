@@ -4,8 +4,6 @@
 
 from types import SimpleNamespace
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.pdf_utilities import compute_mean_binormal, calc_corr_rt_x, calc_corr_thl_x

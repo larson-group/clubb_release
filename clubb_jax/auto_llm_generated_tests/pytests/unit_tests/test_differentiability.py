@@ -15,7 +15,6 @@ Run from the repo root: bash human_reviewed_tests/run_pytests.sh -jax -k test_di
 import jax
 import jax.numpy as jnp
 
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.saturation import sat_mixrat_liq
 

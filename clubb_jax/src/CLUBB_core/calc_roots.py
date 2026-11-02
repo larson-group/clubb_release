@@ -11,8 +11,6 @@ Porting deviations:
   can return non-roots for that case.  The deviation is covered by residual and
   set-match tests against `numpy.roots`.
 """
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()   # cubic_solve uses complex128 (principal-branch ** and sqrt)
 import jax.numpy as jnp
 
 _ONE_THIRD = 1.0 / 3.0

@@ -352,9 +352,6 @@ def calc_Luhar_params(Skx, wpxp, xp2, x_tol_sqd):
     Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
     Probability Density Functions. J. Atmos. Sci., 59, 3519-3539.
     """
-    Skx = jnp.asarray(Skx, dtype=jnp.float64)
-    wpxp = jnp.asarray(wpxp, dtype=jnp.float64)
-    xp2 = jnp.asarray(xp2, dtype=jnp.float64)
 
     # Width (standard deviation) parameters are non-zero
 
@@ -400,11 +397,8 @@ def close_Luhar_pdf(xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd):
        Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
        Probability Density Functions. J. Atmos. Sci., 59, 3519-3539.
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64); m = jnp.asarray(small_m, dtype=jnp.float64)
-    wpxp = jnp.asarray(wpxp, dtype=jnp.float64)
-    omf = 1.0 - mf
-    msq = 1.0 + m ** 2
+    omf = 1.0 - mixt_frac
+    msq = 1.0 + small_m ** 2
     sgn = jnp.where(wpxp >= 0.0, 1.0, -1.0)
 
     # Width (standard deviation) parameters are non-zero
@@ -414,17 +408,17 @@ def close_Luhar_pdf(xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd):
     # Calculate the square root of the overall variance of x.
     vary = xp2 > x_tol_sqd
     # Normalized width parameter of x in the 1st PDF component.
-    sigma_sqd_x_1 = jnp.where(vary, omf / (mf * msq), 1.0 / msq)
+    sigma_sqd_x_1 = jnp.where(vary, omf / (mixt_frac * msq), 1.0 / msq)
     # Normalized width parameter of x in the 2nd PDF component.
-    sigma_sqd_x_2 = jnp.where(vary, mf / (omf * msq), 1.0 / msq)
+    sigma_sqd_x_2 = jnp.where(vary, mixt_frac / (omf * msq), 1.0 / msq)
     # The variance of x in the 1st PDF component.
     varnce_x_1 = jnp.where(vary, sigma_sqd_x_1 * xp2, 0.0)
     # The variance of x in the 2nd PDF component.
     varnce_x_2 = jnp.where(vary, sigma_sqd_x_2 * xp2, 0.0)
     # Normalized mean of x in the 1st PDF component.
-    x_1_n = sgn * m * sqrt_clipped(sigma_sqd_x_1)
+    x_1_n = sgn * small_m * sqrt_clipped(sigma_sqd_x_1)
     # Normalized mean of x in the 2nd PDF component.
-    x_2_n = -sgn * m * sqrt_clipped(sigma_sqd_x_2)
+    x_2_n = -sgn * small_m * sqrt_clipped(sigma_sqd_x_2)
     sqrt_xp2 = sqrt_clipped(xp2)
     # The mean of x in the 1st PDF component.
     x_1 = jnp.where(vary, xm + sqrt_xp2 * x_1_n, xm)
@@ -441,25 +435,23 @@ def max_cubic_root(a_coef, b_coef, c_coef, d_coef):
     cubic_solve) → differentiable away from the root-multiplicity branch points. Inputs broadcast elementwise."""
     from clubb_jax.src.CLUBB_core.calc_roots import cubic_solve, quadratic_solve
     from clubb_jax.src.CLUBB_core.constants_clubb import eps
-    a = jnp.asarray(a_coef, dtype=jnp.float64); b = jnp.asarray(b_coef, dtype=jnp.float64)
-    c = jnp.asarray(c_coef, dtype=jnp.float64); d = jnp.asarray(d_coef, dtype=jnp.float64)
 
-    a_thresh = 0.001 * jnp.maximum(jnp.maximum(jnp.abs(b), jnp.abs(c)), jnp.abs(d))
-    b_thresh = 0.001 * jnp.maximum(jnp.abs(c), jnp.abs(d))
+    a_thresh = 0.001 * jnp.maximum(jnp.maximum(jnp.abs(b_coef), jnp.abs(c_coef)), jnp.abs(d_coef))
+    b_thresh = 0.001 * jnp.maximum(jnp.abs(c_coef), jnp.abs(d_coef))
 
-    cr = cubic_solve(a, b, c, d)                      # (..., 3) complex
+    cr = cubic_solve(a_coef, b_coef, c_coef, d_coef)                      # (..., 3) complex
     r0, r1, r2 = jnp.real(cr[..., 0]), jnp.real(cr[..., 1]), jnp.real(cr[..., 2])
     is_3real = (jnp.abs(jnp.imag(cr[..., 1])) < eps) & (jnp.abs(jnp.imag(cr[..., 2])) < eps)
     cubic_max = jnp.where(is_3real, jnp.maximum(jnp.maximum(r0, r1), r2), r0)
 
-    qr = quadratic_solve(b, c, d)                     # (..., 2) complex
+    qr = quadratic_solve(b_coef, c_coef, d_coef)                     # (..., 2) complex
     quad_max = jnp.maximum(jnp.real(qr[..., 0]), jnp.real(qr[..., 1]))
 
-    c_safe = jnp.where(c != 0.0, c, 1.0)
-    linear = -d / c_safe
+    c_safe = jnp.where(c_coef != 0.0, c_coef, 1.0)
+    linear = -d_coef / c_safe
 
-    return jnp.where(jnp.abs(a) > a_thresh, cubic_max,
-                     jnp.where(jnp.abs(b) > b_thresh, quad_max, linear))
+    return jnp.where(jnp.abs(a_coef) > a_thresh, cubic_max,
+                     jnp.where(jnp.abs(b_coef) > b_thresh, quad_max, linear))
 
 
 def backsolve_Luhar_params(Sk_max, Skx, big_m_max, mixt_frac):
@@ -470,17 +462,15 @@ def backsolve_Luhar_params(Sk_max, Skx, big_m_max, mixt_frac):
     (alpha−1)(m²)³ + (3alpha−6)(m²)² + (3alpha−9)(m²) + alpha = 0 (floored at 0.05²). Pure-jnp → differentiable.
     Returns (big_m_x, small_m_x)."""
     from clubb_jax.src.CLUBB_core.constants_clubb import eps
-    Skx = jnp.asarray(Skx, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
 
-    near_half = jnp.abs(mf - 0.5) < 0.001
+    near_half = jnp.abs(mixt_frac - 0.5) < 0.001
     skx_zero = jnp.abs(Skx) < eps
 
     m_nh = 0.05
     bigm_nh = (1.0 + m_nh ** 2) ** 3 / ((3.0 + m_nh ** 2) ** 2 * m_nh ** 2)
 
-    denom = jnp.where(near_half, 1.0, (1.0 - 2.0 * mf) ** 2)        # guard the 1/(1-2mf)^2 at mf=0.5
-    alpha = mf * (1.0 - mf) / denom * Skx ** 2
+    denom = jnp.where(near_half, 1.0, (1.0 - 2.0 * mixt_frac) ** 2)        # guard the 1/(1-2mf)^2 at mf=0.5
+    alpha = mixt_frac * (1.0 - mixt_frac) / denom * Skx ** 2
     alpha_safe = jnp.where(alpha > 0.0, alpha, 1.0)
     bigm_else = 1.0 / alpha_safe
     m2 = max_cubic_root(alpha - 1.0, 3.0 * alpha - 6.0, 3.0 * alpha - 9.0, alpha)
@@ -497,10 +487,6 @@ def Luhar_3D_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp
     mixt_frac (backsolve_Luhar_params); each variable's PDF component means/variances follow from close_Luhar_pdf.
     Pure-jnp (vectorized 3-way setter select) → differentiable. Returns (w_1, w_2, rt_1, rt_2, thl_1, thl_2,
     varnce_w_1, varnce_w_2, varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac)."""
-    Skw = jnp.asarray(Skw, dtype=jnp.float64); Skrt = jnp.asarray(Skrt, dtype=jnp.float64)
-    Skthl = jnp.asarray(Skthl, dtype=jnp.float64)
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); rtp2 = jnp.asarray(rtp2, dtype=jnp.float64); thlp2 = jnp.asarray(thlp2, dtype=jnp.float64)
-    wprtp = jnp.asarray(wprtp, dtype=jnp.float64); wpthlp = jnp.asarray(wpthlp, dtype=jnp.float64)
     w_tsq, rt_tsq, thl_tsq = w_tol_sqd, rt_tol ** 2, thl_tol ** 2
 
     # calc_Luhar_params for each variable as a potential setter (w uses wp2 as the covariance -> sgn = +1).
@@ -544,8 +530,6 @@ def ADG2_pdf_driver(nz, ngrdcol, sclr_dim, sclr_tol,
     varnce_thl_1, varnce_thl_2, mixt_frac, alpha_rt, alpha_thl, sigma_sqd_w, sclr_1, sclr_2, varnce_sclr_1,
     varnce_sclr_2, alpha_sclr)."""
     del nz, ngrdcol
-    wm = jnp.asarray(wm, dtype=jnp.float64); wp2 = jnp.asarray(wp2, dtype=jnp.float64)
-    Skw = jnp.asarray(Skw, dtype=jnp.float64); sqrt_wp2 = jnp.asarray(sqrt_wp2, dtype=jnp.float64)
     w_tsq = w_tol_sqd
 
     mixt_frac, _, small_m_w = calc_Luhar_params(Skw, wp2, wp2, w_tsq)

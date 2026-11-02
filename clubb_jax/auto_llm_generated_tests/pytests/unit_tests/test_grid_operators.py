@@ -2,9 +2,6 @@
 """validate the JAX vertical grid operators."""
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
 _NG, _DZ, _ZTOP = 2, 40.0, 1200.0

@@ -1,8 +1,5 @@
 """Verification of Nc_Ncn_eqns.py — cloud-nuclei-concentration mean <Ncn> (Ncnm)."""
 import numpy as np
-import jax
-
-jax.config.update("jax_enable_x64", True)
 
 
 from clubb_jax.src.CLUBB_core.Nc_Ncn_eqns import bivar_NL_chi_Ncn_mean, Ncnm_to_Ncm, Ncnm_to_Nc_in_cloud

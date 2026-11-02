@@ -13,8 +13,6 @@ fill_holes_global. Oracle-independent; never SKIPs. (iter 572)
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_sliding_window

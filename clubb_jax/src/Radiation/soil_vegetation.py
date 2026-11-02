@@ -11,10 +11,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, kappa, p0, stefan_boltzmann
-
-configure_jax_precision()
 
 
 @partial(jax.jit, static_argnames=("ngrdcol",))
@@ -160,9 +157,9 @@ def initialize_soil_veg(ngrdcol):
     """
     # ---- Begin Code ----
     # These default values are the values for gabls3
-    deep_soil_T_in_K = jnp.full((ngrdcol,), 288.58, dtype=jnp.float64)
-    sfc_soil_T_in_K = jnp.full((ngrdcol,), 300.0, dtype=jnp.float64)
-    veg_T_in_K = jnp.full((ngrdcol,), 300.0, dtype=jnp.float64)
+    deep_soil_T_in_K = jnp.full((ngrdcol,), 288.58)
+    sfc_soil_T_in_K = jnp.full((ngrdcol,), 300.0)
+    veg_T_in_K = jnp.full((ngrdcol,), 300.0)
     # Disable this for most cases
     # JAX adaptation: the source resets module ``l_soil_veg`` here. Its
     # immutable equivalent is initialized later from the case namelist.

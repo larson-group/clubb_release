@@ -10,7 +10,6 @@ REPO_ROOT = _REPO_ROOT
 
 import jax
 
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core import model_flags, parameter_indices

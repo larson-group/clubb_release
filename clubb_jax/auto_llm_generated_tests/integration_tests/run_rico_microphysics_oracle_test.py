@@ -18,9 +18,7 @@ if __name__ == '__main__':
 
 import netCDF4 as nc
 import numpy as np
-import jax
 import jax.numpy as jnp
-jax.config.update('jax_enable_x64', True)
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import (
     KK_auto_upscaled_mean, KK_accr_upscaled_mean, KK_evap_upscaled_mean,
 )
@@ -42,10 +40,8 @@ def _logm(mu, sig):
             np.asarray(stdev_L2N(s2m2)), s2m2)
 
 
-
 def _rel(out, ref, mask):
     return np.abs(out[mask] - ref[mask]) / np.abs(ref[mask])
-
 
 
 def check_kk_rates_vs_rico_oracle(stats_file):
@@ -117,7 +113,6 @@ def check_kk_rates_vs_rico_oracle(stats_file):
           f"median {np.median(rall):.1e}  PASS")
 
 
-
 def check_kk_microphys_adjust_vs_rico(stats_file):
     """KK_microphys_adjust (the tendency assembly) reproduces rico's rcm_mc / rrm_mc.
 
@@ -147,7 +142,6 @@ def check_kk_microphys_adjust_vs_rico(stats_file):
           f"no-evap-adj pts ({mm.sum()}), thlm_mc self-consistent  PASS")
 
 
-
 def check_Ncnm_vs_rico_stats(stats_file):
     """Reproduce rico's Ncnm exactly (rico: constant N_c -> Ncnm = Nc_in_cloud)."""
     ds = nc.Dataset(stats_file)
@@ -161,7 +155,6 @@ def check_Ncnm_vs_rico_stats(stats_file):
     d = np.max(np.abs(jo[m] - ncnm_s[m]) / ncnm_s[m])
     assert d < 1e-13, f"Ncnm vs rico stats max rel {d:.2e}"
     print(f"  Nc_in_cloud_to_Ncnm vs rico Ncnm (const-Ncn): max rel {d:.1e}  PASS")
-
 
 
 def check_precip_fraction_vs_rico_oracle(stats_file):

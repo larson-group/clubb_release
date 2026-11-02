@@ -11,10 +11,7 @@ JAX adaptation:
 
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 from clubb_jax.src.CLUBB_core.constants_clubb import sec_per_day
-
-configure_jax_precision()
 
 month_names = ("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
 days_per_month = jnp.asarray((31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31))

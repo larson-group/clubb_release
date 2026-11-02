@@ -18,10 +18,6 @@ points instead of an unbounded ``do`` loop so it remains JIT compatible.
 from jax import lax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
-
 # Grad-safe sqrt(max(x,0)); the Fortran uses sqrt directly.
 from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 
@@ -44,11 +40,7 @@ def calc_params_LY93(xm, xp2, Skx, mixt_frac):
     Lewellen, W. S. and Yoh, S., 1993.  Binormal Model of Ensemble Partial
     Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64)
-    xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    Skx = jnp.asarray(Skx, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
     # Find the sign of Skx
     sgn = jnp.where(Skx >= 0.0, 1.0, -1.0)
@@ -60,10 +52,10 @@ def calc_params_LY93(xm, xp2, Skx, mixt_frac):
     mu_x_1 = xm - B_x * omf
 
     # Calculate the mean of x in the 2nd PDF component.
-    mu_x_2 = xm + B_x * mf
+    mu_x_2 = xm + B_x * mixt_frac
 
     # Calculate the variance of x in the 1st PDF component.
-    sigma_x_1_sqd = xp2 - B_x ** 2 * omf * (1.0 + mf + mf ** 2) / (3.0 * mf)
+    sigma_x_1_sqd = xp2 - B_x ** 2 * omf * (1.0 + mixt_frac + mixt_frac ** 2) / (3.0 * mixt_frac)
 
     # Calculate the variance of x in the 2nd PDF component.
     sigma_x_2_sqd = xp2 + B_x ** 2 * omf ** 2 / 3.0
@@ -80,8 +72,6 @@ def calc_mixt_frac_LY93(Sk_max, itermax=60):
     Eq. (21) of Lewellen, W. S. and Yoh, S., 1993.  Binormal Model of Ensemble
     Partial Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     """
-    Sk_max = jnp.asarray(Sk_max, dtype=jnp.float64)
-
     # Tolerance for mixture fraction in solver [-]
     tol = 1.0e-4
     use_iter = Sk_max > 0.84
@@ -119,9 +109,6 @@ def LY93_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl):
     Lewellen, W. S. and Yoh, S., 1993.  Binormal Model of Ensemble Partial
     Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     """
-    Skw = jnp.asarray(Skw, dtype=jnp.float64)
-    Skrt = jnp.asarray(Skrt, dtype=jnp.float64)
-    Skthl = jnp.asarray(Skthl, dtype=jnp.float64)
 
     # Find the maximum of the magnitudes of skewness.
     Sk_max = jnp.maximum(jnp.maximum(jnp.abs(Skw), jnp.abs(Skrt)), jnp.abs(Skthl))

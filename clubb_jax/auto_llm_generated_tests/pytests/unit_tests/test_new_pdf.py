@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.new_pdf import calc_mixture_fraction
 # calc_coef_wp2xp_implicit + the calculate_* aliases moved to new_hybrid_pdf.py (mirror-refactor iter 18)

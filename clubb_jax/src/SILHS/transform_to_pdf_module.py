@@ -8,6 +8,8 @@ import jax
 import jax.numpy as jnp
 from jax.scipy.special import erfc
 
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
+
 
 # -----------------------------------------------------------------------------
 def transform_uniform_samples_to_pdf(
@@ -68,7 +70,7 @@ def transform_uniform_samples_to_pdf(
 
     # Clip extreme sample chi values. PDF closure clips component cloud fraction
     # under extreme conditions; force chi to the same saturated/unsaturated side.
-    eps = jnp.finfo(jnp.float64).eps
+    eps = jnp.finfo(core_rknd).eps
     chi = X_nl_all_levs[..., hm_metadata.iiPDF_chi]
     chi = jnp.where(
         cloud_frac < eps,
@@ -201,7 +203,7 @@ def ltqnorm(p_core_rknd):
             1.0,
         ]
     )
-    p = jnp.asarray(p_core_rknd, dtype=jnp.float64)
+    p = jnp.asarray(p_core_rknd)
 
     # JAX adaptation: mask the input before logarithms so invalid/end-point
     # values do not contaminate the inactive approximation branches.

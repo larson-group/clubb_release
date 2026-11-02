@@ -7,6 +7,7 @@ Fortran CUDA/MT95 generator branches are replaced by native JAX randomness.
 
 import jax
 import jax.numpy as jnp
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     rc_tol,
     rt_tol,
@@ -830,7 +831,7 @@ def stats_accumulate_lh_api(
     stats = stats.update("lh_Ncm", lh_Ncm)
 
     # Weighted and unweighted Latin-hypercube estimates of cloud fraction.
-    cloud = (X_nl_all_levs[..., hm_metadata.iiPDF_chi] > 0.0).astype(jnp.float64)
+    cloud = (X_nl_all_levs[..., hm_metadata.iiPDF_chi] > 0.0).astype(core_rknd)
     stats = stats.update(
         "lh_cloud_frac",
         compute_sample_mean(nzt, num_samples, ngrdcol, lh_sample_point_weights, cloud),
@@ -946,8 +947,8 @@ def stats_accumulate_uniform_lh(
     """
     if not stats.l_sample:
         return stats
-    int_in_precip = l_in_precip_all_levs.astype(jnp.float64)
-    int_mixt_comp = (X_mixt_comp_all_levs == 1).astype(jnp.float64)
+    int_in_precip = l_in_precip_all_levs.astype(core_rknd)
+    int_mixt_comp = (X_mixt_comp_all_levs == 1).astype(core_rknd)
     stats = stats.update(
         "lh_precip_frac",
         compute_sample_mean(
@@ -966,7 +967,7 @@ def stats_accumulate_uniform_lh(
     stats = stats.update("lh_mixt_frac_unweighted", jnp.mean(int_mixt_comp, axis=1))
 
     # Diagnostics retain the source one-based level, represented as a real.
-    stats = stats.update("k_lh_start", (k_lh_start + 1).astype(jnp.float64))
+    stats = stats.update("k_lh_start", (k_lh_start + 1).astype(core_rknd))
     cloud_frac_i = jnp.where(
         X_mixt_comp_all_levs == 1,
         pdf_params.cloud_frac_1[:, None, :],

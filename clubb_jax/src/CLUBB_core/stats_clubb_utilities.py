@@ -145,7 +145,7 @@ def stats_accumulate(
         stats = stats.update("rcm_in_cloud", rcm_in_cloud)
 
     if stats.var_on_stats_list("shear"):
-        shear = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        shear = jnp.zeros((ngrdcol, nzm))
         shear_int = (
             -upwp[:, 1:nzm - 1]
             * (um[:, 1:nzm - 1] - um[:, :nzm - 2])

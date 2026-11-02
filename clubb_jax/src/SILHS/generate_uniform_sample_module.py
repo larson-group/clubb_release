@@ -6,6 +6,7 @@ random machinery. Keys and permutation storage are explicit inputs/returns.
 
 import jax
 import jax.numpy as jnp
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.SILHS.latin_hypercube_arrays import LatinHypercubeArrays
 
 
@@ -19,7 +20,7 @@ def rand_uniform_real(key, shape=()):
     # The source clips a rounded value of one when generator/model kinds differ.
     # Native draws exclude one; the positive lower bound also excludes zero.
     return jax.random.uniform(
-        key, shape, dtype=jnp.float64, minval=jnp.finfo(jnp.float64).eps, maxval=1.0
+        key, shape, minval=jnp.finfo(core_rknd).eps, maxval=1.0
     )
 
 

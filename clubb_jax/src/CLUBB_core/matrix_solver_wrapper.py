@@ -21,10 +21,9 @@ from __future__ import annotations
 
 import jax
 import sys
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.model_flags import (
@@ -79,7 +78,7 @@ def _reciprocal_condition_number_estimate(a):
         ainvnm = jnp.where(jnp.abs(a[..., 0, 0]) > 0.0, 1.0 / jnp.abs(a[..., 0, 0]), 0.0)
         return jnp.where((anorm > 0.0) & (ainvnm > 0.0), (1.0 / ainvnm) / anorm, 0.0)
 
-    x = jnp.ones(a.shape[:-1], dtype=jnp.float64) / float(n)
+    x = jnp.ones(a.shape[:-1]) / float(n)
     x = _solve_matrix_vector(a, x)
     est = jnp.sum(jnp.abs(x), axis=-1)
     isgn = _sign_one(x)
@@ -89,7 +88,7 @@ def _reciprocal_condition_number_estimate(a):
 
     batch_axis = jnp.arange(a.shape[0])
     for iteration in range(2, 6):
-        x_basis = jax.nn.one_hot(j, n, dtype=jnp.float64)
+        x_basis = jax.nn.one_hot(j, n)
         x_solved = _solve_matrix_vector(a, x_basis)
         est_new = jnp.sum(jnp.abs(x_solved), axis=-1)
         sign_x = _sign_one(x_solved)
@@ -109,7 +108,7 @@ def _reciprocal_condition_number_estimate(a):
         j = jnp.where(active, j_new, j)
 
     alt_sign = jnp.where(jnp.arange(n) % 2 == 0, 1.0, -1.0)
-    alt_x = alt_sign * (1.0 + jnp.arange(n, dtype=jnp.float64) / float(n - 1))
+    alt_x = alt_sign * (1.0 + jnp.arange(n, dtype=core_rknd) / float(n - 1))
     x = _solve_matrix_vector(a, jnp.broadcast_to(alt_x, a.shape[:-1]))
     temp = 2.0 * (jnp.sum(jnp.abs(x), axis=-1) / float(3 * n))
     ainvnm = jnp.where(temp > est, temp, est)
@@ -122,7 +121,7 @@ def _reciprocal_condition_number_estimate(a):
 
 def _lapack_equilibrated_band_matrix(a):
     threshold = 0.1
-    finfo = jnp.finfo(jnp.float64)
+    finfo = jnp.finfo(core_rknd)
     small = finfo.tiny / finfo.eps
     large = 1.0 / small
 
@@ -147,7 +146,7 @@ def _lapack_equilibrated_band_matrix(a):
 
 
 def _band_rcond(ndim: int, lhs):
-    a = jnp.zeros((lhs.shape[1], ndim, ndim), dtype=jnp.float64)
+    a = jnp.zeros((lhs.shape[1], ndim, ndim))
     diag = jnp.arange(ndim)
     a = a.at[:, diag, diag].set(lhs[2, :, :])
 
@@ -165,7 +164,7 @@ def _band_rcond(ndim: int, lhs):
 
 
 def _tridiag_rcond_single_lhs(ndim: int, lhs):
-    a = jnp.zeros((ndim, ndim), dtype=jnp.float64)
+    a = jnp.zeros((ndim, ndim))
     diag = jnp.arange(ndim)
     a = a.at[diag, diag].set(lhs[1, :])
 
@@ -178,7 +177,7 @@ def _tridiag_rcond_single_lhs(ndim: int, lhs):
 
 
 def _tridiag_rcond_multiple_lhs(ndim: int, lhs):
-    a = jnp.zeros((lhs.shape[1], ndim, ndim), dtype=jnp.float64)
+    a = jnp.zeros((lhs.shape[1], ndim, ndim))
     diag = jnp.arange(ndim)
     a = a.at[:, diag, diag].set(lhs[1, :, :])
 
@@ -214,7 +213,7 @@ def band_solve_single_rhs_multiple_lhs(
     rcond = (
         _band_rcond(ndim, lhs)
         if use_rcond
-        else jnp.zeros((ngrdcol,), dtype=jnp.float64)
+        else jnp.zeros((ngrdcol,))
     )
 
     if nsup != 2 or nsub != 2:
@@ -288,7 +287,7 @@ def band_solve_multiple_rhs_lhs(
     rcond = (
         _band_rcond(ndim, lhs)
         if use_rcond
-        else jnp.zeros((ngrdcol,), dtype=jnp.float64)
+        else jnp.zeros((ngrdcol,))
     )
 
     if nsup != 2 or nsub != 2:
@@ -410,7 +409,7 @@ def tridiag_solve_single_rhs_lhs(
     rcond = (
         _tridiag_rcond_single_lhs(ndim, lhs)
         if use_rcond
-        else jnp.zeros((1,), dtype=jnp.float64)
+        else jnp.zeros((1,))
     )
 
     if tridiag_solve_method == lapack:
@@ -461,7 +460,7 @@ def tridiag_solve_single_rhs_multiple_lhs(
     rcond = (
         _tridiag_rcond_multiple_lhs(ndim, lhs)
         if use_rcond
-        else jnp.zeros((ngrdcol,), dtype=jnp.float64)
+        else jnp.zeros((ngrdcol,))
     )
 
     if tridiag_solve_method == lapack:
@@ -515,7 +514,7 @@ def tridiag_solve_multiple_rhs_lhs(
     rcond = (
         _tridiag_rcond_multiple_lhs(ndim, lhs)
         if use_rcond
-        else jnp.zeros((ngrdcol,), dtype=jnp.float64)
+        else jnp.zeros((ngrdcol,))
     )
 
     if tridiag_solve_method == lapack:

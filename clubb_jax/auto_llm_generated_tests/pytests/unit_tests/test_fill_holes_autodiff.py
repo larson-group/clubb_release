@@ -12,8 +12,6 @@ from clubb_jax.src.CLUBB_core.fill_holes import (
     fill_holes_vertical,
 )
 
-jax.config.update("jax_enable_x64", True)
-
 
 @pytest.mark.parametrize("fill", [fill_holes_global, fill_holes_sliding_window])
 @pytest.mark.parametrize("threshold", [0.0, 0.125])

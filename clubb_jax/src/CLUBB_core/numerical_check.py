@@ -30,8 +30,6 @@ Observed Fortran differences retained in this diagnostic pass:
 
 import sys
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 import jax
 import numpy as np

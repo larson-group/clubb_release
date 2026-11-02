@@ -74,15 +74,6 @@ def calc_F_w_zeta_w(Skw, wprtp, wpthlp, upwp, vpwp, wp2, rtp2, thlp2, up2, vp2,
     ! become large, and the spread between the two PDF component means of w
     ! becomes small.  F_w goes to max_F_w.
     """
-    Skw = jnp.asarray(Skw, dtype=jnp.float64)
-    wprtp = jnp.asarray(wprtp, dtype=jnp.float64); wpthlp = jnp.asarray(wpthlp, dtype=jnp.float64)
-    upwp = jnp.asarray(upwp, dtype=jnp.float64); vpwp = jnp.asarray(vpwp, dtype=jnp.float64)
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); rtp2 = jnp.asarray(rtp2, dtype=jnp.float64)
-    thlp2 = jnp.asarray(thlp2, dtype=jnp.float64); up2 = jnp.asarray(up2, dtype=jnp.float64)
-    vp2 = jnp.asarray(vp2, dtype=jnp.float64)
-    gamma = jnp.asarray(gamma_Skw_fnc, dtype=jnp.float64)
-    pstdev = jnp.asarray(pdf_component_stdev_factor_w, dtype=jnp.float64)
-    mcs = jnp.asarray(max_corr_w_sclr_sqd, dtype=jnp.float64)
 
     def _corr_sqd(cov, va, vb):
         d = va * vb
@@ -108,7 +99,7 @@ def calc_F_w_zeta_w(Skw, wprtp, wpthlp, upwp, vpwp, wp2, rtp2, thlp2, up2, vp2,
     # value of corr_w_sclr^2 (for all sclrs) when scalars are found.
     max_corr_w_x_sqd = jnp.maximum(
         jnp.maximum(jnp.maximum(corr_w_rt_sqd, corr_w_thl_sqd),
-                    jnp.maximum(corr_u_w_sqd, corr_v_w_sqd)), mcs)
+                    jnp.maximum(corr_u_w_sqd, corr_v_w_sqd)), max_corr_w_sclr_sqd)
     max_corr_w_x_sqd = jnp.minimum(max_corr_w_x_sqd, _MAX_MAG_CORRELATION_FLUX ** 2)
 
     # Calculate min_F_w and set max_F_w to 1.
@@ -125,10 +116,10 @@ def calc_F_w_zeta_w(Skw, wprtp, wpthlp, upwp, vpwp, wp2, rtp2, thlp2, up2, vp2,
     # When gamma goes to 1, the standard deviations of w in each PDF component
     # become large, and the spread between the two PDF component means of w
     # becomes small.  F_w goes to max_F_w.
-    F_w = max_F_w - gamma * (max_F_w - min_F_w)
+    F_w = max_F_w - gamma_Skw_fnc * (max_F_w - min_F_w)
 
     # The value of zeta_w must be greater than -1.
-    zeta_w_star = pstdev - 1.0
+    zeta_w_star = pdf_component_stdev_factor_w - 1.0
     # Make the PDF of w symmetric.  In other words, the PDF at a value of
     # positive skewness will look like a mirror image of the PDF at the
     # opposite value of negative skewness.
@@ -142,11 +133,7 @@ def calc_responder_driver(xm, xp2, wpxp, wp2, mixt_frac, F_w, Skx):
     Skx is clipped when it exceeds the upper or lower limit.  Then, the PDF
     parameters for responder variable x are calculated.
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    wpxp = jnp.asarray(wpxp, dtype=jnp.float64); wp2 = jnp.asarray(wp2, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64); F_w = jnp.asarray(F_w, dtype=jnp.float64)
-    Skx = jnp.asarray(Skx, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
     # Calculate the limits of Skx.
     F_pos = F_w > 0.0
@@ -164,12 +151,12 @@ def calc_responder_driver(xm, xp2, wpxp, wp2, mixt_frac, F_w, Skx):
 
     sqrt_F = sqrt_clipped(F_safe)
     F_3half = F_safe ** 1.5                                     # F_w**three_halves (gfortran pow)
-    base_mfomf = sqrt_clipped(mf * omf)
+    base_mfomf = sqrt_clipped(mixt_frac * omf)
     corr3 = corr_w_x * corr_w_x * corr_w_x                      # gfortran expands x**3 to x*x*x
-    A = ((1.0 + mf) / base_mfomf * corr3 / F_3half
-         - sqrt_clipped(mf / omf) * 3.0 * corr_w_x / sqrt_F)
-    B = ((mf - 2.0) / base_mfomf * corr3 / F_3half
-         + sqrt_clipped(omf / mf) * 3.0 * corr_w_x / sqrt_F)
+    A = ((1.0 + mixt_frac) / base_mfomf * corr3 / F_3half
+         - sqrt_clipped(mixt_frac / omf) * 3.0 * corr_w_x / sqrt_F)
+    B = ((mixt_frac - 2.0) / base_mfomf * corr3 / F_3half
+         + sqrt_clipped(omf / mixt_frac) * 3.0 * corr_w_x / sqrt_F)
 
     wpxp_nonneg = wpxp >= 0.0
     # When F_w = 0, <w'x'> = 0, and Skx = 0.
@@ -181,7 +168,7 @@ def calc_responder_driver(xm, xp2, wpxp, wp2, mixt_frac, F_w, Skx):
 
     # Calculate the PDF parameters for responder variable x.
     mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, c1, c2 = calculate_responder_params(
-        xm, xp2, Skx_c, wpxp, wp2, F_w, mf)
+        xm, xp2, Skx_c, wpxp, wp2, F_w, mixt_frac)
     return Skx_c, mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, c1, c2
 
 
@@ -193,9 +180,8 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
     """Calculate the PDF parameters for w (including mixture fraction), rt,
     theta-l, and optionally, u, v, and passive scalar variables.
     """
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64)
-    slope = jnp.asarray(slope_coef_spread_DG_means_w, dtype=jnp.float64)
-    pstdev = jnp.asarray(pdf_component_stdev_factor_w, dtype=jnp.float64)
+    slope = jnp.asarray(slope_coef_spread_DG_means_w)
+    pstdev = jnp.asarray(pdf_component_stdev_factor_w)
     if slope.ndim == 1:
         slope = slope[:, None]
     if pstdev.ndim == 1:
@@ -206,10 +192,8 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
     # Initialize max_corr_w_sclr_sqd to 0.  It needs to retain this value even
     # when sclr_dim = 0.
     if sclrm is not None and jnp.asarray(sclrm).shape[-1] > 0:
-        sclrp2_a = jnp.asarray(sclrp2, dtype=jnp.float64)
-        wpsclrp_a = jnp.asarray(wpsclrp, dtype=jnp.float64)
-        d = wp2[..., None] * sclrp2_a
-        ratio = jnp.where(d > 0.0, wpsclrp_a ** 2 / jnp.where(d > 0.0, d, 1.0), 0.0)
+        d = wp2[..., None] * sclrp2
+        ratio = jnp.where(d > 0.0, wpsclrp ** 2 / jnp.where(d > 0.0, d, 1.0), 0.0)
         max_corr_w_sclr_sqd = jnp.max(ratio, axis=-1)
     else:
         max_corr_w_sclr_sqd = jnp.zeros_like(wp2)
@@ -256,8 +240,6 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
     zero = jnp.zeros_like(wp2)
     if sclrm is not None and jnp.asarray(sclrm).shape[-1] > 0:
         # Calculate the PDF parameters for responder variable sclr.
-        sclrm_a = jnp.asarray(sclrm, dtype=jnp.float64)
-        Sksclr_a = jnp.asarray(Sksclr, dtype=jnp.float64)
         (
             out['Sksclr'],
             out['mu_sclr_1'],
@@ -272,7 +254,7 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
             ),
             in_axes=(2, 2, 2, 2),
             out_axes=-1,
-        )(sclrm_a, sclrp2_a, wpsclrp_a, Sksclr_a)
+        )(sclrm, sclrp2, wpsclrp, Sksclr)
     else:
         coef_sigma_sclr_1_sqd = None
         coef_sigma_sclr_2_sqd = None
@@ -356,7 +338,7 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
                 ),
                 in_axes=(2, 2, 2),
                 out_axes=-1,
-            )(coef_sigma_sclr_1_sqd, coef_sigma_sclr_2_sqd, wpsclrp_a)
+            )(coef_sigma_sclr_1_sqd, coef_sigma_sclr_2_sqd, wpsclrp)
             # <w'rt'sclr'> = coef_wprtpsclrp_implicit * <sclr'rt'>
             #                + term_wprtpsclrp_explicit
             coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit = jax.vmap(
@@ -366,7 +348,7 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
                 ),
                 in_axes=(2, 2, 2),
                 out_axes=-1,
-            )(coef_sigma_sclr_1_sqd, coef_sigma_sclr_2_sqd, wpsclrp_a)
+            )(coef_sigma_sclr_1_sqd, coef_sigma_sclr_2_sqd, wpsclrp)
             # <w'thl'sclr'> = coef_wpthlpsclrp_implicit * <sclr'thl'>
             #                 + term_wpthlpsclrp_explicit
             coef_wpthlpsclrp_implicit, term_wpthlpsclrp_explicit = jax.vmap(
@@ -376,7 +358,7 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
                 ),
                 in_axes=(2, 2, 2),
                 out_axes=-1,
-            )(coef_sigma_sclr_1_sqd, coef_sigma_sclr_2_sqd, wpsclrp_a)
+            )(coef_sigma_sclr_1_sqd, coef_sigma_sclr_2_sqd, wpsclrp)
         else:
             coef_wpsclrp2_implicit = pdf_implicit_coefs_terms.coef_wpsclrp2_implicit
             term_wpsclrp2_explicit = pdf_implicit_coefs_terms.term_wpsclrp2_explicit

@@ -13,7 +13,6 @@ range are untouched; (4) a finite jax.grad. Oracle-independent; never SKIPs. (it
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_global

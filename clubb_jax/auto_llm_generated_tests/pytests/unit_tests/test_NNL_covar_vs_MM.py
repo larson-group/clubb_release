@@ -15,8 +15,6 @@ against the MC-tested kernel); (2) the <Y> dependence: `covar(<Y>) − covar(0) 
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_covar import trivar_NNL_covar, quadrivar_NNLL_covar
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_all_MM import trivar_NNL_MM, quadrivar_NNLL_MM

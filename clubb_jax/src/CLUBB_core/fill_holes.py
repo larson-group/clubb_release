@@ -20,10 +20,9 @@ from functools import partial
 import jax
 import sys
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     eps,
     num_hf_draw_points,
@@ -33,7 +32,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.model_flags import global_fill, sliding_window
 
-_F64_EPS = jnp.finfo(jnp.float64).eps
+_CORE_EPS = jnp.finfo(core_rknd).eps
 
 
 @partial(
@@ -377,8 +376,8 @@ def fill_holes_wp2_from_horz_tke(
 
     # Enough TKE is available to fill the hole.
     case_enough = do_fill & (missing_wp2 < up2_vp2_avail)
-    no_up2_avail = jnp.abs(up2_avail) < _F64_EPS * 1000.0
-    no_vp2_avail = jnp.abs(vp2_avail) < _F64_EPS * 1000.0
+    no_up2_avail = jnp.abs(up2_avail) < _CORE_EPS * 1000.0
+    no_vp2_avail = jnp.abs(vp2_avail) < _CORE_EPS * 1000.0
     # Calculate portion of up2/vp2 that we want to take away
     has_donor_energy = up2_vp2_avail > zero
     ratio = jnp.where(

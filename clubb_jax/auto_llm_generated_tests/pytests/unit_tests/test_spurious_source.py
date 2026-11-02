@@ -2,9 +2,6 @@
 """validate the JAX calculate_spurious_source port (advance_clubb_core_module)."""
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.CLUBB_core.numerical_check import calculate_spurious_source
 
 

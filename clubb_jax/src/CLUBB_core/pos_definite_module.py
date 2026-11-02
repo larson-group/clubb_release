@@ -13,8 +13,6 @@ from functools import partial
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.constants_clubb import eps, zero, zero_threshold
@@ -66,10 +64,6 @@ def pos_definite_adj(
     """
     if clubb_at_least_debug_level(1):
         jax.debug.print("Correcting flux", ordered=True)
-
-    field_np1 = jnp.asarray(field_np1, dtype=jnp.float64)
-    flux_np1 = jnp.asarray(flux_np1, dtype=jnp.float64)
-    field_n = jnp.asarray(field_n, dtype=jnp.float64)
 
     # Def. of F+ and F- from eqn 2 Smolarkowicz
     flux_plus = jnp.maximum(zero_threshold, flux_np1)

@@ -20,7 +20,6 @@ import numpy as np
 try:
     import jax
     import jax.numpy as jnp
-    jax.config.update("jax_enable_x64", True)
     HAS_JAX = True
 except ImportError:
     HAS_JAX = False

@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.Radiation.rad_lwsw_module import sunray_sw

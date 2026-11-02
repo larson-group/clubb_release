@@ -12,8 +12,6 @@ validates the analytic moment formula itself (not a tautology). + finite grad. (
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.pdf_closure_module import calc_wp4_pdf
 

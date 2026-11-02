@@ -11,9 +11,6 @@ import numpy as np
 import pytest
 
 from clubb_jax.src.SILHS.transform_to_pdf_module import cdfnorminv
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-
-configure_jax_precision()
 
 
 def test_inverse_normal_matches_source_literal_precision(tmp_path):

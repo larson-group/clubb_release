@@ -12,9 +12,6 @@ dispatch test; a mis-wired branch or wrong-swap bug is caught directly. Oracle-i
 """
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import trivar_NLL_mean_eq, CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
     trivar_NLL_mean, trivar_NLL_mean_const_x1, trivar_NLL_mean_const_x2,

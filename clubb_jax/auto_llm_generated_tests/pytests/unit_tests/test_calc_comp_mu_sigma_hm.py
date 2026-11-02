@@ -1,8 +1,5 @@
 """Verification of calc_comp_mu_sigma_hm (hydrometeor in-precip component moments)."""
 import numpy as np
-import jax
-
-jax.config.update("jax_enable_x64", True)
 
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import (

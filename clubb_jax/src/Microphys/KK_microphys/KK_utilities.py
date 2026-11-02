@@ -7,11 +7,6 @@ Eqs. 7.17-7.18 / Khairoutdinov & Kogan (2000) Eq. 22. Oracle: KK_utilities.F90:1
 (The parabolic cylinder function Dv_fnc, also in KK_utilities.F90, lives in
 parabolic_cylinder.py.)
 """
-import jax.numpy as jnp
-
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 from clubb_jax.src.CLUBB_core.saturation import (
     sat_vapor_press_liq, SATURATION_FLATAU,
 )
@@ -26,8 +21,6 @@ def G_T_p(T_in_K, p_in_Pa, saturation_formula=SATURATION_FLATAU):
     Ka = thermal conductivity of air; Dv = vapor diffusion coefficient;
     Fk (heat-conduction term) and Fd (vapor-diffusion term) per Rogers & Yau 7.17-7.18;
     G = 1 / (Fk + Fd)."""
-    T_in_K = jnp.asarray(T_in_K, dtype=jnp.float64)
-    p_in_Pa = jnp.asarray(p_in_Pa, dtype=jnp.float64)
     Celsius = T_in_K - T_freeze_K
 
     # Thermal conductivity of air: cal/(cm s C) -> J/(m s K).

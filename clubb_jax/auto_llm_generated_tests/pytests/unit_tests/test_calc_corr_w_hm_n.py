@@ -18,7 +18,6 @@ a strong independent oracle:
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import calc_corr_w_hm_n
 from clubb_jax.src.CLUBB_core.constants_clubb import max_mag_correlation, w_tol

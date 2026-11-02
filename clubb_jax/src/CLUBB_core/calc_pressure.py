@@ -13,9 +13,6 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     Cp,
     Lv,
@@ -101,8 +98,8 @@ def init_pressure(thvm, p_sfc, gr):
 
     References:
     """
-    thvm = jnp.asarray(thvm, dtype=jnp.float64)
-    p_sfc = jnp.asarray(p_sfc, dtype=jnp.float64)
+    thvm = jnp.asarray(thvm)
+    p_sfc = jnp.asarray(p_sfc)
 
     # Interpolate theta_v to momentum levels.
     thvm_zm = zt2zm(

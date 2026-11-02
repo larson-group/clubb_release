@@ -31,8 +31,6 @@ from functools import partial
 import jax
 import sys
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import calc_xpwp, pvertinterp
@@ -180,7 +178,7 @@ def advance_windm_edsclrm(
             lambda _: None,
             operand=None,
         )
-    nu_zero = jnp.zeros((ngrdcol,), dtype=jnp.float64)
+    nu_zero = jnp.zeros((ngrdcol,))
 
     # Coefficient for momentum
     Km_zm = Kh_zm * clubb_params[:, ic_K10][:, None]
@@ -201,15 +199,15 @@ def advance_windm_edsclrm(
             gr.invrs_dzt, gr.invrs_dzm, l_upwind_xm_ma, gr.grid_dir,
         )
     else:
-        lhs_ma_zt = jnp.zeros((ndiags3, ngrdcol, nzt), dtype=jnp.float64)
+        lhs_ma_zt = jnp.zeros((ndiags3, ngrdcol, nzt))
 
-    lhs = jnp.zeros((ndiags3, ngrdcol, nzt), dtype=jnp.float64)
-    rhs = jnp.zeros((ngrdcol, nzt, max(2, edsclr_dim)), dtype=jnp.float64)
+    lhs = jnp.zeros((ndiags3, ngrdcol, nzt))
+    rhs = jnp.zeros((ngrdcol, nzt, max(2, edsclr_dim)))
     solution = jnp.zeros_like(rhs)
-    upwp_chnge = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    vpwp_chnge = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    wind_speed = jnp.ones((ngrdcol, nzt), dtype=jnp.float64)
-    u_star_sqd = jnp.zeros((ngrdcol,), dtype=jnp.float64)
+    upwp_chnge = jnp.zeros((ngrdcol, nzm))
+    vpwp_chnge = jnp.zeros((ngrdcol, nzm))
+    wind_speed = jnp.ones((ngrdcol, nzt))
+    u_star_sqd = jnp.zeros((ngrdcol,))
 
     if not l_predict_upwp_vpwp:
         Km_zt = zm2zt(nzm, nzt, ngrdcol, gr, Km_zm, zero)
@@ -731,8 +729,8 @@ def advance_windm_edsclrm(
                 zero,
             )
         else:
-            thlm_ed = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-            rtm_ed = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+            thlm_ed = jnp.zeros((ngrdcol, nzt))
+            rtm_ed = jnp.zeros((ngrdcol, nzt))
 
         thlm = jnp.where(
             apply_explicit_diffusion[:, None],
@@ -745,8 +743,8 @@ def advance_windm_edsclrm(
             rtm,
         )
     else:
-        thlm_ed = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-        rtm_ed = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+        thlm_ed = jnp.zeros((ngrdcol, nzt))
+        rtm_ed = jnp.zeros((ngrdcol, nzt))
 
     if stats.l_sample:
         stats = stats.update("thlm_ed", thlm_ed)
@@ -885,7 +883,7 @@ def windm_edsclrm_implicit_stats(
     else:
         return stats
 
-    imp_sfc_flux = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    imp_sfc_flux = jnp.zeros((ngrdcol, nzt))
 
     if l_imp_sfc_momentum_flux and stats.var_on_stats_list(name_ta):
         # Statistics:  implicit contributions for um or vm.
@@ -900,7 +898,7 @@ def windm_edsclrm_implicit_stats(
             * (u_star_sqd / wind_speed[:, gr.k_lb_zt])
         )
 
-    stats_tmp = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    stats_tmp = jnp.zeros((ngrdcol, nzt))
     if gr.grid_dir_indx > 0:
         # Lower boundary conditions
         # xm mean advection
@@ -940,7 +938,7 @@ def windm_edsclrm_implicit_stats(
         )
     stats = stats.update(name_ma, stats_tmp)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    stats_tmp = jnp.zeros((ngrdcol, nzt))
     if gr.grid_dir_indx > 0:
         # Lower boundary conditions
         # xm turbulent transport (implicit component)
@@ -1037,8 +1035,8 @@ def compute_uv_tndcy(
             name_gf = ""
             name_cf = ""
             name_f = ""
-            xm_gf = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-            xm_cf = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+            xm_gf = jnp.zeros((ngrdcol, nzt))
+            xm_cf = jnp.zeros((ngrdcol, nzt))
 
         xm_tndcy = xm_gf + xm_cf + xm_forcing
 
@@ -1051,7 +1049,7 @@ def compute_uv_tndcy(
             # xm term F
             stats = stats.update(name_f, xm_forcing)
     else:
-        xm_tndcy = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+        xm_tndcy = jnp.zeros((ngrdcol, nzt))
 
     return xm_tndcy, stats
 
@@ -1150,7 +1148,7 @@ def windm_edsclrm_rhs(
     else:
         name_ta = ""
 
-    rhs = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    rhs = jnp.zeros((ngrdcol, nzt))
     # Lower (ascending grid) or upper (descending grid) boundary calculation
     rhs = rhs.at[:, 0].set(
         one_half
@@ -1204,7 +1202,7 @@ def windm_edsclrm_rhs(
     )
 
     if stats.l_sample and stats.var_on_stats_list(name_ta):
-        stats_tmp = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+        stats_tmp = jnp.zeros((ngrdcol, nzt))
         # Lower boundary
         stats_tmp = stats_tmp.at[:, 0].set(
             one_half
@@ -1252,7 +1250,7 @@ def windm_edsclrm_rhs(
         rhs = rhs.at[:, gr.k_lb_zt].add(sfc_term)
 
         if stats.l_sample and stats.var_on_stats_list(name_ta):
-            stats_tmp = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+            stats_tmp = jnp.zeros((ngrdcol, nzt))
             stats_tmp = stats_tmp.at[:, gr.k_lb_zt].set(sfc_term)
             stats = stats.update_budget(name_ta, stats_tmp)
 

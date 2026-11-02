@@ -4,8 +4,6 @@ import math
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Microphys.mixed_moment_PDF_integrals import (
     univar_N_int_PDF_comp_all_MM, univar_L_int_PDF_comp_all_MM, bivar_NL_int_PDF_comp_all_MM,

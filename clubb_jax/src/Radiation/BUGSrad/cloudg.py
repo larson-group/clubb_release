@@ -14,9 +14,6 @@ more accurate, well within Tier-C for gabls3 — the only bugsrad case).
 import jax.numpy as jnp
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 _PI = float(np.pi)   # float64 π (REFACTOR A3: was the float32 value of π for bit-faithfulness)
 _EPS = 1.0e-5
 
@@ -26,8 +23,6 @@ def cloudg(ib, pp, tt, wcont, re, pdist, cnrw, cniw, cnri, cnii, xlam, flag):
     `tt`/`wcont`/`re`=(ncol,nlm) temp [K]/content [g/m^3]/eff. radius [µm]; `pdist`=scalar dist. width;
     `cnrw/cniw/cnri/cnii/xlam`=(mb,) refractive indices + band centers; `flag`=ice if True.
     Returns (tcld, wcld, asycld), each (ncol, nlm)."""
-    pp = jnp.asarray(pp, dtype=jnp.float64); tt = jnp.asarray(tt, dtype=jnp.float64)
-    wcont = jnp.asarray(wcont, dtype=jnp.float64); re = jnp.asarray(re, dtype=jnp.float64)
     cnr = float(cnri[ib]) if flag else float(cnrw[ib])
     cni = float(cnii[ib]) if flag else float(cniw[ib])
     xl = float(xlam[ib])

@@ -18,7 +18,6 @@ import math
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.pdf_closure_module import transform_pdf_chi_eta_component
 from clubb_jax.src.CLUBB_core.constants_clubb import ep, Lv, Rd, Cp

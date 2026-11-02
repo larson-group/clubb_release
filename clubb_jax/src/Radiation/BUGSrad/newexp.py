@@ -9,16 +9,11 @@ replicated, not "improved").
 
   exp(x) ≈ 1 / (1 − x·(0.2507213 − x·(0.0292732 − x·0.0038278)))^4
 """
-import jax.numpy as jnp
-
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 
 
 def newexp(x):
     """BUGSrad fast-exp approximation (newexp.F90). NOT the true exp — replicates the Fortran
     bit-for-bit so the two-stream solvers stay faithful."""
-    x = jnp.asarray(x, dtype=jnp.float64)
     y1 = 1.0 - x * (0.2507213 - x * (0.0292732 - x * 0.0038278))
     y2 = y1 * y1
     y4 = y2 * y2

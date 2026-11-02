@@ -36,8 +36,6 @@ from functools import partial
 import jax
 import sys
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.Skx_module import Skx_func
@@ -302,7 +300,7 @@ def advance_xm_wpxp(
         C6thl_Skw_fnc = jnp.broadcast_to(clubb_params[:, iC6thl, None], (ngrdcol, nzm)).copy()
 
     if l_use_c7_richardson:
-        C7_Skw_fnc = jnp.asarray(cx_fnc_richardson, dtype=jnp.float64)
+        C7_Skw_fnc = cx_fnc_richardson
     else:
         C7 = clubb_params[:, iC7]
         C7b = clubb_params[:, iC7b]
@@ -526,7 +524,7 @@ def xm_wpxp_lhs(
 ):
     """Compute LHS band diagonal matrix for xm and w'x'."""
     invrs_dt = one / dt
-    lhs = jnp.zeros((nsup + nsub + 1, ngrdcol, 2 * nzm - 1), dtype=jnp.float64)
+    lhs = jnp.zeros((nsup + nsub + 1, ngrdcol, 2 * nzm - 1))
 
     # Lower (upper) boundary for w'x' on ascending (descending) grid.
     lhs = lhs.at[2, :, 0].set(one)
@@ -624,8 +622,8 @@ def calc_xm_wpxp_lhs_terms(
         gr.invrs_dzm, gr.weights_zm2zt,
     )
 
-    lhs_diff_zt = jnp.zeros((ndiags3, ngrdcol, nzt), dtype=jnp.float64)
-    lhs_ma_zt = jnp.zeros((ndiags3, ngrdcol, nzt), dtype=jnp.float64)
+    lhs_diff_zt = jnp.zeros((ndiags3, ngrdcol, nzt))
+    lhs_ma_zt = jnp.zeros((ndiags3, ngrdcol, nzt))
 
     # Calculate diffusion terms for all thermodynamic grid level
     if l_diffuse_rtm_and_thlm:
@@ -639,7 +637,7 @@ def calc_xm_wpxp_lhs_terms(
             zm2zt(nzm, nzt, ngrdcol, gr, K_zm),
             zero_threshold,
         )
-        zeros_array = jnp.zeros(ngrdcol, dtype=jnp.float64)
+        zeros_array = jnp.zeros(ngrdcol)
 
         lhs_diff_zt = diffusion_zt_lhs(
             nzm, nzt, ngrdcol, gr, K_zm, K_zt, zeros_array,
@@ -666,20 +664,13 @@ def xm_wpxp_rhs(
 ):
     """Compute RHS vector for xm and w'x'."""
     l_sample = stats.l_sample
-    xm = jnp.asarray(xm, dtype=jnp.float64)
-    wpxp = jnp.asarray(wpxp, dtype=jnp.float64)
-    xm_forcing = jnp.asarray(xm_forcing, dtype=jnp.float64)
-    wpxp_forcing = jnp.asarray(wpxp_forcing, dtype=jnp.float64)
-    rhs_ta = jnp.asarray(rhs_ta, dtype=jnp.float64)
-    lhs_pr1 = jnp.asarray(lhs_pr1, dtype=jnp.float64)
-    lhs_ta_wpxp = jnp.asarray(lhs_ta_wpxp, dtype=jnp.float64)
 
     invrs_dt = one / dt
     rhs_bp_pr3 = wpxp_terms_bp_pr3_rhs(
         nzm, ngrdcol, gr, C7_Skw_fnc, thv_ds_zm, xpthvp,
     )
 
-    rhs = jnp.zeros((ngrdcol, 2 * nzm - 1), dtype=jnp.float64)
+    rhs = jnp.zeros((ngrdcol, 2 * nzm - 1))
 
     # Index of the momentum boundary levels
     if gr.grid_dir_indx > 0:
@@ -759,7 +750,7 @@ def xm_wpxp_rhs(
             name_wpxp_ta = ""
             name_wpxp_pr1 = ""
 
-        C7_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        C7_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzm))
         C7_Skw_fnc_plus_one = jnp.asarray(C7_Skw_fnc) + one
 
         # Statistics: explicit contributions for wpxp.
@@ -780,7 +771,7 @@ def xm_wpxp_rhs(
             stats = stats.update(name_wpxp_pr3, rhs_pr3)
 
         if len(name_wpxp_f.strip()) > 0:
-            wpxp_forcing_stats = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            wpxp_forcing_stats = jnp.zeros((ngrdcol, nzm))
             wpxp_forcing_stats = wpxp_forcing_stats.at[:, 1:nzm - 1].set(
                 wpxp_forcing[:, 1:nzm - 1]
             )
@@ -790,7 +781,7 @@ def xm_wpxp_rhs(
         if len(name_wpxp_ta.strip()) > 0:
             # <w'x'> term ta has both implicit and explicit components.
             stats = stats.begin_budget(name_wpxp_ta, rhs_ta)
-            ta_over = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            ta_over = jnp.zeros((ngrdcol, nzm))
             ta_over = ta_over.at[:, 1:nzm - 1].set(
                 (one - gamma_over_implicit_ts)
                 * (
@@ -802,7 +793,7 @@ def xm_wpxp_rhs(
             stats = stats.update_budget(name_wpxp_ta, ta_over)
 
         if len(name_wpxp_pr1.strip()) > 0:
-            pr1_over = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+            pr1_over = jnp.zeros((ngrdcol, nzm))
             pr1_over = pr1_over.at[:, 1:nzm - 1].set(
                 (one - gamma_over_implicit_ts) * lhs_pr1[:, k_int] * wpxp[:, k_int]
             )
@@ -832,34 +823,34 @@ def calc_xm_wpxp_ta_terms(
     l_sample = stats.l_sample
     l_dummy_false = False
 
-    coef_wp2rtp_implicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    term_wp2rtp_explicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    coef_wp2rtp_implicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    term_wp2rtp_explicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    coef_wp2rtp_implicit = jnp.zeros((ngrdcol, nzt))
+    term_wp2rtp_explicit = jnp.zeros((ngrdcol, nzt))
+    coef_wp2rtp_implicit_zm = jnp.zeros((ngrdcol, nzm))
+    term_wp2rtp_explicit_zm = jnp.zeros((ngrdcol, nzm))
 
-    coef_wp2thlp_implicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    term_wp2thlp_explicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    coef_wp2thlp_implicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    term_wp2thlp_explicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    coef_wp2thlp_implicit = jnp.zeros((ngrdcol, nzt))
+    term_wp2thlp_explicit = jnp.zeros((ngrdcol, nzt))
+    coef_wp2thlp_implicit_zm = jnp.zeros((ngrdcol, nzm))
+    term_wp2thlp_explicit_zm = jnp.zeros((ngrdcol, nzm))
 
-    term_wp2sclrp_explicit = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    term_wp2sclrp_explicit_zm = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    term_wp2sclrp_explicit = jnp.zeros((ngrdcol, nzt))
+    term_wp2sclrp_explicit_zm = jnp.zeros((ngrdcol, nzm))
 
-    sgn_t_vel_wprtp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    sgn_t_vel_wpthlp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    sgn_t_vel_wpsclrp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    sgn_t_vel_wprtp = jnp.zeros((ngrdcol, nzm))
+    sgn_t_vel_wpthlp = jnp.zeros((ngrdcol, nzm))
+    sgn_t_vel_wpsclrp = jnp.zeros((ngrdcol, nzm))
 
-    lhs_ta_wprtp = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    lhs_ta_wpthlp = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    lhs_ta_wpup = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    lhs_ta_wpvp = jnp.zeros((ndiags3, ngrdcol, nzm), dtype=jnp.float64)
-    lhs_ta_wpsclrp = jnp.zeros((ndiags3, ngrdcol, nzm, max(sclr_dim, 1)), dtype=jnp.float64)
+    lhs_ta_wprtp = jnp.zeros((ndiags3, ngrdcol, nzm))
+    lhs_ta_wpthlp = jnp.zeros((ndiags3, ngrdcol, nzm))
+    lhs_ta_wpup = jnp.zeros((ndiags3, ngrdcol, nzm))
+    lhs_ta_wpvp = jnp.zeros((ndiags3, ngrdcol, nzm))
+    lhs_ta_wpsclrp = jnp.zeros((ndiags3, ngrdcol, nzm, max(sclr_dim, 1)))
 
-    rhs_ta_wprtp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wpthlp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wpup = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wpvp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    rhs_ta_wpsclrp = jnp.zeros((ngrdcol, nzm, max(sclr_dim, 1)), dtype=jnp.float64)
+    rhs_ta_wprtp = jnp.zeros((ngrdcol, nzm))
+    rhs_ta_wpthlp = jnp.zeros((ngrdcol, nzm))
+    rhs_ta_wpup = jnp.zeros((ngrdcol, nzm))
+    rhs_ta_wpvp = jnp.zeros((ngrdcol, nzm))
+    rhs_ta_wpsclrp = jnp.zeros((ngrdcol, nzm, max(sclr_dim, 1)))
 
     # Set up the implicit coefficients and explicit terms for turbulent
     # advection of <w'rt'>, <w'thl'>, and <w'sclr'>.
@@ -1096,7 +1087,7 @@ def solve_xm_wpxp_with_single_lhs(
         l_diffuse_rtm_and_thlm,
     )
 
-    rhs = jnp.zeros((ngrdcol, 2 * nzm - 1, nrhs), dtype=jnp.float64)
+    rhs = jnp.zeros((ngrdcol, 2 * nzm - 1, nrhs))
     rhs_field, stats = xm_wpxp_rhs(
         nzm, nzt, ngrdcol, gr, xm_wpxp_rtm, l_iter, dt,
         rtm, wprtp, rtm_forcing, wprtp_forcing, C7_Skw_fnc,
@@ -1112,7 +1103,7 @@ def solve_xm_wpxp_with_single_lhs(
     )
     rhs = rhs.at[:, :, 1].set(rhs_field)
 
-    wpsclrp_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    wpsclrp_forcing = jnp.zeros((ngrdcol, nzm))
     for sclr in range(sclr_dim):
         rhs_field, stats = xm_wpxp_rhs(
             nzm, nzt, ngrdcol, gr, xm_wpxp_scalar, l_iter, dt,
@@ -1123,8 +1114,8 @@ def solve_xm_wpxp_with_single_lhs(
         )
         rhs = rhs.at[:, :, 2 + sclr].set(rhs_field)
 
-    um_tndcy = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-    vm_tndcy = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    um_tndcy = jnp.zeros((ngrdcol, nzt))
+    vm_tndcy = jnp.zeros((ngrdcol, nzt))
 
     if l_predict_upwp_vpwp:
         fcor_col = jnp.asarray(fcor)[:, None]
@@ -1156,8 +1147,8 @@ def solve_xm_wpxp_with_single_lhs(
         if l_ho_nontrad_coriolis:
             upwp_forcing = upwp_forcing + fcor_y_col * (jnp.asarray(up2) - jnp.asarray(wp2))
 
-        upwp_forcing_pert = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-        vpwp_forcing_pert = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        upwp_forcing_pert = jnp.zeros((ngrdcol, nzm))
+        vpwp_forcing_pert = jnp.zeros((ngrdcol, nzm))
         if l_perturbed_wind:
             ddzt_um_pert = ddzt(nzm, nzt, ngrdcol, gr, um_pert)
             ddzt_vm_pert = ddzt(nzm, nzt, ngrdcol, gr, vm_pert)
@@ -1278,7 +1269,7 @@ def solve_xm_wpxp_with_single_lhs(
         if l_perturbed_wind:
             field_pairs.extend([(um_pert, upwp_pert), (vm_pert, vpwp_pert)])
 
-    old_solution = jnp.zeros((ngrdcol, 2 * nzm - 1, nrhs), dtype=jnp.float64)
+    old_solution = jnp.zeros((ngrdcol, 2 * nzm - 1, nrhs))
     if penta_solve_method == penta_bicgstab:
         for irhs, (xm_field, wpxp_field) in enumerate(field_pairs):
             old_solution = old_solution.at[:, 1:2 * (nzm - 1) + 1:2, irhs].set(
@@ -1508,7 +1499,7 @@ def solve_xm_wpxp_with_multiple_lhs(
         stats, thlm, wpthlp, err_info, wpxp_cl_num=wpthlp_cl_num,
     )
 
-    wpsclrp_forcing = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    wpsclrp_forcing = jnp.zeros((ngrdcol, nzm))
     for sclr in range(sclr_dim):
         sclrm_s, wpsclrp_s, err_info, _wpxp_cl_num, stats = _solve_one_xm_wpxp(
             nzm, nzt, ngrdcol, gr, xm_wpxp_scalar, dt, l_iter, wm_zt, wp2, sclrp2[:, :, sclr],
@@ -1539,21 +1530,18 @@ def xm_wpxp_solve(
 ):
     """Solve for xm / w'x' using the band diagonal solver."""
     ndim = 2 * nzm - 1
-    lhs_work = jnp.asarray(lhs, dtype=jnp.float64)
-    rhs_work = jnp.asarray(rhs, dtype=jnp.float64)
-    old_work = jnp.asarray(old_solution, dtype=jnp.float64)
 
     if l_force_descending_solves and gr.grid_dir_indx > 0:
-        lhs_work = lhs_work[::-1, :, ::-1]
-        rhs_work = rhs_work[:, ::-1, :]
+        lhs = lhs[::-1, :, ::-1]
+        rhs = rhs[:, ::-1, :]
         if penta_solve_method == penta_bicgstab:
-            old_work = old_work[:, ::-1, :]
+            old_solution = old_solution[:, ::-1, :]
 
     err_info, solution, rcond = band_solve(
         "xm_wpxp", penta_solve_method, ngrdcol, nsup,
         nsub, ndim, nrhs, l_implemented,
-        lhs_work, rhs_work, err_info,
-        old_soln=old_work, use_rcond=use_rcond,
+        lhs, rhs, err_info,
+        old_soln=old_solution, use_rcond=use_rcond,
     )
 
     if l_force_descending_solves and gr.grid_dir_indx > 0:
@@ -1575,7 +1563,7 @@ def xm_wpxp_solve(
         )
     # TODO: Source field-specific matrix/RHS dumps need the caller's solve and
     # scalar labels, absent from this shared solver interface; skipped here.
-    return solution, jnp.asarray(rcond, dtype=jnp.float64), err_info
+    return solution, jnp.asarray(rcond), err_info
 
 
 def xm_wpxp_clipping_and_stats(
@@ -1674,14 +1662,13 @@ def xm_wpxp_clipping_and_stats(
         name_wpxp_dp1 = ""
         name_wpxp_pd = ""
 
-    xm_old = jnp.asarray(xm, dtype=jnp.float64)
+    xm_old = xm
 
-    sol = jnp.asarray(solution, dtype=jnp.float64)
-    xm = sol[:, 1:2 * nzt + 1:2]
-    wpxp = sol[:, 0:2 * nzm - 1:2]
+    xm = solution[:, 1:2 * nzt + 1:2]
+    wpxp = solution[:, 0:2 * nzm - 1:2]
 
     if l_sample:
-        C7_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        C7_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzm))
         C7_Skw_fnc_plus_one = jnp.asarray(C7_Skw_fnc) + one
         wpxp_ac = wpxp_terms_ac_pr2_lhs(
             nzm, nzt, ngrdcol, gr, C7_Skw_fnc_zeros, wm_zt, gr.invrs_dzm,
@@ -1697,7 +1684,6 @@ def xm_wpxp_clipping_and_stats(
             stats = stats.update(name_xm_matrix_condt_num, one / jnp.asarray(rcond))
 
         if not l_implemented:
-            lhs_ma_zt = jnp.asarray(lhs_ma_zt, dtype=jnp.float64)
             k_zt = jnp.arange(nzt)
             km1_zt = jnp.clip(k_zt - gr.grid_dir_indx, 0, nzt - 1)
             kp1_zt = jnp.clip(k_zt + gr.grid_dir_indx, 0, nzt - 1)
@@ -1709,7 +1695,6 @@ def xm_wpxp_clipping_and_stats(
             if name_xm_ma.strip():
                 stats = stats.update(name_xm_ma, tmp_zt_stats)
 
-        lhs_ta_xm = jnp.asarray(lhs_ta_xm, dtype=jnp.float64)
         tmp_zt_stats = (
             -lhs_ta_xm[1, :, :] * wpxp[:, :nzt]
             - lhs_ta_xm[0, :, :] * wpxp[:, 1:nzt + 1]
@@ -1721,8 +1706,7 @@ def xm_wpxp_clipping_and_stats(
         k_minus = slice(1 - gr.grid_dir_indx, nzm - 1 - gr.grid_dir_indx)
         k_plus = slice(1 + gr.grid_dir_indx, nzm - 1 + gr.grid_dir_indx)
 
-        tmp_zm_stats = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-        lhs_ma_zm = jnp.asarray(lhs_ma_zm, dtype=jnp.float64)
+        tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -lhs_ma_zm[1 + gr.grid_dir_indx, :, k_int] * wpxp[:, k_minus]
             - lhs_ma_zm[1, :, k_int] * wpxp[:, k_int]
@@ -1731,8 +1715,7 @@ def xm_wpxp_clipping_and_stats(
         if name_wpxp_ma.strip():
             stats = stats.update(name_wpxp_ma, tmp_zm_stats)
 
-        tmp_zm_stats = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-        lhs_ta_wpxp = jnp.asarray(lhs_ta_wpxp, dtype=jnp.float64)
+        tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -gamma_over_implicit_ts * lhs_ta_wpxp[1 + gr.grid_dir_indx, :, k_int] * wpxp[:, k_minus]
             - gamma_over_implicit_ts * lhs_ta_wpxp[1, :, k_int] * wpxp[:, k_int]
@@ -1741,8 +1724,7 @@ def xm_wpxp_clipping_and_stats(
         if name_wpxp_ta.strip():
             stats = stats.finalize_budget(name_wpxp_ta, tmp_zm_stats)
 
-        tmp_zm_stats = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-        lhs_tp = jnp.asarray(lhs_tp, dtype=jnp.float64)
+        tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -lhs_tp[1, :, k_int] * xm[:, :nzt - 1]
             - lhs_tp[0, :, k_int] * xm[:, 1:nzt]
@@ -1750,7 +1732,7 @@ def xm_wpxp_clipping_and_stats(
         if name_wpxp_tp.strip():
             stats = stats.update(name_wpxp_tp, tmp_zm_stats)
 
-        tmp_zm_stats = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
         wpxp_ac = jnp.asarray(wpxp_ac)
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -wpxp_ac[:, k_int] * wpxp[:, k_int]
@@ -1758,15 +1740,14 @@ def xm_wpxp_clipping_and_stats(
         if name_wpxp_ac.strip():
             stats = stats.update(name_wpxp_ac, tmp_zm_stats)
 
-        tmp_zm_stats = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-        lhs_pr1 = jnp.asarray(lhs_pr1, dtype=jnp.float64)
+        tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -gamma_over_implicit_ts * lhs_pr1[:, k_int] * wpxp[:, k_int]
         )
         if name_wpxp_pr1.strip():
             stats = stats.finalize_budget(name_wpxp_pr1, tmp_zm_stats)
 
-        tmp_zm_stats = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
         wpxp_pr2 = jnp.asarray(wpxp_pr2)
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -wpxp_pr2[:, k_int] * wpxp[:, k_int]
@@ -1774,8 +1755,7 @@ def xm_wpxp_clipping_and_stats(
         if name_wpxp_pr2.strip():
             stats = stats.update(name_wpxp_pr2, tmp_zm_stats)
 
-        tmp_zm_stats = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-        lhs_diff_zm = jnp.asarray(lhs_diff_zm, dtype=jnp.float64)
+        tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -lhs_diff_zm[1 + gr.grid_dir_indx, :, k_int] * wpxp[:, k_minus]
             - lhs_diff_zm[1, :, k_int] * wpxp[:, k_int]
@@ -1819,8 +1799,8 @@ def xm_wpxp_clipping_and_stats(
             )
 
     if solve_type == xm_wpxp_rtm and l_pos_def:
-        xm_pd = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
-        wpxp_pd = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+        xm_pd = jnp.zeros((ngrdcol, nzt))
+        wpxp_pd = jnp.zeros((ngrdcol, nzm))
         l_do_pos_def = jnp.any(xm < zero) & ~jnp.any(xm_old < zero)
 
         def pos_definite_branch(fields):
@@ -1866,7 +1846,7 @@ def xm_wpxp_clipping_and_stats(
         else:
             xp2_relaxed = jnp.maximum(1.0e-7, jnp.asarray(xp2))
     else:
-        xp2_relaxed = jnp.asarray(xp2, dtype=jnp.float64)
+        xp2_relaxed = xp2
 
     if solve_type == xm_wpxp_rtm:
         solve_type_cl = clip_wprtp
@@ -1944,7 +1924,7 @@ def xm_term_ta_lhs(nzm, nzt, ngrdcol, gr, rho_ds_zm, invrs_rho_ds_zt):
 
     invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) )
     """
-    lhs_ta_xm = jnp.zeros((ndiags2, ngrdcol, nzt), dtype=jnp.float64)
+    lhs_ta_xm = jnp.zeros((ndiags2, ngrdcol, nzt))
     # Momentum superdiagonal [ x wpxp(k+1,<t+1>) ]
     lhs_ta_xm = lhs_ta_xm.at[0, :, :].set(
         jnp.asarray(invrs_rho_ds_zt) * jnp.asarray(gr.invrs_dzt) * jnp.asarray(rho_ds_zm[:, 1:nzm])
@@ -1969,7 +1949,7 @@ def wpxp_term_tp_lhs(nzm, ngrdcol, gr, wp2):
 
     invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
     """
-    lhs_tp = jnp.zeros((ndiags2, ngrdcol, nzm), dtype=jnp.float64)
+    lhs_tp = jnp.zeros((ndiags2, ngrdcol, nzm))
     # Thermodynamic superdiagonal [ x xm(k,<t+1>) ]
     lhs_tp = lhs_tp.at[0, :, 1:nzm - 1].set(
         jnp.asarray(wp2[:, 1:nzm - 1]) * jnp.asarray(gr.invrs_dzm[:, 1:nzm - 1])
@@ -1997,7 +1977,7 @@ def wpxp_terms_ac_pr2_lhs(nzm, nzt, ngrdcol, gr, C7_Skw_fnc, wm_zt, invrs_dzm):
            is reversed and the leading "-" in front of the term is changed
            to a "+".
     """
-    lhs_ac_pr2 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    lhs_ac_pr2 = jnp.zeros((ngrdcol, nzm))
     # Momentum main diagonal: [ x wpxp(k,<t+1>) ]
     lhs_ac_pr2 = lhs_ac_pr2.at[:, 1:nzm - 1].set(
         (one - jnp.asarray(C7_Skw_fnc[:, 1:nzm - 1]))
@@ -2026,9 +2006,9 @@ def wpxp_term_pr1_lhs(
            is reversed and the leading "-" in front of the term is changed
            to a "+".
     """
-    lhs_pr1_wprtp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    lhs_pr1_wpthlp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    lhs_pr1_wpsclrp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    lhs_pr1_wprtp = jnp.zeros((ngrdcol, nzm))
+    lhs_pr1_wpthlp = jnp.zeros((ngrdcol, nzm))
+    lhs_pr1_wpsclrp = jnp.zeros((ngrdcol, nzm))
 
     # Momentum main diagonals: [ x wpxp(k,<t+1>) ]
     lhs_pr1_wprtp = lhs_pr1_wprtp.at[:, 1:nzm - 1].set(
@@ -2060,7 +2040,7 @@ def wpxp_terms_bp_pr3_rhs(nzm, ngrdcol, gr, C7_Skw_fnc, thv_ds_zm, xpthvp):
 
     - C_7 ( (g/thv_ds) x'th_v' ).
     """
-    rhs_bp_pr3 = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    rhs_bp_pr3 = jnp.zeros((ngrdcol, nzm))
     # Calculate term at all interior grid levels.
     rhs_bp_pr3 = rhs_bp_pr3.at[:, 1:nzm - 1].set(
         (grav / jnp.asarray(thv_ds_zm[:, 1:nzm - 1]))
@@ -2091,7 +2071,6 @@ def xm_correction_wpxp_cl(
     """
     l_sample = stats.l_sample
     wpxp_chnge = jnp.asarray(wpxp_chnge)
-    xm = jnp.asarray(xm, dtype=jnp.float64)
     l_clipping_needed = jnp.any(jnp.abs(wpxp_chnge) > eps, axis=1)
 
     if solve_type == xm_wpxp_rtm:
@@ -2149,7 +2128,7 @@ def diagnose_upxp(
     """
     ddzt_xm = ddzt(nzm, nzt, ngrdcol, gr, xm)
     ddzt_ym = ddzt(nzm, nzt, ngrdcol, gr, ym)
-    ypxp = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    ypxp = jnp.zeros((ngrdcol, nzm))
     # The value of ypxp is irrelevant to the calculations at the upper and
     # lower boundaries
     ypxp_interior = (
@@ -2209,7 +2188,7 @@ def _solve_one_xm_wpxp(
         stats,
     )
     rhs = rhs_2d[:, :, None]
-    old_solution = jnp.zeros((ngrdcol, 2 * nzm - 1, 1), dtype=jnp.float64)
+    old_solution = jnp.zeros((ngrdcol, 2 * nzm - 1, 1))
     if penta_solve_method == penta_bicgstab:
         old_solution = old_solution.at[:, 1:2 * (nzm - 1) + 1:2, 0].set(
             jnp.asarray(xm)

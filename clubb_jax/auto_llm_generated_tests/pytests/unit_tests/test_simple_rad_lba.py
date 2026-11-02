@@ -6,8 +6,6 @@ import os
 _ROOT = str(_REPO_ROOT)
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Radiation.simple_rad_module import (
     simple_rad_lba_init, lba_radhtz, simple_rad_lba, lba_ntimes, lba_nzrad)

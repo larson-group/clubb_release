@@ -16,9 +16,6 @@ the general partial. + finite grad. Oracle-independent; never SKIPs. (iter 555)
 import math
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_turbulent_sed import (
     bivar_LL_covar_partial, bivar_LL_covar_const_x2_partial)
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import bivar_LL_mean

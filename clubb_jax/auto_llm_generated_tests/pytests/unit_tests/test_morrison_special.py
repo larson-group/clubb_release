@@ -1,8 +1,6 @@
 """Checks of DERF1 retained by the active Morrison core."""
 import numpy as np
 import pytest
-import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 from clubb_jax.src.Microphys.Morrison_microphys.module_mp_graupel import DERF1
 

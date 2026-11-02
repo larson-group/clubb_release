@@ -4,14 +4,11 @@ scattering-weighted asymmetry — port of comscp1.F.
 """
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 
 def comscp1(taer, tcldi, tcldw, tgm, tray, waer, wcldi, wcldw, wray, asyaer, asycldi, asycldw):
     """Combine scattering optical properties (comscp1.F). All inputs (ncol, nlm). Returns
     (tccld1, tcclr1, asycld, asyclr, fwcld, fwclr)."""
-    a = lambda x: jnp.asarray(x, dtype=jnp.float64)
+    a = jnp.asarray
     taer, tcldi, tcldw, tgm, tray = a(taer), a(tcldi), a(tcldw), a(tgm), a(tray)
     waer, wcldi, wcldw, wray = a(waer), a(wcldi), a(wcldw), a(wray)
     asyaer, asycldi, asycldw = a(asyaer), a(asycldi), a(asycldw)

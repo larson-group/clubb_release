@@ -24,8 +24,6 @@ from functools import partial
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.constants_clubb import (

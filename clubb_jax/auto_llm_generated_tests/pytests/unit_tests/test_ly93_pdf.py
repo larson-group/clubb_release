@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.LY93_pdf import calc_params_LY93, calc_mixt_frac_LY93
 

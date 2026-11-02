@@ -9,8 +9,6 @@ import pytest
 from clubb_jax.src.CLUBB_core.advance_helper_module import wp23_term_splat_lhs
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid, zm2zt, zm2zt2zm
 
-jax.config.update("jax_enable_x64", True)
-
 
 def _weighted_loss(outputs):
     return sum(

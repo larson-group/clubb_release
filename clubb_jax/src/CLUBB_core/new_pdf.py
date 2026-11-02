@@ -253,9 +253,6 @@ import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 
 def calc_coef_wp4_implicit(mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd):
     """Calculate coef_wp4_implicit.
@@ -315,18 +312,14 @@ def calc_coef_wp4_implicit(mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sq
     ! are solved together.  This allows the term containing <w'^4> to be solved
     ! implicitly.
     """
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    F = jnp.asarray(F_w, dtype=jnp.float64)
-    c1 = jnp.asarray(coef_sigma_w_1_sqd, dtype=jnp.float64)
-    c2 = jnp.asarray(coef_sigma_w_2_sqd, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
     # Calculate coef_wp4_implicit.
-    return (3.0 * mf * c1 ** 2
-            + 6.0 * F * omf * c1
-            + F ** 2 * omf ** 2 / mf
-            + 3.0 * omf * c2 ** 2
-            + 6.0 * F * mf * c2
-            + F ** 2 * mf ** 2 / omf)
+    return (3.0 * mixt_frac * coef_sigma_w_1_sqd ** 2
+            + 6.0 * F_w * omf * coef_sigma_w_1_sqd
+            + F_w ** 2 * omf ** 2 / mixt_frac
+            + 3.0 * omf * coef_sigma_w_2_sqd ** 2
+            + 6.0 * F_w * mixt_frac * coef_sigma_w_2_sqd
+            + F_w ** 2 * mixt_frac ** 2 / omf)
 
 
 def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
@@ -335,26 +328,22 @@ def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
     ! References:
     ! Griffin and Larson (2018)
     """
-    Skx = jnp.asarray(Skx, dtype=jnp.float64)
-    F = jnp.asarray(F_x, dtype=jnp.float64)
-    zeta = jnp.asarray(zeta_x, dtype=jnp.float64)
-    sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    zp2 = zeta + 2.0
+    zp2 = zeta_x + 2.0
 
-    sqrt_arg = (4.0 * F ** 3 + 12.0 * F ** 2 * (1.0 - F)
-                + 36.0 * F * (zeta + 1.0) * (1.0 - F) ** 2 / zp2 ** 2 + Skx ** 2)
-    num = (4.0 * F ** 3
-           + 18.0 * F * (zeta + 1.0) * (1.0 - F) / zp2
-           + 6.0 * F ** 2 * (1.0 - F) / zp2
+    sqrt_arg = (4.0 * F_x ** 3 + 12.0 * F_x ** 2 * (1.0 - F_x)
+                + 36.0 * F_x * (zeta_x + 1.0) * (1.0 - F_x) ** 2 / zp2 ** 2 + Skx ** 2)
+    num = (4.0 * F_x ** 3
+           + 18.0 * F_x * (zeta_x + 1.0) * (1.0 - F_x) / zp2
+           + 6.0 * F_x ** 2 * (1.0 - F_x) / zp2
            + Skx ** 2
-           - Skx * sgn * jnp.sqrt(jnp.maximum(sqrt_arg, 0.0)))
-    den = 2.0 * F * (F - 3.0) ** 2 + 2.0 * Skx ** 2
+           - Skx * sgn_wpxp * jnp.sqrt(jnp.maximum(sqrt_arg, 0.0)))
+    den = 2.0 * F_x * (F_x - 3.0) ** 2 + 2.0 * Skx ** 2
     # Calculate mixture fraction, which is the weight of the 1st PDF component.
     # The 2nd PDF component has a weight of 1 - mixt_frac.
     mf_pos = num / jnp.where(den > 0.0, den, 1.0)
 
     jax.lax.cond(
-        jnp.any((F <= 0.0) & (jnp.abs(Skx) > 0.0)),
+        jnp.any((F_x <= 0.0) & (jnp.abs(Skx) > 0.0)),
         lambda _: jax.debug.callback(
             lambda: print("Mixture fraction cannot be calculated.",
                           "The value of F_x must be greater than 0 when | Skx | > 0.", sep="\n", file=sys.stderr),
@@ -363,8 +352,8 @@ def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
         lambda _: None, operand=None,
     )
     # F_x = 0 and Skx = 0
-    mf_symmetric = (zeta + 1.0) / zp2
-    return jnp.where(F > 0.0, mf_pos, mf_symmetric)
+    mf_symmetric = (zeta_x + 1.0) / zp2
+    return jnp.where(F_x > 0.0, mf_pos, mf_symmetric)
 
 
 
@@ -393,32 +382,26 @@ def calc_coef_wpxp2_implicit(wp2, xp2, wpxp, sgn_wpxp, mixt_frac, F_w, F_x,
     ! taking the original equation for <w'x'^2> and setting both
     ! sigma_w_1 * sigma_x_1 = 0 and sigma_w_2 * sigma_x_2 = 0.
     """
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    wpxp = jnp.asarray(wpxp, dtype=jnp.float64); sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    F_w = jnp.asarray(F_w, dtype=jnp.float64); F_x = jnp.asarray(F_x, dtype=jnp.float64)
-    cw1 = jnp.asarray(coef_sigma_w_1_sqd, dtype=jnp.float64); cw2 = jnp.asarray(coef_sigma_w_2_sqd, dtype=jnp.float64)
-    cx1 = jnp.asarray(coef_sigma_x_1_sqd, dtype=jnp.float64); cx2 = jnp.asarray(coef_sigma_x_2_sqd, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
-    F_spread = F_x * (omf / mf - mf / omf)
-    base = sqrt_clipped(mf * omf) * sqrt_clipped(wp2)
+    F_spread = F_x * (omf / mixt_frac - mixt_frac / omf)
+    base = sqrt_clipped(mixt_frac * omf) * sqrt_clipped(wp2)
 
     # ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0
     #   and coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0 )
     # or wp2 * xp2 = 0
-    branchB = base * sqrt_clipped(F_w) * (F_spread + (cx1 - cx2))
+    branchB = base * sqrt_clipped(F_w) * (F_spread + (coef_sigma_x_1_sqd - coef_sigma_x_2_sqd))
 
-    cwcx1 = cw1 * cx1
-    cwcx2 = cw2 * cx2
-    denom = mf * sqrt_clipped(cwcx1) + omf * sqrt_clipped(cwcx2)
+    cwcx1 = coef_sigma_w_1_sqd * coef_sigma_x_1_sqd
+    cwcx2 = coef_sigma_w_2_sqd * coef_sigma_x_2_sqd
+    denom = mixt_frac * sqrt_clipped(cwcx1) + omf * sqrt_clipped(cwcx2)
     # Factor involving coef_sigma_... coefficients
     coefs_factor = (sqrt_clipped(cwcx1) - sqrt_clipped(cwcx2)) / jnp.where(denom > 0.0, denom, 1.0)
     denom2 = sqrt_clipped(wp2) * sqrt_clipped(xp2)
     wpxp_ratio = wpxp / jnp.where(denom2 > 0.0, denom2, 1.0)
-    branchA = base * (sqrt_clipped(F_w) * F_x * (omf / mf - mf / omf)
-                      + sqrt_clipped(F_w) * (cx1 - cx2)
-                      + 2.0 * sqrt_clipped(F_x) * coefs_factor * sgn * wpxp_ratio
+    branchA = base * (sqrt_clipped(F_w) * F_x * (omf / mixt_frac - mixt_frac / omf)
+                      + sqrt_clipped(F_w) * (coef_sigma_x_1_sqd - coef_sigma_x_2_sqd)
+                      + 2.0 * sqrt_clipped(F_x) * coefs_factor * sgn_wpxp * wpxp_ratio
                       - 2.0 * sqrt_clipped(F_w) * F_x * coefs_factor)
 
     # Calculate coef_wpxp2_implicit.
@@ -433,28 +416,25 @@ def calc_setter_var_params(xm, xp2, Skx, sgn_wpxp, F_x, zeta_x):
     ! References:
     ! Griffin and Larson (2018)
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    Skx = jnp.asarray(Skx, dtype=jnp.float64); sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    F_x = jnp.asarray(F_x, dtype=jnp.float64); zeta = jnp.asarray(zeta_x, dtype=jnp.float64)
 
     # Calculate the mixture fraction.
-    mixt_frac = calc_mixture_fraction(Skx, F_x, zeta, sgn)
+    mixt_frac = calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp)
     omf = 1.0 - mixt_frac
     # Calculate the mean of x in the 1st PDF component.
-    mu_x_1 = xm + sgn * sqrt_clipped(F_x * (omf / mixt_frac) * xp2)
+    mu_x_1 = xm + sgn_wpxp * sqrt_clipped(F_x * (omf / mixt_frac) * xp2)
     # Calculate the mean of x in the 2nd PDF component.
     mu_x_2 = xm - (mixt_frac / omf) * (mu_x_1 - xm)
     # Calculate the standard deviation of x in the 1st PDF component.
     # sigma_x_1 = sqrt( ( ( zeta_x + 1 ) * ( 1 - F_x ) )
     #                   / ( ( zeta_x + 2 ) * mixt_frac ) * <x'^2> )
-    coef_sigma_x_1_sqd = ((zeta + 1.0) * (1.0 - F_x)) / ((zeta + 2.0) * mixt_frac)
+    coef_sigma_x_1_sqd = ((zeta_x + 1.0) * (1.0 - F_x)) / ((zeta_x + 2.0) * mixt_frac)
     sigma_x_1 = sqrt_clipped(coef_sigma_x_1_sqd * xp2)
     # Calculate the standard deviation of x in the 2nd PDF component.
     # sigma_x_2 = sqrt( ( mixt_frac * sigma_x_1^2 )
     #                   / ( ( 1 - mixt_frac ) * ( 1 + zeta_x ) ) )
     #           = sqrt( ( 1 - F_x )
     #                   / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ) * <x'^2> )
-    coef_sigma_x_2_sqd = (1.0 - F_x) / ((zeta + 2.0) * omf)
+    coef_sigma_x_2_sqd = (1.0 - F_x) / ((zeta_x + 2.0) * omf)
     sigma_x_2 = sqrt_clipped(coef_sigma_x_2_sqd * xp2)
     return mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, mixt_frac, coef_sigma_x_1_sqd, coef_sigma_x_2_sqd
 
@@ -493,16 +473,13 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
     !
     ! where Skx is the skewness of x, and Skx = <x'^3> / <x'^2>^(3/2).
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    Skx = jnp.asarray(Skx, dtype=jnp.float64); sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    F_x = jnp.asarray(F_x, dtype=jnp.float64); mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
     F_safe = jnp.where(F_x > 0.0, F_x, 1.0)
 
     # Calculate the mean of x in the 1st PDF component.
-    mu_x_1_v = xm + sgn * sqrt_clipped(F_x * (omf / mf) * xp2)
+    mu_x_1_v = xm + sgn_wpxp * sqrt_clipped(F_x * (omf / mixt_frac) * xp2)
     # Calculate the mean of x in the 2nd PDF component.
-    mu_x_2_v = xm - (mf / omf) * (mu_x_1_v - xm)
+    mu_x_2_v = xm - (mixt_frac / omf) * (mu_x_1_v - xm)
     # Calculate the variance of x in the 1st PDF component.
     # sigma_x_1^2
     # = ( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
@@ -512,8 +489,8 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
     #     / ( 3 * mixt_frac * sqrt( F_x ) )
     #     - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
     #     + 1 ) * <x'^2>
-    c1_v = (sqrt_clipped(mf * omf) * Skx * sgn / (3.0 * mf * sqrt_clipped(F_safe))
-            - (1.0 + mf) * F_x / (3.0 * mf) + 1.0)
+    c1_v = (sqrt_clipped(mixt_frac * omf) * Skx * sgn_wpxp / (3.0 * mixt_frac * sqrt_clipped(F_safe))
+            - (1.0 + mixt_frac) * F_x / (3.0 * mixt_frac) + 1.0)
     # Calculate the variance of x in the 2nd PDF component.
     # sigma_x_2^2
     # = ( ( 1 - F_x ) / ( 1 - mixt_frac )
@@ -524,7 +501,7 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
     #           + 1 ) ) * <x'^2>
     # = ( ( ( 1 - F_x ) - mixt_frac * coef_sigma_x_1_sqd )
     #     / ( 1 - mixt_frac ) ) * <x'^2>
-    c2_v = ((1.0 - F_x) - mf * c1_v) / omf
+    c2_v = ((1.0 - F_x) - mixt_frac * c1_v) / omf
 
     vary = F_x > 0.0
     # When F_x has a value of 0, the PDF becomes a single Gaussian.  This
@@ -546,7 +523,7 @@ def sort_roots(roots):
     comments for each branch.  jnp.sort is the same operation for the returned
     values.
     """
-    return jnp.sort(jnp.asarray(roots, dtype=jnp.float64), axis=-1)
+    return jnp.sort(jnp.asarray(roots), axis=-1)
 
 
 def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
@@ -600,22 +577,17 @@ def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
     ! respectively.
     """
     from clubb_jax.src.CLUBB_core.calc_roots import cubic_solve
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    Skx = jnp.asarray(Skx, dtype=jnp.float64)
-    sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    max_pos = jnp.asarray(max_Skx2_pos_Skx_sgn_wpxp, dtype=jnp.float64)
-    max_neg = jnp.asarray(max_Skx2_neg_Skx_sgn_wpxp, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
-    Dterm = sqrt_clipped(mf * omf) * Skx * sgn
+    Dterm = sqrt_clipped(mixt_frac * omf) * Skx * sgn_wpxp
 
     # Set up the coefficients in the equation for the limit of sqrt(F_x) based
     # on the 1st PDF component standard deviation (sigma_x_1) being greater than
     # or equal to 0.  This equation has the form:
     # A * sqrt(F_x)^3 + B * sqrt(F_x)^2 + C * sqrt(F_x) + D = 0.
-    r1 = cubic_solve(-(1.0 + mf), jnp.zeros_like(mf), 3.0 * mf, Dterm)
+    r1 = cubic_solve(-(1.0 + mixt_frac), jnp.zeros_like(mixt_frac), 3.0 * mixt_frac, Dterm)
     # Solve for the roots (values of sqrt(F_x)) that satisfy the above equation.
-    r2 = cubic_solve(-(2.0 - mf), jnp.zeros_like(mf), 3.0 * omf, -Dterm)
+    r2 = cubic_solve(-(2.0 - mixt_frac), jnp.zeros_like(mixt_frac), 3.0 * omf, -Dterm)
     r1_real = jnp.real(r1)
     r2_real = jnp.real(r2)
     # Sort the values of the roots (values of sqrt(F_x)) from smallest to
@@ -635,15 +607,15 @@ def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
     r2s = sort_roots(r2_real)
 
     Skx2 = Skx ** 2
-    pos = Skx * sgn >= 0.0
+    pos = Skx * sgn_wpxp >= 0.0
 
     # Find the minimum and maximum allowable values of sqrt(F_x) based on Skx
     # and sgn( <w'x'> ).
     min_sqrt = jnp.where(pos, r2s[..., 1], r1s[..., 1])
-    max_pos_branch = jnp.where(Skx2 > max_neg,
+    max_pos_branch = jnp.where(Skx2 > max_Skx2_neg_Skx_sgn_wpxp,
                                jnp.minimum(r1_real[..., 0], r2s[..., 2]),
                                jnp.minimum(r1s[..., 2], r2s[..., 2]))
-    max_neg_branch = jnp.where(Skx2 > max_pos,
+    max_neg_branch = jnp.where(Skx2 > max_Skx2_pos_Skx_sgn_wpxp,
                                jnp.minimum(r2_real[..., 0], r1s[..., 2]),
                                jnp.minimum(r1s[..., 2], r2s[..., 2]))
     max_sqrt = jnp.where(pos, max_pos_branch, max_neg_branch)
@@ -680,30 +652,26 @@ def calc_coefs_wp2xp_semiimpl(wp2, xp2, sgn_wpxp, mixt_frac, F_w, F_x,
     ! taking the original equation for <w'^2 x'> and setting both
     ! sigma_w_1 * sigma_x_1 = 0 and sigma_w_2 * sigma_x_2 = 0.
     """
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64); mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    F_w = jnp.asarray(F_w, dtype=jnp.float64); F_x = jnp.asarray(F_x, dtype=jnp.float64)
-    cw1 = jnp.asarray(coef_sigma_w_1_sqd, dtype=jnp.float64); cw2 = jnp.asarray(coef_sigma_w_2_sqd, dtype=jnp.float64)
-    cx1 = jnp.asarray(coef_sigma_x_1_sqd, dtype=jnp.float64); cx2 = jnp.asarray(coef_sigma_x_2_sqd, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
-    base = sqrt_clipped(mf * omf)
+    base = sqrt_clipped(mixt_frac * omf)
     swp2 = sqrt_clipped(wp2)
-    F_spread = omf / mf - mf / omf
-    explicit_prefac = base * sqrt_clipped(F_x) * sqrt_clipped(xp2) * wp2 * sgn
+    F_spread = omf / mixt_frac - mixt_frac / omf
+    explicit_prefac = base * sqrt_clipped(F_x) * sqrt_clipped(xp2) * wp2 * sgn_wpxp
 
     # Calculate coef_wp2xp_implicit and term_wp2xp_explicit.
-    cwcx1 = cw1 * cx1
-    cwcx2 = cw2 * cx2
-    denom = mf * sqrt_clipped(cwcx1) + omf * sqrt_clipped(cwcx2)
+    cwcx1 = coef_sigma_w_1_sqd * coef_sigma_x_1_sqd
+    cwcx2 = coef_sigma_w_2_sqd * coef_sigma_x_2_sqd
+    denom = mixt_frac * sqrt_clipped(cwcx1) + omf * sqrt_clipped(cwcx2)
     # Factor involving coef_sigma_... coefficients
     coefs_factor = (sqrt_clipped(cwcx1) - sqrt_clipped(cwcx2)) / jnp.where(denom > 0.0, denom, 1.0)
 
     coef_full = base * 2.0 * sqrt_clipped(F_w) * swp2 * coefs_factor
-    term_full = explicit_prefac * (F_w * F_spread + (cw1 - cw2) - 2.0 * F_w * coefs_factor)
+    term_full = explicit_prefac * (F_w * F_spread + (coef_sigma_w_1_sqd - coef_sigma_w_2_sqd)
+                                   - 2.0 * F_w * coefs_factor)
 
     coef_red = base * sqrt_clipped(F_w) * swp2 * F_spread
-    term_red = explicit_prefac * (cw1 - cw2)
+    term_red = explicit_prefac * (coef_sigma_w_1_sqd - coef_sigma_w_2_sqd)
 
     # coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0
     # and coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0
@@ -734,20 +702,11 @@ def calc_coefs_wpxpyp_semiimpl(wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mi
     !
     ! There are also special cases for the above equations.
     """
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    yp2 = jnp.asarray(yp2, dtype=jnp.float64)
-    wpxp = jnp.asarray(wpxp, dtype=jnp.float64); wpyp = jnp.asarray(wpyp, dtype=jnp.float64)
-    sx = jnp.asarray(sgn_wpxp, dtype=jnp.float64); sy = jnp.asarray(sgn_wpyp, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    F_w = jnp.asarray(F_w, dtype=jnp.float64); F_x = jnp.asarray(F_x, dtype=jnp.float64); F_y = jnp.asarray(F_y, dtype=jnp.float64)
-    cw1 = jnp.asarray(coef_sigma_w_1_sqd, dtype=jnp.float64); cw2 = jnp.asarray(coef_sigma_w_2_sqd, dtype=jnp.float64)
-    cx1 = jnp.asarray(coef_sigma_x_1_sqd, dtype=jnp.float64); cx2 = jnp.asarray(coef_sigma_x_2_sqd, dtype=jnp.float64)
-    cy1 = jnp.asarray(coef_sigma_y_1_sqd, dtype=jnp.float64); cy2 = jnp.asarray(coef_sigma_y_2_sqd, dtype=jnp.float64)
-    omf = 1.0 - mf
+    omf = 1.0 - mixt_frac
 
     def _cfactor(p1, p2):
         s1, s2 = sqrt_clipped(p1), sqrt_clipped(p2)
-        denom = mf * s1 + omf * s2
+        denom = mixt_frac * s1 + omf * s2
         # When coef_sigma_*_1_sqd * coef_sigma_*_1_sqd = 0 and
         # coef_sigma_*_2_sqd * coef_sigma_*_2_sqd = 0, the value of
         # coefs_factor_* is undefined.  However, setting coefs_factor_* to a
@@ -756,17 +715,17 @@ def calc_coefs_wpxpyp_semiimpl(wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mi
         return jnp.where((p1 > 0.0) | (p2 > 0.0), (s1 - s2) / jnp.where(denom > 0.0, denom, 1.0), 0.0)
 
     # Calculate coefs_factor_wx.
-    factor_wx = _cfactor(cw1 * cx1, cw2 * cx2)
+    factor_wx = _cfactor(coef_sigma_w_1_sqd * coef_sigma_x_1_sqd, coef_sigma_w_2_sqd * coef_sigma_x_2_sqd)
     # Calculate coefs_factor_wy.
-    factor_wy = _cfactor(cw1 * cy1, cw2 * cy2)
+    factor_wy = _cfactor(coef_sigma_w_1_sqd * coef_sigma_y_1_sqd, coef_sigma_w_2_sqd * coef_sigma_y_2_sqd)
     # Calculate coefs_factor_xy.
-    factor_xy = _cfactor(cx1 * cy1, cx2 * cy2)
+    factor_xy = _cfactor(coef_sigma_x_1_sqd * coef_sigma_y_1_sqd, coef_sigma_x_2_sqd * coef_sigma_y_2_sqd)
 
-    base = sqrt_clipped(mf * omf)
+    base = sqrt_clipped(mixt_frac * omf)
     sFw_wp2 = sqrt_clipped(F_w) * sqrt_clipped(wp2)
-    Fx_xp2_sx = sqrt_clipped(F_x) * sqrt_clipped(xp2) * sx
-    Fy_yp2_sy = sqrt_clipped(F_y) * sqrt_clipped(yp2) * sy
-    spread = omf / mf - mf / omf
+    Fx_xp2_sx = sqrt_clipped(F_x) * sqrt_clipped(xp2) * sgn_wpxp
+    Fy_yp2_sy = sqrt_clipped(F_y) * sqrt_clipped(yp2) * sgn_wpyp
+    spread = omf / mixt_frac - mixt_frac / omf
 
     coef_A = base * sFw_wp2 * factor_xy
     term_A = (base * sFw_wp2 * Fx_xp2_sx * Fy_yp2_sy * (spread - factor_xy - factor_wy - factor_wx)
@@ -776,5 +735,5 @@ def calc_coefs_wpxpyp_semiimpl(wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mi
     term_B = base * Fx_xp2_sx * factor_wy * wpyp + base * Fy_yp2_sy * factor_wx * wpxp
 
     # Calculate coef_wpxpyp_implicit and term_wpxpyp_explicit.
-    cond_A = (cx1 * cy1 > 0.0) | (cx2 * cy2 > 0.0)
+    cond_A = (coef_sigma_x_1_sqd * coef_sigma_y_1_sqd > 0.0) | (coef_sigma_x_2_sqd * coef_sigma_y_2_sqd > 0.0)
     return jnp.where(cond_A, coef_A, coef_B), jnp.where(cond_A, term_A, term_B)

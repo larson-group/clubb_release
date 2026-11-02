@@ -21,10 +21,6 @@ Porting deviations:
 import numpy as np
 import sys
 
-
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 import jax.numpy as jnp
 from jax import lax
 
@@ -66,15 +62,6 @@ def precip_fraction(
     """
     del nzt, ngrdcol
 
-    hydromet = jnp.asarray(hydromet, dtype=jnp.float64)
-    cloud_frac = jnp.asarray(cloud_frac, dtype=jnp.float64)
-    cloud_frac_1 = jnp.asarray(cloud_frac_1, dtype=jnp.float64)
-    cloud_frac_2 = jnp.asarray(cloud_frac_2, dtype=jnp.float64)
-    ice_supersat_frac = jnp.asarray(ice_supersat_frac, dtype=jnp.float64)
-    ice_supersat_frac_1 = jnp.asarray(ice_supersat_frac_1, dtype=jnp.float64)
-    ice_supersat_frac_2 = jnp.asarray(ice_supersat_frac_2, dtype=jnp.float64)
-    mixt_frac = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    hydromet_tol = jnp.asarray(hydromet_tol, dtype=jnp.float64)
     l_mix_rat_hm = jnp.asarray(l_mix_rat_hm, dtype=bool)
     l_frozen_hm = jnp.asarray(l_frozen_hm, dtype=bool)
 
@@ -154,7 +141,6 @@ def precip_fraction(
         )
     elif precip_frac_calc_type == 2:
         # Specified method.
-        clubb_params = jnp.asarray(clubb_params, dtype=jnp.float64)
         if clubb_params.ndim == 1:
             upsilon_precip_frac_rat = clubb_params[iupsilon_precip_frac_rat]
         else:
@@ -357,16 +343,6 @@ def component_precip_frac_weighted(
         precip_frac_tol: Minimum precip. frac. when hydromet. are present [-]
     """
     del hydromet_dim
-
-    hydromet = jnp.asarray(hydromet, dtype=jnp.float64)
-    hydromet_tol = jnp.asarray(hydromet_tol, dtype=jnp.float64)
-    precip_frac = jnp.asarray(precip_frac, dtype=jnp.float64)
-    cloud_frac_1 = jnp.asarray(cloud_frac_1, dtype=jnp.float64)
-    cloud_frac_2 = jnp.asarray(cloud_frac_2, dtype=jnp.float64)
-    ice_supersat_frac_1 = jnp.asarray(ice_supersat_frac_1, dtype=jnp.float64)
-    ice_supersat_frac_2 = jnp.asarray(ice_supersat_frac_2, dtype=jnp.float64)
-    mixt_frac = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    precip_frac_tol = jnp.asarray(precip_frac_tol, dtype=jnp.float64)
 
     any_frozen_hm = jnp.any(jnp.asarray(l_frozen_hm, dtype=bool))
     one_minus_mixt_frac = 1.0 - mixt_frac
@@ -628,15 +604,8 @@ def component_precip_frac_specify(
     """
     del hydromet_dim
 
-    hydromet = jnp.asarray(hydromet, dtype=jnp.float64)
-    hydromet_tol = jnp.asarray(hydromet_tol, dtype=jnp.float64)
-    precip_frac = jnp.asarray(precip_frac, dtype=jnp.float64)
-    mixt_frac = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    precip_frac_tol = jnp.asarray(precip_frac_tol, dtype=jnp.float64)[:, None]
-    upsilon_precip_frac_rat = jnp.asarray(
-        upsilon_precip_frac_rat,
-        dtype=jnp.float64,
-    )
+    precip_frac_tol = jnp.asarray(precip_frac_tol)[:, None]
+    upsilon_precip_frac_rat = jnp.asarray(upsilon_precip_frac_rat)
 
     has_hydromet = jnp.any(hydromet >= hydromet_tol[None, None, :], axis=2)
     one_minus_mixt_frac = 1.0 - mixt_frac

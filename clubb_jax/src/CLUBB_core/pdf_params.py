@@ -167,10 +167,10 @@ class pdf_parameter(NamedTuple):
 
 def init_pdf_implicit_coefs_terms_api(nz: int, ngrdcol: int, sclr_dim: int) -> implicit_coefs_terms:
     """JAX equivalent of pdf_parameter_module.F90:init_pdf_implicit_coefs_terms_api."""
-    zero_2d = jnp.zeros((ngrdcol, nz), dtype=jnp.float64)
+    zero_2d = jnp.zeros((ngrdcol, nz))
 
     if sclr_dim > 0:
-        zero_3d = jnp.zeros((ngrdcol, nz, sclr_dim), dtype=jnp.float64)
+        zero_3d = jnp.zeros((ngrdcol, nz, sclr_dim))
         coef_wp2sclrp_implicit = zero_3d
         term_wp2sclrp_explicit = zero_3d
         coef_wpsclrp2_implicit = zero_3d
@@ -230,7 +230,7 @@ def zero_pdf_implicit_coefs_terms_api(coefs: implicit_coefs_terms) -> implicit_c
 
 def init_pdf_params(nz: int, ngrdcol: int) -> pdf_parameter:
     """JAX equivalent of pdf_parameter_module.F90:init_pdf_params."""
-    zero_2d = jnp.zeros((ngrdcol, nz), dtype=jnp.float64)
+    zero_2d = jnp.zeros((ngrdcol, nz))
     values = {
         field: zero_2d
         for field in pdf_parameter._fields
@@ -308,7 +308,7 @@ def pack_pdf_params_api(params: pdf_parameter, nz: int):
     """Pack the first column of a pdf_parameter into a ``(nz, 47)`` array."""
     slots = []
     for field in pdf_parameter._fields[2:]:
-        value = jnp.asarray(getattr(params, field), dtype=jnp.float64)
+        value = jnp.asarray(getattr(params, field))
         if value.ndim == 1:
             slots.append(value[:nz])
         else:
@@ -318,10 +318,9 @@ def pack_pdf_params_api(params: pdf_parameter, nz: int):
 
 def unpack_pdf_params_api(r_param_array, nz: int, template: pdf_parameter) -> pdf_parameter:
     """Unpack a ``(nz, 47)`` array into the first column of a pdf_parameter."""
-    r_param_array = jnp.asarray(r_param_array, dtype=jnp.float64)
     values = {}
     for idx, field in enumerate(pdf_parameter._fields[2:]):
-        arr = jnp.zeros((template.ngrdcol, nz), dtype=jnp.float64)
+        arr = jnp.zeros((template.ngrdcol, nz))
         arr = arr.at[0, :].set(r_param_array[:nz, idx])
         values[field] = arr
     return pdf_parameter(ngrdcol=template.ngrdcol, nz=nz, **values)

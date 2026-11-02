@@ -4,8 +4,6 @@
 # _ROOT first so `import clubb_jax` resolves to this checkout's package.
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.diagnose_correlations_module import calc_mean, calc_varnce, calc_w_corr, corr_array_assertion_checks
 

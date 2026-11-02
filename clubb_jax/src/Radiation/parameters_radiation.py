@@ -185,8 +185,8 @@ def initialize_radiation_parameters(cfg: dict, rad_scheme: str, case_setups_dir:
             forcings_path = next((p for p in candidates if p.is_dir()), candidates[0])
         lba_zrad, lba_krad = simple_rad_lba_init(forcings_path)
     else:
-        lba_zrad = jnp.zeros((33,), dtype=jnp.float64)
-        lba_krad = jnp.zeros((33, 36), dtype=jnp.float64)
+        lba_zrad = jnp.zeros((33,))
+        lba_krad = jnp.zeros((33, 36))
 
     return RadiationParameters(
         rad_scheme=rad_scheme,

@@ -35,8 +35,6 @@ from functools import partial
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.model_flags import l_upwind_Kh_dp_term
@@ -289,7 +287,7 @@ def diffusion_zt_lhs(
         # k = 1 (bottom level); lower boundary level
         super_upwind_bot = gd * min_drho[:, :1] * gr.invrs_dzm[:, 1:2]
         main_upwind_bot = -gd * min_drho[:, :1] * gr.invrs_dzm[:, 1:2]
-        sub_upwind_bot = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        sub_upwind_bot = jnp.zeros((ngrdcol, 1))
 
         # Most of the interior model; normal conditions.
         super_upwind_int = gd * min_drho[:, 1:-1] * gr.invrs_dzm[:, 2:-1]
@@ -301,7 +299,7 @@ def diffusion_zt_lhs(
 
         # k = nzt (top level); upper boundary level.
         # Only relevant if zero-flux boundary conditions are used.
-        super_upwind_top = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        super_upwind_top = jnp.zeros((ngrdcol, 1))
         main_upwind_top = gd * max_drho[:, -1:] * gr.invrs_dzm[:, nzm - 2:nzm - 1]
         sub_upwind_top = -gd * max_drho[:, -1:] * gr.invrs_dzm[:, nzm - 2:nzm - 1]
 
@@ -359,7 +357,7 @@ def diffusion_zt_lhs(
         )
         super_bot = -common_bot
         main_bot = common_bot
-        sub_bot = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        sub_bot = jnp.zeros((ngrdcol, 1))
 
         # Most of the interior model; normal conditions.
         scale_int = gr.invrs_dzt[:, 1:-1] * invrs_rho_ds_ztzxt[:, 1:-1]
@@ -387,7 +385,7 @@ def diffusion_zt_lhs(
             * rho_ds_zm[:, nzm - 2:nzm - 1]
             * gr.invrs_dzm[:, nzm - 2:nzm - 1]
         )
-        super_top = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        super_top = jnp.zeros((ngrdcol, 1))
         main_top = common_top
         sub_top = -common_top
 
@@ -643,7 +641,7 @@ def diffusion_zm_lhs(
         # k = 1 (bottom level); lower boundary level
         super_upwind_bot = gd * min_drho[:, :1] * gr.invrs_dzt[:, :1]
         main_upwind_bot = -gd * min_drho[:, :1] * gr.invrs_dzt[:, :1]
-        sub_upwind_bot = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        sub_upwind_bot = jnp.zeros((ngrdcol, 1))
 
         # Most of the interior model; normal conditions.
         super_upwind_int = gd * min_drho[:, 1:-1] * gr.invrs_dzt[:, 1:]
@@ -655,7 +653,7 @@ def diffusion_zm_lhs(
 
         # k = nzm (top level); upper boundary level.
         # Only relevant if zero-flux boundary conditions are used.
-        super_upwind_top = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        super_upwind_top = jnp.zeros((ngrdcol, 1))
         main_upwind_top = gd * max_drho[:, -1:] * gr.invrs_dzt[:, -1:]
         sub_upwind_top = -gd * max_drho[:, -1:] * gr.invrs_dzt[:, -1:]
 
@@ -713,7 +711,7 @@ def diffusion_zm_lhs(
         )
         super_bot = -common_bot
         main_bot = common_bot
-        sub_bot = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        sub_bot = jnp.zeros((ngrdcol, 1))
 
         # Most of the interior model; normal conditions.
         scale_int = gr.invrs_dzm[:, 1:-1] * invrs_rho_ds_zm[:, 1:-1]
@@ -739,7 +737,7 @@ def diffusion_zm_lhs(
             gr.invrs_dzm[:, -1:] * invrs_rho_ds_zm[:, -1:]
             * K_zt_nu[:, -1:] * rho_ds_zt[:, -1:] * gr.invrs_dzt[:, -1:]
         )
-        super_top = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        super_top = jnp.zeros((ngrdcol, 1))
         main_top = common_top
         sub_top = -common_top
 

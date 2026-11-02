@@ -14,9 +14,6 @@ Oracle-independent; never SKIPs. (iter 551)
 import math
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
     bivar_LL_mean, bivar_LL_mean_const_x1, bivar_LL_mean_const_all)
 

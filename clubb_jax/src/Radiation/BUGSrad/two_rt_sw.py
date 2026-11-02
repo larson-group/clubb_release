@@ -13,9 +13,6 @@ downward flux `fddir = μ0·slr·direct`.
 import jax.numpy as jnp
 import jax.lax as lax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 _EPS = 1.0e-02
 
 
@@ -23,10 +20,6 @@ def two_rt_sw(ib, slr, amu0, wc, asym, tau, asdir, asdif, mbs):
     """SW two-stream fluxes for 0-based band `ib` (0..mbs-1). `slr`/`amu0` = (ncol,) daylight
     fraction / cos(zenith); `wc`/`asym`/`tau` = (ncol, nlm); `asdir`/`asdif` = (ncol, mbs) direct/
     diffuse surface albedo. Returns (fudif, fddir, fddif), each (ncol, nlm+1)."""
-    slr = jnp.asarray(slr, dtype=jnp.float64); amu0 = jnp.asarray(amu0, dtype=jnp.float64)
-    wc = jnp.asarray(wc, dtype=jnp.float64); asym = jnp.asarray(asym, dtype=jnp.float64)
-    tau = jnp.asarray(tau, dtype=jnp.float64)
-    asdir = jnp.asarray(asdir, dtype=jnp.float64); asdif = jnp.asarray(asdif, dtype=jnp.float64)
     ncol, nlm = wc.shape
     mu0 = amu0[:, None]                                 # (ncol, 1)
     inv_mu0 = 1.0 / mu0

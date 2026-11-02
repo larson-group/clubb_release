@@ -36,17 +36,15 @@ See clubb_jax/auto_llm_generated_tests/pytests/unit_tests/test_pdf_utilities.py.
 """
 import jax.numpy as jnp
 
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
-
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 
 # constants_clubb.F90 (pdf_utilities.F90 `use constants_clubb`)
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     max_mag_correlation as MAX_MAG_CORRELATION,
     chi_tol as _CHI_TOL, eta_tol as _ETA_TOL, rt_tol as _RT_TOL, thl_tol as _THL_TOL,
 )
-_TINY = jnp.finfo(jnp.float64).tiny  # Fortran tiny(mu_x) for double precision
+_TINY = jnp.finfo(core_rknd).tiny  # Fortran tiny(mu_x)
 _MIN_MAX_SMTH_MAG = 1.0e-9           # constants_clubb.F90 min_max_smth_mag
 _EPS = 1.0e-10                       # constants_clubb.F90 eps = max(1e-10, epsilon)
 
@@ -63,8 +61,6 @@ def mean_L2N(mu_x, sigma2_on_mu2):
        Marcel Dekker, 401 pp.
      -- App. B.
     """
-    mu_x = jnp.asarray(mu_x, dtype=jnp.float64)
-    sigma2_on_mu2 = jnp.asarray(sigma2_on_mu2, dtype=jnp.float64)
     # Find the mean of ln x for the ith component of the PDF.
     # The max( mu_x / sqrt( 1 + sigma_x^2 / mu_x^2 ), tiny( mu_x ) ) statement
     # is used to prevent taking ln 0, which will produce a result of -infinity.
@@ -85,7 +81,6 @@ def stdev_L2N(sigma2_on_mu2):
        Marcel Dekker, 401 pp.
      -- App. B.
     """
-    sigma2_on_mu2 = jnp.asarray(sigma2_on_mu2, dtype=jnp.float64)
     # Find the standard deviation of ln x for the ith component of the PDF.
     return jnp.sqrt(jnp.log(1.0 + sigma2_on_mu2))
 
@@ -103,9 +98,6 @@ def corr_NL2NN(corr_x_y, sigma_y_n, y_sigma2_on_mu2):
        Marcel Dekker, 401 pp.
      -- Eq. B-1.
     """
-    corr_x_y = jnp.asarray(corr_x_y, dtype=jnp.float64)
-    sigma_y_n = jnp.asarray(sigma_y_n, dtype=jnp.float64)
-    y_sigma2_on_mu2 = jnp.asarray(y_sigma2_on_mu2, dtype=jnp.float64)
     # Find the correlation of x and ln y for the ith component of the PDF.
     # When sigma_y = 0 and mu_y > 0, y_sigma2_on_mu2 = 0.  This results in
     # sigma_y_n = 0.  The resulting corr_x_y_n is undefined.  However, the
@@ -134,11 +126,6 @@ def corr_LL2NN(corr_x_y, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu2)
        Marcel Dekker, 401 pp.
      -- Eq. C-3.
     """
-    corr_x_y = jnp.asarray(corr_x_y, dtype=jnp.float64)
-    sigma_x_n = jnp.asarray(sigma_x_n, dtype=jnp.float64)
-    sigma_y_n = jnp.asarray(sigma_y_n, dtype=jnp.float64)
-    x_sigma2_on_mu2 = jnp.asarray(x_sigma2_on_mu2, dtype=jnp.float64)
-    y_sigma2_on_mu2 = jnp.asarray(y_sigma2_on_mu2, dtype=jnp.float64)
     # Find the correlation of ln x and ln y for the ith component of the PDF.
     # If sigma_x_n = 0 or sigma_y_n = 0, the value of corr_x_y_n is undefined,
     # so set it to corr_x_y.
@@ -163,9 +150,6 @@ def corr_NN2NL(corr_x_y_n, sigma_y_n, y_sigma2_on_mu2):
        Marcel Dekker, 401 pp.
      -- Eq. B-1.
     """
-    corr_x_y_n = jnp.asarray(corr_x_y_n, dtype=jnp.float64)
-    sigma_y_n = jnp.asarray(sigma_y_n, dtype=jnp.float64)
-    y_sigma2_on_mu2 = jnp.asarray(y_sigma2_on_mu2, dtype=jnp.float64)
     # Find the correlation of x and y for the ith component of the PDF.
     corr = jnp.where(sigma_y_n > 0.0,
                      corr_x_y_n * sigma_y_n / jnp.sqrt(jnp.maximum(y_sigma2_on_mu2, _TINY)),
@@ -179,11 +163,6 @@ def corr_NN2LL(corr_x_y_n, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu
 
     Inverse of corr_LL2NN: corr_x_y = (exp(sigma_x_n sigma_y_n corr_x_y_n) - 1)
     / sqrt(x_sigma2_on_mu2 y_sigma2_on_mu2) if both sigma_n>0, else corr_x_y_n; clipped."""
-    corr_x_y_n = jnp.asarray(corr_x_y_n, dtype=jnp.float64)
-    sigma_x_n = jnp.asarray(sigma_x_n, dtype=jnp.float64)
-    sigma_y_n = jnp.asarray(sigma_y_n, dtype=jnp.float64)
-    x_sigma2_on_mu2 = jnp.asarray(x_sigma2_on_mu2, dtype=jnp.float64)
-    y_sigma2_on_mu2 = jnp.asarray(y_sigma2_on_mu2, dtype=jnp.float64)
     both_pos = (sigma_x_n > 0.0) & (sigma_y_n > 0.0)
     denom = jnp.where(both_pos, jnp.sqrt(x_sigma2_on_mu2 * y_sigma2_on_mu2), 1.0)
     corr = jnp.where(both_pos,
@@ -199,7 +178,6 @@ def calc_corr_chi_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_chi_i,
 
     corr_chi_x = crt (sigma_rt/sigma_chi) corr_rt_x - cthl (sigma_thl/sigma_chi) corr_thl_x
     when sigma_chi > chi_tol, else 0; clipped to +/- max_mag_correlation."""
-    sigma_chi_i = jnp.asarray(sigma_chi_i, dtype=jnp.float64)
     sig_safe = jnp.where(sigma_chi_i > _CHI_TOL, sigma_chi_i, 1.0)
     corr = jnp.where(
         sigma_chi_i > _CHI_TOL,
@@ -216,7 +194,6 @@ def calc_corr_eta_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_eta_i,
     eta' = crt·rt' + cthl·thl' (note the + on cthl, vs - for chi), so
     corr_eta_x = crt (sigma_rt/sigma_eta) corr_rt_x + cthl (sigma_thl/sigma_eta) corr_thl_x
     when sigma_eta > eta_tol (= chi_tol), else 0; clipped to +/- max_mag_correlation."""
-    sigma_eta_i = jnp.asarray(sigma_eta_i, dtype=jnp.float64)
     sig_safe = jnp.where(sigma_eta_i > _ETA_TOL, sigma_eta_i, 1.0)
     corr = jnp.where(
         sigma_eta_i > _ETA_TOL,
@@ -244,13 +221,9 @@ def compute_variance_binormal(xm, mu_x_1, mu_x_2, stdev_x_1, stdev_x_2, mixt_fra
     xp2 = mixt_frac * ( ( mu_x_1 - xm )^2 + stdev_x_1^2 )
           + ( 1 - mixt_frac ) * ( ( mu_x_2 - xm )^2 + stdev_x_2^2 )
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64)
-    mu_x_1 = jnp.asarray(mu_x_1, dtype=jnp.float64); mu_x_2 = jnp.asarray(mu_x_2, dtype=jnp.float64)
-    stdev_x_1 = jnp.asarray(stdev_x_1, dtype=jnp.float64); stdev_x_2 = jnp.asarray(stdev_x_2, dtype=jnp.float64)
-    a = jnp.asarray(mixt_frac, dtype=jnp.float64)
     # Calculate the overall variance of x.
-    return (a * ((mu_x_1 - xm) ** 2 + stdev_x_1 ** 2)
-            + (1.0 - a) * ((mu_x_2 - xm) ** 2 + stdev_x_2 ** 2))
+    return (mixt_frac * ((mu_x_1 - xm) ** 2 + stdev_x_1 ** 2)
+            + (1.0 - mixt_frac) * ((mu_x_2 - xm) ** 2 + stdev_x_2 ** 2))
 
 
 def calc_corr_rt_x(crt_i, sigma_rt_i, sigma_chi_i, sigma_eta_i,
@@ -259,7 +232,6 @@ def calc_corr_rt_x(crt_i, sigma_rt_i, sigma_chi_i, sigma_eta_i,
 
     Inverts the chi/eta decomposition: corr_rt_x = (sigma_eta corr_eta_x + sigma_chi corr_chi_x)
     / (2 crt sigma_rt) when sigma_rt > rt_tol, else 0; clipped."""
-    sigma_rt_i = jnp.asarray(sigma_rt_i, dtype=jnp.float64)
     sig_safe = jnp.where(sigma_rt_i > _RT_TOL, sigma_rt_i, 1.0)
     corr = jnp.where(
         sigma_rt_i > _RT_TOL,
@@ -274,7 +246,6 @@ def calc_corr_thl_x(cthl_i, sigma_thl_i, sigma_chi_i, sigma_eta_i,
 
     corr_thl_x = (sigma_eta corr_eta_x - sigma_chi corr_chi_x) / (2 cthl sigma_thl)
     when sigma_thl > thl_tol, else 0; clipped."""
-    sigma_thl_i = jnp.asarray(sigma_thl_i, dtype=jnp.float64)
     sig_safe = jnp.where(sigma_thl_i > _THL_TOL, sigma_thl_i, 1.0)
     corr = jnp.where(
         sigma_thl_i > _THL_TOL,
@@ -290,16 +261,14 @@ def smooth_corr_quotient(numerator, denominator, denom_thresh):
     denominator is first raised to at least |num|/max_mag_correlation and then
     to at least denom_thresh.
     """
-    num = jnp.asarray(numerator, dtype=jnp.float64)
-    den = jnp.asarray(denominator, dtype=jnp.float64)
     coef = jnp.minimum(_MIN_MAX_SMTH_MAG, denom_thresh)
 
     def _smax(a, b):
         return 0.5 * ((a + b) + jnp.sqrt((a - b) ** 2 + coef ** 2))
 
-    tmp = _smax(jnp.abs(num) / MAX_MAG_CORRELATION, den)
+    tmp = _smax(jnp.abs(numerator) / MAX_MAG_CORRELATION, denominator)
     tmp = _smax(tmp, denom_thresh)
-    return num / tmp
+    return numerator / tmp
 
 
 def calc_comp_corrs_binormal(xpyp, xm, ym, mu_x_1, mu_x_2, mu_y_1, mu_y_2,
@@ -307,19 +276,12 @@ def calc_comp_corrs_binormal(xpyp, xm, ym, mu_x_1, mu_x_2, mu_y_1, mu_y_2,
     """Diagnoses PDF-component correlations of x and y from their overall
     covariance, component means, component variances, and mixture fraction.
     """
-    xpyp = jnp.asarray(xpyp, dtype=jnp.float64); xm = jnp.asarray(xm, dtype=jnp.float64)
-    ym = jnp.asarray(ym, dtype=jnp.float64)
-    mu_x_1 = jnp.asarray(mu_x_1, dtype=jnp.float64); mu_x_2 = jnp.asarray(mu_x_2, dtype=jnp.float64)
-    mu_y_1 = jnp.asarray(mu_y_1, dtype=jnp.float64); mu_y_2 = jnp.asarray(mu_y_2, dtype=jnp.float64)
-    sx1 = jnp.asarray(sigma_x_1_sqd, dtype=jnp.float64); sx2 = jnp.asarray(sigma_x_2_sqd, dtype=jnp.float64)
-    sy1 = jnp.asarray(sigma_y_1_sqd, dtype=jnp.float64); sy2 = jnp.asarray(sigma_y_2_sqd, dtype=jnp.float64)
-    a = jnp.asarray(mixt_frac, dtype=jnp.float64)
-
     # Calculate the numerator of the component correlation equation.
-    numerator = (xpyp - a * (mu_x_1 - xm) * (mu_y_1 - ym)
-                 - (1.0 - a) * (mu_x_2 - xm) * (mu_y_2 - ym))
+    numerator = (xpyp - mixt_frac * (mu_x_1 - xm) * (mu_y_1 - ym)
+                 - (1.0 - mixt_frac) * (mu_x_2 - xm) * (mu_y_2 - ym))
     # Calculate the denominator of the component correlation equation.
-    denominator = a * sqrt_clipped(sx1 * sy1) + (1.0 - a) * sqrt_clipped(sx2 * sy2)
+    denominator = (mixt_frac * sqrt_clipped(sigma_x_1_sqd * sigma_y_1_sqd)
+                   + (1.0 - mixt_frac) * sqrt_clipped(sigma_x_2_sqd * sigma_y_2_sqd))
     # Calculate corr_x_y_1 and corr_x_y_2.
     corr = smooth_corr_quotient(numerator, denominator, _EPS)
     return corr, corr

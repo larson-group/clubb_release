@@ -18,9 +18,6 @@ import sys
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 _EPS = 1.0e-10   # constants_clubb.F90 eps
 
 
@@ -188,9 +185,7 @@ def linear_interp_factor(factor, var_high, var_low):
 
 def lin_interp_between_grids(interpolate_altitudes, current_altitudes, current_values):
     """Interpolates from the values (gr_current_values) on the current grid (gr_current) to the gr_interpolate grid."""
-    interpolate_altitudes = jnp.asarray(interpolate_altitudes, dtype=jnp.float64)
-    current_altitudes = jnp.asarray(current_altitudes, dtype=jnp.float64)
-    current_values = jnp.asarray(current_values, dtype=jnp.float64)
+    current_values = jnp.asarray(current_values)
 
     # --------------------- Begin Code ---------------------
     tol = 1.0e-6
@@ -238,9 +233,6 @@ def zlinterp_fnc(grid_out, grid_src, var_src):
     References:
       function LIN_INT from WRF-HOC
     """
-    grid_out = jnp.asarray(grid_out, dtype=jnp.float64)
-    grid_src = jnp.asarray(grid_src, dtype=jnp.float64)
-    var_src = jnp.asarray(var_src, dtype=jnp.float64)
     # ---- Begin Code ----
     return jnp.interp(grid_out, grid_src, var_src, left=0.0, right=0.0)
 
@@ -256,7 +248,5 @@ def plinterp_fnc(grid_out, grid_src, var_src):
     References:
       function LIN_INT from WRF-HOC
     """
-    grid_out = jnp.asarray(grid_out, dtype=jnp.float64)
-    grid_src = jnp.asarray(grid_src, dtype=jnp.float64)
     # ---- Begin Code ----
     return zlinterp_fnc(-grid_out, -grid_src, var_src)

@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import calc_corr_norm_and_cholesky_factor
 from clubb_jax.src.CLUBB_core.constants_clubb import rc_tol

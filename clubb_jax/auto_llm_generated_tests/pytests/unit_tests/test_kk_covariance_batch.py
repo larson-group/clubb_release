@@ -9,8 +9,6 @@ import pytest
 
 from clubb_jax.src.Microphys.KK_microphys import KK_upscaled_covariances as kk
 
-jax.config.update("jax_enable_x64", True)
-
 
 @pytest.fixture(autouse=True)
 def release_compilations():

@@ -20,9 +20,6 @@ directly). Oracle-independent; never SKIPs. (iter 549)
 """
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_means import bivar_NL_mean_eq, CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
     bivar_NL_mean, bivar_NL_mean_const_x1, bivar_NL_mean_const_x2, bivar_NL_mean_const_all)

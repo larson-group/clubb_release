@@ -403,8 +403,10 @@ def init_clubb_case(namelist_path: str) -> dict:
         raise ValueError('JAX restart does not yet support runtime batching')
     nzmax = cfg['nzmax']
     grid_type = cfg['grid_type']
-    dt_main = cfg['dt_main']
-    dt_rad = cfg['dt_rad']
+    # Fortran declares model times as real(time_precision). Python floats are
+    # double precision regardless of the JAX precision setting.
+    dt_main = float(cfg['dt_main'])
+    dt_rad = float(cfg['dt_rad'])
     runtype = cfg['runtype']
     sclr_dim = cfg['sclr_dim']
     edsclr_dim = cfg['edsclr_dim']
@@ -826,8 +828,8 @@ def init_clubb_case(namelist_path: str) -> dict:
         sfc_data = read_surface(str(sfc_path))
 
     # ── 12. Time controls ───────────────────────────────────────────────
-    time_initial = cfg['time_initial']
-    time_final = cfg['time_final']
+    time_initial = float(cfg['time_initial'])
+    time_final = float(cfg['time_final'])
     ifinal = int(math.floor((time_final - time_initial) / dt_main))
     iinit = 1
     if bool(cfg.get('l_restart', False)):
@@ -884,11 +886,11 @@ def init_clubb_case(namelist_path: str) -> dict:
             zm=np.asarray(gr.zm[0, :]),
             stats_tsamp=float(cfg['stats_tsamp']),
             stats_tout=float(cfg['stats_tout']),
-            dt_main=float(dt_main),
+            dt_main=dt_main,
             day=int(cfg['day']),
             month=int(cfg['month']),
             year=int(cfg['year']),
-            time_initial=float(time_initial),
+            time_initial=time_initial,
             stats_tstart=float(cfg.get('stats_tstart', time_initial)),
             stats_tend=float(cfg.get('stats_tend', time_final)),
             ncol_total=total_param_sets,

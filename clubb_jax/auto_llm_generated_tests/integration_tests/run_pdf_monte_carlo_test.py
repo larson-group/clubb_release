@@ -14,8 +14,6 @@ if __name__ == "__main__":
     ensure_environment()
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_all_MM import (
     trivar_NNL_MM, trivar_NNL_MM_const_x1, trivar_NNL_MM_const_x2, trivar_NNL_MM_const_x1x2,
     quadrivar_NNLL_MM, quadrivar_NNLL_MM_const_x1, quadrivar_NNLL_MM_const_x2,

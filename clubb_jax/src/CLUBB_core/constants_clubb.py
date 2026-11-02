@@ -17,7 +17,7 @@ Porting deviations:
 
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.clubb_precision import USE_X64
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 
 
 # -----------------------------------------------------------------------------
@@ -178,8 +178,7 @@ rho_lw = 1000.0  # Density of liquid water [kg/m^3]
 
 rho_ice = 917.0  # Density of ice [kg/m^3]
 
-_core_float = np.float64 if USE_X64 else np.float32
-_core_epsilon = np.finfo(_core_float).eps
+_core_epsilon = np.finfo(core_rknd).eps
 
 # Tolerances below which we consider moments to be zero
 w_tol = 2.0e-2                         # [m/s]

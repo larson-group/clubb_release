@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.diagnose_correlations_module import setup_corr_cholesky_mtx, cholesky_to_corr_mtx_approx
 

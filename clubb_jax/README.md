@@ -80,6 +80,24 @@ more permissive, so use it only when a partial run is sufficient:
   -stats multi_col_stats -debug 0 -max_iters 120 arm
 ```
 
+### Precision
+
+CLUBB JAX runs in double precision by default, which is the precision the
+comparisons with Fortran use. Set `CLUBB_JAX_PRECISION=single` to run in single
+precision instead, for example to reduce memory use or to try faster GPU runs:
+
+```bash
+CLUBB_JAX_PRECISION=single ./run_scripts/run_scm.py -jax -debug 0 bomex
+```
+
+Single precision computes almost everything in float32, including parts that
+the Fortran keeps in double precision in every build, so it does not reproduce
+a single-precision Fortran build. On bomex its results differ from double
+precision by about as much as the single-precision Fortran build does, but
+cases with KK microphysics, such as `dycoms2_rf02_do`, currently fail with
+NaNs. [`clubb_precision.py`](src/CLUBB_core/clubb_precision.py) describes
+which code keeps a fixed precision.
+
 ### Reusable case processes
 
 [`clubb_case_runner`](../utilities/README.md#reusable-case-runners) keeps the

@@ -39,9 +39,6 @@ import jax
 import sys
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 
 def calc_L_x_Skx_fnc(Skx, sgn_wpxp, small_l_x_1, small_l_x_2):
     """Calculates the values of big_L_x_1 and big_L_x_2 as functions of Skx.
@@ -60,15 +57,11 @@ def calc_L_x_Skx_fnc(Skx, sgn_wpxp, small_l_x_1, small_l_x_2):
     ! L_x_1 = l_x_2 * abs( Skx ) / sqrt( 4 + Skx^2 ); and
     ! L_x_2 = l_x_1 * abs( Skx ) / sqrt( 4 + Skx^2 ).
     """
-    Skx = jnp.asarray(Skx, dtype=jnp.float64)
-    sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    l1 = jnp.asarray(small_l_x_1, dtype=jnp.float64)
-    l2 = jnp.asarray(small_l_x_2, dtype=jnp.float64)
 
     factor = jnp.abs(Skx) / jnp.sqrt(4.0 + Skx ** 2)
-    cond = Skx * sgn >= 0.0
-    big_L_x_1 = jnp.where(cond, l1, l2) * factor
-    big_L_x_2 = jnp.where(cond, l2, l1) * factor
+    cond = Skx * sgn_wpxp >= 0.0
+    big_L_x_1 = jnp.where(cond, small_l_x_1, small_l_x_2) * factor
+    big_L_x_2 = jnp.where(cond, small_l_x_2, small_l_x_1) * factor
     return big_L_x_1, big_L_x_2
 
 
@@ -83,18 +76,15 @@ def calc_setter_parameters(xm, xp2, Skx, sgn_wpxp, big_L_x_1, big_L_x_2):
     """Calculates the PDF component means, the PDF component standard deviations,
     and the mixture fraction for the variable that sets the PDF.
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    Skx = jnp.asarray(Skx, dtype=jnp.float64); sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    L1 = jnp.asarray(big_L_x_1, dtype=jnp.float64); L2 = jnp.asarray(big_L_x_2, dtype=jnp.float64)
 
     # Calculate the factors in the PDF component mean equations.
-    t = Skx * sgn / jnp.sqrt(4.0 + Skx ** 2)
+    t = Skx * sgn_wpxp / jnp.sqrt(4.0 + Skx ** 2)
     factor_plus = 1.0 + t
     factor_minus = 1.0 - t
     # Calculate the normalized mean of x in the 1st PDF component.
-    mu1n = L1 * jnp.sqrt(factor_plus / factor_minus) * sgn
+    mu1n = big_L_x_1 * jnp.sqrt(factor_plus / factor_minus) * sgn_wpxp
     # Calculate the normalized mean of x in the 2nd PDF component.
-    mu2n = -L2 * jnp.sqrt(factor_minus / factor_plus) * sgn
+    mu2n = -big_L_x_2 * jnp.sqrt(factor_minus / factor_plus) * sgn_wpxp
     sqrt_xp2 = sqrt_clipped(xp2)
     # Calculate the mean of x in the 1st PDF component.
     mu_x_1 = xm + mu1n * sqrt_xp2
@@ -131,16 +121,13 @@ def calc_respnder_parameters(xm, xp2, Skx, sgn_wpxp, mixt_frac, big_L_x_1):
     Calculates the PDF component means, the PDF component standard deviations,
     and the mixture fraction for the variable that sets the PDF.
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64); xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    Skx = jnp.asarray(Skx, dtype=jnp.float64); sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    mf = jnp.asarray(mixt_frac, dtype=jnp.float64); L1 = jnp.asarray(big_L_x_1, dtype=jnp.float64)
 
     # Calculate the factors in the PDF component mean equations.
-    t = Skx * sgn / jnp.sqrt(4.0 + Skx ** 2)
+    t = Skx * sgn_wpxp / jnp.sqrt(4.0 + Skx ** 2)
     # Calculate the normalized mean of x in the 1st PDF component.
-    mu1n = L1 * jnp.sqrt((1.0 + t) / (1.0 - t)) * sgn
+    mu1n = big_L_x_1 * jnp.sqrt((1.0 + t) / (1.0 - t)) * sgn_wpxp
     # Calculate the normalized mean of x in the 2nd PDF component.
-    mu2n = -(mf / (1.0 - mf)) * mu1n
+    mu2n = -(mixt_frac / (1.0 - mixt_frac)) * mu1n
     sqrt_xp2 = sqrt_clipped(xp2)
     # Calculate the mean of x in the 1st PDF component.
     mu_x_1 = xm + mu1n * sqrt_xp2
@@ -151,12 +138,12 @@ def calc_respnder_parameters(xm, xp2, Skx, sgn_wpxp, mixt_frac, big_L_x_1):
     # term in the PDF component variance equations in order to prevent a
     # divide-by-zero error.
     mu1n_thresh = jnp.where(mu1n >= 0.0, jnp.maximum(mu1n, _EPS), jnp.minimum(mu1n, -_EPS))
-    common = Skx / (3.0 * mf * mu1n_thresh) - mu1n ** 2 / 3.0 + mu2n ** 2 / 3.0
-    base = 1.0 - mf * mu1n ** 2 - (1.0 - mf) * mu2n ** 2
+    common = Skx / (3.0 * mixt_frac * mu1n_thresh) - mu1n ** 2 / 3.0 + mu2n ** 2 / 3.0
+    base = 1.0 - mixt_frac * mu1n ** 2 - (1.0 - mixt_frac) * mu2n ** 2
     # Calculate the variance of x in the 1st PDF component.
-    coef1 = base + (1.0 - mf) * common
+    coef1 = base + (1.0 - mixt_frac) * common
     # Calculate the variance of x in the 2nd PDF component.
-    coef2 = base - mf * common
+    coef2 = base - mixt_frac * common
     return mu_x_1, mu_x_2, coef1 * xp2, coef2 * xp2, coef1, coef2
 
 
@@ -167,9 +154,6 @@ def tsdadg_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, 
     the PDF.  However, here, the variable with the greatest magnitude of
     skewness is used to set the PDF.
     """
-    Skw = jnp.asarray(Skw, dtype=jnp.float64); Skrt = jnp.asarray(Skrt, dtype=jnp.float64)
-    Skthl = jnp.asarray(Skthl, dtype=jnp.float64)
-    wprtp = jnp.asarray(wprtp, dtype=jnp.float64); wpthlp = jnp.asarray(wpthlp, dtype=jnp.float64)
 
     # Calculate sgn( <w'rt'> ).
     sgn_wprtp = jnp.where(wprtp >= 0.0, 1.0, -1.0)

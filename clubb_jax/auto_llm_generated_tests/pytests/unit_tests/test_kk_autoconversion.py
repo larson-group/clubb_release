@@ -18,8 +18,6 @@ Run from the repo root: bash human_reviewed_tests/run_pytests.sh -jax -k test_kk
 import numpy as np
 import jax
 
-jax.config.update("jax_enable_x64", True)
-
 
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import (
     bivar_NL_mean,

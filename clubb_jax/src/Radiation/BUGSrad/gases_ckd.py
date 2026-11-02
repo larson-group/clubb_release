@@ -11,9 +11,6 @@ coefficient tables (hk*, c*h2o, c10ch4, …) are a separate (table-transcription
 """
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 from clubb_jax.src.Radiation.BUGSrad.bugsrad_physconst import (
     MOLAR_VOLUME, GRAVITY, MW_H2O, MW_O3, MW_DRY_AIR)
 
@@ -25,7 +22,7 @@ def pscale(ppl, stanp):
     """Bracket each layer pressure `ppl` (ncol, nlm) in the ascending standard-pressure grid `stanp`
     (n,). Returns (pkd, ip1, ip2): the linear weight and the 0-based bracketing indices (faithful to
     pscale's 3-case logic: below stanp[0] → ip1=ip2=0; ≥ stanp[-1] → top bracket; else interior)."""
-    ppl = jnp.asarray(ppl, dtype=jnp.float64); stanp = jnp.asarray(stanp, dtype=jnp.float64)
+    stanp = jnp.asarray(stanp)
     n = stanp.shape[0]
     j = jnp.clip(jnp.searchsorted(stanp, ppl, side='right') - 1, 0, n - 2)   # interior lower bracket
     below = ppl < stanp[0]
@@ -39,8 +36,7 @@ def pscale(ppl, stanp):
 
 
 def _qk_core(coefk, tt, pkd, ip1, ip2, t0, ylo, yhi, yhi_set):
-    coefk = jnp.asarray(coefk, dtype=jnp.float64)         # (3, n)
-    tt = jnp.asarray(tt, dtype=jnp.float64); pkd = jnp.asarray(pkd, dtype=jnp.float64)
+    coefk = jnp.asarray(coefk)         # (3, n)
     y1 = tt - t0
     y1 = jnp.where(y1 < ylo, ylo, y1)
     y1 = jnp.where(y1 > yhi, yhi_set, y1)                 # qkio3: >75 sets 70 (asymmetric, faithful)

@@ -110,41 +110,22 @@ def gh1(x):
 
 @partial(jax.jit)
 def fm1(x):
-    # The source converts through default real inside alog. Preserve that
-    # precision boundary explicitly before returning to the core dtype.
-    core_dtype = jnp.result_type(x)
-    x_real = jnp.asarray(x, dtype=jnp.float32)
-    x_squared_real = jnp.asarray(x * x, dtype=jnp.float32)
-    # XLA's float32 log may differ from host ALOG by one ulp. Evaluate in
-    # float64, then explicitly round through the source's default real.
-    log_one = jnp.log(
-        ((1.0 + x_real) / 2.0).astype(jnp.float64)
-    ).astype(jnp.float32).astype(core_dtype)
-    log_two = jnp.log(
-        ((1.0 + x_squared_real) / 2.0).astype(jnp.float64)
-    ).astype(jnp.float32).astype(core_dtype)
-    pii = jnp.arccos(jnp.asarray(-1.0, dtype=core_dtype)) / 2.0
-    return 2.0 * log_one + log_two - 2.0 * jnp.arctan(x) + pii
+    pii = jnp.arccos(-1.0) / 2.0
+    return (
+        2.0 * jnp.log((1.0 + x) / 2.0)
+        + jnp.log((1.0 + x * x) / 2.0) - 2.0 * jnp.arctan(x) + pii
+    )
 
 
 @partial(jax.jit)
 def fh1(x):
-    # The source converts through default real inside alog. Preserve that
-    # precision boundary explicitly before returning to the core dtype.
-    core_dtype = jnp.result_type(x)
-    x_real = jnp.asarray(x, dtype=jnp.float32)
-    log_arg = (1.0 + jnp.float32(0.74) * x_real) / 2.0
-    return 2.0 * jnp.log(log_arg.astype(jnp.float64)).astype(jnp.float32).astype(core_dtype)
+    return 2.0 * jnp.log((1.0 + 0.74 * x) / 2.0)
 
 
 @partial(jax.jit)
 def landflx(th, ts, qh, qs, uh, vh, h, z0):
     """landflx.F90 from SAM 6.7.5."""
-    core_dtype = jnp.result_type(th, ts, qh, qs, uh, vh, h, z0)
-    zody_arg = (
-        jnp.asarray(h, dtype=jnp.float32) / jnp.asarray(z0, dtype=jnp.float32)
-    )
-    zody = jnp.log(zody_arg.astype(jnp.float64)).astype(jnp.float32).astype(core_dtype)
+    zody = jnp.log(h / z0)
 
     vel = jnp.sqrt(jnp.maximum(0.5, uh ** 2 + vh ** 2))
     r = (
@@ -157,7 +138,7 @@ def landflx(th, ts, qh, qs, uh, vh, h, z0):
     # TODO(port-mirror): lax.cond requires callable branches; these two local
     # functions preserve the source r < 0 branch without becoming module APIs.
     def unstable_branch(_):
-        xsi = jnp.asarray(0.0, dtype=core_dtype)
+        xsi = 0.0
 
         xm = gm1(xsi)
         xh = gh1(xsi)
@@ -187,10 +168,7 @@ def landflx(th, ts, qh, qs, uh, vh, h, z0):
         d = jnp.sqrt(b * b - 4.0 * a * c)
         xsi1 = (-b + d) / a / 2.0
         xsi2 = (-b - d) / a / 2.0
-        xsi = jnp.maximum(
-            jnp.asarray(xsi1, dtype=jnp.float32),
-            jnp.asarray(xsi2, dtype=jnp.float32),
-        ).astype(core_dtype)
+        xsi = jnp.maximum(xsi1, xsi2)
         fm = zody + 4.8 * xsi
         fh = zody + 7.8 * xsi
         return xsi, fm, fh
@@ -212,11 +190,7 @@ def landflx(th, ts, qh, qs, uh, vh, h, z0):
     )
     xlmo = h / xsi
     #------ Modification of GABLS3_night
-    surface_log_arg = jnp.asarray(h, dtype=jnp.float32) / jnp.float32(0.25)
-    surface_log = jnp.log(
-        surface_log_arg.astype(jnp.float64)
-    ).astype(jnp.float32).astype(core_dtype)
-    denominator = surface_log - psi_h(h, xlmo) + psi_h(0.25, xlmo)
+    denominator = jnp.log(h / 0.25) - psi_h(h, xlmo) + psi_h(0.25, xlmo)
     shf = 0.4 * ustar * (ts - th) / denominator
     lhf = 0.4 * ustar * (qs - qh) / denominator
     #-----------------------------

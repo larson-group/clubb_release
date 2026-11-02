@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.adg1_adg2_3d_luhar_pdf import ADG1_ADG2_responder_params, zero_threshold

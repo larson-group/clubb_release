@@ -19,7 +19,6 @@ Pure-Python (the F90 formulas are the oracle), so it never SKIPs. (iter 508)
 import numpy as np
 import jax
 import jax.numpy as jnp
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Benchmark_cases import time_dependent_input
 from clubb_jax.src.Benchmark_cases.sfc_flux import (

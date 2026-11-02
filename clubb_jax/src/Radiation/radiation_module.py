@@ -17,7 +17,6 @@ import sys
 import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp
 from clubb_jax.src.CLUBB_core.grid_class import ddzm
 from clubb_jax.src.Radiation.cos_solar_zen_module import cos_solar_zen
@@ -28,8 +27,6 @@ from clubb_jax.src.Radiation.simple_rad_module import (
     simple_rad_lba,
 )
 from clubb_jax.src.Radiation.soil_vegetation import advance_soil_veg
-
-configure_jax_precision()
 
 
 @partial(

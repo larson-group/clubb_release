@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.pdf_utilities import calc_comp_corrs_binormal, smooth_corr_quotient
 

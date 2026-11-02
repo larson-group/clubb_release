@@ -10,9 +10,6 @@ flux·hk into the all-sky/clear-sky up/down fluxes.
 import jax.numpy as jnp
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 from clubb_jax.src.Radiation.BUGSrad.cloudg import cloudg
 from clubb_jax.src.Radiation.BUGSrad.gascon import gascon
 from clubb_jax.src.Radiation.BUGSrad.bugsrad_planck import planck
@@ -49,7 +46,7 @@ def bugs_lwr(ts, ppl, dp, tt, rmix, cwrho, cirho, o3mix, pp, umco2, umch4, umn2o
     """LW radiative fluxes. Inputs (ncol, nlm) unless noted: ts=(ncol,) surface temp; ppl/dp/tt/rmix/
     cwrho/cirho/o3mix layer fields; pp=(ncol, nlm+1) level pressure; umco2/umch4/umn2o gas concs.
     Returns (fdlw, fulw, fdlwcl, fulwcl), each (ncol, nlm+1) [down/up, all-sky/clear-sky]."""
-    a = lambda x: jnp.asarray(x, dtype=jnp.float64)
+    a = jnp.asarray
     ts, ppl, dp, tt, rmix = a(ts), a(ppl), a(dp), a(tt), a(rmix)
     cwrho, cirho, o3mix, pp = a(cwrho), a(cirho), a(o3mix), a(pp)
     ncol, nlm = tt.shape

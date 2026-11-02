@@ -9,9 +9,7 @@ stopped comparing anything.
 
 import sys
 
-import jax
-
-jax.config.update("jax_enable_x64", True)
+import clubb_jax.src  # noqa: F401  # applies CLUBB_JAX_PRECISION before the tests import JAX code
 
 try:
     # The package import preloads a compatible NetCDF stack before clubb_f2py.

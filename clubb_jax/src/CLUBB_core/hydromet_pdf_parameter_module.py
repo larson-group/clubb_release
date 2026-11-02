@@ -18,8 +18,6 @@ from dataclasses import dataclass
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 MAX_HYDROMET_DIM = 8
@@ -109,8 +107,8 @@ class PrecipitationFractions:
 
 def init_hydromet_pdf_params():
     """Initialize the elements of hydromet_pdf_params."""
-    vec = lambda: jnp.zeros(MAX_HYDROMET_DIM, dtype=jnp.float64)
-    mat = lambda: jnp.zeros((MAX_HYDROMET_DIM, MAX_HYDROMET_DIM), dtype=jnp.float64)
+    vec = lambda: jnp.zeros(MAX_HYDROMET_DIM)
+    mat = lambda: jnp.zeros((MAX_HYDROMET_DIM, MAX_HYDROMET_DIM))
     # Initialize hydromet_pdf_params.
     return HydrometPdfParameter(
         hm_1=vec(), hm_2=vec(), mu_hm_1=vec(), mu_hm_2=vec(),
@@ -123,7 +121,7 @@ def init_hydromet_pdf_params():
 def init_precip_fracs(nzt, ngrdcol):
     """Initialize the elements of precip_fracs."""
     # Allocate precip frac arrays
-    z = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    z = jnp.zeros((ngrdcol, nzt))
     # Set metadata values
     # Zero precip_fracs
     return PrecipitationFractions(ngrdcol=ngrdcol, nzt=nzt,
@@ -133,6 +131,6 @@ def init_precip_fracs(nzt, ngrdcol):
 def zero_precip_fracs(precip_fracs):
     """Initialize the elements of precip_fracs."""
     # Initialize precip_fracs.
-    z = jnp.zeros((precip_fracs.ngrdcol, precip_fracs.nzt), dtype=jnp.float64)
+    z = jnp.zeros((precip_fracs.ngrdcol, precip_fracs.nzt))
     return PrecipitationFractions(ngrdcol=precip_fracs.ngrdcol, nzt=precip_fracs.nzt,
                                   precip_frac=z, precip_frac_1=z, precip_frac_2=z)

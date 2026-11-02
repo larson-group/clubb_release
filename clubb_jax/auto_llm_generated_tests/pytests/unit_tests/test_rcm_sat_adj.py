@@ -2,9 +2,6 @@
 """validate the JAX rcm_sat_adj port (saturation.F90:rcm_sat_adj)."""
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.CLUBB_core.saturation import rcm_sat_adj, sat_mixrat_liq, SATURATION_FLATAU
 
 _Cp, _Lv = 1004.67, 2.5e6

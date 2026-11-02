@@ -19,15 +19,12 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 from clubb_jax.src.CLUBB_core.constants_clubb import radians_per_deg_dp, sec_per_hr
 from clubb_jax.src.CLUBB_core.calendar import (
     compute_current_date_api,
     gregorian2julian_day,
     leap_year,
 )
-
-configure_jax_precision()
 
 # Input Variables
 @partial(jax.jit, static_argnames=("day", "month", "year"))

@@ -26,8 +26,6 @@ from functools import partial
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 
@@ -140,14 +138,14 @@ def xpyp_term_ta_pdf_lhs(
             -irho * gr.invrs_dzt[:, 1:]
             * rho_ds_zm[:, 1:-1] * coef_wpxpyp_implicit_zm[:, 1:-1]
         )
-        zeros_int = jnp.zeros((ngrdcol, nzm - 2), dtype=jnp.float64)
+        zeros_int = jnp.zeros((ngrdcol, nzm - 2))
 
         super_int = jnp.where(grid_sgn > 0.0, zeros_int, super_down)
         main_int = jnp.where(grid_sgn > 0.0, main_up, main_down)
         sub_int = jnp.where(grid_sgn > 0.0, sub_up, zeros_int)
 
     # Set upper boundary array to 0.
-    zeros_bnd = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+    zeros_bnd = jnp.zeros((ngrdcol, 1))
     superdiag = jnp.concatenate([zeros_bnd, super_int, zeros_bnd], axis=1)
     maindiag = jnp.concatenate([zeros_bnd, main_int, zeros_bnd], axis=1)
     subdiag = jnp.concatenate([zeros_bnd, sub_int, zeros_bnd], axis=1)
@@ -178,7 +176,7 @@ def xpyp_term_ta_pdf_lhs_godunov(
     # Set lower boundary array to 0.
     # Godunov-like upwind discretization.
     gd = gr.grid_dir
-    zero = jnp.zeros((ngrdcol, nzm - 2), dtype=jnp.float64)
+    zero = jnp.zeros((ngrdcol, nzm - 2))
     coef_k = coef_wpxpyp_implicit[:, 1:]
     coef_km1 = coef_wpxpyp_implicit[:, :-1]
     fac = invrs_rho_ds_zm[:, 1:-1] * gr.invrs_dzm[:, 1:-1] * gd
@@ -196,7 +194,7 @@ def xpyp_term_ta_pdf_lhs_godunov(
     sub_int = -fac * rho_ds_zm[:, :-2] * jnp.maximum(zero, gd * coef_km1)
 
     # Set upper boundary array to 0.
-    zeros_bnd = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+    zeros_bnd = jnp.zeros((ngrdcol, 1))
     superdiag = jnp.concatenate([zeros_bnd, super_int, zeros_bnd], axis=1)
     maindiag = jnp.concatenate([zeros_bnd, main_int, zeros_bnd], axis=1)
     subdiag = jnp.concatenate([zeros_bnd, sub_int, zeros_bnd], axis=1)
@@ -281,7 +279,7 @@ def xpyp_term_ta_pdf_rhs(
         rhs_int = jnp.where(grid_sgn > 0.0, rhs_up, rhs_down)
 
     # Set upper boundary value to 0.
-    zeros_bnd = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+    zeros_bnd = jnp.zeros((ngrdcol, 1))
     return jnp.concatenate([zeros_bnd, rhs_int, zeros_bnd], axis=1)
 
 
@@ -315,7 +313,7 @@ def xpyp_term_ta_pdf_rhs_godunov(
     """
     # Set lower boundary value to 0.
     gd = gr.grid_dir
-    zero = jnp.zeros((ngrdcol, nzm - 2), dtype=jnp.float64)
+    zero = jnp.zeros((ngrdcol, nzm - 2))
     sgn_k = sgn_turbulent_vel[:, 1:]
     sgn_km1 = sgn_turbulent_vel[:, :-1]
     term_k = term_wpxpyp_explicit_zm[:, 1:-1]
@@ -333,7 +331,7 @@ def xpyp_term_ta_pdf_rhs_godunov(
     )
 
     # Set upper boundary value to 0.
-    zeros_bnd = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+    zeros_bnd = jnp.zeros((ngrdcol, 1))
     return jnp.concatenate([zeros_bnd, rhs_int, zeros_bnd], axis=1)
 
 

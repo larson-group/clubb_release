@@ -14,15 +14,15 @@ Porting deviations:
 import numpy as np
 import jax.numpy as jnp
 
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.constants_clubb import max_mag_correlation
 
 
-_SQRT_FLOOR = jnp.finfo(jnp.float64).tiny
+_SQRT_FLOOR = jnp.finfo(core_rknd).tiny
 
 
 def _safe_corr_sqrt(value):
     """sqrt(max(value, 0)) with finite gradient at exactly zero."""
-    value = jnp.asarray(value, dtype=jnp.float64)
     return jnp.where(value > 0.0, jnp.sqrt(jnp.maximum(value, _SQRT_FLOOR)), 0.0)
 
 
@@ -49,7 +49,7 @@ def diagnose_correlations(pdf_dim, iiPDF_w, corr_array_pre, l_calc_w_corr=False)
     # diagnose correlations
     corr_array_swapped = diagnose_corr(
         pdf_dim,
-        jnp.zeros((pdf_dim,), dtype=jnp.float64),
+        jnp.zeros((pdf_dim,)),
         corr_array_pre_swapped,
         corr_array_swapped,
     )
@@ -247,7 +247,7 @@ def corr_array_assertion_checks(n_variables, corr_array=None):
 def rearrange_corr_array(pdf_dim, iiPDF_w, corr_array):
     """Swap the w-correlations to the first row."""
     w_idx = int(iiPDF_w) - 1
-    corr_array = jnp.asarray(corr_array, dtype=jnp.float64)
+    corr_array = jnp.asarray(corr_array)
     swap_array = corr_array[:, 0]
 
     corr_array_swapped = corr_array

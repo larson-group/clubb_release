@@ -14,8 +14,6 @@ Pure-Python (the F90 formulas are the oracle), so it never SKIPs. (iter 509)
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Benchmark_cases.spec_hum_to_mixing_ratio import (
     flux_spec_hum_to_mixing_ratio, force_spec_hum_to_mixing_ratio,

@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.sponge_layer_damping import sponge_damp_xp2, sponge_damp_xp3
 

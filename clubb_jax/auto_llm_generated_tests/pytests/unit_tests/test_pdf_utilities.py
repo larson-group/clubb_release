@@ -3,8 +3,6 @@
 import numpy as np
 import jax
 
-jax.config.update("jax_enable_x64", True)
-
 
 from clubb_jax.src.CLUBB_core.pdf_utilities import stdev_L2N, corr_NL2NN, corr_LL2NN, MAX_MAG_CORRELATION
 

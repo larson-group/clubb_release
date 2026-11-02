@@ -13,9 +13,6 @@ caught directly. Oracle-independent; never SKIPs. (iter 556)
 """
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_turbulent_sed import (
     bivar_LL_covar_partial_rr, bivar_LL_covar_partial_Nr, KK_MVR_RR_EXP, KK_MVR_NR_EXP)
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_turbulent_sed import (

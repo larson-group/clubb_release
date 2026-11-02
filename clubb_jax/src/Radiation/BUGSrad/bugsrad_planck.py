@@ -14,9 +14,6 @@ where tt is the NLM layer temperatures and bf has NLM+1 interfaces.
 import jax.numpy as jnp
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 _MBIR = 12   # number of IR bands
 
 # Fitted polynomial coefficients b(6, MBIR): _B[band] = the 6 coeffs (c0..c5) for that band.
@@ -47,9 +44,7 @@ def planck(tt, ts, nbir):
     """Blackbody emission bf [W/m^2] at the NLM+1 interfaces for IR band `nbir` (0-based, 0..11;
     Fortran nbir is 1-based). `tt` = (ncol, NLM) layer temperatures, `ts` = (ncol,) surface temp.
     Returns bf = (ncol, NLM+1)."""
-    tt = jnp.asarray(tt, dtype=jnp.float64)
-    ts = jnp.asarray(ts, dtype=jnp.float64)
-    c = jnp.asarray(_B[nbir], dtype=jnp.float64)
+    c = _B[nbir]
     top = _poly(tt[:, :1], c)                              # interface 0: poly(tt[0])
     mid = _poly(0.5 * (tt[:, :-1] + tt[:, 1:]), c)         # interfaces 1..NLM-1: layer-mean temp
     sfc = _poly(ts[:, None], c)                            # interface NLM: poly(ts)

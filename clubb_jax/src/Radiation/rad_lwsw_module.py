@@ -23,11 +23,8 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 from clubb_jax.src.CLUBB_core.constants_clubb import rho_lw, three_halves
 from clubb_jax.src.CLUBB_core.interpolation import lin_interpolate_two_points
-
-configure_jax_precision()
 
 
 @partial(jax.jit, static_argnames=("ngrdcol", "nzt", "l_center"))

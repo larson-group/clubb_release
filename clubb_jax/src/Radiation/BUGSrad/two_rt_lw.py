@@ -13,9 +13,6 @@ propagation (fu/fd).
 import jax.numpy as jnp
 import jax.lax as lax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 _DIFFAC = 2.0
 
 
@@ -23,9 +20,6 @@ def two_rt_lw(ib, wc, asym, tau, es, bf, mbs):
     """LW two-stream fluxes for 0-based band `ib`. `wc`/`asym`/`tau` = (ncol, nlm) SSA/asymmetry/
     optical depth; `es` = (ncol, mbir) surface emissivity; `bf` = (ncol, nlm+1) Planck at levels;
     `mbs` = number of SW bands (ibms = ib - mbs indexes es). Returns (fu, fd), each (ncol, nlm+1)."""
-    wc = jnp.asarray(wc, dtype=jnp.float64); asym = jnp.asarray(asym, dtype=jnp.float64)
-    tau = jnp.asarray(tau, dtype=jnp.float64); bf = jnp.asarray(bf, dtype=jnp.float64)
-    es = jnp.asarray(es, dtype=jnp.float64)
     ncol, nlm = wc.shape
     ibms = ib - mbs
     bfl, bfr = bf[:, :-1], bf[:, 1:]                    # bf[l], bf[l+1]   (ncol, nlm)

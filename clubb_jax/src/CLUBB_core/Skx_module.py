@@ -14,8 +14,6 @@ from functools import partial
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.constants_clubb import eps, one, one_half, w_tol_sqd
@@ -58,8 +56,6 @@ def compute_gamma_Skw(nz: int, ngrdcol: int, Skw, clubb_params, l_gamma_Skw: boo
       None
     """
     del nz, ngrdcol
-    Skw = jnp.asarray(Skw, dtype=jnp.float64)
-    clubb_params = jnp.asarray(clubb_params, dtype=jnp.float64)
 
     # First gamma(Skw) coefficient [-]
     gamma_coef = clubb_params[:, igamma_coef, None]
@@ -108,12 +104,6 @@ def LG_2005_ansatz(
     Higher-Order Moments.  Mon. Wea. Rev., 133, 1023–1042.
     """
     del nz, ngrdcol
-    Skw = jnp.asarray(Skw, dtype=jnp.float64)
-    wpxp = jnp.asarray(wpxp, dtype=jnp.float64)
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64)
-    xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    beta = jnp.asarray(beta, dtype=jnp.float64)
-    sigma_sqd_w = jnp.asarray(sigma_sqd_w, dtype=jnp.float64)
 
     #--------------------------Begin Code --------------------------
 
@@ -157,7 +147,6 @@ def xp3_LG_2005_ansatz(
     References:
     """
     del ngrdcol
-    clubb_params = jnp.asarray(clubb_params, dtype=jnp.float64)
     Skx_denom_tol = clubb_params[:, iSkw_denom_coef, None] * x_tol ** 2
     beta = clubb_params[:, ibeta]
 

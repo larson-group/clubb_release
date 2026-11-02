@@ -29,8 +29,6 @@ from functools import partial
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 
@@ -171,7 +169,7 @@ def term_ma_zt_lhs(
         # Special discretization for zero derivative method, where the
         # derivative d(var_zt)/dz over the model boundary is set to 0.
         fac_top = wm_zt[:, -1:] * invrs_dzt[:, -1:]
-        super_top = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        super_top = jnp.zeros((ngrdcol, 1))
         main_top = fac_top * (1.0 - weights_zt2zm[:, nzm - 2:nzm - 1, 0])
         sub_top = -fac_top * weights_zt2zm[:, nzm - 2:nzm - 1, 1]
 
@@ -183,7 +181,7 @@ def term_ma_zt_lhs(
         fac_bot = wm_zt[:, :1] * invrs_dzt[:, :1]
         super_bot = fac_bot * weights_zt2zm[:, 1:2, 0]
         main_bot = -fac_bot * (1.0 - weights_zt2zm[:, 1:2, 1])
-        sub_bot = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+        sub_bot = jnp.zeros((ngrdcol, 1))
 
         superdiag = jnp.concatenate([super_bot, super_int, super_top], axis=1)
         maindiag = jnp.concatenate([main_bot, main_int, main_top], axis=1)
@@ -218,7 +216,7 @@ def term_ma_zt_lhs(
     wm_top = wm_zt[:, -1:]
     grid_wm_top = grid_dir * wm_top
     invrs_dzm_top = invrs_dzm[:, nzm - 2:nzm - 1]
-    super_top = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+    super_top = jnp.zeros((ngrdcol, 1))
     main_top = jnp.where(grid_wm_top >= 0.0, wm_top * invrs_dzm_top, 0.0)
     sub_top = jnp.where(grid_wm_top >= 0.0, -wm_top * invrs_dzm_top, 0.0)
 
@@ -229,7 +227,7 @@ def term_ma_zt_lhs(
     invrs_dzm_bot = invrs_dzm[:, 1:2]
     super_bot = jnp.where(grid_wm_bot >= 0.0, 0.0, wm_bot * invrs_dzm_bot)
     main_bot = jnp.where(grid_wm_bot >= 0.0, 0.0, -wm_bot * invrs_dzm_bot)
-    sub_bot = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+    sub_bot = jnp.zeros((ngrdcol, 1))
 
     superdiag = jnp.concatenate([super_bot, super_int, super_top], axis=1)
     maindiag = jnp.concatenate([main_bot, main_int, main_top], axis=1)
@@ -319,7 +317,7 @@ def term_ma_zm_lhs(
     # Set boundary array to 0
     # This is the Upper Boundary for an Ascending Grid
     # or the Lower Boundary for a Descending Grid.
-    zeros_bnd = jnp.zeros((ngrdcol, 1), dtype=jnp.float64)
+    zeros_bnd = jnp.zeros((ngrdcol, 1))
     superdiag = jnp.concatenate([zeros_bnd, super_int, zeros_bnd], axis=1)
     maindiag = jnp.concatenate([zeros_bnd, main_int, zeros_bnd], axis=1)
     subdiag = jnp.concatenate([zeros_bnd, sub_int, zeros_bnd], axis=1)

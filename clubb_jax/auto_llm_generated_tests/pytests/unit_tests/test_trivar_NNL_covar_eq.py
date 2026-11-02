@@ -13,9 +13,6 @@ all-const-equivalence bug is caught directly. Oracle-independent; never SKIPs. (
 """
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.Microphys.KK_microphys.KK_upscaled_covariances import trivar_NNL_covar_eq, _CHI_TOL
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_covar import (
     trivar_NNL_covar, trivar_NNL_covar_const_x1, trivar_NNL_covar_const_x1x2,

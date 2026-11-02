@@ -13,8 +13,6 @@ Pure-Python (the F90 loop is the oracle), so it never SKIPs. (iter 504)
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Radiation.simple_rad_module import liq_water_path
 

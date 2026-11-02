@@ -28,8 +28,6 @@ import jax
 import sys
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 from jax.scipy.special import erf
 
@@ -151,16 +149,6 @@ def monotonic_turbulent_flux_limit(
     implementation below follows the same limiter equations but expresses the
     vertical scan with `jax.lax.scan`.
     """
-    xm = jnp.asarray(xm, dtype=jnp.float64)
-    wpxp = jnp.asarray(wpxp, dtype=jnp.float64)
-    xm_old = jnp.asarray(xm_old, dtype=jnp.float64)
-    xp2 = jnp.asarray(xp2, dtype=jnp.float64)
-    wm_zt = jnp.asarray(wm_zt, dtype=jnp.float64)
-    xm_forcing = jnp.asarray(xm_forcing, dtype=jnp.float64)
-    rho_ds_zm = jnp.asarray(rho_ds_zm, dtype=jnp.float64)
-    rho_ds_zt = jnp.asarray(rho_ds_zt, dtype=jnp.float64)
-    invrs_rho_ds_zm = jnp.asarray(invrs_rho_ds_zm, dtype=jnp.float64)
-    invrs_rho_ds_zt = jnp.asarray(invrs_rho_ds_zt, dtype=jnp.float64)
     low_lev_effect = jnp.asarray(low_lev_effect, dtype=jnp.int32)
     high_lev_effect = jnp.asarray(high_lev_effect, dtype=jnp.int32)
 
@@ -345,9 +333,9 @@ def monotonic_turbulent_flux_limit(
     ) = jax.lax.scan(clip_step, initial_neighbor, scan_levels)
 
     wpxp = wpxp.at[:, k_scan].set(wpxp_scan.T)
-    wpxp_net_adjust = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    wpxp_mfl_min = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
-    wpxp_mfl_max = jnp.zeros((ngrdcol, nzm), dtype=jnp.float64)
+    wpxp_net_adjust = jnp.zeros((ngrdcol, nzm))
+    wpxp_mfl_min = jnp.zeros((ngrdcol, nzm))
+    wpxp_mfl_max = jnp.zeros((ngrdcol, nzm))
     wpxp_net_adjust = wpxp_net_adjust.at[:, k_scan].set(wpxp_net_adjust_scan.T)
     wpxp_mfl_min = wpxp_mfl_min.at[:, k_scan].set(wpxp_mfl_min_scan.T)
     wpxp_mfl_max = wpxp_mfl_max.at[:, k_scan].set(wpxp_mfl_max_scan.T)
@@ -528,7 +516,7 @@ def mfl_xm_lhs(
             grid_dir,
         )
     else:
-        lhs = jnp.zeros((ndiags3, ngrdcol, nzt), dtype=jnp.float64)
+        lhs = jnp.zeros((ndiags3, ngrdcol, nzt))
 
     # LHS xm time tendency.
     lhs = lhs.at[1, :, :].add(one / dt)
@@ -771,7 +759,7 @@ def _calc_turb_adv_range_ascending(nzt, ngrdcol, gr, dt, mean_w_down_zm, mean_w_
             low_body,
             (
                 start_low,
-                jnp.zeros((ngrdcol,), dtype=jnp.float64),
+                jnp.zeros((ngrdcol,)),
                 start_low,
                 jnp.zeros((ngrdcol,), dtype=bool),
             ),
@@ -821,7 +809,7 @@ def _calc_turb_adv_range_ascending(nzt, ngrdcol, gr, dt, mean_w_down_zm, mean_w_
             high_body,
             (
                 start_high,
-                jnp.zeros((ngrdcol,), dtype=jnp.float64),
+                jnp.zeros((ngrdcol,)),
                 start_high,
                 jnp.zeros((ngrdcol,), dtype=bool),
             ),
@@ -896,7 +884,7 @@ def _calc_turb_adv_range_descending(nzt, ngrdcol, gr, dt, mean_w_down_zm, mean_w
             low_body,
             (
                 start_low,
-                jnp.zeros((ngrdcol,), dtype=jnp.float64),
+                jnp.zeros((ngrdcol,)),
                 start_low,
                 jnp.zeros((ngrdcol,), dtype=bool),
             ),
@@ -941,7 +929,7 @@ def _calc_turb_adv_range_descending(nzt, ngrdcol, gr, dt, mean_w_down_zm, mean_w
             high_body,
             (
                 start_high,
-                jnp.zeros((ngrdcol,), dtype=jnp.float64),
+                jnp.zeros((ngrdcol,)),
                 start_high,
                 jnp.zeros((ngrdcol,), dtype=bool),
             ),
@@ -1011,8 +999,6 @@ def mean_vert_vel_up_down(
         nzm, ngrdcol, w_2_zm, varnce_w_2_zm, w_ref, w_min,
     )
 
-    mixt_frac_zm = jnp.asarray(mixt_frac_zm, dtype=jnp.float64)
-
     # Overall mean of downwards w.
     mean_w_down = (
         mixt_frac_zm * mean_w_down_1st
@@ -1052,9 +1038,6 @@ def calc_mean_w_up_down_component(
     packing/unpacking strategy.
     """
     del ngrdcol
-    w_i_zm = jnp.asarray(w_i_zm, dtype=jnp.float64)
-    varnce_w_i_zm = jnp.asarray(varnce_w_i_zm, dtype=jnp.float64)
-    w_min = jnp.asarray(w_min, dtype=jnp.float64)
 
     invrs_sqrt_2pi = one / jnp.sqrt(2.0 * jnp.pi)
     sqrt_2 = jnp.sqrt(2.0)

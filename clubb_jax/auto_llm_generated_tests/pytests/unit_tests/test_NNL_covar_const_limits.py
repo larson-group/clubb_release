@@ -16,8 +16,6 @@ import math
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_covar import (
     trivar_NNL_covar, trivar_NNL_covar_const_x1, trivar_NNL_covar_const_x2,

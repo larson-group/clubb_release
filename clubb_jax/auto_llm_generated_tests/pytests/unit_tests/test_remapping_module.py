@@ -4,7 +4,6 @@
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.remapping_module import calc_mass_over_grid_intervals, remapping_matrix, matrix_vector_mult, remap_vals_to_target, _pressure_levels

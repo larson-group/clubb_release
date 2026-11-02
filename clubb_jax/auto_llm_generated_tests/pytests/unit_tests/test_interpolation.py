@@ -3,8 +3,6 @@
 
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.interpolation import lin_interpolate_two_points, mono_cubic_interp, linear_interp_factor, zlinterp_fnc, lin_interp_between_grids
 

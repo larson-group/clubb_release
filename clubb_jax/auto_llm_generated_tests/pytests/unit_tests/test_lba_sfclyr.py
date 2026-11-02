@@ -10,7 +10,6 @@ import math
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.Benchmark_cases.lba import lba_sfclyr
 from clubb_jax.src.Benchmark_cases.diag_ustar_module import diag_ustar

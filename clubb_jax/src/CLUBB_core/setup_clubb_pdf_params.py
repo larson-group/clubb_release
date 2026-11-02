@@ -76,9 +76,6 @@ from clubb_jax.src.CLUBB_core.pdf_utilities import (
 from clubb_jax.src.CLUBB_core.matrix_operations import Cholesky_factor
 from clubb_jax.src.CLUBB_core.precipitation_fraction import precip_fraction
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 _MU_HM_MIN_COEF = 0.01   # setup_clubb_pdf_params.F90:2176
 
 # PDF-variable index layout (0-based), matching the iiPDF indices for the KK PDF.
@@ -148,16 +145,6 @@ def setup_pdf_parameters_api(
         stats: Immutable statistics state; return its updated value.
     """
     del precip_fracs
-
-    Nc_in_cloud = jnp.asarray(Nc_in_cloud, dtype=jnp.float64)
-    cloud_frac = jnp.asarray(cloud_frac, dtype=jnp.float64)
-    Kh_zm = jnp.asarray(Kh_zm, dtype=jnp.float64)
-    ice_supersat_frac = jnp.asarray(ice_supersat_frac, dtype=jnp.float64)
-    hydromet = jnp.asarray(hydromet, dtype=jnp.float64)
-    wphydrometp = jnp.asarray(wphydrometp, dtype=jnp.float64)
-    corr_array_n_cloud = jnp.asarray(corr_array_n_cloud, dtype=jnp.float64)
-    corr_array_n_below = jnp.asarray(corr_array_n_below, dtype=jnp.float64)
-    clubb_params = jnp.asarray(clubb_params, dtype=jnp.float64)
 
     # ---- Begin Code ----
 
@@ -240,10 +227,10 @@ def setup_pdf_parameters_api(
         # JAX adaptation: preserve the fatal code from precip_fraction, but do
         # not return early inside the traced region.
     else:
-        precip_frac = jnp.ones((ngrdcol, nzt), dtype=jnp.float64)
-        precip_frac_1 = jnp.ones((ngrdcol, nzt), dtype=jnp.float64)
-        precip_frac_2 = jnp.ones((ngrdcol, nzt), dtype=jnp.float64)
-        precip_frac_tol = jnp.full((ngrdcol,), cloud_frac_min, dtype=jnp.float64)
+        precip_frac = jnp.ones((ngrdcol, nzt))
+        precip_frac_1 = jnp.ones((ngrdcol, nzt))
+        precip_frac_2 = jnp.ones((ngrdcol, nzt))
+        precip_frac_tol = jnp.full((ngrdcol,), cloud_frac_min)
 
     precip_fracs = PrecipitationFractions(
         ngrdcol=ngrdcol,
@@ -288,11 +275,8 @@ def setup_pdf_parameters_api(
 
     # Calculate the overall variance of a precipitating hydrometeor (hm),
     # <hm'^2>.
-    hydromet_tol = jnp.asarray(hm_metadata.hydromet_tol, dtype=jnp.float64)
-    hmp2_ip_on_hmm2_ip = jnp.asarray(
-        hm_metadata.hmp2_ip_on_hmm2_ip,
-        dtype=jnp.float64,
-    )
+    hydromet_tol = jnp.asarray(hm_metadata.hydromet_tol)
+    hmp2_ip_on_hmm2_ip = jnp.asarray(hm_metadata.hmp2_ip_on_hmm2_ip)
     precip_frac_safe = jnp.where(precip_frac > 0.0, precip_frac, 1.0)
     hydrometp2_zt = jnp.where(
         hydromet >= hydromet_tol[None, None, :],
@@ -320,8 +304,8 @@ def setup_pdf_parameters_api(
         axis=-1,
     )
 
-    wphydrometp_zt = jnp.zeros((ngrdcol, nzt, hydromet_dim), dtype=jnp.float64)
-    wpNcnp_zt = jnp.zeros((ngrdcol, nzt), dtype=jnp.float64)
+    wphydrometp_zt = jnp.zeros((ngrdcol, nzt, hydromet_dim))
+    wpNcnp_zt = jnp.zeros((ngrdcol, nzt))
 
     # Calculate correlations involving w and Ncn by first calculating the
     # overall covariance of w and Ncn using the down-gradient approximation.
@@ -1157,27 +1141,18 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     zeta_vrnce_rat_in are scalars. Returns
     (mu_hm_1, mu_hm_2, sigma_hm_1, sigma_hm_2, hm_1, hm_2,
      sigma_hm_1_sqd_on_mu_hm_1_sqd, sigma_hm_2_sqd_on_mu_hm_2_sqd)."""
-    hmm = jnp.asarray(hmm, dtype=jnp.float64)
-    hmp2 = jnp.asarray(hmp2, dtype=jnp.float64)
-    ratio = jnp.asarray(hmp2_ip_on_hmm2_ip, dtype=jnp.float64)
-    a = jnp.asarray(mixt_frac, dtype=jnp.float64)
-    fp = jnp.asarray(precip_frac, dtype=jnp.float64)
-    fp1 = jnp.asarray(precip_frac_1, dtype=jnp.float64)
-    fp2 = jnp.asarray(precip_frac_2, dtype=jnp.float64)
-    mu_thl_1 = jnp.asarray(mu_thl_1, dtype=jnp.float64)
-    mu_thl_2 = jnp.asarray(mu_thl_2, dtype=jnp.float64)
-    pftol = jnp.asarray(precip_frac_tol, dtype=jnp.float64)[:, None]
-    oma = 1.0 - a
+    pftol = jnp.asarray(precip_frac_tol)[:, None]
+    oma = 1.0 - mixt_frac
 
     # Branch masks (mirror the Fortran if/elseif ladder).
-    both = (hmm >= hm_tol) & (fp1 >= pftol) & (fp2 >= pftol)
-    comp1 = (~both) & (hmm >= hm_tol) & (fp1 >= pftol)
-    comp2 = (~both) & (~comp1) & (hmm >= hm_tol) & (fp2 >= pftol)
+    both = (hmm >= hm_tol) & (precip_frac_1 >= pftol) & (precip_frac_2 >= pftol)
+    comp1 = (~both) & (hmm >= hm_tol) & (precip_frac_1 >= pftol)
+    comp2 = (~both) & (~comp1) & (hmm >= hm_tol) & (precip_frac_2 >= pftol)
 
     # Safe denominators so unselected branches never divide by zero / poison gradients.
-    fp1_s = jnp.where(fp1 > 0.0, fp1, 1.0)
-    fp2_s = jnp.where(fp2 > 0.0, fp2, 1.0)
-    a_s = jnp.where(a > 0.0, a, 1.0)
+    fp1_s = jnp.where(precip_frac_1 > 0.0, precip_frac_1, 1.0)
+    fp2_s = jnp.where(precip_frac_2 > 0.0, precip_frac_2, 1.0)
+    a_s = jnp.where(mixt_frac > 0.0, mixt_frac, 1.0)
     oma_s = jnp.where(oma > 0.0, oma, 1.0)
 
     # Adjust the value of zeta based on the relationship of mu_thl_1 to
@@ -1196,18 +1171,18 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     # The parameter zeta is written in the code as zeta_vrnce_rat.
     # Guard the Rmax denominator: at no-precip points fp1=fp2=0 -> 0/0 = nan (forward and grad),
     # which poisons even though the both-precip branch is unselected there.
-    den_R = a * fp1 * (1.0 + zeta) + oma * fp2
-    Rmax = (fp / jnp.where(den_R > 0.0, den_R, 1.0)) * ratio
+    den_R = mixt_frac * precip_frac_1 * (1.0 + zeta) + oma * precip_frac_2
+    Rmax = (precip_frac / jnp.where(den_R > 0.0, den_R, 1.0)) * hmp2_ip_on_hmm2_ip
     oR = omicron * Rmax
     # Calculate the value of coefficient A.
     # A = a * f_p_1 * ( 1 + omicron * Rmax * ( 1 + zeta ) )
     #     + a^2 * f_p_1^2 * ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ).
-    coef_A = (a * fp1 * (1.0 + oR * (1.0 + zeta))
-              + a ** 2 * fp1 ** 2 * (1.0 + oR) / (oma_s * fp2_s))
+    coef_A = (mixt_frac * precip_frac_1 * (1.0 + oR * (1.0 + zeta))
+              + mixt_frac ** 2 * precip_frac_1 ** 2 * (1.0 + oR) / (oma_s * fp2_s))
     # Calculate the value of coefficient B.
     # B = - 2 * <hm> * a * f_p_1 * ( 1 + omicron * Rmax )
     #     / ( ( 1 - a ) * f_p_2 ).
-    coef_B = -2.0 * hmm * a * fp1 * (1.0 + oR) / (oma_s * fp2_s)
+    coef_B = -2.0 * hmm * mixt_frac * precip_frac_1 * (1.0 + oR) / (oma_s * fp2_s)
     # Calculate the value of coefficient C.
     # C = - ( <hm’^2>
     #         + ( 1 - ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ) )
@@ -1222,12 +1197,12 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
                     (-coef_B - sqrt_clipped(disc)) / (2.0 * coef_A_s))
     # Calculate the mean (in-precip.) of the hydrometeor in the 2nd PDF
     # component.
-    mu2 = (hmm - a * fp1 * mu1) / (oma_s * fp2_s)
+    mu2 = (hmm - mixt_frac * precip_frac_1 * mu1) / (oma_s * fp2_s)
     R = oR
 
     # Calculate the minimum allowable value of the mean (in-precip.) of a
     # hydrometeor in the 1st PDF component.
-    hm_ip = hmm / jnp.where(fp > 0.0, fp, 1.0)
+    hm_ip = hmm / jnp.where(precip_frac > 0.0, precip_frac, 1.0)
     mu1_min = jnp.where(hm_ip > hm_tol / fp1_s,
                         jnp.minimum(hm_tol / fp1_s + _MU_HM_MIN_COEF * (hm_ip - hm_tol / fp1_s),
                                     (hmm - oma * hm_tol) / (a_s * fp1_s)),
@@ -1236,26 +1211,26 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     # hydrometeor in the 2nd PDF component.
     mu2_min = jnp.where(hm_ip > hm_tol / fp2_s,
                         jnp.minimum(hm_tol / fp2_s + _MU_HM_MIN_COEF * (hm_ip - hm_tol / fp2_s),
-                                    (hmm - a * hm_tol) / (oma_s * fp2_s)),
+                                    (hmm - mixt_frac * hm_tol) / (oma_s * fp2_s)),
                         hm_tol / fp2_s)
 
     def _emergency_R(m1, m2):
         # Calculate new R.
-        num = (hmp2 + hmm ** 2 - a * fp1 * m1 ** 2 - oma * fp2 * m2 ** 2)
-        den = (a * fp1 * (1.0 + zeta) * m1 ** 2 + oma * fp2 * m2 ** 2)
+        num = (hmp2 + hmm ** 2 - mixt_frac * precip_frac_1 * m1 ** 2 - oma * precip_frac_2 * m2 ** 2)
+        den = (mixt_frac * precip_frac_1 * (1.0 + zeta) * m1 ** 2 + oma * precip_frac_2 * m2 ** 2)
         return jnp.maximum(num / jnp.where(den != 0.0, den, 1.0), 0.0)
 
     # If mu_hm_1 is less than mu_hm_1_min, then set mu_hm_1 equal to
     # mu_hm_1_min.  Calculate mu_hm_2 to preserve overall mean, and calculate
     # a new value of R to preserve overall variance.
     mu1_e1 = mu1_min
-    mu2_e1 = (hmm - a * fp1 * mu1_e1) / (oma_s * fp2_s)
+    mu2_e1 = (hmm - mixt_frac * precip_frac_1 * mu1_e1) / (oma_s * fp2_s)
     R_e1 = _emergency_R(mu1_e1, mu2_e1)
     # If mu_hm_2 is less than mu_hm_2_min, then set mu_hm_2 equal to
     # mu_hm_2_min.  Calculate mu_hm_1 to preserve overall mean, and calculate
     # a new value of R to preserve overall variance.
     mu2_e2 = mu2_min
-    mu1_e2 = (hmm - oma * fp2 * mu2_e2) / (a_s * fp1_s)
+    mu1_e2 = (hmm - oma * precip_frac_2 * mu2_e2) / (a_s * fp1_s)
     R_e2 = _emergency_R(mu1_e2, mu2_e2)
 
     use_e1 = mu1 < mu1_min
@@ -1269,8 +1244,8 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     sig1_b = sqrt_clipped(R_b * (1.0 + zeta)) * mu1_b
     sig2_b = sqrt_clipped(R_b) * mu2_b
     # Calculate the mean of the hydrometeor in the 1st and 2nd PDF components.
-    hm1_b = jnp.maximum(mu1_b * fp1, hm_tol)
-    hm2_b = jnp.maximum(mu2_b * fp2, hm_tol)
+    hm1_b = jnp.maximum(mu1_b * precip_frac_1, hm_tol)
+    hm2_b = jnp.maximum(mu2_b * precip_frac_2, hm_tol)
 
     # Else if there is precipitation found in the 1st PDF component but not
     # the 2nd PDF component.
@@ -1279,9 +1254,9 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     mu1_c1 = hmm / (a_s * fp1_s)
     # Calculate the in-precip. standard deviation of the hydrometeor in the 1st
     # PDF component.
-    sig1_c1 = sqrt_clipped((hmp2 + hmm ** 2 - a * fp1 * mu1_c1 ** 2) / (a_s * fp1_s))
+    sig1_c1 = sqrt_clipped((hmp2 + hmm ** 2 - mixt_frac * precip_frac_1 * mu1_c1 ** 2) / (a_s * fp1_s))
     # Calculate the mean of the hydrometeor in the 1st PDF component.
-    hm1_c1 = mu1_c1 * fp1
+    hm1_c1 = mu1_c1 * precip_frac_1
 
     # Else if there is precipitation found in the 2nd PDF component but not
     # the 1st PDF component.
@@ -1290,9 +1265,9 @@ def calc_comp_mu_sigma_hm(hmm, hmp2, hmp2_ip_on_hmm2_ip, mixt_frac,
     mu2_c2 = hmm / (oma_s * fp2_s)
     # Calculate the in-precip. standard deviation of the hydrometeor in the 2nd
     # PDF component.
-    sig2_c2 = sqrt_clipped((hmp2 + hmm ** 2 - oma * fp2 * mu2_c2 ** 2) / (oma_s * fp2_s))
+    sig2_c2 = sqrt_clipped((hmp2 + hmm ** 2 - oma * precip_frac_2 * mu2_c2 ** 2) / (oma_s * fp2_s))
     # Calculate the mean of the hydrometeor in the 2nd PDF component.
-    hm2_c2 = mu2_c2 * fp2
+    hm2_c2 = mu2_c2 * precip_frac_2
 
     # Else there is no precipitation.
     z = jnp.zeros_like(hmm)
@@ -1343,13 +1318,11 @@ def compute_mean_stdev(chi_1, chi_2, stdev_chi_1, stdev_chi_2,
       hm_1/hm_2        : (ngrdcol, nzt, n_hydromet) per-hydrometeor in-precip-weighted means
       s2m2_*           : (ngrdcol, nzt, pdf_dim) ratio sigma_x^2/mu_x^2 (Ncn + hydrometeors)
     """
-    chi_1 = jnp.asarray(chi_1, dtype=jnp.float64)
     z = jnp.zeros_like(chi_1)
-    w_1 = z if w_1 is None else jnp.asarray(w_1, dtype=jnp.float64)
-    w_2 = z if w_2 is None else jnp.asarray(w_2, dtype=jnp.float64)
-    stdev_w_1 = z if stdev_w_1 is None else jnp.asarray(stdev_w_1, dtype=jnp.float64)
-    stdev_w_2 = z if stdev_w_2 is None else jnp.asarray(stdev_w_2, dtype=jnp.float64)
-    Ncnm = jnp.asarray(Ncnm, dtype=jnp.float64)
+    w_1 = z if w_1 is None else jnp.asarray(w_1)
+    w_2 = z if w_2 is None else jnp.asarray(w_2)
+    stdev_w_1 = z if stdev_w_1 is None else jnp.asarray(stdev_w_1)
+    stdev_w_2 = z if stdev_w_2 is None else jnp.asarray(stdev_w_2)
 
     # Initialize output variables.
 
@@ -1368,18 +1341,18 @@ def compute_mean_stdev(chi_1, chi_2, stdev_chi_1, stdev_chi_2,
     else:
         # Ncn varies in both PDF components.
         sig_Ncn = jnp.sqrt(Ncnp2_on_Ncnm2) * Ncnm
-        s2m2_Ncn = jnp.broadcast_to(jnp.asarray(Ncnp2_on_Ncnm2, dtype=jnp.float64), chi_1.shape)
+        s2m2_Ncn = jnp.broadcast_to(jnp.asarray(Ncnp2_on_Ncnm2), chi_1.shape)
 
     # Note:  This code assumes to be these arrays in the same order as the
     # correlation arrays, etc., which is determined by the iiPDF indices.
     # The order should be as follows:  chi, eta, w, Ncn, <precip. hydrometeors>
     # (indices increasing from left to right).
     mu1_cols = [chi_1, jnp.broadcast_to(z, chi_1.shape), w_1, Ncnm]
-    mu2_cols = [jnp.asarray(chi_2, dtype=jnp.float64), jnp.broadcast_to(z, chi_1.shape), w_2, Ncnm]
-    sig1_cols = [jnp.asarray(stdev_chi_1, dtype=jnp.float64),
-                 jnp.asarray(stdev_eta_1, dtype=jnp.float64), stdev_w_1, sig_Ncn]
-    sig2_cols = [jnp.asarray(stdev_chi_2, dtype=jnp.float64),
-                 jnp.asarray(stdev_eta_2, dtype=jnp.float64), stdev_w_2, sig_Ncn]
+    mu2_cols = [jnp.asarray(chi_2), jnp.broadcast_to(z, chi_1.shape), w_2, Ncnm]
+    sig1_cols = [jnp.asarray(stdev_chi_1),
+                 jnp.asarray(stdev_eta_1), stdev_w_1, sig_Ncn]
+    sig2_cols = [jnp.asarray(stdev_chi_2),
+                 jnp.asarray(stdev_eta_2), stdev_w_2, sig_Ncn]
     s2m2_1_cols = [z, z, z, s2m2_Ncn]
     s2m2_2_cols = [z, z, z, s2m2_Ncn]
     hm1_list, hm2_list = [], []
@@ -1419,10 +1392,10 @@ def norm_transform_mean_stdev(mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,
         mu_safe = jnp.maximum(jnp.abs(mu), 1.0e-30)
         return mean_L2N(mu_safe, s2m2), stdev_L2N(s2m2)
 
-    mu_x_1_n = jnp.asarray(mu_x_1, dtype=jnp.float64)
-    mu_x_2_n = jnp.asarray(mu_x_2, dtype=jnp.float64)
-    sigma_x_1_n = jnp.asarray(sigma_x_1, dtype=jnp.float64)
-    sigma_x_2_n = jnp.asarray(sigma_x_2, dtype=jnp.float64)
+    mu_x_1_n = jnp.asarray(mu_x_1)
+    mu_x_2_n = jnp.asarray(mu_x_2)
+    sigma_x_1_n = jnp.asarray(sigma_x_1)
+    sigma_x_2_n = jnp.asarray(sigma_x_2)
 
     # Ncn (single lognormal: components share the moments).
     mu_Ncn_1_n, sig_Ncn_1_n = _to_n(mu_x_1_n[..., IIPDF_NCN], s2m2_1[..., IIPDF_NCN])
@@ -1841,10 +1814,8 @@ def calc_corr_norm_and_cholesky_factor(corr_array_n_cloud, corr_array_n_below, r
     (corr_array_1_n, corr_array_2_n, corr_cholesky_mtx_1, corr_cholesky_mtx_2), each
     (ngrdcol, nzt, pdf_dim, pdf_dim) — the corr arrays symmetric, the Cholesky matrices lower-triangular.
     """
-    cc = jnp.asarray(corr_array_n_cloud, dtype=jnp.float64)
-    cb = jnp.asarray(corr_array_n_below, dtype=jnp.float64)
-    rc_1 = jnp.asarray(rc_1, dtype=jnp.float64)
-    rc_2 = jnp.asarray(rc_2, dtype=jnp.float64)
+    cc = jnp.asarray(corr_array_n_cloud)
+    cb = jnp.asarray(corr_array_n_below)
     pdf_dim = cc.shape[0]
     hm_indices = list(range(iiPDF_Ncn + 1, pdf_dim))
 
@@ -2193,20 +2164,20 @@ def pack_hydromet_pdf_params(nzt, ngrdcol,
     hm_shape = base_shape + (MAX_HYDROMET_DIM,)
     corr_shape = base_shape + (MAX_HYDROMET_DIM, MAX_HYDROMET_DIM)
 
-    hm_1_out = jnp.zeros(hm_shape, dtype=jnp.float64)
-    hm_2_out = jnp.zeros(hm_shape, dtype=jnp.float64)
-    mu_hm_1 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    mu_hm_2 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    sigma_hm_1 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    sigma_hm_2 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    corr_w_hm_1 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    corr_w_hm_2 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    corr_chi_hm_1 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    corr_chi_hm_2 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    corr_eta_hm_1 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    corr_eta_hm_2 = jnp.zeros(hm_shape, dtype=jnp.float64)
-    corr_hmx_hmy_1 = jnp.zeros(corr_shape, dtype=jnp.float64)
-    corr_hmx_hmy_2 = jnp.zeros(corr_shape, dtype=jnp.float64)
+    hm_1_out = jnp.zeros(hm_shape)
+    hm_2_out = jnp.zeros(hm_shape)
+    mu_hm_1 = jnp.zeros(hm_shape)
+    mu_hm_2 = jnp.zeros(hm_shape)
+    sigma_hm_1 = jnp.zeros(hm_shape)
+    sigma_hm_2 = jnp.zeros(hm_shape)
+    corr_w_hm_1 = jnp.zeros(hm_shape)
+    corr_w_hm_2 = jnp.zeros(hm_shape)
+    corr_chi_hm_1 = jnp.zeros(hm_shape)
+    corr_chi_hm_2 = jnp.zeros(hm_shape)
+    corr_eta_hm_1 = jnp.zeros(hm_shape)
+    corr_eta_hm_2 = jnp.zeros(hm_shape)
+    corr_hmx_hmy_1 = jnp.zeros(corr_shape)
+    corr_hmx_hmy_2 = jnp.zeros(corr_shape)
 
     # Pack remaining means and standard deviations into hydromet_pdf_params.
     for ivar in range(hydromet_dim):

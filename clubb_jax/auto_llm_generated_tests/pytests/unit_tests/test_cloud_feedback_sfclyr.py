@@ -8,7 +8,6 @@ and a finite jax.grad. sat_mixrat_liq is the already-validated saturation port.
 
 
 import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.Benchmark_cases import time_dependent_input

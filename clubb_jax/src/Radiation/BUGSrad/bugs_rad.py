@@ -17,9 +17,6 @@ Heating rate (K/s): `rate[l] = -heat_fac·(Fnet[l] − Fnet[l+1])/dpl[l]`, `heat
 """
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 from clubb_jax.src.Radiation.BUGSrad.bugs_lwr import bugs_lwr
 from clubb_jax.src.Radiation.BUGSrad.bugs_swr import bugs_swr
 from clubb_jax.src.Radiation.BUGSrad.bugsrad_physconst import GRAVITY as _GRAV, CP_DRY_AIR as _CP
@@ -44,7 +41,7 @@ def bugs_rad(pl2, ppl, dpl, tl, ql, qcwl, qcil, o3l, ts, amu0, slr,
     mixing ratio/ozone/cloud fraction; `ts`/`amu0`/`slr`/`alvdf`/`alndf`/`alvdr`/`alndr`=(ncol,) surface
     temp/cos zenith/daylight frac/diffuse-vis/diffuse-nIR/direct-vis/direct-nIR albedo; `s0`=solar
     constant. Returns dict with atl/asl/atlcl/aslcl (LW/SW all/clear heating rates, K/s) + the fluxes."""
-    a = lambda x: jnp.asarray(x, dtype=jnp.float64)
+    a = jnp.asarray
     pl2, ppl, dpl, tl = a(pl2), a(ppl), a(dpl), a(tl)
     ql, qcwl, qcil, o3l, acld = a(ql), a(qcwl), a(qcil), a(o3l), a(acld)
     ts, amu0, slr = a(ts), a(amu0), a(slr)

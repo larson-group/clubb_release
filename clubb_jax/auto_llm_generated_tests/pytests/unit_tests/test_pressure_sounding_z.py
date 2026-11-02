@@ -16,8 +16,6 @@ import os
 _ROOT = str(_REPO_ROOT)
 
 import numpy as np
-import jax
-jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 
 from clubb_jax.src.Input_fields.sounding import read_sounding, convert_pressure_sounding_to_z

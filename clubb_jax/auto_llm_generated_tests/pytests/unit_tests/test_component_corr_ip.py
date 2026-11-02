@@ -4,7 +4,6 @@
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import (
     component_corr_w_hm_n_ip, component_corr_x_hm_n_ip,

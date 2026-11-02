@@ -14,7 +14,6 @@ corr_NN2NL, lognormal-lognormal pairs use corr_NN2LL. Oracle:
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import denorm_transform_corr
 from clubb_jax.src.CLUBB_core.pdf_utilities import corr_NN2NL, corr_NN2LL

@@ -7,6 +7,7 @@ state; fixed category/cluster metadata permits vectorized sample operations.
 from typing import NamedTuple
 import jax
 import jax.numpy as jnp
+from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.SILHS import parameters_silhs
 from clubb_jax.src.SILHS.generate_uniform_sample_module import (
@@ -205,7 +206,7 @@ def compute_category_sample_weights(category_real_probs, category_prescribed_pro
             sampling
     """
     # A category with no probability of being sampled has an irrelevant weight.
-    absent = jnp.abs(category_prescribed_probs) < jnp.finfo(jnp.float64).eps
+    absent = jnp.abs(category_prescribed_probs) < jnp.finfo(core_rknd).eps
     return jnp.where(
         absent,
         1.0,
@@ -482,7 +483,7 @@ def clust_cat_probs_frm_var_fracs(
 
     # Compute the sum of p_j * f_j across clusters.
     pdf_prob_var_frac_prod_sum = jnp.sum(cluster_real_probs * cluster_variance_fractions)
-    eps = jnp.finfo(jnp.float64).eps
+    eps = jnp.finfo(core_rknd).eps
 
     # Prescribe probabilities proportional to PDF probability times variance
     # fraction. If no variance has nonzero PDF mass, fall back to ordinary sampling.
@@ -649,7 +650,7 @@ def importance_sampling_assertions(
         l_lh_normalize_weights: Normalize weights to sum to num_samples
     """
     # Assert that real, prescribed and weighted prescribed probabilities sum to 1.
-    tolerance = num_importance_categories * jnp.finfo(jnp.float64).eps
+    tolerance = num_importance_categories * jnp.finfo(core_rknd).eps
     l_error = (
         (jnp.abs(jnp.sum(category_real_probs) - 1.0) > tolerance)
         | (jnp.abs(jnp.sum(category_prescribed_probs) - 1.0) > tolerance)
@@ -660,7 +661,7 @@ def importance_sampling_assertions(
     if l_lh_normalize_weights:
         l_error |= (
             jnp.abs(jnp.mean(lh_sample_point_weights) - 1.0)
-            > num_samples * jnp.finfo(jnp.float64).eps
+            > num_samples * jnp.finfo(core_rknd).eps
         )
 
     # Verify mixture component, cloud and precipitation intervals for each sample.

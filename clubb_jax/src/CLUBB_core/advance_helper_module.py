@@ -41,8 +41,6 @@ from functools import partial
 
 import jax
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.T_in_K_module import thlm2T_in_K
@@ -694,12 +692,12 @@ def calc_xpwp(nzm: int, nzt: int, ngrdcol: int, gr, Km_zm, xm):
     """
     del nzt, ngrdcol
     if Km_zm.ndim == 1:
-        xpwp = jnp.zeros((nzm,), dtype=jnp.float64)
+        xpwp = jnp.zeros((nzm,))
         # Solve for x'w' at all intermediate model levels.
         interior = Km_zm[1:nzm - 1] * gr.invrs_dzm[0, 1:nzm - 1] * (xm[1:] - xm[:-1])
         return xpwp.at[1:nzm - 1].set(interior)
 
-    xpwp = jnp.zeros((Km_zm.shape[0], nzm), dtype=jnp.float64)
+    xpwp = jnp.zeros((Km_zm.shape[0], nzm))
     # Solve for x'w' at all intermediate model levels.
     interior = Km_zm[:, 1:nzm - 1] * gr.invrs_dzm[:, 1:nzm - 1] * (xm[:, 1:] - xm[:, :-1])
     return xpwp.at[:, 1:nzm - 1].set(interior)

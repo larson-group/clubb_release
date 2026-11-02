@@ -16,9 +16,6 @@ Porting deviations:
 """
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 
 def _spow(x, p):
     """Positive power with a finite gradient at x=0.
@@ -69,20 +66,16 @@ def calc_F_x_zeta_x_setter(Skx, slope_coef_spread_DG_means_x, pdf_component_stde
     !
     ! where zeta_x > -1.
     """
-    Skx = jnp.asarray(Skx, dtype=jnp.float64)
-    slope = jnp.asarray(slope_coef_spread_DG_means_x, dtype=jnp.float64)
-    stdev_factor = jnp.asarray(pdf_component_stdev_factor_x, dtype=jnp.float64)
-    lam = jnp.asarray(lambda_, dtype=jnp.float64)
 
     absS = jnp.abs(Skx)
     # Set min_F_x to 0 and max_F_x to 1 for the setter variable.
     min_F_x = jnp.where(absS > 0.0, 1.0e-3, 0.0)
     max_F_x = jnp.ones_like(Skx)
     # F_x must have a value between min_F_x and max_F_x.
-    e = jnp.exp(-_spow(absS, lam) / slope)
+    e = jnp.exp(-_spow(absS, lambda_) / slope_coef_spread_DG_means_x)
     F_x = min_F_x * e + max_F_x * (1.0 - e)
     # The value of zeta_x must be greater than -1.
-    zeta_x = (stdev_factor - 1.0) * jnp.ones_like(Skx)
+    zeta_x = (pdf_component_stdev_factor_x - 1.0) * jnp.ones_like(Skx)
     return F_x, zeta_x, min_F_x, max_F_x
 
 
@@ -148,21 +141,21 @@ def calc_responder_var(xm, xp2, sgn_wpxp, mixt_frac, coef_spread_DG_means_x, exp
     and the value of F_x is set within those limits.  Then, the PDF parameters
     for responder variable x are calculated.
     """
-    Skx = jnp.asarray(Skx, dtype=jnp.float64); sgn = jnp.asarray(sgn_wpxp, dtype=jnp.float64)
-    mp = jnp.asarray(max_Skx2_pos_Skx_sgn_wpxp, dtype=jnp.float64)
-    mn = jnp.asarray(max_Skx2_neg_Skx_sgn_wpxp, dtype=jnp.float64)
 
     # Calculate the upper limit of the magnitude of Skx.
-    sk_pos = jnp.where(Skx >= 0.0, jnp.sqrt(0.99 * mp), -jnp.sqrt(0.99 * mp))
-    sk_neg = jnp.where(Skx >= 0.0, jnp.sqrt(0.99 * mn), -jnp.sqrt(0.99 * mn))
-    clip_pos = jnp.where(Skx ** 2 >= mp, sk_pos, Skx)
-    clip_neg = jnp.where(Skx ** 2 >= mn, sk_neg, Skx)
-    Skx_c = jnp.where(Skx * sgn >= 0.0, clip_pos, clip_neg)
+    sk_pos = jnp.where(Skx >= 0.0, jnp.sqrt(0.99 * max_Skx2_pos_Skx_sgn_wpxp),
+                       -jnp.sqrt(0.99 * max_Skx2_pos_Skx_sgn_wpxp))
+    sk_neg = jnp.where(Skx >= 0.0, jnp.sqrt(0.99 * max_Skx2_neg_Skx_sgn_wpxp),
+                       -jnp.sqrt(0.99 * max_Skx2_neg_Skx_sgn_wpxp))
+    clip_pos = jnp.where(Skx ** 2 >= max_Skx2_pos_Skx_sgn_wpxp, sk_pos, Skx)
+    clip_neg = jnp.where(Skx ** 2 >= max_Skx2_neg_Skx_sgn_wpxp, sk_neg, Skx)
+    Skx_c = jnp.where(Skx * sgn_wpxp >= 0.0, clip_pos, clip_neg)
 
-    min_F, max_F = calc_limits_F_x_responder(mixt_frac, Skx_c, sgn, mp, mn)
+    min_F, max_F = calc_limits_F_x_responder(mixt_frac, Skx_c, sgn_wpxp,
+                                             max_Skx2_pos_Skx_sgn_wpxp, max_Skx2_neg_Skx_sgn_wpxp)
     # F_x must have a value between min_F_x and max_F_x.
     F_x = calc_F_x_responder(coef_spread_DG_means_x, exp_factor_x, min_F, max_F)
-    mu1, mu2, s1sq, s2sq, c1, c2 = calc_responder_params(xm, xp2, Skx_c, sgn, F_x, mixt_frac)
+    mu1, mu2, s1sq, s2sq, c1, c2 = calc_responder_params(xm, xp2, Skx_c, sgn_wpxp, F_x, mixt_frac)
     return mu1, mu2, s1sq, s2sq, c1, c2, F_x, min_F, max_F, Skx_c
 
 
@@ -178,11 +171,6 @@ def new_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw,
     JAX returns the Fortran output and input/output values by name, including
     the packed implicit_coefs_terms fields used by turbulent-advection solvers.
     """
-    wm = jnp.asarray(wm, dtype=jnp.float64); rtm = jnp.asarray(rtm, dtype=jnp.float64); thlm = jnp.asarray(thlm, dtype=jnp.float64)
-    wp2 = jnp.asarray(wp2, dtype=jnp.float64); rtp2 = jnp.asarray(rtp2, dtype=jnp.float64); thlp2 = jnp.asarray(thlp2, dtype=jnp.float64)
-    Skw = jnp.asarray(Skw, dtype=jnp.float64); rtpthlp = jnp.asarray(rtpthlp, dtype=jnp.float64)
-    wprtp = jnp.asarray(wprtp, dtype=jnp.float64); wpthlp = jnp.asarray(wpthlp, dtype=jnp.float64)
-    cp = jnp.asarray(clubb_params, dtype=jnp.float64)
 
     # ------------------------- Begin Code -------------------------
 
@@ -202,10 +190,10 @@ def new_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw,
     # The value of F_thl is not reduced by exp_factor_thl.
     exp_factor_thl = jnp.ones_like(Skw)
 
-    slope_w = cp[:, islope_coef_spread_DG_means_w:islope_coef_spread_DG_means_w + 1]
-    stdev_w = cp[:, ipdf_component_stdev_factor_w:ipdf_component_stdev_factor_w + 1]
-    coef_rt = cp[:, icoef_spread_DG_means_rt:icoef_spread_DG_means_rt + 1]
-    coef_thl = cp[:, icoef_spread_DG_means_thl:icoef_spread_DG_means_thl + 1]
+    slope_w = clubb_params[:, islope_coef_spread_DG_means_w:islope_coef_spread_DG_means_w + 1]
+    stdev_w = clubb_params[:, ipdf_component_stdev_factor_w:ipdf_component_stdev_factor_w + 1]
+    coef_rt = clubb_params[:, icoef_spread_DG_means_rt:icoef_spread_DG_means_rt + 1]
+    coef_thl = clubb_params[:, icoef_spread_DG_means_thl:icoef_spread_DG_means_thl + 1]
 
     # Vertical velocity, w, will always be the setter variable.
     F_w, zeta_w, min_F_w, max_F_w = calc_F_x_zeta_x_setter(Skw, slope_w, stdev_w, _LAMBDA_W)

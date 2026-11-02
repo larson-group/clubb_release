@@ -154,14 +154,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp, eps
 from clubb_jax.src.CLUBB_core.interpolation import (
     lin_interpolate_two_points,
     zlinterp_fnc,
 )
-
-configure_jax_precision()
 
 # These variables are for the LBA radiation
 # Constant Parameters

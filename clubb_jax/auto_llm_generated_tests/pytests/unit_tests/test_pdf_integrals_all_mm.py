@@ -5,9 +5,6 @@ import pytest
 from clubb_jax.src.Microphys.KK_microphys import parabolic_cylinder
 
 
-import jax
-jax.config.update("jax_enable_x64", True)
-
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_all_MM import trivar_NNL_MM, quadrivar_NNLL_MM
 
 
@@ -35,7 +32,6 @@ def test_base_case_probability_mass(monkeypatch, high_accuracy, tolerance):
             print(f"  probability mass: high_accuracy={high_accuracy}, tolerance={tolerance:g}  PASS")
     finally:
         parabolic_cylinder.dv_parabolic_cylinder.clear_cache()
-
 
 
 def _normal_central(mu, sigma, c, n):

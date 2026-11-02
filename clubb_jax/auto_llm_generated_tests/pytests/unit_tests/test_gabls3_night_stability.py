@@ -10,19 +10,14 @@ coefficients are checked directly):
     gh1(x) = sqrt(1 − 9x) / 0.74
     fm1(x) = 2·log((1+x)/2) + log((1+x²)/2) − 2·atan(x) + π/2
     fh1(x) = 2·log((1+0.74x)/2)
-gm1/gh1 are evaluated over the unstable regime x<0 where `landflx` calls them;
-fm1/fh1 preserve the source's explicit default-real `alog` evaluation before
-conversion back to CLUBB core precision. Oracle-independent; never SKIPs.
+gm1/gh1 are evaluated over the unstable regime x<0 where `landflx` calls them.
+Oracle-independent; never SKIPs.
 """
 import math
 
-
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
 from clubb_jax.src.CLUBB_core.constants_clubb import ep1
-
-configure_jax_precision()
 
 from clubb_jax.src.Benchmark_cases.gabls3_night import (
     fh1,
@@ -36,11 +31,9 @@ from clubb_jax.src.Benchmark_cases.gabls3_night import (
 
 def _ref_gm1(x): return (1.0 - 15.0 * x) ** 0.25
 def _ref_gh1(x): return math.sqrt(1.0 - 9.0 * x) / 0.74
-def _alog(x): return float(np.log(np.float32(x)))
-def _ref_fm1(x): return 2.0 * _alog((np.float32(1.0) + np.float32(x)) / np.float32(2.0)) \
-    + _alog((np.float32(1.0) + np.float32(x * x)) / np.float32(2.0)) - 2.0 * math.atan(x) + math.pi / 2.0
-def _ref_fh1(x): return 2.0 * _alog( \
-    (np.float32(1.0) + np.float32(0.74) * np.float32(x)) / np.float32(2.0))
+def _ref_fm1(x): return 2.0 * math.log((1.0 + x) / 2.0) + math.log((1.0 + x * x) / 2.0) \
+    - 2.0 * math.atan(x) + math.pi / 2.0
+def _ref_fh1(x): return 2.0 * math.log((1.0 + 0.74 * x) / 2.0)
 
 
 def test_gm1_gh1_unstable_regime():
@@ -57,19 +50,18 @@ def test_fm1_fh1_formula():
     for x in np.linspace(1.0, 6.0, 50):          # gm1/gh1 outputs are > 1 in the unstable regime
         worst = max(worst, abs(float(fm1(float(x))) - _ref_fm1(x)),
                     abs(float(fh1(float(x))) - _ref_fh1(x)))
-    # JAX and the host libm may differ by a few float32 ulps for ALOG.
-    assert worst < 5e-7, f"fm1/fh1 mismatch vs F90 formula {worst:.2e}"
+    assert worst < 1e-13, f"fm1/fh1 mismatch vs F90 formula {worst:.2e}"
     print(f"  fm1 (log+atan+π/2), fh1=2·log((1+0.74x)/2): match F90 formula (worst {worst:.1e})  PASS")
 
 
-def test_landflx_stable_default_real_boundaries():
-    """Pin the stable GABLS3-night path, including its default-real ALOG calls."""
+def test_landflx_stable_path():
+    """Pin the stable GABLS3-night path of landflx."""
     th, ts = 290.0, 289.0
     qh, qs = 0.005, 0.006
     uh, vh = 5.0, 1.0
     h, z0 = 3.125, 0.15
 
-    zody = _alog(np.float32(h) / np.float32(z0))
+    zody = math.log(h / z0)
     vel_floor = math.sqrt(max(0.5, uh**2 + vh**2))
     r = 9.81 / ts * (th * (1.0 + ep1 * qh) - ts * (1.0 + ep1 * qs)) * h / vel_floor**2
     a = 4.8 * 4.8 * r - 6.35
@@ -78,13 +70,13 @@ def test_landflx_stable_default_real_boundaries():
     d = math.sqrt(b * b - 4.0 * a * c)
     xsi1 = (-b + d) / a / 2.0
     xsi2 = (-b - d) / a / 2.0
-    xsi = float(max(np.float32(xsi1), np.float32(xsi2)))
+    xsi = max(xsi1, xsi2)
     fm = zody + 4.8 * xsi
     vel = math.sqrt(uh**2 + vh**2)
     ustar = 0.4 / fm * vel
     xsi = max(1.0e-5, xsi)
     xlmo = h / xsi
-    denominator = _alog(np.float32(h) / np.float32(0.25)) + 5.0 * h / xlmo - 5.0 * 0.25 / xlmo
+    denominator = math.log(h / 0.25) + 5.0 * h / xlmo - 5.0 * 0.25 / xlmo
     expected = (
         0.4 * ustar * (ts - th) / denominator,
         0.4 * ustar * (qs - qh) / denominator,

@@ -10,9 +10,6 @@ small/large-amount region split (`ireg`) and a thin/thick-layer pathlength corre
 import jax.numpy as jnp
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.clubb_precision import configure_jax_precision
-configure_jax_precision()
-
 from clubb_jax.src.Radiation.BUGSrad.bugsrad_physconst import GRAVITY, R_D, R_STAR, MW_H2O, F_VIRT
 
 # Fortran band (1-18) → CKD continuum band (1-12); 0 = no continuum (SW bands). 0-based array.
@@ -53,9 +50,7 @@ _CK24 = np.array([
 def parm_ckd24(iband0, amnt, patm, temp, dz):
     """CKD2.4 continuum optical depth for continuum band `iband0` (0-based, 0..11). amnt [g/cm^2],
     patm [atm], temp [K], dz [km] — same shape; returns the optical depth. Vectorized."""
-    amnt = jnp.asarray(amnt, dtype=jnp.float64); patm = jnp.asarray(patm, dtype=jnp.float64)
-    temp = jnp.asarray(temp, dtype=jnp.float64); dz = jnp.asarray(dz, dtype=jnp.float64)
-    c = jnp.asarray(_CK24[iband0], dtype=jnp.float64)   # (2, 7) [reg][coef]
+    c = _CK24[iband0]   # (2, 7) [reg][coef]
     h2b = float(_H2OBND[iband0])
     # thin/thick-layer pathlength correction
     factor = jnp.where(dz < 0.25, 0.25 / dz, jnp.where(dz > 1.50, 1.50 / dz, 1.0))
@@ -75,9 +70,6 @@ def gascon(ib, pp, ppl, dp, tt, rmix):
     """H2O continuum optical depth `tgm` (ncol, nlm) for 0-based global band `ib` (0..17). 0 where
     the band has no continuum (SW) or rmix<=0. `pp`=(ncol,nlm+1) level pres [hPa], `ppl`/`dp`/`tt`/
     `rmix`=(ncol,nlm) layer pres/thickness [hPa]/temp [K]/vapor mixing ratio [kg/kg]."""
-    pp = jnp.asarray(pp, dtype=jnp.float64); ppl = jnp.asarray(ppl, dtype=jnp.float64)
-    dp = jnp.asarray(dp, dtype=jnp.float64); tt = jnp.asarray(tt, dtype=jnp.float64)
-    rmix = jnp.asarray(rmix, dtype=jnp.float64)
     cb = int(_IFLB[ib])
     if cb == 0:
         return jnp.zeros_like(ppl)

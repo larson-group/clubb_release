@@ -12,7 +12,6 @@ PDF correlation arrays from the component_corr_* routines + calc_corr_w_hm_n. Or
 
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 
 from clubb_jax.src.CLUBB_core.setup_clubb_pdf_params import comp_corr_norm, component_corr_chi_eta, component_corr_w_x, component_corr_w_hm_n_ip, calc_corr_w_hm_n
 
