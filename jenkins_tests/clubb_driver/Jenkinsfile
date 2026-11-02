@@ -8,6 +8,7 @@
 // four parameter sets in batches of two (eight steps), Intel standard cases with
 // four columns (at most 500 steps), and NVIDIA OpenACC minimal cases with eight
 // columns (at most 200 steps). GPU SILHS uses straight Monte Carlo in both runs.
+// The OpenACC comparison enables ordered coherent mixing-length sums for exact output.
 //
 // Reproduce the first stage from the repository root on a UWM worker:
 //   source /etc/profile.d/larson-group.sh
@@ -17,6 +18,11 @@
 //   python3 human_reviewed_tests/case_runner_lifecycle_test.py -output_dir output/driver_test/case_runner_native
 //   python3 human_reviewed_tests/case_runner_lifecycle_test.py -python -output_dir output/driver_test/case_runner_python
 //   python3 human_reviewed_tests/case_runner_lifecycle_test.py -jax=cpu -output_dir output/driver_test/case_runner_jax
+// Reproduce the GPU comparison with the same NVHPC and NetCDF modules:
+//   ./compile.py -gpu openacc -openacc_bfb
+//   run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
+//   run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
+//   run_scripts/run_bindiff_all.py output/driver_test/standalone_nvhpc output/driver_test/driver_nvhpc
 // Elsewhere, provide the GNU/NetCDF build environment described in BUILD.md.
 // Python dependencies and the JAX CPU environment use the existing bootstraps.
 // Record independent failures while allowing manual aborts to stop the pipeline.
@@ -111,7 +117,7 @@ pipeline {
               sh '''
                 source /etc/profile.d/larson-group.sh
                 module load nvhpc netcdf-fortran
-                ./compile.py -gpu openacc
+                ./compile.py -gpu openacc -openacc_bfb
               '''
               // Serialize GPU cases on this worker; other nodes may run concurrently.
               lock( "GPU_${env.NODE_NAME}" ) {

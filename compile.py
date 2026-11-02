@@ -215,6 +215,7 @@ def configure_cmake(args, toolchain_file, inst_dir, build_type):
         f"-DCMAKE_BUILD_TYPE={build_type}",
         f"-DPRECISION={args.precision}",
         f"-DGPU={args.gpu}",
+        f"-DOPENACC_BFB={to_on_off(args.openacc_bfb)}",
 
         # --- NetCDF & External Library Linker Fixes ---
         "-DBUILD_SHARED_LIBS=OFF", # Shared libraries complicate the building of netcdf
@@ -366,6 +367,8 @@ def main():
     parser.add_argument("-toolchain", metavar="FILE", help="Path to CMake toolchain file")
     parser.add_argument("-gpu", choices=["none", "openacc", "openmp"], default="none", 
                         help="GPU option for build")
+    parser.add_argument("-openacc_bfb", action="store_true",
+                        help="Use reproducible OpenACC kernels for exact-output comparisons")
     parser.add_argument("-precision", choices=["single", "double"], default="double", 
                         help="Floating-point precision")
     parser.add_argument("-debug", action="store_true", help="Compile in debug mode")
@@ -392,6 +395,9 @@ def main():
 
     args = parser.parse_args()
 
+    if args.openacc_bfb and args.gpu != "openacc":
+        parser.error("-openacc_bfb requires -gpu openacc")
+
     # Our CMake files distinguish between "Debug" and "Release" for CMAKE_BUILD_TYPE
     build_type = "Debug" if args.debug else "Release"
 
@@ -401,6 +407,7 @@ def main():
     subdir_suffix =  ""
     subdir_suffix += f"_DEBUG" if args.debug else ""
     subdir_suffix += f"_GPU{args.gpu}" if args.gpu != "none" else ""
+    subdir_suffix += "_OPENACC_BFB" if args.openacc_bfb else ""
     subdir_suffix += f"_PREC{args.precision}"
     subdir_suffix += "_PYTHON" if args.python else ""
     subdir_suffix += "_OPENMP" if args.openmp else ""

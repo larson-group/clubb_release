@@ -1,5 +1,17 @@
 // GPU SILHS requires straight Monte Carlo sampling in both comparison runs.
 // Compare synchronous and async OpenACC outputs exactly using a 16-column C8 hypergrid.
+// Both builds use ordered coherent mixing-length sums for exact output.
+// On a UWM GPU worker, source /etc/profile.d/larson-group.sh, load nvhpc and
+// netcdf-fortran, then run the compile, case and comparison commands below.
+// The async build also needs utilities/convert_to_async.py before compilation.
+// For a short BOMEX reproduction, use the same -multicol, -stats and -debug
+// settings as below, with -max_iters 40 in both run_scm.py calls:
+//   ./compile.py -gpu openacc -openacc_bfb
+//   run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats multi_col_stats -debug 0 -max_iters 40 -output_dir gpu_async/normal bomex
+//   python3 utilities/convert_to_async.py
+//   ./compile.py -gpu openacc -openacc_bfb
+//   run_scripts/run_scm.py -multicol C8/0.4:0.9/16 -stats multi_col_stats -debug 0 -max_iters 40 -output_dir gpu_async/async bomex
+//   run_scripts/run_bindiff_all.py output/gpu_async/normal output/gpu_async/async -verbose 2
 pipeline {
 
   agent any
@@ -10,7 +22,7 @@ pipeline {
         sh '''
           source /etc/profile.d/larson-group.sh
           module load nvhpc netcdf-fortran
-          ./compile.py -gpu openacc
+          ./compile.py -gpu openacc -openacc_bfb
         '''
       }
     }
@@ -40,7 +52,7 @@ pipeline {
         sh '''
           source /etc/profile.d/larson-group.sh
           module load nvhpc netcdf-fortran
-          ./compile.py -gpu openacc
+          ./compile.py -gpu openacc -openacc_bfb
         '''
       }
     }

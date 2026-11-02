@@ -1,3 +1,8 @@
+// Compare consecutive master commits with the shared GPU bit-difference harness.
+// Its live config owns RunCommands and must use `compile.py -gpu openacc -debug
+// -openacc_bfb` once the new build flag is available on master. The baseline
+// transition and config change must happen together; this pipeline does not
+// rewrite the persistent test config.
 pipeline {
 
   agent any

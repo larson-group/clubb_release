@@ -32,6 +32,16 @@ module load nvhpc netcdf-fortran
 ./compile.py -gpu openacc
 ```
 
+For exact-output OpenACC comparisons, add `-openacc_bfb`:
+
+```
+./compile.py -gpu openacc -openacc_bfb
+```
+
+This build processes coherent mixing-length launch levels in a fixed order within
+each column. It uses a separate build and install directory from the default,
+faster OpenACC build. Both runs in an exact comparison must use the same mode.
+
 However, if you don't have `module` set up, you can just do the following
 ```
 FC=<compiler> ./compile.py

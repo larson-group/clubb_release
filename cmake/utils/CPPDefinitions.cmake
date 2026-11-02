@@ -25,6 +25,14 @@ add_compile_options(${GPU_COMPILE_FLAGS})
 add_link_options(${GPU_LINK_FLAGS})
 add_compile_definitions(${GPU_DEFINITIONS})
 
+option(OPENACC_BFB "Use reproducible OpenACC kernels for exact-output comparisons" OFF)
+if(OPENACC_BFB)
+  if(NOT GPU STREQUAL "openacc")
+    message(FATAL_ERROR "OPENACC_BFB requires GPU=openacc")
+  endif()
+  add_compile_definitions(OPENACC_BFB)
+endif()
+
 
 # Preprocessor definition for CLUBB_REAL_TYPE, which sets the floating-point precision
 set(PRECISION "double" CACHE STRING "Precision for CLUBB_REAL_TYPE (single,double)")

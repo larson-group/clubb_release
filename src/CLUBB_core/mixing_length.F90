@@ -3076,9 +3076,17 @@ module mixing_length
     !$acc end parallel loop
 
     ! Compute the coherence-weighted upward length for each launch level.
+#ifdef OPENACC_BFB
+    ! Visit launches in a fixed order within each column for reproducible sums.
+    !$acc parallel loop gang default(present)
+    do i = 1, ngrdcol
+      !$acc loop seq
+      do k = gr%k_lb_zt, gr%k_ub_zt, gr%grid_dir_indx
+#else
     !$acc parallel loop collapse(2) default(present)
     do k = gr%k_lb_zt, gr%k_ub_zt, gr%grid_dir_indx
       do i = 1, ngrdcol
+#endif
 
         Lscale_tmp = zero
 
@@ -3210,9 +3218,17 @@ module mixing_length
     !$acc end parallel loop
 
     ! Compute the coherence-weighted downward length for each launch level.
+#ifdef OPENACC_BFB
+    ! Match the upward launch order so each column accumulates reproducibly.
+    !$acc parallel loop gang default(present)
+    do i = 1, ngrdcol
+      !$acc loop seq
+      do k = gr%k_lb_zt, gr%k_ub_zt, gr%grid_dir_indx
+#else
     !$acc parallel loop collapse(2) default(present)
     do k = gr%k_lb_zt, gr%k_ub_zt, gr%grid_dir_indx
       do i = 1, ngrdcol
+#endif
 
         Lscale_tmp = zero
 
