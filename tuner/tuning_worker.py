@@ -11,29 +11,19 @@ import traceback
 import numpy as np
 
 from tuner.paths import REPO_ROOT, RUN_SCRIPTS
-from tuner.taylor_metrics import INVALID_SCALED_RMSE_PENALTY, LOSS_METRIC_NAMES
-from tuner.loss_backend import load_loss_backend, parameter_metadata
+from tuner.taylor_metrics import INVALID_RMSE_PENALTY, LOSS_METRIC_NAMES
+from utilities.clubb_loss_runner import clubb_loss_runner, validate_gradient_backend
 
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from input.scripts.create_case_namelist import create_loss_case_namelist  # noqa: E402
 
 
 def _actionable_error_message(exc: BaseException) -> str:
     """Return an error string with the common module workaround when relevant."""
     message = f"{exc}\n{traceback.format_exc(limit=10)}"
     lower = message.lower()
-    if (
-        "f2py_clubb_get_loss_for_params" in lower
-        and "expected 3" in lower
-    ):
-        message += (
-            "\nThe loaded CLUBB Python API does not expose Taylor-metric loss outputs. "
-            "Rebuild the CLUBB Python API so f2py_clubb_get_loss_for_params returns "
-            "scaled_rmse, correlation, std_ratio, centered_rmse_norm, and bias_norm."
-        )
-    elif "libnvomp" in lower or "netcdf" in lower or "no module named" in lower or "importerror" in lower:
+    if "libnvomp" in lower or "netcdf" in lower or "no module named" in lower or "importerror" in lower:
         message += (
             "\nCLUBB Python import/init failed. Check that the compiler and "
             "NetCDF modules used for the Python build are available in this shell."
@@ -53,60 +43,33 @@ def _baseline_worker_main(conn, init_payload: dict) -> None:
     original_cwd = os.getcwd()
 
     try:
-        clubb_api = load_loss_backend(init_payload.get("backend", "fortran"))
-
         baselines = {}
-        baseline_specs = [("clubb_default", "default", None)]
+        baseline_specs = [('clubb_default', 'default', None)]
         if override:
-            baseline_specs.append(("override_defaults", config, override))
+            baseline_specs.append(('override_defaults', config, override))
         for baseline_name, baseline_config, baseline_override in baseline_specs:
-            try:
-                baseline_path, _, _ = create_loss_case_namelist(
-                    case_name,
-                    worker_dir / "baselines" / baseline_name,
-                    selected_fields,
-                    num_time_windows=num_time_windows,
-                    config=baseline_config,
-                    case_defaults=case_defaults or None,
-                    batch_size=1,
-                    duplicate_params_for_batch=True,
-                    disable_stats_storage=True,
-                    override=baseline_override,
-                )
-                os.chdir(RUN_SCRIPTS)
-                baseline_fields, baseline_params = clubb_api.init_clubb_loss(
-                    str(baseline_path),
-                    return_default_params=True,
-                )
-                try:
-                    baseline_metrics = clubb_api.clubb_get_loss_for_params(
-                        np.asarray(baseline_params, dtype=np.float64)
-                    )
-                    scaled_rmse = np.asarray(baseline_metrics[0], dtype=float)
-                    baseline_available = not (
-                        np.any(~np.isfinite(scaled_rmse))
-                        or np.any(scaled_rmse >= INVALID_SCALED_RMSE_PENALTY)
-                    )
-                finally:
-                    clubb_api.finalize_clubb_loss()
-            except Exception as exc:
-                raise RuntimeError(
-                    f"{case_name} {baseline_name} baseline evaluation failed: {exc}"
-                ) from exc
-            baselines[baseline_name] = {
-                "available": baseline_available,
-                "unavailable_reason": (
-                    "CLUBB rejected this baseline parameter set"
-                    if not baseline_available
-                    else ""
-                ),
-                "field_names": list(baseline_fields),
-                "loss_metric_names": list(LOSS_METRIC_NAMES),
-                "loss_metrics_by_metric_window_field_and_column": {
-                    metric_name: np.asarray(values, dtype=float).tolist()
-                    for metric_name, values in zip(LOSS_METRIC_NAMES, baseline_metrics)
-                },
-            }
+            os.chdir(RUN_SCRIPTS)
+            with clubb_loss_runner(
+                init_payload.get('backend', 'fortran'), case_name, selected_fields,
+                worker_dir / 'baselines' / baseline_name, batch_size=1,
+                case_defaults=dict(case_defaults, num_time_windows=num_time_windows),
+                config=baseline_config, override=baseline_override,
+                loss_weights=init_payload.get("loss_weights"), field_weights=init_payload.get("field_weights"),
+            ) as runner:
+                result = runner.evaluate(runner.default_params)
+                rmse = result['metrics']['rmse']
+                available = bool(np.isfinite(rmse).all()
+                                 and np.all(rmse < INVALID_RMSE_PENALTY))
+                baselines[baseline_name] = {
+                    'available': available,
+                    'unavailable_reason': '' if available else 'CLUBB rejected this baseline parameter set',
+                    'case_loss': result['loss'].tolist(),
+                    'field_loss': result['field_loss'].tolist(),
+                    'field_names': list(runner.field_names),
+                    'loss_metric_names': list(LOSS_METRIC_NAMES),
+                    'loss_metrics_by_metric_window_field_and_column': {
+                        name: values.tolist() for name, values in result['metrics'].items()},
+                }
         conn.send({"baselines": baselines})
     except Exception as exc:
         conn.send({"error_message": _actionable_error_message(exc)})
@@ -174,29 +137,16 @@ def worker_main(conn, init_payload: dict) -> None:
         if baselines is None:
             return
         backend = init_payload.get("backend", "fortran")
-        clubb_api = load_loss_backend(backend)
-
-        worker_dir.mkdir(parents=True, exist_ok=True)
-        aggregate_path, _, _ = create_loss_case_namelist(
-            case_name,
-            worker_dir,
-            selected_fields,
-            num_time_windows=num_time_windows,
-            config=config,
-            case_defaults=case_defaults or None,
-            batch_size=batch_size,
-            duplicate_params_for_batch=True,
-            disable_stats_storage=True,
-            override=override,
-        )
-
+        validate_gradient_backend(backend, init_payload.get('grad', False))
         os.chdir(RUN_SCRIPTS)
-        field_names, default_params = clubb_api.init_clubb_loss(
-            str(aggregate_path),
-            return_default_params=True,
-        )
+        runner = clubb_loss_runner(
+            backend, case_name, selected_fields, worker_dir, batch_size=batch_size,
+            case_defaults=dict(case_defaults, num_time_windows=num_time_windows),
+            config=config, override=override,
+            loss_weights=init_payload.get("loss_weights"), field_weights=init_payload.get("field_weights")).init()
         initialized = True
-        param_names, hard_parameter_bounds = parameter_metadata(backend)
+        field_names, default_params = runner.field_names, runner.default_params
+        param_names, hard_parameter_bounds = runner.param_names, runner.bounds
 
         conn.send(
             {
@@ -226,22 +176,18 @@ def worker_main(conn, init_payload: dict) -> None:
                 raise RuntimeError(f"Unknown worker message type: {message_type}")
 
             params_batch = np.asarray(message["params_batch"], dtype=np.float64)
-            (
-                scaled_rmse,
-                correlation,
-                std_ratio,
-                centered_rmse_norm,
-                bias_norm,
-            ) = clubb_api.clubb_get_loss_for_params(params_batch)
-            metric_arrays = {
-                "scaled_rmse": scaled_rmse,
-                "correlation": correlation,
-                "std_ratio": std_ratio,
-                "centered_rmse_norm": centered_rmse_norm,
-                "bias_norm": bias_norm,
-            }
+            result = runner.evaluate(params_batch, grad=init_payload.get('grad', False),
+                                     gradient_parameters=init_payload.get('gradient_parameters'),
+                                     gradient_mode=init_payload.get('gradient_mode', 'auto'))
+            metric_arrays = result['metrics']
             conn.send(
                 {
+                    "case_loss": result["loss"].tolist(),
+                    "field_loss": result["field_loss"].tolist(),
+                    "gradient_target": result.get("gradient_target"),
+                    "gradient_parameters": result.get("gradient_parameters", []),
+                    "gradient_mode": result.get('gradient_mode'),
+                    "gradient": {name: values.tolist() for name, values in result.get("gradient", {}).items()},
                     "type": "result",
                     "case_name": case_name,
                     "batch_id": int(message["batch_id"]),
@@ -274,7 +220,7 @@ def worker_main(conn, init_payload: dict) -> None:
             pass
         if initialized:
             try:
-                clubb_api.finalize_clubb_loss()
+                runner.close()
             except Exception:
                 pass
         try:

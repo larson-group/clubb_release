@@ -12,15 +12,10 @@ from tuner.sample_history import SAMPLE_HISTORY_DIR, SampleHistoryWriter, sample
 from tuner.tuning_scheduler import TuningScheduler
 from tuner.taylor_metrics import (
     DEFAULT_AGGREGATION_MODE,
-    DEFAULT_LOSS_MODE,
-    INVALID_CORRELATION_PENALTY,
-    INVALID_LOG_STD_RATIO_PENALTY,
     LOSS_METRIC_NAMES,
     LOSS_POLICY_VERSION,
     aggregate_losses,
     blended_mean_max_loss,
-    compute_field_loss_diagnostics,
-    field_smart_loss,
     normalize_aggregation_weights,
 )
 from tuner.request import load_request
@@ -36,102 +31,17 @@ from tuner.tuning_strategy import (
 )
 
 
-def test_field_smart_loss_combines_centered_rmse_and_bias():
-    metrics = {"centered_rmse_norm": 0.25, "bias_norm": -0.75}
-
-    assert field_smart_loss(metrics, "centered_rmse_bias") == 1.0
-
-
-def test_default_loss_mode_prefers_shape_first():
-    assert DEFAULT_LOSS_MODE == "shape_first"
-
-
-def test_compute_field_loss_diagnostics_all_named_modes():
-    metrics = {
-        "scaled_rmse": 1.5,
-        "centered_rmse_norm": 0.25,
-        "bias_norm": -0.5,
-        "correlation": 0.8,
-        "std_ratio": 2.0,
-    }
-
-    diagnostics = compute_field_loss_diagnostics(metrics)
-    losses = diagnostics["per_field_losses"]
-
-    assert math.isclose(losses["scaled_rmse"], 1.5)
-    assert math.isclose(losses["centered_rmse_bias"], 0.75)
-    assert math.isclose(
-        losses["taylor_components"],
-        0.25 + 0.5 * 0.5 + 0.25 * 0.2 + 0.25 * abs(math.log(2.0)),
-    )
-    assert math.isclose(
-        losses["taylor_components_squared"],
-        0.25**2 + 0.5 * 0.5**2 + 0.25 * 0.2**2 + 0.25 * abs(math.log(2.0)) ** 2,
-    )
-    assert math.isclose(
-        losses["shape_first"],
-        0.5 * 0.25 + 0.5 * 0.5 + 1.0 * 0.2 + 0.5 * abs(math.log(2.0)),
-    )
-    assert math.isclose(
-        losses["bias_light_taylor"],
-        0.25 + 0.25 * 0.5 + 0.5 * 0.2 + 0.5 * abs(math.log(2.0)),
-    )
-    assert math.isclose(
-        losses["decomposed_taylor"],
-        0.5 + 0.2 + abs(math.log(2.0)),
-    )
-    assert math.isclose(
-        diagnostics["loss_components_by_mode"]["taylor_components"]["correlation_penalty"],
-        0.25 * 0.2,
-    )
-    assert "centered_rmse_norm" not in diagnostics["loss_components_by_mode"]["decomposed_taylor"]
-
-
-def test_invalid_correlation_uses_named_penalty_and_flag():
-    diagnostics = compute_field_loss_diagnostics(
-        {
-            "centered_rmse_norm": 0.0,
-            "bias_norm": 0.0,
-            "correlation": float("nan"),
-            "std_ratio": 1.0,
-        }
-    )
-
-    assert diagnostics["correlation_invalid"] is True
-    assert diagnostics["possible_degenerate_taylor_metrics"] is True
-    assert diagnostics["correlation_penalty"] == INVALID_CORRELATION_PENALTY
-
-
-def test_small_correlation_roundoff_is_clamped_without_invalid_flag():
-    diagnostics = compute_field_loss_diagnostics(
-        {
-            "centered_rmse_norm": 0.0,
-            "bias_norm": 0.0,
-            "correlation": 1.0 + 1.0e-8,
-            "std_ratio": 1.0,
-        }
-    )
-
-    assert diagnostics["correlation_clamped"] is True
-    assert diagnostics["correlation_invalid"] is False
-    assert diagnostics["sanitized_correlation"] == 1.0
-    assert diagnostics["correlation_penalty"] == 0.0
-
-
-def test_invalid_std_ratio_uses_named_log_penalty_and_flag():
-    diagnostics = compute_field_loss_diagnostics(
-        {
-            "centered_rmse_norm": 0.0,
-            "bias_norm": 0.0,
-            "correlation": 1.0,
-            "std_ratio": 0.0,
-        }
-    )
-
-    assert diagnostics["std_ratio_invalid"] is True
-    assert diagnostics["std_ratio_nonpositive"] is True
-    assert diagnostics["possible_degenerate_taylor_metrics"] is True
-    assert diagnostics["abs_log_std_ratio"] == INVALID_LOG_STD_RATIO_PENALTY
+def _prepared_cases(cases):
+    """Build explicit case values for scheduler fixtures, independent of its policy."""
+    result = {}
+    for case, fields in cases.items():
+        metrics = {name: np.asarray([field[name] for field in fields.values()]).transpose(1, 0, 2)
+                   for name in LOSS_METRIC_NAMES}
+        errors = metrics['rmse']
+        result[case] = {'metrics': {name: values.tolist() for name, values in metrics.items()},
+                        'loss': np.sqrt(np.mean(errors ** 2, axis=(0, 1))).tolist(),
+                        'field_loss': np.sqrt(np.mean(errors ** 2, axis=0)).tolist()}
+    return result
 
 
 def test_blended_mean_max_loss_uses_normalized_mean_and_worst_loss():
@@ -297,10 +207,9 @@ def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
 
     request = load_request(request_path)
 
-    assert request["loss_mode"] == DEFAULT_LOSS_MODE
+    assert request["loss_weights"] == {"mean": 1., "std": 1., "corr": 1.}
     assert request["aggregation_mode"] == DEFAULT_AGGREGATION_MODE
     assert request["aggregation_weights"] == [0.1, 0.4, 0.4, 0.1]
-    assert request["time_window_aggregation_scope"] == "overall"
     assert request["config"] == "default"
     assert request["loss_policy_version"] == LOSS_POLICY_VERSION
     assert request["case_configs"] == [
@@ -312,7 +221,7 @@ def test_load_request_defaults_loss_policy_metadata(tmp_path, monkeypatch):
         }
     ]
     assert "time_window_mode" not in request
-    assert "invalid_correlation_penalty" in request["loss_policy_constants"]
+    assert "invalid_rmse_penalty" in request["loss_policy_constants"]
 
 
 def test_load_request_accepts_named_tunable_config(tmp_path, monkeypatch):
@@ -921,7 +830,6 @@ def test_scheduler_stores_selected_loss_and_aggregation_diagnostics(tmp_path):
             "max_workers": 1,
             "strategy": {"name": "random", "options": {"max_samples": 1}},
             "parameter_ranges": [{"name": "C8", "min": 10.0, "max": 11.0}],
-            "loss_mode": "taylor_components",
             "aggregation_mode": "mean_worst_quantile",
         },
         job_dir=tmp_path,
@@ -934,33 +842,32 @@ def test_scheduler_stores_selected_loss_and_aggregation_diagnostics(tmp_path):
         "sample_ids": [7],
         "selected_params_by_sample": [{"C8": 10.0}],
         "all_params_by_sample": [{"C8": 10.0}],
-        "case_loss_metrics": {
+        "case_results": {
             "atex": {
                 "cloud_frac": {
-                    "scaled_rmse": [[9.0]],
+                    "rmse": [[9.0]],
                     "correlation": [[0.8]],
                     "std_ratio": [[1.0]],
-                    "centered_rmse_norm": [[0.25]],
                     "bias_norm": [[-0.5]],
                 }
             }
         },
     }
-    assert set(batch["case_loss_metrics"]["atex"]["cloud_frac"]) == set(LOSS_METRIC_NAMES)
 
     scheduler.batches[3] = batch
+    batch["case_results"] = _prepared_cases(batch["case_results"])
     scheduler._complete_batch(3, batch)
 
     result = scheduler.completed_samples[0]
     metrics = result["field_metrics"]["atex"]["cloud_frac"]
-    assert result["loss_mode"] == "taylor_components"
+    assert result["loss_weights"] == {"mean": 1., "std": 1., "corr": 1.}
     assert result["aggregation_mode"] == "mean_worst_quantile"
-    assert result["case_loss_diagnostics"]["atex"]["aggregation_mode"] == "mean_worst_quantile"
+    assert result["case_loss_diagnostics"]["atex"]["aggregation"] == "rms_fields_and_windows"
     assert result["total_loss_diagnostics"]["aggregation_mode"] == "mean_worst_quantile"
-    assert metrics["scaled_rmse"] == 9.0
-    assert "centered_rmse_bias" in metrics["per_field_losses"]
-    assert metrics["smart_loss"] == metrics["per_field_losses"]["taylor_components"]
-    assert metrics["loss_components_by_mode"]["taylor_components"]["abs_bias_norm"] == 0.25
+    assert metrics["rmse"] == 9.0
+
+
+
 
 
 def test_scheduler_handles_different_window_counts_by_case(tmp_path):
@@ -996,7 +903,6 @@ def test_scheduler_handles_different_window_counts_by_case(tmp_path):
                 },
             },
             "selected_fields": ["cloud_frac"],
-            "loss_mode": "centered_rmse_bias",
             "batch_size": 1,
             "max_workers": 1,
             "strategy": {"name": "random", "options": {"max_samples": 1}},
@@ -1012,22 +918,20 @@ def test_scheduler_handles_different_window_counts_by_case(tmp_path):
         "sample_ids": [8],
         "selected_params_by_sample": [{"C8": 10.0}],
         "all_params_by_sample": [{"C8": 10.0}],
-        "case_loss_metrics": {
+        "case_results": {
             "atex": {
                 "cloud_frac": {
-                    "scaled_rmse": [[1.0]],
+                    "rmse": [[1.0]],
                     "correlation": [[1.0]],
                     "std_ratio": [[1.0]],
-                    "centered_rmse_norm": [[0.1]],
                     "bias_norm": [[0.1]],
                 }
             },
             "bomex": {
                 "cloud_frac": {
-                    "scaled_rmse": [[2.0], [3.0]],
+                    "rmse": [[2.0], [3.0]],
                     "correlation": [[1.0], [0.9]],
                     "std_ratio": [[1.0], [1.0]],
-                    "centered_rmse_norm": [[0.2], [0.3]],
                     "bias_norm": [[0.1], [0.2]],
                 }
             },
@@ -1035,6 +939,7 @@ def test_scheduler_handles_different_window_counts_by_case(tmp_path):
     }
 
     scheduler.batches[4] = batch
+    batch["case_results"] = _prepared_cases(batch["case_results"])
     scheduler._complete_batch(4, batch)
 
     result = scheduler.completed_samples[0]
@@ -1042,10 +947,8 @@ def test_scheduler_handles_different_window_counts_by_case(tmp_path):
     assert result["field_metrics"]["atex"]["cloud_frac"]["num_time_windows"] == 1
     assert result["field_metrics"]["bomex"]["cloud_frac"]["num_time_windows"] == 2
     assert len(result["field_metrics"]["bomex"]["cloud_frac"]["subwindows"]) == 2
-    assert result["time_window_aggregation_scope"] == "overall"
-    # The default policy ranks all three active time-window losses together:
-    # 0.2, 0.3, and 0.5.  The empty worst bin is renormalized away.
-    assert result["total_loss"] == pytest.approx((0.1 * 0.2 + 0.4 * 0.3 + 0.4 * 0.5) / 0.9)
+    assert result['case_loss']['bomex'] == pytest.approx(np.sqrt(6.5))
+    assert result['total_loss'] == pytest.approx((.1 * 1. + .4 * np.sqrt(6.5)) / .5)
 
 
 def test_sample_history_writer_stores_observation_axis_without_window_padding(tmp_path):
@@ -1075,17 +978,15 @@ def test_sample_history_writer_stores_observation_axis_without_window_padding(tm
         return {
             "subwindows": [
                 {
-                    "scaled_rmse": base,
+                    "rmse": base,
                     "correlation": base + 0.1,
                     "std_ratio": base + 0.2,
-                    "centered_rmse_norm": base + 0.3,
                     "bias_norm": base + 0.4,
                 },
                 {
-                    "scaled_rmse": base + 1.0,
+                    "rmse": base + 1.0,
                     "correlation": base + 1.1,
                     "std_ratio": base + 1.2,
-                    "centered_rmse_norm": base + 1.3,
                     "bias_norm": base + 1.4,
                 },
             ]
@@ -1124,6 +1025,8 @@ def test_sample_history_writer_stores_observation_axis_without_window_padding(tm
         },
     ]
 
+    for entry in entries:
+        entry["case_loss"] = {"atex": 1., "bomex": 2.}
     writer.append(entries)
     writer.close()
 
@@ -1141,6 +1044,6 @@ def test_sample_history_writer_stores_observation_axis_without_window_padding(tm
     assert list(history["obs_field"]) == [0, 1, 0, 0, 1, 1]
     assert list(history["obs_window"]) == [0, 0, 0, 1, 0, 1]
     np.testing.assert_allclose(history["all_params"], [[1.0, 0.5], [2.0, 0.7]])
-    assert history["loss_metrics"][0, 0, list(LOSS_METRIC_NAMES).index("scaled_rmse")] == 10.0
+    assert history["loss_metrics"][0, 0, list(LOSS_METRIC_NAMES).index("rmse")] == 10.0
     assert history["loss_metrics"][0, 3, list(LOSS_METRIC_NAMES).index("bias_norm")] == 31.4
     assert history["loss_metrics"][1, 5, list(LOSS_METRIC_NAMES).index("correlation")] == 81.1

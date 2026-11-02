@@ -58,8 +58,12 @@ subroutine f2py_get_clubb_params_all(total_param_sets, nparams_in, clubb_params_
 end subroutine f2py_get_clubb_params_all
 
 subroutine f2py_clubb_get_loss_for_params(total_param_sets, nparams_in, num_variables, &
-                                          num_time_windows, clubb_params_all, scaled_rmse, correlation, &
-                                          std_ratio, centered_rmse_norm, bias_norm)
+                                        num_time_windows, clubb_params_all, &
+                                        rmse, correlation, std_ratio, bias_norm, case_loss)
+
+  ! Description:
+  !   Expose four profile metrics and one per-candidate case loss with explicit
+  !   F2PY output shapes. Request weights are fixed by init_clubb_loss.
 
   use clubb_precision, only: core_rknd
   use clubb_loss_driver, only: clubb_get_loss_for_params
@@ -68,22 +72,28 @@ subroutine f2py_clubb_get_loss_for_params(total_param_sets, nparams_in, num_vari
 
   implicit none
 
-  integer, intent(in) :: total_param_sets, nparams_in, num_variables, num_time_windows
-  real(core_rknd), dimension(total_param_sets, nparams_in), intent(in) :: clubb_params_all
-  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: scaled_rmse
-  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: correlation
-  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: std_ratio
-  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: centered_rmse_norm
-  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: bias_norm
+  !--------------------------- Input Variables ---------------------------
+  integer, intent(in) :: total_param_sets, nparams_in ! Parameter-matrix dimensions.
+  integer, intent(in) :: num_variables, num_time_windows ! Profile-metric dimensions.
+  real(core_rknd), dimension(total_param_sets, nparams_in), intent(in) :: clubb_params_all ! Candidate parameters.
 
-  real(core_rknd), allocatable, dimension(:,:) :: local_params
-  real(core_rknd), allocatable, dimension(:,:,:) :: local_scaled_rmse
-  real(core_rknd), allocatable, dimension(:,:,:) :: local_correlation
-  real(core_rknd), allocatable, dimension(:,:,:) :: local_std_ratio
-  real(core_rknd), allocatable, dimension(:,:,:) :: local_centered_rmse_norm
-  real(core_rknd), allocatable, dimension(:,:,:) :: local_bias_norm
-  type(err_info_type) :: err_info
+  !--------------------------- Output Variables ---------------------------
+  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: rmse ! Profile error.
+  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: correlation ! Shape.
+  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: std_ratio ! Variability.
+  real(core_rknd), dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: bias_norm ! Mean bias.
+  real(core_rknd), dimension(total_param_sets), intent(out) :: case_loss ! RMS over fields and windows.
 
+  !--------------------------- Local Variables ---------------------------
+  real(core_rknd), allocatable, dimension(:,:) :: local_params ! Source parameter matrix.
+  real(core_rknd), allocatable, dimension(:,:,:) :: local_rmse ! Source profile RMSE.
+  real(core_rknd), allocatable, dimension(:,:,:) :: local_correlation ! Source correlations.
+  real(core_rknd), allocatable, dimension(:,:,:) :: local_std_ratio ! Source std ratios.
+  real(core_rknd), allocatable, dimension(:,:,:) :: local_bias_norm ! Source normalized biases.
+  real(core_rknd), allocatable, dimension(:) :: local_case_loss ! Source per-candidate losses.
+  type(err_info_type) :: err_info ! Column-local runtime error state.
+
+  !--------------------------- Begin Code ---------------------------
   if ( nparams_in /= nparams ) then
     error stop "f2py_clubb_get_loss_for_params: nparams mismatch"
   end if
@@ -91,44 +101,23 @@ subroutine f2py_clubb_get_loss_for_params(total_param_sets, nparams_in, num_vari
   allocate( local_params(total_param_sets, nparams_in) )
   local_params = clubb_params_all
 
-  call clubb_get_loss_for_params(local_params, local_scaled_rmse, local_correlation, local_std_ratio, &
-                                 local_centered_rmse_norm, local_bias_norm, err_info)
+  call clubb_get_loss_for_params(local_params, & ! In
+                                 local_rmse, local_correlation, local_std_ratio, local_bias_norm, & ! Out
+                                 local_case_loss, err_info) ! Out
 
-  if ( size(local_scaled_rmse, 1) /= num_time_windows .or. &
-       size(local_scaled_rmse, 2) /= num_variables .or. &
-       size(local_scaled_rmse, 3) /= total_param_sets ) then
-    error stop "f2py_clubb_get_loss_for_params: scaled_rmse shape mismatch"
+  if ( any(shape(local_rmse) /= [num_time_windows, num_variables, total_param_sets]) .or. &
+       any(shape(local_correlation) /= shape(local_rmse)) .or. &
+       any(shape(local_std_ratio) /= shape(local_rmse)) .or. &
+       any(shape(local_bias_norm) /= shape(local_rmse)) .or. &
+       size(local_case_loss) /= total_param_sets ) then
+    error stop "f2py_clubb_get_loss_for_params: profile/case output shape mismatch"
   end if
 
-  if ( size(local_correlation, 1) /= num_time_windows .or. &
-       size(local_correlation, 2) /= num_variables .or. &
-       size(local_correlation, 3) /= total_param_sets ) then
-    error stop "f2py_clubb_get_loss_for_params: correlation shape mismatch"
-  end if
-
-  if ( size(local_std_ratio, 1) /= num_time_windows .or. &
-       size(local_std_ratio, 2) /= num_variables .or. &
-       size(local_std_ratio, 3) /= total_param_sets ) then
-    error stop "f2py_clubb_get_loss_for_params: std_ratio shape mismatch"
-  end if
-
-  if ( size(local_centered_rmse_norm, 1) /= num_time_windows .or. &
-       size(local_centered_rmse_norm, 2) /= num_variables .or. &
-       size(local_centered_rmse_norm, 3) /= total_param_sets ) then
-    error stop "f2py_clubb_get_loss_for_params: centered_rmse_norm shape mismatch"
-  end if
-
-  if ( size(local_bias_norm, 1) /= num_time_windows .or. &
-       size(local_bias_norm, 2) /= num_variables .or. &
-       size(local_bias_norm, 3) /= total_param_sets ) then
-    error stop "f2py_clubb_get_loss_for_params: bias_norm shape mismatch"
-  end if
-
-  scaled_rmse = local_scaled_rmse
+  rmse = local_rmse
   correlation = local_correlation
   std_ratio = local_std_ratio
-  centered_rmse_norm = local_centered_rmse_norm
   bias_norm = local_bias_norm
+  case_loss = local_case_loss
 
 end subroutine f2py_clubb_get_loss_for_params
 

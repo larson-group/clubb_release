@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Any
 
 
-RUNTIME_FINGERPRINT_SCOPE = "dash_app,tuner,utilities:non-test-python"
-_RUNTIME_ROOTS = ("dash_app", "tuner", "utilities")
+RUNTIME_FINGERPRINT_SCOPE = "dash_app,tuner,utilities,clubb_jax:non-test-python"
+_RUNTIME_ROOTS = ("dash_app", "tuner", "utilities", "clubb_jax")
 _RUNTIME_EXCLUDED_PARTS = {"__pycache__", "auto_llm_generated_tests", "human_reviewed_tests"}
 
 

@@ -9,7 +9,7 @@
 }
 #app-root .misc-directory-header h2 { margin: .2rem 0 .35rem; font-size: 1.55rem; }
 .misc-directory-eyebrow {
-  color: #38bdf8 !important;
+  color: var(--ui-accent) !important;
   font-size: .74rem;
   font-weight: 800;
   letter-spacing: .12em;
@@ -24,7 +24,7 @@
   min-width: 252px !important;
   padding: 7.6rem .65rem .8rem;
   gap: .45rem;
-  background: #0c1424 !important;
+  background: var(--ui-surface) !important;
   border-right: 1px solid var(--notes-border) !important;
 }
 #app-root .misc-directory-card,
@@ -37,21 +37,21 @@
   text-align: left !important;
   white-space: normal !important;
 }
-#app-root .misc-directory-card { background: var(--notes-panel) !important; color: #c9d4e5 !important; }
-#app-root .misc-directory-card:hover { border-color: #52647d !important; background: #172033 !important; }
+#app-root .misc-directory-card { background: var(--notes-panel) !important; color: var(--ui-text) !important; }
+#app-root .misc-directory-card:hover { border-color: var(--ui-accent-border) !important; background: var(--ui-raised) !important; }
 #app-root .misc-directory-card-selected {
-  background: #173457 !important;
-  color: #f8fafc !important;
-  border-color: #3a6b9f !important;
+  background: var(--ui-accent-soft) !important;
+  color: var(--ui-text) !important;
+  border-color: var(--ui-accent-border) !important;
   box-shadow: inset 3px 0 0 var(--notes-accent);
 }
 .misc-directory-title { font-size: .86rem; font-weight: 750; line-height: 1.25; }
-.misc-directory-category { margin-top: .3rem; color: #8fa4bf !important; font-size: .69rem; letter-spacing: .04em; text-transform: uppercase; }
-.misc-directory-card-selected .misc-directory-category { color: #b9dcff !important; }
+.misc-directory-category { margin-top: .3rem; color: var(--ui-muted) !important; font-size: .69rem; letter-spacing: .04em; text-transform: uppercase; }
+.misc-directory-card-selected .misc-directory-category { color: var(--ui-text) !important; }
 #app-root .misc-report-content { flex: 1 1 auto; min-width: 0; background: var(--notes-bg); }
 
 @media (max-width: 980px) {
-  #app-root .misc-directory-header { position: static; width: auto; background: #0c1424; }
+  #app-root .misc-directory-header { position: static; width: auto; background: var(--ui-surface); }
   #app-root .misc-tabs-shell { flex-direction: column; min-height: 0; }
   #app-root .misc-directory { flex: 0 0 auto !important; width: 100% !important; min-width: 0 !important; padding: .55rem; flex-direction: row !important; overflow-x: auto; border-right: 0 !important; border-bottom: 1px solid var(--notes-border) !important; }
   #app-root .misc-directory-card, #app-root .misc-directory-card-selected { width: 260px !important; min-width: 260px !important; }

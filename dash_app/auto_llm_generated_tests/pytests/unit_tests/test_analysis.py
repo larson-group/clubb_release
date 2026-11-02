@@ -58,7 +58,10 @@ def test_empty_dataset_callbacks_do_not_raise_dash_errors(tmp_path):
     register_callbacks(app)
 
     update_mu = _registered_callback(app, "update_mu_control")
-    assert update_mu(str(path), 0) == (3.0e-3, {}, 1.0e-3)
+    slider_max, marks, value = update_mu(str(path), 0)
+    assert slider_max == 3.0e-3
+    assert value == 1.0e-3
+    assert value in marks
 
     update_diagnostics = _registered_callback(app, "update_diagnostics")
     result = update_diagnostics(str(path), 0, 0, 1.0e-3)

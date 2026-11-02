@@ -70,7 +70,7 @@ pipeline {
               -batch_size 4 \
               -workers 2 \
               -seed 1 \
-              -loss_mode centered_rmse_bias \
+              -loss_weights '{"mean":1,"std":1,"corr":1}' \
               -aggregation_mode mean_max \
               -poll_interval 1 \
               -output_root output/tuner/new_tuner_test/complex \
@@ -89,7 +89,7 @@ pipeline {
           sh '''
             python human_reviewed_tests/analyze_tuner_sample_history.py \
               output/tuner/new_tuner_test \
-              -metric scaled_rmse \
+              -metric rmse \
               -min_samples 2 \
               -require_param_variation
           '''

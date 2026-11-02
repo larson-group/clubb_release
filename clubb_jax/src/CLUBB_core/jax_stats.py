@@ -252,7 +252,7 @@ class JaxStats:
         bank = buffers[bank_id]
         count_bank = nsamples[bank_id]
         nlev = self.grid_nlev[bank_id]
-        arr = jax.lax.stop_gradient(jnp.asarray(values, dtype=jnp.float64))
+        arr = jnp.asarray(values, dtype=jnp.float64)
         if arr.ndim > 2:
             raise ValueError(f"Stats values must have rank <= 2; got rank {arr.ndim}.")
 

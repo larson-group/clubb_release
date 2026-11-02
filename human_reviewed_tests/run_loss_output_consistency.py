@@ -60,7 +60,7 @@ if CLUBB_ROOT not in sys.path:
     sys.path.insert(0, CLUBB_ROOT)
 
 from tuner.case_defaults import DEFAULT_LOSS_FIELDS, read_case_defaults  # noqa: E402
-from utilities.loss_metrics import calculate_column_loss_metrics  # noqa: E402
+from utilities.loss_metrics import calculate_column_loss_metrics, loss_metric_values_valid  # noqa: E402
 from input.scripts.create_case_namelist import resolve_case_model_input  # noqa: E402
 from utilities.clubb_case_runner import extract_jax_options  # noqa: E402
 
@@ -87,10 +87,9 @@ METRIC_REL_TOL = 5.0e-8
 TIME_MATCH_TOL = 1.0e-6
 
 LOSS_METRIC_PREFIXES = {
-    "scaled_rmse": "scaled_rmse_col",
+    "rmse": "rmse_col",
     "corr": "corr_col",
     "std_ratio": "std_ratio_col",
-    "crmse_norm": "crmse_norm_col",
     "bias_norm": "bias_norm_col",
 }
 
@@ -615,13 +614,12 @@ def calculate_loss_metrics(
     """Mirror the loss-driver per-field metrics for all parameter columns."""
     raw_metrics = calculate_column_loss_metrics(model_matrix, benchmark_profile)
     metrics = {
-        "scaled_rmse": raw_metrics["scaled_rmse"],
+        "rmse": raw_metrics["rmse"],
         "corr": raw_metrics["correlation"],
         "std_ratio": raw_metrics["std_ratio"],
-        "crmse_norm": raw_metrics["centered_rmse_norm"],
         "bias_norm": raw_metrics["bias_norm"],
     }
-    best_col_idx = int(np.argmin(metrics["scaled_rmse"])) + 1
+    best_col_idx = int(np.argmin(metrics["rmse"])) + 1
     metrics["best_col"] = f"col{best_col_idx}"
     return metrics
 
@@ -711,12 +709,17 @@ def compare_reported_metrics_against_netcdf(
                 )
                 continue
 
-            diff = reported_values - recomputed_values
-            max_abs = float(np.max(np.abs(diff)))
-            denom = np.maximum(np.abs(recomputed_values), 1.0e-30)
-            max_rel = float(np.max(np.abs(diff) / denom))
+            if not (loss_metric_values_valid("correlation" if metric_name == "corr" else metric_name, reported_values).all()
+                    and loss_metric_values_valid("correlation" if metric_name == "corr" else metric_name, recomputed_values).all()):
+                mismatches.append(f"{var_name}:{metric_name}: invalid nonfinite metric")
+            paired = np.isfinite(reported_values) & np.isfinite(recomputed_values)
+            diff = reported_values[paired] - recomputed_values[paired]
+            max_abs = float(np.max(np.abs(diff), initial=0.0))
+            denom = np.maximum(np.abs(recomputed_values[paired]), 1.0e-30)
+            max_rel = float(np.max(np.abs(diff) / denom, initial=0.0))
             var_diagnostics.append(
-                f"{metric_name}(max_abs={max_abs:.6e}, max_rel={max_rel:.6e})"
+                f"{metric_name}(max_abs={max_abs:.6e}, max_rel={max_rel:.6e}, "
+                f"undefined={np.count_nonzero(np.isnan(reported_values))})"
             )
 
             if not np.allclose(
@@ -724,6 +727,7 @@ def compare_reported_metrics_against_netcdf(
                 recomputed_values,
                 atol=METRIC_ABS_TOL,
                 rtol=METRIC_REL_TOL,
+                equal_nan=True,
             ):
                 mismatches.append(
                     f"{var_name}:{metric_name}: mismatch "

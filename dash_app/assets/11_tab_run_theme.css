@@ -593,23 +593,6 @@
   gap: 6px clamp(16px, 3vw, 36px);
 }
 
-#app-root .run-multicol-row .dash-dropdown .Select-input > input {
-  caret-color: transparent;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-#app-root .run-multicol-row .dash-dropdown .Select-input > input:focus {
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
-  background: transparent !important;
-}
-
 #app-root .run-multicol-row .dash-dropdown .Select--single > .Select-control .Select-value,
 #app-root .run-multicol-row .dash-dropdown .Select-placeholder {
   padding-left: 10px;

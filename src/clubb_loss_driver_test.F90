@@ -22,9 +22,9 @@
 !   This test is about the loss-driver contract used by the tuner, not about
 !   validating every physical result in a case.
 !
-!   The first check is deliberately small: calculate_taylor_metrics() is tested
-!   against simple profiles where the expected correlation, variance ratio,
-!   centered RMSE, and bias are obvious.
+!   The first check is deliberately small: calculate_profile_loss() is tested
+!   against simple profiles where the expected correlation, standard-deviation ratio,
+!   weighted normalized RMSE, and bias are obvious.
 !
 !   After that, the test runs the real loss driver in two forms:
 !
@@ -48,13 +48,15 @@
 
 program clubb_loss_driver_test
 
+  use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan, ieee_is_nan, ieee_is_finite
+
   use clubb_loss_driver, only: &
     loss_name_len, &
     clubb_get_loss, &
     init_clubb_loss, &
     clubb_get_loss_for_params, &
     finalize_clubb_loss, &
-    calculate_taylor_metrics
+    calculate_profile_loss
 
   use err_info_type_module, only: &
     err_info_type, &
@@ -79,11 +81,12 @@ program clubb_loss_driver_test
     namelist_filename
 
   real( kind = core_rknd ), allocatable, dimension(:,:,:) :: &
-    scaled_rmse, &
-    correlation, &
-    std_ratio, &
-    centered_rmse_norm, &
-    bias_norm
+      rmse, &
+      correlation, &
+      std_ratio, &
+      bias_norm
+  real( kind = core_rknd ), allocatable, dimension(:) :: &
+      case_loss
 
   character(len=loss_name_len), allocatable, dimension(:) :: &
     clubb_var_names
@@ -104,17 +107,17 @@ program clubb_loss_driver_test
   call run_taylor_metric_known_profile_test()
 
   ! Run the normal one-shot loss path first.
-  call clubb_get_loss( trim( namelist_filename ), clubb_var_names, scaled_rmse, correlation, std_ratio, &
-                       centered_rmse_norm, bias_norm, err_info )
+  call clubb_get_loss( trim( namelist_filename ), clubb_var_names, rmse, correlation, std_ratio, &
+                       bias_norm, case_loss, err_info )
 
   ! Reuse the same request manually and verify that repeated calls stay BFB.
-  call run_manual_loss_bfb_test( trim( namelist_filename ), clubb_var_names, scaled_rmse, correlation, &
-                                 std_ratio, centered_rmse_norm, bias_norm, err_info )
-  call run_tweaked_parameter_test( trim( namelist_filename ), clubb_var_names, scaled_rmse, err_info )
-  call run_reinitialize_loss_bfb_test( trim( namelist_filename ), clubb_var_names, scaled_rmse, correlation, &
-                                      std_ratio, centered_rmse_norm, bias_norm, err_info )
+  call run_manual_loss_bfb_test( trim( namelist_filename ), clubb_var_names, rmse, correlation, &
+                                 std_ratio, bias_norm, case_loss, err_info )
+  call run_tweaked_parameter_test( trim( namelist_filename ), clubb_var_names, rmse, err_info )
+  call run_reinitialize_loss_bfb_test( trim( namelist_filename ), clubb_var_names, rmse, correlation, &
+                                      std_ratio, bias_norm, case_loss, err_info )
 
-  call print_loss_matrix( clubb_var_names, scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm )
+  call print_loss_matrix( clubb_var_names, rmse, correlation, std_ratio, bias_norm, case_loss )
 
   call cleanup_err_info_api( err_info )
   call exit( success_code )
@@ -138,6 +141,13 @@ contains
     real( kind = core_rknd ), parameter :: &
       tolerance = 1.0e-12_core_rknd
 
+    if ( ieee_is_nan( expected ) ) then
+      if ( .not. ieee_is_nan( actual ) ) stop "Expected an undefined diagnostic"
+      return
+    end if
+
+    if ( .not. ieee_is_finite( actual ) ) stop "Expected a finite diagnostic"
+
     if ( abs( actual - expected ) > tolerance ) then
       write( *, '(a,1x,es16.8,1x,a,1x,es16.8)' ) &
         trim( test_name )//" failed:", actual, "expected", expected
@@ -149,67 +159,99 @@ contains
   subroutine run_taylor_metric_known_profile_test()
 
     ! Description:
-    !   Check Taylor diagnostic arithmetic against simple profile cases with
-    !   obvious expected values.
+    !   Check the four profile metrics, normalized total RMSE and fixed-weight
+    !   behavior on exact, rescaled, flat and opposite-pattern profiles.
 
     implicit none
 
+    !--------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(3) :: &
-      model_profile, &
-      benchmark_profile
+      model_profile, &                                             ! Synthetic compared values.
+      benchmark_profile, &                                         ! Paired reference values.
+      weights                                                      ! Fixed mean/std/correlation weights.
 
     real( kind = core_rknd ) :: &
-      correlation, &
-      std_ratio, &
-      centered_rmse_norm, &
-      bias_norm
+      rmse_value, &                                                ! Weighted normalized profile error.
+      correlation_value, &                                         ! Centered profile correlation.
+      std_ratio_value, &                                           ! Standard-deviation ratio.
+      bias_value                                                   ! Normalized mean bias.
 
-    model_profile = [ 1.0_core_rknd, 2.0_core_rknd, 3.0_core_rknd ]
+    !--------------------------- Begin Code ---------------------------
+    weights = 1.0_core_rknd
+    model_profile = [1.0_core_rknd, 2.0_core_rknd, 3.0_core_rknd]
     benchmark_profile = model_profile
 
-    call calculate_taylor_metrics( model_profile, benchmark_profile, correlation, std_ratio, &
-                                   centered_rmse_norm, bias_norm )
-    call assert_close( "Taylor identical correlation", correlation, 1.0_core_rknd )
-    call assert_close( "Taylor identical std_ratio", std_ratio, 1.0_core_rknd )
-    call assert_close( "Taylor identical centered_rmse_norm", centered_rmse_norm, 0.0_core_rknd )
-    call assert_close( "Taylor identical bias_norm", bias_norm, 0.0_core_rknd )
+    call calculate_profile_loss( model_profile, benchmark_profile, weights, & ! In
+                                 rmse_value, correlation_value, std_ratio_value, bias_value ) ! Out
+    call assert_close( "Identical RMSE", rmse_value, 0.0_core_rknd )
+    call assert_close( "Identical correlation", correlation_value, 1.0_core_rknd )
+    call assert_close( "Identical std ratio", std_ratio_value, 1.0_core_rknd )
+    call assert_close( "Identical bias", bias_value, 0.0_core_rknd )
 
-    model_profile = [ 2.0_core_rknd, 4.0_core_rknd, 6.0_core_rknd ]
-    benchmark_profile = [ 1.0_core_rknd, 2.0_core_rknd, 3.0_core_rknd ]
+    model_profile = 2.0_core_rknd * benchmark_profile
 
-    call calculate_taylor_metrics( model_profile, benchmark_profile, correlation, std_ratio, &
-                                   centered_rmse_norm, bias_norm )
-    call assert_close( "Taylor scaled correlation", correlation, 1.0_core_rknd )
-    call assert_close( "Taylor scaled std_ratio", std_ratio, 2.0_core_rknd )
-    call assert_close( "Taylor scaled centered_rmse_norm", centered_rmse_norm, 1.0_core_rknd )
+    call calculate_profile_loss( model_profile, benchmark_profile, weights, & ! In
+                                 rmse_value, correlation_value, std_ratio_value, bias_value ) ! Out
+    call assert_close( "Rescaled total RMSE", rmse_value, sqrt( 7.0_core_rknd ) )
+    call assert_close( "Rescaled correlation", correlation_value, 1.0_core_rknd )
+    call assert_close( "Rescaled std ratio", std_ratio_value, 2.0_core_rknd )
 
-    model_profile = [ 2.0_core_rknd, 2.0_core_rknd, 2.0_core_rknd ]
-    benchmark_profile = [ 2.0_core_rknd, 2.0_core_rknd, 2.0_core_rknd ]
+    model_profile = 2.0_core_rknd
 
-    call calculate_taylor_metrics( model_profile, benchmark_profile, correlation, std_ratio, &
-                                   centered_rmse_norm, bias_norm )
-    call assert_close( "Taylor flat correlation", correlation, 1.0_core_rknd )
-    call assert_close( "Taylor flat std_ratio", std_ratio, 1.0_core_rknd )
-    call assert_close( "Taylor flat centered_rmse_norm", centered_rmse_norm, 0.0_core_rknd )
-    call assert_close( "Taylor flat bias_norm", bias_norm, 0.0_core_rknd )
+    call calculate_profile_loss( model_profile, benchmark_profile, weights, & ! In
+                                 rmse_value, correlation_value, std_ratio_value, bias_value ) ! Out
+    call assert_close( "Flat model RMSE", rmse_value, 1.0_core_rknd )
+    call assert_close( "Flat model correlation", correlation_value, ieee_value( 0.0_core_rknd, ieee_quiet_nan ) )
+    call assert_close( "Flat model std ratio", std_ratio_value, 0.0_core_rknd )
 
-    model_profile = [ 1.0_core_rknd, 2.0_core_rknd, 3.0_core_rknd ]
-    benchmark_profile = [ 2.0_core_rknd, 2.0_core_rknd, 2.0_core_rknd ]
+    benchmark_profile = model_profile
 
-    call calculate_taylor_metrics( model_profile, benchmark_profile, correlation, std_ratio, &
-                                   centered_rmse_norm, bias_norm )
-    call assert_close( "Taylor flat benchmark correlation", correlation, 1.0_core_rknd )
-    call assert_close( "Taylor flat benchmark std_ratio", std_ratio, 1.0_core_rknd )
-    call assert_close( "Taylor flat benchmark centered_rmse_norm", centered_rmse_norm, &
-                       sqrt( 2.0_core_rknd / 3.0_core_rknd ) )
-    call assert_close( "Taylor flat benchmark bias_norm", bias_norm, 0.0_core_rknd )
+    call calculate_profile_loss( model_profile, benchmark_profile, weights, & ! In
+                                 rmse_value, correlation_value, std_ratio_value, bias_value ) ! Out
+    call assert_close( "Flat exact RMSE", rmse_value, 0.0_core_rknd )
+    call assert_close( "Flat correlation", correlation_value, ieee_value( 0.0_core_rknd, ieee_quiet_nan ) )
+    call assert_close( "Flat std ratio", std_ratio_value, ieee_value( 0.0_core_rknd, ieee_quiet_nan ) )
+    call assert_close( "Flat bias", bias_value, 0.0_core_rknd )
+
+    model_profile = [1.0_core_rknd, 2.0_core_rknd, 3.0_core_rknd]
+
+    call calculate_profile_loss( model_profile, benchmark_profile, weights, & ! In
+                                 rmse_value, correlation_value, std_ratio_value, bias_value ) ! Out
+    call assert_close( "Flat reference variability error", rmse_value, sqrt( 2.0_core_rknd / 3.0_core_rknd ) )
+
+    model_profile = 0.2_core_rknd
+    benchmark_profile = 0.1_core_rknd
+
+    call calculate_profile_loss( model_profile, benchmark_profile, weights, & ! In
+                                 rmse_value, correlation_value, std_ratio_value, bias_value ) ! Out
+    call assert_close( "Rounded constant RMSE", rmse_value, 0.1_core_rknd )
+    call assert_close( "Rounded constant correlation", correlation_value, ieee_value( 0.0_core_rknd, ieee_quiet_nan ) )
+    call assert_close( "Rounded constant std ratio", std_ratio_value, ieee_value( 0.0_core_rknd, ieee_quiet_nan ) )
+    call assert_close( "Rounded constant bias", bias_value, 0.1_core_rknd )
+
+    model_profile = [1.0_core_rknd, 2.0_core_rknd, 3.0_core_rknd]
+    benchmark_profile = 2.0_core_rknd
+
+    weights = [2.0_core_rknd, 3.0_core_rknd, 4.0_core_rknd]
+
+    call calculate_profile_loss( model_profile, benchmark_profile, weights, & ! In
+                                 rmse_value, correlation_value, std_ratio_value, bias_value ) ! Out
+    call assert_close( "Flat reference weighted variability error", rmse_value, sqrt( 2.0_core_rknd ) )
+
+    benchmark_profile = [3.0_core_rknd, 2.0_core_rknd, 1.0_core_rknd]
+    weights = [2.0_core_rknd, 0.25_core_rknd, 3.0_core_rknd]
+
+    call calculate_profile_loss( model_profile, benchmark_profile, weights, & ! In
+                                 rmse_value, correlation_value, std_ratio_value, bias_value ) ! Out
+    call assert_close( "Opposite pattern weighted RMSE", rmse_value, sqrt( 12.0_core_rknd ) )
+    call assert_close( "Opposite pattern correlation", correlation_value, -1.0_core_rknd )
 
   end subroutine run_taylor_metric_known_profile_test
 
-  subroutine assert_loss_outputs_match( test_name, test_var_names, test_scaled_rmse, test_correlation, &
-                                        test_std_ratio, test_centered_rmse_norm, test_bias_norm, &
-                                        reference_var_names, reference_scaled_rmse, reference_correlation, &
-                                        reference_std_ratio, reference_centered_rmse_norm, reference_bias_norm )
+  subroutine assert_loss_outputs_match( test_name, test_var_names, test_rmse, test_correlation, &
+                                        test_std_ratio, test_bias_norm, test_case_loss, &
+                                        reference_var_names, reference_rmse, reference_correlation, &
+                                        reference_std_ratio, reference_bias_norm, reference_case_loss )
 
     ! Description:
     !   Require two loss-driver outputs to match bit-for-bit.
@@ -224,16 +266,19 @@ contains
       reference_var_names
 
     real( kind = core_rknd ), dimension(:,:,:), intent(in) :: &
-      test_scaled_rmse, &
+      test_rmse, &
       test_correlation, &
       test_std_ratio, &
-      test_centered_rmse_norm, &
-      test_bias_norm, &
-      reference_scaled_rmse, &
+      test_bias_norm
+    real( kind = core_rknd ), dimension(:), intent(in) :: &
+      test_case_loss
+    real( kind = core_rknd ), dimension(:,:,:), intent(in) :: &
+      reference_rmse, &
       reference_correlation, &
       reference_std_ratio, &
-      reference_centered_rmse_norm, &
       reference_bias_norm
+    real( kind = core_rknd ), dimension(:), intent(in) :: &
+      reference_case_loss
 
     if ( size( test_var_names ) /= size( reference_var_names ) ) then
       write( *, '(a)' ) trim( test_name )//" failed: variable-name count changed"
@@ -245,8 +290,8 @@ contains
       stop 1
     end if
 
-    if ( any( shape( test_scaled_rmse ) /= shape( reference_scaled_rmse ) ) ) then
-      write( *, '(a)' ) trim( test_name )//" failed: scaled_rmse shapes changed"
+    if ( any( shape( test_rmse ) /= shape( reference_rmse ) ) ) then
+      write( *, '(a)' ) trim( test_name )//" failed: rmse shapes changed"
       stop 1
     end if
 
@@ -260,8 +305,8 @@ contains
       stop 1
     end if
 
-    if ( any( shape( test_centered_rmse_norm ) /= shape( reference_centered_rmse_norm ) ) ) then
-      write( *, '(a)' ) trim( test_name )//" failed: centered_rmse_norm shapes changed"
+    if ( any( shape( test_case_loss ) /= shape( reference_case_loss ) ) ) then
+      write( *, '(a)' ) trim( test_name )//" failed: case_loss shapes changed"
       stop 1
     end if
 
@@ -270,23 +315,27 @@ contains
       stop 1
     end if
 
-    if ( any( test_scaled_rmse /= reference_scaled_rmse ) ) then
-      write( *, '(a)' ) trim( test_name )//" failed: scaled_rmse changed"
+    if ( any( test_rmse /= reference_rmse ) ) then
+      write( *, '(a)' ) trim( test_name )//" failed: rmse changed"
       stop 1
     end if
 
-    if ( any( test_correlation /= reference_correlation ) ) then
+    if ( any( ieee_is_nan( test_correlation ) .neqv. ieee_is_nan( reference_correlation ) ) .or. &
+         any( merge( 0.0_core_rknd, test_correlation, ieee_is_nan( test_correlation ) ) /= &
+              merge( 0.0_core_rknd, reference_correlation, ieee_is_nan( reference_correlation ) ) ) ) then
       write( *, '(a)' ) trim( test_name )//" failed: correlation changed"
       stop 1
     end if
 
-    if ( any( test_std_ratio /= reference_std_ratio ) ) then
+    if ( any( ieee_is_nan( test_std_ratio ) .neqv. ieee_is_nan( reference_std_ratio ) ) .or. &
+         any( merge( 0.0_core_rknd, test_std_ratio, ieee_is_nan( test_std_ratio ) ) /= &
+              merge( 0.0_core_rknd, reference_std_ratio, ieee_is_nan( reference_std_ratio ) ) ) ) then
       write( *, '(a)' ) trim( test_name )//" failed: std_ratio changed"
       stop 1
     end if
 
-    if ( any( test_centered_rmse_norm /= reference_centered_rmse_norm ) ) then
-      write( *, '(a)' ) trim( test_name )//" failed: centered_rmse_norm changed"
+    if ( any( test_case_loss /= reference_case_loss ) ) then
+      write( *, '(a)' ) trim( test_name )//" failed: case_loss changed"
       stop 1
     end if
 
@@ -297,9 +346,9 @@ contains
 
   end subroutine assert_loss_outputs_match
 
-  subroutine run_manual_loss_bfb_test( namelist_filename, reference_var_names, reference_scaled_rmse, &
+  subroutine run_manual_loss_bfb_test( namelist_filename, reference_var_names, reference_rmse, &
                                        reference_correlation, reference_std_ratio, &
-                                       reference_centered_rmse_norm, reference_bias_norm, err_info )
+                                       reference_bias_norm, reference_case_loss, err_info )
 
     ! Description:
     !   Reuse the explicit init/run/finalize loss path twice with the same
@@ -314,11 +363,12 @@ contains
       reference_var_names
 
     real( kind = core_rknd ), dimension(:,:,:), intent(in) :: &
-      reference_scaled_rmse, &
+      reference_rmse, &
       reference_correlation, &
       reference_std_ratio, &
-      reference_centered_rmse_norm, &
       reference_bias_norm
+    real( kind = core_rknd ), dimension(:), intent(in) :: &
+      reference_case_loss
 
     type(err_info_type), intent(out) :: &
       err_info
@@ -330,54 +380,54 @@ contains
       clubb_params_all
 
     real( kind = core_rknd ), allocatable, dimension(:,:,:) :: &
-      manual_scaled_rmse_1, &
+      manual_rmse_1, &
       manual_correlation_1, &
       manual_std_ratio_1, &
-      manual_centered_rmse_norm_1, &
-      manual_bias_norm_1, &
-      manual_scaled_rmse_2, &
+      manual_bias_norm_1
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      manual_case_loss_1
+    real( kind = core_rknd ), allocatable, dimension(:,:,:) :: &
+      manual_rmse_2, &
       manual_correlation_2, &
       manual_std_ratio_2, &
-      manual_centered_rmse_norm_2, &
       manual_bias_norm_2
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      manual_case_loss_2
 
     ! Initialize once and capture the full default parameter matrix.
     call init_clubb_loss( trim( namelist_filename ), manual_var_names, err_info, clubb_params_all )
 
     ! Score the same parameter matrix twice without reinitializing CLUBB.
-    call clubb_get_loss_for_params( clubb_params_all, manual_scaled_rmse_1, manual_correlation_1, &
-                                    manual_std_ratio_1, manual_centered_rmse_norm_1, manual_bias_norm_1, err_info )
-    call clubb_get_loss_for_params( clubb_params_all, manual_scaled_rmse_2, manual_correlation_2, &
-                                    manual_std_ratio_2, manual_centered_rmse_norm_2, manual_bias_norm_2, err_info )
+    call clubb_get_loss_for_params( clubb_params_all, manual_rmse_1, manual_correlation_1, &
+                                    manual_std_ratio_1, manual_bias_norm_1, manual_case_loss_1, err_info )
+    call clubb_get_loss_for_params( clubb_params_all, manual_rmse_2, manual_correlation_2, &
+                                    manual_std_ratio_2, manual_bias_norm_2, manual_case_loss_2, err_info )
 
     ! Release the manual loss session after both reruns are done.
     call finalize_clubb_loss( err_info )
 
     call assert_loss_outputs_match( "Manual loss BFB check (first rerun)", manual_var_names, &
-                                    manual_scaled_rmse_1, manual_correlation_1, manual_std_ratio_1, &
-                                    manual_centered_rmse_norm_1, manual_bias_norm_1, reference_var_names, &
-                                    reference_scaled_rmse, reference_correlation, reference_std_ratio, &
-                                    reference_centered_rmse_norm, reference_bias_norm )
+                                    manual_rmse_1, manual_correlation_1, manual_std_ratio_1, &
+                                    manual_bias_norm_1, manual_case_loss_1, reference_var_names, &
+                                    reference_rmse, reference_correlation, reference_std_ratio, &
+                                    reference_bias_norm, reference_case_loss )
     call assert_loss_outputs_match( "Manual loss BFB check (second rerun)", manual_var_names, &
-                                    manual_scaled_rmse_2, manual_correlation_2, manual_std_ratio_2, &
-                                    manual_centered_rmse_norm_2, manual_bias_norm_2, reference_var_names, &
-                                    reference_scaled_rmse, reference_correlation, reference_std_ratio, &
-                                    reference_centered_rmse_norm, reference_bias_norm )
+                                    manual_rmse_2, manual_correlation_2, manual_std_ratio_2, &
+                                    manual_bias_norm_2, manual_case_loss_2, reference_var_names, &
+                                    reference_rmse, reference_correlation, reference_std_ratio, &
+                                    reference_bias_norm, reference_case_loss )
 
-    if ( any( manual_scaled_rmse_2 /= manual_scaled_rmse_1 ) .or. &
-         any( manual_correlation_2 /= manual_correlation_1 ) .or. &
-         any( manual_std_ratio_2 /= manual_std_ratio_1 ) .or. &
-         any( manual_centered_rmse_norm_2 /= manual_centered_rmse_norm_1 ) .or. &
-         any( manual_bias_norm_2 /= manual_bias_norm_1 ) ) then
-      write( *, '(a)' ) "Manual loss BFB check failed: repeated manual metrics are not identical"
-      stop 1
-    end if
+    call assert_loss_outputs_match( "Manual repeated metrics", manual_var_names, & ! In
+                                    manual_rmse_2, manual_correlation_2, manual_std_ratio_2, & ! In
+                                    manual_bias_norm_2, manual_case_loss_2, manual_var_names, & ! In
+                                    manual_rmse_1, manual_correlation_1, manual_std_ratio_1, & ! In
+                                    manual_bias_norm_1, manual_case_loss_1 ) ! In
 
     write( *, '(a)' ) "Manual loss BFB check passed"
 
   end subroutine run_manual_loss_bfb_test
 
-  subroutine run_tweaked_parameter_test( namelist_filename, reference_var_names, reference_scaled_rmse, err_info )
+  subroutine run_tweaked_parameter_test( namelist_filename, reference_var_names, reference_rmse, err_info )
 
     ! Description:
     !   Verify that a deliberate parameter perturbation changes the loss.
@@ -391,7 +441,7 @@ contains
       reference_var_names
 
     real( kind = core_rknd ), dimension(:,:,:), intent(in) :: &
-      reference_scaled_rmse
+      reference_rmse
 
     type(err_info_type), intent(out) :: &
       err_info
@@ -403,11 +453,12 @@ contains
       clubb_params_all
 
     real( kind = core_rknd ), allocatable, dimension(:,:,:) :: &
-      tweaked_scaled_rmse, &
+      tweaked_rmse, &
       tweaked_correlation, &
       tweaked_std_ratio, &
-      tweaked_centered_rmse_norm, &
       tweaked_bias_norm
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      tweaked_case_loss
 
     call init_clubb_loss( trim( namelist_filename ), tweaked_var_names, err_info, clubb_params_all )
 
@@ -424,12 +475,12 @@ contains
     ! Perturb one tunable parameter enough that the resulting loss should move.
     clubb_params_all(1,iC8) = clubb_params_all(1,iC8) + 0.5_core_rknd
 
-    call clubb_get_loss_for_params( clubb_params_all, tweaked_scaled_rmse, tweaked_correlation, &
-                                    tweaked_std_ratio, tweaked_centered_rmse_norm, tweaked_bias_norm, err_info )
+    call clubb_get_loss_for_params( clubb_params_all, tweaked_rmse, tweaked_correlation, &
+                                    tweaked_std_ratio, tweaked_bias_norm, tweaked_case_loss, err_info )
     call finalize_clubb_loss( err_info )
 
-    if ( all( tweaked_scaled_rmse == reference_scaled_rmse ) ) then
-      write( *, '(a)' ) "Tweaked-parameter test failed: changing C8 did not change scaled_rmse"
+    if ( all( tweaked_rmse == reference_rmse ) ) then
+      write( *, '(a)' ) "Tweaked-parameter test failed: changing C8 did not change rmse"
       stop 1
     end if
 
@@ -437,9 +488,9 @@ contains
 
   end subroutine run_tweaked_parameter_test
 
-  subroutine run_reinitialize_loss_bfb_test( namelist_filename, reference_var_names, reference_scaled_rmse, &
+  subroutine run_reinitialize_loss_bfb_test( namelist_filename, reference_var_names, reference_rmse, &
                                              reference_correlation, reference_std_ratio, &
-                                             reference_centered_rmse_norm, reference_bias_norm, err_info )
+                                             reference_bias_norm, reference_case_loss, err_info )
 
     ! Description:
     !   Reinitialize the reusable loss path after finalization and require that
@@ -454,11 +505,12 @@ contains
       reference_var_names
 
     real( kind = core_rknd ), dimension(:,:,:), intent(in) :: &
-      reference_scaled_rmse, &
+      reference_rmse, &
       reference_correlation, &
       reference_std_ratio, &
-      reference_centered_rmse_norm, &
       reference_bias_norm
+    real( kind = core_rknd ), dimension(:), intent(in) :: &
+      reference_case_loss
 
     type(err_info_type), intent(out) :: &
       err_info
@@ -472,37 +524,40 @@ contains
       clubb_params_all_2
 
     real( kind = core_rknd ), allocatable, dimension(:,:,:) :: &
-      reinit_scaled_rmse_1, &
+      reinit_rmse_1, &
       reinit_correlation_1, &
       reinit_std_ratio_1, &
-      reinit_centered_rmse_norm_1, &
-      reinit_bias_norm_1, &
-      reinit_scaled_rmse_2, &
+      reinit_bias_norm_1
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      reinit_case_loss_1
+    real( kind = core_rknd ), allocatable, dimension(:,:,:) :: &
+      reinit_rmse_2, &
       reinit_correlation_2, &
       reinit_std_ratio_2, &
-      reinit_centered_rmse_norm_2, &
       reinit_bias_norm_2
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      reinit_case_loss_2
 
     call init_clubb_loss( trim( namelist_filename ), reinit_var_names_1, err_info, clubb_params_all_1 )
-    call clubb_get_loss_for_params( clubb_params_all_1, reinit_scaled_rmse_1, reinit_correlation_1, &
-                                    reinit_std_ratio_1, reinit_centered_rmse_norm_1, reinit_bias_norm_1, err_info )
+    call clubb_get_loss_for_params( clubb_params_all_1, reinit_rmse_1, reinit_correlation_1, &
+                                    reinit_std_ratio_1, reinit_bias_norm_1, reinit_case_loss_1, err_info )
     call finalize_clubb_loss( err_info )
 
     call init_clubb_loss( trim( namelist_filename ), reinit_var_names_2, err_info, clubb_params_all_2 )
-    call clubb_get_loss_for_params( clubb_params_all_2, reinit_scaled_rmse_2, reinit_correlation_2, &
-                                    reinit_std_ratio_2, reinit_centered_rmse_norm_2, reinit_bias_norm_2, err_info )
+    call clubb_get_loss_for_params( clubb_params_all_2, reinit_rmse_2, reinit_correlation_2, &
+                                    reinit_std_ratio_2, reinit_bias_norm_2, reinit_case_loss_2, err_info )
     call finalize_clubb_loss( err_info )
 
     call assert_loss_outputs_match( "Reinitialize loss BFB check (first reinit)", reinit_var_names_1, &
-                                    reinit_scaled_rmse_1, reinit_correlation_1, reinit_std_ratio_1, &
-                                    reinit_centered_rmse_norm_1, reinit_bias_norm_1, reference_var_names, &
-                                    reference_scaled_rmse, reference_correlation, reference_std_ratio, &
-                                    reference_centered_rmse_norm, reference_bias_norm )
+                                    reinit_rmse_1, reinit_correlation_1, reinit_std_ratio_1, &
+                                    reinit_bias_norm_1, reinit_case_loss_1, reference_var_names, &
+                                    reference_rmse, reference_correlation, reference_std_ratio, &
+                                    reference_bias_norm, reference_case_loss )
     call assert_loss_outputs_match( "Reinitialize loss BFB check (second reinit)", reinit_var_names_2, &
-                                    reinit_scaled_rmse_2, reinit_correlation_2, reinit_std_ratio_2, &
-                                    reinit_centered_rmse_norm_2, reinit_bias_norm_2, reference_var_names, &
-                                    reference_scaled_rmse, reference_correlation, reference_std_ratio, &
-                                    reference_centered_rmse_norm, reference_bias_norm )
+                                    reinit_rmse_2, reinit_correlation_2, reinit_std_ratio_2, &
+                                    reinit_bias_norm_2, reinit_case_loss_2, reference_var_names, &
+                                    reference_rmse, reference_correlation, reference_std_ratio, &
+                                    reference_bias_norm, reference_case_loss )
 
     if ( any( reinit_var_names_1 /= reinit_var_names_2 ) ) then
       write( *, '(a)' ) "Reinitialize loss BFB check failed: variable-name ordering changed across reinit"
@@ -514,20 +569,17 @@ contains
       stop 1
     end if
 
-    if ( any( reinit_scaled_rmse_1 /= reinit_scaled_rmse_2 ) .or. &
-         any( reinit_correlation_1 /= reinit_correlation_2 ) .or. &
-         any( reinit_std_ratio_1 /= reinit_std_ratio_2 ) .or. &
-         any( reinit_centered_rmse_norm_1 /= reinit_centered_rmse_norm_2 ) .or. &
-         any( reinit_bias_norm_1 /= reinit_bias_norm_2 ) ) then
-      write( *, '(a)' ) "Reinitialize loss BFB check failed: repeated reinitialization changed metrics"
-      stop 1
-    end if
+    call assert_loss_outputs_match( "Reinitialized repeated metrics", reinit_var_names_1, & ! In
+                                    reinit_rmse_1, reinit_correlation_1, reinit_std_ratio_1, & ! In
+                                    reinit_bias_norm_1, reinit_case_loss_1, reinit_var_names_2, & ! In
+                                    reinit_rmse_2, reinit_correlation_2, reinit_std_ratio_2, & ! In
+                                    reinit_bias_norm_2, reinit_case_loss_2 ) ! In
 
     write( *, '(a)' ) "Reinitialize loss BFB check passed"
 
   end subroutine run_reinitialize_loss_bfb_test
 
-  subroutine print_loss_matrix( clubb_var_names, scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm )
+  subroutine print_loss_matrix( clubb_var_names, rmse, correlation, std_ratio, bias_norm, case_loss )
 
     ! Description:
   !   Prints one row per variable/window together with the explicit
@@ -539,11 +591,13 @@ contains
       clubb_var_names ! CLUBB variable names, one per loss row.
 
     real( kind = core_rknd ), dimension(:,:,:), intent(in) :: &
-      scaled_rmse, &        ! Scaled RMSE shaped (window, variable, parameter column).
-      correlation, &        ! Taylor correlation shaped (window, variable, parameter column).
-      std_ratio, &          ! Taylor standard-deviation ratio shaped (window, variable, parameter column).
-      centered_rmse_norm, & ! Taylor centered RMSE shaped (window, variable, parameter column).
-      bias_norm             ! Taylor normalized bias shaped (window, variable, parameter column).
+      rmse, & ! RMSE shaped (window, variable, parameter column).
+      correlation, & ! Taylor correlation shaped (window, variable, parameter column).
+      std_ratio ! Taylor standard-deviation ratio shaped (window, variable, parameter column).
+    real( kind = core_rknd ), dimension(:), intent(in) :: &
+      case_loss ! Taylor centered RMSE shaped (window, variable, parameter column).
+    real( kind = core_rknd ), dimension(:,:,:), intent(in) :: &
+      bias_norm ! Taylor normalized bias shaped (window, variable, parameter column).
 
     integer :: &
       row_idx, &      ! Current loss-variable row being printed.
@@ -555,57 +609,57 @@ contains
       best_col_loss   ! Lowest loss found across all parameter columns.
 
     write( *, '(a)', advance = "no" ) "variable"
-    if ( size( scaled_rmse, 1 ) > 1 ) write( *, '(1x,a)', advance = "no" ) "window"
-    do col_idx = 1, size( scaled_rmse, 3 )
-      write( *, '(1x,a,i0)', advance = "no" ) "scaled_rmse_col", col_idx
+    if ( size( rmse, 1 ) > 1 ) write( *, '(1x,a)', advance = "no" ) "window"
+    do col_idx = 1, size( rmse, 3 )
+      write( *, '(1x,a,i0)', advance = "no" ) "rmse_col", col_idx
     end do
-    do col_idx = 1, size( scaled_rmse, 3 )
+    do col_idx = 1, size( rmse, 3 )
       write( *, '(1x,a,i0)' , advance = "no" ) "corr_col", col_idx
     end do
-    do col_idx = 1, size( scaled_rmse, 3 )
+    do col_idx = 1, size( rmse, 3 )
       write( *, '(1x,a,i0)' , advance = "no" ) "std_ratio_col", col_idx
     end do
-    do col_idx = 1, size( scaled_rmse, 3 )
-      write( *, '(1x,a,i0)' , advance = "no" ) "crmse_norm_col", col_idx
-    end do
-    do col_idx = 1, size( scaled_rmse, 3 )
+    do col_idx = 1, size( rmse, 3 )
       write( *, '(1x,a,i0)' , advance = "no" ) "bias_norm_col", col_idx
     end do
     write( *, '(1x,a)' ) "best_col"
 
-    do window_idx = 1, size( scaled_rmse, 1 )
-      do row_idx = 1, size( scaled_rmse, 2 )
+    do window_idx = 1, size( rmse, 1 )
+      do row_idx = 1, size( rmse, 2 )
         ! Summarize the best-performing parameter column directly in the printed
         ! table so manual tuning runs are easier to scan.
         best_col_idx = 1
-        best_col_loss = scaled_rmse(window_idx,row_idx,1)
-        do col_idx = 2, size( scaled_rmse, 3 )
-          if ( scaled_rmse(window_idx,row_idx,col_idx) < best_col_loss ) then
+        best_col_loss = rmse(window_idx,row_idx,1)
+        do col_idx = 2, size( rmse, 3 )
+          if ( rmse(window_idx,row_idx,col_idx) < best_col_loss ) then
             best_col_idx = col_idx
-            best_col_loss = scaled_rmse(window_idx,row_idx,col_idx)
+            best_col_loss = rmse(window_idx,row_idx,col_idx)
           end if
         end do
 
         write( *, '(a)', advance = "no" ) trim( clubb_var_names(row_idx) )
-        if ( size( scaled_rmse, 1 ) > 1 ) write( *, '(1x,a,i0)', advance = "no" ) "window", window_idx
-        do col_idx = 1, size( scaled_rmse, 3 )
-          write( *, '(1x,es16.8)', advance = "no" ) scaled_rmse(window_idx,row_idx,col_idx)
+        if ( size( rmse, 1 ) > 1 ) write( *, '(1x,a,i0)', advance = "no" ) "window", window_idx
+        do col_idx = 1, size( rmse, 3 )
+          write( *, '(1x,es16.8)', advance = "no" ) rmse(window_idx,row_idx,col_idx)
         end do
-        do col_idx = 1, size( scaled_rmse, 3 )
+        do col_idx = 1, size( rmse, 3 )
           write( *, '(1x,es16.8)', advance = "no" ) correlation(window_idx,row_idx,col_idx)
         end do
-        do col_idx = 1, size( scaled_rmse, 3 )
+        do col_idx = 1, size( rmse, 3 )
           write( *, '(1x,es16.8)', advance = "no" ) std_ratio(window_idx,row_idx,col_idx)
         end do
-        do col_idx = 1, size( scaled_rmse, 3 )
-          write( *, '(1x,es16.8)', advance = "no" ) centered_rmse_norm(window_idx,row_idx,col_idx)
-        end do
-        do col_idx = 1, size( scaled_rmse, 3 )
+        do col_idx = 1, size( rmse, 3 )
           write( *, '(1x,es16.8)', advance = "no" ) bias_norm(window_idx,row_idx,col_idx)
         end do
         write( *, '(1x,a,i0)' ) "col", best_col_idx
       end do
     end do
+
+    write( *, '(a)', advance = "no" ) "case_loss"
+    do col_idx = 1, size( case_loss )
+      write( *, '(1x,es16.8)', advance = "no" ) case_loss(col_idx)
+    end do
+    write( *, * )
 
   end subroutine print_loss_matrix
 end program clubb_loss_driver_test

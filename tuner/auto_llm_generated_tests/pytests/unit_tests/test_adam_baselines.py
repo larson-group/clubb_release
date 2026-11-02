@@ -1,3 +1,4 @@
+from tuner.taylor_metrics import LOSS_METRIC_NAMES
 from collections import deque
 import json
 from pathlib import Path
@@ -68,6 +69,19 @@ def _adam_strategy(*, max_updates=3, pairs=2, chains_per_batch=2, concurrent_bat
         chain_count=chains_per_batch * concurrent_batches,
         seed=seed,
     )
+
+
+def _prepared_cases(cases):
+    """Build explicit case values for scheduler fixtures, independent of its policy."""
+    result = {}
+    for case, fields in cases.items():
+        metrics = {name: np.asarray([field[name] for field in fields.values()]).transpose(1, 0, 2)
+                   for name in LOSS_METRIC_NAMES}
+        errors = metrics['rmse']
+        result[case] = {'metrics': {name: values.tolist() for name, values in metrics.items()},
+                        'loss': np.sqrt(np.mean(errors ** 2, axis=(0, 1))).tolist(),
+                        'field_loss': np.sqrt(np.mean(errors ** 2, axis=0)).tolist()}
+    return result
 
 
 def test_adam_config_and_cli_use_normalized_fractions():
@@ -240,7 +254,7 @@ def test_adam_checkpoint_preserves_incomplete_generation(tmp_path):
     scheduler.pending_samples = pending
     scheduler.batches = {
         4: {
-            "case_loss_metrics": {"atex": {"already": "complete"}},
+            "case_results": {"atex": {"already": "complete"}},
         }
     }
     scheduler.next_batch_id = 5
@@ -314,16 +328,15 @@ def test_baseline_and_candidates_share_the_exact_aggregation_path(tmp_path):
         return {
             "atex": {
                 "cloud_frac": {
-                    "scaled_rmse": [[centered + bias]],
+                    "rmse": [[centered + bias]],
                     "correlation": [[1.0]],
                     "std_ratio": [[1.0]],
-                    "centered_rmse_norm": [[centered]],
                     "bias_norm": [[bias]],
                 }
             }
         }
 
-    scheduler.baseline_case_metrics["clubb_default"] = metrics(0.4, 0.2)
+    scheduler.baseline_case_results["clubb_default"] = _prepared_cases(metrics(0.4, 0.2))
     scheduler._finalize_baselines()
     baseline_loss = scheduler.baselines["clubb_default"]["total_loss"]
 
@@ -333,7 +346,7 @@ def test_baseline_and_candidates_share_the_exact_aggregation_path(tmp_path):
             "sample_ids": [batch_id],
             "selected_params_by_sample": [{"C8": 0.5}],
             "all_params_by_sample": [{"C8": 0.5}],
-            "case_loss_metrics": case_metrics,
+            "case_results": _prepared_cases(case_metrics),
         }
         scheduler.batches[batch_id] = batch
         scheduler._complete_batch(batch_id, batch)
@@ -361,10 +374,10 @@ def test_rejected_baseline_is_unavailable_without_stopping_tune(tmp_path):
         status_path=tmp_path / "status.json",
         results_path=tmp_path / "results.json",
     )
-    scheduler.baseline_case_metrics["clubb_default"] = {
+    scheduler.baseline_case_results["clubb_default"] = {
         "lba": {"__baseline_unavailable__": "CLUBB rejected this baseline parameter set"}
     }
-    scheduler.baseline_case_metrics["override_defaults"] = {
+    scheduler.baseline_case_results["override_defaults"] = {
         "lba": {"__baseline_unavailable__": "CLUBB rejected this baseline parameter set"}
     }
 

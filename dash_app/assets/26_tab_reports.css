@@ -9,7 +9,7 @@
   width: 270px;
   min-width: 270px;
   padding-top: 7.9rem;
-  background: #0c1424;
+  background: var(--ui-surface);
   border-right: 1px solid var(--notes-border);
 }
 #app-root .reports-directory-header {
@@ -19,7 +19,7 @@
 }
 #app-root .reports-directory-header h2 { margin: .2rem 0 .35rem; font-size: 1.55rem; }
 .reports-directory-eyebrow {
-  color: #38bdf8 !important;
+  color: var(--ui-accent) !important;
   font-size: .74rem;
   font-weight: 800;
   letter-spacing: .12em;
@@ -35,15 +35,15 @@
   border: 1px solid var(--notes-border) !important;
   border-radius: .62rem !important;
   background: var(--notes-panel) !important;
-  color: #c9d4e5 !important;
+  color: var(--ui-text) !important;
   text-align: left !important;
   white-space: normal !important;
 }
-#app-root .reports-directory-card:hover { border-color: #52647d !important; background: #172033 !important; }
+#app-root .reports-directory-card:hover { border-color: var(--ui-accent-border) !important; background: var(--ui-raised) !important; }
 #app-root .reports-directory-card-selected {
-  background: #173457 !important;
-  color: #f8fafc !important;
-  border-color: #3a6b9f !important;
+  background: var(--ui-accent-soft) !important;
+  color: var(--ui-text) !important;
+  border-color: var(--ui-accent-border) !important;
   box-shadow: inset 3px 0 0 var(--notes-accent);
 }
 #app-root .reports-view { flex: 1 1 auto; min-width: 0; padding: 1rem; }
@@ -54,7 +54,7 @@
   min-height: 680px;
   border: 1px solid var(--notes-border);
   border-radius: .8rem;
-  background: #0d1525;
+  background: var(--ui-surface);
 }
 #app-root .reports-frame-hidden, #app-root .reports-empty-state-hidden { display: none; }
 #app-root .reports-empty-state {

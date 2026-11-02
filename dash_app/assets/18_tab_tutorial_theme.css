@@ -18,8 +18,8 @@
   min-width: 220px !important;
   padding: .75rem .55rem;
   gap: .35rem;
-  background: #0c1424 !important;
-  border-right: 1px solid #334155 !important;
+  background: var(--ui-surface) !important;
+  border-right: 1px solid var(--ui-border) !important;
 }
 #app-root .tutorial-page-tab,
 #app-root .tutorial-page-tab-selected {
@@ -33,37 +33,37 @@
   text-align: left !important;
   white-space: normal !important;
 }
-#app-root .tutorial-page-tab { background: transparent !important; color: #aebbd0 !important; }
-#app-root .tutorial-page-tab:hover { background: #172033 !important; color: #f8fafc !important; }
+#app-root .tutorial-page-tab { background: transparent !important; color: var(--ui-muted) !important; }
+#app-root .tutorial-page-tab:hover { background: var(--ui-raised) !important; color: var(--ui-text) !important; }
 #app-root .tutorial-page-tab-selected {
-  background: #1e3a5f !important;
-  color: #f8fafc !important;
-  border-color: #315a86 !important;
-  box-shadow: inset 3px 0 0 #38bdf8;
+  background: var(--ui-accent-soft) !important;
+  color: var(--ui-text) !important;
+  border-color: var(--ui-accent-border) !important;
+  box-shadow: inset 3px 0 0 var(--ui-accent);
 }
-.tutorial-page-content { min-width: 0; flex: 1 1 auto; background: #0b1120; }
+.tutorial-page-content { min-width: 0; flex: 1 1 auto; background: var(--ui-bg); }
 .tutorial-welcome-page { max-width: 1040px; margin: 0 auto; padding: clamp(2rem, 5vw, 5rem); }
-.tutorial-eyebrow { color: #38bdf8 !important; font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.tutorial-eyebrow { color: var(--ui-accent) !important; font-size: .8rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .tutorial-welcome-page h1 { margin: .35rem 0 .7rem; font-size: clamp(2.3rem, 5vw, 4.4rem); }
-.tutorial-lead { max-width: 760px; margin: 0; color: #b9c5d8 !important; font-size: 1.15rem; line-height: 1.65; }
+.tutorial-lead { max-width: 760px; margin: 0; color: var(--ui-muted) !important; font-size: 1.15rem; line-height: 1.65; }
 .tutorial-welcome-grid { display: grid; grid-template-columns: 1.25fr .85fr; gap: 1rem; margin-top: 2.2rem; }
-.tutorial-welcome-card { padding: 1.35rem; border: 1px solid #334155; border-radius: .8rem; background: #111827; }
-.tutorial-welcome-primary { border-top: 3px solid #38bdf8; }
+.tutorial-welcome-card { padding: 1.35rem; border: 1px solid var(--ui-border); border-radius: .8rem; background: var(--ui-surface); }
+.tutorial-welcome-primary { border-top: 3px solid var(--ui-accent); }
 .tutorial-welcome-card h2 { margin: 0 0 .8rem; }
-.tutorial-welcome-card p, .tutorial-steps { color: #b9c5d8 !important; line-height: 1.55; }
+.tutorial-welcome-card p, .tutorial-steps { color: var(--ui-muted) !important; line-height: 1.55; }
 .tutorial-steps { margin: 0; padding-left: 1.4rem; }
 .tutorial-steps li { margin: .55rem 0; padding-left: .25rem; }
 .tutorial-start-button {
   margin-top: 1rem;
   padding: .7rem 1rem;
-  border: 1px solid #38bdf8;
+  border: 1px solid var(--ui-accent);
   border-radius: .55rem;
-  background: #0c4a6e;
-  color: #f0f9ff;
+  background: var(--ui-accent-soft);
+  color: var(--ui-text);
   font-weight: 750;
   cursor: pointer;
 }
-.tutorial-lesson-hint { padding: .7rem 1rem; border-bottom: 1px solid #334155; background: #10213a; color: #cfe8ff !important; line-height: 1.4; }
+.tutorial-lesson-hint { padding: .7rem 1rem; border-bottom: 1px solid var(--ui-border); background: var(--ui-accent-soft); color: var(--ui-text) !important; line-height: 1.4; }
 .tutorial-demo-page .dg-app { min-height: 0; }
 
 /* Shared Double Gaussian lesson styling. */

@@ -4,7 +4,7 @@ import pytest
 
 from dash_app.tune_tab.callbacks_runs import build_request_payload
 from dash_app.tune_tab.runtime import write_loss_params_file
-from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE
+from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_WEIGHTS
 from input.scripts.create_case_namelist import normalize_override_string, override_value
 
 
@@ -24,7 +24,7 @@ def test_tune_request_keeps_a_generic_scm_override():
         1,
         1,
         "random",
-        DEFAULT_LOSS_MODE,
+        DEFAULT_LOSS_WEIGHTS,
         DEFAULT_AGGREGATION_MODE,
         1,
         0.1,
@@ -33,7 +33,6 @@ def test_tune_request_keeps_a_generic_scm_override():
         1.0e-6,
         "default",
         "-override iiPDF_type=1",
-        [],
     )
 
     assert request["override"] == "iiPDF_type=1"
@@ -47,8 +46,8 @@ def test_tune_request_migrates_a_documented_stale_parameter_name(monkeypatch):
     request = build_request_payload(
         ["arm"], [41400], [41460], [60], [20.0], [100.0], ["cloud_frac"],
         ["C_uu_shr"], ["0.1"], ["0.9"], 1, 1, "random",
-        DEFAULT_LOSS_MODE, DEFAULT_AGGREGATION_MODE, 1, 0.1, 1, 1.0, 1.0e-6,
-        "default", "", [],
+        DEFAULT_LOSS_WEIGHTS, DEFAULT_AGGREGATION_MODE, 1, 0.1, 1, 1.0, 1.0e-6,
+        "default", "",
     )
 
     assert request["parameter_ranges"] == [
@@ -62,8 +61,8 @@ def test_tune_request_keeps_linked_physical_targets(monkeypatch):
     monkeypatch.setattr(callbacks_runs, "load_tunable_names", lambda _config: ["C6rt", "C6thl"])
     request = build_request_payload(
         ["arm"], [41400], [41460], [60], [20.0], [100.0], ["cloud_frac"],
-        ["C6rt"], ["0"], ["4"], 1, 1, "random", DEFAULT_LOSS_MODE,
-        DEFAULT_AGGREGATION_MODE, 1, 0.1, 1, 1.0, 1.0e-6, "default", "", [],
+        ["C6rt"], ["0"], ["4"], 1, 1, "random", DEFAULT_LOSS_WEIGHTS,
+        DEFAULT_AGGREGATION_MODE, 1, 0.1, 1, 1.0, 1.0e-6, "default", "",
         range_targets=[["C6rt", "C6thl"]],
     )
     assert request["parameter_ranges"] == [

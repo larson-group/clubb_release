@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from clubb_jax.run_jax import runtime_selection
 from dash_app.shared.stats import validate_stats_selection
 
@@ -119,6 +119,8 @@ class ParameterRange(StrictModel):
 
 
 class TuneRequest(JaxDeviceOptions):
+    grad: bool = False
+    gradient_mode: Literal['auto', 'forward', 'reverse'] = 'auto'
     request_id: str = Field(min_length=8, max_length=128)
     backend: Literal["fortran", "jax"] = "fortran"
     jax_options: str = Field(default="cpu", max_length=512)
@@ -138,17 +140,28 @@ class TuneRequest(JaxDeviceOptions):
     adam_spsa_pairs: int = Field(default=2, ge=1)
     batch_size: int = Field(default=1, ge=1, le=64)
     max_workers: int = Field(default=1, ge=1)
-    loss_mode: str | None = None
+    loss_weights: dict[str, float] = Field(default_factory=lambda: {"mean": 1.0, "std": 1.0, "corr": 1.0})
     aggregation_mode: str | None = None
     aggregation_weights: list[float] = Field(default_factory=lambda: [0.1, 0.4, 0.4, 0.1], min_length=4, max_length=4)
-    time_window_aggregation_scope: Literal["overall", "by_case"] = "overall"
     overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
+
+    @field_validator("loss_weights")
+    @classmethod
+    def _loss_weights(cls, value):
+        from utilities.loss_metrics import normalize_loss_weights
+        return normalize_loss_weights(value)
 
     @field_validator("jax_options")
     @classmethod
     def _runtime_options(cls, value: str) -> str:
         runtime_selection(value)
         return value
+
+    @model_validator(mode='after')
+    def _gradient_backend(self):
+        from utilities.clubb_loss_runner import validate_gradient_backend
+        validate_gradient_backend(self.backend, self.grad)
+        return self
 
 
 class ProfileArtifactRequest(StrictModel):

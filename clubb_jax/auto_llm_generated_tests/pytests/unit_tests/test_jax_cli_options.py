@@ -236,6 +236,7 @@ def test_managed_launcher_dispatches_selected_entry_module(module, tmp_path, mon
     assert executable == str(python)
     assert command == [str(python), "-m", module, "run.in"]
     assert env["_CLUBB_JAX_ENVIRONMENT_PYTHON"] == str(python)
+    assert "--combiner-disabled=true" in env["XLA_FLAGS"]
 
 
 @pytest.mark.parametrize("options", [

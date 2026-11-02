@@ -6,17 +6,16 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from dash_app.shared.plot_theme import figure_theme
+
 from .analysis import MOMENTS, below_threshold_counts, load_moment
 
 
-def _finish(figure, *, height: int, uirevision: str):
+def _finish(figure, *, height: int, uirevision: str, theme: str):
     figure.update_layout(
-        template="plotly_dark",
+        **figure_theme(theme),
         height=height,
         margin={"l": 72, "r": 34, "t": 62, "b": 92},
-        paper_bgcolor="#0f172a",
-        plot_bgcolor="#111827",
-        font={"color": "#e5e7eb", "size": 12},
         hovermode="closest",
         uirevision=uirevision,
         legend={
@@ -27,15 +26,13 @@ def _finish(figure, *, height: int, uirevision: str):
             "xanchor": "left",
         },
     )
-    figure.update_xaxes(gridcolor="#334155", zerolinecolor="#94a3b8")
-    figure.update_yaxes(gridcolor="#334155", zerolinecolor="#94a3b8")
     return figure
 
 
-def empty_figure(message: str):
+def empty_figure(message: str, theme: str = "dark"):
     figure = go.Figure()
-    figure.add_annotation(text=message, showarrow=False, font={"color": "#cbd5e1"})
-    return _finish(figure, height=360, uirevision="hf-empty")
+    figure.add_annotation(text=message, showarrow=False)
+    return _finish(figure, height=360, uirevision="hf-empty", theme=theme)
 
 
 def profile_figure(
@@ -44,6 +41,7 @@ def profile_figure(
     record: int,
     column: int,
     field_scale: str = "log",
+    theme: str = "dark",
 ):
     before = data["before"][record, :, column]
     after = data["after"][record, :, column]
@@ -60,7 +58,7 @@ def profile_figure(
             y=height,
             mode="lines+markers",
             name="before",
-            line={"color": "#f59e0b", "width": 2},
+            line={"color": "#aa6400" if theme == "light" else "#f59e0b", "width": 2},
             marker={"size": 4},
             hovertemplate="before=%{x:.7g}<br>z=%{y:.2f} m<extra></extra>",
         )
@@ -71,7 +69,7 @@ def profile_figure(
             y=height,
             mode="lines",
             name="after",
-            line={"color": "#34d399", "width": 2},
+            line={"color": "#187c50" if theme == "light" else "#34d399", "width": 2},
             hovertemplate="after=%{x:.7g}<br>z=%{y:.2f} m<extra></extra>",
         )
     )
@@ -106,10 +104,11 @@ def profile_figure(
         figure,
         height=610,
         uirevision=f"hf-profile-{moment}-{field_scale}",
+        theme=theme,
     )
 
 
-def holes_over_time_figure(data: dict, moment: str, column: int):
+def holes_over_time_figure(data: dict, moment: str, column: int, theme: str = "dark"):
     threshold = data["threshold"][:, column, np.newaxis]
     before = data["before"][:, :, column]
     after = data["after"][:, :, column]
@@ -124,7 +123,8 @@ def holes_over_time_figure(data: dict, moment: str, column: int):
         subplot_titles=("Before fill", "Still below threshold after fill"),
         horizontal_spacing=0.08,
     )
-    colorscale = [[0.0, "#111827"], [0.499, "#111827"], [0.5, "#f43f5e"], [1.0, "#f43f5e"]]
+    background = "#ffffff" if theme == "light" else "#151f30"
+    colorscale = [[0.0, background], [0.499, background], [0.5, "#f43f5e"], [1.0, "#f43f5e"]]
     for column_index, values in enumerate((before_holes, after_holes), start=1):
         figure.add_trace(
             go.Heatmap(
@@ -143,12 +143,14 @@ def holes_over_time_figure(data: dict, moment: str, column: int):
     figure.update_xaxes(title_text="Model time (min)")
     figure.update_yaxes(title_text="Altitude (m)", row=1, col=1)
     figure.update_layout(title=f"Where {MOMENTS[moment]['label']} falls below its fill threshold")
-    return _finish(figure, height=470, uirevision=f"hf-map-{moment}-{column}")
+    return _finish(figure, height=470, uirevision=f"hf-map-{moment}-{column}", theme=theme)
 
 
-def summary_figure(path: str, moments: list[str], column: int):
+def summary_figure(path: str, moments: list[str], column: int, theme: str = "dark"):
     figure = go.Figure()
-    colors = ["#38bdf8", "#a78bfa", "#f59e0b", "#34d399", "#f472b6", "#fb7185", "#22d3ee"]
+    colors = (["#087a9b", "#8050ae", "#aa6400", "#187c50", "#ad357b", "#ba3449", "#007e84"]
+              if theme == "light" else
+              ["#38bdf8", "#a78bfa", "#f59e0b", "#34d399", "#f472b6", "#fb7185", "#22d3ee"])
     for color, moment in zip(colors, moments):
         data = load_moment(path, moment)
         before_count, after_count = below_threshold_counts(data, column)
@@ -171,4 +173,4 @@ def summary_figure(path: str, moments: list[str], column: int):
         xaxis_title="Model time (min)",
         yaxis_title="Level count",
     )
-    return _finish(figure, height=420, uirevision=f"hf-summary-{column}")
+    return _finish(figure, height=420, uirevision=f"hf-summary-{column}", theme=theme)

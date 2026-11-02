@@ -16,16 +16,13 @@ from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
     DEFAULT_AGGREGATION_WEIGHTS,
     DEFAULT_AGGREGATION_MODE,
-    DEFAULT_LOSS_MODE,
     DEFAULT_NUM_TIME_WINDOWS,
-    LOSS_MODE_NAMES,
     LOSS_POLICY_CONSTANTS,
     LOSS_POLICY_VERSION,
-    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
-    TIME_WINDOW_AGGREGATION_SCOPES,
     WORST_QUANTILE_FRACTION,
     normalize_aggregation_weights,
 )
+from utilities.loss_metrics import normalize_loss_weights, normalize_named_weights
 from tuner.tuning_strategy import normalize_strategy_config
 from input.scripts.create_case_namelist import normalize_override_string, parse_override_pairs
 from utilities.clubb_settings_validation import (
@@ -48,6 +45,9 @@ def load_request(request_path: Path) -> dict:
     if request["backend"] == "jax":
         request["jax_options"] = str(request.get("jax_options", "cpu"))
 
+    request["grad"] = request.get("grad", False)
+    from utilities.clubb_loss_runner import validate_gradient_mode
+    request['gradient_mode'] = validate_gradient_mode(request.get('gradient_mode', 'auto'))
     tuner_runtime_settings(request)
 
     request["config"] = _normalize_config(request.get("config"))
@@ -135,32 +135,24 @@ def load_request(request_path: Path) -> dict:
     request["max_workers"] = _positive_int(request.get("max_workers", 1), "Tuning request max_workers")
     request["case_weights"] = _normalize_weights(request.get("case_weights"), set(cases), "case")
     request["field_weights"] = _normalize_weights(request.get("field_weights"), set(selected_fields), "field")
-    request["loss_mode"] = _normalize_choice(
-        request.get("loss_mode", DEFAULT_LOSS_MODE),
-        set(LOSS_MODE_NAMES),
-        "loss_mode",
-    )
+    try:
+        request["loss_weights"] = normalize_loss_weights(request.get("loss_weights"))
+        request["field_weights"] = normalize_named_weights(request.get("field_weights"), selected_fields, "field")
+    except ValueError as exc:
+        raise RuntimeError(str(exc)) from exc
     request["aggregation_mode"] = _normalize_choice(
         request.get("aggregation_mode", DEFAULT_AGGREGATION_MODE),
         set(AGGREGATION_MODE_NAMES),
         "aggregation_mode",
     )
-    request["time_window_aggregation_mode"] = _normalize_choice(
-        request.get("time_window_aggregation_mode", request["aggregation_mode"]),
-        set(AGGREGATION_MODE_NAMES),
-        "time_window_aggregation_mode",
-    )
+
     try:
         request["aggregation_weights"] = normalize_aggregation_weights(
             request.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS)
         )
     except ValueError as exc:
         raise RuntimeError(str(exc)) from exc
-    request["time_window_aggregation_scope"] = _normalize_choice(
-        request.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE),
-        set(TIME_WINDOW_AGGREGATION_SCOPES),
-        "time_window_aggregation_scope",
-    )
+
     request.pop("time_window_mode", None)
     request.pop("num_time_windows", None)
     requested_loss_policy_version = request.get("loss_policy_version", LOSS_POLICY_VERSION)
@@ -173,7 +165,6 @@ def load_request(request_path: Path) -> dict:
     request["aggregation_options"] = {
         "worst_quantile_fraction": WORST_QUANTILE_FRACTION,
         "quantile_weights": list(request["aggregation_weights"]),
-        "time_window_aggregation_scope": request["time_window_aggregation_scope"],
     }
 
     try:

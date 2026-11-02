@@ -95,23 +95,6 @@
   border-color: #cbd5e1;
 }
 
-#app-root .compile-lmod-panel .dash-dropdown .Select-input > input {
-  caret-color: transparent;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-#app-root .compile-lmod-panel .dash-dropdown .Select-input > input:focus {
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
-  background: transparent !important;
-}
-
 #app-root .compile-lmod-panel .dash-dropdown .Select--single > .Select-control .Select-value,
 #app-root .compile-lmod-panel .dash-dropdown .Select-placeholder {
   padding-left: 10px;

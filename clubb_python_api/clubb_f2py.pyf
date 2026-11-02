@@ -495,15 +495,15 @@ python module clubb_f2py
     end subroutine
 
     subroutine f2py_clubb_get_loss_for_params(total_param_sets, nparams_in, num_variables, &
-        num_time_windows, clubb_params_all, scaled_rmse, correlation, std_ratio, &
-        centered_rmse_norm, bias_norm)
+        num_time_windows, clubb_params_all, rmse, correlation, std_ratio, &
+        bias_norm, case_loss)
       integer, intent(in) :: total_param_sets, nparams_in, num_variables, num_time_windows
       double precision, dimension(total_param_sets, nparams_in), intent(in) :: clubb_params_all
-      double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: scaled_rmse
+      double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: rmse
       double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: correlation
       double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: std_ratio
-      double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: centered_rmse_norm
       double precision, dimension(num_time_windows, num_variables, total_param_sets), intent(out) :: bias_norm
+      double precision, dimension(total_param_sets), intent(out) :: case_loss
     end subroutine
 
     subroutine f2py_finalize_clubb_loss()

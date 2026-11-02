@@ -36,3 +36,10 @@ def parameter_metadata(backend):
     api = load_loss_backend(backend)
     names = list(api.get_param_names())
     return names, list(api.get_parameter_hard_bounds(len(names)))
+
+
+def available_loss_fields():
+    """Return benchmark-supported fields present in the canonical tuning stats preset."""
+    from input.scripts.benchmark_converter import supported_fields
+    from input.scripts.stats_json_to_namelist import select_stats_entries
+    return sorted(set(supported_fields()) & {entry['name'] for entry in select_stats_entries('all_tuning_stats')})

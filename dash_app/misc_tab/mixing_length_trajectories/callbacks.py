@@ -139,14 +139,16 @@ def register_callbacks(app):
         Input("mlt-column", "value"),
     )
     def update_mu_control(path, column):
+        """Set the entrainment slider range, marks and value for a file column."""
+        default = (3.0e-3, {1.0e-5: "0.00001", 1.0e-3: "0.001", 3.0e-3: "0.003"}, 1.0e-3)
         if path is None or column is None:
-            return 3.0e-3, {}, 1.0e-3
+            return default
         try:
             record = load_dataset_record(path, 0, column)
         except (IndexError, OSError, RuntimeError, TypeError, ValueError):
             # File metadata owns the visible validation message. This callback
             # can race that validation when a newly-created NetCDF is empty.
-            return 3.0e-3, {}, 1.0e-3
+            return default
         slider_max = max(3.0e-3, 2.0 * record.mu)
         marks = {
             1.0e-5: "0.00001",

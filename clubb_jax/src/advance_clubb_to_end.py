@@ -1,10 +1,17 @@
-"""CLUBB time-loop driver utilities.
+"""Advance CLUBB fields and statistics through a requested range of timesteps.
 
-Mirrors the timestep loop of the Fortran `advance_clubb_to_end` subroutine (clubb_driver.F90): per step it
-applies forcings, adds radiation tendencies, calls the closure advance (advance_clubb_core), advances
-radiation, and accumulates stats. Split out from the previous monolithic Python driver file.
+advance_clubb_to_end(state, ...) runs the normal host-owned time loop, mirroring
+src/clubb_driver.F90: prescribe forcings, advance the closure, apply microphysics,
+advance radiation, then finalize sampled statistics and print progress.
+
+For reverse-mode loss gradients, pass a case-owned checkpoint_cache. The same
+loop then checkpoints each numerical timestep, retaining its input state and
+recomputing intermediates during backpropagation. Scheduling, stats reporting
+and other host output stay outside replay. This requires negative debug and
+enabled in-memory statistics. Ordinary and forward-mode runs omit the cache.
 """
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -29,16 +36,24 @@ def _err_code_summary(err_info) -> str:
 def advance_clubb_to_end(
     state: dict, l_stdout: bool = True, l_suppress_stats: bool = False,
     itime_start: int | None = None, itime_end: int | None = None,
-    max_steps: int | None = None,
+    max_steps: int | None = None, *, checkpoint_cache: dict | None = None,
 ):
     """Run the CLUBB time loop.
 
-    For JAX differentiation, initialize with debug=-1 and stats disabled,
-    and pass l_stdout=False. Set configuration before tracing the driver.
+    For JAX differentiation, initialize with debug=-1 and pass l_stdout=False.
+    Set the statistics configuration before tracing the driver.
     The source l_suppress_stats option disables sampling for this advance
     without changing the initialized stats configuration. max_steps is the
     existing JAX-only iteration cap; source optional arguments precede it.
+    JAX adaptation: a supplied case-owned checkpoint_cache enables one-timestep
+    reverse replay without changing host scheduling or reporting.
     """
+
+    if checkpoint_cache is not None and (
+        clubb_at_least_debug_level(0) or not state['l_stats']
+        or l_suppress_stats or state['stats_output_path']
+    ):
+        raise ValueError('Checkpointed loss runs require debug=-1 and enabled in-memory statistics')
 
     timer_start("advance_clubb_to_end")
     dt_main = state['dt_main']
@@ -109,69 +124,11 @@ def advance_clubb_to_end(
             l_sample = False
             l_last_sample = False
 
-        # ── Compute thvm ────────────────────────────────────────────────
-        # Update virtual potential temperature diagnostic.
-        state['thvm'] = calculate_thvm(
-            nzt=state['nzt'],
-            ngrdcol=state['ngrdcol'],
-            thlm=state['thlm'],
-            rtm=state['rtm'],
-            rcm=state['rcm'],
-            exner=state['exner'],
-            thv_ds_zt=state['thv_ds_zt'],
-        )
-
-        # ── Prescribe forcings (case-specific) ──────────────────────────
-        timer_start("prescribe_forcings")
-        _prescribe_forcings(state, time_current)
-        timer_stop("prescribe_forcings")
-
-        # ── Add radiation tendency to forcing ─────────────────────────────────
-        state['rtm_forcing'] = state['rtm_forcing'] + state['rcm_mc'] + state['rvm_mc']
-        state['thlm_forcing'] = state['thlm_forcing'] + state['thlm_mc'] + state['radht']
-        state['wprtp_forcing'] = state['wprtp_forcing'] + state['wprtp_mc']
-        state['wpthlp_forcing'] = state['wpthlp_forcing'] + state['wpthlp_mc']
-        state['rtp2_forcing'] = state['rtp2_forcing'] + state['rtp2_mc']
-        state['thlp2_forcing'] = state['thlp2_forcing'] + state['thlp2_mc']
-        state['rtpthlp_forcing'] = state['rtpthlp_forcing'] + state['rtpthlp_mc']
-
-        # ── Radiation contribution to thlp2 ─────────────────────────────
-        # Apply radiation contribution to thlp2 forcing when enabled.
-        if state['l_calc_thlp2_rad']:
-            timer_start("calculate_thlp2_rad_api")
-            state['thlp2_forcing'] = calculate_thlp2_rad(
-                state['ngrdcol'],
-                state['nzm'],
-                state['nzt'],
-                state['gr'],
-                state['rcm'],
-                state['thlprcp'],
-                state['radht'],
-                state['clubb_params'],
-                state['thlp2_forcing'],
-            )
-            timer_stop("calculate_thlp2_rad_api")
-
-        # ── Advance CLUBB core ──────────────────────────────────────────
-        state['l_sample'] = l_sample
-        timer_start("advance_clubb_core_api")
-        _advance_clubb_core(state)
-        timer_stop("advance_clubb_core_api")
-
-        # ── Radiation ───────────────────────────────────────────────────
         l_rad_itime = (itime % rad_interval == 0) or (itime == 1)
-
-        _advance_microphysics(state, itime, time_current, l_rad_itime)
-
-        timer_start("advance_clubb_radiation")
-        _advance_radiation(state=state, time_current=time_current, l_rad_itime=l_rad_itime)
-        timer_stop("advance_clubb_radiation")
-
-        if clubb_at_least_debug_level(0) and state['err_info'].is_fatal():
-            raise RuntimeError(
-                "Fatal error in radiation; "
-                f"{_err_code_summary(state['err_info'])}"
-            )
+        if checkpoint_cache is None:
+            _advance_timestep(state, itime, time_current, l_sample, l_rad_itime)
+        else:
+            _checkpoint_timestep(state, itime, time_current, l_sample, l_rad_itime, checkpoint_cache)
 
         # ── Stats: end timestep ─────────────────────────────────────────
         if l_last_sample:
@@ -195,6 +152,116 @@ def advance_clubb_to_end(
         timer_stop("timestep")
 
     timer_stop("advance_clubb_to_end")
+
+
+def _checkpoint_timestep(state, itime, time_current, l_sample, l_rad_itime, cache):
+    """Replay one pure numerical step while leaving host work in the normal loop.
+
+    JAX adaptation: split array-valued state from host resources and cache a
+    checkpointed callable per case, sampling/radiation flags and pytree layout.
+    The callable reuses existing jitted physics kernels; the host loop is not
+    globally jitted, so no compiler CSE barrier is needed here.
+    """
+    def numerical_state(values):
+        """Select numerical pytrees, keeping host resources and lookup tables outside AD."""
+        result = {}
+        for name, value in values.items():
+            if name in {'_initial_state', '_loss_stats_snapshots'}:
+                continue
+            leaves = jax.tree.leaves(value)
+            if (any(isinstance(leaf, (jax.Array, jax.core.Tracer, np.ndarray)) for leaf in leaves)
+                    and all(isinstance(leaf, (jax.Array, jax.core.Tracer, np.ndarray,
+                                             int, float, complex, bool)) for leaf in leaves)):
+                result[name] = value
+        return result
+
+    dynamic = numerical_state(state)
+    key = (l_sample, l_rad_itime, jax.tree.structure(dynamic))
+    if key not in cache:
+        static = {name: value for name, value in state.items()
+                  if name not in dynamic and name not in {'_initial_state', '_loss_stats_snapshots'}}
+
+        def advance_step(dynamic, step, time):
+            """Return numerical state after one timestep, without host reporting."""
+            local = dict(static, **dynamic)
+            _advance_timestep(local, step, time, l_sample, l_rad_itime)
+            return numerical_state(local)
+
+        cache[key] = jax.checkpoint(advance_step, prevent_cse=False)
+    state.update(cache[key](dynamic, jnp.asarray(itime, dtype=jnp.int32), jnp.asarray(time_current)))
+    state['l_sample'] = l_sample
+
+
+def _advance_timestep(state, itime, time_current, l_sample, l_rad_itime):
+    """Update physical fields and sampled statistics for one prepared timestep.
+
+    Inputs: driver state, absolute one-based step, its start time [s], and the
+    static sampling/radiation flags. Update state in place. Host scheduling and
+    completed-window reporting belong to the calling time loop. This extraction
+    lets checkpoint replay use the same forcing/core/microphysics/radiation order
+    as advance_clubb_to_end, without replaying host output.
+    """
+    # ── Compute thvm ────────────────────────────────────────────────
+    # Update virtual potential temperature diagnostic.
+    state['thvm'] = calculate_thvm(
+        nzt=state['nzt'],
+        ngrdcol=state['ngrdcol'],
+        thlm=state['thlm'],
+        rtm=state['rtm'],
+        rcm=state['rcm'],
+        exner=state['exner'],
+        thv_ds_zt=state['thv_ds_zt'],
+    )
+
+    # ── Prescribe forcings (case-specific) ──────────────────────────
+    timer_start("prescribe_forcings")
+    _prescribe_forcings(state, time_current)
+    timer_stop("prescribe_forcings")
+
+    # ── Add radiation tendency to forcing ─────────────────────────────────
+    state['rtm_forcing'] = state['rtm_forcing'] + state['rcm_mc'] + state['rvm_mc']
+    state['thlm_forcing'] = state['thlm_forcing'] + state['thlm_mc'] + state['radht']
+    state['wprtp_forcing'] = state['wprtp_forcing'] + state['wprtp_mc']
+    state['wpthlp_forcing'] = state['wpthlp_forcing'] + state['wpthlp_mc']
+    state['rtp2_forcing'] = state['rtp2_forcing'] + state['rtp2_mc']
+    state['thlp2_forcing'] = state['thlp2_forcing'] + state['thlp2_mc']
+    state['rtpthlp_forcing'] = state['rtpthlp_forcing'] + state['rtpthlp_mc']
+
+    # ── Radiation contribution to thlp2 ─────────────────────────────
+    # Apply radiation contribution to thlp2 forcing when enabled.
+    if state['l_calc_thlp2_rad']:
+        timer_start("calculate_thlp2_rad_api")
+        state['thlp2_forcing'] = calculate_thlp2_rad(
+            state['ngrdcol'],
+            state['nzm'],
+            state['nzt'],
+            state['gr'],
+            state['rcm'],
+            state['thlprcp'],
+            state['radht'],
+            state['clubb_params'],
+            state['thlp2_forcing'],
+        )
+        timer_stop("calculate_thlp2_rad_api")
+
+    # ── Advance CLUBB core ──────────────────────────────────────────
+    state['l_sample'] = l_sample
+    timer_start("advance_clubb_core_api")
+    _advance_clubb_core(state)
+    timer_stop("advance_clubb_core_api")
+
+    # ── Radiation ───────────────────────────────────────────────────
+    _advance_microphysics(state, itime, time_current, l_rad_itime)
+
+    timer_start("advance_clubb_radiation")
+    _advance_radiation(state=state, time_current=time_current, l_rad_itime=l_rad_itime)
+    timer_stop("advance_clubb_radiation")
+
+    if clubb_at_least_debug_level(0) and state['err_info'].is_fatal():
+        raise RuntimeError(
+            "Fatal error in radiation; "
+            f"{_err_code_summary(state['err_info'])}"
+        )
 
 
 def _prescribe_forcings(state: dict, time_current):

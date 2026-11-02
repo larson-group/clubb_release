@@ -9,6 +9,9 @@ from pathlib import Path
 from dash import ALL, Input, Output, State, dcc, html, no_update
 import numpy as np
 import plotly.graph_objects as go
+from plotly.colors import get_colorscale
+
+from dash_app.shared.plot_theme import figure_theme
 
 from .callbacks_settings import parameter_group_specs
 from .layout import (
@@ -22,11 +25,9 @@ from tuner.sample_history import sample_history_paths
 from tuner.taylor_metrics import (
     DEFAULT_AGGREGATION_MODE,
     DEFAULT_AGGREGATION_WEIGHTS,
-    DEFAULT_LOSS_MODE,
-    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
+    DEFAULT_LOSS_WEIGHTS,
     LOSS_METRIC_NAMES,
     aggregate_losses,
-    compute_field_loss_diagnostics,
     normalize_aggregation_weights,
 )
 
@@ -83,7 +84,7 @@ _LANDSCAPE_METADATA_NAMES = [
 _LANDSCAPE_AGGREGATION_NAMES = {"mean", "median", "min", "p90", "max"}
 _LANDSCAPE_MODE_NAMES = {"samples", "binned"}
 _LANDSCAPE_BINS = 28
-_LANDSCAPE_LOSS_LIKE_METRICS = {"total_loss", "raw:scaled_rmse", "raw:centered_rmse_norm"}
+_LANDSCAPE_LOSS_LIKE_METRICS = {"total_loss", "raw:rmse"}
 
 
 def rendered_config_names(button_ids):
@@ -188,11 +189,10 @@ def _window_display_metrics(metrics, display_mode):
 
     if mode == "average":
         displayed = dict(base)
-        for metric_name in (*LOSS_METRIC_NAMES, "loss", "smart_loss"):
+        for metric_name in (*LOSS_METRIC_NAMES, "loss"):
             values = [_plot_diagnostic_float(item.get(metric_name)) for item in valid]
             values = [value for value in values if value is not None]
-            if values:
-                displayed[metric_name] = float(sum(values) / len(values))
+            displayed[metric_name] = float(sum(values) / len(values)) if len(values) == len(valid) else None
         displayed["displayed_window_loss"] = displayed.get("loss")
         return displayed, {
             "mode": mode,
@@ -217,7 +217,7 @@ def _window_display_metrics(metrics, display_mode):
     }
 
 
-def _collect_taylor_points(best_results, window_display="average"):
+def _collect_taylor_points(best_results, window_display="average", undefined=None):
     """Flatten retained best results into Taylor points using one display view."""
     points = []
     for result_index, result in enumerate(best_results or [], start=1):
@@ -237,15 +237,18 @@ def _collect_taylor_points(best_results, window_display="average"):
                 displayed, display_info = _window_display_metrics(metrics, window_display)
                 correlation = _plot_diagnostic_float(displayed.get("correlation"))
                 std_ratio = _plot_diagnostic_float(displayed.get("std_ratio"))
-                centered_rmse_norm = _plot_diagnostic_float(displayed.get("centered_rmse_norm"))
+                centered_rmse = (max(0.0, 1.0 + std_ratio ** 2 - 2.0 * std_ratio * correlation) ** 0.5
+                                 if std_ratio is not None and correlation is not None else None)
                 bias_norm = _plot_diagnostic_float(displayed.get("bias_norm"))
                 field_loss = _plot_diagnostic_float(displayed.get("aggregate_field_loss", metrics.get("loss")))
                 displayed_window_loss = _plot_diagnostic_float(displayed.get("displayed_window_loss", displayed.get("loss")))
-                scaled_rmse = _plot_diagnostic_float(displayed.get("scaled_rmse", displayed.get("simple_rms")))
+                rmse = _plot_diagnostic_float(displayed.get("rmse", displayed.get("simple_rms")))
+                if undefined is not None and field_loss is not None and (correlation is None or std_ratio is None):
+                    undefined.add(f"{case_name}/{field_name}")
                 if (
                     correlation is None
                     or std_ratio is None
-                    or centered_rmse_norm is None
+                    or centered_rmse is None
                     or bias_norm is None
                     or field_loss is None
                 ):
@@ -254,7 +257,7 @@ def _collect_taylor_points(best_results, window_display="average"):
                 if (
                     std_ratio < 0.0
                     or std_ratio > _TAYLOR_PLOT_VALUE_LIMIT
-                    or centered_rmse_norm > _TAYLOR_PLOT_VALUE_LIMIT
+                    or centered_rmse > _TAYLOR_PLOT_VALUE_LIMIT
                     or abs(bias_norm) > _TAYLOR_PLOT_VALUE_LIMIT
                 ):
                     continue
@@ -265,11 +268,11 @@ def _collect_taylor_points(best_results, window_display="average"):
                         "field": str(field_name),
                         "correlation": correlation,
                         "std_ratio": std_ratio,
-                        "centered_rmse_norm": centered_rmse_norm,
+                        "centered_rmse": centered_rmse,
                         "bias_norm": bias_norm,
                         "field_loss": field_loss,
                         "displayed_window_loss": displayed_window_loss,
-                        "scaled_rmse": scaled_rmse,
+                        "rmse": rmse,
                         "total_loss": total_loss,
                         "window_display": display_info["label"],
                         "window_index": display_info["window_index"],
@@ -300,20 +303,57 @@ def _taylor_hover_text(point):
                 if point["window_index"] is not None
                 else (f" ({point['window_count']} windows)" if point["window_count"] else "")
             ),
-            f"Total smart loss {_fmt_metric(point['total_loss'], 6)}",
+            f"Total loss {_fmt_metric(point['total_loss'], 6)}",
             f"Aggregate field smart loss {_fmt_metric(point['field_loss'], 6)}",
             *(
                 [f"Displayed-window smart loss {_fmt_metric(point['displayed_window_loss'], 6)}"]
                 if point["displayed_window_loss"] is not None
                 else []
             ),
-            f"scaled_rmse {_fmt_metric(point['scaled_rmse'], 6)}",
+            f"rmse {_fmt_metric(point['rmse'], 6)}",
             f"correlation {_fmt_metric(point['correlation'])}",
             f"std_ratio {_fmt_metric(point['std_ratio'])}",
-            f"centered_rmse_norm {_fmt_metric(point['centered_rmse_norm'])}",
+            f"centered_rmse {_fmt_metric(point['centered_rmse'])}",
             f"bias_norm {_fmt_metric(point['bias_norm'])}",
         ]
     )
+
+
+def _theme_diagnostic_figure(figure, theme):
+    """Apply dashboard colors to a Tune figure without changing its plotted data."""
+    if theme == "light":
+        return figure
+    figure.update_layout(**figure_theme(theme))
+    for annotation in figure.layout.annotations or ():
+        annotation.font.color = "#b0c0d2"
+    dark_colors = {
+        "#2563eb": "#72a4ff", "#dc2626": "#fb7185", "#16a34a": "#4ade80",
+        "#9333ea": "#c084fc", "#ea580c": "#fb923c", "#0891b2": "#22d3ee",
+        "#be123c": "#fb7185", "#4f46e5": "#a5b4fc", "#111827": "#edf3fa",
+        "#0f172a": "#edf3fa", "#f8fafc": "#151f30",
+        "rgba(15, 23, 42, 0.52)": "rgba(237, 243, 250, 0.68)",
+        "rgba(71, 85, 105, 0.28)": "rgba(176, 192, 210, 0.38)",
+        "rgba(202, 138, 4, 0.34)": "rgba(251, 191, 36, 0.48)",
+    }
+    rdbu = tuple((round(position, 3), color) for position, color in get_colorscale("RdBu"))
+    dark_rdbu = [
+        [0.0, "#ed6e77"], [0.25, "#f5b39b"], [0.5, "#edf3fa"],
+        [0.75, "#97cfe8"], [1.0, "#4c9de0"],
+    ]
+    for trace in figure.data:
+        if hasattr(trace, "colorscale") and trace.colorscale == rdbu:
+            trace.colorscale = dark_rdbu
+        if hasattr(trace, "line") and trace.line.color in dark_colors:
+            trace.line.color = dark_colors[trace.line.color]
+        if hasattr(trace, "marker"):
+            if hasattr(trace.marker, "colorscale") and trace.marker.colorscale == rdbu:
+                trace.marker.colorscale = dark_rdbu
+            color = trace.marker.color
+            if isinstance(color, str) and color in dark_colors:
+                trace.marker.color = dark_colors[color]
+            if trace.marker.line.color in dark_colors:
+                trace.marker.line.color = dark_colors[trace.marker.line.color]
+    return figure
 
 
 def _empty_diagnostics_figure(title, message):
@@ -348,11 +388,13 @@ def build_taylor_figure(best_results, window_display="average"):
     mode = str(window_display or "average").strip().lower()
     if mode not in _TAYLOR_WINDOW_DISPLAY_NAMES:
         mode = "average"
-    points = _collect_taylor_points(best_results, mode)
+    undefined = set()
+    points = _collect_taylor_points(best_results, mode, undefined)
+    undefined_message = ("Undefined Taylor coordinates: " + ", ".join(sorted(undefined))) if undefined else ""
     if not points:
         return _empty_diagnostics_figure(
             f"Taylor Diagnostics · {_TAYLOR_WINDOW_DISPLAY_NAMES[mode]}",
-            "Taylor diagnostics will appear after tuning results are available.",
+            undefined_message or "Taylor diagnostics will appear after tuning results are available.",
         )
 
     show_negative = any(point["correlation"] < -1.0e-8 for point in points)
@@ -420,7 +462,7 @@ def build_taylor_figure(best_results, window_display="average"):
             yanchor="middle",
         )
 
-    max_crmse = max([1.0] + [point["centered_rmse_norm"] or 0.0 for point in points])
+    max_crmse = max([1.0] + [point["centered_rmse"] or 0.0 for point in points])
     for radius in _levels_up_to(max(radius_limit, max_crmse)):
         x_values, y_values = _crmse_points(radius, x_min, x_max, y_max)
         if len([value for value in x_values if value is not None]) < 2:
@@ -435,6 +477,10 @@ def build_taylor_figure(best_results, window_display="average"):
                 showlegend=False,
             )
         )
+
+    if undefined_message:
+        fig.add_annotation(text=undefined_message, xref="paper", yref="paper", x=0, y=-0.2,
+                           xanchor="left", showarrow=False, font={"size": 11, "color": "#64748b"})
 
     rank_max = max(point["rank"] for point in points)
     fig.add_trace(
@@ -601,7 +647,6 @@ def _collect_top_parameter_values(best_results, best_results_by_case=None, selec
             rank = int(result.get("rank", result_index))
             group_loss = _finite_float(result.get(loss_key))
             total_loss = _finite_float(result.get("total_loss"))
-            scaled_rmse_sum = _finite_float(result.get("scaled_rmse_sum", result.get("simple_rms_sum")))
             params = _result_params(result)
             for name, raw_value in params.items():
                 value = _finite_float(raw_value)
@@ -623,8 +668,7 @@ def _collect_top_parameter_values(best_results, best_results_by_case=None, selec
                             f"{group_label} rank {rank}",
                             f"{name} {_fmt_metric(value, 6)}",
                             f"{loss_key} {_fmt_metric(group_loss, 6)}",
-                            f"Total smart loss {_fmt_metric(total_loss, 6)}",
-                            f"Scaled RMSE sum {_fmt_metric(scaled_rmse_sum, 6)}",
+                            f"Total loss {_fmt_metric(total_loss, 6)}",
                         ]
                     )
                 )
@@ -853,6 +897,7 @@ def _load_sample_history(job_dir):
         }
         history["all_params"] = np.concatenate([chunk["all_params"] for chunk in chunks], axis=0)
         history["loss_metrics"] = np.concatenate([chunk["loss_metrics"] for chunk in chunks], axis=0)
+        history["case_loss"] = np.concatenate([chunk["case_loss"] for chunk in chunks], axis=0)
         history["sample_id"] = np.concatenate([chunk["sample_id"] for chunk in chunks], axis=0)
         history["batch_id"] = np.concatenate([chunk["batch_id"] for chunk in chunks], axis=0)
         history["chunk_paths"] = paths
@@ -1033,108 +1078,16 @@ def _request_weight(mapping, name):
 
 
 def _total_selected_loss_series(history, request):
-    """Compute scheduler-equivalent total selected loss for every history sample."""
-    case_names = _string_array_values(history, "case_names")
-    field_names = _string_array_values(history, "field_names")
-    metric_names = _string_array_values(history, "metric_names")
-    metric_index = {name: idx for idx, name in enumerate(metric_names)}
-    missing_metrics = [name for name in LOSS_METRIC_NAMES if name not in metric_index]
-    loss_metrics = np.asarray((history or {}).get("loss_metrics", []), dtype=float)
-    if missing_metrics or loss_metrics.ndim != 3:
-        return np.full(loss_metrics.shape[0] if loss_metrics.ndim else 0, np.nan)
-
-    request = request if isinstance(request, dict) else {}
-    loss_mode = request.get("loss_mode") or DEFAULT_LOSS_MODE
-    aggregation_mode = request.get("aggregation_mode") or DEFAULT_AGGREGATION_MODE
-    time_window_aggregation_mode = request.get("time_window_aggregation_mode") or aggregation_mode
-    aggregation_scope = request.get("time_window_aggregation_scope") or DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE
-    try:
-        aggregation_weights = normalize_aggregation_weights(
-            request.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS)
-        )
-    except ValueError:
-        aggregation_weights = list(DEFAULT_AGGREGATION_WEIGHTS)
-    case_weights = request.get("case_weights", {})
-    field_weights = request.get("field_weights", {})
-
-    obs_by_axis = {}
-    for obs_idx, (case_idx, field_idx, window_idx) in enumerate(
-        zip(history["obs_case"], history["obs_field"], history["obs_window"])
-    ):
-        obs_by_axis[(int(case_idx), int(field_idx), int(window_idx))] = obs_idx
-
-    case_window_counts = np.asarray(history.get("case_window_counts", []), dtype=int)
-    output = np.empty(loss_metrics.shape[0], dtype=float)
-    for sample_idx in range(loss_metrics.shape[0]):
-        smart_losses = []
-        smart_weights = []
-        all_window_losses = []
-        all_window_weights = []
-        case_quantile_losses = []
-        case_quantile_weights = []
-        for case_idx, case_name in enumerate(case_names):
-            if case_idx >= len(case_window_counts):
-                continue
-            window_count = int(case_window_counts[case_idx])
-            case_weight = _request_weight(case_weights, case_name)
-            case_window_losses = []
-            case_window_weights = []
-            for field_idx, field_name in enumerate(field_names):
-                subwindow_losses = []
-                for window_idx in range(window_count):
-                    obs_idx = obs_by_axis.get((case_idx, field_idx, window_idx))
-                    if obs_idx is None:
-                        continue
-                    metrics = {
-                        metric_name: float(loss_metrics[sample_idx, obs_idx, metric_index[metric_name]])
-                        for metric_name in LOSS_METRIC_NAMES
-                    }
-                    try:
-                        diagnostics = compute_field_loss_diagnostics(metrics)
-                        subwindow_losses.append(float(diagnostics["per_field_losses"][loss_mode]))
-                    except Exception:
-                        subwindow_losses.append(float("nan"))
-                if not subwindow_losses:
-                    continue
-                window_aggregation = aggregate_losses(
-                    subwindow_losses,
-                    [1.0] * len(subwindow_losses),
-                    time_window_aggregation_mode,
-                    aggregation_weights,
-                )
-                smart_losses.append(float(window_aggregation["loss"]))
-                field_weight = _request_weight(field_weights, field_name)
-                smart_weights.append(case_weight * field_weight)
-                case_window_losses.extend(subwindow_losses)
-                case_window_weights.extend([field_weight] * len(subwindow_losses))
-            if aggregation_mode == "quantile_weighted":
-                case_aggregation = aggregate_losses(
-                    case_window_losses,
-                    case_window_weights,
-                    "quantile_weighted",
-                    aggregation_weights,
-                )
-                case_quantile_losses.append(float(case_aggregation["loss"]))
-                case_quantile_weights.append(case_weight)
-                all_window_losses.extend(case_window_losses)
-                all_window_weights.extend([case_weight * weight for weight in case_window_weights])
-        try:
-            if aggregation_mode == "quantile_weighted":
-                if aggregation_scope == "overall":
-                    output[sample_idx] = float(
-                        aggregate_losses(all_window_losses, all_window_weights, "quantile_weighted", aggregation_weights)["loss"]
-                    )
-                else:
-                    weight_sum = sum(case_quantile_weights)
-                    output[sample_idx] = float(
-                        sum(loss * weight for loss, weight in zip(case_quantile_losses, case_quantile_weights)) / weight_sum
-                        if weight_sum > 0.0 else 0.0
-                    )
-            else:
-                output[sample_idx] = float(aggregate_losses(smart_losses, smart_weights, aggregation_mode)["loss"])
-        except Exception:
-            output[sample_idx] = float("nan")
-    return output
+    """Combine stored case objectives using the request's cross-case policy."""
+    cases = _string_array_values(history, "case_names")
+    request = request or {}
+    weights = [_request_weight(request.get("case_weights", {}), name) for name in cases]
+    return np.asarray([
+        aggregate_losses(row.tolist(), weights,
+                         request.get("aggregation_mode") or DEFAULT_AGGREGATION_MODE,
+                         request.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS))["loss"]
+        for row in np.asarray(history["case_loss"], dtype=float)
+    ])
 
 
 def _landscape_metric_series(history, request, metric_key, case_value, field_value, window_value, aggregation):
@@ -1159,8 +1112,7 @@ def _landscape_metric_series(history, request, metric_key, case_value, field_val
 def _landscape_metric_label(metric_key, request):
     """Return a readable label for a landscape metric selector value."""
     if metric_key == "total_loss":
-        loss_mode = (request or {}).get("loss_mode") or DEFAULT_LOSS_MODE
-        return f"total selected loss ({loss_mode})"
+        return "total case loss"
     if isinstance(metric_key, str) and metric_key.startswith("raw:"):
         return metric_key.split(":", 1)[1]
     return "metric"
@@ -2103,8 +2055,7 @@ def build_results_table(top_results, selected_param_names):
 
     header = [
         html.Th("Rank"),
-        html.Th("Smart Loss"),
-        html.Th("Scaled RMSE Sum"),
+        html.Th("Loss"),
     ]
     improvement_columns = [
         ("improvement_vs_clubb_default_percent", "vs CLUBB default"),
@@ -2126,11 +2077,6 @@ def build_results_table(top_results, selected_param_names):
         row = [
             html.Td(rank),
             html.Td(f"{float(result.get('total_loss', 0.0)):.6E}"),
-            html.Td(
-                ""
-                if result.get("scaled_rmse_sum", result.get("simple_rms_sum")) is None
-                else f"{float(result.get('scaled_rmse_sum', result.get('simple_rms_sum', 0.0))):.6E}"
-            ),
         ]
         for key, _label in improvement_columns:
             value = result.get(key)
@@ -2475,6 +2421,7 @@ def register_display_callbacks(app):
         Input("tune-landscape-case", "value"),
         Input("tune-landscape-field", "value"),
         Input("tune-landscape-window", "value"),
+        Input("theme-store", "data"),
         State("tune-landscape-signature", "data"),
     )
     def render_landscape(
@@ -2487,6 +2434,7 @@ def register_display_callbacks(app):
         case_value,
         field_value,
         window_value,
+        theme,
         previous_signature,
     ):
         """Render all-sample parameter landscape diagnostics."""
@@ -2495,6 +2443,7 @@ def register_display_callbacks(app):
         signature = json.dumps(
             {
                 "job_dir": str(job_dir) if job_dir is not None else None,
+                "theme": theme,
                 "history": history_signature,
                 "x": x_name,
                 "y": y_name,
@@ -2504,7 +2453,7 @@ def register_display_callbacks(app):
                 "case": case_value,
                 "field": field_value,
                 "window": window_value,
-                "loss_mode": (status or {}).get("loss_mode"),
+                "loss_weights": (status or {}).get("loss_weights"),
                 "aggregation_mode": (status or {}).get("aggregation_mode"),
             },
             sort_keys=True,
@@ -2514,40 +2463,38 @@ def register_display_callbacks(app):
             return no_update, no_update, no_update, no_update, no_update
         if not history_signature:
             return (
-                _empty_landscape_figure(
+                _theme_diagnostic_figure(_empty_landscape_figure(
                     "Parameter Landscape",
                     "Parameter landscapes will appear after sample-history chunks are available.",
-                ),
-                _empty_landscape_figure(
+                ), theme),
+                _theme_diagnostic_figure(_empty_landscape_figure(
                     "Parameter Correlations",
                     "Parameter correlations will appear after sample-history chunks are available.",
-                ),
-                _empty_landscape_figure(
+                ), theme),
+                _theme_diagnostic_figure(_empty_landscape_figure(
                     "Field Sensitivity",
                     "Field sensitivity will appear after sample-history chunks are available.",
-                ),
-                _empty_landscape_figure(
+                ), theme),
+                _theme_diagnostic_figure(_empty_landscape_figure(
                     "Field Interactions",
                     "Field interactions will appear after sample-history chunks are available.",
-                ),
+                ), theme),
                 signature,
             )
 
         try:
             history = _load_sample_history(job_dir)
             request = _read_job_request(job_dir)
-            if (status or {}).get("loss_mode"):
-                request["loss_mode"] = (status or {}).get("loss_mode")
+            if (status or {}).get("loss_weights"):
+                request["loss_weights"] = (status or {}).get("loss_weights")
             if (status or {}).get("aggregation_mode"):
                 request["aggregation_mode"] = (status or {}).get("aggregation_mode")
-            if (status or {}).get("time_window_aggregation_mode"):
-                request["time_window_aggregation_mode"] = (status or {}).get("time_window_aggregation_mode")
         except Exception as exc:
             return (
-                _empty_landscape_figure("Parameter Landscape", f"Unable to load sample history: {exc}"),
-                _empty_landscape_figure("Parameter Correlations", f"Unable to load sample history: {exc}"),
-                _empty_landscape_figure("Field Sensitivity", f"Unable to load sample history: {exc}"),
-                _empty_landscape_figure("Field Interactions", f"Unable to load sample history: {exc}"),
+                _theme_diagnostic_figure(_empty_landscape_figure("Parameter Landscape", f"Unable to load sample history: {exc}"), theme),
+                _theme_diagnostic_figure(_empty_landscape_figure("Parameter Correlations", f"Unable to load sample history: {exc}"), theme),
+                _theme_diagnostic_figure(_empty_landscape_figure("Field Sensitivity", f"Unable to load sample history: {exc}"), theme),
+                _theme_diagnostic_figure(_empty_landscape_figure("Field Interactions", f"Unable to load sample history: {exc}"), theme),
                 signature,
             )
 
@@ -2561,7 +2508,7 @@ def register_display_callbacks(app):
             aggregation,
         )
         return (
-            build_landscape_figure(
+            _theme_diagnostic_figure(build_landscape_figure(
                 history,
                 request,
                 x_name,
@@ -2573,8 +2520,8 @@ def register_display_callbacks(app):
                 field_value,
                 window_value,
                 z_values=z_values,
-            ),
-            build_parameter_correlation_figure(
+            ), theme),
+            _theme_diagnostic_figure(build_parameter_correlation_figure(
                 history,
                 request,
                 metric_key,
@@ -2583,23 +2530,23 @@ def register_display_callbacks(app):
                 field_value,
                 window_value,
                 z_values=z_values,
-            ),
-            build_field_sensitivity_figure(
+            ), theme),
+            _theme_diagnostic_figure(build_field_sensitivity_figure(
                 history,
                 request,
                 aggregation,
                 case_value,
                 field_value,
                 window_value,
-            ),
-            build_field_interaction_figure(
+            ), theme),
+            _theme_diagnostic_figure(build_field_interaction_figure(
                 history,
                 request,
                 aggregation,
                 case_value,
                 field_value,
                 window_value,
-            ),
+            ), theme),
             signature,
         )
 
@@ -2612,6 +2559,7 @@ def register_display_callbacks(app):
         Input("tune-parameter-box-groups", "value"),
         Input("tune-parameter-box-scale", "value"),
         Input("tune-taylor-window-display", "value"),
+        Input("theme-store", "data"),
         State("tune-status", "data"),
         State("tune-diagnostics-signature", "data"),
     )
@@ -2621,6 +2569,7 @@ def register_display_callbacks(app):
         selected_box_groups,
         scale_mode,
         window_display,
+        theme,
         status,
         previous_signature,
     ):
@@ -2636,18 +2585,18 @@ def register_display_callbacks(app):
             window_display,
             scale_mode,
             parameter_context,
-        )
+        ) + ":" + str(theme)
         if signature == (previous_signature or ""):
             return no_update, no_update, no_update
         return (
-            build_taylor_figure(best_results, window_display),
-            build_parameter_box_figure(
+            _theme_diagnostic_figure(build_taylor_figure(best_results, window_display), theme),
+            _theme_diagnostic_figure(build_parameter_box_figure(
                 best_results,
                 best_results_by_case,
                 selected_box_groups,
                 scale_mode,
                 parameter_context,
-            ),
+            ), theme),
             signature,
         )
 
@@ -2672,28 +2621,13 @@ def register_display_callbacks(app):
         Output("tune-mode-resolve", "style"),
         Output("tune-mode-simann", "style"),
         Output("tune-mode-adam", "style"),
-        Output("tune-loss-mode-scaled-rmse", "disabled"),
-        Output("tune-loss-mode-centered-rmse-bias", "disabled"),
-        Output("tune-loss-mode-taylor-components", "disabled"),
-        Output("tune-loss-mode-taylor-components-squared", "disabled"),
-        Output("tune-loss-mode-shape-first", "disabled"),
-        Output("tune-loss-mode-bias-light-taylor", "disabled"),
-        Output("tune-loss-mode-decomposed-taylor", "disabled"),
-        Output("tune-aggregation-overall", "disabled"),
-        Output("tune-aggregation-by-case", "disabled"),
+        Output('tune-loss-weight-mean', "disabled"),
+        Output('tune-loss-weight-std', "disabled"),
+        Output('tune-loss-weight-corr', "disabled"),
         Output("tune-aggregation-weight-1", "disabled"),
         Output("tune-aggregation-weight-2", "disabled"),
         Output("tune-aggregation-weight-3", "disabled"),
         Output("tune-aggregation-weight-4", "disabled"),
-        Output("tune-loss-mode-scaled-rmse", "style"),
-        Output("tune-loss-mode-centered-rmse-bias", "style"),
-        Output("tune-loss-mode-taylor-components", "style"),
-        Output("tune-loss-mode-taylor-components-squared", "style"),
-        Output("tune-loss-mode-shape-first", "style"),
-        Output("tune-loss-mode-bias-light-taylor", "style"),
-        Output("tune-loss-mode-decomposed-taylor", "style"),
-        Output("tune-aggregation-overall", "style"),
-        Output("tune-aggregation-by-case", "style"),
         Output("tune-random-options", "style"),
         Output("tune-resolve-options", "style"),
         Output("tune-simann-options", "style"),
@@ -2738,9 +2672,8 @@ def register_display_callbacks(app):
         Input("tune-active-job", "data"),
         Input("tune-workspace-selection", "data"),
         Input("tune-strategy-mode", "data"),
-        Input("tune-loss-mode", "data"),
+        Input("tune-loss-weights", "data"),
         Input("tune-aggregation-mode", "data"),
-        Input("tune-time-window-aggregation-scope", "data"),
         Input("tune-aggregation-weight-1", "value"),
         Input("tune-aggregation-weight-2", "value"),
         Input("tune-aggregation-weight-3", "value"),
@@ -2781,9 +2714,8 @@ def register_display_callbacks(app):
         active_job,
         workspace_selection,
         strategy_mode,
-        loss_mode,
+        loss_weights,
         aggregation_mode,
-        aggregation_scope,
         _aggregation_weight_1,
         _aggregation_weight_2,
         _aggregation_weight_3,
@@ -2944,21 +2876,6 @@ def register_display_callbacks(app):
             controls_locked,
             controls_locked,
             controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            mode_button_style(selected=loss_mode == "scaled_rmse", disabled=controls_locked),
-            mode_button_style(selected=(loss_mode or DEFAULT_LOSS_MODE) == "centered_rmse_bias", disabled=controls_locked),
-            mode_button_style(selected=loss_mode == "taylor_components", disabled=controls_locked),
-            mode_button_style(selected=loss_mode == "taylor_components_squared", disabled=controls_locked),
-            mode_button_style(selected=(loss_mode or DEFAULT_LOSS_MODE) == "shape_first", disabled=controls_locked),
-            mode_button_style(selected=loss_mode == "bias_light_taylor", disabled=controls_locked),
-            mode_button_style(selected=loss_mode == "decomposed_taylor", disabled=controls_locked),
-            mode_button_style(selected=(aggregation_scope or "overall") == "overall", disabled=controls_locked),
-            mode_button_style(selected=aggregation_scope == "by_case", disabled=controls_locked),
             mode_options_block_style(strategy_mode == "random"),
             mode_options_block_style(strategy_mode == "resolve"),
             mode_options_block_style(strategy_mode == "simann"),

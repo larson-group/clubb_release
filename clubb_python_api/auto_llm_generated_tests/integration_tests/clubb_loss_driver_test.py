@@ -69,12 +69,12 @@ def assert_loss_outputs_match(
     """Require two loss-driver outputs to match bit-for-bit."""
     if list(test_var_names) != list(reference_var_names):
         raise RuntimeError(f"{test_name} failed: variable-name ordering changed")
-    if len(test_metrics) != len(LOSS_METRIC_NAMES) or len(reference_metrics) != len(LOSS_METRIC_NAMES):
+    if len(test_metrics) != len(LOSS_METRIC_NAMES) + 1 or len(reference_metrics) != len(LOSS_METRIC_NAMES) + 1:
         raise RuntimeError(f"{test_name} failed: unexpected metric tuple length")
-    for metric_name, test_metric, reference_metric in zip(LOSS_METRIC_NAMES, test_metrics, reference_metrics):
+    for metric_name, test_metric, reference_metric in zip((*LOSS_METRIC_NAMES, "loss"), test_metrics, reference_metrics):
         if test_metric.shape != reference_metric.shape:
             raise RuntimeError(f"{test_name} failed: {metric_name} shapes changed")
-        if not np.array_equal(test_metric, reference_metric):
+        if not np.array_equal(test_metric, reference_metric, equal_nan=True):
             raise RuntimeError(f"{test_name} failed: {metric_name} changed")
 
 
@@ -108,8 +108,8 @@ def run_manual_loss_bfb_test(
         reference_var_names,
         reference_metrics,
     )
-    for metric_name, manual_metric_1, manual_metric_2 in zip(LOSS_METRIC_NAMES, manual_metrics_1, manual_metrics_2):
-        if not np.array_equal(manual_metric_1, manual_metric_2):
+    for metric_name, manual_metric_1, manual_metric_2 in zip((*LOSS_METRIC_NAMES, "loss"), manual_metrics_1, manual_metrics_2):
+        if not np.array_equal(manual_metric_1, manual_metric_2, equal_nan=True):
             raise RuntimeError(
                 f"Manual loss BFB check failed: repeated manual {metric_name} calls are not identical"
             )
@@ -120,7 +120,7 @@ def run_manual_loss_bfb_test(
 def run_tweaked_parameter_test(
     namelist_filename: str,
     reference_var_names,
-    reference_scaled_rmse: np.ndarray,
+    reference_rmse: np.ndarray,
 ):
     """Verify that perturbing C8 changes the loss."""
     tweaked_var_names, clubb_params_all = init_clubb_loss(
@@ -139,12 +139,12 @@ def run_tweaked_parameter_test(
 
         clubb_params_all = np.array(clubb_params_all, copy=True)
         clubb_params_all[0, c8_idx] = clubb_params_all[0, c8_idx] + 0.5
-        tweaked_scaled_rmse, _, _, _, _ = clubb_get_loss_for_params(clubb_params_all)
+        tweaked_rmse, _, _, _, _ = clubb_get_loss_for_params(clubb_params_all)
     finally:
         finalize_clubb_loss()
 
-    if np.array_equal(tweaked_scaled_rmse, reference_scaled_rmse):
-        raise RuntimeError("Tweaked-parameter test failed: changing C8 did not change scaled_rmse")
+    if np.array_equal(tweaked_rmse, reference_rmse):
+        raise RuntimeError("Tweaked-parameter test failed: changing C8 did not change rmse")
 
     print("Tweaked-parameter test passed")
 
@@ -204,12 +204,12 @@ def main():
         print("Usage: python -m clubb_python_api.auto_llm_generated_tests.integration_tests.clubb_loss_driver_test <namelist_path>")
         sys.exit(0)
 
-    clubb_var_names, scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm = clubb_get_loss(namelist_filename)
-    reference_metrics = (scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm)
+    clubb_var_names, rmse, correlation, std_ratio, bias_norm, case_loss = clubb_get_loss(namelist_filename)
+    reference_metrics = (rmse, correlation, std_ratio, bias_norm, case_loss)
     run_manual_loss_bfb_test(namelist_filename, clubb_var_names, reference_metrics)
-    run_tweaked_parameter_test(namelist_filename, clubb_var_names, scaled_rmse)
+    run_tweaked_parameter_test(namelist_filename, clubb_var_names, rmse)
     run_reinitialize_loss_bfb_test(namelist_filename, clubb_var_names, reference_metrics)
-    print_loss_matrix(clubb_var_names, scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm)
+    print_loss_matrix(clubb_var_names, rmse, correlation, std_ratio, bias_norm, case_loss)
     sys.exit(6)
 
 

@@ -76,12 +76,19 @@ RUN_SCM_LOSS = RUN_SCRIPTS / "run_scm_loss.py"
 if str(CLUBB_ROOT) not in sys.path:
     sys.path.insert(0, str(CLUBB_ROOT))
 
+if __name__ == "__main__":
+    from utilities.setup_python_venv import ensure_python_venv
+
+    # Prepare dependencies before imports; follow-up runs inherit this interpreter.
+    ensure_python_venv()
+
 from clubb_jax.run_jax import runtime_arguments  # noqa: E402
 from tuner.job_runtime import TERMINAL_STATES, TunerJob, tuner_worker_env  # noqa: E402
 from tuner.presets import apply_preset, list_presets  # noqa: E402
 from tuner.status import read_json_or_default  # noqa: E402
 from tuner.system_defaults import default_max_workers  # noqa: E402
-from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_MODE  # noqa: E402
+from tuner.taylor_metrics import DEFAULT_AGGREGATION_MODE, DEFAULT_LOSS_WEIGHTS  # noqa: E402
+from utilities.loss_metrics import normalize_loss_weights  # noqa: E402
 from input.scripts.create_case_namelist import (  # noqa: E402
     filter_tuned_overrides,
 )
@@ -256,14 +263,14 @@ def build_request(args: argparse.Namespace) -> dict:
         strategy["options"].setdefault("chain_count", max(1, max_workers * batch_size))
     request = {
         "backend": "jax" if getattr(args, "jax", False) else "fortran",
+        "grad": getattr(args, "grad", False),
+        "gradient_mode": getattr(args, 'gradient_mode', 'auto'),
         "batch_size": batch_size,
         "max_workers": max_workers,
         "strategy": strategy,
-        "loss_mode": args.loss_mode,
+        "loss_weights": normalize_loss_weights(json.loads(args.loss_weights)),
         "aggregation_mode": args.aggregation_mode,
-        "time_window_aggregation_mode": args.aggregation_mode,
         "aggregation_weights": list(args.aggregation_weights),
-        "time_window_aggregation_scope": args.aggregation_scope,
     }
     if args.preset:
         request["preset"] = args.preset
@@ -474,10 +481,9 @@ def print_request_summary(
             ("backend", request.get("backend", "fortran")),
             ("max_workers", str(request["max_workers"])),
             ("config", str(request.get("config") or "default")),
-            ("loss", request["loss_mode"]),
+            ("loss", request["loss_weights"]),
             ("aggregation", request["aggregation_mode"]),
             ("aggregation_weights", ", ".join(f"{value:g}" for value in request.get("aggregation_weights", []))),
-            ("aggregation_scope", request.get("time_window_aggregation_scope", "overall")),
             ("poll_interval", f"{args.poll_interval:g} s"),
             ("post_run", f"{args.run_top}, top_n={args.top_n}, out={Path(args.run_out_dir).resolve()}"),
         ],
@@ -761,6 +767,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "-jax", action="store_true",
         help="Use the JAX loss backend; -jax=cpu or -jax=gpu selects its runtime.",
     )
+    parser.add_argument("-grad", action="store_true", help="Compute and store case-loss gradients for selected parameters (JAX only).")
+    from utilities.clubb_loss_runner import GRADIENT_MODES
+    parser.add_argument('-gradient_mode', choices=GRADIENT_MODES, default='auto',
+                        help='Gradient mode: auto uses reverse for more than one parameter targeting the case loss, otherwise forward.')
     parser.add_argument("-fields", nargs="+", help="CLUBB-facing fields, comma-separated or space-separated.")
     parser.add_argument('-param_ranges', dest='params', nargs="+", help="Ranges as PARAM:MIN:MAX or linked PARAM=PARAM:MIN:MAX.", metavar='RANGE')
     parser.add_argument('-preset', dest='preset', help="Named tuner preset; explicit -cases/-fields/-param_ranges override its pieces.")
@@ -789,7 +799,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         metavar='N',
     )
     parser.add_argument("-seed", type=int, help="Optional random seed.")
-    parser.add_argument("-loss_mode", default=DEFAULT_LOSS_MODE, help=f"Loss mode. Default: {DEFAULT_LOSS_MODE}.")
+    parser.add_argument("-loss_weights", default=json.dumps(DEFAULT_LOSS_WEIGHTS),
+                        help='Positive Taylor contribution weights as JSON, e.g. {"mean":1,"std":2,"corr":1}.')
     parser.add_argument(
         "-aggregation_mode",
         default=DEFAULT_AGGREGATION_MODE,
@@ -802,12 +813,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=(0.1, 0.4, 0.4, 0.1),
         metavar=("BEST", "LOWER_MID", "UPPER_MID", "WORST"),
         help="Best-to-worst quantile weights for quantile_weighted aggregation. Default: 0.1 0.4 0.4 0.1.",
-    )
-    parser.add_argument(
-        "-aggregation_scope",
-        choices=("overall", "by_case"),
-        default="overall",
-        help="Pool time-window samples globally or aggregate each case before averaging. Default: overall.",
     )
     parser.add_argument('-output_job_dir', dest='job_dir', help="Exact job directory to create. Must be empty if it exists.", metavar='DIR')
     parser.add_argument("-output_root", default=str(OUTPUT_TUNER_DIR), help="Root for generated job directories.", metavar='DIR')
@@ -892,8 +897,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    from utilities.setup_python_venv import ensure_python_venv
-
-    # Follow-up case runs inherit this interpreter through sys.executable.
-    ensure_python_venv()
     sys.exit(main())

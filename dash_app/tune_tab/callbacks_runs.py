@@ -28,14 +28,12 @@ from .runtime import (
 from dash_app.shared.tunable_configs import canonical_tunable_parameter_name
 from input.scripts.create_case_namelist import normalize_override_string
 
+from utilities.loss_metrics import normalize_loss_weights
 from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
     DEFAULT_AGGREGATION_MODE,
     DEFAULT_AGGREGATION_WEIGHTS,
-    DEFAULT_LOSS_MODE,
-    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
-    LOSS_MODE_NAMES,
-    TIME_WINDOW_AGGREGATION_SCOPES,
+    DEFAULT_LOSS_WEIGHTS,
     normalize_aggregation_weights,
 )
 from tuner.presets import apply_preset, get_preset, list_presets
@@ -179,7 +177,7 @@ def build_validation_message(
     batch_size,
     max_workers,
     strategy_mode,
-    loss_mode,
+    loss_weights,
     aggregation_mode,
     random_max_samples,
     resolve_spacing,
@@ -190,7 +188,6 @@ def build_validation_message(
     selected_config,
     tunable_configs,
     tunable_names,
-    aggregation_scope=DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
     aggregation_weights=DEFAULT_AGGREGATION_WEIGHTS,
     range_targets=None,
     adam_max_updates=100,
@@ -277,14 +274,14 @@ def build_validation_message(
         return "Max workers must be >= 1."
     if strategy_mode not in {"random", "resolve", "simann", "adam"}:
         return "Select a tuning mode."
-    loss_mode = loss_mode or DEFAULT_LOSS_MODE
+    loss_weights = loss_weights or DEFAULT_LOSS_WEIGHTS
     aggregation_mode = aggregation_mode or DEFAULT_AGGREGATION_MODE
-    if loss_mode not in LOSS_MODE_NAMES:
-        return "Select a loss mode."
+    try:
+        normalize_loss_weights(loss_weights)
+    except ValueError as exc:
+        return str(exc)
     if aggregation_mode not in AGGREGATION_MODE_NAMES:
         return "Select an aggregation mode."
-    if aggregation_scope not in TIME_WINDOW_AGGREGATION_SCOPES:
-        return "Select an aggregation scope."
     try:
         normalize_aggregation_weights(aggregation_weights)
     except ValueError as exc:
@@ -414,7 +411,7 @@ def build_request_payload(
     batch_size,
     max_workers,
     strategy_mode,
-    loss_mode,
+    loss_weights,
     aggregation_mode,
     random_max_samples,
     resolve_spacing,
@@ -423,7 +420,6 @@ def build_request_payload(
     simann_final_temp,
     selected_config,
     scm_override,
-    aggregation_scope=DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
     aggregation_weights=DEFAULT_AGGREGATION_WEIGHTS,
     range_targets=None,
     adam_max_updates=100,
@@ -434,6 +430,8 @@ def build_request_payload(
     jax_profile="cpu",
     jax_gpu="",
     jax_xla_prealloc=None,
+    grad=False,
+    gradient_mode='auto',
 ):
     """Build the worker request payload from the live UI values."""
     batch_size = int(float(batch_size))
@@ -492,10 +490,8 @@ def build_request_payload(
         "selected_fields": list(selected_fields or []),
         "batch_size": int(batch_size),
         "max_workers": int(max_workers),
-        "loss_mode": loss_mode or DEFAULT_LOSS_MODE,
+        "loss_weights": normalize_loss_weights(loss_weights),
         "aggregation_mode": aggregation_mode or DEFAULT_AGGREGATION_MODE,
-        "time_window_aggregation_mode": aggregation_mode or DEFAULT_AGGREGATION_MODE,
-        "time_window_aggregation_scope": aggregation_scope or DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
         "aggregation_weights": normalize_aggregation_weights(aggregation_weights),
         "parameter_ranges": ranges,
         "strategy": {
@@ -503,6 +499,8 @@ def build_request_payload(
             "options": strategy_options,
         },
     }
+    request["grad"] = grad
+    request['gradient_mode'] = gradient_mode
     request["backend"] = "jax" if implementation == "jax" else "fortran"
     if request["backend"] == "jax":
         request.update(
@@ -596,9 +594,8 @@ def agent_request_to_tune_controls(request, case_data):
         "adam_spsa_pairs": options.get("spsa_pairs", 2),
         "batch_size": request.get("batch_size", 1),
         "max_workers": request.get("max_workers", 1),
-        "loss_mode": request.get("loss_mode") or DEFAULT_LOSS_MODE,
+        "loss_weights": request.get("loss_weights") or DEFAULT_LOSS_WEIGHTS,
         "aggregation_mode": request.get("aggregation_mode") or DEFAULT_AGGREGATION_MODE,
-        "aggregation_scope": request.get("time_window_aggregation_scope") or DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
         "aggregation_weights": request.get("aggregation_weights") or list(DEFAULT_AGGREGATION_WEIGHTS),
         "override": request.get("override") or "",
         "runtime": runtime_settings,
@@ -630,9 +627,8 @@ def initial_tune_control_outputs():
         [{"label": field, "value": field} for field in initial["field_options"]],
         initial["selected_fields"],
         initial["strategy_mode"],
-        initial["loss_mode"],
+        initial["loss_weights"],
         initial["aggregation_mode"],
-        initial["time_window_aggregation_scope"],
         *initial["aggregation_weights"],
         initial["random_max_samples"],
         initial["resolve_spacing"],
@@ -665,9 +661,8 @@ def register_run_callbacks(app):
         Output("tune-field-selector", "options", allow_duplicate=True),
         Output("tune-field-selector", "value", allow_duplicate=True),
         Output("tune-strategy-mode", "data", allow_duplicate=True),
-        Output("tune-loss-mode", "data", allow_duplicate=True),
+        Output("tune-loss-weights", "data", allow_duplicate=True),
         Output("tune-aggregation-mode", "data", allow_duplicate=True),
-        Output("tune-time-window-aggregation-scope", "data", allow_duplicate=True),
         Output("tune-aggregation-weight-1", "value", allow_duplicate=True),
         Output("tune-aggregation-weight-2", "value", allow_duplicate=True),
         Output("tune-aggregation-weight-3", "value", allow_duplicate=True),
@@ -696,6 +691,8 @@ def register_run_callbacks(app):
         Output("compile-run-jax-profile", "data", allow_duplicate=True),
         Output("compile-run-jax-gpu", "data", allow_duplicate=True),
         Output("compile-run-jax-xla-prealloc", "data", allow_duplicate=True),
+        Output("tune-grad", "value", allow_duplicate=True),
+        Output('tune-gradient-mode', 'value', allow_duplicate=True),
         Input("tune-workspace-selection", "data"),
         State("tune-case-data", "data"),
         State("tune-active-job", "data"),
@@ -721,7 +718,7 @@ def register_run_callbacks(app):
                 try:
                     controls = agent_request_to_tune_controls(apply_preset({"preset": preset_name}), case_data or {})
                 except (OSError, TypeError, ValueError) as exc:
-                    return (no_update,) * 38 + (f"Could not apply Tune preset: {exc}",) + (no_update,) * 4
+                    return (no_update,) * 37 + (f"Could not apply Tune preset: {exc}",) + (no_update,) * 6
                 case_options = [{"label": name, "value": name} for name in sorted((case_data or {}).keys())]
                 case_children = [build_case_config_row(row, case_options) for row in controls["case_rows"]]
                 range_children = [build_param_range_row(row, controls["tunable_names"]) for row in controls["parameter_rows"]]
@@ -729,8 +726,8 @@ def register_run_callbacks(app):
                     case_children, len(controls["case_rows"]), [row["id"] for row in controls["case_rows"]],
                     range_children, len(controls["parameter_rows"]), [row["id"] for row in controls["parameter_rows"]],
                     controls["selected_config"], controls["tunable_names"], controls["default_ranges"],
-                    controls["field_options"], controls["fields"], controls["strategy"], controls["loss_mode"],
-                    controls["aggregation_mode"], controls["aggregation_scope"], *controls["aggregation_weights"],
+                    controls["field_options"], controls["fields"], controls["strategy"], controls["loss_weights"],
+                    controls["aggregation_mode"], *controls["aggregation_weights"],
                     controls["random_max_samples"], controls["resolve_spacing"],
                     controls["simann_max_iters"], controls["simann_initial_temp"], controls["simann_final_temp"],
                     controls["adam_max_updates"], controls["adam_learning_rate_percent"],
@@ -739,7 +736,7 @@ def register_run_callbacks(app):
                     # scheduling.  Preserve the user's batch/worker choices.
                     no_update, no_update, controls["override"], {}, empty_status_payload(),
                     [], [], {}, True, 0, f"Applied preset {preset_name}. Review this editable draft, then Start to save and run it.",
-                    *(no_update,) * 4,
+                    *(no_update,) * 4, [], 'auto',
                 )
             # A new workspace has no durable request yet.  Clear any prior
             # selected execution's retained plots/status, but leave the normal
@@ -754,10 +751,10 @@ def register_run_callbacks(app):
                 True,
                 0,
                 "Configure this new workspace, then Start to create its original revision.",
-                *(no_update,) * 4,
+                *(no_update,) * 4, [], 'auto',
             )
         if not workspace_id or not revision_id:
-            return (no_update,) * 43
+            return (no_update,) * 44
         try:
             from dash_app.shared.broker_client import perform_action
 
@@ -767,11 +764,11 @@ def register_run_callbacks(app):
                 internal=True,
             )
         except Exception as exc:
-            return (no_update,) * 38 + (f"Could not load saved Tune revision: {exc}",) + (no_update,) * 4
+            return (no_update,) * 37 + (f"Could not load saved Tune revision: {exc}",) + (no_update,) * 6
         request = dict(loaded.get("request") or {})
         job = dict(loaded.get("job") or {})
         if not job or not request:
-            return (no_update,) * 38 + ("Saved Tune revision has no readable request.",) + (no_update,) * 4
+            return (no_update,) * 37 + ("Saved Tune revision has no readable request.",) + (no_update,) * 6
         job.update({"workspace_id": workspace_id, "revision_id": revision_id})
         execution_state = str((loaded.get("execution") or {}).get("state") or "draft")
         message_prefix = (
@@ -783,7 +780,7 @@ def register_run_callbacks(app):
         try:
             controls = agent_request_to_tune_controls(request, case_data or {})
         except (OSError, TypeError, ValueError) as exc:
-            return (no_update,) * 38 + (f"Could not display agent tuning request: {exc}",) + (no_update,) * 4
+            return (no_update,) * 37 + (f"Could not display agent tuning request: {exc}",) + (no_update,) * 6
         case_names = [row["case_name"] for row in controls["case_rows"]]
         case_options = [
             {"label": name, "value": name}
@@ -826,9 +823,8 @@ def register_run_callbacks(app):
             controls["field_options"],
             controls["fields"],
             controls["strategy"],
-            controls["loss_mode"],
+            controls["loss_weights"],
             controls["aggregation_mode"],
-            controls["aggregation_scope"],
             *controls["aggregation_weights"],
             controls["random_max_samples"],
             controls["resolve_spacing"],
@@ -854,6 +850,8 @@ def register_run_callbacks(app):
             controls["runtime"]["jax_profile"],
             controls["runtime"]["jax_gpu"],
             controls["runtime"]["jax_xla_prealloc"],
+            ["grad"] if request.get("grad", False) else [],
+            request.get('gradient_mode', 'auto'),
         )
 
     @app.callback(
@@ -882,9 +880,8 @@ def register_run_callbacks(app):
         State("tune-batch-size", "value"),
         State("tune-max-workers", "value"),
         State("tune-strategy-mode", "data"),
-        State("tune-loss-mode", "data"),
+        State("tune-loss-weights", "data"),
         State("tune-aggregation-mode", "data"),
-        State("tune-time-window-aggregation-scope", "data"),
         State("tune-aggregation-weight-1", "value"),
         State("tune-aggregation-weight-2", "value"),
         State("tune-aggregation-weight-3", "value"),
@@ -910,6 +907,8 @@ def register_run_callbacks(app):
         State("compile-run-jax-profile", "data"),
         State("compile-run-jax-gpu", "data"),
         State("compile-run-jax-xla-prealloc", "data"),
+        State("tune-grad", "value"),
+        State('tune-gradient-mode', 'value'),
         prevent_initial_call=True,
     )
     def start_tuning(
@@ -929,9 +928,8 @@ def register_run_callbacks(app):
         batch_size,
         max_workers,
         strategy_mode,
-        loss_mode,
+        loss_weights,
         aggregation_mode,
-        aggregation_scope,
         aggregation_weight_1,
         aggregation_weight_2,
         aggregation_weight_3,
@@ -957,6 +955,8 @@ def register_run_callbacks(app):
         jax_profile,
         jax_gpu,
         jax_xla_prealloc,
+        grad_values,
+        gradient_mode,
     ):
         """Validate the tuning inputs, then launch the background worker."""
         active_status = read_tuning_status((active_job or {}).get("status_path")) if active_job else dict(displayed_status or {})
@@ -1003,7 +1003,7 @@ def register_run_callbacks(app):
             batch_size,
             max_workers,
             strategy_mode,
-            loss_mode,
+            loss_weights,
             aggregation_mode,
             random_max_samples,
             resolve_spacing,
@@ -1014,7 +1014,6 @@ def register_run_callbacks(app):
             selected_config,
             tunable_configs,
             tunable_names,
-            aggregation_scope=aggregation_scope,
             aggregation_weights=[aggregation_weight_1, aggregation_weight_2, aggregation_weight_3, aggregation_weight_4],
             range_targets=range_targets,
             adam_max_updates=adam_max_updates,
@@ -1039,7 +1038,7 @@ def register_run_callbacks(app):
             batch_size,
             max_workers,
             strategy_mode,
-            loss_mode,
+            loss_weights,
             aggregation_mode,
             random_max_samples,
             resolve_spacing,
@@ -1048,7 +1047,6 @@ def register_run_callbacks(app):
             simann_final_temp,
             selected_config,
             scm_override,
-            aggregation_scope=aggregation_scope,
             aggregation_weights=[aggregation_weight_1, aggregation_weight_2, aggregation_weight_3, aggregation_weight_4],
             range_targets=range_targets,
             adam_max_updates=adam_max_updates,
@@ -1059,6 +1057,8 @@ def register_run_callbacks(app):
             jax_profile=jax_profile,
             jax_gpu=jax_gpu,
             jax_xla_prealloc=jax_xla_prealloc,
+            grad="grad" in (grad_values or []),
+            gradient_mode=gradient_mode,
         )
         try:
             # The worker must be born in the durable broker, even when a user

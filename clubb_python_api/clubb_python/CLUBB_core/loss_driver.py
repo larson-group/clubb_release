@@ -1,4 +1,14 @@
-"""User-facing wrappers for routines from clubb_loss_driver.F90."""
+"""Initialize, reuse and close native CLUBB profile-loss requests.
+
+init_clubb_loss(runfile, return_default_params=True) returns field names and the
+full default parameter matrix; get_clubb_params_all reads that matrix later.
+clubb_get_loss_for_params scores full matrices against the prepared benchmark
+and fixed weights. It returns (rmse,correlation,std_ratio,bias_norm,case_loss):
+four (window,field,candidate) arrays and one candidate vector. finalize_clubb_loss
+releases the process-global session. clubb_get_loss performs this lifecycle once
+and prepends field names to those five outputs. Only one session is active per
+process; rebuild the native/F2PY binding after interface changes.
+"""
 
 from __future__ import annotations
 
@@ -15,14 +25,6 @@ _loss_num_variables = 0
 _loss_total_param_sets = 0
 _loss_num_time_windows = 1
 _loss_var_names: list[str] = []
-
-LOSS_METRIC_NAMES = (
-    "scaled_rmse",
-    "correlation",
-    "std_ratio",
-    "centered_rmse_norm",
-    "bias_norm",
-)
 
 
 def init_clubb_loss(runfile: str, return_default_params: bool = False):
@@ -69,21 +71,14 @@ def clubb_get_loss_for_params(clubb_params_all: np.ndarray):
         int(_loss_num_time_windows),
         f_arr(params),
     )
-    try:
-        result_count = len(result)
-    except TypeError:
-        result_count = 1
-    if result_count != 5:
-        raise RuntimeError(
-            "CLUBB f2py loss driver returned "
-            f"{result_count} value(s); expected 5: scaled_rmse, correlation, std_ratio, "
-            "centered_rmse_norm, and bias_norm. "
-            "This usually means clubb_python_api/clubb_f2py was built before the explicit-metrics "
-            "loss-driver update. Rebuild the CLUBB Python API, then restart the Dash tuner."
-        )
+    if len(result) != 5:
+        raise RuntimeError('Loss API requires four profile metrics and one case-loss vector; rebuild the Python API')
+    expected_metrics = (_loss_num_time_windows, _loss_num_variables, _loss_total_param_sets)
+    if (any(np.shape(value) != expected_metrics for value in result[:4])
+            or np.shape(result[4]) != (_loss_total_param_sets,)):
+        raise RuntimeError('Loss API profile/case shapes do not match the prepared request; rebuild the Python API')
+    return tuple(result)
 
-    scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm = result
-    return scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm
 
 
 def finalize_clubb_loss():
@@ -105,10 +100,10 @@ def clubb_get_loss(runfile: str):
         return_default_params=True,
     )
     try:
-        scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm = clubb_get_loss_for_params(
+        rmse, correlation, std_ratio, bias_norm, case_loss = clubb_get_loss_for_params(
             clubb_params_all
         )
     finally:
         finalize_clubb_loss()
 
-    return clubb_var_names, scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm
+    return clubb_var_names, rmse, correlation, std_ratio, bias_norm, case_loss

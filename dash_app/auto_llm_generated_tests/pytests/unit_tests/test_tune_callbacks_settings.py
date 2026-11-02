@@ -211,7 +211,7 @@ def test_adam_dash_controls_convert_percentages_and_show_derived_cost():
     request = build_request_payload(
         ["arm"], [0], [3600], [3600], [0], [1000],
         ["cloud_frac"], ["C8"], ["0.1"], ["0.2"],
-        8, 5, "adam", "shape_first", "quantile_weighted",
+        8, 5, "adam", {"mean": 1., "std": 1., "corr": 1.}, "quantile_weighted",
         100, 0.1, 200, 1.0, 1.0e-12, "default", "",
         adam_max_updates=10,
         adam_learning_rate_percent=1.5,
@@ -282,7 +282,7 @@ def test_workspace_hydration_restores_locked_groups_and_adam_percentages():
 
 def test_locked_group_uses_one_leaderboard_column():
     table = build_results_table(
-        [{"total_loss": 1.0, "scaled_rmse_sum": 2.0, "params": {"C2rt": 0.7, "C2thl": 0.7}}],
+        [{"total_loss": 1.0, "rmse_sum": 2.0, "params": {"C2rt": 0.7, "C2thl": 0.7}}],
         [{"label": "C2rt = C2thl", "targets": ["C2rt", "C2thl"]}],
     )
 

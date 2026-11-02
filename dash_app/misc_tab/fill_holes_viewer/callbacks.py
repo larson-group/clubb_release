@@ -157,10 +157,12 @@ def register_callbacks(app):
         Input("hf-record", "value"),
         Input("hf-column", "value"),
         Input("hf-field-scale", "value"),
+        Input("theme-store", "data"),
     )
-    def update_figures(path, moment, record, column, field_scale):
+    def update_figures(path, moment, record, column, field_scale, theme):
+        """Render the selected snapshots and time summaries in the current theme."""
         if path is None or moment is None or record is None or column is None:
-            blank = empty_figure("Choose a stats file with dedicated hole-filling diagnostics.")
+            blank = empty_figure("Choose a stats file with dedicated hole-filling diagnostics.", theme)
             return blank, blank, blank, ""
         try:
             metadata = inspect_dataset(path)
@@ -174,11 +176,12 @@ def register_callbacks(app):
                     record_index,
                     column_index,
                     field_scale,
+                    theme,
                 ),
-                holes_over_time_figure(data, moment, column_index),
-                summary_figure(path, metadata["moments"], column_index),
+                holes_over_time_figure(data, moment, column_index, theme),
+                summary_figure(path, metadata["moments"], column_index, theme),
                 f"record {record_index} · model time {data['times'][record_index] / 60.0:.2f} min",
             )
         except Exception as error:
-            blank = empty_figure(str(error))
+            blank = empty_figure(str(error), theme)
             return blank, blank, blank, ""

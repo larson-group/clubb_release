@@ -515,13 +515,20 @@ def build_loss_settings(
     case_defaults: dict,
     selected_fields: list[str],
     num_time_windows: int = 1,
+    *, loss_weights=None, field_weights=None,
 ) -> dict:
     """Build typed loss-driver request settings for the final aggregate input."""
+    from utilities.loss_metrics import normalize_loss_weights, normalize_named_weights
+    loss_weights = normalize_loss_weights(loss_weights)
+    field_weights = normalize_named_weights(field_weights, selected_fields, 'field')
     return {"tuner_loss_nl": {"les_stats_file": case_defaults["les_stats_file"],
             "clubb_var_names": list(selected_fields), "benchmark_var_name": list(selected_fields),
             "altitude_comparison_range": list(case_defaults["altitude_comparison_range"]),
             "time_average_range": list(case_defaults["time_average_range"]),
-            "num_time_windows": int(num_time_windows)}}
+            "num_time_windows": int(num_time_windows),
+            "mean_weight": loss_weights['mean'], "std_weight": loss_weights['std'],
+            "corr_weight": loss_weights['corr'],
+            "field_weights": [field_weights[name] for name in selected_fields]}}
 
 
 def create_normalized_benchmark_file(
@@ -652,6 +659,8 @@ def create_loss_case_namelist(
     *,
     case_defaults: dict | None = None,
     num_time_windows: int | None = None,
+    loss_weights: dict | None = None,
+    field_weights: dict | None = None,
     config: str | None = None,
     params: str | None = None,
     flags: str | None = None,
@@ -742,6 +751,7 @@ def create_loss_case_namelist(
         normalized_case_defaults,
         selected_fields,
         num_time_windows=num_time_windows,
+        loss_weights=loss_weights, field_weights=field_weights,
     ))
 
     model_file = clubb_in["model_setting"]

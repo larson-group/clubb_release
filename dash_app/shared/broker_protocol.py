@@ -29,4 +29,16 @@
 # contract, so they do not require a protocol bump.
 # Version 31 adds bounded native Plot tasks in broker-owned worker processes.
 # Version 32 batches native Plot result polling across cards.
-BROKER_PROTOCOL_VERSION = 32
+# Version 33 adds a dedicated lane for the short gradient response plot.
+# Version 34 reports live gradient-response stages and elapsed times.
+# Version 35 adds the case and averaging window to gradient-response requests.
+# Version 36 evaluates gradient-response samples together in 16 columns.
+# Version 37 adds the independent multi-field gradient map and response lane.
+# Version 38 replaces the old gradient response task with map-anchored sweeps.
+# Version 39 carries entered parameter ranges through gradient maps and sweeps.
+# Version 40 adds JAX loss-gradient requests and persistent explorer loss sessions.
+# Version 41 moves explorer JAX process ownership into Dash runtime executors.
+# Version 42 adds all-sample gradient overlays using the retained 16-column worker.
+# Version 43 carries automatic/forward/reverse loss-gradient requests.
+# Version 45 carries fixed Taylor objective weights and per-case loss gradients.
+BROKER_PROTOCOL_VERSION = 45

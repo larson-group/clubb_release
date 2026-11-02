@@ -42,7 +42,8 @@ def read_tuning_stats_fields():
 
 def available_tuning_fields():
     """Return normalized fields the tuner can request and CLUBB can output."""
-    return sorted(set(supported_fields()) & set(read_tuning_stats_fields()))
+    from tuner.loss_backend import available_loss_fields
+    return available_loss_fields()
 
 
 def _dash_case_defaults(case_name, defaults, fields):

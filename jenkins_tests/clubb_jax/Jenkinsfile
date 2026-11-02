@@ -72,7 +72,7 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            ./tests/run_jax_vs_fortran_cases.py -workers 8
+            ./human_reviewed_tests/run_jax_vs_fortran_cases.py -workers 8
           '''
         }
       }

@@ -1,0 +1,27 @@
+// Information flow for one candidate batch, repeated until the strategy stops.
+digraph tuning_loop {
+  graph [rankdir=TB, bgcolor="white", pad="0.25", nodesep="0.45", ranksep="0.45", fontname="DejaVu Sans", fontsize=18, label="From parameter proposals to ranked results", labelloc=t];
+  node [shape=box, style="rounded,filled", fillcolor="#edf5fc", color="#49738f", fontname="DejaVu Sans", fontsize=13, margin="0.18,0.12"];
+  edge [color="#456174", arrowsize=0.75, fontname="DejaVu Sans", fontsize=11];
+  request [label="Experiment request\nCases + windows; fields; parameter ranges\nWeights; backend; optional JAX gradients", fillcolor="#f3f4f6", color="#78848d"];
+  strategy [label="Tuner scheduler + strategy\nPropose the next parameter sets"];
+  batch [label="Candidate batch\nOne full parameter set per model column"];
+  case_a [label="Case worker: BOMEX\nExample: 3 windows\nReusable loss runner", fillcolor="#eaf6f1", color="#47836f"];
+  case_b [label="Case worker: ARM\nExample: 1 window\nReusable loss runner", fillcolor="#eaf6f1", color="#47836f"];
+  {rank=same; case_a; case_b;}
+  returned [label="Returned for each candidate, for each case\nOne case loss + window/field metrics\nOptional JAX case-loss gradients", fillcolor="#eaf6f1", color="#47836f"];
+  combine [label="Tuner combines CASE losses\nCross-case policy + case weights\nOne ranking score: total_loss", fillcolor="#fff4df", color="#ae8236"];
+  completed [label="Completed candidate\nParameters + total_loss + case losses\nOriginal metrics + optional case gradients"];
+  history [label="Outputs\nRanked results and baseline comparisons\nSample history; Dash / CLI status", fillcolor="#f3f4f6", color="#78848d"];
+  request -> strategy;
+  strategy -> batch [label="fill: parameter proposals"];
+  batch -> case_a [label="same candidate batch"];
+  batch -> case_b [label="same candidate batch"];
+  case_a -> returned;
+  case_b -> returned;
+  returned -> combine [label="case-loss scalars"];
+  combine -> completed [label="total_loss"];
+  returned -> completed [label="retain metrics + gradients", constraint=false];
+  completed -> history;
+  completed -> strategy [label="tell: completed candidates\nCurrent strategies use losses,\nnot the JAX gradients", constraint=false, color="#49738f", fontcolor="#355c78"];
+}

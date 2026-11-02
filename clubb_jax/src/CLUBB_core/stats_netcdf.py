@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Tuple
 
+import jax
 import numpy as np
 
 from clubb_jax.src.CLUBB_core.stats_metadata import GRID_ORDER, StatsLayout
@@ -490,6 +491,23 @@ class StatsWriter:
         if not self.enabled:
             return jax_stats
 
+        # Reporting and NetCDF output stay on the host when banks are traced.
+        if any(isinstance(value, jax.core.Tracer) for value in jax.tree_util.tree_leaves(jax_stats)):
+            jax.debug.callback(self._write_timestep, t_out, jax_stats, ordered=True)
+        else:
+            self._write_timestep(t_out, jax_stats)
+        # Cadence belongs to the calling time loop. A delayed device callback
+        # must not reset flags after a later timestep has already been scheduled.
+        self.l_sample = False
+        self.l_last_sample = False
+        return jax_stats.clear_output_diagnostics()
+
+    def _write_timestep(self, t_out, jax_stats):
+        """Report diagnostics and write a completed statistics window on the host.
+
+        Inputs: t_out, the window end time [s], and its JAX statistics banks.
+        Outputs: warnings and, when configured, one NetCDF record.
+        """
         buffers, nsamples, issues, l_in_budget = jax_stats.to_host_banks()
         jax_stats.report_issues(issues, l_in_budget)
         values = tuple(
@@ -542,11 +560,6 @@ class StatsWriter:
         # keeping the sync I/O negligible next to the physics. (Iter322 — mpace_a OOM.)
         if self._ncid is not None and self._time_index % 20 == 0:
             self._ncid.sync()
-
-        # Reset flags
-        self.l_sample = False
-        self.l_last_sample = False
-        return jax_stats.clear_output_diagnostics()
 
     def reset(self) -> None:
         """Mirror ``stats_reset_api`` for another run or output batch."""

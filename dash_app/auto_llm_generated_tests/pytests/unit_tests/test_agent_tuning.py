@@ -207,7 +207,7 @@ def test_native_tune_request_is_relaunched_by_the_broker_without_agent_cap(monke
             "strategy": {"name": "random", "options": {"max_samples": 10000}},
             "batch_size": 8,
             "max_workers": 4,
-            "loss_mode": "shape_first",
+            "loss_weights": {"mean": 1., "std": 1., "corr": 1.},
             "aggregation_mode": "mean_max",
             "override": "iiPDF_type=1",
         }

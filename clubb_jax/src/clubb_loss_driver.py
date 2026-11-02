@@ -3,12 +3,22 @@
 This module owns the reusable loss path used by the tuner and standalone loss
 executable. It initializes CLUBB once, prepares benchmark truth profiles from a
 converted LES stats file, and returns per-window, per-variable, per-column
-profile-comparison metrics. Loss settings come from ``&tuner_loss_nl``.
+profile-comparison metrics and a field/window RMS case loss. Loss settings come from ``&tuner_loss_nl``.
 
 Benchmark profiles are interpolated onto the native CLUBB zt or zm source grid.
 Benchmark records use the open/closed convention ``(window_start, window_end]``.
 Successive windows continue from the previous model state. Nonfinite profiles
 receive finite bad metrics so tuner ranking and output do not inherit NaN/Inf.
+
+Public routines: init_clubb_loss prepares the case and fixed request weights;
+clubb_get_loss_for_params scores repeated matrices; evaluate_loss adds JAX
+case-loss or diagnostic metric derivatives; finalize_clubb_loss releases state;
+clubb_get_loss is the one-shot entry point; get_loss_time_window_count returns
+the prepared window count. init_loss_request validates a namelist and
+prepare_loss_request_for_scoring reads/interpolates benchmark profiles.
+calculate_profile_loss and calculate_field_loss score paired profiles and stats;
+set_invalid_field_metric_outputs supplies finite penalties, is_finite_core_value
+checks diagnostic values, and stop_with_error reports fatal setup errors.
 
 Adaptations: derived types are dataclasses, output arguments are return values,
 indices are zero based, and driver globals live in the JAX state dictionary.
@@ -18,6 +28,7 @@ See ``clubb_jax/TUNER_PORT.md`` for these boundaries and supported combinations.
 """
 from dataclasses import dataclass, field
 from pathlib import Path
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -32,7 +43,12 @@ from clubb_jax.src.clubb_case_initalization import (
     clean_up_clubb,
 )
 from clubb_jax.src.advance_clubb_to_end import advance_clubb_to_end
+from utilities.loss_metrics import (
+    LOSS_METRIC_NAMES, LOSS_WEIGHT_NAMES, normalize_loss_weights, loss_metric_values_valid,
+    profile_comparison, case_rmse,
+)
 from clubb_jax.src.CLUBB_core.constants_clubb import g_per_kg, sec_per_day
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 from clubb_jax.src.CLUBB_core.interpolation import lin_interpolate_two_points
 from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
 from clubb_jax.src.CLUBB_core.parameters_tunable import (
@@ -56,6 +72,7 @@ class loss_field_type:
     stats_var_id: tuple = ()
     k_min: int = 0                               # Lower compared model level.
     k_max: int = 0                               # Upper compared model level.
+    weight: float = 1.0                          # Fixed field weight in the case RMS.
     truth_profile: object = None                 # Benchmark by window/level.
 
 
@@ -64,6 +81,7 @@ class loss_request_type:
     """Full configuration for one loss evaluation."""
 
     num_variables: int = 0                        # Number of scored variables.
+    loss_weights: tuple = (1.0, 1.0, 1.0)         # Fixed mean/std/correlation weights.
     time_average_range: tuple = (0, 0)            # Absolute averaging window [s].
     num_time_windows: int = 1                     # Number of equal subwindows.
     time_window_ranges: tuple = ()                # Absolute (start, end) [s].
@@ -75,6 +93,7 @@ class loss_request_type:
     l_initialized: bool = False                   # Ready for repeated scoring.
     fields: list = field(default_factory=list)    # Metadata and prepared truth.
     # Adaptation: the Fortran driver owns these globals in clubb_driver.
+    checkpoint_cache: dict = field(default_factory=dict)  # Pure timestep callables retained with this case.
     state: dict = field(default_factory=dict)
 
 
@@ -94,68 +113,24 @@ def is_finite_core_value(value):
 def set_invalid_field_metric_outputs():
     """Fill one field/column result with finite values that rank as very bad.
 
-    Returns: scaled_rmse_value, correlation_value, std_ratio_value,
-    centered_rmse_norm_value, bias_norm_value, in source output order.
+    Returns: rmse_value, correlation_value, std_ratio_value,
+    bias_norm_value, in source output order.
     """
-    return invalid_loss_penalty, 0.0, 0.0, invalid_loss_penalty, invalid_loss_penalty
+    return invalid_loss_penalty, 0.0, 0.0, invalid_loss_penalty
 
 
-@jax.jit
-def calculate_taylor_metrics(
-    model_profile, benchmark_profile,                         # Intent(in)
-):
-    """Compute Taylor diagnostics for a model and paired benchmark profile.
+@partial(jax.jit, static_argnames=('loss_weights',))
+def calculate_profile_loss(model_profile, benchmark_profile, loss_weights):
+    """Return weighted RMSE, correlation, std ratio and normalized mean bias.
 
-    Inputs: model_profile and benchmark_profile over compared levels.
-    Returns: correlation, model/benchmark standard-deviation ratio,
-    centered_rmse_norm and bias_norm, normalized by benchmark standard deviation.
-    Adaptation: the last axis contains levels; leading axes vectorize columns.
+    Inputs mirror the native profile kernel; the final axis contains levels
+    and leading axes vectorize columns. The shared NumPy/JAX objective owns
+    stable moments and the flat-profile conventions, avoiding a second Python
+    implementation. Fixed weights specialize only this small scoring kernel.
     """
-    if model_profile.shape[-1] != benchmark_profile.shape[-1]:
-        stop_with_error('Taylor metric profiles must have matching sizes')
-    num_levels = model_profile.shape[-1]
-    if num_levels <= 0:
-        stop_with_error('Taylor metric profiles must contain at least one level')
-
-    model_mean = jnp.sum(model_profile, axis=-1) / num_levels
-    benchmark_mean = jnp.sum(benchmark_profile, axis=-1) / num_levels
-
-    # Adaptation: source level accumulations become whole-profile reductions.
-    model_centered = model_profile - model_mean[..., None]
-    benchmark_centered = benchmark_profile - benchmark_mean[..., None]
-    model_centered_sumsq = jnp.sum(model_centered**2, axis=-1)
-    benchmark_centered_sumsq = jnp.sum(benchmark_centered**2, axis=-1)
-    covariance_sum = jnp.sum(model_centered * benchmark_centered, axis=-1)
-    centered_diff_sumsq = jnp.sum((model_centered - benchmark_centered)**2, axis=-1)
-
-    model_stddev = jnp.sqrt(model_centered_sumsq / num_levels)
-    benchmark_stddev = jnp.sqrt(benchmark_centered_sumsq / num_levels)
-    centered_rmse = jnp.sqrt(centered_diff_sumsq / num_levels)
-    bias = model_mean - benchmark_mean
-
-    # A flat benchmark has no vertical shape or variability amplitude to
-    # compare. Treat those Taylor components as neutral and let centered
-    # RMSE and bias carry any actual mismatch.
-    # Adaptation: safe denominators keep inactive JAX branches finite.
-    norm = jnp.where(benchmark_stddev > 0.0, benchmark_stddev, 1.0)
-    correlation = jnp.where(
-        benchmark_stddev <= 0.0,
-        1.0,
-        jnp.where(
-            model_stddev > 0.0,
-            jnp.clip(
-                covariance_sum / jnp.where(
-                    model_centered_sumsq * benchmark_centered_sumsq > 0.0,
-                    jnp.sqrt(model_centered_sumsq * benchmark_centered_sumsq),
-                    1.0,
-                ),
-                -1.0, 1.0,
-            ),
-            0.0,
-        ),
-    )
-    std_ratio = jnp.where(benchmark_stddev <= 0.0, 1.0, model_stddev / norm)
-    return correlation, std_ratio, centered_rmse / norm, bias / norm
+    comparison = profile_comparison(model_profile, benchmark_profile, loss_weights,
+                                    array_module=jnp, sqrt=sqrt_clipped)
+    return tuple(comparison['metrics'][name] for name in LOSS_METRIC_NAMES)
 
 
 def stop_with_error(message):
@@ -186,6 +161,8 @@ def init_loss_request(
         nml.get('altitude_comparison_range', (0.0, 0.0))
     )
     time_average_range = tuple(nml.get('time_average_range', (0, 0)))
+    loss_weights = normalize_loss_weights({name: nml.get(name + '_weight', 1.0)
+                                           for name in LOSS_WEIGHT_NAMES})
     num_time_windows = nml.get('num_time_windows', 1)
     if int(num_time_windows) != num_time_windows:
         stop_with_error('num_time_windows must be an integer')
@@ -222,25 +199,28 @@ def init_loss_request(
     # Adaptation: the minimal namelist parser retains indexed keys; f90nml
     # returns lists. Normalize the fixed-size source arrays at this I/O boundary.
     names = {}
-    for key in ('clubb_var_names', 'benchmark_var_name'):
+    for key in ('clubb_var_names', 'benchmark_var_name', 'field_weights'):
+        default = 1.0 if key == 'field_weights' else ''
         raw = nml.get(key, [])
-        if isinstance(raw, str):
+        if isinstance(raw, str) or np.isscalar(raw):
             raw = [raw]
         first = (getattr(nml, 'start_index', {}).get(key, [1])[0] or 1) - 1
         if first < 0:
             stop_with_error('Loss variable array indices must be one based')
-        entries = [''] * first + list(raw)
+        entries = [default] * first + list(raw)
         for nml_key, value in nml.items():
             if nml_key.startswith(key + '('):
                 index = int(nml_key[len(key) + 1:-1]) - 1
                 values = value if isinstance(value, list) else [value]
                 if not 0 <= index or index + len(values) > max_loss_variables:
                     stop_with_error('Too many loss variables')
-                entries.extend([''] * max(0, index + len(values) - len(entries)))
+                entries.extend([default] * max(0, index + len(values) - len(entries)))
                 entries[index:index + len(values)] = values
         if len(entries) > max_loss_variables:
             stop_with_error('Too many loss variables')
-        names[key] = [str(value or '').strip()[:loss_name_len] for value in entries]
+        names[key] = ([default if value is None else float(value) for value in entries]
+                      if key == 'field_weights' else
+                      [str(value or '').strip()[:loss_name_len] for value in entries])
     clubb_var_names = names['clubb_var_names']
     benchmark_var_name = names['benchmark_var_name']
     nvars = 0
@@ -269,6 +249,7 @@ def init_loss_request(
     request.altitude_comparison_range = altitude_comparison_range
     request.time_average_range = time_average_range
     request.num_time_windows = num_time_windows
+    request.loss_weights = tuple(loss_weights[name] for name in LOSS_WEIGHT_NAMES)
     request.num_variables = nvars
     request.total_param_sets = total_param_sets
     request.l_initialized = False
@@ -283,9 +264,16 @@ def init_loss_request(
 
     # Store each requested comparison in one field descriptor.
     request.fields = [
-        loss_field_type(clubb_var_names[i], benchmark_var_name[i])
+        loss_field_type(clubb_var_names[i], benchmark_var_name[i],
+                        weight=names['field_weights'][i] if i < len(names['field_weights']) else 1.0)
         for i in range(nvars)
     ]
+
+    field_weights = [item.weight for item in request.fields]
+    if not np.isfinite(field_weights).all() or any(weight < 0.0 for weight in field_weights):
+        stop_with_error('Field weights must be finite and nonnegative')
+    if not any(weight > 0.0 for weight in field_weights):
+        stop_with_error('At least one field weight must be positive')
 
     # CLUBB-dependent preparation
     # Snapshot the configured stats registry used for name lookup and scoring.
@@ -355,13 +343,16 @@ def get_loss_time_window_count():
     return active_request.num_time_windows if active_request.l_initialized else 1
 
 
-def clubb_get_loss_for_params(clubb_params_all):
+def clubb_get_loss_for_params(clubb_params_all, *, checkpoint=False):
     """Reuse initialized CLUBB/loss state to score parameter columns.
 
     Input: clubb_params_all, the full (parameter column, parameter) matrix.
-    Returns: scaled_rmse, correlation, std_ratio, centered_rmse_norm and
-    bias_norm, shaped (time window, requested variable, parameter column).
+    Returns: rmse, correlation, std_ratio and bias_norm with axes
+    (time window, requested variable, parameter column), followed by
+    case_loss(parameter column).
     Runtime errors remain in the driver state and penalize affected columns.
+    checkpoint enables one-timestep reverse replay in the normal time loop.
+    Host sampling and stats output keep their ordinary schedule.
 
     Adaptation: in-memory reruns may vary the candidate count. Pad the final
     batch and discard spare columns, preserving one compiled runtime shape.
@@ -394,6 +385,7 @@ def clubb_get_loss_for_params(clubb_params_all):
 
     runtime_batch_size = state['ngrdcol']
     batch_metrics = []
+    snapshots = []
 
     # Run each parameter batch through the full case.
     for batch_start in range(0, clubb_params_all.shape[0], runtime_batch_size):
@@ -438,6 +430,7 @@ def clubb_get_loss_for_params(clubb_params_all):
 
         itime_start = 1
         window_metrics = []
+        window_stats = []
         for window_idx, (_, end) in enumerate(request.time_window_ranges):
             itime_end = (end - request.time_initial_seconds) / request.dt_main_seconds
             # Fortran NINT rounds half-integers away from zero.
@@ -448,17 +441,19 @@ def clubb_get_loss_for_params(clubb_params_all):
 
             # Advance through this subwindow for the current batch.
             advance_clubb_to_end(
-                state, False,                                                # InOut / in
-                itime_start=itime_start, itime_end=itime_end,                  # Optional in
+                state, False,                                            # InOut / in
+                itime_start=itime_start, itime_end=itime_end,              # Optional in
+                checkpoint_cache=request.checkpoint_cache if checkpoint else None,  # JAX adaptation
             )
 
             # Snapshot and score this completed stats subwindow.
             window_metrics.append(calculate_field_loss(
                 request, state['_jax_stats'], window_idx,                     # In
             ))
+            window_stats.append(state['_jax_stats'])
             itime_start = itime_end + 1
 
-        metrics = tuple(jnp.stack([values[i] for values in window_metrics]) for i in range(5))
+        metrics = tuple(jnp.stack([values[i] for values in window_metrics]) for i in range(4))
 
         # Runtime errors remain column-local at debug level -1. Reject only
         # affected candidates after every healthy neighbor has finished once.
@@ -468,11 +463,103 @@ def clubb_get_loss_for_params(clubb_params_all):
             for values, penalty in zip(metrics, set_invalid_field_metric_outputs())
         )
         batch_metrics.append(metrics)
+        snapshots.append((num_columns, tuple(window_stats)))
 
-    return tuple(
-        jnp.concatenate([values[i] for values in batch_metrics], axis=2)
-        for i in range(5)
+    state['_loss_stats_snapshots'] = snapshots
+
+    values = tuple(
+        jnp.concatenate([metrics[i] for metrics in batch_metrics], axis=2)
+        for i in range(4)
     )
+    loss = case_rmse(values[0], [item.weight for item in request.fields],
+                     array_module=jnp, sqrt=sqrt_clipped)
+    return (*values, loss)
+
+
+def evaluate_loss(clubb_params_all, *, grad=False, gradient_parameters=None, gradient_mode='auto',
+                  gradient_target='loss', progress=None):
+    """Return four profile metrics, one case loss per candidate, and requested gradients.
+
+    The prepared request fixes contribution and field weights. Metric axes are
+    (window, field, candidate); case loss has only the candidate axis. By default
+    grad=True differentiates that case loss with one reverse pullback. Explicit
+    gradient_target='metrics' retains the explorer's per-field Jacobians.
+    Gradients add a final selected-parameter axis. Independent candidate columns
+    share output seeds without introducing cross-column blocks.
+
+    Forward directions use vmap; reverse mode checkpoints the full trajectory
+    one timestep at a time. progress receives (completed_parameters,total_parameters)
+    at launch and completion. Primal
+    diagnostics and statistics are returned as auxiliary data, without extra
+    backward sweeps in scalar-loss mode.
+    """
+    from utilities.clubb_loss_runner import (
+        resolve_gradient_mode, validate_gradient_mode, validate_gradient_target,
+    )
+
+    validate_gradient_mode(gradient_mode)
+    validate_gradient_target(gradient_target)
+    parameters = list(PARAM_NAMES if gradient_parameters is None else gradient_parameters)
+    if grad and (not parameters or len(set(parameters)) != len(parameters)
+                 or any(name not in PNAME_IDX for name in parameters)):
+        raise ValueError('Gradient parameters must be distinct CLUBB parameter names')
+    if not grad:
+        values = clubb_get_loss_for_params(clubb_params_all)
+        return {'metrics': dict(zip(LOSS_METRIC_NAMES, values[:4])), 'loss': values[4]}
+    params = jnp.asarray(clubb_params_all, dtype=active_request.state['clubb_params'].dtype)
+    mode = resolve_gradient_mode(gradient_mode, len(parameters),
+                                 1 if gradient_target == 'loss' else len(active_request.fields))
+    indices = jnp.array([PNAME_IDX[name] for name in parameters])
+    output_names = ('loss',) if gradient_target == 'loss' else LOSS_METRIC_NAMES
+
+    def score(candidates):
+        """Select differentiable outputs while retaining primal diagnostics and profiles."""
+        values = clubb_get_loss_for_params(candidates,
+            checkpoint=mode == 'reverse')
+        outputs = (values[4],) if gradient_target == 'loss' else values[:4]
+        return outputs, (values[:4], values[4], active_request.state['_loss_stats_snapshots'])
+
+    if progress:
+        progress(0, len(parameters))
+    if mode == 'forward':
+        directions = jnp.zeros((len(parameters), *params.shape), dtype=params.dtype)
+        directions = directions.at[jnp.arange(len(parameters)), :, indices].set(1.)
+
+        def differentiate(direction):
+            """Push one selected physical-parameter direction through the case objective."""
+            return jax.jvp(score, (params,), (direction,), has_aux=True)
+
+        values, derivatives, auxiliary = jax.vmap(differentiate, out_axes=(None, -1, None))(directions)
+    else:
+        values, pullback, auxiliary = jax.vjp(score, params, has_aux=True)
+        derivatives = []
+        for output_idx, value in enumerate(values):
+            gradients = []
+            # Loss has no window/field prefix, so this loop executes once.
+            for prefix in np.ndindex(value.shape[:-1]):
+                seed = [jnp.zeros_like(array) for array in values]
+                seed[output_idx] = seed[output_idx].at[prefix].set(1.)
+                gradient, = pullback(tuple(seed))
+                gradients.append(jax.block_until_ready(gradient[:, indices]))
+            derivatives.append(jnp.stack(gradients).reshape((*value.shape, len(parameters))))
+        derivatives = tuple(derivatives)
+    if gradient_target == 'metrics':
+        # Mask only the exported Jacobians, after AD. NaN cotangents inside the
+        # pullback would contaminate the valid RMSE and bias derivatives.
+        derivatives = tuple(jnp.where(
+            (jnp.isfinite(value) & ((value > 0.0) if name == 'std_ratio' else True))[..., None],
+            derivative, jnp.nan,
+        ) for name, value, derivative in zip(output_names, values, derivatives))
+    metrics, loss, snapshots = auxiliary
+    jax.block_until_ready((values, derivatives, loss))
+    active_request.state['_loss_stats_snapshots'] = snapshots
+    active_request.state['_jax_stats'] = snapshots[-1][1][-1]
+    if progress:
+        progress(len(parameters), len(parameters))
+    return {'metrics': dict(zip(LOSS_METRIC_NAMES, metrics)), 'loss': loss,
+            'gradient_mode': mode, 'gradient_target': gradient_target,
+            'gradient_parameters': parameters,
+            'gradient': dict(zip(output_names, derivatives))}
 
 
 def finalize_clubb_loss():
@@ -492,7 +579,7 @@ def finalize_clubb_loss():
 def clubb_get_loss(runfile):
     """Initialize, run all default parameter batches, and clean up.
 
-    Input: aggregate runfile. Return: clubb_var_names and the five metric arrays,
+    Input: aggregate runfile. Return: clubb_var_names, four metric arrays and the case-loss vector,
     in source output order. Fatal runtime setup errors raise exceptions.
     """
     # Phase 1: initialize CLUBB and prepare the reusable loss request.
@@ -708,14 +795,21 @@ def prepare_loss_request_for_scoring(
     # Close the shared benchmark file (owned by the context manager).
 
 
+def _field_profile(field, stats_snapshot):
+    """Return the sampled average for each column over the requested levels."""
+    bank, slot = field.stats_var_id
+    values = stats_snapshot.buffers[bank][slot, :, field.k_min:field.k_max + 1]
+    counts = stats_snapshot.nsamples[bank][slot, :, field.k_min:field.k_max + 1]
+    return jnp.where(counts > 0, values / jnp.maximum(counts, 1), 0.0)
+
+
 def calculate_field_loss(
     request, stats_snapshot, window_idx,                      # Intent(in)
 ):
     """Compute loss and Taylor diagnostics for a completed stats window.
 
     Inputs: prepared request, completed stats_snapshot and zero-based window_idx.
-    Returns: scaled_rmse, correlation, std_ratio, centered_rmse_norm and
-    bias_norm, each shaped (requested variable, active batch column).
+    Returns: rmse, correlation, std_ratio and bias_norm, each shaped (requested variable, active batch column).
     Adaptation: divide JAX accumulation banks by their sample counts to obtain
     the source's averaged buffer; columns and levels are vectorized.
     """
@@ -724,37 +818,19 @@ def calculate_field_loss(
     # Score each prepared field independently.
     for field in request.fields:
         benchmark_profile = field.truth_profile[window_idx]
-        norm = jnp.max(benchmark_profile) - jnp.min(benchmark_profile)
-        norm = jnp.where(is_finite_core_value(norm) & (norm > 0.0), norm, 1.0)
-
-        # Sum the profile mismatch for each parameter column.
-        # Collapse the requested height window for this one column.
-        bank, slot = field.stats_var_id
-        model_profile = stats_snapshot.buffers[bank][
-            slot, :, field.k_min:field.k_max + 1
-        ]
-        counts = stats_snapshot.nsamples[bank][
-            slot, :, field.k_min:field.k_max + 1
-        ]
-        model_profile = jnp.where(
-            counts > 0, model_profile / jnp.maximum(counts, 1), 0.0
-        )
-        scaled_rmse = jnp.sum(((model_profile - benchmark_profile) / norm)**2, axis=-1)
-
-        correlation, std_ratio, centered_rmse_norm, bias_norm = calculate_taylor_metrics(
-            model_profile, benchmark_profile,                                # In
-        )
-        metrics = scaled_rmse, correlation, std_ratio, centered_rmse_norm, bias_norm
+        model_profile = _field_profile(field, stats_snapshot)
+        metrics = calculate_profile_loss(model_profile, benchmark_profile, request.loss_weights)
         valid = (
             jnp.all(is_finite_core_value(model_profile), axis=-1)
             & jnp.all(is_finite_core_value(benchmark_profile))
         )
         valid &= jnp.all(
-            jnp.stack([is_finite_core_value(values) for values in metrics]), axis=0
+            jnp.stack([loss_metric_values_valid(name, values, array_module=jnp)
+                       for name, values in zip(LOSS_METRIC_NAMES, metrics)]), axis=0
         )
         field_metrics.append(tuple(
             jnp.where(valid, values, penalty)
             for values, penalty in zip(metrics, set_invalid_field_metric_outputs())
         ))
 
-    return tuple(jnp.stack([values[i] for values in field_metrics]) for i in range(5))
+    return tuple(jnp.stack([values[i] for values in field_metrics]) for i in range(4))

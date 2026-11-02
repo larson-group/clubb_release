@@ -6,8 +6,7 @@ from tuner.system_defaults import default_max_workers
 from tuner.taylor_metrics import (
     DEFAULT_AGGREGATION_MODE,
     DEFAULT_AGGREGATION_WEIGHTS,
-    DEFAULT_LOSS_MODE,
-    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
+    DEFAULT_LOSS_WEIGHTS,
 )
 
 from .callbacks_display import register_display_callbacks
@@ -90,10 +89,9 @@ def build_initial_tune_state():
         "batch_size": 8,
         "max_workers": default_max_workers(),
         "strategy_mode": "random",
-        "loss_mode": DEFAULT_LOSS_MODE,
+        "loss_weights": dict(DEFAULT_LOSS_WEIGHTS),
         "aggregation_mode": DEFAULT_AGGREGATION_MODE,
         "aggregation_weights": list(DEFAULT_AGGREGATION_WEIGHTS),
-        "time_window_aggregation_scope": DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
         "scm_override": "",
         "random_max_samples": 2000,
         "resolve_spacing": 0.1,

@@ -22,6 +22,10 @@
 !     altitude_comparison_range = 0.0, 3000.0
 !     time_average_range = 10800, 21600
 !     num_time_windows = 1
+!     mean_weight = 1.0
+!     std_weight = 1.0
+!     corr_weight = 1.0
+!     field_weights(1) = 1.0
 !   /
 !
 !   clubb_var_names(:) are variables from the active CLUBB stats registry.
@@ -47,16 +51,15 @@
 !       windows so callers can size UI or Python-side outputs.
 !
 !     - clubb_get_loss_for_params(): run a full CLUBB parameter matrix and fill
-!       metric arrays shaped (time_window, variable, parameter_column).
+!       four metric arrays shaped (time_window, variable, parameter_column)
+!       and one case-loss value per parameter column.
 !
 !     - finalize_clubb_loss(): clean up CLUBB and release prepared loss state.
 !
 !
-!   Metric helper:
-!     - calculate_taylor_metrics(): compute centered correlation, standard
-!       deviation ratio, centered RMSE, and bias diagnostics for one pair of
-!       profiles.  This helper is public so Python/tuner code can use the same
-!       metric definitions as the Fortran loss path.
+!   Profile helper:
+!     - calculate_profile_loss(): compute weighted normalized RMSE, correlation,
+!       standard-deviation ratio and normalized bias for paired profiles.
 !
 !
 ! Understanding:
@@ -119,15 +122,23 @@
 !       batch loop copies each runtime batch result into the proper column range
 !       of the caller's output arrays.
 !
-!   Metric outputs:
-!     - scaled_rmse is the sum of squared model-minus-benchmark profile
-!       differences after scaling by the benchmark profile range in the selected
-!       altitude window.  The Taylor-style outputs are correlation, std_ratio,
-!       centered_rmse_norm, and bias_norm.
+!   Objective and outputs:
+!     - The four profile metrics are rmse, correlation, std_ratio and bias_norm.
+!       RMSE uses fixed strictly positive mean/std/correlation weights. At unit
+!       weights it is the total model-minus-benchmark RMSE divided by the
+!       benchmark standard deviation; a flat benchmark uses scale one.
 !
-!     - Non-finite model or benchmark values are converted to finite bad metric
-!       values.  This keeps tuner ranking and JSON/NetCDF consumers from
-!       inheriting NaN or Inf values.
+!     - The squared contributions are normalized mean bias squared, normalized
+!       standard-deviation difference squared, and amplitude-weighted pattern
+!       mismatch. Actual moments carry flat-profile errors even when the shape
+!       diagnostics are undefined (quiet NaN).
+!
+!     - case_loss is the weighted RMS of field/window RMSE values. Field weights
+!       are fixed by the request; time windows are equally weighted. Aggregation
+!       across different cases belongs to the caller.
+!
+!     - Nonfinite model/reference profiles receive finite bad metrics, keeping
+!       candidate failures local and avoiding NaN/Inf in ranking and output.
 !
 !   Error behavior:
 !     - Configuration errors in the loss request are treated as fatal because
@@ -137,6 +148,8 @@
 !
 !-------------------------------------------------------------------------------
 module clubb_loss_driver
+
+  use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan, ieee_is_nan, ieee_is_finite
 
   use clubb_driver, only: &
     init_clubb_case, &
@@ -205,6 +218,7 @@ module clubb_loss_driver
     integer :: stats_var_id = 0                                    ! Matching variable id in the CLUBB stats registry.
     integer :: k_min = 0                                           ! Lower resolved model level for this field.
     integer :: k_max = 0                                           ! Upper resolved model level for this field.
+    real( kind = core_rknd ) :: weight = 1.0_core_rknd               ! Fixed field weight in the case RMS [-].
     real( kind = core_rknd ), allocatable, dimension(:,:) :: &
       truth_profile                                                ! Benchmark profiles by time window on the CLUBB grid.
   end type loss_field_type
@@ -212,6 +226,7 @@ module clubb_loss_driver
   ! Full configuration for one loss evaluation.
   type :: loss_request_type
     integer :: num_variables = 0                                   ! Number of requested loss variables.
+    real( kind = core_rknd ) :: loss_weights(3) = 1.0_core_rknd       ! Fixed mean/std/correlation weights [-].
     integer :: time_average_range(2) = 0                           ! Absolute model-time window [s] used for averaging.
     integer :: num_time_windows = 1                                ! Number of averaged comparison subwindows.
     integer, allocatable, dimension(:,:) :: &
@@ -237,141 +252,214 @@ module clubb_loss_driver
     clubb_get_loss_for_params, &
     finalize_clubb_loss, &
     clubb_get_loss, &
-    calculate_taylor_metrics
+    calculate_profile_loss
 
 contains
 
   logical function is_finite_core_value( value )
 
     ! Description:
-    !   Return true only for finite CLUBB-core real values.  This avoids
-    !   propagating NaN/Inf into tuner ranking and JSON output.
+    !   Return true only for finite CLUBB-core real values. IEEE classification
+    !   avoids NaN comparisons that can trap in debug builds.
 
     implicit none
 
     real( kind = core_rknd ), intent(in) :: &
       value
 
-    is_finite_core_value = ( value == value ) .and. ( abs( value ) <= huge( value ) )
+    is_finite_core_value = ieee_is_finite( value )
 
   end function is_finite_core_value
 
-  subroutine set_invalid_field_metric_outputs( scaled_rmse_value, correlation_value, std_ratio_value, &
-                                               centered_rmse_norm_value, bias_norm_value )
+  subroutine set_invalid_field_metric_outputs( rmse_value, correlation_value, std_ratio_value, bias_norm_value )
 
     ! Description:
     !   Fill one field/column result with finite values that rank as very bad.
 
     implicit none
 
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), intent(out) :: &
-      scaled_rmse_value, &
-      correlation_value, &
-      std_ratio_value, &
-      centered_rmse_norm_value, &
-      bias_norm_value
+      rmse_value, &                                                ! Invalid profile RMSE [-].
+      correlation_value, &                                         ! Neutral invalid correlation [-].
+      std_ratio_value, &                                           ! Invalid variability ratio [-].
+      bias_norm_value                                              ! Invalid normalized mean bias [-].
 
-    scaled_rmse_value = invalid_loss_penalty
+    !--------------------------- Begin Code ---------------------------
+    rmse_value = invalid_loss_penalty
     correlation_value = 0.0_core_rknd
     std_ratio_value = 0.0_core_rknd
-    centered_rmse_norm_value = invalid_loss_penalty
     bias_norm_value = invalid_loss_penalty
 
   end subroutine set_invalid_field_metric_outputs
 
-  subroutine calculate_taylor_metrics( model_profile, benchmark_profile, correlation, std_ratio, &
-                                       centered_rmse_norm, bias_norm )
+  subroutine calculate_profile_loss( model_profile, benchmark_profile, loss_weights, &
+                                     rmse, correlation, std_ratio, bias_norm )
 
     ! Description:
-    !   Compute Taylor-diagram profile diagnostics from one model profile and
-    !   its paired benchmark profile.
+    !   Compute weighted normalized RMSE and three profile diagnostics. Fixed
+    !   loss_weights select mean-bias, variability-amplitude and pattern error.
+    !   Unit weights recover direct normalized RMSE. Actual moments retain
+    !   variability error when a flat benchmark has undefined shape diagnostics.
 
     implicit none
 
-    ! ------------------------ Inputs ------------------------
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), dimension(:), intent(in) :: &
-      model_profile, &                                             ! CLUBB profile over compared levels.
-      benchmark_profile                                            ! Benchmark profile over compared levels.
+      model_profile, &                                             ! CLUBB profile over compared levels [units vary].
+      benchmark_profile                                            ! Paired reference profile [units vary].
 
-    ! ------------------------ Outputs ------------------------
+    real( kind = core_rknd ), dimension(3), intent(in) :: &
+      loss_weights                                                 ! Fixed mean/std/correlation contribution weights [-].
+
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), intent(out) :: &
-      correlation, &                                                ! Centered profile correlation.
-      std_ratio, &                                                  ! Model profile standard deviation / benchmark standard deviation.
-      centered_rmse_norm, &                                         ! Centered RMS difference normalized by benchmark stddev.
-      bias_norm                                                     ! Mean bias normalized by benchmark stddev.
+      rmse, &                                                      ! Weighted error normalized by benchmark stddev [-].
+      correlation, &                                               ! Centered profile correlation [-].
+      std_ratio, &                                                 ! Model / benchmark standard deviation [-].
+      bias_norm                                                    ! Normalized model-minus-benchmark mean [-].
 
-    ! ------------------------- Locals -------------------------
+    !--------------------------- Local Variables ---------------------------
     integer :: &
-      k, &                                                          ! Profile level index.
-      num_levels                                                    ! Number of compared levels.
+      k, &                                                         ! Compared profile level.
+      num_levels                                                   ! Number of compared levels.
 
     real( kind = core_rknd ) :: &
-      model_mean, &                                                 ! Model profile mean.
-      benchmark_mean, &                                             ! Benchmark profile mean.
-      model_centered, &                                             ! Model value with mean removed.
-      benchmark_centered, &                                         ! Benchmark value with mean removed.
-      model_centered_sumsq, &                                       ! Sum of squared centered model values.
-      benchmark_centered_sumsq, &                                   ! Sum of squared centered benchmark values.
-      covariance_sum, &                                             ! Sum of centered model times centered benchmark.
-      centered_diff_sumsq, &                                        ! Sum of squared centered-profile differences.
-      model_stddev, &                                               ! Model profile standard deviation.
-      benchmark_stddev, &                                           ! Benchmark profile standard deviation.
-      centered_rmse, &                                              ! Centered profile RMS difference.
-      bias                                                          ! Model mean minus benchmark mean.
+      model_mean, &                                                ! Model profile mean [units vary].
+      benchmark_mean, &                                            ! Reference profile mean [units vary].
+      model_centered, &                                            ! Model value with its mean removed [units vary].
+      benchmark_centered, &                                        ! Reference value with its mean removed [units vary].
+      model_centered_sumsq, &                                      ! Sum of squared centered model values.
+      benchmark_centered_sumsq, &                                  ! Sum of squared centered reference values.
+      unit_correlation_sum, &                                      ! Sum of paired unit-pattern values [-].
+      covariance_norm_sum, &                                      ! Sum of normalized centered products [-].
+      model_stddev, &                                              ! Model profile standard deviation [units vary].
+      benchmark_stddev, &                                          ! Reference standard deviation [units vary].
+      norm, &                                                      ! Reference stddev, or one for a flat reference.
+      squared_diff_sum, &                                         ! Sum of normalized squared total errors [-].
+      centered_error, &                                            ! Normalized centered mean squared error [-].
+      amplitude_error, &                                           ! Normalized squared stddev difference [-].
+      pattern_error, &                                             ! Normalized amplitude-weighted pattern error [-].
+      unit_pattern_diff_sum, &                                    ! Squared differences of unit-variance patterns [-].
+      squared_loss                                                 ! Weighted normalized squared error [-].
 
-    if ( size( model_profile ) /= size( benchmark_profile ) ) then
-      call stop_with_error( "Taylor metric profiles must have matching sizes" )
+    !--------------------------- Begin Code ---------------------------
+    if ( size( model_profile ) /= size( benchmark_profile ) .or. size( model_profile ) <= 0 ) then
+
+      call stop_with_error( "Profile comparisons require nonempty matching level axes" )
+
     end if
 
     num_levels = size( model_profile )
-    if ( num_levels <= 0 ) then
-      call stop_with_error( "Taylor metric profiles must contain at least one level" )
-    end if
-
     model_mean = sum( model_profile ) / real( num_levels, kind = core_rknd )
     benchmark_mean = sum( benchmark_profile ) / real( num_levels, kind = core_rknd )
-
     model_centered_sumsq = 0.0_core_rknd
     benchmark_centered_sumsq = 0.0_core_rknd
-    covariance_sum = 0.0_core_rknd
-    centered_diff_sumsq = 0.0_core_rknd
+    unit_correlation_sum = 0.0_core_rknd
 
     do k = 1, num_levels
+
       model_centered = model_profile(k) - model_mean
       benchmark_centered = benchmark_profile(k) - benchmark_mean
       model_centered_sumsq = model_centered_sumsq + model_centered**2
       benchmark_centered_sumsq = benchmark_centered_sumsq + benchmark_centered**2
-      covariance_sum = covariance_sum + model_centered * benchmark_centered
-      centered_diff_sumsq = centered_diff_sumsq + ( model_centered - benchmark_centered )**2
+
     end do
+
+    ! A rounded mean can leave spurious variance in exactly constant profiles.
+    ! Equality detects only that case; small but real variation stays defined.
+    if ( all( model_profile == model_profile(1) ) ) model_centered_sumsq = 0.0_core_rknd
+    if ( all( benchmark_profile == benchmark_profile(1) ) ) benchmark_centered_sumsq = 0.0_core_rknd
 
     model_stddev = sqrt( model_centered_sumsq / real( num_levels, kind = core_rknd ) )
     benchmark_stddev = sqrt( benchmark_centered_sumsq / real( num_levels, kind = core_rknd ) )
-    centered_rmse = sqrt( centered_diff_sumsq / real( num_levels, kind = core_rknd ) )
-    bias = model_mean - benchmark_mean
+    norm = benchmark_stddev
 
-    if ( benchmark_stddev <= 0.0_core_rknd ) then
-      ! A flat benchmark has no vertical shape or variability amplitude to
-      ! compare.  Treat those Taylor components as neutral and let centered
-      ! RMSE and bias carry any actual mismatch.
-      correlation = 1.0_core_rknd
-      std_ratio = 1.0_core_rknd
-      centered_rmse_norm = centered_rmse
-      bias_norm = bias
-    else if ( model_stddev > 0.0_core_rknd ) then
-      correlation = covariance_sum / sqrt( model_centered_sumsq * benchmark_centered_sumsq )
-      correlation = max( -1.0_core_rknd, min( 1.0_core_rknd, correlation ) )
-      std_ratio = model_stddev / benchmark_stddev
-      centered_rmse_norm = centered_rmse / benchmark_stddev
-      bias_norm = bias / benchmark_stddev
+    if ( .not. is_finite_core_value( norm ) .or. norm <= 0.0_core_rknd ) norm = 1.0_core_rknd
+
+    bias_norm = ( model_mean - benchmark_mean ) / norm
+    amplitude_error = ( ( model_stddev - benchmark_stddev ) / norm )**2
+    squared_diff_sum = 0.0_core_rknd
+    centered_error = 0.0_core_rknd
+    covariance_norm_sum = 0.0_core_rknd
+    unit_pattern_diff_sum = 0.0_core_rknd
+
+    do k = 1, num_levels
+
+      model_centered = model_profile(k) - model_mean
+      benchmark_centered = benchmark_profile(k) - benchmark_mean
+      squared_diff_sum = squared_diff_sum + ( ( model_profile(k) - benchmark_profile(k) ) / norm )**2
+      centered_error = centered_error + ( ( model_centered - benchmark_centered ) / norm )**2
+      covariance_norm_sum = covariance_norm_sum + ( model_centered / norm ) * ( benchmark_centered / norm )
+
+      if ( model_stddev > 0.0_core_rknd .and. benchmark_stddev > 0.0_core_rknd ) then
+
+        unit_correlation_sum = unit_correlation_sum + &
+                               ( model_centered / model_stddev ) * ( benchmark_centered / benchmark_stddev )
+
+        unit_pattern_diff_sum = unit_pattern_diff_sum + &
+                                ( model_centered / model_stddev - benchmark_centered / benchmark_stddev )**2
+
+      end if
+
+    end do
+
+    centered_error = centered_error / real( num_levels, kind = core_rknd )
+
+    if ( model_stddev > 0.0_core_rknd .and. benchmark_stddev > 0.0_core_rknd ) then
+
+      ! Unit-pattern differences avoid cancellation near a perfect match.
+      pattern_error = ( model_stddev / norm ) * ( benchmark_stddev / norm ) * &
+                      unit_pattern_diff_sum / real( num_levels, kind = core_rknd )
+
     else
-      correlation = 0.0_core_rknd
-      std_ratio = 0.0_core_rknd
-      centered_rmse_norm = centered_rmse / benchmark_stddev
-      bias_norm = bias / benchmark_stddev
+
+      pattern_error = 2.0_core_rknd * ( ( model_stddev / norm ) * ( benchmark_stddev / norm ) - &
+                      covariance_norm_sum / real( num_levels, kind = core_rknd ) )
+
     end if
 
-  end subroutine calculate_taylor_metrics
+    pattern_error = max( pattern_error, 0.0_core_rknd )
+
+    if ( loss_weights(1) == loss_weights(2) .and. loss_weights(2) == loss_weights(3) ) then
+
+      squared_loss = loss_weights(1) * squared_diff_sum / real( num_levels, kind = core_rknd )
+
+    else if ( loss_weights(2) >= loss_weights(3) ) then
+
+      squared_loss = loss_weights(1) * bias_norm**2 + loss_weights(3) * centered_error + &
+                     ( loss_weights(2) - loss_weights(3) ) * amplitude_error
+
+    else
+
+      squared_loss = loss_weights(1) * bias_norm**2 + loss_weights(2) * centered_error + &
+                     ( loss_weights(3) - loss_weights(2) ) * pattern_error
+
+    end if
+
+    rmse = sqrt( squared_loss )
+
+    if ( benchmark_stddev <= 0.0_core_rknd ) then
+
+      ! Correlation and a std ratio are undefined for a flat reference. The
+      ! objective above uses its moments rather than these undefined diagnostics.
+      correlation = ieee_value( 0.0_core_rknd, ieee_quiet_nan )
+      std_ratio = ieee_value( 0.0_core_rknd, ieee_quiet_nan )
+
+    else if ( model_stddev > 0.0_core_rknd ) then
+
+      correlation = unit_correlation_sum / real( num_levels, kind = core_rknd )
+      correlation = max( -1.0_core_rknd, min( 1.0_core_rknd, correlation ) )
+      std_ratio = model_stddev / benchmark_stddev
+
+    else
+
+      correlation = ieee_value( 0.0_core_rknd, ieee_quiet_nan )
+      std_ratio = 0.0_core_rknd
+
+    end if
+
+  end subroutine calculate_profile_loss
 
   subroutine stop_with_error( message )
 
@@ -419,7 +507,9 @@ contains
       benchmark_var_name                                           ! Raw paired benchmark variable names.
 
     real( kind = core_rknd ) :: &
-      altitude_comparison_range(2)                                ! Requested height window [m].
+      altitude_comparison_range(2), &                              ! Requested height window [m].
+      mean_weight, std_weight, corr_weight, &                      ! Fixed objective contribution weights [-].
+      field_weights(max_loss_variables)                            ! Fixed weights in the case RMS [-].
 
     integer :: &
       time_average_range(2), &                                     ! Requested absolute averaging window [s].
@@ -444,7 +534,7 @@ contains
 
     namelist /tuner_loss_nl/ les_stats_file, clubb_var_names, benchmark_var_name, &
                              altitude_comparison_range, time_average_range, &
-                             num_time_windows
+                             num_time_windows, mean_weight, std_weight, corr_weight, field_weights
 
     les_stats_file = ""
     clubb_var_names = ""
@@ -452,6 +542,10 @@ contains
     altitude_comparison_range = 0.0_core_rknd
     time_average_range = 0
     num_time_windows = 1
+    mean_weight = 1.0_core_rknd
+    std_weight = 1.0_core_rknd
+    corr_weight = 1.0_core_rknd
+    field_weights = 1.0_core_rknd
 
     iunit_local = 907
     l_found = .false.
@@ -539,6 +633,28 @@ contains
       call stop_with_error( "clubb_var_names must contain at least one CLUBB variable" )
     end if
 
+    ! The request owns the objective for every subsequent evaluation.
+    request%loss_weights = [mean_weight, std_weight, corr_weight]
+    do i = 1, 3
+
+      if ( .not. is_finite_core_value( request%loss_weights(i) ) .or. request%loss_weights(i) <= 0.0_core_rknd ) then
+        call stop_with_error( "Loss contribution weights must be finite and strictly positive" )
+      end if
+
+    end do
+
+    do i = 1, nvars
+
+      if ( .not. is_finite_core_value( field_weights(i) ) .or. field_weights(i) < 0.0_core_rknd ) then
+        call stop_with_error( "Field weights must be finite and nonnegative" )
+      end if
+
+    end do
+
+    if ( .not. any( field_weights(1:nvars) > 0.0_core_rknd ) ) then
+      call stop_with_error( "At least one field weight must be positive" )
+    end if
+
     ! Store only the active request entries.
     request%les_stats_file = trim( les_stats_file )
     request%altitude_comparison_range = altitude_comparison_range
@@ -560,6 +676,7 @@ contains
     do i = 1, nvars
       request%fields(i)%clubb_var_name = trim( adjustl( clubb_var_names(i) ) )
       request%fields(i)%benchmark_var_name = trim( adjustl( benchmark_var_name(i) ) )
+      request%fields(i)%weight = field_weights(i)
 
     end do
 
@@ -650,8 +767,8 @@ contains
 
   end subroutine get_loss_time_window_count
 
-  subroutine clubb_get_loss_for_params( clubb_params_all, scaled_rmse, correlation, std_ratio, &
-                                        centered_rmse_norm, bias_norm, err_info )
+  subroutine clubb_get_loss_for_params( clubb_params_all, rmse, correlation, std_ratio, &
+                                        bias_norm, case_loss, err_info )
 
     ! Description:
     !   Reuse an initialized CLUBB/loss setup to score one full parameter
@@ -663,11 +780,13 @@ contains
       clubb_params_all                                             ! Full parameter matrix to score against the prepared request.
 
     real( kind = core_rknd ), allocatable, dimension(:,:,:), intent(out) :: &
-      scaled_rmse, &                                               ! Scaled RMSE diagnostic shaped (window, variable, parameter set).
+      rmse, &                                               ! RMSE diagnostic shaped (window, variable, parameter set).
       correlation, &                                               ! Taylor correlation shaped (window, variable, parameter set).
       std_ratio, &                                                 ! Taylor standard-deviation ratio shaped (window, variable, parameter set).
-      centered_rmse_norm, &                                        ! Taylor centered RMSE shaped (window, variable, parameter set).
       bias_norm                                                    ! Taylor normalized bias shaped (window, variable, parameter set).
+
+    real( kind = core_rknd ), allocatable, dimension(:), intent(out) :: &
+      case_loss                                                    ! RMS over fields/windows, one per parameter set [-].
 
     type(err_info_type), intent(out) :: &
       err_info                                                     ! CLUBB/runtime error state for the caller.
@@ -703,21 +822,20 @@ contains
       call stop_with_error( "clubb_get_loss_for_params requires the full parameter matrix to match total_param_sets" )
     end if
 
-    allocate( scaled_rmse( active_request%num_time_windows, active_request%num_variables, &
+    allocate( rmse( active_request%num_time_windows, active_request%num_variables, &
                            active_request%total_param_sets ) )
     allocate( correlation( active_request%num_time_windows, active_request%num_variables, &
                            active_request%total_param_sets ) )
     allocate( std_ratio( active_request%num_time_windows, active_request%num_variables, &
                          active_request%total_param_sets ) )
-    allocate( centered_rmse_norm( active_request%num_time_windows, active_request%num_variables, &
-                                  active_request%total_param_sets ) )
     allocate( bias_norm( active_request%num_time_windows, active_request%num_variables, &
                          active_request%total_param_sets ) )
 
-    scaled_rmse = 0.0_core_rknd
+    allocate( case_loss(active_request%total_param_sets) )
+
+    rmse = 0.0_core_rknd
     correlation = 0.0_core_rknd
     std_ratio = 0.0_core_rknd
-    centered_rmse_norm = 0.0_core_rknd
     bias_norm = 0.0_core_rknd
 
     num_batches = total_param_sets / runtime_batch_size
@@ -750,10 +868,9 @@ contains
         ! Snapshot and score this completed stats subwindow.
         call get_stats( stats_snapshot )
         call calculate_field_loss( active_request, stats_snapshot, window_idx, &
-                                   scaled_rmse(window_idx,:,batch_start:batch_end), &
+                                   rmse(window_idx,:,batch_start:batch_end), &
                                    correlation(window_idx,:,batch_start:batch_end), &
                                    std_ratio(window_idx,:,batch_start:batch_end), &
-                                   centered_rmse_norm(window_idx,:,batch_start:batch_end), &
                                    bias_norm(window_idx,:,batch_start:batch_end) )
 
         itime_start = itime_end + 1
@@ -766,16 +883,19 @@ contains
           do window_idx = 1, active_request%num_time_windows
             do field_idx = 1, active_request%num_variables
               call set_invalid_field_metric_outputs( &
-                scaled_rmse(window_idx,field_idx,batch_start+column_idx-1), &
+                rmse(window_idx,field_idx,batch_start+column_idx-1), &
                 correlation(window_idx,field_idx,batch_start+column_idx-1), &
                 std_ratio(window_idx,field_idx,batch_start+column_idx-1), &
-                centered_rmse_norm(window_idx,field_idx,batch_start+column_idx-1), &
                 bias_norm(window_idx,field_idx,batch_start+column_idx-1) )
             end do
           end do
         end if
       end do
     end do
+
+    ! Reduce the prepared field/window errors inside the loss-driver boundary.
+    call calculate_case_loss( active_request, rmse, & ! In
+                              case_loss )             ! Out
 
   end subroutine clubb_get_loss_for_params
 
@@ -809,6 +929,7 @@ contains
       deallocate( active_request%time_window_ranges )
     end if
 
+    active_request%loss_weights = 1.0_core_rknd
     active_request%num_variables = 0
     active_request%time_average_range = 0
     active_request%num_time_windows = 1
@@ -819,8 +940,8 @@ contains
 
   end subroutine finalize_clubb_loss
 
-  subroutine clubb_get_loss( runfile, clubb_var_names, scaled_rmse, correlation, std_ratio, &
-                             centered_rmse_norm, bias_norm, err_info )
+  subroutine clubb_get_loss( runfile, clubb_var_names, rmse, correlation, std_ratio, &
+                             bias_norm, case_loss, err_info )
 
     ! Description:
     !   Initialize CLUBB, run all batches for the default parameter matrix, and
@@ -835,11 +956,13 @@ contains
       clubb_var_names                                              ! Requested CLUBB variable names, in printed loss-row order.
 
     real( kind = core_rknd ), allocatable, dimension(:,:,:), intent(out) :: &
-      scaled_rmse, &                                               ! Scaled RMSE diagnostic shaped (window, variable, parameter set).
+      rmse, &                                               ! RMSE diagnostic shaped (window, variable, parameter set).
       correlation, &                                               ! Taylor correlation shaped (window, variable, parameter set).
       std_ratio, &                                                 ! Taylor standard-deviation ratio shaped (window, variable, parameter set).
-      centered_rmse_norm, &                                        ! Taylor centered RMSE shaped (window, variable, parameter set).
       bias_norm                                                    ! Taylor normalized bias shaped (window, variable, parameter set).
+
+    real( kind = core_rknd ), allocatable, dimension(:), intent(out) :: &
+      case_loss                                                    ! RMS over fields/windows, one per parameter set [-].
 
     type(err_info_type), intent(out) :: &
       err_info                                                     ! CLUBB/runtime error state for the caller.
@@ -850,8 +973,8 @@ contains
     ! Phase 1: initialize CLUBB and prepare the reusable loss request.
     call init_clubb_loss( trim( runfile ), clubb_var_names, err_info, clubb_params_all )
     ! Phase 2: run the default parameter matrix through the reusable loss path.
-    call clubb_get_loss_for_params( clubb_params_all, scaled_rmse, correlation, std_ratio, &
-                                    centered_rmse_norm, bias_norm, err_info )
+    call clubb_get_loss_for_params( clubb_params_all, rmse, correlation, std_ratio, &
+                                    bias_norm, case_loss, err_info )
     ! Phase 3: release CLUBB state after the one-shot evaluation.
     call finalize_clubb_loss( err_info )
 
@@ -1125,126 +1248,180 @@ contains
 
   end subroutine prepare_loss_request_for_scoring
 
-  subroutine calculate_field_loss( request, stats_snapshot, window_idx, scaled_rmse, correlation, std_ratio, &
-                                   centered_rmse_norm, bias_norm )
+  subroutine calculate_field_loss( request, stats_snapshot, window_idx, &
+                                   rmse, correlation, std_ratio, bias_norm )
 
     ! Description:
-    !   Compute loss and Taylor diagnostics for one completed CLUBB stats window.
+    !   Compute four profile metrics for one completed CLUBB stats window using
+    !   the objective weights fixed in the prepared request.
 
     implicit none
 
-    ! ------------------------ Inputs ------------------------
+    !--------------------------- Input Variables ---------------------------
     type(loss_request_type), intent(in) :: &
-      request                                                      ! Fully validated loss request metadata.
+      request                                                      ! Prepared fields and fixed loss weights.
 
     type(stats_type), intent(in) :: &
-      stats_snapshot                                               ! Completed final CLUBB stats window.
+      stats_snapshot                                               ! Completed CLUBB statistics window.
 
     integer, intent(in) :: &
-      window_idx                                                   ! Prepared comparison time-window index.
+      window_idx                                                   ! Prepared comparison window index.
 
-    ! ------------------------ Outputs ------------------------
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(:,:), intent(out) :: &
-      scaled_rmse, &                                               ! Scaled RMSE shaped (variable, active batch column).
-      correlation, &                                               ! Taylor correlation shaped (variable, active batch column).
-      std_ratio, &                                                 ! Taylor standard-deviation ratio shaped (variable, active batch column).
-      centered_rmse_norm, &                                        ! Taylor centered RMSE shaped (variable, active batch column).
-      bias_norm                                                    ! Taylor normalized bias shaped (variable, active batch column).
+      rmse, &                                                      ! Weighted normalized RMSE (field, column) [-].
+      correlation, &                                               ! Centered correlation (field, column) [-].
+      std_ratio, &                                                 ! Standard-deviation ratio (field, column) [-].
+      bias_norm                                                    ! Normalized mean bias (field, column) [-].
 
-    ! ------------------------- Locals -------------------------
+    !--------------------------- Local Variables ---------------------------
     integer :: &
-      row_idx, &                                                   ! Loss-matrix row / requested-variable index.
-      i, &                                                         ! Parameter-column index.
-      k, &                                                         ! Vertical level index.
-      level_idx, &                                                 ! Compact profile index over the compared height window.
-      num_levels                                                   ! Number of vertical levels compared for one field.
-
-    real( kind = core_rknd ) :: &
-      diff, &                                                      ! Columnwise CLUBB minus benchmark difference.
-      norm, &                                                      ! Benchmark variability over the compared height range.
-      model_value, &                                               ! CLUBB profile value for one compared level.
-      truth_value, &                                               ! Benchmark profile value for one compared level.
-      field_correlation, &                                         ! Centered model/benchmark profile correlation.
-      field_std_ratio, &                                           ! Model stddev normalized by benchmark stddev.
-      field_centered_rmse_norm, &                                  ! Centered RMS difference normalized by benchmark stddev.
-      field_bias_norm                                              ! Mean bias normalized by benchmark stddev.
+      row_idx, &                                                   ! Requested-field index.
+      column_idx, &                                                ! Runtime candidate column.
+      k, &                                                         ! Model vertical level.
+      level_idx, &                                                 ! Compact profile level.
+      num_levels                                                   ! Compared level count.
 
     logical :: &
-      l_invalid_profile                                            ! True when one compared value is NaN/Inf.
+      invalid_profile                                              ! Nonfinite model/reference value or metric.
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
-      model_profile, &                                             ! Compact CLUBB profile over compared levels.
-      benchmark_profile                                            ! Compact benchmark profile over compared levels.
+      model_profile, &                                             ! CLUBB values over the selected height range.
+      benchmark_profile                                            ! Paired reference over that range.
 
-    scaled_rmse = 0.0_core_rknd
-    correlation = 0.0_core_rknd
-    std_ratio = 0.0_core_rknd
-    centered_rmse_norm = 0.0_core_rknd
-    bias_norm = 0.0_core_rknd
-
-    ! Score each prepared field independently.
+    !--------------------------- Begin Code ---------------------------
     do row_idx = 1, request%num_variables
+
       associate( field => request%fields(row_idx) )
 
         num_levels = field%k_max - field%k_min + 1
-        norm = maxval( field%truth_profile(window_idx,field%k_min:field%k_max) ) - &
-               minval( field%truth_profile(window_idx,field%k_min:field%k_max) )
-        if ( .not. is_finite_core_value( norm ) .or. norm <= 0.0_core_rknd ) norm = 1.0_core_rknd
-
         allocate( model_profile(num_levels), benchmark_profile(num_levels) )
         benchmark_profile = field%truth_profile(window_idx,field%k_min:field%k_max)
 
-        ! Sum the profile mismatch for each parameter column.
-        do i = 1, size( scaled_rmse, 2 )
-          l_invalid_profile = .false.
+        do column_idx = 1, size( rmse, 2 )
 
-          ! Collapse the requested height window for this one column.
+          invalid_profile = .false.
+
           do k = field%k_min, field%k_max
-            level_idx = k - field%k_min + 1
-            model_value = real( stats_snapshot%vars(field%stats_var_id)%buffer(i,k), kind = core_rknd )
-            truth_value = field%truth_profile(window_idx,k)
-            model_profile(level_idx) = model_value
 
-            if ( .not. is_finite_core_value( model_value ) .or. &
-                 .not. is_finite_core_value( truth_value ) ) then
-              l_invalid_profile = .true.
-            else
-              diff = model_value - truth_value
-              scaled_rmse(row_idx,i) = scaled_rmse(row_idx,i) + ( diff / norm )**2
-              if ( .not. is_finite_core_value( scaled_rmse(row_idx,i) ) ) l_invalid_profile = .true.
-            end if
+            level_idx = k - field%k_min + 1
+            model_profile(level_idx) = real( stats_snapshot%vars(field%stats_var_id)%buffer(column_idx,k), &
+                                             kind = core_rknd )
+            if ( .not. is_finite_core_value( model_profile(level_idx) ) .or. &
+                 .not. is_finite_core_value( benchmark_profile(level_idx) ) ) invalid_profile = .true.
+
           end do
 
-          if ( l_invalid_profile ) then
-            call set_invalid_field_metric_outputs( scaled_rmse(row_idx,i), correlation(row_idx,i), &
-                                                   std_ratio(row_idx,i), centered_rmse_norm(row_idx,i), &
-                                                   bias_norm(row_idx,i) )
-            cycle
+          if ( .not. invalid_profile ) then
+
+            call calculate_profile_loss( model_profile, benchmark_profile, request%loss_weights, & ! In
+                                         rmse(row_idx,column_idx), correlation(row_idx,column_idx), & ! Out
+                                         std_ratio(row_idx,column_idx), bias_norm(row_idx,column_idx) ) ! Out
+
+            invalid_profile = .not. is_finite_core_value( rmse(row_idx,column_idx) ) .or. &
+                              (.not. is_finite_core_value( correlation(row_idx,column_idx) ) .and. &
+                               .not. ieee_is_nan( correlation(row_idx,column_idx) )) .or. &
+                              (.not. is_finite_core_value( std_ratio(row_idx,column_idx) ) .and. &
+                               .not. ieee_is_nan( std_ratio(row_idx,column_idx) )) .or. &
+                              .not. is_finite_core_value( bias_norm(row_idx,column_idx) )
+
           end if
 
-          call calculate_taylor_metrics( model_profile, benchmark_profile, field_correlation, field_std_ratio, &
-                                         field_centered_rmse_norm, field_bias_norm )
-          if ( .not. is_finite_core_value( field_correlation ) .or. &
-               .not. is_finite_core_value( field_std_ratio ) .or. &
-               .not. is_finite_core_value( field_centered_rmse_norm ) .or. &
-               .not. is_finite_core_value( field_bias_norm ) ) then
-            call set_invalid_field_metric_outputs( scaled_rmse(row_idx,i), correlation(row_idx,i), &
-                                                   std_ratio(row_idx,i), centered_rmse_norm(row_idx,i), &
-                                                   bias_norm(row_idx,i) )
-            cycle
+          if ( invalid_profile ) then
+
+            call set_invalid_field_metric_outputs( rmse(row_idx,column_idx), correlation(row_idx,column_idx), & ! Out
+                                                   std_ratio(row_idx,column_idx), bias_norm(row_idx,column_idx) ) ! Out
+
           end if
 
-          correlation(row_idx,i) = field_correlation
-          std_ratio(row_idx,i) = field_std_ratio
-          centered_rmse_norm(row_idx,i) = field_centered_rmse_norm
-          bias_norm(row_idx,i) = field_bias_norm
         end do
 
         deallocate( model_profile, benchmark_profile )
 
       end associate
+
     end do
 
   end subroutine calculate_field_loss
+
+  subroutine calculate_case_loss( request, rmse, &
+                                  case_loss )
+
+    ! Description:
+    !   Reduce field/window RMSEs to one weighted RMS per candidate. Scale errors
+    !   before squaring so finite invalid-profile penalties remain finite.
+
+    implicit none
+
+    !--------------------------- Input Variables ---------------------------
+    type(loss_request_type), intent(in) :: &
+      request                                                      ! Prepared field weights and time-window count.
+
+    real( kind = core_rknd ), dimension(:,:,:), intent(in) :: &
+      rmse                                                         ! Profile errors (window, field, candidate) [-].
+
+    !--------------------------- Output Variables ---------------------------
+    real( kind = core_rknd ), dimension(:), intent(out) :: &
+      case_loss                                                    ! One RMS per candidate [-].
+
+    !--------------------------- Local Variables ---------------------------
+    integer :: &
+      column_idx, &                                                ! Candidate index.
+      field_idx, &                                                 ! Compared field.
+      window_idx                                                   ! Compared time window.
+
+    real( kind = core_rknd ) :: &
+      weight_scale, &                                              ! Largest fixed field weight [-].
+      field_weight, &                                              ! Rescaled field weight [-].
+      denominator, &                                               ! Sum of rescaled weights across windows/fields [-].
+      error_scale, &                                               ! Largest active profile error [-].
+      squared_sum                                                  ! Weighted rescaled squared-error sum [-].
+
+    !--------------------------- Begin Code ---------------------------
+    weight_scale = maxval( request%fields%weight )
+    denominator = real( request%num_time_windows, kind = core_rknd ) * &
+                  sum( request%fields%weight / weight_scale )
+
+    do column_idx = 1, size( case_loss )
+
+      error_scale = 0.0_core_rknd
+
+      do field_idx = 1, request%num_variables
+
+        if ( request%fields(field_idx)%weight > 0.0_core_rknd ) then
+          error_scale = max( error_scale, maxval( abs( rmse(:,field_idx,column_idx) ) ) )
+        end if
+
+      end do
+
+      case_loss(column_idx) = 0.0_core_rknd
+
+      if ( error_scale > 0.0_core_rknd ) then
+
+        squared_sum = 0.0_core_rknd
+
+        do field_idx = 1, request%num_variables
+
+          field_weight = request%fields(field_idx)%weight / weight_scale
+
+          if ( field_weight > 0.0_core_rknd ) then
+
+            do window_idx = 1, request%num_time_windows
+
+              squared_sum = squared_sum + field_weight * ( rmse(window_idx,field_idx,column_idx) / error_scale )**2
+
+            end do
+
+          end if
+
+        end do
+
+        case_loss(column_idx) = error_scale * sqrt( squared_sum / denominator )
+
+      end if
+
+    end do
+
+  end subroutine calculate_case_loss
 
 end module clubb_loss_driver

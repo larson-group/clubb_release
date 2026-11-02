@@ -1301,8 +1301,16 @@ def set_case_initial_conditions(
         jnp.full((state['ngrdcol'],), state['cfg']['deltaz_nl']),                     # In
         state['clubb_params'], state['flags'].l_prescribed_avg_deltaz,               # In
     )
-    if float(state['lmin']) < 1.0:
-        raise ValueError('lmin is < 1.0')
+    def check_lmin(value):
+        """Reject a derived minimum length below one metre."""
+        if float(value) < 1.0:
+            raise ValueError('lmin is < 1.0')
+
+    # Preserve the host validation when parameters are being differentiated.
+    if isinstance(state['lmin'], jax.core.Tracer):
+        jax.debug.callback(check_lmin, state['lmin'], ordered=True)
+    else:
+        check_lmin(state['lmin'])
 
     # Re-run the parameter sanity checks when debugging, as at initial setup.
     if clubb_at_least_debug_level(0):

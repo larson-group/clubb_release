@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 
-SCHEMA_VERSION = "sample_history_observation_v1"
+SCHEMA_VERSION = "sample_history_case_loss_v3"
 DEFAULT_CHUNK_SIZE = 1000
 SAMPLE_HISTORY_DIR = "sample_history"
 CHUNK_PREFIX = "sample_history_"
@@ -31,6 +31,7 @@ class SampleHistoryWriter:
         metric_names: list[str],
         case_configs: list[dict],
         case_window_counts: dict[str, int],
+        gradient_parameters: list[str] | None = None,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
     ):
         self.job_dir = Path(job_dir)
@@ -39,6 +40,7 @@ class SampleHistoryWriter:
         self.case_names = [str(name) for name in case_names]
         self.field_names = [str(name) for name in field_names]
         self.metric_names = [str(name) for name in metric_names]
+        self.gradient_parameters = list(gradient_parameters or [])
         self.chunk_size = int(chunk_size)
         if self.chunk_size < 1:
             raise ValueError("sample history chunk_size must be >= 1")
@@ -116,6 +118,8 @@ class SampleHistoryWriter:
         ]
         return {
             "schema_version": np.asarray([SCHEMA_VERSION], dtype="U64"),
+            "gradient_target": np.asarray(["loss"], dtype="U16"),
+            "gradient_parameters": np.asarray(self.gradient_parameters, dtype="U96"),
             "param_names": np.asarray(self.param_names, dtype="U96"),
             "case_names": np.asarray(self.case_names, dtype="U96"),
             "field_names": np.asarray(self.field_names, dtype="U96"),
@@ -165,6 +169,8 @@ class SampleHistoryWriter:
             dtype=np.float64,
         )
 
+        gradients = np.full((sample_count, len(self.case_names), len(self.gradient_parameters)), np.nan)
+        case_loss = np.empty((sample_count, len(self.case_names)), dtype=np.float64)
         for sample_idx, entry in enumerate(entries):
             all_param_values = entry.get("all_params", {})
             all_params[sample_idx, :] = [
@@ -174,6 +180,10 @@ class SampleHistoryWriter:
             sample_id[sample_idx] = int(entry["sample_id"])
             batch_id[sample_idx] = int(entry["batch_id"])
 
+            for case_idx, case_name in enumerate(self.case_names):
+                case_loss[sample_idx, case_idx] = entry['case_loss'][case_name]
+                if self.gradient_parameters:
+                    gradients[sample_idx, case_idx] = entry['gradient'][case_name]['loss']
             for obs_idx, obs in enumerate(self.observations):
                 subwindows = (
                     entry["field_metrics"][obs["case_name"]][obs["field_name"]]["subwindows"]
@@ -189,6 +199,8 @@ class SampleHistoryWriter:
             "sample_id": sample_id,
             "batch_id": batch_id,
             "loss_metrics": loss_metrics,
+            "case_loss": case_loss,
+            **({"gradient": gradients} if self.gradient_parameters else {}),
         }
 
 

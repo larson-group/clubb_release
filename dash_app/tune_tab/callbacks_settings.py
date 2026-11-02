@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from utilities.loss_metrics import normalize_loss_weights
 from dash import ALL, Input, Output, Patch, State, callback_context, html, no_update
 
 from .discovery import (
@@ -31,7 +32,6 @@ from input.scripts.save_tunable_config import (
     save_tunable_config,
 )
 
-from tuner.taylor_metrics import LOSS_MODE_NAMES, TIME_WINDOW_AGGREGATION_SCOPES
 from tuner.request import evaluate_tune_settings
 
 
@@ -522,63 +522,26 @@ def register_settings_callbacks(app):
         return no_update
 
     @app.callback(
-        Output("tune-loss-mode", "data"),
-        Input("tune-loss-mode-scaled-rmse", "n_clicks"),
-        Input("tune-loss-mode-centered-rmse-bias", "n_clicks"),
-        Input("tune-loss-mode-taylor-components", "n_clicks"),
-        Input("tune-loss-mode-taylor-components-squared", "n_clicks"),
-        Input("tune-loss-mode-shape-first", "n_clicks"),
-        Input("tune-loss-mode-bias-light-taylor", "n_clicks"),
-        Input("tune-loss-mode-decomposed-taylor", "n_clicks"),
+        Output("tune-loss-weights", "data"),
+        Output("tune-loss-weight-mean", "value"),
+        Output("tune-loss-weight-std", "value"),
+        Output("tune-loss-weight-corr", "value"),
+        Input("tune-loss-weight-mean", "value"),
+        Input("tune-loss-weight-std", "value"),
+        Input("tune-loss-weight-corr", "value"),
+        Input("tune-loss-weights", "data"),
         State("tune-active-job", "data"),
         prevent_initial_call=True,
     )
-    def select_loss_mode(
-        _scaled_rmse_clicks,
-        _centered_clicks,
-        _components_clicks,
-        _squared_clicks,
-        _shape_first_clicks,
-        _bias_light_clicks,
-        _decomposed_clicks,
-        active_job,
-    ):
-        """Persist the selected Taylor loss policy mode."""
+    def select_loss_weights(mean, std, corr, stored, active_job):
+        """Keep the fixed positive objective weights and their controls together."""
+        if callback_context.triggered_id == "tune-loss-weights":
+            weights = normalize_loss_weights(stored)
+            return no_update, weights['mean'], weights['std'], weights['corr']
         if active_job:
-            return no_update
-        mode_by_button = {
-            "tune-loss-mode-scaled-rmse": "scaled_rmse",
-            "tune-loss-mode-centered-rmse-bias": "centered_rmse_bias",
-            "tune-loss-mode-taylor-components": "taylor_components",
-            "tune-loss-mode-taylor-components-squared": "taylor_components_squared",
-            "tune-loss-mode-shape-first": "shape_first",
-            "tune-loss-mode-bias-light-taylor": "bias_light_taylor",
-            "tune-loss-mode-decomposed-taylor": "decomposed_taylor",
-        }
-        selected = mode_by_button.get(callback_context.triggered_id)
-        if selected in LOSS_MODE_NAMES:
-            return selected
-        return no_update
-
-    @app.callback(
-        Output("tune-time-window-aggregation-scope", "data"),
-        Input("tune-aggregation-overall", "n_clicks"),
-        Input("tune-aggregation-by-case", "n_clicks"),
-        State("tune-active-job", "data"),
-        prevent_initial_call=True,
-    )
-    def select_aggregation_scope(_overall_clicks, _by_case_clicks, active_job):
-        """Persist whether quantile weighting pools all windows or each case."""
-        if active_job:
-            return no_update
-        mode_by_button = {
-            "tune-aggregation-overall": "overall",
-            "tune-aggregation-by-case": "by_case",
-        }
-        selected = mode_by_button.get(callback_context.triggered_id)
-        if selected in TIME_WINDOW_AGGREGATION_SCOPES:
-            return selected
-        return no_update
+            return (no_update,) * 4
+        # Keep invalid entries visible so start validation can explain them.
+        return {'mean': mean, 'std': std, 'corr': corr}, no_update, no_update, no_update
 
     @app.callback(
         Output("tune-selected-config", "data"),
@@ -1049,8 +1012,7 @@ def register_settings_callbacks(app):
         Input("tune-batch-size", "value"),
         Input("tune-max-workers", "value"),
         Input("tune-strategy-mode", "data"),
-        Input("tune-loss-mode", "data"),
-        Input("tune-time-window-aggregation-scope", "data"),
+        Input("tune-loss-weights", "data"),
         Input("tune-aggregation-weight-1", "value"),
         Input("tune-aggregation-weight-2", "value"),
         Input("tune-aggregation-weight-3", "value"),
@@ -1087,8 +1049,7 @@ def register_settings_callbacks(app):
         _batch_size,
         _max_workers,
         _strategy_mode,
-        _loss_mode,
-        _aggregation_scope,
+        _loss_weights,
         _aggregation_weight_1,
         _aggregation_weight_2,
         _aggregation_weight_3,

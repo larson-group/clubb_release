@@ -33,6 +33,25 @@ def request_args(extra=()):
     ])
 
 
+def test_cli_bootstraps_before_importing_dependencies():
+    """Reach environment setup with site packages disabled, before importing NumPy."""
+    root = Path(__file__).resolve().parents[4]
+    program = """
+import runpy
+from utilities import setup_python_venv
+def stop_at_bootstrap():
+    raise SystemExit('bootstrap reached')
+setup_python_venv.ensure_python_venv = stop_at_bootstrap
+runpy.run_path('run_scripts/run_tuner_job.py', run_name='__main__')
+"""
+    result = subprocess.run(
+        [sys.executable, "-S", "-c", program], cwd=root,
+        capture_output=True, text=True, timeout=10,
+    )
+    assert result.returncode == 1
+    assert result.stderr.strip() == "bootstrap reached"
+
+
 @pytest.mark.parametrize(
     "extra,backend,options",
     [
@@ -86,8 +105,9 @@ def test_job_selects_managed_runtime(tmp_path, monkeypatch, backend):
         assert command[1:3] == ["-m", "tuner.tune_clubb"]
 
 
-def test_worker_payload_retains_backend(tmp_path, monkeypatch):
-    request = cli.build_request(request_args(["-jax"]))
+@pytest.mark.parametrize('mode', ['auto', 'forward', 'reverse'])
+def test_worker_payload_retains_backend(tmp_path, monkeypatch, mode):
+    request = cli.build_request(request_args(["-jax", '-grad', '-gradient_mode', mode]))
     path = tmp_path / "request.json"
     path.write_text(json.dumps(request))
     scheduler = TuningScheduler(
@@ -112,6 +132,9 @@ def test_worker_payload_retains_backend(tmp_path, monkeypatch):
     scheduler.ctx = SimpleNamespace(Pipe=lambda: (conn, conn), Process=Process)
     scheduler._start_worker("bomex")
     assert payloads[0]["backend"] == "jax"
+    assert payloads[0]['grad'] is True
+    assert payloads[0]['gradient_mode'] == mode
+    assert payloads[0]['gradient_parameters'] == ['C8']
 
 
 @pytest.mark.parametrize('backend', [[], ['-jax=gpu']])

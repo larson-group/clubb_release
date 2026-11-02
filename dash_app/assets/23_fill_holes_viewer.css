@@ -4,8 +4,8 @@
 .hf-viewer {
   width: 100%;
   padding: 16px 18px 60px;
-  color: #cbd5e1;
-  background: #0b1220;
+  color: var(--ui-muted);
+  background: var(--ui-bg);
 }
 
 .hf-workspace {
@@ -22,7 +22,7 @@
   height: calc(100vh - 108px);
   min-height: 620px;
   justify-self: center;
-  background: #334155;
+  background: var(--ui-border);
 }
 
 .hf-right-pane {
@@ -33,9 +33,9 @@
   overflow-x: visible;
   overflow-y: auto;
   padding: 20px 18px 28px;
-  border: 1px solid #334155;
+  border: 1px solid var(--ui-border);
   border-radius: 12px;
-  background: #0f172a;
+  background: var(--ui-surface);
 }
 
 .hf-hero {
@@ -44,7 +44,7 @@
 }
 
 .hf-kicker {
-  color: #94a3b8;
+  color: var(--ui-muted);
   font-size: .76rem;
   font-weight: 750;
   letter-spacing: .08em;
@@ -53,7 +53,7 @@
 
 .hf-hero h1 {
   margin: 4px 0 10px;
-  color: #f8fafc;
+  color: var(--ui-text);
   font-size: clamp(2rem, 4vw, 3.1rem);
   line-height: 1.1;
   letter-spacing: -.025em;
@@ -62,7 +62,7 @@
 .hf-hero p {
   max-width: 860px;
   margin: 0;
-  color: #cbd5e1;
+  color: var(--ui-muted);
   font-size: 1rem;
   line-height: 1.55;
 }
@@ -70,12 +70,12 @@
 .hf-sidebar-heading { margin-bottom: 24px; }
 .hf-sidebar-heading h2 {
   margin: 4px 0 7px;
-  color: #f8fafc;
+  color: var(--ui-text);
   font-size: 1.45rem;
 }
 .hf-sidebar-heading p {
   margin: 0;
-  color: #94a3b8;
+  color: var(--ui-muted);
   font-size: .86rem;
   line-height: 1.4;
 }
@@ -84,7 +84,7 @@
 .hf-control label {
   display: block;
   margin-bottom: 7px;
-  color: #e2e8f0;
+  color: var(--ui-text);
   font-size: .85rem;
   font-weight: 700;
 }
@@ -93,47 +93,48 @@
   width: 100%;
   min-height: 38px;
   padding: 8px 12px;
-  border: 1px solid #475569;
+  border: 1px solid var(--ui-border);
   border-radius: 5px;
-  background: #1e293b;
-  color: #e2e8f0;
+  background: var(--ui-raised);
+  color: var(--ui-text);
   cursor: pointer;
   font-weight: 700;
 }
-#app-root .hf-sidebar-button:hover { background: #29384d; }
+#app-root .hf-sidebar-button:hover { background: var(--ui-accent-soft); }
 #app-root .hf-play-button {
-  border-color: #3b82a8;
-  background: #12304b;
-  color: #e0f2fe;
+  border-color: var(--ui-accent-border);
+  background: var(--ui-accent-soft);
+  color: var(--ui-text);
 }
-#app-root .hf-play-button:hover { background: #174365; }
+#app-root .hf-play-button:hover { background: var(--ui-raised); }
 
 .hf-status {
   min-height: 22px;
   margin: 8px 0 20px;
-  color: #94a3b8;
+  color: var(--ui-muted);
   font-size: .82rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
-.hf-error { color: #fca5a5; }
+#app-root.theme-dark .hf-error,
+#app-root.theme-light .hf-error { color: var(--ui-danger); }
 
 .hf-threshold-panel {
   margin: 4px 0 22px;
   padding: 12px 12px 13px;
-  border: 1px solid #334155;
+  border: 1px solid var(--ui-border);
   border-radius: 6px;
-  background: #111c2e;
+  background: var(--ui-raised);
 }
 .hf-threshold-title {
   margin-bottom: 5px;
-  color: #f8fafc;
+  color: var(--ui-text);
   font-size: .86rem;
   font-weight: 700;
 }
 .hf-threshold-note {
   margin: 0 0 10px;
-  color: #94a3b8;
+  color: var(--ui-muted);
   font-size: .76rem;
   line-height: 1.4;
 }
@@ -146,12 +147,12 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  color: #cbd5e1;
+  color: var(--ui-muted);
   font-size: .78rem;
 }
 .hf-threshold-label { flex: 0 0 auto; }
 .hf-threshold-value {
-  color: #bae6fd;
+  color: var(--ui-accent);
   font-size: .74rem;
   text-align: right;
   white-space: nowrap;
@@ -160,7 +161,7 @@
 .hf-sidebar-rule {
   height: 1px;
   margin: 3px 0 22px;
-  background: #334155;
+  background: var(--ui-border);
 }
 
 .hf-radio-row {
@@ -168,7 +169,7 @@
   min-height: 34px;
   align-items: center;
   gap: 16px;
-  color: #cbd5e1;
+  color: var(--ui-muted);
 }
 .hf-radio-row label {
   display: inline-flex;
@@ -198,7 +199,7 @@
 .hf-record-control { padding: 0 6px 12px 0; }
 .hf-time-label {
   margin: -4px 0 12px;
-  color: #bae6fd;
+  color: var(--ui-accent);
   font-size: .92rem;
   font-variant-numeric: tabular-nums;
   line-height: 1.45;
@@ -212,7 +213,7 @@
 .hf-primary-grid > div,
 #hf-map-figure {
   min-width: 0;
-  border: 1px solid #263950;
+  border: 1px solid var(--ui-border);
   border-radius: .65rem;
   overflow: hidden;
 }
@@ -222,8 +223,8 @@
   padding: .58rem .7rem;
   border-left: 3px solid #a78bfa;
   border-radius: .25rem;
-  background: #1c1837;
-  color: #c8c2eb;
+  background: var(--ui-raised);
+  color: var(--ui-text);
   font-size: .78rem;
   line-height: 1.45;
 }

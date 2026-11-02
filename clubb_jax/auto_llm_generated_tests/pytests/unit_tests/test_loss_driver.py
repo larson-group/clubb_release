@@ -30,25 +30,25 @@ ROOT = Path(loss.__file__).resolve().parents[2]
 
 
 @pytest.mark.parametrize('model,truth,expected', [
-    ([1., 2., 3.], [1., 2., 3.], [1., 1., 0., 0.]),
-    ([3., 2., 1.], [1., 2., 3.], [-1., 1., 2., 0.]),
-    ([2., 2., 2.], [1., 2., 3.], [0., 0., 1., 0.]),
-    ([2., 4., 6.], [1., 2., 3.], [1., 2., 1., np.sqrt(6.)]),
-    ([1., 2., 3.], [2., 2., 2.], [1., 1., np.sqrt(2./3.), 0.]),
-    ([4.], [2.], [1., 1., 0., 2.]),
+    ([1., 2., 3.], [1., 2., 3.], [0., 1., 1., 0.]),
+    ([3., 2., 1.], [1., 2., 3.], [2., -1., 1., 0.]),
+    ([2., 2., 2.], [1., 2., 3.], [1., np.nan, 0., 0.]),
+    ([2., 4., 6.], [1., 2., 3.], [np.sqrt(7.), 1., 2., np.sqrt(6.)]),
+    ([1., 2., 3.], [2., 2., 2.], [np.sqrt(2./3.), np.nan, np.nan, 0.]),
+    ([4.], [2.], [2., np.nan, np.nan, 2.]),
 ])
 def test_taylor_metrics_source_conventions(model, truth, expected):
-    result = loss.calculate_taylor_metrics(jnp.array(model), jnp.array(truth))
+    result = loss.calculate_profile_loss(jnp.array(model), jnp.array(truth), (1., 1., 1.))
     np.testing.assert_allclose(result, expected, rtol=1.e-13, atol=1.e-13)
 
 
 @pytest.mark.parametrize('model,truth,message', [
-    ([1.0], [1.0, 2.0], 'matching sizes'),
-    ([], [], 'at least one level'),
+    ([1.0], [1.0, 2.0], 'matching level axes'),
+    ([], [], 'nonempty'),
 ])
 def test_taylor_metrics_invalid_shapes(model, truth, message):
     with pytest.raises(ValueError, match=message):
-        loss.calculate_taylor_metrics(jnp.array(model), jnp.array(truth))
+        loss.calculate_profile_loss(jnp.array(model), jnp.array(truth), (1., 1., 1.))
 
 
 @pytest.mark.parametrize('dimensions', [
@@ -121,7 +121,7 @@ def test_loss_file_batches_keep_configured_column_slices(tmp_path, monkeypatch):
     }
     request = loss.loss_request_type(
         l_initialized=True, total_param_sets=4, state=state,
-        time_window_ranges=((0, 120),), dt_main_seconds=60.0,
+        time_window_ranges=((0, 120),), dt_main_seconds=60.0, fields=[loss.loss_field_type('wp2', 'wp2')],
     )
     monkeypatch.setattr(loss, 'active_request', request)
     batches = []
@@ -134,11 +134,12 @@ def test_loss_file_batches_keep_configured_column_slices(tmp_path, monkeypatch):
     monkeypatch.setattr(loss, 'advance_clubb_to_end', lambda *args, **kwargs: None)
     monkeypatch.setattr(
         loss, 'calculate_field_loss',
-        lambda *args: tuple(jnp.zeros((1, 2)) for _ in range(5)),
+        lambda *args: tuple(jnp.zeros((1, 2)) for _ in range(4)),
     )
     result = loss.clubb_get_loss_for_params(params)
     assert batches == [1, 2]
-    assert all(values.shape == (1, 1, 4) for values in result)
+    assert all(values.shape == (1, 1, 4) for values in result[:4])
+    assert result[4].shape == (4,)
     with pytest.raises(ValueError, match='in-memory statistics'):
         loss.clubb_get_loss_for_params(params[:3])
 

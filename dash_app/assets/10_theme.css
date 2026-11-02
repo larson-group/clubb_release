@@ -11,8 +11,19 @@ body,
 }
 
 #app-root.theme-dark {
-  background: #0b1220;
-  color: #e5e7eb;
+  --ui-bg: #0d1524;
+  --ui-surface: #151f30;
+  --ui-raised: #1c2a3e;
+  --ui-border: #35465e;
+  --ui-text: #edf3fa;
+  --ui-muted: #b0c0d2;
+  --ui-accent: #60c9e7;
+  --ui-accent-soft: #183f57;
+  --ui-accent-border: #347999;
+  --ui-danger: #ff9e9e;
+  --ui-shadow: rgba(2, 8, 20, .24);
+  background: var(--ui-bg);
+  color: var(--ui-text);
   --Dash-Fill-Inverse-Strong: #0f172a;
   --Dash-Fill-Interactive-Strong: #64748b;
   --Dash-Fill-Interactive-Weak: #1e293b;
@@ -30,52 +41,90 @@ body,
 }
 
 #app-root.theme-light {
-  background: #f8fafc;
-  color: #0f172a;
+  --ui-bg: #f3f7fa;
+  --ui-surface: #ffffff;
+  --ui-raised: #e8f0f5;
+  --ui-border: #c7d6e0;
+  --ui-text: #172d3e;
+  --ui-muted: #506778;
+  --ui-accent: #087a9b;
+  --ui-accent-soft: #d9eef5;
+  --ui-accent-border: #87bccc;
+  --ui-danger: #a32f38;
+  --ui-shadow: rgba(37, 67, 84, .09);
+  background: var(--ui-bg);
+  color: var(--ui-text);
   --shared-notecard-background: #f8fafc;
   --shared-notecard-header: #ffffff;
   --shared-notecard-border: #94a3b8;
   --shared-notecard-text: #0f172a;
 }
 
-#app-root.theme-dark .dash-tabs,
-#app-root.theme-dark .tab-content,
-#app-root.theme-dark .tab-parent {
-  background: #0b1220 !important;
-  border-color: #0b1220 !important;
+#app-root {
+  --notes-bg: var(--ui-bg);
+  --notes-panel: var(--ui-surface);
+  --notes-panel-soft: var(--ui-raised);
+  --notes-border: var(--ui-border);
+  --notes-muted: var(--ui-muted);
+  --notes-accent: var(--ui-accent);
 }
 
-#app-root.theme-light .dash-tabs,
-#app-root.theme-light .tab-content,
-#app-root.theme-light .tab-parent {
-  background: #f8fafc !important;
-  border-color: #f8fafc !important;
+#app-root #dashboard-tabs-parent,
+#app-root #dashboard-tabs-parent > .tab-content,
+#app-root #dashboard-tabs {
+  background: var(--ui-bg) !important;
+  border-color: var(--ui-bg) !important;
 }
 
-#app-root.theme-dark .tab {
-  background: #1f2937 !important;
-  color: #cbd5e1 !important;
-  border-color: #334155 !important;
+#app-root #dashboard-tabs > .tab {
+  background: var(--ui-raised) !important;
+  color: var(--ui-muted) !important;
+  border-color: var(--ui-border) !important;
   font-size: 16pt !important;
 }
 
-#app-root.theme-dark .tab--selected {
-  background: #334155 !important;
-  color: #f8fafc !important;
-  border-color: #475569 !important;
+#app-root #dashboard-tabs > .tab:hover {
+  color: var(--ui-text) !important;
 }
 
-#app-root.theme-light .tab {
-  background: #e2e8f0 !important;
-  color: #334155 !important;
-  border-color: #cbd5e1 !important;
-  font-size: 16pt !important;
+#app-root #dashboard-tabs > .tab--selected {
+  background: var(--ui-surface) !important;
+  color: var(--ui-text) !important;
+  border-color: var(--ui-border) !important;
+  box-shadow: inset 0 3px 0 var(--ui-accent);
 }
 
-#app-root.theme-light .tab--selected {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+#app-root.theme-dark .Select-input > input,
+#app-root.theme-light .Select-input > input,
+#app-root.theme-dark .Select-input > input:focus,
+#app-root.theme-light .Select-input > input:focus {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+@keyframes clubb-activity-stripes {
+  from { background-position: 0 0; }
+  to { background-position: 67.88225px 67.88225px; }
+}
+
+#app-root .tune-workspace-change-active,
+#app-root .clubb-activity-stripes:disabled {
+  background-image: repeating-linear-gradient(135deg, #166534 0 12px, #7f1d1d 12px 24px) !important;
+  background-size: 67.88225px 67.88225px;
+  border: 1px solid #facc15 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px #000;
+  opacity: 1;
+  animation: clubb-activity-stripes 1400ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app-root .tune-workspace-change-active,
+  #app-root .clubb-activity-stripes:disabled { animation: none; }
 }
 
 #app-root.theme-dark details {
@@ -455,40 +504,30 @@ body,
   border-top-color: #cbd5e1 !important;
 }
 
-.Select-menu-outer,
-.Select-menu,
-.Select-menu > div,
-.VirtualizedSelectGrid,
-.VirtualizedSelectGrid > div,
-.VirtualizedSelectOption,
-.VirtualizedSelectSelectedOption,
-.VirtualizedSelectFocusedOption,
-.Select-option,
-.Select-noresults {
-  background: #0f172a !important;
-  background-color: #0f172a !important;
-  color: #e2e8f0 !important;
+#app-root .Select-menu-outer,
+#app-root .Select-menu,
+#app-root .Select-menu > div,
+#app-root .VirtualizedSelectGrid,
+#app-root .VirtualizedSelectGrid > div,
+#app-root .VirtualizedSelectOption,
+#app-root .VirtualizedSelectSelectedOption,
+#app-root .Select-option,
+#app-root .Select-noresults {
+  background: var(--ui-surface) !important;
+  color: var(--ui-text) !important;
 }
 
-.VirtualizedSelectFocusedOption,
-.VirtualizedSelectOption:hover,
-.Select-option.is-focused,
-.Select-option:hover {
-  background: #1e293b !important;
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
+#app-root .VirtualizedSelectFocusedOption,
+#app-root .VirtualizedSelectOption:hover,
+#app-root .Select-option.is-focused,
+#app-root .Select-option:hover {
+  background: var(--ui-accent-soft) !important;
+  color: var(--ui-text) !important;
 }
 
-.Select-menu-outer {
-  border-color: #334155 !important;
-  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.45) !important;
-}
-
-.Select-menu-outer .Select-input,
-.Select-menu-outer .Select-input > input {
-  background: #0f172a !important;
-  background-color: #0f172a !important;
-  color: #e2e8f0 !important;
+#app-root .Select-menu-outer {
+  border-color: var(--ui-border) !important;
+  box-shadow: 0 12px 24px var(--ui-shadow) !important;
 }
 
 #app-root .theme-toggle-button {

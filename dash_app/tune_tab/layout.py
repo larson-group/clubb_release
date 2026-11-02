@@ -8,8 +8,7 @@ from dash_app.shared import styled_dropdown
 from dash_app.compile_tab.build_selector import build_selector_trigger
 from tuner.taylor_metrics import (
     DEFAULT_AGGREGATION_WEIGHTS,
-    DEFAULT_LOSS_MODE,
-    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
+    DEFAULT_LOSS_WEIGHTS,
 )
 from tuner.presets import list_presets
 
@@ -59,10 +58,7 @@ def mode_options_block_style(visible: bool) -> dict:
 def build_top_controls(initial_data):
     """Render mode selection, mode options, and run controls."""
     selected_mode = initial_data.get("strategy_mode")
-    selected_loss_mode = initial_data.get("loss_mode", DEFAULT_LOSS_MODE)
-    selected_aggregation_scope = initial_data.get(
-        "time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE
-    )
+    selected_loss_weights = initial_data.get("loss_weights", DEFAULT_LOSS_WEIGHTS)
     aggregation_weights = initial_data.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS)
     return html.Div(
         [
@@ -269,87 +265,29 @@ def build_top_controls(initial_data):
             html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch"}),
             html.Div(
                 [
-                    html.Div("Loss Mode", className="tune-section-title"),
-                    html.Div(
-                        [
-                            html.Button(
-                                "Scaled RMSE",
-                                id="tune-loss-mode-scaled-rmse",
-                                n_clicks=0,
-                                title="L = scaled_rmse.",
-                                style=mode_button_style(selected=selected_loss_mode == "scaled_rmse"),
-                            ),
-                            html.Button(
-                                "Centered RMS + Bias",
-                                id="tune-loss-mode-centered-rmse-bias",
-                                n_clicks=0,
-                                title="L = centered_rmse_norm + |bias_norm|.",
-                                style=mode_button_style(selected=selected_loss_mode == "centered_rmse_bias"),
-                            ),
-                            html.Button(
-                                "Taylor Components",
-                                id="tune-loss-mode-taylor-components",
-                                n_clicks=0,
-                                title="L = centered_rmse_norm + 0.5|bias_norm| + 0.25(1-R) + 0.25|log(std_ratio)|.",
-                                style=mode_button_style(selected=selected_loss_mode == "taylor_components"),
-                            ),
-                            html.Button(
-                                "Squared",
-                                id="tune-loss-mode-taylor-components-squared",
-                                n_clicks=0,
-                                title="L = centered_rmse_norm² + 0.5|bias_norm|² + 0.25(1-R)² + 0.25|log(std_ratio)|².",
-                                style=mode_button_style(selected=selected_loss_mode == "taylor_components_squared"),
-                            ),
-                            html.Button(
-                                "Shape First",
-                                id="tune-loss-mode-shape-first",
-                                n_clicks=0,
-                                title="L = 0.5 centered_rmse_norm + 0.5|bias_norm| + (1-R) + 0.5|log(std_ratio)|.",
-                                style=mode_button_style(selected=selected_loss_mode == "shape_first"),
-                            ),
-                            html.Button(
-                                "Bias Light",
-                                id="tune-loss-mode-bias-light-taylor",
-                                n_clicks=0,
-                                title="L = centered_rmse_norm + 0.25|bias_norm| + 0.5(1-R) + 0.5|log(std_ratio)|.",
-                                style=mode_button_style(selected=selected_loss_mode == "bias_light_taylor"),
-                            ),
-                            html.Button(
-                                "Decomposed Taylor",
-                                id="tune-loss-mode-decomposed-taylor",
-                                n_clicks=0,
-                                title="abs(bias_norm) + (1 - R) + abs(log(std_ratio)); omits centered RMSE.",
-                                style=mode_button_style(selected=selected_loss_mode == "decomposed_taylor"),
-                            ),
-                        ],
-                        style={"display": "flex", "gap": "8px", "flexWrap": "wrap"},
-                    ),
+                    dcc.Checklist(id='tune-grad', options=[{'label': 'Compute and store gradients (JAX)', 'value': 'grad'}],
+                                  value=['grad'] if initial_data.get('grad', False) else []),
+                    html.Label('Gradient mode', htmlFor='tune-gradient-mode'),
+                    styled_dropdown(id='tune-gradient-mode', options=[
+                        {'label': 'Auto', 'value': 'auto'}, {'label': 'Forward', 'value': 'forward'},
+                        {'label': 'Backward (reverse)', 'value': 'reverse'},
+                    ], value=initial_data.get('gradient_mode', 'auto'), clearable=False),
+                    html.Div("Taylor RMSE weights", className="tune-section-title"),
+                    html.Div([
+                        html.Label([label, dcc.Input(
+                            id=f"tune-loss-weight-{name}", type="number", min=0,
+                            step="any", value=selected_loss_weights[name], debounce=True,
+                            style={"width": "80px", "marginLeft": "6px"},
+                        )]) for name, label in (("mean", "Mean"), ("std", "Std"), ("corr", "Pattern"))
+                    ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"}),
+                    html.Small("Positive weights, fixed for this run. Unit weights recover normalized RMSE."),
                 ],
                 style={"padding": "12px"},
             ),
             html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch"}),
             html.Div(
                 [
-                    html.Div("Time-window aggregation", className="tune-section-title"),
-                    html.Div(
-                        [
-                            html.Button(
-                                "Overall",
-                                id="tune-aggregation-overall",
-                                n_clicks=0,
-                                title="Pool all active case/field/time-window losses, then rank them best to worst.",
-                                style=mode_button_style(selected=selected_aggregation_scope == "overall"),
-                            ),
-                            html.Button(
-                                "By case",
-                                id="tune-aggregation-by-case",
-                                n_clicks=0,
-                                title="Rank each case's active time-window losses separately, then take the case-weighted mean.",
-                                style=mode_button_style(selected=selected_aggregation_scope == "by_case"),
-                            ),
-                        ],
-                        style={"display": "flex", "gap": "8px", "flexWrap": "wrap"},
-                    ),
+                    html.Div("Across-case aggregation", className="tune-section-title"),
                     html.Div(
                         [
                             html.Span("Best → worst weights", style={"fontSize": "12px", "fontWeight": "600"}),
@@ -876,9 +814,8 @@ def build_layout(initial_data):
             dcc.Store(id="tune-settings-resolution", data={}),
             dcc.Store(id="tune-tunable-default-ranges", data=initial_data["tunable_default_ranges"]),
             dcc.Store(id="tune-strategy-mode", data=initial_data["strategy_mode"]),
-            dcc.Store(id="tune-loss-mode", data=initial_data["loss_mode"]),
+            dcc.Store(id="tune-loss-weights", data=initial_data["loss_weights"]),
             dcc.Store(id="tune-aggregation-mode", data=initial_data["aggregation_mode"]),
-            dcc.Store(id="tune-time-window-aggregation-scope", data=initial_data.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE)),
             dcc.Store(id="tune-case-next-id", data=len(initial_case_rows)),
             dcc.Store(id="tune-case-row-order", data=[row["id"] for row in initial_case_rows]),
             dcc.Store(id="tune-range-next-id", data=len(initial_param_rows)),

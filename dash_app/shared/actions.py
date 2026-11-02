@@ -111,14 +111,12 @@ from tuner.request import (
 )
 from tuner.job_runtime import TunerJob
 from tuner.system_defaults import available_logical_cpu_count
+from utilities.loss_metrics import normalize_loss_weights
 from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
     DEFAULT_AGGREGATION_MODE,
     DEFAULT_AGGREGATION_WEIGHTS,
-    DEFAULT_LOSS_MODE,
-    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
-    LOSS_MODE_NAMES,
-    TIME_WINDOW_AGGREGATION_SCOPES,
+    DEFAULT_LOSS_WEIGHTS,
     normalize_aggregation_weights,
 )
 from tuner.tuning_strategy import VALID_STRATEGY_NAMES
@@ -965,11 +963,6 @@ def _canonical_tune_request(request: TuneRequest) -> TuneRequest:
     aggregation_mode = str(request.aggregation_mode or DEFAULT_AGGREGATION_MODE).strip()
     if aggregation_mode not in AGGREGATION_MODE_NAMES:
         raise ValueError("unknown aggregation mode")
-    aggregation_scope = str(
-        request.time_window_aggregation_scope or DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE
-    ).strip()
-    if aggregation_scope not in TIME_WINDOW_AGGREGATION_SCOPES:
-        raise ValueError("unknown time-window aggregation scope")
     aggregation_weights = normalize_aggregation_weights(request.aggregation_weights)
     return request.model_copy(
         update={
@@ -977,7 +970,6 @@ def _canonical_tune_request(request: TuneRequest) -> TuneRequest:
             "parameter_ranges": [ParameterRange.model_validate(item) for item in ranges],
             "aggregation_mode": aggregation_mode,
             "aggregation_weights": aggregation_weights,
-            "time_window_aggregation_scope": aggregation_scope,
         }
     )
 
@@ -2002,12 +1994,13 @@ def submit_tune(request: TuneRequest) -> dict[str, Any]:
             adam_spsa_pairs=request.adam_spsa_pairs,
             batch_size=request.batch_size,
             max_workers=request.max_workers,
-            loss_mode=request.loss_mode or DEFAULT_LOSS_MODE,
+            loss_weights=request.loss_weights or DEFAULT_LOSS_WEIGHTS,
             aggregation_mode=request.aggregation_mode or DEFAULT_AGGREGATION_MODE,
             aggregation_weights=request.aggregation_weights,
-            time_window_aggregation_scope=request.time_window_aggregation_scope,
             overrides=_typed_override_text(request.overrides),
             backend=request.backend,
+            grad=request.grad,
+            gradient_mode=request.gradient_mode,
             jax_options=request.jax_options,
             jax_gpu=request.jax_gpu,
             jax_xla_prealloc=request.jax_xla_prealloc,
@@ -3108,12 +3101,13 @@ def launch_tuning(
     adam_spsa_pairs: int = 2,
     batch_size: int = 1,
     max_workers: int = 1,
-    loss_mode: str = DEFAULT_LOSS_MODE,
+    loss_weights: dict[str, float] | None = None,
     aggregation_mode: str = DEFAULT_AGGREGATION_MODE,
     aggregation_weights: list[float] | tuple[float, ...] = DEFAULT_AGGREGATION_WEIGHTS,
-    time_window_aggregation_scope: str = DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
     overrides: str = "",
     backend: str = "fortran",
+    grad: bool = False,
+    gradient_mode: str = 'auto',
     jax_options: str = "cpu",
     jax_gpu: str = "",
     jax_xla_prealloc: bool | None = None,
@@ -3179,21 +3173,18 @@ def launch_tuning(
     worker_cap = max(1, available_logical_cpu_count())
     requested_workers = _positive_int(max_workers, "max_workers", maximum=worker_cap)
     requested_batch_size = _positive_int(batch_size, "batch_size", maximum=_TUNE_MAX_BATCH_SIZE)
-    selected_loss_mode = str(loss_mode or DEFAULT_LOSS_MODE).strip()
+    selected_loss_weights = normalize_loss_weights(loss_weights)
     selected_aggregation_mode = str(aggregation_mode or DEFAULT_AGGREGATION_MODE).strip()
-    if selected_loss_mode not in LOSS_MODE_NAMES:
-        raise ValueError("unknown loss mode")
     if selected_aggregation_mode not in AGGREGATION_MODE_NAMES:
         raise ValueError("unknown aggregation mode")
     try:
         selected_aggregation_weights = normalize_aggregation_weights(aggregation_weights)
     except ValueError as exc:
         raise ValueError(str(exc)) from exc
-    selected_aggregation_scope = str(time_window_aggregation_scope or DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE).strip()
-    if selected_aggregation_scope not in TIME_WINDOW_AGGREGATION_SCOPES:
-        raise ValueError("unknown time-window aggregation scope")
     request = {
         "backend": backend,
+        "grad": grad,
+        "gradient_mode": gradient_mode,
         "jax_options": jax_options,
         "jax_gpu": jax_gpu,
         "jax_xla_prealloc": jax_xla_prealloc,
@@ -3204,11 +3195,9 @@ def launch_tuning(
         "selected_fields": requested_fields,
         "batch_size": requested_batch_size,
         "max_workers": requested_workers,
-        "loss_mode": selected_loss_mode,
+        "loss_weights": selected_loss_weights,
         "aggregation_mode": selected_aggregation_mode,
-        "time_window_aggregation_mode": selected_aggregation_mode,
         "aggregation_weights": selected_aggregation_weights,
-        "time_window_aggregation_scope": selected_aggregation_scope,
         "parameter_ranges": ranges,
         "settings_resolution": resolution,
         "strategy": _normalize_tune_strategy(
@@ -3295,12 +3284,13 @@ def launch_tuning_request(request: dict[str, Any]) -> dict[str, Any]:
         adam_spsa_pairs=options.get("spsa_pairs", 2),
         batch_size=payload.get("batch_size", 1),
         max_workers=payload.get("max_workers", 1),
-        loss_mode=payload.get("loss_mode", DEFAULT_LOSS_MODE),
+        loss_weights=payload.get("loss_weights", DEFAULT_LOSS_WEIGHTS),
         aggregation_mode=payload.get("aggregation_mode", DEFAULT_AGGREGATION_MODE),
         aggregation_weights=payload.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS),
-        time_window_aggregation_scope=payload.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE),
         overrides=payload.get("override", ""),
         backend=payload.get("backend", "fortran"),
+        grad=payload.get("grad", False),
+        gradient_mode=payload.get('gradient_mode', 'auto'),
         jax_options=payload.get("jax_options", "cpu"),
         jax_gpu=payload.get("jax_gpu", ""),
         jax_xla_prealloc=payload.get("jax_xla_prealloc"),
@@ -4344,10 +4334,9 @@ def _register_dashboard_operations() -> None:
                 "adam_spsa_pairs": {"type": "integer", "default": 2},
                 "batch_size": {"type": "integer", "default": 1},
                 "max_workers": {"type": "integer", "default": 1},
-                "loss_mode": {"type": "string"},
+                "loss_weights": {"type": "object", "properties": {name: {"type": "number", "exclusiveMinimum": 0} for name in ("mean", "std", "corr")}, "additionalProperties": False},
                 "aggregation_mode": {"type": "string"},
                 "aggregation_weights": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4},
-                "time_window_aggregation_scope": {"type": "string", "enum": ["overall", "by_case"]},
                 "overrides": {"type": "string", "default": ""},
             },
         },
@@ -4368,10 +4357,9 @@ def _register_dashboard_operations() -> None:
             adam_spsa_pairs=arguments.get("adam_spsa_pairs", 2),
             batch_size=arguments.get("batch_size", 1),
             max_workers=arguments.get("max_workers", 1),
-            loss_mode=arguments.get("loss_mode", DEFAULT_LOSS_MODE),
+            loss_weights=arguments.get("loss_weights", DEFAULT_LOSS_WEIGHTS),
             aggregation_mode=arguments.get("aggregation_mode", DEFAULT_AGGREGATION_MODE),
             aggregation_weights=arguments.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS),
-            time_window_aggregation_scope=arguments.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE),
             overrides=arguments.get("overrides", ""),
         ),
     )
@@ -4642,10 +4630,9 @@ def dispatch(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             adam_spsa_pairs=payload.get("adam_spsa_pairs", 2),
             batch_size=payload.get("batch_size", 1),
             max_workers=payload.get("max_workers", 1),
-            loss_mode=payload.get("loss_mode", DEFAULT_LOSS_MODE),
+            loss_weights=payload.get("loss_weights", DEFAULT_LOSS_WEIGHTS),
             aggregation_mode=payload.get("aggregation_mode", DEFAULT_AGGREGATION_MODE),
             aggregation_weights=payload.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS),
-            time_window_aggregation_scope=payload.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE),
             overrides=payload.get("overrides", ""),
         )
     if action == "launch_tuning_request":

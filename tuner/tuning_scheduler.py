@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass
 import math
+import numpy as np
 import multiprocessing
 import os
 from pathlib import Path
@@ -20,18 +21,14 @@ from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
     DEFAULT_AGGREGATION_WEIGHTS,
     DEFAULT_AGGREGATION_MODE,
-    DEFAULT_LOSS_MODE,
     LOSS_METRIC_NAMES,
-    LOSS_MODE_NAMES,
     LOSS_POLICY_CONSTANTS,
     LOSS_POLICY_VERSION,
-    DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE,
-    TIME_WINDOW_AGGREGATION_SCOPES,
     WORST_QUANTILE_FRACTION,
     aggregate_losses,
-    compute_field_loss_diagnostics,
     normalize_aggregation_weights,
 )
+from utilities.loss_metrics import normalize_loss_weights, normalize_named_weights
 from tuner.status import (
     RESULTS_FILE_LIMIT,
     should_stop,
@@ -120,16 +117,17 @@ class TuningScheduler:
             if simann_chain_count < 1:
                 raise RuntimeError("simann chain_count must be >= 1")
             options["chain_count"] = simann_chain_count
+        from utilities.clubb_loss_runner import validate_gradient_backend
+        self.grad = request.get("grad", False)
+        validate_gradient_backend(request.get("backend", "fortran"), self.grad)
+        self.gradient_parameters = list(dict.fromkeys(target for spec in request["parameter_ranges"]
+                                                     for target in spec.get("targets", [spec["name"]])))
         self.case_weights = dict(request.get("case_weights", {}))
-        self.field_weights = dict(request.get("field_weights", {}))
-        self.loss_mode = request.get("loss_mode", DEFAULT_LOSS_MODE)
+        self.field_weights = normalize_named_weights(request.get("field_weights"), self.selected_fields, "field")
+        self.loss_weights = normalize_loss_weights(request.get("loss_weights"))
         self.aggregation_mode = request.get("aggregation_mode", DEFAULT_AGGREGATION_MODE)
-        self.time_window_aggregation_mode = request.get("time_window_aggregation_mode", self.aggregation_mode)
         self.aggregation_weights = normalize_aggregation_weights(
             request.get("aggregation_weights", DEFAULT_AGGREGATION_WEIGHTS)
-        )
-        self.time_window_aggregation_scope = str(
-            request.get("time_window_aggregation_scope", DEFAULT_TIME_WINDOW_AGGREGATION_SCOPE)
         )
         self.case_num_time_windows = {
             case_name: int(
@@ -140,14 +138,8 @@ class TuningScheduler:
             )
             for case_name in self.cases
         }
-        if self.loss_mode not in LOSS_MODE_NAMES:
-            raise RuntimeError(f"Unknown loss mode: {self.loss_mode}")
         if self.aggregation_mode not in AGGREGATION_MODE_NAMES:
             raise RuntimeError(f"Unknown aggregation mode: {self.aggregation_mode}")
-        if self.time_window_aggregation_mode not in AGGREGATION_MODE_NAMES:
-            raise RuntimeError(f"Unknown time window aggregation mode: {self.time_window_aggregation_mode}")
-        if self.time_window_aggregation_scope not in TIME_WINDOW_AGGREGATION_SCOPES:
-            raise RuntimeError(f"Unknown time window aggregation scope: {self.time_window_aggregation_scope}")
         invalid_window_cases = [
             case_name for case_name, count in self.case_num_time_windows.items()
             if count < 1
@@ -163,9 +155,8 @@ class TuningScheduler:
         self.aggregation_options = {
             "worst_quantile_fraction": WORST_QUANTILE_FRACTION,
             "quantile_weights": list(self.aggregation_weights),
-            "time_window_aggregation_scope": self.time_window_aggregation_scope,
         }
-        self.request["loss_mode"] = self.loss_mode
+        self.request["loss_weights"] = dict(self.loss_weights)
         self.request["config"] = self.config
         self.request["override"] = self.override
         self.request["aggregation_mode"] = self.aggregation_mode
@@ -186,9 +177,7 @@ class TuningScheduler:
         self.request["case_window_counts"] = dict(self.case_num_time_windows)
         self.request.pop("time_window_mode", None)
         self.request.pop("num_time_windows", None)
-        self.request["time_window_aggregation_mode"] = self.time_window_aggregation_mode
         self.request["aggregation_weights"] = list(self.aggregation_weights)
-        self.request["time_window_aggregation_scope"] = self.time_window_aggregation_scope
         self.request["loss_policy_version"] = self.loss_policy_version
         self.request["loss_policy_constants"] = dict(self.loss_policy_constants)
         self.request["aggregation_options"] = dict(self.aggregation_options)
@@ -235,7 +224,7 @@ class TuningScheduler:
         self.param_names: list[str] | None = None
         self.parameter_hard_bounds: dict[str, dict] | None = None
         self.default_params_row: list[float] | None = None
-        self.baseline_case_metrics: dict[str, dict[str, dict]] = {
+        self.baseline_case_results: dict[str, dict[str, dict]] = {
             "clubb_default": {},
             **({"override_defaults": {}} if self.override else {}),
         }
@@ -524,6 +513,11 @@ class TuningScheduler:
             "config": self.config,
             "override": self.override,
             "evaluate_baselines": evaluate_baselines,
+            "grad": self.grad,
+            "loss_weights": dict(self.loss_weights),
+            "field_weights": dict(self.field_weights),
+            "gradient_parameters": self.gradient_parameters,
+            "gradient_mode": self.request.get('gradient_mode', 'auto'),
         }
         process = self.ctx.Process(target=worker_main, args=(child_conn, payload))
         process.start()
@@ -640,23 +634,23 @@ class TuningScheduler:
             self.default_params_row = [float(value) for value in default_params[0]]
 
         for baseline_name, baseline_message in dict(message.get("baselines") or {}).items():
-            if baseline_name not in self.baseline_case_metrics:
+            if baseline_name not in self.baseline_case_results:
                 self.error_message = f"Worker for {worker.case_name} returned unknown baseline {baseline_name}"
                 worker.state = "failed"
                 return
             if not baseline_message.get("available", True):
-                self.baseline_case_metrics[baseline_name][worker.case_name] = {
+                self.baseline_case_results[baseline_name][worker.case_name] = {
                     "__baseline_unavailable__": str(
                         baseline_message.get("unavailable_reason")
                         or "CLUBB rejected this baseline parameter set"
                     )
                 }
                 continue
-            case_metrics = self._case_metrics_from_message(baseline_message, worker.case_name)
+            case_metrics = self._case_result_from_message(baseline_message, worker.case_name)
             if case_metrics is None:
                 worker.state = "failed"
                 return
-            self.baseline_case_metrics[baseline_name][worker.case_name] = case_metrics
+            self.baseline_case_results[baseline_name][worker.case_name] = case_metrics
 
         worker.state = "idle"
 
@@ -674,6 +668,7 @@ class TuningScheduler:
             metric_names=list(LOSS_METRIC_NAMES),
             case_configs=list(self.request.get("case_configs", [])),
             case_window_counts=dict(self.case_num_time_windows),
+            gradient_parameters=self.gradient_parameters if self.grad else [],
         )
 
     def _close_sample_history(self, *, suppress_errors: bool = False) -> None:
@@ -693,16 +688,31 @@ class TuningScheduler:
         if batch is None:
             return
 
-        case_metrics = self._case_metrics_from_message(message, case_name)
+        case_metrics = self._case_result_from_message(message, case_name)
         if case_metrics is None:
             return
 
-        batch["case_loss_metrics"][case_name] = case_metrics
+        if len(case_metrics['loss']) != len(batch['params_batch']):
+            self.error_message = f'Result candidate count for {case_name} did not match request'
+            return
+        if self.grad:
+            if message.get('gradient_parameters') != self.gradient_parameters:
+                self.error_message = f'Gradient parameter order for {case_name} did not match request'
+                return
+            gradients = message.get('gradient', {})
+            expected = (len(batch['params_batch']), len(self.gradient_parameters))
+            if message.get('gradient_target') != 'loss' or set(gradients) != {'loss'} or any(
+                np.asarray(values).shape != expected for values in gradients.values()
+            ):
+                self.error_message = f'Gradient shape for {case_name} did not match request'
+                return
+            batch.setdefault('case_gradients', {})[case_name] = gradients
+        batch["case_results"][case_name] = case_metrics
 
-        if all(case_name in batch["case_loss_metrics"] for case_name in self.cases):
+        if all(case_name in batch["case_results"] for case_name in self.cases):
             self._complete_batch(batch_id, batch)
 
-    def _case_metrics_from_message(self, message: dict, case_name: str) -> dict | None:
+    def _case_result_from_message(self, message: dict, case_name: str) -> dict | None:
         """Validate one case result and return its canonical metric structure."""
         field_names = list(message.get("field_names", []))
         if field_names != self.selected_fields:
@@ -719,208 +729,89 @@ class TuningScheduler:
             self.error_message = f"Result loss metric keys for {case_name} did not match expected names"
             return None
 
-        expected_window_count = self.case_num_time_windows.get(case_name, 1)
-        for metric_name in LOSS_METRIC_NAMES:
-            metric_matrix = metric_arrays.get(metric_name, [])
-            if len(metric_matrix) != expected_window_count:
-                self.error_message = f"Result {metric_name} shape for {case_name} did not match time-window count"
-                return None
-            if any(len(window_matrix) != len(self.selected_fields) for window_matrix in metric_matrix):
-                self.error_message = f"Result {metric_name} shape for {case_name} did not match selected fields"
-                return None
-
-        return {
-            field_name: {
-                metric_name: [
-                    [float(value) for value in metric_arrays[metric_name][window_idx][field_idx]]
-                    for window_idx in range(expected_window_count)
-                ]
-                for metric_name in LOSS_METRIC_NAMES
-            }
-            for field_idx, field_name in enumerate(self.selected_fields)
-        }
+        case_loss = np.asarray(message.get("case_loss", []), dtype=float)
+        field_loss = np.asarray(message.get("field_loss", []), dtype=float)
+        expected = (self.case_num_time_windows.get(case_name, 1), len(self.selected_fields), case_loss.size)
+        if (case_loss.ndim != 1 or not case_loss.size
+                or field_loss.shape != expected[1:]
+                or any(np.asarray(values).shape != expected for values in metric_arrays.values())
+                or not np.all(np.isfinite(case_loss)) or np.any(case_loss < 0)):
+            self.error_message = f"Result loss shapes or values for {case_name} did not match request"
+            return None
+        return {"metrics": metric_arrays, "loss": case_loss.tolist(), "field_loss": field_loss.tolist()}
 
     def _complete_batch(self, batch_id: int, batch: dict) -> None:
         active_count = int(batch["active_sample_count"])
         entries = []
         for col_idx in range(active_count):
             field_loss = {}
-            scaled_rmse_by_field = {}
             field_metrics = {}
             case_loss = {}
             case_loss_diagnostics = {}
-            scaled_rmse_case_sum = {}
-            smart_losses = []
-            smart_weights = []
-            all_window_losses = []
-            all_window_weights = []
-            scaled_rmse_sum = 0.0
             for case_name in self.cases:
-                case_window_count = self.case_num_time_windows.get(case_name, 1)
-                case_smart_losses = []
-                case_smart_weights = []
-                case_window_losses = []
-                case_window_weights = []
-                field_metrics[case_name] = {}
+                result = batch["case_results"][case_name]
+                case_loss[case_name] = float(result["loss"][col_idx])
+                case_loss_diagnostics[case_name] = {
+                    "aggregation": "rms_fields_and_windows",
+                    "loss_weights": dict(self.loss_weights),
+                    "loss": case_loss[case_name],
+                }
                 field_loss[case_name] = {}
-                scaled_rmse_by_field[case_name] = {}
-                for field_name in self.selected_fields:
-                    field_metric_values = batch["case_loss_metrics"][case_name][field_name]
-                    subwindows = []
-                    subwindow_losses = []
-                    subwindow_scaled_rmse_values = []
-                    for window_idx in range(case_window_count):
-                        subwindow_metrics = {
-                            "window_index": window_idx + 1,
-                        }
-                        for metric_name in LOSS_METRIC_NAMES:
-                            subwindow_metrics[metric_name] = float(field_metric_values[metric_name][window_idx][col_idx])
-                        subwindow_diagnostics = compute_field_loss_diagnostics(subwindow_metrics)
-                        subwindow_metrics.update(subwindow_diagnostics)
-                        subwindow_smart_loss = float(subwindow_metrics["per_field_losses"][self.loss_mode])
-                        subwindow_metrics["loss"] = subwindow_smart_loss
-                        subwindow_metrics["smart_loss"] = subwindow_smart_loss
-                        subwindow_metrics["loss_mode"] = self.loss_mode
-                        subwindow_metrics["loss_policy_version"] = self.loss_policy_version
-                        subwindows.append(subwindow_metrics)
-                        subwindow_losses.append(subwindow_smart_loss)
-                        subwindow_scaled_rmse_values.append(float(subwindow_metrics["scaled_rmse"]))
-
-                    subwindow_aggregation = aggregate_losses(
-                        subwindow_losses,
-                        None,
-                        self.time_window_aggregation_mode,
-                        self.aggregation_weights,
-                    )
-                    scaled_rmse_aggregation = aggregate_losses(
-                        subwindow_scaled_rmse_values,
-                        None,
-                        self.time_window_aggregation_mode,
-                        self.aggregation_weights,
-                    )
-                    scaled_rmse = float(scaled_rmse_aggregation["loss"])
-                    smart_loss = float(subwindow_aggregation["loss"])
-                    worst_window = max(subwindows, key=lambda item: float(item["loss"]))
-                    metrics = dict(worst_window)
-                    metrics.update(
-                        {
-                            "scaled_rmse": scaled_rmse,
-                            "scaled_rmse_aggregation": scaled_rmse_aggregation,
-                            "loss": smart_loss,
-                            "smart_loss": smart_loss,
-                            "num_time_windows": case_window_count,
-                            "time_window_aggregation_mode": self.time_window_aggregation_mode,
-                            "time_window_aggregation_scope": self.time_window_aggregation_scope,
-                            "time_window_aggregation": subwindow_aggregation,
-                            "representative_window_index": int(worst_window["window_index"]),
-                            "subwindows": subwindows,
-                        }
-                    )
-                    metrics["loss_mode"] = self.loss_mode
-                    metrics["loss_policy_version"] = self.loss_policy_version
-                    field_loss[case_name][field_name] = smart_loss
-                    field_metrics[case_name][field_name] = metrics
-                    scaled_rmse_by_field[case_name][field_name] = scaled_rmse
-                    field_weight = float(self.field_weights.get(field_name, 1.0))
-                    case_window_losses.extend(subwindow_losses)
-                    case_window_weights.extend([field_weight] * len(subwindow_losses))
-                case_weight = float(self.case_weights.get(case_name, 1.0))
-                for field_name, field_scaled_rmse in scaled_rmse_by_field[case_name].items():
-                    field_weight = float(self.field_weights.get(field_name, 1.0))
-                    combined_weight = case_weight * field_weight
-                    scaled_rmse_sum += combined_weight * field_scaled_rmse
-                    smart_loss = field_loss[case_name][field_name]
-                    case_smart_losses.append(smart_loss)
-                    case_smart_weights.append(field_weight)
-                    smart_losses.append(smart_loss)
-                    smart_weights.append(combined_weight)
-                if self.aggregation_mode == "quantile_weighted":
-                    # New policy: rank the individual time-window losses, not
-                    # already-aggregated field means.  ``overall`` pools these
-                    # case/field/window samples below; ``by_case`` first
-                    # computes this per-case objective and then averages cases.
-                    case_aggregation = aggregate_losses(
-                        case_window_losses,
-                        case_window_weights,
-                        "quantile_weighted",
-                        self.aggregation_weights,
-                    )
-                    all_window_losses.extend(case_window_losses)
-                    all_window_weights.extend([case_weight * weight for weight in case_window_weights])
-                else:
-                    case_aggregation = aggregate_losses(
-                        case_smart_losses,
-                        case_smart_weights,
-                        self.aggregation_mode,
-                    )
-                case_loss[case_name] = float(case_aggregation["loss"])
-                case_loss_diagnostics[case_name] = case_aggregation
-                scaled_rmse_case_sum[case_name] = float(sum(scaled_rmse_by_field[case_name].values()))
-
-            if self.aggregation_mode == "quantile_weighted":
-                if self.time_window_aggregation_scope == "overall":
-                    total_loss_diagnostics = aggregate_losses(
-                        all_window_losses,
-                        all_window_weights,
-                        "quantile_weighted",
-                        self.aggregation_weights,
-                    )
-                else:
-                    active_case_pairs = [
-                        (float(case_loss[case_name]), float(self.case_weights.get(case_name, 1.0)))
-                        for case_name in self.cases
-                        if float(self.case_weights.get(case_name, 1.0)) > 0.0
+                field_metrics[case_name] = {}
+                for field_idx, field_name in enumerate(self.selected_fields):
+                    subwindows = [
+                        {"window_index": window_idx + 1,
+                         **{name: float(result["metrics"][name][window_idx][field_idx][col_idx])
+                            for name in LOSS_METRIC_NAMES}}
+                        for window_idx in range(self.case_num_time_windows[case_name])
                     ]
-                    case_weight_sum = sum(weight for _loss, weight in active_case_pairs)
-                    case_mean = (
-                        sum(loss * weight for loss, weight in active_case_pairs) / case_weight_sum
-                        if case_weight_sum > 0.0 else 0.0
-                    )
-                    total_loss_diagnostics = {
-                        "aggregation_mode": "quantile_weighted",
-                        "time_window_aggregation_scope": "by_case",
-                        "quantile_weights": list(self.aggregation_weights),
-                        "active_item_count": len(active_case_pairs),
-                        "excluded_item_count": len(self.cases) - len(active_case_pairs),
-                        "weighted_mean": float(case_mean),
-                        "loss": float(case_mean),
+                    for window in subwindows:
+                        window["loss"] = window["rmse"]
+                    representative = max(subwindows, key=lambda item: item["rmse"])
+                    value = float(result["field_loss"][field_idx][col_idx])
+                    field_loss[case_name][field_name] = value
+                    field_metrics[case_name][field_name] = {
+                        **representative, "rmse": value, "loss": value,
+                        "num_time_windows": len(subwindows),
+                        "representative_window_index": representative["window_index"],
+                        "subwindows": subwindows,
                     }
-            else:
-                total_loss_diagnostics = aggregate_losses(
-                    smart_losses,
-                    smart_weights,
-                    self.aggregation_mode,
-                )
+            total_loss_diagnostics = aggregate_losses(
+                [case_loss[name] for name in self.cases],
+                [self.case_weights.get(name, 1.0) for name in self.cases],
+                self.aggregation_mode, self.aggregation_weights,
+            )
             total_loss = float(total_loss_diagnostics["loss"])
 
             entry = {
                 "sample_id": int(batch["sample_ids"][col_idx]),
                 "batch_id": int(batch_id),
                 "total_loss": float(total_loss),
-                "loss_mode": self.loss_mode,
+                "loss_weights": dict(self.loss_weights),
                 "aggregation_mode": self.aggregation_mode,
                 "case_window_counts": dict(self.case_num_time_windows),
                 "config": self.config,
                 "case_configs": list(self.request.get("case_configs", [])),
-                "time_window_aggregation_mode": self.time_window_aggregation_mode,
-                "time_window_aggregation_scope": self.time_window_aggregation_scope,
                 "aggregation_weights": list(self.aggregation_weights),
                 "loss_policy_version": self.loss_policy_version,
                 "loss_policy_constants": dict(self.loss_policy_constants),
                 "aggregation_options": dict(self.aggregation_options),
-                "scaled_rmse_sum": float(scaled_rmse_sum),
                 "selected_params": dict(batch["selected_params_by_sample"][col_idx]),
                 "all_params": dict(batch["all_params_by_sample"][col_idx]),
                 "case_loss": case_loss,
                 "case_loss_diagnostics": case_loss_diagnostics,
                 "total_loss_diagnostics": total_loss_diagnostics,
                 "field_loss": field_loss,
-                "scaled_rmse_case_sum": scaled_rmse_case_sum,
-                "scaled_rmse_by_field": scaled_rmse_by_field,
                 "field_metrics": field_metrics,
             }
             if not batch.get("baseline_name"):
                 entry.update(self._improvement_scores(total_loss))
+            if self.grad and not batch.get('baseline_name'):
+                entry['gradient_parameters'] = self.gradient_parameters
+                entry['gradient_target'] = 'loss'
+                entry['gradient'] = {
+                    case: {'loss': np.asarray(batch['case_gradients'][case]['loss'])[col_idx].tolist()}
+                    for case in self.cases}
             entries.append(entry)
 
         if batch.get("baseline_name"):
@@ -935,7 +826,7 @@ class TuningScheduler:
 
     def _finalize_baselines(self) -> None:
         """Aggregate the one-column initialization baselines like candidates."""
-        for baseline_name, case_metrics in self.baseline_case_metrics.items():
+        for baseline_name, case_metrics in self.baseline_case_results.items():
             missing = [case_name for case_name in self.cases if case_name not in case_metrics]
             if missing:
                 raise RuntimeError(
@@ -962,7 +853,7 @@ class TuningScheduler:
                     "sample_ids": [-1],
                     "selected_params_by_sample": [{}],
                     "all_params_by_sample": [{}],
-                    "case_loss_metrics": case_metrics,
+                    "case_results": case_metrics,
                 },
             )
             self.baselines[baseline_name]["available"] = True
@@ -973,7 +864,7 @@ class TuningScheduler:
         candidate_loss = float(candidate_loss)
         candidate_available = (
             math.isfinite(candidate_loss)
-            and candidate_loss < float(LOSS_POLICY_CONSTANTS["invalid_scaled_rmse_penalty"])
+            and candidate_loss < float(LOSS_POLICY_CONSTANTS["invalid_rmse_penalty"])
         )
         for baseline_name, output_name in (
             ("clubb_default", "improvement_vs_clubb_default_percent"),
@@ -1058,7 +949,7 @@ class TuningScheduler:
                 "params_batch": params_batch,
                 "selected_params_by_sample": [sample["selected_params"] for sample in samples],
                 "all_params_by_sample": [sample["all_params"] for sample in samples],
-                "case_loss_metrics": {},
+                "case_results": {},
             }
             for case_name in self.cases:
                 self.case_jobs.append({"batch_id": batch_id, "case_name": case_name})
@@ -1420,7 +1311,7 @@ class TuningScheduler:
                 {"batch_id": int(batch_id), "case_name": case_name}
                 for batch_id, batch in self.batches.items()
                 for case_name in self.cases
-                if case_name not in batch.get("case_loss_metrics", {})
+                if case_name not in batch.get("case_results", {})
             )
             self.samples_evaluated = int(payload.get("samples_evaluated", 0))
             self.completed_batches = int(payload.get("completed_batches", 0))
@@ -1495,13 +1386,11 @@ class TuningScheduler:
             "best_loss_history": list(self.best_loss_history),
             "total_samples": None if self.strategy is None else self.strategy.estimated_sample_count(),
             "selected_fields": list(self.selected_fields),
-            "loss_mode": self.loss_mode,
+            "loss_weights": dict(self.loss_weights),
             "aggregation_mode": self.aggregation_mode,
             "case_window_counts": dict(self.case_num_time_windows),
             "case_configs": list(self.request.get("case_configs", [])),
             "config": self.config,
-            "time_window_aggregation_mode": self.time_window_aggregation_mode,
-            "time_window_aggregation_scope": self.time_window_aggregation_scope,
             "aggregation_weights": list(self.aggregation_weights),
             "loss_policy_version": self.loss_policy_version,
             "loss_policy_constants": dict(self.loss_policy_constants),

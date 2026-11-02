@@ -33,8 +33,8 @@ def input_values():
         case_names=["bomex"], time_start_values=[10800], time_end_values=[11400],
         average_time_values=[600], altitude_min_values=[20], altitude_max_values=[2940],
         selected_fields=["cloud_frac"], min_values=[0.2], max_values=[0.8],
-        batch_size=2, max_workers=1, strategy_mode="random", loss_mode="shape_first",
-        aggregation_mode="quantile_weighted", aggregation_scope="overall",
+        batch_size=2, max_workers=1, strategy_mode="random", loss_weights={"mean": 1., "std": 1., "corr": 1.},
+        aggregation_mode="quantile_weighted",
         aggregation_weight_1=0.1, aggregation_weight_2=0.4,
         aggregation_weight_3=0.4, aggregation_weight_4=0.1,
         random_max_samples=4, resolve_spacing=0.1,
@@ -65,7 +65,7 @@ def test_start_callback_sends_the_selected_backend(monkeypatch, implementation):
         member_values=["C8"], range_row_order=[0], case_data={}, tunable_configs=["default"],
         tunable_names=["C8"], active_job={}, workspace_selection={"mode": "new"},
         displayed_status={}, run_implementation=implementation,
-        jax_profile="cpu", jax_gpu="", jax_xla_prealloc=False,
+        jax_profile="cpu", jax_gpu="", jax_xla_prealloc=False, grad_values=[], gradient_mode="auto",
     )
     response = registry.functions["start_tuning"](**values)
     assert response[0] is not no_update
@@ -224,3 +224,22 @@ def test_result_poll_uses_broker_terminal_state(monkeypatch):
     )
     assert runs["window"]["state"] == "success"
     assert disabled is True
+
+
+def test_workspace_hydration_keeps_output_count_on_empty_and_error_paths(monkeypatch):
+    """Removing the window-policy control must also shorten early-return tuples."""
+    from dash import Dash
+    app = Dash(__name__)
+    callbacks_runs.register_run_callbacks(app)
+    entry = next(item for item in app.callback_map.values()
+                 if item['callback'].__wrapped__.__name__ == 'load_selected_workspace')
+    load = entry['callback'].__wrapped__
+    expected = len(entry['output'])
+    assert len(load({}, {}, {})) == expected
+    assert len(load({'mode': 'new'}, {}, {})) == expected
+    def unavailable(*args, **kwargs):
+        raise RuntimeError('Unavailable test workspace')
+    monkeypatch.setattr(broker_client, 'perform_action', unavailable)
+    result = load({'workspace_id': 'test', 'revision_id': 'original'}, {}, {})
+    assert len(result) == expected
+    assert 'Unavailable test workspace' in result[37]

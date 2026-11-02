@@ -53,7 +53,7 @@ Options:
   -info[=json]          Inspect hardware and runtime readiness without setup
   -module=NAME         Entry module: CLUBB standalone, CLUBB driver test,
                         tuner.tune_clubb,
-                        or clubb_jax.src.clubb_standalone_loss
+                        clubb_jax.src.clubb_standalone_loss, or dash_app.workers
   -launcher_help        Show this help
 
 Environment:
@@ -134,6 +134,7 @@ def parse_launcher_args(argv: Sequence[str]) -> tuple[dict[str, object], list[st
             if values["module"] not in {
                 "clubb_jax.src.clubb_standalone", "clubb_jax.src.clubb_driver_test",
                 "tuner.tune_clubb", "clubb_jax.src.clubb_standalone_loss",
+                "dash_app.workers",
             }:
                 fail("Unsupported JAX entry module")
         elif token.startswith("-options="):
@@ -343,7 +344,7 @@ def runtime_configuration(
         "CUDA_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
         "CLUBB_JAX_ACCELERATOR", "CLUBB_JAX_PRECISION", "CLUBB_JAX_VENV",
         "CLUBB_JAX_TOOLS_DIR", "XLA_PYTHON_CLIENT_PREALLOCATE", "JAX_PLATFORMS",
-        "JAX_COMPILATION_CACHE_DIR", "CLUBB_JAX_TRACE",
+        "JAX_COMPILATION_CACHE_DIR", "CLUBB_JAX_TRACE", "XLA_FLAGS",
     )
     return {
         "profile": profile, "accelerator": accelerator, "precision": precision,

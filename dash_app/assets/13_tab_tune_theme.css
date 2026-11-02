@@ -145,32 +145,6 @@ body.tune-ui-dragging * {
   border-radius: 7px;
 }
 
-/* Match the compile tab's moving green/red rebuild stripes.  The signal is
- * deliberately reserved for an active Tune revision outside the workspace
- * currently shown in this tab, so it is an attention cue rather than a
- * duplicate state indicator for the selected run. */
-@keyframes tune-workspace-active-stripes {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 67.88225px 67.88225px;
-  }
-}
-
-#app-root .tune-workspace-change-active {
-  background-image: repeating-linear-gradient(
-    135deg,
-    rgba(22, 163, 74, 0.78) 0,
-    rgba(22, 163, 74, 0.78) 12px,
-    rgba(220, 38, 38, 0.78) 12px,
-    rgba(220, 38, 38, 0.78) 24px
-  ) !important;
-  background-size: 67.88225px 67.88225px;
-  border: 1px solid #facc15 !important;
-  animation: tune-workspace-active-stripes 1400ms linear infinite;
-}
-
 #app-root.theme-dark .tune-workspace-controls {
   background: rgba(30, 41, 59, 0.42);
   border-radius: 8px;
@@ -189,25 +163,6 @@ body.tune-ui-dragging * {
 #app-root.theme-light .tune-case-config-row {
   background: #f8fafc;
   border-color: #cbd5e1 !important;
-}
-
-#app-root .tune-range-row .dash-dropdown .Select-input > input,
-#app-root .tune-case-config-row .dash-dropdown .Select-input > input {
-  caret-color: transparent;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-#app-root .tune-range-row .dash-dropdown .Select-input > input:focus,
-#app-root .tune-case-config-row .dash-dropdown .Select-input > input:focus {
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
-  background: transparent !important;
 }
 
 #app-root .tune-range-row .dash-dropdown .Select--single > .Select-control .Select-value,

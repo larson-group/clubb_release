@@ -647,23 +647,6 @@ body.plots-ui-dragging * {
   border-color: #b45309;
 }
 
-#app-root .plots-card .dash-dropdown .Select-input > input {
-  caret-color: transparent;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-#app-root .plots-card .dash-dropdown .Select-input > input:focus {
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
-  background: transparent !important;
-}
-
 #app-root .plots-card .dash-dropdown .Select--single > .Select-control .Select-value,
 #app-root .plots-card .dash-dropdown .Select-placeholder {
   padding-left: 10px;

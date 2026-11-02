@@ -1,7 +1,8 @@
 """Broker-owned, bounded queues for transient native Plot requests.
 
-Only registered Plot callbacks can run here. Workers are warm spawned processes,
-so NetCDF stays out of HTTP threads and unchanged extraction caches survive.
+Registered Plot callbacks and the gradient-response calculation run here.
+Workers are warm spawned processes, so NetCDF stays out of HTTP threads and
+unchanged extraction caches survive.
 Each browser/card has one newest request; superseded queued work is discarded.
 These replaceable UI requests deliberately do not create scientific JobStore or
 artifact records. A broker restart returns "missing" and the browser resubmits.
@@ -11,14 +12,18 @@ from concurrent.futures import ProcessPoolExecutor
 import atexit
 import json
 import multiprocessing
+from pathlib import Path
+import shutil
+import tempfile
 import threading
 import time
 
 from dash._callback_context import context_value
 from dash._utils import AttributeDict, to_json
 
+GRADIENT_TASKS = frozenset({"gradient_matrix", "gradient_matrix_response", "gradient_matrix_response_gradients"})
 ALLOWED_TASKS = frozenset({"catalog", "case", "params", "profile", "budget", "custom",
-                           "pdf_contour", "subcolumn", "timeheight", "timeseries"})
+                           "pdf_contour", "subcolumn", "timeheight", "timeseries"}) | GRADIENT_TASKS
 _HANDLERS = {}
 
 
@@ -60,20 +65,22 @@ def execute(request):
 
 
 class PlotTasks:
-    """Two independent lanes: metadata and figures; one running job per lane."""
+    """Serialize metadata, figure and gradient work in broker-owned runtime pools."""
     def __init__(self, executor_factory=None, max_scopes=128, max_bytes=64 * 1024 * 1024, ttl=120):
         self.lock = threading.RLock()
         self.records = OrderedDict()
         self.pending = OrderedDict()
         self.running = {}
         self.pools = {}
+        self.progress_dirs = set()
         self.closed = False
         self.max_scopes, self.max_bytes, self.ttl = max_scopes, max_bytes, ttl
-        self.executor_factory = executor_factory or (lambda: ProcessPoolExecutor(
-            max_workers=1, mp_context=multiprocessing.get_context("spawn")))
+        self.executor_factory = executor_factory
 
     @staticmethod
     def lane(request):
+        if request["task"] in GRADIENT_TASKS:
+            return "gradient_matrix"
         return "metadata" if request["task"] in {"catalog", "case", "params"} else "figures"
 
     def _prune(self):
@@ -131,17 +138,40 @@ class PlotTasks:
             if lane in self.running:
                 continue
             self.pending.pop(scope)
-            if lane not in self.pools:
-                self.pools[lane] = self.executor_factory()
+            gradient = request['task'] in GRADIENT_TASKS
+            pool_key = ('gradient_matrix' if request['task'] == 'gradient_matrix'
+                        else 'gradient_matrix_response') if gradient else lane
+            if pool_key not in self.pools:
+                if self.executor_factory is not None:
+                    self.pools[pool_key] = self.executor_factory()
+                elif gradient:
+                    from dash_app.workers import RuntimeExecutor
+                    self.pools[pool_key] = RuntimeExecutor('jax')
+                else:
+                    self.pools[pool_key] = ProcessPoolExecutor(
+                        max_workers=1, mp_context=multiprocessing.get_context('spawn'))
+            record = self.records[scope]
+            if gradient:
+                progress_dir = tempfile.mkdtemp(prefix='clubb-gradient-progress-')
+                self.progress_dirs.add(progress_dir)
+                record['_progress_dir'] = progress_dir
+                request = dict(request, _progress_file=str(Path(progress_dir) / 'progress.json'))
             try:
-                future = self.pools[lane].submit(execute, request)
+                if gradient:
+                    from dash_app.services.gradient_response import execute_gradient_request
+                    function = execute_gradient_request
+                else:
+                    function = execute
+                future = self.pools[pool_key].submit(function, request)
             except RuntimeError as exc:
                 self.records[scope].update(state="error", error=str(exc))
+                if record.get('_progress_dir'):
+                    self.progress_dirs.discard(record['_progress_dir'])
+                    shutil.rmtree(record['_progress_dir'])
                 # A crashed process pool is replaceable on the next request.
-                self.pools.pop(lane).shutdown(wait=False, cancel_futures=True)
+                self.pools.pop(pool_key).shutdown(wait=False, cancel_futures=True)
                 continue
             self.running[lane] = future
-            record = self.records[scope]
             record["state"] = "running"
             future.add_done_callback(lambda f, s=scope, r=record, l=lane: self._done(s, r, l, f))
 
@@ -157,7 +187,13 @@ class PlotTasks:
                     record.update(state="ready", result=result, result_bytes=result_bytes)
                 except Exception as exc:
                     record.update(state="error", error=str(exc))
+                    if record.get('_progress_dir'):
+                        from tuner.status import read_json_or_default
+                        record['progress'] = read_json_or_default(Path(record['_progress_dir']) / 'progress.json', {})
                 record["touched"] = time.monotonic()
+            if record.get('_progress_dir') in self.progress_dirs:
+                self.progress_dirs.remove(record['_progress_dir'])
+                shutil.rmtree(record['_progress_dir'])
             self._prune()
             self._schedule()
 
@@ -171,7 +207,10 @@ class PlotTasks:
                 return {"state": "superseded", "revision": record["revision"]}
             record["touched"] = time.monotonic()
             self.records.move_to_end(scope)
-            response = {k: v for k, v in record.items() if k not in {"touched", "result", "result_bytes"}}
+            response = {k: v for k, v in record.items() if k not in {"touched", "result", "result_bytes", "_progress_dir"}}
+            if record.get('_progress_dir') and record['state'] == 'running':
+                from tuner.status import read_json_or_default
+                response['progress'] = read_json_or_default(Path(record['_progress_dir']) / 'progress.json', {})
             if "result" in record:
                 response["result"] = json.loads(record["result"])
             return response
@@ -199,6 +238,10 @@ class PlotTasks:
                 terminate()
             else:
                 pool.shutdown(wait=True, cancel_futures=True)
+        with self.lock:
+            for directory in self.progress_dirs:
+                shutil.rmtree(directory)
+            self.progress_dirs.clear()
 
 
 _MANAGER = None

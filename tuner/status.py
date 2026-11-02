@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from utilities.loss_metrics import loss_result_for_json
 from datetime import datetime, timezone
 import fcntl
 import json
@@ -186,18 +187,12 @@ def summarize_for_status(best_results: list[dict]) -> list[dict]:
             "rank": idx,
             "total_loss": float(result["total_loss"]),
             "params": dict(result["selected_params"]),
-            "loss_mode": result.get("loss_mode"),
+            "loss_weights": result.get("loss_weights"),
             "aggregation_mode": result.get("aggregation_mode"),
             "case_window_counts": dict(result.get("case_window_counts", {})),
-            "time_window_aggregation_mode": result.get("time_window_aggregation_mode"),
-            "time_window_aggregation_scope": result.get("time_window_aggregation_scope"),
             "aggregation_weights": list(result.get("aggregation_weights", [])),
             "loss_policy_version": result.get("loss_policy_version"),
         }
-        if "scaled_rmse_sum" in result:
-            entry["scaled_rmse_sum"] = float(result["scaled_rmse_sum"])
-        elif "simple_rms_sum" in result:
-            entry["scaled_rmse_sum"] = float(result["simple_rms_sum"])
         if "case_loss" in result:
             entry["case_loss"] = dict(result["case_loss"])
         for key in (
@@ -246,12 +241,10 @@ def write_status(
         "best_loss_history": [dict(item) for item in list(metrics.get("best_loss_history", []))[-300:]],
         "selected_fields": [str(name) for name in list(metrics.get("selected_fields", []))],
         "config": metrics.get("config"),
-        "loss_mode": metrics.get("loss_mode"),
+        "loss_weights": metrics.get("loss_weights"),
         "aggregation_mode": metrics.get("aggregation_mode"),
         "case_window_counts": dict(metrics.get("case_window_counts", {})),
         "case_configs": list(metrics.get("case_configs", [])),
-        "time_window_aggregation_mode": metrics.get("time_window_aggregation_mode"),
-        "time_window_aggregation_scope": metrics.get("time_window_aggregation_scope"),
         "aggregation_weights": list(metrics.get("aggregation_weights", [])),
         "loss_policy_version": metrics.get("loss_policy_version"),
         "loss_policy_constants": dict(metrics.get("loss_policy_constants", {})),
@@ -259,7 +252,7 @@ def write_status(
         "control_stop_reason": metrics.get("control_stop_reason"),
         "baselines": dict(metrics.get("baselines", {})),
     }
-    atomic_write_json(status_path, payload)
+    atomic_write_json(status_path, loss_result_for_json(payload))
 
 
 def write_results(
@@ -287,10 +280,8 @@ def write_results(
         "config": None if request is None else request.get("config"),
         "case_configs": [] if request is None else list(request.get("case_configs", [])),
         "case_window_counts": {} if request is None else dict(request.get("case_window_counts", {})),
-        "loss_mode": None if request is None else request.get("loss_mode"),
+        "loss_weights": None if request is None else request.get("loss_weights"),
         "aggregation_mode": None if request is None else request.get("aggregation_mode"),
-        "time_window_aggregation_mode": None if request is None else request.get("time_window_aggregation_mode"),
-        "time_window_aggregation_scope": None if request is None else request.get("time_window_aggregation_scope"),
         "aggregation_weights": [] if request is None else list(request.get("aggregation_weights", [])),
         "loss_policy_version": None if request is None else request.get("loss_policy_version"),
         "loss_policy_constants": {} if request is None else dict(request.get("loss_policy_constants", {})),
@@ -311,17 +302,14 @@ def write_results(
             {
                 "rank": idx,
                 "total_loss": float(result["total_loss"]),
-                "loss_mode": result.get("loss_mode"),
+                "loss_weights": result.get("loss_weights"),
                 "aggregation_mode": result.get("aggregation_mode"),
                 "case_window_counts": dict(result.get("case_window_counts", {})),
                 "case_configs": list(result.get("case_configs", [])),
-                "time_window_aggregation_mode": result.get("time_window_aggregation_mode"),
-                "time_window_aggregation_scope": result.get("time_window_aggregation_scope"),
                 "aggregation_weights": list(result.get("aggregation_weights", [])),
                 "loss_policy_version": result.get("loss_policy_version"),
                 "loss_policy_constants": dict(result.get("loss_policy_constants", {})),
                 "aggregation_options": dict(result.get("aggregation_options", {})),
-                "scaled_rmse_sum": float(result.get("scaled_rmse_sum", result.get("simple_rms_sum", result["total_loss"]))),
                 "selected_params": dict(result["selected_params"]),
                 "all_params": dict(result["all_params"]),
                 "sample_id": result.get("sample_id"),
@@ -336,16 +324,6 @@ def write_results(
                     case_name: dict(case_fields)
                     for case_name, case_fields in result.get("field_loss", {}).items()
                 },
-                "scaled_rmse_case_sum": dict(
-                    result.get("scaled_rmse_case_sum", result.get("simple_rms_case_sum", {}))
-                ),
-                "scaled_rmse_by_field": {
-                    case_name: dict(case_fields)
-                    for case_name, case_fields in result.get(
-                        "scaled_rmse_by_field",
-                        result.get("simple_rms_by_field", {}),
-                    ).items()
-                },
                 "field_metrics": {
                     case_name: {
                         field_name: dict(metrics)
@@ -353,6 +331,9 @@ def write_results(
                     }
                     for case_name, case_fields in result.get("field_metrics", {}).items()
                 },
+                **({"gradient": result["gradient"],
+                    "gradient_parameters": list(result["gradient_parameters"]),
+                    "gradient_target": "loss"} if "gradient" in result else {}),
                 **{
                     key: result[key]
                     for key in (
@@ -368,19 +349,13 @@ def write_results(
             _lightweight_case_result(case_name, result, idx)
             for idx, result in enumerate(case_results[:RESULTS_FILE_LIMIT], start=1)
         ]
-    atomic_write_json(results_path, payload)
+    atomic_write_json(results_path, loss_result_for_json(payload))
 
 
 def _lightweight_case_result(case_name: str, result: dict, rank: int) -> dict:
     """Return a compact per-case top-result row for display-oriented uses."""
     raw_case_loss = result.get("case_loss", {})
     case_loss_value = raw_case_loss.get(case_name, result["total_loss"]) if isinstance(raw_case_loss, dict) else raw_case_loss
-    raw_scaled_rmse_case_sum = result.get("scaled_rmse_case_sum", result.get("simple_rms_case_sum", {}))
-    scaled_rmse_case_value = (
-        raw_scaled_rmse_case_sum.get(case_name, 0.0)
-        if isinstance(raw_scaled_rmse_case_sum, dict)
-        else raw_scaled_rmse_case_sum
-    )
     entry = {
         "rank": int(rank),
         "case_name": str(case_name),
@@ -388,15 +363,11 @@ def _lightweight_case_result(case_name: str, result: dict, rank: int) -> dict:
         "batch_id": result.get("batch_id"),
         "total_loss": float(result["total_loss"]),
         "case_loss": float(case_loss_value),
-        "scaled_rmse_sum": float(result.get("scaled_rmse_sum", result.get("simple_rms_sum", result["total_loss"]))),
-        "scaled_rmse_case_sum": float(scaled_rmse_case_value),
         "selected_params": dict(result.get("selected_params", {})),
         "all_params": dict(result.get("all_params", {})),
-        "loss_mode": result.get("loss_mode"),
+        "loss_weights": result.get("loss_weights"),
         "aggregation_mode": result.get("aggregation_mode"),
         "case_window_counts": dict(result.get("case_window_counts", {})),
-        "time_window_aggregation_mode": result.get("time_window_aggregation_mode"),
-        "time_window_aggregation_scope": result.get("time_window_aggregation_scope"),
         "aggregation_weights": list(result.get("aggregation_weights", [])),
         "loss_policy_version": result.get("loss_policy_version"),
     }

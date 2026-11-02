@@ -16,9 +16,10 @@
 #
 # This file is a Jenkins-friendly test for that contract.  It intentionally
 # fails loudly if history is missing, chunks are malformed, metadata does not
-# match across chunks, sample IDs are incomplete, numeric arrays contain NaNs or
+# match across chunks, sample IDs are incomplete, required losses contain NaNs, any metrics contain
 # infinities, or the observation axis does not cover every expected
-# case/field/window combination exactly once.
+# case/field/window combination exactly once. NaN correlation/std ratio mark
+# undefined diagnostics and do not invalidate an otherwise finite case loss.
 #
 # When the input path is a single job directory or one .npz file, only that
 # history is validated.  When the input path is a parent output directory, the
@@ -47,7 +48,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from tuner.sample_history import CHUNK_PREFIX, SAMPLE_HISTORY_DIR, sample_history_paths  # noqa: E402
+from utilities.loss_metrics import loss_metric_values_valid
+from tuner.sample_history import CHUNK_PREFIX, SAMPLE_HISTORY_DIR, SCHEMA_VERSION, sample_history_paths  # noqa: E402
 
 
 METADATA_ARRAYS = (
@@ -66,11 +68,12 @@ METADATA_ARRAYS = (
 SAMPLE_ARRAYS = (
     "all_params",
     "loss_metrics",
+    "case_loss",
     "sample_id",
     "batch_id",
 )
 REQUIRED_ARRAYS = METADATA_ARRAYS + SAMPLE_ARRAYS
-EXPECTED_SCHEMA_VERSION = "sample_history_observation_v1"
+EXPECTED_SCHEMA_VERSION = SCHEMA_VERSION
 
 
 def history_paths(path: Path) -> list[Path]:
@@ -174,6 +177,7 @@ def load_history(path: Path) -> dict:
     }
     history["all_params"] = np.concatenate([chunk["all_params"] for chunk in chunks], axis=0)
     history["loss_metrics"] = np.concatenate([chunk["loss_metrics"] for chunk in chunks], axis=0)
+    history["case_loss"] = np.concatenate([chunk["case_loss"] for chunk in chunks], axis=0)
     history["sample_id"] = np.concatenate([chunk["sample_id"] for chunk in chunks], axis=0)
     history["batch_id"] = np.concatenate([chunk["batch_id"] for chunk in chunks], axis=0)
     history["chunk_paths"] = paths
@@ -229,8 +233,14 @@ def check_history(history: dict, *, min_samples: int = 1, require_param_variatio
         failures.append("sample_id contains duplicates")
     if not np.all(np.isfinite(all_params)):
         failures.append("all_params contains non-finite values")
-    if not np.all(np.isfinite(loss_metrics)):
-        failures.append("loss_metrics contains non-finite values")
+    if np.asarray(history['case_loss']).shape != (sample_count, len(history['case_names'])):
+        failures.append('case_loss shape does not match sample/case axes')
+    if not np.all(np.isfinite(history['case_loss'])):
+        failures.append('case_loss contains non-finite values')
+    if loss_metrics.shape == (sample_count, expected_obs_count, expected_metric_count):
+        for index, name in enumerate(history['metric_names']):
+            if not np.all(loss_metric_values_valid(str(name), loss_metrics[..., index])):
+                failures.append(f'loss_metrics contains invalid {name} values')
     if not np.array_equal(np.sort(sample_id), np.arange(sample_count)):
         failures.append("sample_id values are not exactly 0..sample_count-1")
     if not np.all(batch_id >= 0):
@@ -400,7 +410,7 @@ def print_check_descriptions(*, min_samples: int, require_param_variation: bool)
     print("  - metadata arrays match exactly across chunks")
     print("  - schema version matches the current observation-axis format")
     print("  - sample IDs are unique and cover 0..sample_count-1")
-    print("  - parameter and loss arrays have the expected shapes and finite values")
+    print("  - parameter/loss arrays have valid shapes and values; undefined shape diagnostics may be NaN")
     print("  - observation metadata covers every case/field/window exactly once")
     print(f"  - at least {int(min_samples)} sample(s) are present")
     if require_param_variation:
@@ -505,8 +515,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "-metric",
-        default="scaled_rmse",
-        help="Metric to analyze, or 'all'. Default: scaled_rmse.",
+        default="rmse",
+        help="Metric to analyze, or 'all'. Default: rmse.",
     )
     parser.add_argument("-modes", type=int, default=3, help="Number of SVD modes to print. Default: 3.")
     parser.add_argument("-top", type=int, default=5, help="Top observations/params per mode. Default: 5.")

@@ -22,7 +22,7 @@ PLOT_HELP = {
                 "bullets": (
                     "Range mode averages all selected CLUBB records; point mode displays the record associated with the playback time.",
                     "Single-column mode uses the chosen CLUBB column. Overplot mode draws every enabled column rather than averaging them.",
-                    "When a benchmark error is shown, it is a scaled RMSE over overlapping plotted heights. The scale is the benchmark profile range, with protective floors for cloud fraction and mean cloud water.",
+                    "When a benchmark error is shown, it is a normalized RMSE over overlapping plotted heights. The scale is the benchmark profile standard deviation, or 1 for a flat profile.",
                 ),
             },
             {

@@ -1,17 +1,6 @@
 import numpy as np
 
-from utilities.loss_metrics import calculate_scaled_rmse
-
-
-def _normalize_term(var_name, benchmark_values):
-    norm = float(np.max(benchmark_values) - np.min(benchmark_values))
-    if var_name == "cloud_frac":
-        return max(0.01, norm), None
-    if var_name == "rcm":
-        return max(1.0e-6, norm), None
-    if abs(norm) < np.finfo(float).eps:
-        return None, f"{var_name} benchmark profile is flat over the selected height range"
-    return norm, None
+from utilities.loss_metrics import calculate_rmse
 
 
 def _prepare_interp_profile(z_values, profile):
@@ -55,9 +44,5 @@ def compute_profile_loss(var_name, clubb_profile, clubb_z, benchmark_profile, be
     clubb_values = clubb_profile_arr[selected]
     benchmark_values = np.interp(target_z, benchmark_z_arr, benchmark_profile_arr)
 
-    norm_term, norm_error = _normalize_term(var_name, benchmark_values)
-    if norm_error is not None:
-        return None, norm_error
-
-    loss = calculate_scaled_rmse(clubb_values, benchmark_values, norm=norm_term)
+    loss = calculate_rmse(clubb_values, benchmark_values)
     return loss, None
