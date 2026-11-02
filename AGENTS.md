@@ -39,6 +39,7 @@ requirements; selecting a child does not automatically load its parent.
 | **Finalize a Branch for Merge**: audit all branch changes, confirm current validation, stop for substantive unaccepted issues, then commit, push and create/update a draft PR. | [Finalization](.agents/skills/clubb-finalization/SKILL.md) |
 | **Add or Review Pytests**: focused checks, test placement and review status, test pruning, or pytest CI coverage. | [Pytest workflow](.agents/skills/clubb-pytests/SKILL.md) |
 | **Learn From a Session**: review recent corrections/decisions and improve their AGENTS, skill, shortcut or documentation owner. | [Session retrospective](.agents/skills/clubb-session-retrospective/SKILL.md) |
+| **Track Findings for Later**: log a verified out-of-scope issue instead of fixing it now, list the backlog, or work or remove an item. | [Backlog](.agents/skills/backlog/SKILL.md) |
 | **Work Through CLUBB Dash**: connect/use/open/control Dash; compile/run, show profiles/contours/plots/console, tune, navigate pages, or create/update/view an investigation report. | [Dash workflow](.agents/skills/clubb-dash/SKILL.md) |
 
 ## Repository conventions

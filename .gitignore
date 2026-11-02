@@ -29,6 +29,8 @@ run_scripts/tmp_dup_params.in
 
 .clubb-jax-tools
 .clubb-python-tools/
+
+.agents/skills/backlog/BACKLOG.md
 run_scripts/clubb_params_multi_col.json
 
 /input/*.case.json
