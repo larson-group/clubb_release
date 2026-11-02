@@ -137,7 +137,7 @@ subroutine f2py_calc_derived_params(ngrdcol, grid_type, deltaz, &
   real(core_rknd), dimension(ngrdcol), intent(in) :: deltaz
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   logical, intent(in) :: l_prescribed_avg_deltaz
-  real(core_rknd), intent(out) :: lmin, mixt_frac_max_mag
+  real(core_rknd), dimension(ngrdcol), intent(out) :: lmin, mixt_frac_max_mag
 
   lmin = 0.0_core_rknd
   mixt_frac_max_mag = 0.0_core_rknd

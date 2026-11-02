@@ -189,10 +189,12 @@ module mixing_length
       ddzt_umvm_sqd,               & ! Squared vertical shear of horizontal wind [s^-2]
       brunt_vaisala_freq_sqd_smth    ! Smoothed Brunt-Vaisala frequency squared [s^-2]
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      lmin ! Minimum mixing length [m]
+
     real( kind = core_rknd ), intent(in) :: &
-      lmin,      & ! Minimum mixing length [m]
-      ufmin,     & ! Minimum velocity scale [m/s]
-      tau_const    ! Constant eddy dissipation time scale [s]
+      ufmin, & ! Minimum velocity scale [m/s]
+      tau_const ! Constant eddy dissipation time scale [s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params   ! Tunable CLUBB parameters
@@ -762,8 +764,8 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       Lscale_mu_entrain      ! Fractional entrainment rate per unit altitude [1/m]
 
-    real( kind = core_rknd ), intent(in) :: &
-      lmin    ! CLUBB tunable parameter lmin
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      lmin ! CLUBB tunable parameter lmin
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
@@ -1572,12 +1574,12 @@ module mixing_length
           ! Within a host model, increase mixing length in 500 m layer above *ground*
           lminh = max( zero_threshold, &
                        Lscale_sfclyr_depth - ( gr%zt(i,k) - gr%zm(i,gr%k_lb_zm) ) ) &
-                  * lmin * invrs_Lscale_sfclyr_depth
+                  * lmin(i) * invrs_Lscale_sfclyr_depth
         else
 
           ! In standalone mode, increase mixing length in 500 m layer above *mean sea level*
           lminh = max( zero_threshold, Lscale_sfclyr_depth - gr%zt(i,k) ) &
-                  * lmin * invrs_Lscale_sfclyr_depth
+                  * lmin(i) * invrs_Lscale_sfclyr_depth
         end if
 
         Lscale_up(i,k)    = max( lminh, Lscale_up(i,k) )
@@ -1743,7 +1745,7 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       Lscale_max ! Per-column cap on combined mixing length [m]
 
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       lmin ! Surface value of the height-dependent length floor [m]
 
     type (pdf_parameter), intent(in) :: &
@@ -2903,8 +2905,8 @@ module mixing_length
       Lscale_pdf_launch_frac,    & ! PDF departure retained in launch properties [-]
       Lscale_up_weight           ! Upward weight in directional geometric mixing [-]
 
-    real( kind = core_rknd ), intent(in) :: &
-      lmin   ! Surface minimum mixing length [m]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      lmin ! Surface minimum mixing length [m]
 
     !----------------------- Input/Output Variables ------------------------
     type(err_info_type), intent(inout) :: &
@@ -3410,10 +3412,10 @@ module mixing_length
         ! The minimum length decays linearly over the lowest 500 m.
         if ( l_implemented ) then
           surface_floor = ( surface_layer_depth - ( gr%zt(i,k) - gr%zm(i,gr%k_lb_zm) ) ) &
-                          * lmin * invs_sfclyr_depth
+                          * lmin(i) * invs_sfclyr_depth
         else
           surface_floor = ( surface_layer_depth - gr%zt(i,k) ) &
-                          * lmin * invs_sfclyr_depth
+                          * lmin(i) * invs_sfclyr_depth
         end if
 
         ! Apply the same surface floor before combining the directional lengths.

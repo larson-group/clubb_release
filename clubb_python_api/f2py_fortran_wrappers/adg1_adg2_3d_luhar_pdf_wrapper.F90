@@ -48,7 +48,7 @@ subroutine f2py_adg1_w_closure(nz, ngrdcol, wm, wp2, skw, sigma_sqd_w, sqrt_wp2,
 
   integer, intent(in) :: nz, ngrdcol
   real(core_rknd), dimension(ngrdcol, nz), intent(in) :: wm, wp2, skw, sigma_sqd_w, sqrt_wp2
-  real(core_rknd), intent(in) :: mixt_frac_max_mag
+  real(core_rknd), dimension(ngrdcol), intent(in) :: mixt_frac_max_mag
   real(core_rknd), dimension(ngrdcol, nz), intent(out) :: &
     w_1, w_2, w_1_n, w_2_n, varnce_w_1, varnce_w_2, mixt_frac
 
@@ -111,7 +111,7 @@ subroutine f2py_adg1_pdf_driver(nz, ngrdcol, sclr_dim, sclr_dim_transport, sclr_
   real(core_rknd), dimension(ngrdcol, nz), intent(in) :: &
     wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, sigma_sqd_w
   real(core_rknd), dimension(ngrdcol), intent(in) :: beta
-  real(core_rknd), intent(in) :: mixt_frac_max_mag
+  real(core_rknd), dimension(ngrdcol), intent(in) :: mixt_frac_max_mag
   real(core_rknd), dimension(ngrdcol, nz, sclr_dim_transport), intent(in) :: sclrm, sclrp2, wpsclrp
   real(core_rknd), dimension(ngrdcol, nz), intent(out) :: &
     w_1, w_2, rt_1, rt_2, thl_1, thl_2, u_1, u_2, v_1, v_2, &

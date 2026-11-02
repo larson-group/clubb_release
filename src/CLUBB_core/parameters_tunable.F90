@@ -768,9 +768,9 @@ module parameters_tunable
     type(nu_vertical_res_dep), intent(inout) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    real( kind = core_rknd ), intent(inout) :: &
-      mixt_frac_max_mag, &  ! Maximum allowable mag. of mixt_frac   [-]
-      lmin                  ! Min. value for the length scale    [m]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
+      mixt_frac_max_mag, & ! Maximum allowable mag. of mixt_frac   [-]
+      lmin ! Min. value for the length scale    [m]
       
     !------------------------------ Local Variables ------------------------------
 
@@ -802,20 +802,17 @@ module parameters_tunable
     ! way to produce grid independent results is to set lmin to be
     ! some fixed value. -dschanen 21 May 2007
     !lmin = lmin_coef * deltaz  ! Old
-    ! TODO: using "clubb_params(ngrdcol,ilmin_coef)", but lmin should really be
-    ! changed to dimension(ngrdcol) to avoid this
-    lmin = clubb_params(ngrdcol,ilmin_coef) * lmin_deltaz ! New fixed value
+    lmin = clubb_params(:,ilmin_coef) * lmin_deltaz ! New fixed value
 
-    if ( lmin < 1.0_core_rknd ) then
+    if ( any( lmin < 1.0_core_rknd ) ) then
       error stop "lmin is < 1.0_core_rknd"
     end if
 
-    ! Using ngrdcol here as well for temporary backward compatibility, same as above
     mixt_frac_max_mag = 1.0_core_rknd &
-      - ( 0.5_core_rknd * ( 1.0_core_rknd - clubb_params(ngrdcol,iSkw_max_mag) &
+      - ( 0.5_core_rknd * ( 1.0_core_rknd - clubb_params(:,iSkw_max_mag) &
                                             / sqrt( 4.0_core_rknd * &
                                                     ( 1.0_core_rknd - 0.4_core_rknd )**3 &
-                                                    + clubb_params(ngrdcol,iSkw_max_mag)**2 ) ) )
+                                                    + clubb_params(:,iSkw_max_mag)**2 ) ) )
       ! Known magic number
     
     ! Flag for adjusting the values of the constant diffusivity coefficients

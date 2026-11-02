@@ -138,7 +138,8 @@ subroutine f2py_pdf_closure_driver(nzm, nzt, ngrdcol, dt, hydromet_dim, sclr_dim
   logical, dimension(hydromet_dim_transport), intent(in) :: l_mix_rat_hm
 
   real(core_rknd), dimension(sclr_dim_transport), intent(in) :: sclr_tol
-  real(core_rknd), intent(in) :: mixt_frac_max_mag, ts_nudge, rtm_min, rtm_nudge_max_altitude
+  real(core_rknd), dimension(ngrdcol), intent(in) :: mixt_frac_max_mag
+  real(core_rknd), intent(in) :: ts_nudge, rtm_min, rtm_nudge_max_altitude
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
 
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &

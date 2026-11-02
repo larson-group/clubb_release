@@ -38,10 +38,8 @@ Language adaptations:
 - Invalid candidates are replaced by defaults during model advancement and
   receive finite penalties afterward. This host boundary preserves healthy
   neighboring columns while avoiding the source's process-wide `lmin` stop.
-- The source derives the global `lmin` and `Skw_max_mag` values from the last
-  column in each runtime batch. Varying these parameters can affect neighboring
-  columns and make scores depend on batch width; their evaluation is not
-  column independent. The JAX port retains this source behavior.
+- Fortran and JAX derive each column's `lmin` and mixture-fraction cap from
+  that column's `lmin_coef` and `Skw_max_mag`, preserving independent candidates.
 - Microphysics host error checks retain the source's `debug >= 0` guards.
   At `debug = -1`, fatal flags remain per-column outputs for loss penalties,
   allowing healthy neighbors to finish their loss windows.

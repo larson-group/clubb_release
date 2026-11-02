@@ -225,8 +225,8 @@ module pdf_closure_module
       rtphmp,      & ! Covariance of rt and a hydrometeor   [(kg/kg) <hm units>]
       thlphmp        ! Covariance of thl and a hydrometeor  [K <hm units>]
 
-    real( kind = core_rknd ), intent(in) :: &
-      mixt_frac_max_mag     ! Maximum allowable mag. of mixt_frac   [-]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      mixt_frac_max_mag ! Maximum allowable mag. of mixt_frac   [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -3769,11 +3769,13 @@ module pdf_closure_module
     logical, intent(in) :: &
       l_samp_stats_in_pdf_call    ! Sample stats in this call to this subroutine
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      mixt_frac_max_mag ! Maximum allowable mag. of mixt_frac   [-]
+
     real( kind = core_rknd ), intent(in) :: &
-      mixt_frac_max_mag, &    ! Maximum allowable mag. of mixt_frac   [-]
-      ts_nudge, &             ! Timescale of u/v nudging             [s]
-      rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
-      rtm_nudge_max_altitude  ! Highest altitude at which to nudge rtm [m]
+      ts_nudge, & ! Timescale of u/v nudging             [s]
+      rtm_min, & ! Value below which rtm will be nudged [kg/kg]
+      rtm_nudge_max_altitude ! Highest altitude at which to nudge rtm [m]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -4706,7 +4708,7 @@ module pdf_closure_module
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc           ! Pressure at surface                  [Pa]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       mixt_frac_max_mag ! Maximum allowable magnitude of mixture fraction [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &

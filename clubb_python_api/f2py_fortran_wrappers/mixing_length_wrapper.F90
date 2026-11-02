@@ -68,7 +68,8 @@ subroutine f2py_calc_lscale(nzm, nzt, ngrdcol, l_implemented, host_dx, host_dy, 
   logical, intent(in) :: &
     l_implemented, l_lscale_plume_centered, l_e3sm_config, &
     l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso
-  real(core_rknd), intent(in) :: lmin, ufmin, tau_const
+  real(core_rknd), dimension(ngrdcol), intent(in) :: lmin
+  real(core_rknd), intent(in) :: ufmin, tau_const
   real(core_rknd), dimension(ngrdcol), intent(in) :: &
     host_dx, host_dy, upwp_sfc, vpwp_sfc, sfc_elevation
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: &
@@ -188,7 +189,7 @@ subroutine f2py_calc_lscale_directly(ngrdcol, nzm, nzt, &
     p_in_pa, exner, rtm, thlm, thvm, rtp2_zt, thlp2_zt, rtpthlp_zt, thv_ds_zt
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: em
   real(core_rknd), dimension(ngrdcol), intent(in) :: lscale_max
-  real(core_rknd), intent(in) :: lmin
+  real(core_rknd), dimension(ngrdcol), intent(in) :: lmin
   real(core_rknd), dimension(ngrdcol, nparams), intent(in) :: clubb_params
   real(core_rknd), dimension(ngrdcol, nzt), intent(out) :: lscale, lscale_up, lscale_down
 

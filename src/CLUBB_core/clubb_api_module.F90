@@ -874,6 +874,10 @@ contains
       host_dx_col,  & ! East-West horizontal grid spacing     [m]
       host_dy_col     ! North-South horizontal grid spacing   [m]
 
+    real( kind = core_rknd ), dimension(1) :: &
+      lmin_col, &            ! Minimum mixing length [m]
+      mixt_frac_max_mag_col  ! Maximum allowable mixture fraction [-]
+
     real( kind = core_rknd ), dimension(1,nparams) :: &
       clubb_params_col    ! Array of CLUBB's tunable parameters    [units vary]
 
@@ -1051,6 +1055,8 @@ contains
     host_dy_col(1) = host_dy
 
     clubb_params_col(1,:) = clubb_params
+    lmin_col(1) = lmin
+    mixt_frac_max_mag_col(1) = mixt_frac_max_mag
 
     um_col(1,:) = um
     vm_col(1,:) = vm
@@ -1124,7 +1130,7 @@ contains
     !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
-    !$acc              sclr_idx, clubb_params_col, &
+    !$acc              sclr_idx, clubb_params_col, lmin_col, mixt_frac_max_mag_col, &
     !$acc              fcor_col, sfc_elevation_col, thlm_forcing_col, rtm_forcing_col, &
     !$acc              um_forcing_col, &
     !$acc              vm_forcing_col, wprtp_forcing_col, wpthlp_forcing_col, rtp2_forcing_col, &
@@ -1236,8 +1242,8 @@ contains
       rfrzm_col, &                                                            ! intent(in)
       wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &               ! intent(in)
       host_dx_col, host_dy_col, &                                                 ! intent(in)
-      clubb_params_col, nu_vert_res_dep, lmin, &                                  ! intent(in)
-      mixt_frac_max_mag, T0, ts_nudge, &                                          ! Intent(in)
+      clubb_params_col, nu_vert_res_dep, lmin_col, &                                  ! intent(in)
+      mixt_frac_max_mag_col, T0, ts_nudge, &                                      ! Intent(in)
       rtm_min, rtm_nudge_max_altitude, &                                          ! Intent(in)
       clubb_config_flags, &                                                       ! intent(in)
       stats,         &                                                            ! intent(inout)
@@ -1519,13 +1525,15 @@ contains
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      lmin, & ! Min. value for the length scale    [m]
+      mixt_frac_max_mag
+
     real( kind = core_rknd ), intent(in) :: &
-      lmin, &                 ! Min. value for the length scale    [m]
-      mixt_frac_max_mag, &
-      T0, &                   ! Reference temperature (usually 300)  [K]
-      ts_nudge, &             ! Timescale of u/v nudging             [s]
-      rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
-      rtm_nudge_max_altitude  ! Highest altitude at which to nudge rtm [m]
+      T0, & ! Reference temperature (usually 300)  [K]
+      ts_nudge, & ! Timescale of u/v nudging             [s]
+      rtm_min, & ! Value below which rtm will be nudged [kg/kg]
+      rtm_nudge_max_altitude ! Highest altitude at which to nudge rtm [m]
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -1661,7 +1669,7 @@ contains
     !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
-    !$acc              sclr_idx, clubb_params, &
+    !$acc              sclr_idx, clubb_params, lmin, mixt_frac_max_mag, &
     !$acc              fcor, sfc_elevation, thlm_forcing, rtm_forcing, um_forcing, &
     !$acc              vm_forcing, wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
     !$acc              rtpthlp_forcing, wm_zm, wm_zt, rho_zm, rho, rho_ds_zm, rho_ds_zt, &
@@ -2341,7 +2349,9 @@ contains
 
     ! Local variables
     real( kind = core_rknd ), dimension(1) ::  &
-      deltaz_col  ! Change per height level        [m]
+      deltaz_col, &          ! Change per height level [m]
+      lmin_col, &            ! Minimum mixing length [m]
+      mixt_frac_max_mag_col  ! Maximum allowable mixture fraction [-]
 
     real( kind = core_rknd ), dimension(1,nparams) :: & 
       clubb_params_col  ! Tuneable model parameters      [-]
@@ -2352,8 +2362,11 @@ contains
     call calc_derived_params( gr, 1, grid_type, deltaz_col,  & ! Intent(in)
                                clubb_params,                  & ! Intent(in)
                                l_prescribed_avg_deltaz,       & ! Intent(in)
-                               nu_vert_res_dep, lmin,         & ! Intent(inout)
-                               mixt_frac_max_mag )              ! Intent(inout)
+                               nu_vert_res_dep, lmin_col,     & ! Intent(inout)
+                               mixt_frac_max_mag_col )          ! Intent(inout)
+
+    lmin = lmin_col(1)
+    mixt_frac_max_mag = mixt_frac_max_mag_col(1)
 
   end subroutine calc_derived_params_api_single_col
   
@@ -2406,9 +2419,9 @@ contains
     type(nu_vertical_res_dep), intent(inout) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    real( kind = core_rknd ), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
       mixt_frac_max_mag, &
-      lmin    ! Min. value for the length scale    [m]
+      lmin ! Min. value for the length scale    [m]
 
     call calc_derived_params( gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
                                clubb_params,                   & ! Intent(in)

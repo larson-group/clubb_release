@@ -61,7 +61,7 @@ def test_param_values_match_fortran():
 def test_calc_derived_params_f2py():
     """`calc_derived_params` (parameters_tunable.F90:calc_derived_params_api) computes the derived tunable params
     from the base clubb_params + grid: `lmin` (the mixing-length floor) and `mixt_frac_max_mag` (the PDF mixture-fraction
-    cap) — both load-bearing (lmin clips Lscale; mixt_frac_max_mag bounds the ADG1 closure). Validate the two scalars vs
+    cap) — both load-bearing (lmin clips Lscale; mixt_frac_max_mag bounds the ADG1 closure). Validate the column arrays vs
     `f2py_calc_derived_params`."""
     from clubb_python.CLUBB_core.parameters_tunable import calc_derived_params as fortran_calc_derived_params
     from clubb_python.derived_types.nu_vert_res_dep import NuVertResDep
@@ -78,5 +78,5 @@ def test_calc_derived_params_f2py():
     _, j_lmin, j_mfmm = calc_derived_params(jgr, ng, 1, deltaz, cp, False)
     _, f_lmin, f_mfmm = fortran_calc_derived_params(fgr, ng, 1, deltaz, cp, False, NuVertResDep.zeros(ng))
     d_lmin = float(max_abs_diff("param_names", np.asarray(j_lmin), np.asarray(f_lmin)))
-    d_mfmm = float(max_abs_diff("param_names", float(j_mfmm), f_mfmm))
+    d_mfmm = float(max_abs_diff("param_names", np.asarray(j_mfmm), np.asarray(f_mfmm)))
     assert d_lmin < 1e-12 and d_mfmm < 1e-12, f"calc_derived_params mismatch: lmin {d_lmin:.2e}, mixt_frac_max_mag {d_mfmm:.2e}"

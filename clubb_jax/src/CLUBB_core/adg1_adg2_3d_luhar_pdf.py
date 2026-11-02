@@ -68,7 +68,7 @@ def ADG1_w_closure(wm, wp2, Skw, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag):
         Skw:              (ngrdcol, nzt) — w skewness [-]
         sigma_sqd_w:      (ngrdcol, nzt) — PDF width parameter [-]
         sqrt_wp2:         (ngrdcol, nzt) — sqrt(wp2) [m/s]
-        mixt_frac_max_mag: scalar — max |mixt_frac - 0.5| + 0.5
+        mixt_frac_max_mag: (ncol,) — max |mixt_frac - 0.5| + 0.5
 
     Returns:
         w_1, w_2:           (ngrdcol, nzt) — w means of each PDF component
@@ -100,7 +100,8 @@ def ADG1_w_closure(wm, wp2, Skw, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag):
     # 1 - ( 1/2 * ( 1 - Skw_max
     #                   / sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) ),
     # where sigma_sqd_w is fixed at 0.4 for this calculation.
-    mixt_frac = jnp.clip(mixt_frac, 1.0 - mixt_frac_max_mag, mixt_frac_max_mag)
+    limit = jnp.asarray(mixt_frac_max_mag)[..., None]
+    mixt_frac = jnp.clip(mixt_frac, 1.0 - limit, limit)
 
     # The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value
     # will always be greater than 0.  As an example, a value of 1.0 would
@@ -225,7 +226,7 @@ def ADG1_pdf_driver(wm, rtm, thlm, um, vm,
         sqrt_wp2: (ngrdcol, nzt) — sqrt(wp2)
         sigma_sqd_w: (ngrdcol, nzt) — PDF width parameter
         beta:   (ngrdcol,) — tunable parameter
-        mixt_frac_max_mag: scalar
+        mixt_frac_max_mag: (ncol,)
 
     Returns:
         dict with keys: w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac,

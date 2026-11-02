@@ -74,7 +74,7 @@ def calc_derived_params(
         l_prescribed_avg_deltaz,
         ngrdcol=int(ngrdcol),
     )
-    return get_fortran_nu_vert_res_dep(int(ngrdcol)), float(lmin), float(mixt_frac_max_mag)
+    return get_fortran_nu_vert_res_dep(int(ngrdcol)), lmin, mixt_frac_max_mag
 
 
 def check_parameters(ngrdcol: int, clubb_params, err_info: ErrInfo):

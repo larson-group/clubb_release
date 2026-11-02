@@ -53,7 +53,8 @@ subroutine f2py_advance_clubb_core( &
 
   logical, intent(in) :: l_implemented
   real(core_rknd), intent(in) :: dt
-  real(core_rknd), intent(in) :: lmin, mixt_frac_max_mag, t0_val, ts_nudge
+  real(core_rknd), dimension(ngrdcol), intent(in) :: lmin, mixt_frac_max_mag
+  real(core_rknd), intent(in) :: t0_val, ts_nudge
   real(core_rknd), intent(in) :: rtm_min, rtm_nudge_max_altitude
 
   real(core_rknd), dimension(ngrdcol), intent(in) :: &

@@ -350,7 +350,6 @@ module clubb_driver
 
   ! 'public' only to fix compiler error for nvhpc versions <24.9, please remove in future
   real( kind = core_rknd ), public :: &
-    mixt_frac_max_mag, &    ! Maximum allowable mag. of mixt_frac   [-]
     T0, &                   ! Reference temperature (usually 300)  [K]
     ts_nudge, &             ! Timescale of u/v nudging             [s]
     rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
@@ -448,6 +447,10 @@ module clubb_driver
     pdf_params,     & ! PDF parameters (thermodynamic levels)    [units vary]
     pdf_params_zm     ! PDF parameters on momentum levels        [units vary]
 
+  real( kind = core_rknd ), dimension(:), allocatable, public :: &
+    lmin, &               ! Min. value for the length scale [m]
+    mixt_frac_max_mag     ! Maximum allowable magnitude of mixture fraction [-]
+
   type(implicit_coefs_terms) :: &
     pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
@@ -464,7 +467,6 @@ module clubb_driver
   real( kind = core_rknd ), public :: &
     sens_ht,          & ! sensible heat flux                          [K m/s]
     latent_ht,        & ! latent heat flux                            [m/s]
-    lmin,             & ! Min. value for the length scale             [m]
     vert_decorr_coef    ! Empirically defined de-correlation constant [-]
 
   real( kind = core_rknd ), dimension(:), allocatable :: &
@@ -2156,6 +2158,8 @@ module clubb_driver
 
     ! Allocate and initialize variables
 
+    allocate( lmin(ngrdcol), mixt_frac_max_mag(ngrdcol) )
+
     allocate( um(ngrdcol, gr%nzt) )        ! u wind
     allocate( vm(ngrdcol, gr%nzt) )        ! v wind
 
@@ -2734,7 +2738,7 @@ module clubb_driver
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
     !$acc              pdf_params, pdf_params_zm, &
-    !$acc              sclr_idx, clubb_params, hm_metadata, &
+    !$acc              sclr_idx, clubb_params, lmin, mixt_frac_max_mag, hm_metadata, &
     !$acc              T_sfc, p_sfc, fcor, fcor_y, sfc_elevation, &
     !$acc              dummy_dx, dummy_dy, deltaz, &
     !$acc              pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
@@ -3301,7 +3305,8 @@ module clubb_driver
       end if
     end if
 
-    !$acc update device( clubb_params, nu_vert_res_dep%nu1,nu_vert_res_dep%nu2, nu_vert_res_dep%nu6, &
+    !$acc update device( clubb_params, lmin, mixt_frac_max_mag, &
+    !$acc                nu_vert_res_dep%nu1,nu_vert_res_dep%nu2, nu_vert_res_dep%nu6, &
     !$acc                nu_vert_res_dep%nu8, nu_vert_res_dep%nu9, nu_vert_res_dep%nu10 )
 
     call timer_stop( "set_case_initial_conditions" )
@@ -4280,7 +4285,7 @@ module clubb_driver
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
     !$acc              pdf_params, pdf_params_zm, &
-    !$acc              sclr_idx, clubb_params, hm_metadata, &
+    !$acc              sclr_idx, clubb_params, lmin, mixt_frac_max_mag, hm_metadata, &
     !$acc              T_sfc, p_sfc, fcor, fcor_y, sfc_elevation, &
     !$acc              dummy_dx, dummy_dy, &
     !$acc              pdf_params%w_1, pdf_params%w_2, pdf_params%varnce_w_1, &
@@ -4412,6 +4417,8 @@ module clubb_driver
     if ( lh_microphys_type /= lh_microphys_disabled ) then
       call cleanup_latin_hypercube_arrays( )
     end if
+
+    deallocate( lmin, mixt_frac_max_mag )
 
     deallocate( um )        ! u wind
     deallocate( vm )        ! v wind

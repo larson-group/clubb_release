@@ -480,7 +480,7 @@ python module clubb_f2py
       double precision, dimension(ngrdcol), intent(in) :: deltaz
       double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
       logical, intent(in) :: l_prescribed_avg_deltaz
-      double precision, intent(out) :: lmin, mixt_frac_max_mag
+      double precision, dimension(ngrdcol), intent(out) :: lmin, mixt_frac_max_mag
     end subroutine
 
     subroutine f2py_init_clubb_loss(runfile, num_variables, total_param_sets, num_time_windows, clubb_var_names)
@@ -982,7 +982,8 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, edsclr_dim_transport), intent(in) :: wpedsclrp_sfc
       ! Tunable params
       double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
-      double precision, intent(in) :: lmin, mixt_frac_max_mag, t0_val, ts_nudge
+      double precision, dimension(ngrdcol), intent(in) :: lmin, mixt_frac_max_mag
+      double precision, intent(in) :: t0_val, ts_nudge
       double precision, intent(in) :: rtm_min, rtm_nudge_max_altitude
       ! Hydromet
       logical, dimension(hydromet_dim_transport), intent(in) :: l_mix_rat_hm
@@ -1859,7 +1860,8 @@ python module clubb_f2py
       integer, intent(in) :: saturation_formula, iipdf_type
       logical, intent(in) :: l_call_pdf_closure_twice
       double precision, dimension(sclr_dim_transport), intent(in) :: sclr_tol
-      double precision, intent(in) :: mixt_frac_max_mag, ts_nudge, rtm_min, rtm_nudge_max_altitude
+      double precision, dimension(ngrdcol), intent(in) :: mixt_frac_max_mag
+      double precision, intent(in) :: ts_nudge, rtm_min, rtm_nudge_max_altitude
       double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
       logical, intent(in) :: l_samp_stats_in_pdf_call, l_rtm_nudge
       logical, intent(in) :: l_trapezoidal_rule_zt, l_trapezoidal_rule_zm
@@ -2066,7 +2068,7 @@ python module clubb_f2py
         mixt_frac_max_mag, w_1, w_2, w_1_n, w_2_n, varnce_w_1, varnce_w_2, mixt_frac)
       integer, intent(in) :: nz, ngrdcol
       double precision, dimension(ngrdcol, nz), intent(in) :: wm, wp2, skw, sigma_sqd_w, sqrt_wp2
-      double precision, intent(in) :: mixt_frac_max_mag
+      double precision, dimension(ngrdcol), intent(in) :: mixt_frac_max_mag
       double precision, dimension(ngrdcol, nz), intent(out) :: &
         w_1, w_2, w_1_n, w_2_n, varnce_w_1, varnce_w_2, mixt_frac
     end subroutine
@@ -2117,7 +2119,7 @@ python module clubb_f2py
       double precision, dimension(ngrdcol, nz), intent(in) :: &
         wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2, skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, sigma_sqd_w
       double precision, dimension(ngrdcol), intent(in) :: beta
-      double precision, intent(in) :: mixt_frac_max_mag
+      double precision, dimension(ngrdcol), intent(in) :: mixt_frac_max_mag
       double precision, dimension(ngrdcol, nz, sclr_dim_transport), intent(in) :: sclrm, sclrp2, wpsclrp
       double precision, dimension(ngrdcol, nz), intent(out) :: &
         w_1, w_2, rt_1, rt_2, thl_1, thl_2, u_1, u_2, v_1, v_2, &
@@ -2384,7 +2386,8 @@ python module clubb_f2py
       logical, intent(in) :: &
         l_implemented, l_lscale_plume_centered, l_e3sm_config, &
         l_smooth_heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_use_invrs_tau_n2_iso
-      double precision, intent(in) :: lmin, ufmin, tau_const
+      double precision, dimension(ngrdcol), intent(in) :: lmin
+      double precision, intent(in) :: ufmin, tau_const
       double precision, dimension(ngrdcol), intent(in) :: &
         host_dx, host_dy, upwp_sfc, vpwp_sfc, sfc_elevation
       double precision, dimension(ngrdcol, nzt), intent(in) :: &
@@ -2442,7 +2445,7 @@ python module clubb_f2py
         p_in_pa, exner, rtm, thlm, thvm, rtp2_zt, thlp2_zt, rtpthlp_zt, thv_ds_zt
       double precision, dimension(ngrdcol, nzm), intent(in) :: em
       double precision, dimension(ngrdcol), intent(in) :: lscale_max
-      double precision, intent(in) :: lmin
+      double precision, dimension(ngrdcol), intent(in) :: lmin
       double precision, dimension(ngrdcol, *), intent(in) :: clubb_params
       double precision, dimension(ngrdcol, nzt), intent(out) :: lscale, lscale_up, lscale_down
     end subroutine

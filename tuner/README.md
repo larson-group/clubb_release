@@ -224,10 +224,6 @@ A future analytic-gradient strategy must combine case derivatives according to i
 cross-case objective and apply the chain rule for linked or rescaled sampling
 coordinates.
 
-Known multicolumn limitation: derived `lmin` and maximum mixture-fraction
-magnitude use the last runtime column's `lmin_coef` and `Skw_max_mag`. Those
-shared quantities can couple candidates; batched AD seeding assumes independent
-candidates. Sensitivities involving that coupling need separate care.
 
 ## 5. Outputs and where to find them
 

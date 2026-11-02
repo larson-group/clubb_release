@@ -663,7 +663,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         gr, ngrdcol, grid_type, deltaz,               # In
         clubb_params, flags.l_prescribed_avg_deltaz,  # In
     )
-    if float(lmin) < 1.0:
+    if np.any(np.asarray(lmin) < 1.0):
         raise ValueError('lmin is < 1.0')
 
     if clubb_at_least_debug_level(0):
@@ -1303,7 +1303,7 @@ def set_case_initial_conditions(
     )
     def check_lmin(value):
         """Reject a derived minimum length below one metre."""
-        if float(value) < 1.0:
+        if np.any(np.asarray(value) < 1.0):
             raise ValueError('lmin is < 1.0')
 
     # Preserve the host validation when parameters are being differentiated.

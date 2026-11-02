@@ -378,13 +378,15 @@ module generalized_grid_test
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
       
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      lmin, & ! Min. value for the length scale    [m]
+      mixt_frac_max_mag
+
     real( kind = core_rknd ), intent(in) :: &
-      lmin, &                 ! Min. value for the length scale    [m]
-      mixt_frac_max_mag, &
-      T0, &                   ! Reference temperature (usually 300)  [K]
-      ts_nudge, &             ! Timescale of u/v nudging             [s]
-      rtm_min, &              ! Value below which rtm will be nudged [kg/kg]
-      rtm_nudge_max_altitude  ! Highest altitude at which to nudge rtm [m]
+      T0, & ! Reference temperature (usually 300)  [K]
+      ts_nudge, & ! Timescale of u/v nudging             [s]
+      rtm_min, & ! Value below which rtm will be nudged [kg/kg]
+      rtm_nudge_max_altitude ! Highest altitude at which to nudge rtm [m]
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags

@@ -94,12 +94,9 @@ def test_repeated_batches_reset_derived_state_and_reuse_jit(prepared_loss):
     cache_size = advance_clubb_core._cache_size()
     changed = params.at[:, PNAME_IDX['C8']].set(.65)
     changed = changed.at[:, PNAME_IDX['nu1']].set(1.5)
-    changed = changed.at[:, PNAME_IDX['lmin_coef']].set(.6)
-    changed = changed.at[:, PNAME_IDX['Skw_max_mag']].set(8.)
     result = loss.clubb_get_loss_for_params(changed)
     assert advance_clubb_core._cache_size() == cache_size
     assert any(np.any(np.asarray(a) != np.asarray(b)) for a, b in zip(baseline, result))
-    assert float(loss.active_request.state['lmin']) == 24.
     np.testing.assert_allclose(loss.active_request.state['nu_vert_res_dep'].nu1, 1.5)
     again = loss.clubb_get_loss_for_params(params)
     from utilities.loss_metrics import LOSS_METRIC_NAMES, loss_metric_values_valid

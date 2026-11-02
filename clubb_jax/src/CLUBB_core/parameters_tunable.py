@@ -264,7 +264,7 @@ def calc_derived_params(
     gr, ngrdcol: int, grid_type: int, deltaz: np.ndarray,  # In
     clubb_params: np.ndarray,                            # In
     l_prescribed_avg_deltaz: bool,                       # In
-) -> tuple[NuVertResDep, float, float]:
+) -> tuple[NuVertResDep, np.ndarray, np.ndarray]:
     """Calculate parameters that should be derived from other quantities.
 
     Description:
@@ -288,8 +288,8 @@ def calc_derived_params(
 
     Returns:
       nu_vert_res_dep: Vertical resolution dependent nu values.
-      lmin: Minimum value for the length scale [m].
-      mixt_frac_max_mag: Maximum allowable magnitude of mixture fraction [-].
+      lmin: Per-column minimum length, shape (ngrdcol,) [m].
+      mixt_frac_max_mag: Per-column maximum mixture fraction, shape (ngrdcol,) [-].
 
     Adaptation: immutable output values replace source inout allocations;
     initialization and reset perform the source lmin fatal check on the host.
@@ -312,13 +312,9 @@ def calc_derived_params(
     # It was decided after some experimentation, that the best
     # way to produce grid independent results is to set lmin to be
     # some fixed value. -dschanen 21 May 2007
-    # TODO: using clubb_params(ngrdcol,ilmin_coef), but lmin should really be
-    # changed to dimension(ngrdcol) to avoid this (same as Fortran). Varying
-    # this or Skw_max_mag between columns can therefore depend on batch width.
-    lmin = clubb_params[ngrdcol - 1, PNAME_IDX['lmin_coef']] * lmin_deltaz
+    lmin = clubb_params[:, PNAME_IDX['lmin_coef']] * lmin_deltaz
 
-    # Using ngrdcol here as well for temporary backward compatibility, same as above
-    Skw_max = clubb_params[ngrdcol - 1, PNAME_IDX['Skw_max_mag']]
+    Skw_max = clubb_params[:, PNAME_IDX['Skw_max_mag']]
     mixt_frac_max_mag = 1.0 - (
         0.5 * (1.0 - Skw_max / jnp.sqrt(
             4.0 * (1.0 - 0.4)**3 + Skw_max**2,

@@ -104,8 +104,8 @@ module adg1_adg2_3d_luhar_pdf
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       beta                    ! CLUBB tunable parameter beta         [-]
 
-    real( kind = core_rknd ), intent(in) ::  &
-      mixt_frac_max_mag       ! Maximum allowable mag. of mixt_frac  [-]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      mixt_frac_max_mag ! Maximum allowable mag. of mixt_frac  [-]
 
     real( kind = core_rknd ), dimension(ngrdcol, nz, sclr_dim), intent(in) ::  &
       sclrm,   & ! Mean of passive scalar (overall)           [units vary]
@@ -686,8 +686,8 @@ module adg1_adg2_3d_luhar_pdf
       sigma_sqd_w,       & ! Widths of each w Gaussian             [-]
       sqrt_wp2             ! Square root of the variance of w      [m/s]
 
-    real( kind = core_rknd ),  intent(in) :: &
-      mixt_frac_max_mag    ! Maximum allowable mag. of mixt_frac   [-]
+    real( kind = core_rknd ), dimension(ngrdcol),  intent(in) :: &
+      mixt_frac_max_mag ! Maximum allowable mag. of mixt_frac   [-]
 
     type(err_info_type), intent(inout) :: &
       err_info
@@ -747,8 +747,8 @@ module adg1_adg2_3d_luhar_pdf
         ! 1 - ( 1/2 * ( 1 - Skw_max
         !                   / sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) ),
         ! where sigma_sqd_w is fixed at 0.4 for this calculation.
-        mixt_frac(i,k) = min( max( mixt_frac(i,k), one - mixt_frac_max_mag ), &
-                              mixt_frac_max_mag )
+        mixt_frac(i,k) = min( max( mixt_frac(i,k), one - mixt_frac_max_mag(i) ), &
+                              mixt_frac_max_mag(i) )
 
         ! The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value
         ! will always be greater than 0.  As an example, a value of 1.0 would

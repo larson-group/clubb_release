@@ -396,8 +396,8 @@ module pdf_parameter_tests
       vpwp,           & ! Covariance of v and w (overall)     [(m/s)^2]
       sigma_sqd_w       ! Width of individual w plumes (ADG1)             [-]
     
-    real( kind = core_rknd ) :: &
-      mixt_frac_max_mag        ! Maximum magnitude of mixture fraction (ADG1) [-]
+    real( kind = core_rknd ), dimension(1) :: &
+      mixt_frac_max_mag ! Maximum magnitude of mixture fraction (ADG1) [-]
 
     integer, parameter :: &
       num_sigma_sqd_w = 11  ! Number of diff. values of sigma_sqd_w used (ADG1)
@@ -2176,7 +2176,7 @@ module pdf_parameter_tests
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       beta
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       mixt_frac_max_mag
 
     logical :: &

@@ -123,32 +123,27 @@ def test_parameter_sections_reject_invalid_or_unhandled_syntax(tmp_path, monkeyp
 def test_derived_parameters_follow_source_grid_branches(grid_type, prescribed, expected_spacing):
     params = jnp.asarray(init_clubb_params(2, ''))
     params = params.at[:, PNAME_IDX['mult_coef']].set(jnp.array([.25, .75]))
-    params = params.at[:, PNAME_IDX['lmin_coef']].set(jnp.array([.5, .6]))
-    params = params.at[:, PNAME_IDX['Skw_max_mag']].set(jnp.array([8., 4.]))
-    nu, lmin, mixture_bound = calc_derived_params(
+    nu, _, _ = calc_derived_params(
         _grid(), 2, grid_type, jnp.array([20., 40.]), params, prescribed,
     )
     spacing = np.asarray(expected_spacing)
     factor = np.where(spacing > 40., 1. + np.array([.25, .75]) * np.log(spacing / 40.), 1.)
     for name in ('nu1', 'nu2', 'nu6', 'nu8', 'nu9', 'nu10', 'nu_hm'):
         np.testing.assert_allclose(getattr(nu, name), params[:, PNAME_IDX[name]] * factor, rtol=1.e-14)
-    assert float(lmin) == 24.
-    np.testing.assert_allclose(mixture_bound, 1. - .5 * (1. - 4. / np.sqrt(4. * (1. - .4)**3 + 4.**2)))
 
 
 def test_derived_parameters_compile_and_differentiate():
     params = jnp.asarray(init_clubb_params(2, ''))
 
     def value(parameters):
-        nu, lmin, _ = calc_derived_params(
+        nu, _, _ = calc_derived_params(
             _grid(), 2, 3, jnp.array([20., 40.]), parameters, False,
         )
-        return jnp.sum(nu.nu1) + lmin
+        return jnp.sum(nu.nu1)
 
     gradient = jax.jit(jax.grad(value))(params)
     assert np.isfinite(gradient).all()
     np.testing.assert_allclose(gradient[:, PNAME_IDX['nu1']], [1., 1. + .5 * np.log(2.)])
-    np.testing.assert_array_equal(gradient[:, PNAME_IDX['lmin_coef']], [0., 40.])
 
 
 def test_reset_restores_fields_sampling_state_and_restart_clock(lifecycle_state):
@@ -170,13 +165,11 @@ def test_reset_restores_fields_sampling_state_and_restart_clock(lifecycle_state)
 def test_reset_retains_current_parameters_and_recomputes_derived_state(lifecycle_state):
     state = lifecycle_state
     changed = state['clubb_params'].at[:, PNAME_IDX['nu1']].set(3.)
-    changed = changed.at[:, PNAME_IDX['lmin_coef']].set(.6)
     initialization.set_case_initial_conditions(state, changed)
     state['thlm'] = state['thlm'] + 1.
     initialization.set_case_initial_conditions(state)
     np.testing.assert_array_equal(state['clubb_params'], changed)
     np.testing.assert_array_equal(state['nu_vert_res_dep'].nu1, [3., 3.])
-    assert float(state['lmin']) == 24.
 
 
 def test_batch_selection_and_repeated_batch_cycle(lifecycle_state):
