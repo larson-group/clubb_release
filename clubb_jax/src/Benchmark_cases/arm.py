@@ -59,6 +59,3 @@ def arm_sfclyr(ngrdcol, time, z, thlm_sfc, ubar):
     wpthlp_sfc = jnp.full(ngrdcol, heat_flx2)
     wprtp_sfc = jnp.full(ngrdcol, moisture_flx2)
     return wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["arm_sfclyr"]

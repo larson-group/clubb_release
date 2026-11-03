@@ -15,7 +15,8 @@ def main():
     """Print the shared loss table and retain the native completion status."""
     if len(sys.argv) != 2 or sys.argv[1] in ("-h", "-help", "--help"):
         print("Usage: python -m clubb_jax.src.clubb_standalone_loss <namelist_path>")
-        return 0 if any(arg in ("-h", "-help", "--help") for arg in sys.argv[1:]) else 1
+        exit_code = 0 if any(arg in ("-h", "-help", "--help") for arg in sys.argv[1:]) else 1
+        return exit_code
 
     print_loss_matrix(*clubb_get_loss(sys.argv[1]))
     # run_scm_loss/run_case uses 6 for a completed loss evaluation.

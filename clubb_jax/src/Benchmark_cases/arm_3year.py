@@ -39,6 +39,3 @@ def arm_3year_sfclyr(ngrdcol, time, z, rho_sfc, thlm_sfc, ubar):
     # Compute ustar
     ustar = diag_ustar(z, bflx, ubar, z0)
     return wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["arm_3year_sfclyr"]

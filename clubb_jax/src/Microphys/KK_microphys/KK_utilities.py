@@ -35,4 +35,5 @@ def G_T_p(T_in_K, p_in_Pa, saturation_formula=SATURATION_FLATAU):
 
     Fk = (Lv / (Rv * T_in_K) - 1.0) * (Lv * rho_lw) / (Ka * T_in_K)
     Fd = (rho_lw * Rv * T_in_K) / (Dv * esatv)
-    return 1.0 / (Fk + Fd)
+    G_T_p = 1.0 / (Fk + Fd)
+    return G_T_p

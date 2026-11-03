@@ -57,8 +57,9 @@ def _covar_x_evap_comp(mu_eta, mu_chi, mu_rr, mu_Nr, mu_rr_n, mu_Nr_n, sigma_eta
     m_a = trivar_NLL_mean_eq(mu_chi, mu_rr, mu_Nr, mu_rr_n, mu_Nr_n, sigma_chi, sigma_rr, sigma_Nr, sigma_rr_n,
                              sigma_Nr_n, corr_chi_rr_n, corr_chi_Nr_n, corr_rr_Nr_n, a, bb, gg,
                              dv=None if dv is None else dv.mean[0])
-    return kk_coef * precip_frac * ((1.0 / (2.0 * c)) * (quad + s * m_a1)
-                                    + (mu_x - xm - s * mu_chi / (2.0 * c)) * m_a)
+    covar_x_evap_comp = kk_coef * precip_frac * ((1.0 / (2.0 * c)) * (quad + s * m_a1)
+                                                 + (mu_x - xm - s * mu_chi / (2.0 * c)) * m_a)
+    return covar_x_evap_comp
 
 
 def _covar_x_comp(mu_eta, mu_chi, mu_y, mu_y_n, sigma_eta, sigma_chi, sigma_y, sigma_y_n,
@@ -75,8 +76,9 @@ def _covar_x_comp(mu_eta, mu_chi, mu_y, mu_y_n, sigma_eta, sigma_chi, sigma_y, s
                               corr_chi_y_n, y_tol, alpha + 1.0, beta, dv=None if dv is None else dv.mean[1])
     biv_a = bivar_NL_mean_eq(mu_chi, mu_y, mu_y_n, sigma_chi, sigma_y, sigma_y_n,
                              corr_chi_y_n, y_tol, alpha, beta, dv=None if dv is None else dv.mean[0])
-    return kk_coef * precip_frac * ((1.0 / (2.0 * c)) * (tri + s * biv_a1)
-                                    + (mu_x - xm - s * mu_chi / (2.0 * c)) * biv_a)
+    covar_x_comp = kk_coef * precip_frac * ((1.0 / (2.0 * c)) * (tri + s * biv_a1)
+                                            + (mu_x - xm - s * mu_chi / (2.0 * c)) * biv_a)
+    return covar_x_comp
 
 
 def covar_rt_KK_auto(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n,
@@ -94,7 +96,8 @@ def covar_rt_KK_auto(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2,
                        sigma_Ncn_2_n, corr_eta_chi_2, corr_eta_Ncn_2_n, corr_chi_Ncn_2_n, rtm, mu_rt_2,
                        KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, crt2, a, b, 1.0, 1.0,
                        dv=None if dv is None else dv[1])
-    return mixt_frac * c1 + (1.0 - mixt_frac) * c2
+    covar_rt_KK_auto = mixt_frac * c1 + (1.0 - mixt_frac) * c2
+    return covar_rt_KK_auto
 
 
 def covar_rt_KK_accr(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_rr_1_n, mu_rr_2_n,
@@ -114,7 +117,8 @@ def covar_rt_KK_accr(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, m
                        sigma_rr_2_n, corr_eta_chi_2, corr_eta_rr_2_n, corr_chi_rr_2_n, rtm, mu_rt_2,
                        KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, crt2, a, b, precip_frac_2, 1.0,
                        dv=None if dv is None else dv[1])
-    return mixt_frac * c1 + (1.0 - mixt_frac) * c2
+    covar_rt_KK_accr = mixt_frac * c1 + (1.0 - mixt_frac) * c2
+    return covar_rt_KK_accr
 
 
 def covar_thl_KK_auto(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n,
@@ -133,7 +137,8 @@ def covar_thl_KK_auto(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2
                        sigma_Ncn_2_n, corr_eta_chi_2, corr_eta_Ncn_2_n, corr_chi_Ncn_2_n, thlm, mu_thl_2,
                        KK_auto_tndcy, KK_auto_coef, eta_tol, NC_TOL, cthl2, a, b, 1.0, -1.0,
                        dv=None if dv is None else dv[1])
-    return mixt_frac * c1 + (1.0 - mixt_frac) * c2
+    covar_thl_KK_auto = mixt_frac * c1 + (1.0 - mixt_frac) * c2
+    return covar_thl_KK_auto
 
 
 def covar_thl_KK_accr(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_rr_1_n, mu_rr_2_n,
@@ -153,7 +158,8 @@ def covar_thl_KK_accr(mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, 
                        sigma_rr_2_n, corr_eta_chi_2, corr_eta_rr_2_n, corr_chi_rr_2_n, thlm, mu_thl_2,
                        KK_accr_tndcy, KK_accr_coef, eta_tol, RR_TOL, cthl2, a, b, precip_frac_2, -1.0,
                        dv=None if dv is None else dv[1])
-    return mixt_frac * c1 + (1.0 - mixt_frac) * c2
+    covar_thl_KK_accr = mixt_frac * c1 + (1.0 - mixt_frac) * c2
+    return covar_thl_KK_accr
 
 
 def covar_x_KK_auto(mu_x_1, mu_x_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n,
@@ -170,7 +176,8 @@ def covar_x_KK_auto(mu_x_1, mu_x_2, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, mu_N
     t2 = trivar_NNL_covar_eq(mu_x_2, mu_chi_2, mu_Ncn_2, mu_Ncn_2_n, sigma_x_2, sigma_chi_2, sigma_Ncn_2,
                              sigma_Ncn_2_n, corr_x_chi_2, corr_x_Ncn_2_n, corr_chi_Ncn_2_n, x_mean,
                              KK_auto_tndcy, KK_auto_coef, x_tol, NC_TOL, a, b, dv=None if dv is None else dv[1].covar)
-    return KK_auto_coef * (mixt_frac * t1 + (1.0 - mixt_frac) * t2)
+    covar_x_KK_auto = KK_auto_coef * (mixt_frac * t1 + (1.0 - mixt_frac) * t2)
+    return covar_x_KK_auto
 
 
 def covar_x_KK_accr(mu_x_1, mu_x_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_rr_1_n, mu_rr_2_n,
@@ -190,7 +197,8 @@ def covar_x_KK_accr(mu_x_1, mu_x_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_rr_
                              KK_accr_tndcy, KK_accr_coef, x_tol, RR_TOL, a, b, dv=None if dv is None else dv[1].covar)
     comp1 = KK_accr_coef * precip_frac_1 * t1 - (1.0 - precip_frac_1) * (mu_x_1 - x_mean) * KK_accr_tndcy
     comp2 = KK_accr_coef * precip_frac_2 * t2 - (1.0 - precip_frac_2) * (mu_x_2 - x_mean) * KK_accr_tndcy
-    return mixt_frac * comp1 + (1.0 - mixt_frac) * comp2
+    covar_x_KK_accr = mixt_frac * comp1 + (1.0 - mixt_frac) * comp2
+    return covar_x_KK_accr
 
 
 def _covar_x_KK_evap(xm, mu_x_1, mu_x_2, c1_, c2_, s, *,
@@ -212,7 +220,8 @@ def _covar_x_KK_evap(xm, mu_x_1, mu_x_2, c1_, c2_, s, *,
                             corr_eta_Nr_2_n, corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, xm, mu_x_2,
                             KK_evap_tndcy, KK_evap_coef, eta_tol, c2_, precip_frac_2, s,
                             dv=None if dv is None else dv[1])
-    return mixt_frac * d1 + (1.0 - mixt_frac) * d2
+    covar_x_KK_evap = mixt_frac * d1 + (1.0 - mixt_frac) * d2
+    return covar_x_KK_evap
 
 
 def covar_rt_KK_evap(rtm, mu_rt_1, mu_rt_2, crt1, crt2, **kw):
@@ -248,7 +257,8 @@ def covar_x_KK_evap(mu_x_1, mu_x_2, mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_
                                  dv=None if dv is None else dv[1].covar)
     comp1 = KK_evap_coef * precip_frac_1 * q1 - (1.0 - precip_frac_1) * (mu_x_1 - x_mean) * KK_evap_tndcy
     comp2 = KK_evap_coef * precip_frac_2 * q2 - (1.0 - precip_frac_2) * (mu_x_2 - x_mean) * KK_evap_tndcy
-    return mixt_frac * comp1 + (1.0 - mixt_frac) * comp2
+    covar_x_KK_evap = mixt_frac * comp1 + (1.0 - mixt_frac) * comp2
+    return covar_x_KK_evap
 
 
 # Constants mirror KK_upscaled_covariances.F90 `use constants_clubb, only: Lv, Cp, w_tol, eta_tol` (eta_tol = chi_tol)

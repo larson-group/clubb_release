@@ -37,6 +37,7 @@ import numpy as np
 import jax.numpy as jnp
 
 from clubb_jax.src.Input_fields.namelist import _read_namelist_groups
+from clubb_jax.src.CLUBB_core.error_code import CLUBB_FATAL_ERROR
 from clubb_jax.src.CLUBB_core.nu_vert_res_dep import NuVertResDep
 
 
@@ -106,8 +107,7 @@ _NAME_TO_IDX: dict[str, int] = {n.lower(): i for i, n in enumerate(PARAM_NAMES)}
 # imports this for check_clubb_settings).
 PNAME_IDX: dict[str, int] = {n: i for i, n in enumerate(PARAM_NAMES)}
 
-# Sentinel for a fatal validation error (error_code.F90); used by check_parameters below.
-CLUBB_FATAL_ERROR = 99
+lmin_deltaz = 40.0  # Fixed value for minimum value for the length scale.
 _EPS64 = np.finfo(np.float64).eps
 _TINY64 = np.finfo(np.float64).tiny
 _HUGE64 = np.finfo(np.float64).max
@@ -295,8 +295,6 @@ def calc_derived_params(
     initialization and reset perform the source lmin fatal check on the host.
     """
     # ------------------------------ Constant Parameters ------------------------------
-    lmin_deltaz = 40.0  # Fixed value for minimum value for the length scale.
-
     # Flag for adjusting the values of the constant background eddy diffusivity
     # coefficients based on the average vertical grid spacing. If this flag is
     # turned off, the various nu coefficients remain as declared in the input.

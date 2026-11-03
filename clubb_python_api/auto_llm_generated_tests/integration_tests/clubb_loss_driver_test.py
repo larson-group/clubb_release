@@ -86,7 +86,7 @@ def run_manual_loss_bfb_test(
     """Repeat the reusable loss path twice with the same parameters and require BFB output."""
     manual_var_names, clubb_params_all = init_clubb_loss(
         namelist_filename,
-        return_default_params=True,
+        l_return_default_params=True,
     )
     try:
         manual_metrics_1 = clubb_get_loss_for_params(clubb_params_all)
@@ -125,7 +125,7 @@ def run_tweaked_parameter_test(
     """Verify that perturbing C8 changes the loss."""
     tweaked_var_names, clubb_params_all = init_clubb_loss(
         namelist_filename,
-        return_default_params=True,
+        l_return_default_params=True,
     )
     try:
         if list(tweaked_var_names) != list(reference_var_names):
@@ -157,7 +157,7 @@ def run_reinitialize_loss_bfb_test(
     """Reinitialize the reusable loss path and require it to reproduce the baseline."""
     reinit_var_names_1, clubb_params_all_1 = init_clubb_loss(
         namelist_filename,
-        return_default_params=True,
+        l_return_default_params=True,
     )
     try:
         reinit_metrics_1 = clubb_get_loss_for_params(clubb_params_all_1)
@@ -166,7 +166,7 @@ def run_reinitialize_loss_bfb_test(
 
     reinit_var_names_2, clubb_params_all_2 = init_clubb_loss(
         namelist_filename,
-        return_default_params=True,
+        l_return_default_params=True,
     )
     try:
         reinit_metrics_2 = clubb_get_loss_for_params(clubb_params_all_2)

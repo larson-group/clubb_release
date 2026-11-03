@@ -108,6 +108,3 @@ def mpace_b_sfclyr(ngrdcol, time, rho_sfc):
     wpthlp_sfc = convert_sens_ht_to_km_s(sensible_heat_flx, rho_sfc)
     wprtp_sfc = convert_latent_ht_to_m_s(latent_heat_flx, rho_sfc)
     return wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["mpace_b_tndcy", "mpace_b_sfclyr"]

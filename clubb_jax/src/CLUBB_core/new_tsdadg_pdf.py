@@ -112,7 +112,9 @@ def calc_setter_parameters(xm, xp2, Skx, sgn_wpxp, big_L_x_1, big_L_x_2):
     coef1 = base + (1.0 - mixt_frac) * common
     # Calculate the variance of x in the 2nd PDF component.
     coef2 = base - mixt_frac * common
-    return mu_x_1, mu_x_2, coef1 * xp2, coef2 * xp2, mixt_frac, coef1, coef2
+    sigma_x_1_sqd = coef1 * xp2
+    sigma_x_2_sqd = coef2 * xp2
+    return mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, mixt_frac, coef1, coef2
 
 
 def calc_respnder_parameters(xm, xp2, Skx, sgn_wpxp, mixt_frac, big_L_x_1):
@@ -144,7 +146,9 @@ def calc_respnder_parameters(xm, xp2, Skx, sgn_wpxp, mixt_frac, big_L_x_1):
     coef1 = base + (1.0 - mixt_frac) * common
     # Calculate the variance of x in the 2nd PDF component.
     coef2 = base - mixt_frac * common
-    return mu_x_1, mu_x_2, coef1 * xp2, coef2 * xp2, coef1, coef2
+    sigma_x_1_sqd = coef1 * xp2
+    sigma_x_2_sqd = coef2 * xp2
+    return mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, coef1, coef2
 
 
 def tsdadg_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, wpthlp):

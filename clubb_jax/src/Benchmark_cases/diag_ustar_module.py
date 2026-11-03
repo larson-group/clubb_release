@@ -91,6 +91,3 @@ def diag_ustar(z, bflx, wnd, z0):
         )
 
     return jax.vmap(column)(z.ravel(), bflx.ravel(), wnd.ravel(), z0.ravel()).reshape(shape)
-
-
-__all__ = ["diag_ustar"]

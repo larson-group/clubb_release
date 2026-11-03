@@ -81,7 +81,7 @@ class HmMetadata:
 
     @property
     def pdf_dim(self):
-        return max(
+        pdf_dim = max(
             self.iiPDF_chi,
             self.iiPDF_eta,
             self.iiPDF_w,
@@ -95,6 +95,7 @@ class HmMetadata:
             self.iiPDF_Ni,
             self.iiPDF_Ng,
         ) + 1
+        return pdf_dim
 
 
 @dataclass(frozen=True)
@@ -201,7 +202,7 @@ class hm_metadata_type:
             return len(self.hydromet_list)
         if self.hmp2_ip_on_hmm2_ip is not None:
             return len(self.hmp2_ip_on_hmm2_ip)
-        return max(
+        hydromet_dim = max(
             self.iirr,
             self.iirs,
             self.iiri,
@@ -211,10 +212,11 @@ class hm_metadata_type:
             self.iiNi,
             self.iiNg,
         ) + 1
+        return hydromet_dim
 
     @property
     def pdf_dim(self):
-        return max(
+        pdf_dim = max(
             self.iiPDF_chi,
             self.iiPDF_eta,
             self.iiPDF_w,
@@ -228,6 +230,7 @@ class hm_metadata_type:
             self.iiPDF_Ng,
             self.iiPDF_Ncn,
         ) + 1
+        return pdf_dim
 
     def tree_flatten(self):
         children = (

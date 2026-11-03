@@ -18,7 +18,7 @@ import sys
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 import jax.numpy as jnp
 
-_EPS = 1.0e-10   # constants_clubb.F90 eps
+from clubb_jax.src.CLUBB_core.constants_clubb import eps
 
 
 def lin_interpolate_two_points(height_int, height_high, height_low, var_high, var_low):
@@ -67,7 +67,8 @@ def lin_interpolate_two_points(height_int, height_high, height_low, var_high, va
         lambda _: None, operand=None,
     )
     # Compute linear interpolation
-    return ((height_int - height_low) / (height_high - height_low)) * (var_high - var_low) + var_low
+    lin_interpolate_two_points = ((height_int - height_low) / (height_high - height_low)) * (var_high - var_low) + var_low
+    return lin_interpolate_two_points
 
 
 def mono_cubic_interp(z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2,
@@ -158,12 +159,12 @@ def mono_cubic_interp(z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp
             beta = 120.0 * ((fp1 - f00) - 0.5 * h00 * (dfdx00 + dfdxp1))
 
             # Prevent an underflow by using a linear interpolation
-            alpha = (6.0 / jnp.where(jnp.abs(beta) < _EPS, 1.0, beta)) * h00 * (dfdxp1 - dfdx00) + 0.5
+            alpha = (6.0 / jnp.where(jnp.abs(beta) < eps, 1.0, beta)) * h00 * (dfdxp1 - dfdx00) + 0.5
             zn = (z_in - z00) / h00
             quintic = (((beta / 20.0) * zn - (beta * (1.0 + alpha) / 12.0)) * zn
                        + (beta * alpha / 6.0)) * zn ** 2 * zn + dfdx00 * h00 * zn + f00
             linfall = lin_interpolate_two_points(z00, zp1, zm1, fp1, fm1)
-            return jnp.where(jnp.abs(beta) < _EPS, linfall, quintic)
+            return jnp.where(jnp.abs(beta) < eps, linfall, quintic)
 
     def extrapolate(_):
         # Linear extrapolation.
@@ -180,7 +181,8 @@ def linear_interp_factor(factor, var_high, var_low):
     References:
       None
     """
-    return factor * (var_high - var_low) + var_low
+    linear_interp_factor = factor * (var_high - var_low) + var_low
+    return linear_interp_factor
 
 
 def lin_interp_between_grids(interpolate_altitudes, current_altitudes, current_values):

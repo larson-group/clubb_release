@@ -347,7 +347,8 @@ def set_Lscale_max(ngrdcol, l_implemented, host_dx, host_dy):
     """
     # Determine the maximum allowable value for Lscale (in meters).
     if l_implemented:
-        return 0.25 * jnp.minimum(host_dx, host_dy)
+        Lscale_max = 0.25 * jnp.minimum(host_dx, host_dy)
+        return Lscale_max
     return jnp.full((ngrdcol,), 1.0e5)
 
 

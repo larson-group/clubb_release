@@ -25,7 +25,7 @@ def test_sampled_profile_loss_has_gradient_through_time_average():
 
     def loss(c8):
         stats = initial.update('wp2', c8 * jnp.array([[1., 2.]]))
-        stats = stats.begin_timestep(l_sample=True, reset_accumulators=False)
+        stats = stats.begin_timestep(l_sample=True, l_reset_accumulators=False)
         stats = stats.update('wp2', c8 * jnp.array([[3., 4.]]))
         return calculate_field_loss(request, stats, 0)[0][0, 0]
 

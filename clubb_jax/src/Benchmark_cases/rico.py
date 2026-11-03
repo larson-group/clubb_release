@@ -184,6 +184,3 @@ def rico_sfclyr(
         vpwp_sfc = -vm_sfc * Cm * ubar
 
     return upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, T_sfc
-
-
-__all__ = ["rico_tndcy", "rico_sfclyr"]

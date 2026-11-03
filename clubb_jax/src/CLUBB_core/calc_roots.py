@@ -32,7 +32,8 @@ def _cardano_cbrt(z):
                           jnp.sign(re) * jnp.where(re_abs > 0.0, re_abs, 1.0) ** _ONE_THIRD,
                           0.0).astype(_C)
     principal = z ** _C(_ONE_THIRD)
-    return jnp.where(im == 0.0, real_cbrt, principal)
+    cube_root = jnp.where(im == 0.0, real_cbrt, principal)
+    return cube_root
 
 
 def cubic_solve(a_coef, b_coef, c_coef, d_coef):
@@ -213,4 +214,5 @@ def cube_root(x):
     """
     x = jnp.asarray(x)
     abs_cbrt = jnp.abs(x) ** _ONE_THIRD
-    return jnp.where(x >= 0.0, abs_cbrt, -abs_cbrt)
+    cube_root = jnp.where(x >= 0.0, abs_cbrt, -abs_cbrt)
+    return cube_root

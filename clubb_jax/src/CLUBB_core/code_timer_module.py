@@ -105,7 +105,7 @@ def timer_disable():
 
     try:
         if _trace_dir is not None:
-            _finish_trace(interrupted=True)
+            _finish_trace(l_interrupted=True)
     finally:
         reset_cpu_timer_state()
         l_timer_initialized = False
@@ -219,7 +219,8 @@ def get_timer_id(timer_name, l_create):
     if not l_create:
         timer_fail(f"Unknown timer name: {trimmed_name}")
     timer_entries.append(timer_entry_t(trimmed_name))
-    return len(timer_entries) - 1
+    timer_id = len(timer_entries) - 1
+    return timer_id
 
 
 def print_cpu_timer_summary(timer_unit):
@@ -330,7 +331,7 @@ def _start_trace():
     _trace_options = configured
 
 
-def _finish_trace(state=None, interrupted=False):
+def _finish_trace(state=None, l_interrupted=False):
     """Export the capture and return its directory; always release profiler state."""
     global _trace_dir, _capture_start, _trace_options
 
@@ -362,7 +363,7 @@ def _finish_trace(state=None, interrupted=False):
             "jax_version": jax.__version__,
             "backend": jax.default_backend(),
             "options": _trace_options,
-            "interrupted": interrupted or readiness_error is not None,
+            "interrupted": l_interrupted or readiness_error is not None,
             "capture_seconds": capture_seconds,
             "export_seconds": export_seconds,
         }

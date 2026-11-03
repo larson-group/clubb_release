@@ -50,7 +50,8 @@ def _calc_mass_1col(rho_vals, rho_levels, grid_levels):
         rho_z = vl + (vh - vl) * (z - zl) / (zh - zl)
         return Mcum[j] + (z - zl) * (vl + rho_z) * 0.5
 
-    return M(grid_levels[1:]) - M(grid_levels[:-1])
+    mass = M(grid_levels[1:]) - M(grid_levels[:-1])
+    return mass
 
 
 def calc_mass_over_grid_intervals(rho_lin_spline_vals, rho_lin_spline_levels, grid_levels):
@@ -145,8 +146,9 @@ def _pressure_levels(mass_on_cells, p_sfc):
     """Hydrostatic pressure at each grid level: p[0]=p_sfc; p[k]=p[k-1] − mass[k-1]·grav. Vectorized over cols."""
     # Calculate pressure levels from altitudes and densities
     dp = mass_on_cells * grav                                        # (ngrdcol, ncell)
-    return p_sfc[:, None] - jnp.concatenate(
+    p_levels = p_sfc[:, None] - jnp.concatenate(
         [jnp.zeros((mass_on_cells.shape[0], 1), dtype=mass_on_cells.dtype), jnp.cumsum(dp, axis=1)], axis=1)
+    return p_levels
 
 
 #-------------------------------------------------------------------------------

@@ -31,7 +31,7 @@ def pdf_hydromet_microphys_prep(
     corr_array_n_cloud, corr_array_n_below,           # In
     hm_metadata, pdf_params, clubb_params,            # In
     clubb_config_flags, silhs_config_flags,           # In
-    l_rad_itime,                                      # In
+    l_rad_itime,                                                           # In
     stats,                                            # InOut
     err_info,                                         # InOut
     precip_fracs,                                     # InOut
@@ -150,10 +150,13 @@ def pdf_hydromet_microphys_prep(
         def compute_subcolumns(_):
             # Timestep-dependent seed: source convention supports repeatable restarts.
             lh_seed_custom = jnp.asarray(parameters_microphys.lh_seed * itime, dtype=jnp.uint32)
+            # False if all time steps use the same weights at all grid levels
+            l_calc_weights_all_levs = False
+            l_calc_weights_all_levs_itime = l_calc_weights_all_levs and not l_rad_itime
             sample_err, X_nl, X_comp, weights, sample_stats, next_state = generate_silhs_sample_api(
                 itime, pdf_dim, parameters_microphys.lh_num_samples,       # In
                 parameters_microphys.lh_sequence_length, gr.nzt, ngrdcol,  # In
-                False,                                                     # In
+                l_calc_weights_all_levs_itime,                             # In
                 gr, pdf_params, gr.dzt, Lscale,                            # In
                 lh_seed_custom, hm_metadata,                               # In
                 mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,              # In
@@ -168,12 +171,13 @@ def pdf_hydromet_microphys_prep(
             # Preserve the source fatal return between generation and clipping.
             # Outputs undefined on that path are explicit zeros in JAX.
             def clip_subcolumns(_):
+                l_use_Ncn_to_Nc = True  # Whether to call Ncn_to_Nc (True) or not (False)
                 clipped, rt, thl, rc, rv, Nc = clip_transform_silhs_output_api(
                     gr.nzt, ngrdcol, parameters_microphys.lh_num_samples,  # In
                     pdf_dim, hydromet_dim, hm_metadata,                    # In
                     X_comp,                                                # In
                     X_nl,                                                  # InOut
-                    pdf_params, True,                                      # In
+                    pdf_params, l_use_Ncn_to_Nc,                           # In
                 )
                 clipped_stats = stats_accumulate_lh_api(
                     gr, gr.nzt, ngrdcol, parameters_microphys.lh_num_samples, pdf_dim,  # In

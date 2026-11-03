@@ -108,6 +108,3 @@ def dycoms2_rf02_sfclyr(ngrdcol, time):
     wpthlp_sfc = jnp.full(ngrdcol, convert_sens_ht_to_km_s(sens_ht, rho_sfc))
     wprtp_sfc = jnp.full(ngrdcol, convert_latent_ht_to_m_s(latent_ht, rho_sfc))
     return wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["dycoms2_rf02_tndcy", "dycoms2_rf02_sfclyr"]

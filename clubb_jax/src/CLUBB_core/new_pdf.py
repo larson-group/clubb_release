@@ -314,12 +314,13 @@ def calc_coef_wp4_implicit(mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sq
     """
     omf = 1.0 - mixt_frac
     # Calculate coef_wp4_implicit.
-    return (3.0 * mixt_frac * coef_sigma_w_1_sqd ** 2
-            + 6.0 * F_w * omf * coef_sigma_w_1_sqd
-            + F_w ** 2 * omf ** 2 / mixt_frac
-            + 3.0 * omf * coef_sigma_w_2_sqd ** 2
-            + 6.0 * F_w * mixt_frac * coef_sigma_w_2_sqd
-            + F_w ** 2 * mixt_frac ** 2 / omf)
+    coef_wp4_implicit = (3.0 * mixt_frac * coef_sigma_w_1_sqd ** 2
+                         + 6.0 * F_w * omf * coef_sigma_w_1_sqd
+                         + F_w ** 2 * omf ** 2 / mixt_frac
+                         + 3.0 * omf * coef_sigma_w_2_sqd ** 2
+                         + 6.0 * F_w * mixt_frac * coef_sigma_w_2_sqd
+                         + F_w ** 2 * mixt_frac ** 2 / omf)
+    return coef_wp4_implicit
 
 
 def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
@@ -353,7 +354,8 @@ def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
     )
     # F_x = 0 and Skx = 0
     mf_symmetric = (zeta_x + 1.0) / zp2
-    return jnp.where(F_x > 0.0, mf_pos, mf_symmetric)
+    mixt_frac = jnp.where(F_x > 0.0, mf_pos, mf_symmetric)
+    return mixt_frac
 
 
 
@@ -523,7 +525,8 @@ def sort_roots(roots):
     comments for each branch.  jnp.sort is the same operation for the returned
     values.
     """
-    return jnp.sort(jnp.asarray(roots), axis=-1)
+    roots_sorted = jnp.sort(jnp.asarray(roots), axis=-1)
+    return roots_sorted
 
 
 def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
@@ -625,7 +628,9 @@ def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
     max_sqrt = jnp.minimum(max_sqrt, 1.0)
     # The minimum and maximum allowable values for F_x are the squares of the
     # minimum and maximum allowable values for sqrt(F_x).
-    return min_sqrt ** 2, max_sqrt ** 2
+    min_F_x = min_sqrt ** 2
+    max_F_x = max_sqrt ** 2
+    return min_F_x, max_F_x
 
 
 def calc_coefs_wp2xp_semiimpl(wp2, xp2, sgn_wpxp, mixt_frac, F_w, F_x,

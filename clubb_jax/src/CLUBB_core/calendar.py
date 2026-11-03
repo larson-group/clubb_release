@@ -31,12 +31,13 @@ def gregorian2julian_date(day, month, year):
     I = jnp.asarray(year, dtype=jnp.int32)
     J = jnp.asarray(month, dtype=jnp.int32)
     K = jnp.asarray(day, dtype=jnp.int32)
-    return (
+    gregorian2julian_date = (
         K - 32075
         + _itrunc_div(1461 * (I + 4800 + _itrunc_div(J - 14, 12)), 4)
         + _itrunc_div(367 * (J - 2 - _itrunc_div(J - 14, 12) * 12), 12)
         - _itrunc_div(3 * _itrunc_div(I + 4900 + _itrunc_div(J - 14, 12), 100), 4)
     )
+    return gregorian2julian_date
 
 
 def julian2gregorian_date(julian_date):
@@ -62,7 +63,8 @@ def leap_year(year):
     """Determine whether the given year is a leap year."""
     # ---- Begin Code ----
     year = jnp.asarray(year, dtype=jnp.int32)
-    return (year % 4 == 0) & ~((year % 100 == 0) & (year % 400 != 0))
+    leap_year = (year % 4 == 0) & ~((year % 100 == 0) & (year % 400 != 0))
+    return leap_year
 
 
 def compute_current_date_api(
@@ -105,10 +107,3 @@ def gregorian2julian_day(day, month, year):
     # The radiation configuration boundary validates external dates before JIT;
     # dates produced by ``compute_current_date_api`` are valid by construction.
     return julian_day
-
-
-__all__ = [
-    "month_names", "days_per_month", "gregorian2julian_date",
-    "julian2gregorian_date", "leap_year", "compute_current_date_api",
-    "gregorian2julian_day",
-]

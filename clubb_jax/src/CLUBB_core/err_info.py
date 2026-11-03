@@ -76,10 +76,12 @@ class ErrInfo(NamedTuple):
         return jnp.asarray(self.err_code, dtype=jnp.int32)
 
     def fatal_mask(self):
-        return self.err_code_or_default() == CLUBB_FATAL_ERROR
+        l_fatal = self.err_code_or_default() == CLUBB_FATAL_ERROR
+        return l_fatal
 
     def any_fatal(self):
-        return jnp.any(self.fatal_mask())
+        l_any_fatal = jnp.any(self.fatal_mask())
+        return l_any_fatal
 
     def has_fatal(self):
         return self.any_fatal()

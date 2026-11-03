@@ -470,7 +470,8 @@ def compute_k_lh_start(
         if gr.grid_dir_indx < 0:
             k_lh_start = k_lh_start_rcm_in_cloud + k_lh_start_rcm - k_lh_start
         return k_lh_start
-    return k_lh_start_rcm_in_cloud if l_rcm_in_cloud_k_lh_start else k_lh_start_rcm
+    k_lh_start = k_lh_start_rcm_in_cloud if l_rcm_in_cloud_k_lh_start else k_lh_start_rcm
+    return k_lh_start
 
 
 # -----------------------------------------------------------------------------
@@ -550,9 +551,10 @@ def assert_consistent_cloud_frac(
         stdev_chi_1: Standard deviation of chi in PDF component 1 [kg/kg]
         stdev_chi_2: Standard deviation of chi in PDF component 2 [kg/kg]
     """
-    return assert_consistent_cf_component(
+    l_error = assert_consistent_cf_component(
         chi_1, stdev_chi_1, cloud_frac_1
     ) | assert_consistent_cf_component(chi_2, stdev_chi_2, cloud_frac_2)
+    return l_error
 
 
 # -----------------------------------------------------------------------------
@@ -585,9 +587,10 @@ def assert_consistent_cf_component(mu_chi_i, sigma_chi_i, cloud_frac_i):
     right = cloud_frac_i + 5.0e-6
     left_chi = ltqnorm(1.0 - jnp.clip(left, 1.0e-5, 1.0 - 1.0e-5)) * sigma_chi_i + mu_chi_i
     right_chi = ltqnorm(1.0 - jnp.clip(right, 1.0e-5, 1.0 - 1.0e-5)) * sigma_chi_i + mu_chi_i
-    return ~omitted & (
+    l_error = ~omitted & (
         ((left >= 1.0e-5) & (left_chi <= 0.0)) | ((right <= 1.0 - 1.0e-5) & (right_chi > 0.0))
     )
+    return l_error
 
 
 # -----------------------------------------------------------------------------
@@ -613,7 +616,7 @@ def assert_correct_cloud_normal(
     """
     cloud_frac_i = jnp.where(X_mixt_comp == 1, cloud_frac_1, cloud_frac_2)
     clear = X_u_chi < 1.0 - cloud_frac_i
-    return jnp.any(
+    l_error = jnp.any(
         jnp.where(
             clear,
             X_nl_chi > 1000.0 * single_prec_thresh,
@@ -621,6 +624,7 @@ def assert_correct_cloud_normal(
         )
         | (X_u_chi >= 1.0)
     )
+    return l_error
 
 
 # -----------------------------------------------------------------------------
@@ -747,11 +751,12 @@ def compute_arb_overlap(
     _, lower = jax.lax.scan(step_down, start, jnp.arange(nzt - 1, -1, -1))
     upper = upper.transpose(1, 2, 0, 3)
     lower = lower[::-1].transpose(1, 2, 0, 3)
-    return jnp.where(
+    X_u_all_levs = jnp.where(
         jnp.arange(nzt)[None, None, :, None] >= k_lh_start[:, None, None, None],
         upper,
         lower,
     )
+    return X_u_all_levs
 
 
 # -----------------------------------------------------------------------------

@@ -54,4 +54,5 @@ def set_debug_level(level: int):
 def clubb_at_least_debug_level(level: int) -> bool:
     """Checks to see if clubb has been set to a specified debug level."""
     # ---- Begin Code ----
-    return int(level) <= _debug_level
+    clubb_at_least_debug_level = int(level) <= _debug_level
+    return clubb_at_least_debug_level

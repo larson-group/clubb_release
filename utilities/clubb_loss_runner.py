@@ -83,7 +83,7 @@ class clubb_loss_runner:
             loss_weights=self.loss_weights, field_weights=self.field_weights,
             duplicate_params_for_batch=True, disable_stats_storage=True)
         api = load_loss_backend(self.backend)
-        self.field_names, params = api.init_clubb_loss(str(runfile), return_default_params=True)
+        self.field_names, params = api.init_clubb_loss(str(runfile), l_return_default_params=True)
         self.api = api
         self.default_params = np.asarray(params, dtype=float).copy()
         self.param_names, self.bounds = parameter_metadata(self.backend)

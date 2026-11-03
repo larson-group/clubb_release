@@ -423,7 +423,7 @@ def penta_lu_solve_multiple_rhs_lhs(
             upper_2[: ndim - 2][::-1],
         ),
     )
-    return jnp.transpose(
+    soln = jnp.transpose(
         jnp.concatenate(
             [
                 soln_reversed[::-1],
@@ -434,6 +434,7 @@ def penta_lu_solve_multiple_rhs_lhs(
         ),
         (1, 0, 2),
     )
+    return soln
 
 
 def penta_lu_solve(ndim: int, ngrdcol: int, lhs, rhs):
@@ -445,10 +446,3 @@ def penta_lu_solve(ndim: int, ngrdcol: int, lhs, rhs):
             ndim, rhs.shape[2], ngrdcol, lhs, rhs
         )
     raise ValueError("rhs must be rank-2 or rank-3 for penta_lu_solve")
-
-
-__all__ = [
-    "penta_lu_solve",
-    "penta_lu_solve_single_rhs_multiple_lhs",
-    "penta_lu_solve_multiple_rhs_lhs",
-]

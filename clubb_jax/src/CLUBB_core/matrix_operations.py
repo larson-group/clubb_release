@@ -35,7 +35,8 @@ _THRESH = 0.1      # LAPACK dlaqsy equilibration threshold
 def _lower_mask(n):
     """Boolean (n,n) mask, True on and below the diagonal."""
     r = jnp.arange(n)
-    return r[:, None] >= r[None, :]
+    l_lower = r[:, None] >= r[None, :]
+    return l_lower
 
 
 def mirror_lower_triangular_matrix(matrix):
@@ -50,7 +51,8 @@ def mirror_lower_triangular_matrix(matrix):
     """
     #----- Begin Code -----
     lower = jnp.tril(matrix)
-    return lower + jnp.tril(matrix, -1).T
+    matrix = lower + jnp.tril(matrix, -1).T
+    return matrix
 
 
 def _portable_cholesky(matrix):
@@ -63,7 +65,8 @@ def _portable_cholesky(matrix):
         entries = (matrix[column + 1:, column] - product) / diagonal
         factor = factor.at[column + 1:, column].set(entries)
     diagonal = jnp.diagonal(factor)
-    return jnp.where(jnp.any(jnp.isnan(diagonal) | (diagonal <= 0.0)), jnp.nan, factor)
+    factor = jnp.where(jnp.any(jnp.isnan(diagonal) | (diagonal <= 0.0)), jnp.nan, factor)
+    return factor
 
 
 def Cholesky_factor(a_input):

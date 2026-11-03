@@ -146,7 +146,8 @@ def xp2_xpyp_single_lhs_valid(clubb_params, iiPDF_type, l_explicit_turbulent_adv
             <= jnp.abs(c2rt + c2rtthl) * one_half * eps
         )
     )
-    return static_allowed & c2_equivalent
+    l_single_lhs_valid = static_allowed & c2_equivalent
+    return l_single_lhs_valid
 
 
 @partial(
@@ -1280,7 +1281,7 @@ def xp2_xpyp_solve(
     err_info, solution, rcond = tridiag_solve(
         solve_type_str, tridiag_solve_method, ngrdcol, nzm,
         lhs_solve, rhs_solve, err_info,
-        use_rcond=l_need_rcond,
+        l_use_rcond=l_need_rcond,
         l_implemented=l_implemented,
     )
     if clubb_at_least_debug_level(0):
@@ -2405,7 +2406,8 @@ def term_dp1_rhs(nzm, ngrdcol, Cn, invrs_tau_zm, threshold):
     momentum levels.
     """
     del ngrdcol
-    return Cn[:, :nzm] * invrs_tau_zm[:, :nzm] * threshold
+    rhs = Cn[:, :nzm] * invrs_tau_zm[:, :nzm] * threshold
+    return rhs
 
 
 @partial(jax.jit, static_argnames=("nzm", "ngrdcol"))
@@ -2563,7 +2565,8 @@ def update_xp2_mc(
 
     pf_const = jnp.where(
         precip_frac_double_delta > cloud_frac_min,
-        (one - precip_frac_double_delta) / precip_frac_double_delta,
+        (one - precip_frac_double_delta)
+        / jnp.where(precip_frac_double_delta > cloud_frac_min, precip_frac_double_delta, one),
         zero,
     )
 

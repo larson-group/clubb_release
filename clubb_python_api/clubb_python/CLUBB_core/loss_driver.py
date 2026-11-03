@@ -1,6 +1,6 @@
 """Initialize, reuse and close native CLUBB profile-loss requests.
 
-init_clubb_loss(runfile, return_default_params=True) returns field names and the
+init_clubb_loss(runfile, l_return_default_params=True) returns field names and the
 full default parameter matrix; get_clubb_params_all reads that matrix later.
 clubb_get_loss_for_params scores full matrices against the prepared benchmark
 and fixed weights. It returns (rmse,correlation,std_ratio,bias_norm,case_loss):
@@ -27,7 +27,7 @@ _loss_num_time_windows = 1
 _loss_var_names: list[str] = []
 
 
-def init_clubb_loss(runfile: str, return_default_params: bool = False):
+def init_clubb_loss(runfile: str, l_return_default_params: bool = False):
     """Initialize the reusable CLUBB loss session from an aggregate runfile."""
     global _loss_initialized, _loss_num_variables, _loss_total_param_sets, _loss_num_time_windows, _loss_var_names
 
@@ -40,7 +40,7 @@ def init_clubb_loss(runfile: str, return_default_params: bool = False):
     _loss_initialized = True
 
     clubb_params_all = None
-    if return_default_params:
+    if l_return_default_params:
         clubb_params_all = get_clubb_params_all()
 
     return list(_loss_var_names), clubb_params_all
@@ -97,7 +97,7 @@ def clubb_get_loss(runfile: str):
     """Run the one-shot CLUBB loss path using the runfile's default parameters."""
     clubb_var_names, clubb_params_all = init_clubb_loss(
         runfile,
-        return_default_params=True,
+        l_return_default_params=True,
     )
     try:
         rmse, correlation, std_ratio, bias_norm, case_loss = clubb_get_loss_for_params(

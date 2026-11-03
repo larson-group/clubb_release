@@ -111,6 +111,3 @@ def dycoms2_rf01_sfclyr(
     else:
         raise ValueError(f"Invalid sfctype value = {sfctype}")
     return wpthlp_sfc, wprtp_sfc, ustar, T_sfc
-
-
-__all__ = ["dycoms2_rf01_tndcy", "dycoms2_rf01_sfclyr"]

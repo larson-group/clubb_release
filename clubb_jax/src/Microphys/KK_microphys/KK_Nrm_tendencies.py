@@ -26,7 +26,8 @@ def KK_Nrm_auto_mean(KK_rrm_auto_tndcy):
     """N_r autoconversion tendency. KK_Nrm_tendencies.F90:296.
 
     = (dr_r/dt)_auto / ((4/3) pi rho_lw r_0^3) — one new drop of radius r_0 per unit mass."""
-    return KK_rrm_auto_tndcy / ((4.0 / 3.0) * pi * rho_lw * parameters_KK.r_0 ** 3)
+    KK_Nrm_auto_mean = KK_rrm_auto_tndcy / ((4.0 / 3.0) * pi * rho_lw * parameters_KK.r_0 ** 3)
+    return KK_Nrm_auto_mean
 
 
 def KK_Nrm_evap_local_mean(KK_rrm_evap_tndcy, Nrm, rrm, dt):
@@ -36,7 +37,8 @@ def KK_Nrm_evap_local_mean(KK_rrm_evap_tndcy, Nrm, rrm, dt):
     which reduces to (Nrm/rrm) * KK_rrm_evap_tndcy."""
     nu = _KK_NRM_EVAP_NU
     rrm_safe = jnp.where(rrm > 0.0, rrm, 1.0)
-    return dt ** (nu - 1.0) * (Nrm / rrm_safe ** nu) * KK_rrm_evap_tndcy ** nu
+    KK_Nrm_evap_local_mean = dt ** (nu - 1.0) * (Nrm / rrm_safe ** nu) * KK_rrm_evap_tndcy ** nu
+    return KK_Nrm_evap_local_mean
 
 
 def KK_Nrm_evap_upscaled_mean(mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2,
@@ -65,6 +67,7 @@ def KK_Nrm_evap_upscaled_mean(mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_
                                sigma_chi_2, sigma_rr_2, sigma_Nr_2, sigma_rr_2_n,
                                sigma_Nr_2_n, corr_chi_rr_2_n, corr_chi_Nr_2_n,
                                corr_rr_Nr_2_n, a, b, g)
-    return (dt ** (nu - 1.0) * KK_evap_coef ** nu
-            * (mixt_frac * precip_frac_1 * comp1
-               + (1.0 - mixt_frac) * precip_frac_2 * comp2))
+    KK_Nrm_evap_upscaled_mean = (dt ** (nu - 1.0) * KK_evap_coef ** nu
+                                 * (mixt_frac * precip_frac_1 * comp1
+                                    + (1.0 - mixt_frac) * precip_frac_2 * comp2))
+    return KK_Nrm_evap_upscaled_mean

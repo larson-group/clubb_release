@@ -549,7 +549,7 @@ def mfl_xm_rhs(
     """
     del nzm, nzt, ngrdcol
     invrs_dt = one / dt
-    return (
+    rhs = (
         jnp.asarray(xm_old) * invrs_dt
         - jnp.asarray(invrs_rho_ds_zt)
         * jnp.asarray(invrs_dzt)
@@ -559,6 +559,7 @@ def mfl_xm_rhs(
         )
         + jnp.asarray(xm_forcing)
     )
+    return rhs
 
 
 @partial(

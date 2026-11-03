@@ -32,7 +32,8 @@ def _safe_sqrt(x):
     ``jnp.sqrt(jnp.maximum(0,x))`` has an inf reverse-mode gradient at the clip. Forward-identical."""
     xp = jnp.maximum(x, 0.0)
     safe = jnp.where(xp > 0.0, xp, 1.0)
-    return jnp.where(xp > 0.0, jnp.sqrt(safe), 0.0)
+    sqrt_x = jnp.where(xp > 0.0, jnp.sqrt(safe), 0.0)
+    return sqrt_x
 
 
 class _TracerXP:

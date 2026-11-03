@@ -59,6 +59,3 @@ def fire_sfclyr(
     wpthlp_sfc = compute_wpthlp_sfc(ngrdcol, Cz, ubar, thlm_sfc, T_sfc, exner_sfc)
     wprtp_sfc = compute_wprtp_sfc(ngrdcol, Cz, ubar, rtm_sfc, rsat)
     return wpthlp_sfc, wprtp_sfc, ustar, T_sfc
-
-
-__all__ = ["fire_sfclyr"]

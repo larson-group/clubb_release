@@ -43,7 +43,8 @@ def _calculate_spurious_source(
     dt,
 ):
     """JAX equivalent of ``calculate_spurious_source`` from numerical_check."""
-    return (integral_after - integral_before) / dt + flux_top - flux_sfc - integral_forcing
+    spurious_source = (integral_after - integral_before) / dt + flux_top - flux_sfc - integral_forcing
+    return spurious_source
 
 
 def stats_accumulate(
@@ -431,9 +432,6 @@ def stats_accumulate(
         )
 
     return stats
-
-
-__all__ = ["stats_accumulate"]
 
 
 def stats_accumulate_hydromet_api(

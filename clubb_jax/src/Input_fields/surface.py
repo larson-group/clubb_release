@@ -10,6 +10,8 @@ JAX I/O grouping (no single Fortran file): reorganizes the Fortran surface-forci
 column reader + time-interpolation that the Fortran does via input_reader.F90 / time_dependent_input.F90.
 """
 import numpy as np
+
+_DEFAULT_T_SFC = 300.0  # Surface temperature used when the file has no such column [K]
 from pathlib import Path
 
 
@@ -43,7 +45,7 @@ def read_surface(path: str) -> dict:
         'time': data[:, 0],
         'wpqtp_sfc': data[:, 1] if data.shape[1] > 1 else np.zeros(len(data)),
         'wpthlp_sfc': data[:, 2] if data.shape[1] > 2 else np.zeros(len(data)),
-        't_sfc': data[:, 3] if data.shape[1] > 3 else np.full(len(data), 300.0),
+        't_sfc': data[:, 3] if data.shape[1] > 3 else np.full(len(data), _DEFAULT_T_SFC),
     }
 
     return result

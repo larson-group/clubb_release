@@ -24,4 +24,5 @@ def variance_KK_mvr(mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu
         + (1.0 - mixt_frac) * precip_frac_2
         * bivar_LL_mean_eq(mu_rr_2, mu_Nr_2, mu_rr_2_n, mu_Nr_2_n, sigma_rr_2, sigma_Nr_2,
                            sigma_rr_2_n, sigma_Nr_2_n, corr_rr_Nr_2_n, a2, b2))
-    return e_r2 - KK_mean_vol_rad ** 2
+    variance_KK_mvr = e_r2 - KK_mean_vol_rad ** 2
+    return variance_KK_mvr

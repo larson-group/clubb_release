@@ -278,7 +278,7 @@ def simple_rad_bomex(gr, ngrdcol):
     # ---- Begin Code ----
 
     # Radiative theta-l tendencysimple_rad_bomex
-    return jnp.where(
+    radht = jnp.where(
         (gr.zt >= 0.0) & (gr.zt < 1500.0),
         -2.315e-5,
         jnp.where(
@@ -288,6 +288,7 @@ def simple_rad_bomex(gr, ngrdcol):
             0.0,
         ),
     )
+    return radht
 
 
 @partial(jax.jit, static_argnames=("ngrdcol",))
@@ -403,14 +404,9 @@ def lba_radhtz(time, lba_krad):
     i2 = i1 + 1
     a = (time - 600.0 * i1) / (600.0 * i2 - 600.0 * i1)
     interpolated = a * (lba_krad[:, i2 - 1] - lba_krad[:, i1 - 1]) + lba_krad[:, i1 - 1]
-    return jnp.where(
+    radhtz = jnp.where(
         time <= 600.0,
         lba_krad[:, 0],
         jnp.where(time >= lba_ntimes * 600.0, lba_krad[:, lba_ntimes - 1], interpolated),
     )
-
-
-__all__ = [
-    "simple_rad", "simple_rad_bomex", "simple_rad_lba", "simple_rad_lba_init",
-    "liq_water_path",
-]
+    return radhtz

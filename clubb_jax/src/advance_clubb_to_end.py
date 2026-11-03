@@ -95,7 +95,7 @@ def advance_clubb_to_end(
                 )
             state['_jax_stats'] = jax_stats.begin_timestep(
                 l_sample=l_sample,
-                reset_accumulators=stats_writer.l_reset,
+                l_reset_accumulators=stats_writer.l_reset,
             )
             timer_stop("stats_begin_timestep_api")
         elif state['l_stats']:
@@ -110,7 +110,7 @@ def advance_clubb_to_end(
                 )
             state['_jax_stats'] = jax_stats.begin_timestep(
                 l_sample=False,
-                reset_accumulators=False,
+                l_reset_accumulators=False,
             )
             l_sample = False
             l_last_sample = False
@@ -606,6 +606,8 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
     if state["microphys_scheme"] != "none":
         # Set PDF parameters/mixed moments, then generate and clip samples.
         timer_start("pdf_hydromet_microphys_prep")
+        # SILHS weights ignore this flag because l_calc_weights_all_levs is False.
+        l_rad_itime = False
         (
             state["_jax_stats"],
             state["err_info"],
@@ -641,7 +643,7 @@ def _advance_microphysics(state, itime, time_current, l_rad_itime):
             state["corr_array_n_cloud"], state["corr_array_n_below"],                # In
             state["hm_metadata"], state["pdf_params"], state["clubb_params"],        # In
             state["flags"], state["silhs_config_flags"],                             # In
-            False,                                                                   # In
+            l_rad_itime,                                                             # In
             state["_jax_stats"],                                                     # InOut
             state["err_info"],                                                       # InOut
             state["precip_fracs"],                                                   # InOut

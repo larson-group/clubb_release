@@ -73,6 +73,3 @@ def twp_ice_sfclyr(
     wpthlp_sfc = compute_wpthlp_sfc(ngrdcol, Ch, ubar, thlm_sfc, T_sfc, exner_sfc)
     wprtp_sfc = compute_wprtp_sfc(ngrdcol, Cq, ubar, rtm, rsat)
     return wpthlp_sfc, wprtp_sfc, ustar, T_sfc
-
-
-__all__ = ["twp_ice_sfclyr"]

@@ -333,11 +333,3 @@ def xpyp_term_ta_pdf_rhs_godunov(
     # Set upper boundary value to 0.
     zeros_bnd = jnp.zeros((ngrdcol, 1))
     return jnp.concatenate([zeros_bnd, rhs_int, zeros_bnd], axis=1)
-
-
-__all__ = [
-    "xpyp_term_ta_pdf_lhs",
-    "xpyp_term_ta_pdf_lhs_godunov",
-    "xpyp_term_ta_pdf_rhs",
-    "xpyp_term_ta_pdf_rhs_godunov",
-]

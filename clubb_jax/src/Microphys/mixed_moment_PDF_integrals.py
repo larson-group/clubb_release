@@ -319,11 +319,12 @@ def xphmp_integral_covar(
     # -----------------------------------------------------------------------
     varies_1 = (sigma_x_1 > x_tol) & (sigma_hm_1 > hm_tol)
     varies_2 = (sigma_x_2 > x_tol) & (sigma_hm_2 > hm_tol)
-    return mixt_frac * precip_frac_1 * (
+    xphmp_integral_covar = mixt_frac * precip_frac_1 * (
         (mu_x_1 - x_mean) * mu_hm_1 + jnp.where(varies_1, corr_x_hm_1 * sigma_x_1 * sigma_hm_1, 0.0)
     ) + (1.0 - mixt_frac) * precip_frac_2 * (
         (mu_x_2 - x_mean) * mu_hm_2 + jnp.where(varies_2, corr_x_hm_2 * sigma_x_2 * sigma_hm_2, 0.0)
     )
+    return xphmp_integral_covar
 
 
 # -----------------------------------------------------------------------------
@@ -370,7 +371,7 @@ def hmxphmyp_integral_covar(
     # -----------------------------------------------------------------------
     varies_1 = (sigma_hmx_1 > hmx_tol) & (sigma_hmy_1 > hmy_tol)
     varies_2 = (sigma_hmx_2 > hmx_tol) & (sigma_hmy_2 > hmy_tol)
-    return (
+    hmxphmyp_integral_covar = (
         mixt_frac
         * precip_frac_1
         * (
@@ -385,6 +386,7 @@ def hmxphmyp_integral_covar(
         )
         - hmx_mean * hmy_mean
     )
+    return hmxphmyp_integral_covar
 
 
 # -----------------------------------------------------------------------------
@@ -437,7 +439,7 @@ def xp_a_hmpb_integrals_all_MM(
     # as rr, Nr, ri, Ni, etc.
     # References:
     # -----------------------------------------------------------------------
-    return mixt_frac * bivar_NL_x_hm_all_MM_comp_eq(
+    xp_a_hmpb_integrals_all_MM = mixt_frac * bivar_NL_x_hm_all_MM_comp_eq(
         mu_x_1, mu_hm_1, mu_hm_1_n,            # In
         sigma_x_1, sigma_hm_1, sigma_hm_1_n,   # In
         corr_x_hm_1_n, precip_frac_1, x_mean,  # In
@@ -448,6 +450,7 @@ def xp_a_hmpb_integrals_all_MM(
         corr_x_hm_2_n, precip_frac_2, x_mean,  # In
         hm_mean, x_tol, hm_tol, a_exp, b_exp,  # In
     )
+    return xp_a_hmpb_integrals_all_MM
 
 
 # -----------------------------------------------------------------------------
@@ -508,11 +511,12 @@ def bivar_NL_x_hm_all_MM_comp_eq(
 
     x_is_const = sigma_x_i <= x_tol
     hm_is_const = sigma_hm_i <= hm_tol
-    return jnp.where(
+    bivar_NL_x_hm_all_MM_comp_eq = jnp.where(
         x_is_const & hm_is_const,
         both_const,
         jnp.where(x_is_const, x_const, jnp.where(hm_is_const, hm_const, both_vary)),
     )
+    return bivar_NL_x_hm_all_MM_comp_eq
 
 
 # -----------------------------------------------------------------------------

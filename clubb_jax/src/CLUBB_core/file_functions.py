@@ -73,6 +73,3 @@ def file_read_2d(
             f"Expected {num_datapts} values in {file_path}, found {variable.size}"
         )
     return variable.reshape(file_dimension1, file_dimension2)
-
-
-__all__ = ["file_read_1d", "file_read_2d"]

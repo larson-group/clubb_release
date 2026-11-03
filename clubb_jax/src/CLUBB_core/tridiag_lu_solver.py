@@ -302,10 +302,11 @@ def tridiag_lu_solve_multiple_rhs_lhs(
         soln[-1],
         (soln[:-1][::-1], upper[::-1]),
     )
-    return jnp.transpose(
+    soln = jnp.transpose(
         jnp.concatenate([soln_reversed[::-1], soln[-1:]], axis=0),
         (1, 0, 2),
     )
+    return soln
 
 
 def tridiag_lu_solve(ndim: int, lhs, rhs):
@@ -321,11 +322,3 @@ def tridiag_lu_solve(ndim: int, lhs, rhs):
             ndim, rhs.shape[2], lhs.shape[1], lhs, rhs
         )
     raise ValueError("Unsupported lhs/rhs ranks for tridiag_lu_solve")
-
-
-__all__ = [
-    "tridiag_lu_solve",
-    "tridiag_lu_solve_single_rhs_lhs",
-    "tridiag_lu_solve_single_rhs_multiple_lhs",
-    "tridiag_lu_solve_multiple_rhs_lhs",
-]

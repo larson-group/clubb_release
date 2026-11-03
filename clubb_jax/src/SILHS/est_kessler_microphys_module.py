@@ -189,4 +189,5 @@ def calc_estimate(
         (jnp.zeros_like(mixt_frac), jnp.zeros_like(mixt_frac)),
         (jnp.moveaxis(sample_estimate, 1, 0), jnp.moveaxis(X_mixt_comp_one_lev, 1, 0)),
     )
-    return (est_m1 + est_m2) / num_samples, l_error
+    est_m = (est_m1 + est_m2) / num_samples
+    return est_m, l_error

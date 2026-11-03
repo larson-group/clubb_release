@@ -108,6 +108,3 @@ def bomex_sfclyr(ngrdcol, time, rtm_sfc):
     # water mixing ratio.
     wprtp_sfc = flux_spec_hum_to_mixing_ratio(ngrdcol, rtm_sfc, wpqtp_sfc)
     return wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["bomex_tndcy", "bomex_sfclyr"]

@@ -91,7 +91,8 @@ def sponge_damp_xm(xm, xm_ref, z, zm_top, tau, sponge_layer_depth, dt):
     dt_on_tau = dt / tau
     # Really, we should be using xm_ref at time n+1 rather than n.
     # However, for steady profiles of xm_ref, it won't matter.
-    return (xm + dt_on_tau * xm_ref) / (1.0 + dt_on_tau)
+    xm_p = (xm + dt_on_tau * xm_ref) / (1.0 + dt_on_tau)
+    return xm_p
 
 
 def sponge_damp_xp2(dt, zm, xp2, x_tol_sqd, tau, sponge_layer_depth):

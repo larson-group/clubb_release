@@ -689,6 +689,3 @@ def read_surface_var_for_bc(
         rho_bot,
         exner_bot,
     )
-
-
-__all__ = ["prescribe_forcings", "read_surface_var_for_bc"]

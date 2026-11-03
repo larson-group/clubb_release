@@ -43,13 +43,14 @@ def nov11_altocu_rtm_adjust(ngrdcol, gr, time, time_initial, dt, rtm):
     # then the operation still happnens at the first timestep and
     # only the first timestep after 3600.0 seconds.
     # -----------------------------------------------------------------------
-    return jnp.where(
+    rtm = jnp.where(
         (time >= time_initial + 3600.0)
         & (time < time_initial + 3600.0 + dt)
         & (gr.zt > 2900.0 + gr.zm[:, 0:1]),
         0.89 * rtm,
         rtm,
     )
+    return rtm
 
 
 # -----------------------------------------------------------------------
@@ -79,6 +80,3 @@ def nov11_altocu_read_t_dependent(time):
         time_dependent_input.latent_ht_given[before_time],
     )
     return sens_ht, latent_ht
-
-
-__all__ = ["nov11_altocu_rtm_adjust", "nov11_altocu_read_t_dependent"]

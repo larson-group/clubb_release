@@ -39,6 +39,3 @@ def neutral_case_sfclyr(ngrdcol, time, um_sfc, vm_sfc, ubar):
         ustar,
     )
     return upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["neutral_case_sfclyr"]

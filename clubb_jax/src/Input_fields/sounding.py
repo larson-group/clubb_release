@@ -283,7 +283,7 @@ def _fill_blanks(z_snd: np.ndarray, vals: np.ndarray) -> np.ndarray:
     return filled
 
 
-def interpolate_sounding(snd: dict, grid_z: np.ndarray, use_cubic: bool = False) -> dict:
+def interpolate_sounding(snd: dict, grid_z: np.ndarray, l_use_cubic: bool = False) -> dict:
     """Interpolate sounding profiles onto a model grid.
 
     Mirrors the Fortran pipeline: first fill_blanks (linear fill at original
@@ -293,7 +293,7 @@ def interpolate_sounding(snd: dict, grid_z: np.ndarray, use_cubic: bool = False)
     Args:
         snd: dict from read_sounding()
         grid_z: 1D array of target altitudes [m]
-        use_cubic: use Steffen monotone cubic interpolation
+        l_use_cubic: use Steffen monotone cubic interpolation
 
     Returns:
         dict with same keys as snd but interpolated to grid_z.
@@ -315,7 +315,7 @@ def interpolate_sounding(snd: dict, grid_z: np.ndarray, use_cubic: bool = False)
         filled = _fill_blanks(z_snd, vals)
 
         # Step 2: interpolate from filled sounding to model grid
-        if use_cubic:
+        if l_use_cubic:
             result[key] = _steffen_interp_1d(z_snd, filled, grid_z)
         else:
             result[key] = np.interp(grid_z, z_snd, filled)
@@ -361,7 +361,7 @@ def read_scalar_sounding(path: str, nvars: int) -> dict:
 
 
 def interpolate_scalar_sounding(
-    z_snd: np.ndarray, scalar_data: np.ndarray, grid_z: np.ndarray, use_cubic: bool = False
+    z_snd: np.ndarray, scalar_data: np.ndarray, grid_z: np.ndarray, l_use_cubic: bool = False
 ) -> np.ndarray:
     """Interpolate scalar-sounding columns from sounding levels to model zt levels.
 
@@ -377,7 +377,7 @@ def interpolate_scalar_sounding(
 
     out = np.zeros((int(len(grid_z)), ncols), dtype=np.float64)
     for j in range(ncols):
-        if use_cubic:
+        if l_use_cubic:
             out[:, j] = _steffen_interp_1d(z_snd, prof[:, j], grid_z)
         else:
             out[:, j] = np.interp(grid_z, z_snd, prof[:, j])

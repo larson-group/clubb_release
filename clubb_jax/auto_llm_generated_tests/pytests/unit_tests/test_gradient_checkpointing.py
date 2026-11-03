@@ -119,7 +119,7 @@ def test_delayed_stats_output_cannot_reset_a_later_timestep_schedule(tmp_path, m
                          1., 4., 1., 1, 1, 2000, 0., stats_tstart=0., stats_tend=8.)
     from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
     stats = JaxStats.from_layout(writer.get_jax_layout(), ncol=2).begin_timestep(
-        l_sample=True, reset_accumulators=True)
+        l_sample=True, l_reset_accumulators=True)
     pending = []
 
     def enqueue(callback, *args, **kwargs):

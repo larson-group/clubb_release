@@ -1094,8 +1094,9 @@ def calc_wp4_pdf(wm, w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac):
     d1 = jnp.asarray(w_1) - wm; d2 = jnp.asarray(w_2) - wm
     v1 = jnp.asarray(varnce_w_1); v2 = jnp.asarray(varnce_w_2)
     # Calculate <w'^4> by integrating over the PDF.
-    return (a * (3.0 * v1 ** 2 + 6.0 * d1 ** 2 * v1 + d1 ** 4)
-            + (1.0 - a) * (3.0 * v2 ** 2 + 6.0 * d2 ** 2 * v2 + d2 ** 4))
+    wp4 = (a * (3.0 * v1 ** 2 + 6.0 * d1 ** 2 * v1 + d1 ** 4)
+           + (1.0 - a) * (3.0 * v2 ** 2 + 6.0 * d2 ** 2 * v2 + d2 ** 4))
+    return wp4
 
 
 def calc_wp2xp2_pdf(wm, xm, w_1, w_2, x_1, x_2,
@@ -1154,7 +1155,8 @@ def calc_wp2xp2_pdf(wm, xm, w_1, w_2, x_1, x_2,
              + (dx_2 ** 2 + (1.0 + 2.0 * corr_w_x_2 ** 2) * varnce_x_2) * varnce_w_2)
 
     # Calculate <w'x'^2> by integrating over the PDF.
-    return mixt_frac * term1 + one_minus_mf * term2
+    wp2xp2 = mixt_frac * term1 + one_minus_mf * term2
+    return wp2xp2
 
 
 def calc_wp2xp_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
@@ -1197,8 +1199,9 @@ def calc_wp2xp_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
     vx1 = jnp.asarray(varnce_x_1); vx2 = jnp.asarray(varnce_x_2)
     c1 = jnp.asarray(corr_w_x_1); c2 = jnp.asarray(corr_w_x_2)
     # Calculate <w'^2 x'> by integrating over the PDF.
-    return (a * ((dw1 ** 2 + vw1) * dx1 + 2.0 * c1 * sqrt_clipped(vw1 * vx1) * dw1)
-            + (1.0 - a) * ((dw2 ** 2 + vw2) * dx2 + 2.0 * c2 * sqrt_clipped(vw2 * vx2) * dw2))
+    wp2xp = (a * ((dw1 ** 2 + vw1) * dx1 + 2.0 * c1 * sqrt_clipped(vw1 * vx1) * dw1)
+             + (1.0 - a) * ((dw2 ** 2 + vw2) * dx2 + 2.0 * c2 * sqrt_clipped(vw2 * vx2) * dw2))
+    return wp2xp
 
 
 def calc_wpxp2_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
@@ -1241,8 +1244,9 @@ def calc_wpxp2_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
     vx1 = jnp.asarray(varnce_x_1); vx2 = jnp.asarray(varnce_x_2)
     c1 = jnp.asarray(corr_w_x_1); c2 = jnp.asarray(corr_w_x_2)
     # Calculate <w'x'^2> by integrating over the PDF.
-    return (a * (dw1 * (dx1 ** 2 + vx1) + 2.0 * c1 * sqrt_clipped(vw1 * vx1) * dx1)
-            + (1.0 - a) * (dw2 * (dx2 ** 2 + vx2) + 2.0 * c2 * sqrt_clipped(vw2 * vx2) * dx2))
+    wpxp2 = (a * (dw1 * (dx1 ** 2 + vx1) + 2.0 * c1 * sqrt_clipped(vw1 * vx1) * dx1)
+             + (1.0 - a) * (dw2 * (dx2 ** 2 + vx2) + 2.0 * c2 * sqrt_clipped(vw2 * vx2) * dx2))
+    return wpxp2
 
 
 def calc_wpxpyp_pdf(wm, xm, ym, w_1, w_2, x_1, x_2, y_1, y_2,
@@ -1306,7 +1310,8 @@ def calc_wpxpyp_pdf(wm, xm, ym, w_1, w_2, x_1, x_2, y_1, y_2,
              + cwy1 * sqrt_clipped(vw1 * vy1) * dx1 + cwx1 * sqrt_clipped(vw1 * vx1) * dy1)
     comp2 = (dw2 * dx2 * dy2 + cxy2 * sqrt_clipped(vx2 * vy2) * dw2
              + cwy2 * sqrt_clipped(vw2 * vy2) * dx2 + cwx2 * sqrt_clipped(vw2 * vx2) * dy2)
-    return a * comp1 + (1.0 - a) * comp2
+    wpxpyp = a * comp1 + (1.0 - a) * comp2
+    return wpxpyp
 
 
 def calc_liquid_cloud_frac_component(mean_chi, stdev_chi_in):
@@ -1366,7 +1371,8 @@ def calc_liquid_cloud_frac_component(mean_chi, stdev_chi_in):
         | (mean_chi < -max_num_stdevs * stdev_chi_in)
     )
     is_full  = mean_chi > max_num_stdevs * stdev_chi_in
-    safe_s   = jnp.maximum(stdev_chi_in, 1.0e-100)
+    stdev_chi_floor = 1.0e-100  # Keeps zeta finite for a zero stdev_chi_in; those cases are masked
+    safe_s   = jnp.maximum(stdev_chi_in, stdev_chi_floor)
     zeta     = mean_chi / safe_s
     cf_mid   = 0.5 * (1.0 + jsp.erf(zeta / sqrt_2))
     rc_mid   = (mean_chi * cf_mid
@@ -1403,7 +1409,8 @@ def calc_ice_cloud_frac_component(mean_chi, stdev_chi_in, crt, rsatl, tl,
     is_clear = (((jnp.abs(delta) <= eps) & (stdev_chi_in <= chi_tol))
                 | (delta < -max_num_stdevs * stdev_chi_in))
     is_full  = delta > max_num_stdevs * stdev_chi_in
-    safe_s   = jnp.maximum(stdev_chi_in, 1.0e-100)
+    stdev_chi_floor = 1.0e-100  # Keeps zeta finite for a zero stdev_chi_in; those cases are masked
+    safe_s   = jnp.maximum(stdev_chi_in, stdev_chi_floor)
     zeta     = delta / safe_s
     ssf_mid  = 0.5 * (1.0 + jsp.erf(zeta / sqrt_2))
     # The mean of chi is at saturation and does not vary in the ith PDF component
@@ -1414,7 +1421,8 @@ def calc_ice_cloud_frac_component(mean_chi, stdev_chi_in, crt, rsatl, tl,
     ssf      = jnp.where(is_clear, 0.0, jnp.where(is_full, 1.0, ssf_mid))
     # If a grid boxes is above freezing, then the calculation is the
     # same as the cloud_frac calculation
-    return jnp.where(tl > T_freeze_K, cf_liq, ssf)
+    ice_supersat_frac = jnp.where(tl > T_freeze_K, cf_liq, ssf)
+    return ice_supersat_frac
 
 
 def calc_xprcp_component(wm, rtm, thlm, um, vm, rcm,
@@ -2612,22 +2620,3 @@ def compute_cloud_cover(gr, nzt, ngrdcol, pdf_params, cloud_frac, rcm):
     cloud_cover = cloud_cover.at[:, gr.k_ub_zt].set(cloud_frac[:, gr.k_ub_zt])
     rcm_in_layer = rcm_in_layer.at[:, gr.k_ub_zt].set(rcm[:, gr.k_ub_zt])
     return cloud_cover, rcm_in_layer
-
-
-__all__ = [
-    "calc_wp2xp_pdf", "calc_wpxp2_pdf", "calc_wp2xp2_pdf",
-    "calc_wp4_pdf", "calc_wpxpyp_pdf",
-    "calc_w_up_in_cloud",
-    "transform_pdf_chi_eta_component",
-    "calc_liquid_cloud_frac_component",
-    "calc_ice_cloud_frac_component",
-    "calc_xprcp_component",
-    "pdf_closure",
-    "trapezoidal_rule_zt",
-    "trapezoidal_rule_zm",
-    "calc_trapezoid_zt",
-    "calc_trapezoid_zm",
-    "compute_cloud_cover",
-    "pdf_closure_driver_zm",
-    "pdf_closure_driver",
-]

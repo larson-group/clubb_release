@@ -88,9 +88,10 @@ def est_silhs_tndcy(
 
     def sample_microphysics(stats, sample):
         # Call the microphysics scheme to obtain one sample-point tendency.
+        l_latin_hypercube = True  # We are the Latin hypercube!
         result = microphys_sub(
             gr, ngrdcol, dt, nzt, hydromet_dim, hm_metadata,          # In
-            True, lh_thl_clipped[:, sample],                         # In
+            l_latin_hypercube, lh_thl_clipped[:, sample],            # In
             w_all_points[:, sample], p_in_Pa, exner, rho,           # In
             cloud_frac_unused, w_std_dev_unused, dzq,               # In
             lh_rc_clipped[:, sample], lh_Nc_clipped[:, sample],     # In
@@ -291,12 +292,14 @@ def adjust_KK_src_means(
         lh_Vrr: Mean sedimentation velocity of < r_r > [m/s]
         lh_VNr: Mean sedimentation velocity of < N_r > [m/s]
     """
+    l_src_adj_enabled = True  # Whether to adjust rrm_source to not over-deplete cloud water
+    l_evap_adj_enabled = True  # Whether to adjust rrm_evap to not over-evaporate rain
     rrm_mc, Nrm_mc, rvm_mc, rcm_mc, thlm_mc, adj_terms = KK_microphys_adjust(
         dt, exner, rcm, rrm, Nrm,  # In
         rrm_evap, rrm_auto,        # In
         rrm_accr, Nrm_evap,        # In
-        Nrm_auto, True,            # In
-        True,                      # In
+        Nrm_auto, l_src_adj_enabled,  # In
+        l_evap_adj_enabled,        # In
     )
 
     # Clip positive rain mixing-ratio and number sedimentation velocities.

@@ -231,7 +231,8 @@ def ltqnorm(p_core_rknd):
     z = z - u / (1.0 + z * u / 2.0)
 
     # Source end-point/error results, expressed without dividing by zero.
-    return jnp.where(valid, z, jnp.where(p == 0.0, -jnp.inf, jnp.where(p == 1.0, jnp.inf, jnp.nan)))
+    ltqnorm = jnp.where(valid, z, jnp.where(p == 0.0, -jnp.inf, jnp.where(p == 1.0, jnp.inf, jnp.nan)))
+    return ltqnorm
 
 
 # -----------------------------------------------------------------------------
@@ -320,4 +321,5 @@ def chi_eta_2_rtthl(
     # Limit the quantity by which temperature can vary [K].
     lh_dev_thl_lim = (-0.5 / cthl) * (chi - mu_chi) + (0.5 / cthl) * eta
     lh_dev_thl_lim = jnp.maximum(jnp.minimum(lh_dev_thl_lim, thl_dev_lim), -thl_dev_lim)
-    return lh_rt, thl + lh_dev_thl_lim
+    lh_thl = thl + lh_dev_thl_lim
+    return lh_rt, lh_thl

@@ -123,7 +123,8 @@ def Ncnm_to_Nc_in_cloud(
 
     # This level is entirely clear.  Set Nc_in_cloud to <Ncn>.
     # Since <Ncn> = mu_Ncn_1 = mu_Ncn_2, use mu_Ncn_1 here.
-    return jnp.where(cloud_frac > cloud_frac_min, Ncm / cloud_frac_safe, mu_Ncn_1)
+    Nc_in_cloud = jnp.where(cloud_frac > cloud_frac_min, Ncm / cloud_frac_safe, mu_Ncn_1)
+    return Nc_in_cloud
 
 
 def Nc_in_cloud_to_Ncnm(
@@ -351,7 +352,8 @@ def Ncm_to_Ncnm(
     # When the denominator is 0, it is usually because there is only clear
     # air.  In that scenario, Ncm should also be 0.  Set Ncnm to a value that
     # is usual or typical
-    return jnp.where(denominator > 0.0, Ncm / denominator_safe, Ncnm_val_denom_0)
+    Ncnm = jnp.where(denominator > 0.0, Ncm / denominator_safe, Ncnm_val_denom_0)
+    return Ncnm
 
 
 def bivar_NL_chi_Ncn_mean(
@@ -408,7 +410,7 @@ def bivar_NL_chi_Ncn_mean(
         )
     )
 
-    return jnp.where(
+    bivar_NL_chi_Ncn_mean = jnp.where(
         chi_and_Ncn_constant,
         constant_value,
         jnp.where(
@@ -417,6 +419,7 @@ def bivar_NL_chi_Ncn_mean(
             jnp.where(Ncn_constant, Ncn_constant_value, both_vary_value),
         ),
     )
+    return bivar_NL_chi_Ncn_mean
 
 
 def bivar_Ncnm_eqn_comp(
@@ -477,4 +480,5 @@ def bivar_Ncnm_eqn_comp(
         )
     )
 
-    return jnp.where(sigma_chi_i <= chi_tol, constant_value, varying_value)
+    bivar_Ncnm_eqn_comp = jnp.where(sigma_chi_i <= chi_tol, constant_value, varying_value)
+    return bivar_Ncnm_eqn_comp

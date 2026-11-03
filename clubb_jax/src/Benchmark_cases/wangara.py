@@ -85,6 +85,3 @@ def wangara_sfclyr(ngrdcol, time):
     wpthlp_sfc = jnp.full(ngrdcol, 0.18 * jnp.cos((time_est - 45000.0) / 36000.0 * jnp.pi))
     wprtp_sfc = 1.3e-4 * wpthlp_sfc
     return wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["wangara_tndcy", "wangara_sfclyr"]

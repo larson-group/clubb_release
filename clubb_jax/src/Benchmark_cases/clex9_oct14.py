@@ -44,6 +44,3 @@ def clex9_oct14_read_t_dependent(time):
     )
 
     return sens_ht, latent_ht
-
-
-__all__ = ["clex9_oct14_read_t_dependent"]

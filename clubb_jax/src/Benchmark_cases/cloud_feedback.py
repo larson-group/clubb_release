@@ -92,6 +92,3 @@ def cloud_feedback_sfclyr(
         rsat,
     )
     return wpthlp_sfc, wprtp_sfc, ustar, T_sfc
-
-
-__all__ = ["cloud_feedback_sfclyr"]

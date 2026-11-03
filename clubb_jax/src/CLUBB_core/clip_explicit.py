@@ -479,7 +479,8 @@ def clip_skewness_core(
 
     # Clipping abs(wp3) to 100. This keeps wp3 from growing too large in some
     # convective cases, which helps prevent these cases from blowing up.
-    return jnp.clip(wp3, -wp3_max, wp3_max)
+    wp3 = jnp.clip(wp3, -wp3_max, wp3_max)
+    return wp3
 
 
 @partial(jax.jit, static_argnames=("nzt", "ngrdcol", "message"))
@@ -508,8 +509,9 @@ def clip_rcm(nzt: int, ngrdcol: int, rtm, message: str, rcm):
     # This code will not work unless rtm >= 0.
     # We do not clip rcm_in_layer because rcm_in_layer only influences
     # radiation, and we do not want to bother recomputing it. 6 Aug 2009.
-    return jnp.where(
+    rcm = jnp.where(
         rtm < rcm,
         jnp.maximum(zero_threshold, rtm - _CORE_EPS),
         rcm,
     )
+    return rcm

@@ -32,23 +32,25 @@ from clubb_jax.src.Microphys.KK_microphys.parameters_KK import (
     KK_mvr_rr_exp as KK_MVR_RR_EXP, KK_mvr_Nr_exp as KK_MVR_NR_EXP)
 from clubb_jax.src.Microphys.KK_microphys.parameters_KK import KK_MVR_COEF
 
-_MICRON_PER_M = 1.0e6
+from clubb_jax.src.CLUBB_core.constants_clubb import micron_per_m
 
 
 def bivar_LL_covar_partial(mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, rho, alpha, beta):
     """Both x1, x2 vary. KK_upscaled_turbulent_sed.F90:1540. The (alpha^2+2 alpha) and (alpha+1)
     terms are the `bivar_LL_mean` exponents with the extra x1 factor of the covariance."""
-    return jnp.exp(mu_x1_n * alpha + mu_x2_n * beta
-                   + 0.5 * sigma_x1_n ** 2 * (alpha ** 2 + 2.0 * alpha)
-                   + 0.5 * sigma_x2_n ** 2 * beta ** 2
-                   + rho * sigma_x1_n * (alpha + 1.0) * sigma_x2_n * beta)
+    bivar_LL_covar_partial = jnp.exp(mu_x1_n * alpha + mu_x2_n * beta
+                                     + 0.5 * sigma_x1_n ** 2 * (alpha ** 2 + 2.0 * alpha)
+                                     + 0.5 * sigma_x2_n ** 2 * beta ** 2
+                                     + rho * sigma_x1_n * (alpha + 1.0) * sigma_x2_n * beta)
+    return bivar_LL_covar_partial
 
 
 def bivar_LL_covar_const_x2_partial(mu_x1_n, mu_x2, sigma_x1_n, alpha, beta):
     """x2 constant (sigma_x2 -> 0). KK_upscaled_turbulent_sed.F90:1584.
     = mu_x2^beta exp( mu_x1_n alpha + 1/2 sigma_x1_n^2 (alpha^2 + 2 alpha) )."""
-    return mu_x2 ** beta * jnp.exp(mu_x1_n * alpha
-                                   + 0.5 * sigma_x1_n ** 2 * (alpha ** 2 + 2.0 * alpha))
+    bivar_LL_covar_const_x2_partial = mu_x2 ** beta * jnp.exp(mu_x1_n * alpha
+                                                              + 0.5 * sigma_x1_n ** 2 * (alpha ** 2 + 2.0 * alpha))
+    return bivar_LL_covar_const_x2_partial
 
 
 def _covar_partial(mu_x1, mu_x2, mu_x1_n, mu_x2_n, sigma_x1, sigma_x2,
@@ -63,9 +65,10 @@ def _covar_partial(mu_x1, mu_x2, mu_x1_n, mu_x2_n, sigma_x1, sigma_x2,
     f_x1 = bivar_LL_mean_const_x1(mu_x1, mu_x2_n, sigma_x2_n, alpha, beta)
     f_x2 = bivar_LL_covar_const_x2_partial(mu_x1_n, mu_x2, sigma_x1_n, alpha, beta)
     f_gen = bivar_LL_covar_partial(mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, rho, alpha, beta)
-    return jnp.where(x1_const & x2_const, f_all,
-                     jnp.where(x1_const, f_x1,
-                               jnp.where(x2_const, f_x2, f_gen)))
+    covar_partial = jnp.where(x1_const & x2_const, f_all,
+                              jnp.where(x1_const, f_x1,
+                                        jnp.where(x2_const, f_x2, f_gen)))
+    return covar_partial
 
 
 def bivar_LL_covar_partial_rr(mu_rr, mu_Nr, mu_rr_n, mu_Nr_n, s_rr, s_Nr, s_rr_n, s_Nr_n, rho):
@@ -121,8 +124,8 @@ def KK_sed_vel_covars(rrm, rr_1, rr_2, Nrm, Nr_1, Nr_2, mvr,
     return {
         'rr_KK_mvr_covar': rr_KK_mvr_covar,
         'Nr_KK_mvr_covar': Nr_KK_mvr_covar,
-        'Vrrprrp_impc': -0.012 * _MICRON_PER_M * rr_coefA,
-        'Vrrprrp_expc': -0.012 * _MICRON_PER_M * rr_termB,
-        'VNrpNrp_impc': -0.007 * _MICRON_PER_M * Nr_coefA,
-        'VNrpNrp_expc': -0.007 * _MICRON_PER_M * Nr_termB,
+        'Vrrprrp_impc': -0.012 * micron_per_m * rr_coefA,
+        'Vrrprrp_expc': -0.012 * micron_per_m * rr_termB,
+        'VNrpNrp_impc': -0.007 * micron_per_m * Nr_coefA,
+        'VNrpNrp_expc': -0.007 * micron_per_m * Nr_termB,
     }

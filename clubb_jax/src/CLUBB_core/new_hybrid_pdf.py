@@ -98,7 +98,8 @@ def calc_coef_wp2xp_implicit(wp2, mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma
     coef = (sqrt_clipped(mixt_frac * omf)
             * (F_w * (omf / mixt_frac - mixt_frac / omf) + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd)
             * sqrt_clipped(wp2 / F_safe))
-    return jnp.where(F_w > 0.0, coef, 0.0)
+    coef_wp2xp_implicit = jnp.where(F_w > 0.0, coef, 0.0)
+    return coef_wp2xp_implicit
 
 
 # --- new_hybrid_pdf.F90 aliases (Griffin & Larson 2020) ---
@@ -312,14 +313,3 @@ def calc_coefs_wpxpyp_semiimpl(wp2, wpxp, wpyp, mixt_frac, F_w,
     coef = jnp.where(xy_vary, coef_vary, coef_else)
     term = jnp.where(xy_vary, term_vary, 0.0)
     return coef, term
-
-
-__all__ = [
-    "calc_coef_wp2xp_implicit",
-    "calculate_coef_wp4_implicit",
-    "calculate_mixture_fraction",
-    "calculate_w_params",
-    "calculate_responder_params",
-    "calc_coefs_wpxp2_semiimpl",
-    "calc_coefs_wpxpyp_semiimpl",
-]

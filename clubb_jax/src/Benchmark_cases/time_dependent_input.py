@@ -643,11 +643,3 @@ def time_select(time, nvar, time_array):
         / (times[after_time] - times[before_time])
     )
     return before_time, after_time, time_frac
-
-
-__all__ = [
-    "finalize_t_dependent_input",
-    "time_select",
-    "apply_time_dependent_forcings",
-    "initialize_t_dependent_input",
-]

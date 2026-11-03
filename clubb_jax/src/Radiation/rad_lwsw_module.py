@@ -344,6 +344,3 @@ def sunray_sw(
         return Frad_SW.at[0].set(Frad_SW_bottom)
 
     return jax.vmap(shortwave_column)(taude, zm, zt, c1, c2)
-
-
-__all__ = ["sunray_sw"]

@@ -25,7 +25,8 @@ from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 def _scbrt(x):
     """Real cube root of x>=0 with a finite gradient at x=0 (cbrt'(0)=inf otherwise)."""
     xp = jnp.where(x > 0.0, x, 1.0)
-    return jnp.where(x > 0.0, jnp.cbrt(xp), 0.0)
+    cbrt_x = jnp.where(x > 0.0, jnp.cbrt(xp), 0.0)
+    return cbrt_x
 
 
 def calc_params_LY93(xm, xp2, Skx, mixt_frac):

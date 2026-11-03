@@ -21,7 +21,8 @@ def _gamma_real(x):
     reflection keeps the routine general for accretion/evap exponents."""
     pos = jnp.exp(lax.lgamma(jnp.where(x >= 0.5, x, 1.0 - x)))
     refl = jnp.pi / (jnp.sin(jnp.pi * x) * pos)
-    return jnp.where(x >= 0.5, pos, refl)
+    gamma_x = jnp.where(x >= 0.5, pos, refl)
+    return gamma_x
 
 
 
@@ -59,7 +60,8 @@ def _uv_series(a, x, eps):
     u=f1*y1+f2*y2
     f1=2.0**ahp14/jnp.pi*_gamma_real(ahp14)*jnp.sin(jnp.pi*(0.75-ah))**2
     f2=2.0**(ahp14+0.5)/jnp.pi*_gamma_real(ah+0.75)*jnp.sin(jnp.pi*(0.25-ah))**2
-    return u,f1*y1+f2*y2
+    v=f1*y1+f2*y2
+    return u,v
 
 
 def _uv_elementary(a, x, eps):
@@ -141,7 +143,9 @@ def _uv_expax(a, x, eps):
         return tuple(jnp.where(active,n,c) for n,c in zip(new,carry)),None
     out,_=lax.scan(body,initial,jnp.arange(1,100))
     phiax=jnp.exp(0.25*x*x+a*jnp.log(x))
-    return out[4]/(jnp.sqrt(x)*phiax), jnp.sqrt(2.0)/(jnp.sqrt(jnp.pi)*jnp.sqrt(x))*phiax*out[5]
+    u=out[4]/(jnp.sqrt(x)*phiax)
+    v=jnp.sqrt(2.0)/(jnp.sqrt(jnp.pi)*jnp.sqrt(x))*phiax*out[5]
+    return u,v
 
 
 def _u_recur(a,x,eps):
@@ -176,7 +180,8 @@ def dv_parabolic_cylinder(v,z):
     use_expax=(x>=12.0)&(a<2.5*x-30.0)&(a<150.0)
     u=jnp.where(use_series,jnp.where(direct_series,us,ur),jnp.where(use_expax,ux,ue))
     vv=jnp.where(use_series,vs,jnp.where(use_expax,vx,ve))
-    return jnp.where(z<=0.0,vv/((1.0/jnp.pi)*_gamma_real(-v))-jnp.sin(jnp.pi*a)*u,u)
+    Dv_fnc=jnp.where(z<=0.0,vv/((1.0/jnp.pi)*_gamma_real(-v))-jnp.sin(jnp.pi*a)*u,u)
+    return Dv_fnc
 
 
 def _dvc(order,arg):

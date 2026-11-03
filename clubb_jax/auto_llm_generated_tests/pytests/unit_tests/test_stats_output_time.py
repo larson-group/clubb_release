@@ -9,9 +9,9 @@ def test_stats_timestamp_uses_end_of_current_model_step(monkeypatch):
     updates = []
 
     class Stats:
-        def begin_timestep(self, *, l_sample, reset_accumulators):
+        def begin_timestep(self, *, l_sample, l_reset_accumulators):
             assert l_sample
-            assert not reset_accumulators
+            assert not l_reset_accumulators
             return self
 
         def update(self, name, values):

@@ -101,9 +101,10 @@ def bivar_NL_mean_eq(mu_chi_i, mu_y_i, mu_y_i_n, sigma_chi_i,
         dv=None if dv is None else dv["full"])
 
     # Mirror the Fortran if/elseif/elseif/else ladder.
-    return jnp.where(x1_const & x2_const, f_all,
-                     jnp.where(x1_const, f_x1,
-                               jnp.where(x2_const, f_x2, f_gen)))
+    bivar_NL_mean_eq = jnp.where(x1_const & x2_const, f_all,
+                                 jnp.where(x1_const, f_x1,
+                                           jnp.where(x2_const, f_x2, f_gen)))
+    return bivar_NL_mean_eq
 
 
 def KK_auto_upscaled_mean(mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2,
@@ -122,7 +123,8 @@ def KK_auto_upscaled_mean(mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2,
     comp2 = bivar_NL_mean_eq(mu_chi_2, mu_Ncn_2, mu_Ncn_2_n, sigma_chi_2,
                              sigma_Ncn_2, sigma_Ncn_2_n, corr_chi_Ncn_2_n,
                              NC_TOL, alpha, beta)
-    return KK_auto_coef_val * (mixt_frac * comp1 + (1.0 - mixt_frac) * comp2)
+    KK_auto_upscaled_mean = KK_auto_coef_val * (mixt_frac * comp1 + (1.0 - mixt_frac) * comp2)
+    return KK_auto_upscaled_mean
 
 
 def KK_accr_upscaled_mean(mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2,
@@ -144,8 +146,9 @@ def KK_accr_upscaled_mean(mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2,
     comp2 = bivar_NL_mean_eq(mu_chi_2, mu_rr_2, mu_rr_2_n, sigma_chi_2,
                              sigma_rr_2, sigma_rr_2_n, corr_chi_rr_2_n,
                              RR_TOL, alpha, beta)
-    return KK_ACCR_COEF * (mixt_frac * precip_frac_1 * comp1
-                           + (1.0 - mixt_frac) * precip_frac_2 * comp2)
+    KK_accr_upscaled_mean = KK_ACCR_COEF * (mixt_frac * precip_frac_1 * comp1
+                                            + (1.0 - mixt_frac) * precip_frac_2 * comp2)
+    return KK_accr_upscaled_mean
 
 
 def trivar_NLL_mean_eq(mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr_i_n,
@@ -194,13 +197,14 @@ def trivar_NLL_mean_eq(mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr_i_n,
                             rho12, rho13, rho23, alpha_exp, beta_exp, gamma_exp, dv=None if dv is None else dv["full"])
 
     # Mirror the Fortran if/elseif ladder (top-priority condition first).
-    return jnp.where(x1_const & x2_const & x3_const, f_all,
-            jnp.where(x1_const & x2_const, f_x1x2,
-             jnp.where(x1_const & x3_const, f_x1x3,
-              jnp.where(x2_const & x3_const, f_x2x3,
-               jnp.where(x1_const, f_x1,
-                jnp.where(x2_const, f_x2,
-                 jnp.where(x3_const, f_x3, f_gen)))))))
+    trivar_NLL_mean_eq = jnp.where(x1_const & x2_const & x3_const, f_all,
+                          jnp.where(x1_const & x2_const, f_x1x2,
+                           jnp.where(x1_const & x3_const, f_x1x3,
+                            jnp.where(x2_const & x3_const, f_x2x3,
+                             jnp.where(x1_const, f_x1,
+                              jnp.where(x2_const, f_x2,
+                               jnp.where(x3_const, f_x3, f_gen)))))))
+    return trivar_NLL_mean_eq
 
 
 def KK_evap_upscaled_mean(mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2,
@@ -227,8 +231,9 @@ def KK_evap_upscaled_mean(mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2
                                sigma_chi_2, sigma_rr_2, sigma_Nr_2, sigma_rr_2_n,
                                sigma_Nr_2_n, corr_chi_rr_2_n, corr_chi_Nr_2_n,
                                corr_rr_Nr_2_n, a, b, g)
-    return KK_evap_coef_val * (mixt_frac * precip_frac_1 * comp1
-                               + (1.0 - mixt_frac) * precip_frac_2 * comp2)
+    KK_evap_upscaled_mean = KK_evap_coef_val * (mixt_frac * precip_frac_1 * comp1
+                                                + (1.0 - mixt_frac) * precip_frac_2 * comp2)
+    return KK_evap_upscaled_mean
 
 
 def bivar_LL_mean_eq(mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr_i_n, sigma_rr_i,
@@ -253,9 +258,10 @@ def bivar_LL_mean_eq(mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr_i_n, sigma_rr_i,
     f_x2 = bivar_LL_mean_const_x1(mu_x2, mu_x1_n, sigma_x1_n, beta_exp, alpha_exp)
     f_gen = bivar_LL_mean(mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n, rho, alpha_exp, beta_exp)
 
-    return jnp.where(x1_const & x2_const, f_all,
-                     jnp.where(x1_const, f_x1,
-                               jnp.where(x2_const, f_x2, f_gen)))
+    bivar_LL_mean_eq = jnp.where(x1_const & x2_const, f_all,
+                                 jnp.where(x1_const, f_x1,
+                                           jnp.where(x2_const, f_x2, f_gen)))
+    return bivar_LL_mean_eq
 
 
 def KK_mvr_upscaled_mean(mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n,
@@ -272,5 +278,6 @@ def KK_mvr_upscaled_mean(mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_
                              sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, corr_rr_Nr_1_n, a, b)
     comp2 = bivar_LL_mean_eq(mu_rr_2, mu_Nr_2, mu_rr_2_n, mu_Nr_2_n, sigma_rr_2,
                              sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, corr_rr_Nr_2_n, a, b)
-    return KK_MVR_COEF * (mixt_frac * precip_frac_1 * comp1
-                          + (1.0 - mixt_frac) * precip_frac_2 * comp2)
+    KK_mvr_upscaled_mean = KK_MVR_COEF * (mixt_frac * precip_frac_1 * comp1
+                                          + (1.0 - mixt_frac) * precip_frac_2 * comp2)
+    return KK_mvr_upscaled_mean

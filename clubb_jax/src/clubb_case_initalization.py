@@ -7,7 +7,24 @@ import jax
 import jax.numpy as jnp
 
 from clubb_jax.src.CLUBB_core.config_flags import ConfigFlags
-from clubb_jax.src.CLUBB_core.constants_clubb import eps
+from clubb_jax.src.CLUBB_core.constants_clubb import (
+    Cp,
+    Lv,
+    Rd,
+    cloud_frac_min,
+    em_min,
+    ep1,
+    ep2,
+    eps,
+    grav,
+    kappa,
+    omega_planet,
+    p0,
+    radians_per_deg,
+    rt_tol,
+    thl_tol,
+    w_tol,
+)
 from clubb_jax.src.CLUBB_core.code_timer_module import (
     timer_initialize,
     timer_disable,
@@ -26,6 +43,7 @@ from clubb_jax.src.CLUBB_core.err_info import ErrInfo
 from clubb_jax.src.CLUBB_core.calc_pressure import calculate_thvm
 from clubb_jax.src.CLUBB_core.error_code import (
     clubb_at_least_debug_level,
+    clubb_at_least_debug_level,
     set_debug_level as set_jax_debug_level,
 )
 from clubb_jax.src.CLUBB_core.grid_class import zt2zm
@@ -38,6 +56,7 @@ from clubb_jax.src.CLUBB_core.parameters_tunable import (
 )
 from clubb_jax.src.CLUBB_core.saturation import rcm_sat_adj, sat_mixrat_liq
 from clubb_jax.src.Input_fields.hydrostatic_module import hydrostatic
+from clubb_jax.src.Microphys.parameters_microphys import Nc0_in_cloud
 
 # I/O
 from clubb_jax.src.Input_fields.grid_file import read_grid_file
@@ -59,26 +78,6 @@ from clubb_jax.src.Radiation.parameters_radiation import initialize_radiation_pa
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
-
-# ── Physical constants (from constants_clubb.F90, standalone block) ──────
-Cp = 1004.67
-Lv = 2.5e6
-Rd = 287.04
-Rv = 461.5
-ep = Rd / Rv                # 0.621993...  (must match Fortran's Rd/Rv exactly)
-ep1 = (1.0 - ep) / ep      # ~0.608
-ep2 = 1.0 / ep              # ~1.608
-kappa = Rd / Cp
-grav = 9.81
-p0 = 1.0e5
-omega_planet = 7.292e-5
-radians_per_deg = math.pi / 180.0
-rt_tol = 1.0e-8
-thl_tol = 1.0e-2
-w_tol = 2.0e-2
-em_min = 1.5 * w_tol**2
-cloud_frac_min = 0.005
-Nc0_in_cloud = 100.0e6      # [num/m^3]
 
 _CLOUD_FEEDBACK_CASES = {
     "cloud_feedback_s6",
@@ -512,13 +511,14 @@ def init_clubb_case(namelist_path: str) -> dict:
     nzm = gr.nzm
     nzt = gr.nzt
 
-    print(f"nzm = {nzm} -- nzt = {nzt}")
+    if clubb_at_least_debug_level(1):
+        print(f"nzm = {nzm} -- nzt = {nzt}")
 
     # ── 5. Interpolate sounding onto grid ───────────────────────────────
     # Use first column's zt for interpolation
     zt_1d = gr.zt[0, :]  # (nzt,)
     use_cubic_ic = bool(cfg.get('l_modify_ic_with_cubic_int', False))
-    snd_interp = interpolate_sounding(snd, zt_1d, use_cubic=use_cubic_ic)
+    snd_interp = interpolate_sounding(snd, zt_1d, l_use_cubic=use_cubic_ic)
 
     # Build 2D arrays (ngrdcol, nzt) by broadcasting 1D profile
     thlm = np.tile(snd_interp['theta'], (ngrdcol, 1))
@@ -728,12 +728,14 @@ def init_clubb_case(namelist_path: str) -> dict:
         case_info_file.write_text("")
 
     from clubb_jax.src.Microphys.microphys_init_cleanup import init_microphys
+    dummy_dx = 1.0e6  # known magic number
+    dummy_dy = 1.0e6  # known magic number
     (
         hydromet_dim, pdf_dim, hm_metadata, silhs_config_flags, vert_decorr_coef,
         corr_array_n_cloud, corr_array_n_below,
     ) = init_microphys(
         0, runtype, cfg, case_info_file,      # In
-        1.0e6, 1.0e6,                        # In
+        dummy_dx, dummy_dy,                  # In
         clubb_params,                        # In
         flags.l_diagnose_correlations,       # In
         flags.l_const_Nc_in_cloud,           # InOut
@@ -796,7 +798,7 @@ def init_clubb_case(namelist_path: str) -> dict:
             sclr_raw['names'], iisclr_rt, iisclr_thl, iisclr_co2, label='sclr_sounding'
         )
         sclr_zt = interpolate_scalar_sounding(
-            snd['z'], sclr_raw['data'], zt_1d, use_cubic=use_cubic_ic
+            snd['z'], sclr_raw['data'], zt_1d, l_use_cubic=use_cubic_ic
         )
         sclrm[:, :, :sclr_dim] = np.tile(sclr_zt[None, :, :], (ngrdcol, 1, 1))
 
@@ -807,7 +809,7 @@ def init_clubb_case(namelist_path: str) -> dict:
             edsclr_raw['names'], iiedsclr_rt, iiedsclr_thl, iiedsclr_co2, label='edsclr_sounding'
         )
         edsclr_zt = interpolate_scalar_sounding(
-            snd['z'], edsclr_raw['data'], zt_1d, use_cubic=use_cubic_ic
+            snd['z'], edsclr_raw['data'], zt_1d, l_use_cubic=use_cubic_ic
         )
         edsclrm[:, :, :edsclr_dim] = np.tile(edsclr_zt[None, :, :], (ngrdcol, 1, 1))
 
@@ -1228,8 +1230,9 @@ def init_clubb_case(namelist_path: str) -> dict:
                     jnp.asarray(last_iter, dtype=jnp.int32),
                 )
 
-    print(f"Initialized {runtype} case: nzm={nzm}, nzt={nzt}, ngrdcol={ngrdcol}")
-    print(f"  dt_main={dt_main}s, time={time_initial}s to {time_final}s, {ifinal} steps")
+    if clubb_at_least_debug_level(1):
+        print(f"Initialized {runtype} case: nzm={nzm}, nzt={nzt}, ngrdcol={ngrdcol}")
+        print(f"  dt_main={dt_main}s, time={time_initial}s to {time_final}s, {ifinal} steps")
 
     # Adaptation: immutable JAX leaves replace the source's per-field initial
     # allocations. Capture restored restart/SILHS state before any advance.
@@ -1348,7 +1351,8 @@ def clean_up_clubb(state: dict):
         time_dependent_input.finalize_t_dependent_input()
     from clubb_jax.src.Microphys.microphys_init_cleanup import cleanup_microphys
     cleanup_microphys()
-    print("CLUBB cleanup complete.")
+    if clubb_at_least_debug_level(1):
+        print("CLUBB cleanup complete.")
     timer_stop("clean_up_clubb")
     return timer_finalize(state['output_file_prefix'] + ".timing", state=state)
 
@@ -1644,7 +1648,8 @@ def restart_clubb(
 
     stat_files = input_fields.set_filenames(restart_path_case)
     # Determine the nearest timestep in the netCDF file to the restart time.
-    timestep = input_fields.compute_timestep(stat_files[0], True, time_restart)
+    l_restart = True
+    timestep = input_fields.compute_timestep(stat_files[0], l_restart, time_restart)
 
     # Read data from stats files.
     (

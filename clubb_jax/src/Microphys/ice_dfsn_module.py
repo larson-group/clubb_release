@@ -183,4 +183,5 @@ def Diff_denom(T_in_K, p_in_Pa, e_i):
     Dv = Dv / 10000.0  # m^2/s
     Fk = (Ls / (Rv * T_in_K) - 1.0) * Ls / (Ka * T_in_K)
     Fd = (Rv * T_in_K) / (Dv * e_i)
-    return Fk + Fd
+    Diff_denom = Fk + Fd
+    return Diff_denom

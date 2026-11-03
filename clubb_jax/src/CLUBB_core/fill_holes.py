@@ -316,7 +316,8 @@ def fill_holes_vertical(
             f"sliding_window; got fill_holes_type={fill_holes_type}."
         )
 
-    return jnp.where(jnp.any(field < threshold), filled, field)
+    field = jnp.where(jnp.any(field < threshold), filled, field)
+    return field
 
 
 @partial(
@@ -465,14 +466,6 @@ def fill_holes_wp2_from_horz_tke(
             lambda _: None, operand=None,
         )
     return wp2_out, up2_out, vp2_out
-
-
-__all__ = [
-    "fill_holes_global",
-    "fill_holes_sliding_window",
-    "fill_holes_vertical",
-    "fill_holes_wp2_from_horz_tke",
-]
 
 
 # Microphysics callers use batched columns; source vertical/species loops below

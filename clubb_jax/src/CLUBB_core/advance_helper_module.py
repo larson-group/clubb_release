@@ -84,7 +84,8 @@ def sqrt_clipped(value):
     Positive inputs are unmodified, and NaN inputs remain NaN.
     """
     clipped = value <= 0.0
-    return jnp.where(clipped, 0.0, jnp.sqrt(jnp.where(clipped, 1.0, value)))
+    clipped_sqrt = jnp.where(clipped, 0.0, jnp.sqrt(jnp.where(clipped, 1.0, value)))
+    return clipped_sqrt
 
 
 def set_boundary_conditions_lhs(
@@ -181,7 +182,8 @@ def calc_ddzt_umvm_sqd(nzm: int, nzt: int, ngrdcol: int, gr, um, vm):
     """
     ddzt_um = ddzt(nzm, nzt, ngrdcol, gr, um)
     ddzt_vm = ddzt(nzm, nzt, ngrdcol, gr, vm)
-    return ddzt_um ** 2 + ddzt_vm ** 2
+    ddzt_umvm_sqd = ddzt_um ** 2 + ddzt_vm ** 2
+    return ddzt_umvm_sqd
 
 
 @partial(jax.jit, static_argnames=("nzm", "nzt", "ngrdcol"))
@@ -234,10 +236,11 @@ def calc_stability_correction(
         lambda0_stability_coef[:, None],
         0.0,
     )
-    return 1.0 + jnp.minimum(
+    stability_correction = 1.0 + jnp.minimum(
         lambda0_stability * brunt_vaisala_freq_sqd * Lscale_zm ** 2 / em,
         three,
     )
+    return stability_correction
 
 
 @partial(
@@ -374,7 +377,8 @@ def calc_Ri_zm(nzm: int, ngrdcol: int, bv_freq_sqd, shear, lim_bv: float, lim_sh
     `shear` is usually norm squared of horizontal wind speeds.
     """
     del nzm, ngrdcol
-    return jnp.maximum(bv_freq_sqd, lim_bv) / jnp.maximum(shear, lim_shear)
+    Ri_zm = jnp.maximum(bv_freq_sqd, lim_bv) / jnp.maximum(shear, lim_shear)
+    return Ri_zm
 
 
 @partial(
@@ -472,7 +476,8 @@ def compute_Cx_fnc_Richardson(
 
     # On some compilers, roundoff error can result in Cx_fnc_Richardson being
     # slightly outside the range [0,1]. Thus, it is clipped here.
-    return jnp.maximum(0.0, jnp.minimum(1.0, Cx_fnc_Richardson))
+    Cx_fnc_Richardson = jnp.maximum(0.0, jnp.minimum(1.0, Cx_fnc_Richardson))
+    return Cx_fnc_Richardson
 
 
 @partial(jax.jit, static_argnames=("nzm", "ngrdcol", "smth_type"))
@@ -555,7 +560,8 @@ def Lscale_width_vert_avg(
 
     # Add numerator and denominator terms for all above-ground levels
     denom_safe = jnp.where(denom_integral != 0.0, denom_integral, 1.0)
-    return numer_integral / denom_safe
+    Lscale_width_vert_avg_output = numer_integral / denom_safe
+    return Lscale_width_vert_avg_output
 
 
 @partial(jax.jit, static_argnames=("nzm", "nzt", "ngrdcol"))
@@ -625,10 +631,11 @@ def smooth_min(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
       See clubb:ticket:894, updated version: 965
     """
     del nz, ngrdcol
-    return one_half * (
+    output_var = one_half * (
         (input_var1 + input_var2)
         - jnp.sqrt((input_var1 - input_var2) ** 2 + smth_coef ** 2)
     )
+    return output_var
 
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol"))
@@ -646,10 +653,11 @@ def smooth_max(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
       See clubb:ticket:894, updated version: 965
     """
     del nz, ngrdcol
-    return one_half * (
+    output_var = one_half * (
         (input_var1 + input_var2)
         + jnp.sqrt((input_var1 - input_var2) ** 2 + smth_coef ** 2)
     )
+    return output_var
 
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol"))
@@ -678,7 +686,8 @@ def smooth_heaviside_peskin(nz: int, ngrdcol: int, input, smth_range: float):
     #
     # JAX evaluates both branches, so callers should use the same nonzero
     # smoothing range assumed by the active formula.
-    return jnp.where(input < -smth_range, 0.0, jnp.where(input > smth_range, 1.0, interior))
+    smth_output = jnp.where(input < -smth_range, 0.0, jnp.where(input > smth_range, 1.0, interior))
+    return smth_output
 
 
 @partial(jax.jit, static_argnames=("nzm", "nzt", "ngrdcol"))
@@ -811,7 +820,8 @@ def vertical_integral(total_idx: int, rho_ds, field, dz):
     # Note:  The values of the field and rho_ds are passed into this function
     #        so that field(1) and rho_ds(1) are actually the field and rho_ds
     #        at level k_start.
-    return jnp.sum(field[:total_idx] * rho_ds[:total_idx] * dz[:total_idx])
+    vertical_integral = jnp.sum(field[:total_idx] * rho_ds[:total_idx] * dz[:total_idx])
+    return vertical_integral
 
 
 def pvertinterp(nzt: int, ngrdcol: int, gr, p_mid, p_out: float, input_var):
@@ -866,4 +876,5 @@ def calculate_thlp2_rad(
         / jnp.where(rcm_zm > rc_tol, rcm_zm, 1.0)
         * thlprcp
     )
-    return jnp.where(rcm_zm > rc_tol, thlp2_forcing + increment, thlp2_forcing)
+    thlp2_forcing = jnp.where(rcm_zm > rc_tol, thlp2_forcing + increment, thlp2_forcing)
+    return thlp2_forcing

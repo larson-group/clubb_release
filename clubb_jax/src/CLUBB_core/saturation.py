@@ -79,7 +79,7 @@ def sat_vapor_press_liq_flatau(T_in_K):
     # units in the cpu, then only when those terms are being multiplied together do the
     # instructions need to be done one at a time. See clubb issue 834 for more info.
     #   - Gunther Huebler, Aug 2018
-    return (
+    esat = (
         -3.21582393e-14
         * (T_in_C - 646.5835252598777)
         * (T_in_C + 90.72381630364440)
@@ -87,6 +87,7 @@ def sat_vapor_press_liq_flatau(T_in_K):
         * (T_in_C_sqd + 152.3131930092453 * T_in_C + 6499.774954705265)
         * (T_in_C_sqd + 174.4279584934021 * T_in_C + 7721.679732114084)
     )
+    return esat
 
 
 def sat_vapor_press_liq_bolton(T_in_K):
@@ -97,7 +98,8 @@ def sat_vapor_press_liq_bolton(T_in_K):
     """
     # (Bolton 1980) approx.
     # Generally this more computationally expensive than the Flatau polnomial expansion
-    return 611.2 * jnp.exp(17.67 * (T_in_K - T_freeze_K) / (T_in_K - 29.65))
+    esat = 611.2 * jnp.exp(17.67 * (T_in_K - T_freeze_K) / (T_in_K - 29.65))
+    return esat
 
 
 def sat_vapor_press_liq_gfdl(T_in_K):
@@ -121,7 +123,7 @@ def sat_vapor_press_liq_gfdl(T_in_K):
     T_in_K_clipped = jnp.maximum(173.15, T_in_K)
 
     # Goff Gratch equation, uncertain below -70 C
-    return (
+    esat = (
         10.0 ** (
             -7.90298 * (373.16 / T_in_K_clipped - 1.0)
             + 5.02808 * jnp.log10(373.16 / T_in_K_clipped)
@@ -133,6 +135,7 @@ def sat_vapor_press_liq_gfdl(T_in_K):
         )
         * 100.0
     )
+    return esat
 
 
 def sat_vapor_press_liq(T_in_K, saturation_formula: int):
@@ -181,7 +184,8 @@ def sat_mixrat_liq(p_in_Pa, T_in_K, saturation_formula: int):
     #
     # rs = (epsilon) * [ esat / ( p - esat ) ];
     # where epsilon = R_d / R_v
-    return jnp.where(safe, ep * esat / denom_safe, ep)
+    sat_mixrat_liq = jnp.where(safe, ep * esat / denom_safe, ep)
+    return sat_mixrat_liq
 
 
 def sat_mixrat_ice(p_in_Pa, T_in_K):
@@ -234,7 +238,8 @@ def sat_mixrat_ice(p_in_Pa, T_in_K):
     #
     # rs = (epsilon) * [ esat / ( p - esat ) ];
     # where epsilon = R_d / R_v
-    return jnp.where(safe, ep * esat_ice / denom_safe, ep)
+    sat_mixrat_ice = jnp.where(safe, ep * esat_ice / denom_safe, ep)
+    return sat_mixrat_ice
 
 
 def rcm_sat_adj(thlm, rtm, p_in_Pa, exner, saturation_formula: int):
@@ -291,4 +296,5 @@ def rcm_sat_adj(thlm, rtm, p_in_Pa, exner, saturation_formula: int):
         jnp.arange(64),
     )
     rsat = sat_mixrat_liq(p_in_Pa, theta * exner, saturation_formula)
-    return jnp.maximum(rtm - rsat, zero_threshold)
+    rcm = jnp.maximum(rtm - rsat, zero_threshold)
+    return rcm

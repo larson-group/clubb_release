@@ -34,22 +34,23 @@ def quadrivar_NNLL_covar(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x1, sigma_x2, sig
             + rho_x2x4_n * sigma_x4_n * gamma_exp)
     d_alpha2 = _dvc(-(alpha_exp + 2.0), s_cc) if dv is None else dv[1]
     d_alpha1 = _dvc(-(alpha_exp + 1.0), s_cc) if dv is None else dv[0]
-    return (1.0 / _SQRT_2PI
-            * _signed_pow(-sigma_x2, alpha_exp)
-            * jnp.exp(mu_x3_n * beta_exp + mu_x4_n * gamma_exp
-                      + 0.5 * (1.0 - rho_x2x3_n ** 2) * sigma_x3_n ** 2 * beta_exp ** 2
-                      + 0.5 * (1.0 - rho_x2x4_n ** 2) * sigma_x4_n ** 2 * gamma_exp ** 2
-                      + (rho_x3x4_n - rho_x2x3_n * rho_x2x4_n)
-                      * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp)
-            * jnp.exp(0.25 * s_cc ** 2 - (mu_x2 / sigma_x2) * s_cc
-                      + 0.5 * (mu_x2 ** 2 / sigma_x2 ** 2))
-            * (-rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0) * d_alpha2
-               + (mu_x1 - x1_mean
-                  - (mu_x2 / sigma_x2) * rho_x1x2 * sigma_x1
-                  + (rho_x1x3_n - rho_x1x2 * rho_x2x3_n) * sigma_x1 * sigma_x3_n * beta_exp
-                  + (rho_x1x4_n - rho_x1x2 * rho_x2x4_n) * sigma_x1 * sigma_x4_n * gamma_exp)
-               * _gamma_real(alpha_exp + 1.0) * d_alpha1)
-            - x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
+    quadrivar_NNLL_covar = (1.0 / _SQRT_2PI
+                            * _signed_pow(-sigma_x2, alpha_exp)
+                            * jnp.exp(mu_x3_n * beta_exp + mu_x4_n * gamma_exp
+                                      + 0.5 * (1.0 - rho_x2x3_n ** 2) * sigma_x3_n ** 2 * beta_exp ** 2
+                                      + 0.5 * (1.0 - rho_x2x4_n ** 2) * sigma_x4_n ** 2 * gamma_exp ** 2
+                                      + (rho_x3x4_n - rho_x2x3_n * rho_x2x4_n)
+                                      * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp)
+                            * jnp.exp(0.25 * s_cc ** 2 - (mu_x2 / sigma_x2) * s_cc
+                                      + 0.5 * (mu_x2 ** 2 / sigma_x2 ** 2))
+                            * (-rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0) * d_alpha2
+                               + (mu_x1 - x1_mean
+                                  - (mu_x2 / sigma_x2) * rho_x1x2 * sigma_x1
+                                  + (rho_x1x3_n - rho_x1x2 * rho_x2x3_n) * sigma_x1 * sigma_x3_n * beta_exp
+                                  + (rho_x1x4_n - rho_x1x2 * rho_x2x4_n) * sigma_x1 * sigma_x4_n * gamma_exp)
+                               * _gamma_real(alpha_exp + 1.0) * d_alpha1)
+                            - x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
+    return quadrivar_NNLL_covar
 
 
 def quadrivar_NNLL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x2, sigma_x3_n, sigma_x4_n,
@@ -58,15 +59,16 @@ def quadrivar_NNLL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x2, sigm
     """x1 constant. PDF_integrals_covar.F90:quadrivar_NNLL_covar_const_x1."""
     s_cc = (mu_x2 / sigma_x2 + rho_x2x3_n * sigma_x3_n * beta_exp + rho_x2x4_n * sigma_x4_n * gamma_exp)
     d_alpha1 = _dvc(-(alpha_exp + 1.0), s_cc) if dv is None else dv[0]
-    return ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean)
-            * _signed_pow(-sigma_x2, alpha_exp)
-            * jnp.exp(mu_x3_n * beta_exp + mu_x4_n * gamma_exp
-                      + 0.5 * (1.0 - rho_x2x3_n ** 2) * sigma_x3_n ** 2 * beta_exp ** 2
-                      + 0.5 * (1.0 - rho_x2x4_n ** 2) * sigma_x4_n ** 2 * gamma_exp ** 2
-                      + (rho_x3x4_n - rho_x2x3_n * rho_x2x4_n) * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp)
-            * jnp.exp(0.25 * s_cc ** 2 - (mu_x2 / sigma_x2) * s_cc + 0.5 * (mu_x2 ** 2 / sigma_x2 ** 2))
-            * _gamma_real(alpha_exp + 1.0) * d_alpha1
-            - x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
+    quadrivar_NNLL_covar_const_x1 = ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean)
+                                     * _signed_pow(-sigma_x2, alpha_exp)
+                                     * jnp.exp(mu_x3_n * beta_exp + mu_x4_n * gamma_exp
+                                               + 0.5 * (1.0 - rho_x2x3_n ** 2) * sigma_x3_n ** 2 * beta_exp ** 2
+                                               + 0.5 * (1.0 - rho_x2x4_n ** 2) * sigma_x4_n ** 2 * gamma_exp ** 2
+                                               + (rho_x3x4_n - rho_x2x3_n * rho_x2x4_n) * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp)
+                                     * jnp.exp(0.25 * s_cc ** 2 - (mu_x2 / sigma_x2) * s_cc + 0.5 * (mu_x2 ** 2 / sigma_x2 ** 2))
+                                     * _gamma_real(alpha_exp + 1.0) * d_alpha1
+                                     - x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
+    return quadrivar_NNLL_covar_const_x1
 
 
 def quadrivar_NNLL_covar_const_x2(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x1, sigma_x3_n, sigma_x4_n,
@@ -81,7 +83,8 @@ def quadrivar_NNLL_covar_const_x2(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x1, sigm
                      + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2 + 0.5 * sigma_x4_n ** 2 * gamma_exp ** 2
                      + rho_x3x4_n * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp)
            - x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
-    return jnp.where(mu_x2 <= 0.0, pos, -x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
+    quadrivar_NNLL_covar_const_x2 = jnp.where(mu_x2 <= 0.0, pos, -x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
+    return quadrivar_NNLL_covar_const_x2
 
 
 def quadrivar_NNLL_covar_const_x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sigma_x1, sigma_x2, sigma_x4_n,
@@ -91,19 +94,21 @@ def quadrivar_NNLL_covar_const_x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sigma_x1, sigma_
     s_cc = mu_x2 / sigma_x2 + rho_x2x4_n * sigma_x4_n * gamma_exp
     d_alpha2 = _dvc(-(alpha_exp + 2.0), s_cc) if dv is None else dv[1]
     d_alpha1 = _dvc(-(alpha_exp + 1.0), s_cc) if dv is None else dv[0]
-    return (1.0 / _SQRT_2PI
-            * _signed_pow(-sigma_x2, alpha_exp) * mu_x3 ** beta_exp
-            * jnp.exp(mu_x4_n * gamma_exp + 0.5 * sigma_x4_n ** 2 * gamma_exp ** 2 - 0.25 * s_cc ** 2)
-            * (-rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0) * d_alpha2
-               + (mu_x1 - x1_mean - (mu_x2 / sigma_x2) * rho_x1x2 * sigma_x1
-                  + (rho_x1x4_n - rho_x1x2 * rho_x2x4_n) * sigma_x1 * sigma_x4_n * gamma_exp)
-               * _gamma_real(alpha_exp + 1.0) * d_alpha1)
-            - x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
+    quadrivar_NNLL_covar_const_x3 = (1.0 / _SQRT_2PI
+                                     * _signed_pow(-sigma_x2, alpha_exp) * mu_x3 ** beta_exp
+                                     * jnp.exp(mu_x4_n * gamma_exp + 0.5 * sigma_x4_n ** 2 * gamma_exp ** 2 - 0.25 * s_cc ** 2)
+                                     * (-rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0) * d_alpha2
+                                        + (mu_x1 - x1_mean - (mu_x2 / sigma_x2) * rho_x1x2 * sigma_x1
+                                           + (rho_x1x4_n - rho_x1x2 * rho_x2x4_n) * sigma_x1 * sigma_x4_n * gamma_exp)
+                                        * _gamma_real(alpha_exp + 1.0) * d_alpha1)
+                                     - x2_alpha_x3_beta_x4_gamma_mean * (mu_x1 - x1_mean))
+    return quadrivar_NNLL_covar_const_x3
 
 
 def _q_const_neg(pos, mu_x1, mu_x2, x1_mean, x2a):
     """Subsaturated multi-const dispatch: the `pos` form for mu_x2<=0, else the −overall-mean term."""
-    return jnp.where(mu_x2 <= 0.0, pos, -x2a * (mu_x1 - x1_mean))
+    q_covar = jnp.where(mu_x2 <= 0.0, pos, -x2a * (mu_x1 - x1_mean))
+    return q_covar
 
 
 def quadrivar_NNLL_covar_const_x1x2(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x3_n, sigma_x4_n, rho_x3x4_n,
@@ -122,10 +127,11 @@ def quadrivar_NNLL_covar_const_x1x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sigma_x2, sigm
     """x1, x3 constant. PDF_integrals_covar.F90:quadrivar_NNLL_covar_const_x1x3."""
     s_cc = mu_x2 / sigma_x2 + rho_x2x4_n * sigma_x4_n * gamma_exp
     d_alpha1 = _dvc(-(alpha_exp + 1.0), s_cc) if dv is None else dv[0]
-    return ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean) * _signed_pow(-sigma_x2, alpha_exp) * mu_x3 ** beta_exp
-            * jnp.exp(mu_x4_n * gamma_exp + 0.5 * sigma_x4_n ** 2 * gamma_exp ** 2 - 0.25 * s_cc ** 2)
-            * _gamma_real(alpha_exp + 1.0) * d_alpha1
-            - x2a * (mu_x1 - x1_mean))
+    quadrivar_NNLL_covar_const_x1x3 = ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean) * _signed_pow(-sigma_x2, alpha_exp) * mu_x3 ** beta_exp
+                                       * jnp.exp(mu_x4_n * gamma_exp + 0.5 * sigma_x4_n ** 2 * gamma_exp ** 2 - 0.25 * s_cc ** 2)
+                                       * _gamma_real(alpha_exp + 1.0) * d_alpha1
+                                       - x2a * (mu_x1 - x1_mean))
+    return quadrivar_NNLL_covar_const_x1x3
 
 
 def quadrivar_NNLL_covar_const_x2x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sigma_x1, sigma_x4_n, rho_x1x4_n,
@@ -144,12 +150,13 @@ def quadrivar_NNLL_covar_const_x3x4(mu_x1, mu_x2, mu_x3, mu_x4, sigma_x1, sigma_
     r = mu_x2 / sigma_x2
     d_alpha2 = _dvc(-(alpha_exp + 2.0), r) if dv is None else dv[1]
     d_alpha1 = _dvc(-(alpha_exp + 1.0), r) if dv is None else dv[0]
-    return (1.0 / _SQRT_2PI * _signed_pow(-sigma_x2, alpha_exp) * mu_x3 ** beta_exp * mu_x4 ** gamma_exp
-            * jnp.exp(-0.25 * (mu_x2 ** 2 / sigma_x2 ** 2))
-            * (-rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0) * d_alpha2
-               + (mu_x1 - x1_mean - r * rho_x1x2 * sigma_x1)
-               * _gamma_real(alpha_exp + 1.0) * d_alpha1)
-            - x2a * (mu_x1 - x1_mean))
+    quadrivar_NNLL_covar_const_x3x4 = (1.0 / _SQRT_2PI * _signed_pow(-sigma_x2, alpha_exp) * mu_x3 ** beta_exp * mu_x4 ** gamma_exp
+                                       * jnp.exp(-0.25 * (mu_x2 ** 2 / sigma_x2 ** 2))
+                                       * (-rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0) * d_alpha2
+                                          + (mu_x1 - x1_mean - r * rho_x1x2 * sigma_x1)
+                                          * _gamma_real(alpha_exp + 1.0) * d_alpha1)
+                                       - x2a * (mu_x1 - x1_mean))
+    return quadrivar_NNLL_covar_const_x3x4
 
 
 def quadrivar_NNLL_covar_cst_x1x2x3(mu_x1, mu_x2, mu_x3, mu_x4_n, sigma_x4_n,
@@ -165,11 +172,12 @@ def quadrivar_NNLL_covar_cst_x1x3x4(mu_x1, mu_x2, mu_x3, mu_x4, sigma_x2,
                                     x1_mean, x2a, alpha_exp, beta_exp, gamma_exp, *, dv=None):
     """x1, x3, x4 constant. PDF_integrals_covar.F90:quadrivar_NNLL_covar_cst_x1x3x4."""
     d_alpha1 = _dvc(-(alpha_exp + 1.0), mu_x2 / sigma_x2) if dv is None else dv[0]
-    return ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean) * _signed_pow(-sigma_x2, alpha_exp)
-            * mu_x3 ** beta_exp * mu_x4 ** gamma_exp
-            * jnp.exp(-0.25 * (mu_x2 ** 2 / sigma_x2 ** 2))
-            * _gamma_real(alpha_exp + 1.0) * d_alpha1
-            - x2a * (mu_x1 - x1_mean))
+    quadrivar_NNLL_covar_cst_x1x3x4 = ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean) * _signed_pow(-sigma_x2, alpha_exp)
+                                       * mu_x3 ** beta_exp * mu_x4 ** gamma_exp
+                                       * jnp.exp(-0.25 * (mu_x2 ** 2 / sigma_x2 ** 2))
+                                       * _gamma_real(alpha_exp + 1.0) * d_alpha1
+                                       - x2a * (mu_x1 - x1_mean))
+    return quadrivar_NNLL_covar_cst_x1x3x4
 
 
 def quadrivar_NNLL_covar_cst_x2x3x4(mu_x1, mu_x2, mu_x3, mu_x4, x1_mean, x2a, alpha_exp, beta_exp, gamma_exp):
@@ -193,20 +201,21 @@ def trivar_NNL_covar(mu_x1, mu_x2, mu_x3_n, sigma_x1, sigma_x2, sigma_x3_n,
     s_c = (mu_x2 / sigma_x2) + rho_x2x3_n * sigma_x3_n * beta_exp
     d_alpha2 = _dvc(-(alpha_exp + 2.0), -s_c) if dv is None else dv[1]
     d_alpha1 = _dvc(-(alpha_exp + 1.0), -s_c) if dv is None else dv[0]
-    return (1.0 / _SQRT_2PI
-            * sigma_x2 ** alpha_exp
-            * jnp.exp(mu_x3_n * beta_exp
-                      + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2
-                      - 0.25 * s_c ** 2)
-            * (rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0)
-               * d_alpha2
-               + (mu_x1 - x1_mean
-                  - (mu_x2 / sigma_x2) * rho_x1x2 * sigma_x1
-                  + (rho_x1x3_n - rho_x1x2 * rho_x2x3_n)
-                  * sigma_x1 * sigma_x3_n * beta_exp)
-               * _gamma_real(alpha_exp + 1.0)
-               * d_alpha1)
-            - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    trivar_NNL_covar = (1.0 / _SQRT_2PI
+                        * sigma_x2 ** alpha_exp
+                        * jnp.exp(mu_x3_n * beta_exp
+                                  + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2
+                                  - 0.25 * s_c ** 2)
+                        * (rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0)
+                           * d_alpha2
+                           + (mu_x1 - x1_mean
+                              - (mu_x2 / sigma_x2) * rho_x1x2 * sigma_x1
+                              + (rho_x1x3_n - rho_x1x2 * rho_x2x3_n)
+                              * sigma_x1 * sigma_x3_n * beta_exp)
+                           * _gamma_real(alpha_exp + 1.0)
+                           * d_alpha1)
+                        - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    return trivar_NNL_covar
 
 
 def trivar_NNL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, sigma_x2, sigma_x3_n,
@@ -214,11 +223,12 @@ def trivar_NNL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, sigma_x2, sigma_x3_n,
     """x1 constant within the component (sigma_x1=0). PDF_integrals_covar.F90:trivar_NNL_covar_const_x1."""
     s_c = (mu_x2 / sigma_x2) + rho_x2x3_n * sigma_x3_n * beta_exp
     d_alpha1 = _dvc(-(alpha_exp + 1.0), -s_c) if dv is None else dv[0]
-    return ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean)
-            * sigma_x2 ** alpha_exp
-            * jnp.exp(mu_x3_n * beta_exp + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2 - 0.25 * s_c ** 2)
-            * _gamma_real(alpha_exp + 1.0) * d_alpha1
-            - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    trivar_NNL_covar_const_x1 = ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean)
+                                 * sigma_x2 ** alpha_exp
+                                 * jnp.exp(mu_x3_n * beta_exp + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2 - 0.25 * s_c ** 2)
+                                 * _gamma_real(alpha_exp + 1.0) * d_alpha1
+                                 - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    return trivar_NNL_covar_const_x1
 
 
 def trivar_NNL_covar_const_x2(mu_x1, mu_x2, mu_x3_n, sigma_x1, sigma_x3_n,
@@ -235,7 +245,8 @@ def trivar_NNL_covar_const_x2(mu_x1, mu_x2, mu_x3_n, sigma_x1, sigma_x3_n,
            * (mu_x1 - x1_mean + rho_x1x3_n * sigma_x1 * sigma_x3_n * beta_exp)
            * jnp.exp(mu_x3_n * beta_exp + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2)
            - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
-    return jnp.where(mu_x2 >= 0.0, pos, neg)
+    trivar_NNL_covar_const_x2 = jnp.where(mu_x2 >= 0.0, pos, neg)
+    return trivar_NNL_covar_const_x2
 
 
 def trivar_NNL_covar_const_x3(mu_x1, mu_x2, mu_x3, sigma_x1, sigma_x2,
@@ -245,18 +256,20 @@ def trivar_NNL_covar_const_x3(mu_x1, mu_x2, mu_x3, sigma_x1, sigma_x2,
     r = mu_x2 / sigma_x2
     d_alpha2 = _dvc(-(alpha_exp + 2.0), -r) if dv is None else dv[1]
     d_alpha1 = _dvc(-(alpha_exp + 1.0), -r) if dv is None else dv[0]
-    return (1.0 / _SQRT_2PI
-            * sigma_x2 ** alpha_exp * mu_x3 ** beta_exp
-            * jnp.exp(-0.25 * (mu_x2 ** 2 / sigma_x2 ** 2))
-            * (rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0) * d_alpha2
-               + (mu_x1 - x1_mean - r * rho_x1x2 * sigma_x1)
-               * _gamma_real(alpha_exp + 1.0) * d_alpha1)
-            - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    trivar_NNL_covar_const_x3 = (1.0 / _SQRT_2PI
+                                 * sigma_x2 ** alpha_exp * mu_x3 ** beta_exp
+                                 * jnp.exp(-0.25 * (mu_x2 ** 2 / sigma_x2 ** 2))
+                                 * (rho_x1x2 * sigma_x1 * _gamma_real(alpha_exp + 2.0) * d_alpha2
+                                    + (mu_x1 - x1_mean - r * rho_x1x2 * sigma_x1)
+                                    * _gamma_real(alpha_exp + 1.0) * d_alpha1)
+                                 - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    return trivar_NNL_covar_const_x3
 
 
 def _x2pow(mu_x2, alpha_exp):
     """mu_x2^alpha, NaN-safe in the unused mu_x2<0 branch (the caller's jnp.where discards it)."""
-    return jnp.where(mu_x2 >= 0.0, mu_x2, 1.0) ** alpha_exp
+    mu_x2_pow = jnp.where(mu_x2 >= 0.0, mu_x2, 1.0) ** alpha_exp
+    return mu_x2_pow
 
 
 def trivar_NNL_covar_const_x1x2(mu_x1, mu_x2, mu_x3_n, sigma_x3_n,
@@ -265,25 +278,28 @@ def trivar_NNL_covar_const_x1x2(mu_x1, mu_x2, mu_x3_n, sigma_x3_n,
     pos = (_x2pow(mu_x2, alpha_exp) * (mu_x1 - x1_mean)
            * jnp.exp(mu_x3_n * beta_exp + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2)
            - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
-    return jnp.where(mu_x2 >= 0.0, pos, -x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    trivar_NNL_covar_const_x1x2 = jnp.where(mu_x2 >= 0.0, pos, -x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    return trivar_NNL_covar_const_x1x2
 
 
 def trivar_NNL_covar_const_x1x3(mu_x1, mu_x2, mu_x3, sigma_x2,
                                 x1_mean, x2_alpha_x3_beta_mean, alpha_exp, beta_exp, *, dv=None):
     """x1 and x3 constant. PDF_integrals_covar.F90:trivar_NNL_covar_const_x1x3."""
     d_alpha1 = _dvc(-(alpha_exp + 1.0), -(mu_x2 / sigma_x2)) if dv is None else dv[0]
-    return ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean)
-            * sigma_x2 ** alpha_exp * mu_x3 ** beta_exp
-            * jnp.exp(-0.25 * (mu_x2 ** 2 / sigma_x2 ** 2))
-            * _gamma_real(alpha_exp + 1.0) * d_alpha1
-            - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    trivar_NNL_covar_const_x1x3 = ((1.0 / _SQRT_2PI) * (mu_x1 - x1_mean)
+                                   * sigma_x2 ** alpha_exp * mu_x3 ** beta_exp
+                                   * jnp.exp(-0.25 * (mu_x2 ** 2 / sigma_x2 ** 2))
+                                   * _gamma_real(alpha_exp + 1.0) * d_alpha1
+                                   - x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    return trivar_NNL_covar_const_x1x3
 
 
 def trivar_NNL_covar_const_x2x3(mu_x1, mu_x2, mu_x3, x1_mean,
                                 x2_alpha_x3_beta_mean, alpha_exp, beta_exp):
     """x2 and x3 constant (== the all-constant case). PDF_integrals_covar.F90:trivar_NNL_covar_const_x2x3."""
     pos = (mu_x1 - x1_mean) * (_x2pow(mu_x2, alpha_exp) * mu_x3 ** beta_exp - x2_alpha_x3_beta_mean)
-    return jnp.where(mu_x2 >= 0.0, pos, -x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    trivar_NNL_covar_const_x2x3 = jnp.where(mu_x2 >= 0.0, pos, -x2_alpha_x3_beta_mean * (mu_x1 - x1_mean))
+    return trivar_NNL_covar_const_x2x3
 
 
 # All three constant: identical formula to const_x2x3 (PDF_integrals_covar.F90:trivar_NNL_covar_const_all).

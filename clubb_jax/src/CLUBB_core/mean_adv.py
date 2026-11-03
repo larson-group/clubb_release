@@ -322,9 +322,3 @@ def term_ma_zm_lhs(
     maindiag = jnp.concatenate([zeros_bnd, main_int, zeros_bnd], axis=1)
     subdiag = jnp.concatenate([zeros_bnd, sub_int, zeros_bnd], axis=1)
     return jnp.stack([superdiag, maindiag, subdiag], axis=0)
-
-
-__all__ = [
-    "term_ma_zt_lhs",
-    "term_ma_zm_lhs",
-]

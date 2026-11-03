@@ -33,7 +33,8 @@ _GRID_TO_ID = {grid: index for index, grid in enumerate(GRID_ORDER)}
 
 
 def _replace(items: tuple, index: int, value) -> tuple:
-    return items[:index] + (value,) + items[index + 1:]
+    replaced = items[:index] + (value,) + items[index + 1:]
+    return replaced
 
 
 @lru_cache(maxsize=None)
@@ -210,9 +211,9 @@ class JaxStats:
             issues=self.issues if issues is None else issues,
         )
 
-    def begin_timestep(self, *, l_sample: bool, reset_accumulators: bool):
+    def begin_timestep(self, *, l_sample: bool, l_reset_accumulators: bool):
         """Set static sampling state and optionally clear the output-window banks."""
-        if not reset_accumulators:
+        if not l_reset_accumulators:
             return self._new(l_sample=l_sample)
         buffers = tuple(jnp.zeros_like(value) for value in self.buffers)
         nsamples = tuple(jnp.zeros_like(value) for value in self.nsamples)
@@ -225,7 +226,8 @@ class JaxStats:
         )
 
     def var_on_stats_list(self, name: str) -> bool:
-        return bool(name) and name.strip() in self.name_to_id
+        var_on_stats_list = bool(name) and name.strip() in self.name_to_id
+        return var_on_stats_list
 
     def _record_issue(self, issues, var_id: int, condition, bit: int):
         old_value = issues[var_id]
@@ -238,7 +240,7 @@ class JaxStats:
         name: str,
         values,
         sign: int,
-        count_sample: bool,
+        l_count_sample: bool,
         allowed,
         icol: int | None,
         level: int | None,
@@ -263,7 +265,7 @@ class JaxStats:
             if row < 0 or row >= self.ncol or column < 0 or column >= nlev:
                 raise ValueError(f"Stats selector is out of bounds for {name!r}.")
             candidate = bank.at[slot, row, column].add(sign * arr)
-            count_candidate = count_bank.at[slot, row, column].add(int(count_sample))
+            count_candidate = count_bank.at[slot, row, column].add(int(l_count_sample))
         elif arr.ndim == 1:
             if level is not None:
                 raise ValueError("Rank-1 stats operations do not accept level.")
@@ -274,7 +276,7 @@ class JaxStats:
                         f"surface shape ({self.ncol},); got {arr.shape}."
                     )
                 candidate = bank.at[slot, :, 0].add(sign * arr)
-                count_candidate = count_bank.at[slot, :, 0].add(int(count_sample))
+                count_candidate = count_bank.at[slot, :, 0].add(int(l_count_sample))
             else:
                 row = int(icol)
                 if row < 0 or row >= self.ncol:
@@ -285,7 +287,7 @@ class JaxStats:
                         f"({nlev},); got {arr.shape}."
                     )
                 candidate = bank.at[slot, row, :].add(sign * arr)
-                count_candidate = count_bank.at[slot, row, :].add(int(count_sample))
+                count_candidate = count_bank.at[slot, row, :].add(int(l_count_sample))
         else:
             if icol is not None or level is not None:
                 raise ValueError("Rank-2 stats operations do not accept icol or level.")
@@ -295,7 +297,7 @@ class JaxStats:
                     f"({self.ncol}, {nlev}); got {arr.shape}."
                 )
             candidate = bank.at[slot, :, :].add(sign * arr)
-            count_candidate = count_bank.at[slot, :, :].add(int(count_sample))
+            count_candidate = count_bank.at[slot, :, :].add(int(l_count_sample))
 
         bank = jnp.where(allowed, candidate, bank)
         count_bank = jnp.where(allowed, count_candidate, count_bank)
@@ -319,7 +321,7 @@ class JaxStats:
             name=clean_name,
             values=values,
             sign=1,
-            count_sample=True,
+            l_count_sample=True,
             allowed=allowed,
             icol=icol,
             level=level,
@@ -357,7 +359,7 @@ class JaxStats:
             name=clean_name,
             values=values,
             sign=-1,
-            count_sample=False,
+            l_count_sample=False,
             allowed=allowed,
             icol=icol,
             level=None,
@@ -398,7 +400,7 @@ class JaxStats:
             name=clean_name,
             values=values,
             sign=1,
-            count_sample=False,
+            l_count_sample=False,
             allowed=allowed,
             icol=icol,
             level=level,
@@ -429,7 +431,7 @@ class JaxStats:
             name=clean_name,
             values=values,
             sign=1,
-            count_sample=bool(l_count_sample),
+            l_count_sample=bool(l_count_sample),
             allowed=allowed,
             icol=icol,
             level=None,

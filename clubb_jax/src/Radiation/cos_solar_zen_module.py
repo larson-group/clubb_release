@@ -106,6 +106,3 @@ def cos_solar_zen(
     )
 
     return cos_solar_zen_result
-
-
-__all__ = ["cos_solar_zen"]

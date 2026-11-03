@@ -450,8 +450,9 @@ def max_cubic_root(a_coef, b_coef, c_coef, d_coef):
     c_safe = jnp.where(c_coef != 0.0, c_coef, 1.0)
     linear = -d_coef / c_safe
 
-    return jnp.where(jnp.abs(a_coef) > a_thresh, cubic_max,
-                     jnp.where(jnp.abs(b_coef) > b_thresh, quad_max, linear))
+    max_root = jnp.where(jnp.abs(a_coef) > a_thresh, cubic_max,
+                         jnp.where(jnp.abs(b_coef) > b_thresh, quad_max, linear))
+    return max_root
 
 
 def backsolve_Luhar_params(Sk_max, Skx, big_m_max, mixt_frac):

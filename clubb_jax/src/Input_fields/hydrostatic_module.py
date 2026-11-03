@@ -39,15 +39,15 @@ def hydrostatic(thvm, p_sfc, gr):
         rho:        (ngrdcol, nzt) air density [kg/m^3]
         rho_zm:     (ngrdcol, nzm) air density [kg/m^3]
     """
-    p_in_Pa, exner_zt, p_in_Pa_zm, exner_zm = init_pressure(thvm, p_sfc, gr)
+    p_in_Pa, exner, p_in_Pa_zm, exner_zm = init_pressure(thvm, p_sfc, gr)
 
     # Interpolate thvm to momentum levels (no floor, as in Fortran hydrostatic)
     thvm_zm = zt2zm(gr.nzm, gr.nzt, gr.ngrdcol, gr, thvm)
 
-    rho    = p_in_Pa    / (Rd * thvm    * exner_zt)
+    rho    = p_in_Pa    / (Rd * thvm    * exner)
     rho_zm = p_in_Pa_zm / (Rd * thvm_zm * exner_zm)
 
-    return p_in_Pa, p_in_Pa_zm, exner_zt, exner_zm, rho, rho_zm
+    return p_in_Pa, p_in_Pa_zm, exner, exner_zm, rho, rho_zm
 
 
 def calc_ref_z_linear_thvm(thvm, exner):
@@ -110,12 +110,5 @@ def inverse_hydrostatic(p_sfc, zm_init, thvm, exner):
     ref_z_sfc = calc_ref_z_sfc_linear_thvm(thvm[low], thvm[high], ref_z_snd[low], ref_z_snd[high],
                                            exner[low], exner_sfc)
     z_snd_bottom = zm_init - ref_z_sfc
-    return z_snd_bottom + ref_z_snd
-
-
-__all__ = [
-    "hydrostatic",
-    "inverse_hydrostatic",
-    "calc_ref_z_linear_thvm",
-    "calc_ref_z_sfc_linear_thvm",
-]
+    z = z_snd_bottom + ref_z_snd
+    return z

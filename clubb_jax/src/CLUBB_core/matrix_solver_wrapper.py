@@ -54,20 +54,24 @@ def _reciprocal_condition_number(a):
     inv_a = jnp.linalg.inv(a)
     norm_inv_a = jnp.max(jnp.sum(jnp.abs(inv_a), axis=-2), axis=-1)
     cond = norm_a * norm_inv_a
-    return jnp.where((cond > 0.0) & jnp.isfinite(cond), 1.0 / cond, 0.0)
+    l_valid = (cond > 0.0) & jnp.isfinite(cond)
+    rcond = jnp.where(l_valid, 1.0 / jnp.where(l_valid, cond, 1.0), 0.0)
+    return rcond
 
 
 def _matrix_one_norm(a):
-    return jnp.max(jnp.sum(jnp.abs(a), axis=-2), axis=-1)
+    one_norm = jnp.max(jnp.sum(jnp.abs(a), axis=-2), axis=-1)
+    return one_norm
 
 
-def _solve_matrix_vector(a, x, transpose=False):
-    lhs = jnp.swapaxes(a, -1, -2) if transpose else a
+def _solve_matrix_vector(a, x, l_transpose=False):
+    lhs = jnp.swapaxes(a, -1, -2) if l_transpose else a
     return jnp.linalg.solve(lhs, x[..., None])[..., 0]
 
 
 def _sign_one(x):
-    return jnp.where(x >= 0.0, 1.0, -1.0)
+    sign_one = jnp.where(x >= 0.0, 1.0, -1.0)
+    return sign_one
 
 
 def _reciprocal_condition_number_estimate(a):
@@ -75,14 +79,21 @@ def _reciprocal_condition_number_estimate(a):
     anorm = _matrix_one_norm(a)
 
     if n == 1:
-        ainvnm = jnp.where(jnp.abs(a[..., 0, 0]) > 0.0, 1.0 / jnp.abs(a[..., 0, 0]), 0.0)
-        return jnp.where((anorm > 0.0) & (ainvnm > 0.0), (1.0 / ainvnm) / anorm, 0.0)
+        l_nonzero = jnp.abs(a[..., 0, 0]) > 0.0
+        ainvnm = jnp.where(l_nonzero, 1.0 / jnp.where(l_nonzero, jnp.abs(a[..., 0, 0]), 1.0), 0.0)
+        l_valid = (anorm > 0.0) & (ainvnm > 0.0)
+        rcond = jnp.where(
+            l_valid,
+            (1.0 / jnp.where(l_valid, ainvnm, 1.0)) / jnp.where(l_valid, anorm, 1.0),
+            0.0,
+        )
+        return rcond
 
     x = jnp.ones(a.shape[:-1]) / float(n)
     x = _solve_matrix_vector(a, x)
     est = jnp.sum(jnp.abs(x), axis=-1)
     isgn = _sign_one(x)
-    x = _solve_matrix_vector(a, isgn, transpose=True)
+    x = _solve_matrix_vector(a, isgn, l_transpose=True)
     j = jnp.argmax(jnp.abs(x), axis=-1)
     active = jnp.ones(a.shape[:-2], dtype=bool)
 
@@ -99,7 +110,7 @@ def _reciprocal_condition_number_estimate(a):
         est = jnp.where(active, est_new, est)
         isgn = jnp.where(pre_transpose[..., None], sign_x, isgn)
 
-        x_transpose = _solve_matrix_vector(a, sign_x, transpose=True)
+        x_transpose = _solve_matrix_vector(a, sign_x, l_transpose=True)
         jlast = j
         j_new = jnp.argmax(jnp.abs(x_transpose), axis=-1)
         x_jlast = x_transpose[batch_axis, jlast]
@@ -112,11 +123,13 @@ def _reciprocal_condition_number_estimate(a):
     x = _solve_matrix_vector(a, jnp.broadcast_to(alt_x, a.shape[:-1]))
     temp = 2.0 * (jnp.sum(jnp.abs(x), axis=-1) / float(3 * n))
     ainvnm = jnp.where(temp > est, temp, est)
-    return jnp.where(
-        (anorm > 0.0) & (ainvnm > 0.0) & jnp.isfinite(ainvnm),
-        (1.0 / ainvnm) / anorm,
+    l_valid = (anorm > 0.0) & (ainvnm > 0.0) & jnp.isfinite(ainvnm)
+    rcond = jnp.where(
+        l_valid,
+        (1.0 / jnp.where(l_valid, ainvnm, 1.0)) / jnp.where(l_valid, anorm, 1.0),
         0.0,
     )
+    return rcond
 
 
 def _lapack_equilibrated_band_matrix(a):
@@ -142,7 +155,8 @@ def _lapack_equilibrated_band_matrix(a):
     col_equ = colcnd < threshold
     row_factor = jnp.where(row_equ[..., None], row_scale, 1.0)
     col_factor = jnp.where(col_equ[..., None], col_scale, 1.0)
-    return row_factor[..., :, None] * a * col_factor[..., None, :]
+    equilibrated_a = row_factor[..., :, None] * a * col_factor[..., None, :]
+    return equilibrated_a
 
 
 def _band_rcond(ndim: int, lhs):
@@ -201,7 +215,7 @@ def band_solve_single_rhs_multiple_lhs(
     rhs,
     err_info,
     old_soln=None,
-    use_rcond: bool = False,
+    l_use_rcond: bool = False,
 ):
     """Band solve written for single RHS and multiple LHS."""
     del old_soln
@@ -212,21 +226,23 @@ def band_solve_single_rhs_multiple_lhs(
     # after equilibration (if done).
     rcond = (
         _band_rcond(ndim, lhs)
-        if use_rcond
+        if l_use_rcond
         else jnp.zeros((ngrdcol,))
     )
 
     if nsup != 2 or nsub != 2:
         print(
             "WARNING: matrix_solver_wrapper.band_solve_single_rhs_multiple_lhs "
-            f"only supports pentadiagonal systems; got nsup={nsup}, nsub={nsub}."
+            f"only supports pentadiagonal systems; got nsup={nsup}, nsub={nsub}.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
     if penta_solve_method == lapack:
         print(
             "WARNING: matrix_solver_wrapper.band_solve_single_rhs_multiple_lhs "
-            "does not yet support the LAPACK band solver path."
+            "does not yet support the LAPACK band solver path.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
@@ -240,7 +256,8 @@ def band_solve_single_rhs_multiple_lhs(
     elif penta_solve_method == penta_bicgstab:
         print(
             "WARNING: matrix_solver_wrapper.band_solve_single_rhs_multiple_lhs "
-            "does not yet support the penta_bicgstab solver path."
+            "does not yet support the penta_bicgstab solver path.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
@@ -275,7 +292,7 @@ def band_solve_multiple_rhs_lhs(
     rhs,
     err_info,
     old_soln=None,
-    use_rcond: bool = False,
+    l_use_rcond: bool = False,
 ):
     """Band solve written for multiple RHS and multiple LHS."""
     del old_soln
@@ -286,21 +303,23 @@ def band_solve_multiple_rhs_lhs(
     # after equilibration (if done).
     rcond = (
         _band_rcond(ndim, lhs)
-        if use_rcond
+        if l_use_rcond
         else jnp.zeros((ngrdcol,))
     )
 
     if nsup != 2 or nsub != 2:
         print(
             "WARNING: matrix_solver_wrapper.band_solve_multiple_rhs_lhs "
-            f"only supports pentadiagonal systems; got nsup={nsup}, nsub={nsub}."
+            f"only supports pentadiagonal systems; got nsup={nsup}, nsub={nsub}.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
     if penta_solve_method == lapack:
         print(
             "WARNING: matrix_solver_wrapper.band_solve_multiple_rhs_lhs "
-            "does not yet support the LAPACK band solver path."
+            "does not yet support the LAPACK band solver path.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
@@ -314,7 +333,8 @@ def band_solve_multiple_rhs_lhs(
     elif penta_solve_method == penta_bicgstab:
         print(
             "WARNING: matrix_solver_wrapper.band_solve_multiple_rhs_lhs "
-            "does not yet support the penta_bicgstab solver path."
+            "does not yet support the penta_bicgstab solver path.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
@@ -349,7 +369,7 @@ def band_solve(
     rhs,
     err_info,
     old_soln=None,
-    use_rcond: bool = False,
+    l_use_rcond: bool = False,
 ):
     """Generic band solve interface."""
     if rhs.ndim == 2:
@@ -365,7 +385,7 @@ def band_solve(
             rhs,
             err_info,
             old_soln=old_soln,
-            use_rcond=use_rcond,
+            l_use_rcond=l_use_rcond,
         )
     if rhs.ndim == 3:
         return band_solve_multiple_rhs_lhs(
@@ -381,7 +401,7 @@ def band_solve(
             rhs,
             err_info,
             old_soln=old_soln,
-            use_rcond=use_rcond,
+            l_use_rcond=l_use_rcond,
         )
     raise ValueError("rhs must be rank-2 or rank-3 for band_solve")
 
@@ -399,7 +419,7 @@ def tridiag_solve_single_rhs_lhs(
     lhs,
     rhs,
     err_info,
-    use_rcond: bool = False,
+    l_use_rcond: bool = False,
 ):
     """Tridiagonal solve written for single RHS and single LHS."""
     # ----------------------- Begin Code -----------------------
@@ -408,14 +428,15 @@ def tridiag_solve_single_rhs_lhs(
     # after equilibration (if done).
     rcond = (
         _tridiag_rcond_single_lhs(ndim, lhs)
-        if use_rcond
+        if l_use_rcond
         else jnp.zeros((1,))
     )
 
     if tridiag_solve_method == lapack:
         print(
             "WARNING: matrix_solver_wrapper.tridiag_solve_single_rhs_lhs "
-            "does not yet support the LAPACK tridiagonal solver path."
+            "does not yet support the LAPACK tridiagonal solver path.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
@@ -450,7 +471,7 @@ def tridiag_solve_single_rhs_multiple_lhs(
     lhs,
     rhs,
     err_info,
-    use_rcond: bool = False,
+    l_use_rcond: bool = False,
 ):
     """Tridiagonal solve written for single RHS and multiple LHS."""
     # ----------------------- Begin Code -----------------------
@@ -459,14 +480,15 @@ def tridiag_solve_single_rhs_multiple_lhs(
     # after equilibration (if done).
     rcond = (
         _tridiag_rcond_multiple_lhs(ndim, lhs)
-        if use_rcond
+        if l_use_rcond
         else jnp.zeros((ngrdcol,))
     )
 
     if tridiag_solve_method == lapack:
         print(
             "WARNING: matrix_solver_wrapper.tridiag_solve_single_rhs_multiple_lhs "
-            "does not yet support the LAPACK tridiagonal solver path."
+            "does not yet support the LAPACK tridiagonal solver path.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
@@ -504,7 +526,7 @@ def tridiag_solve_multiple_rhs_lhs(
     lhs,
     rhs,
     err_info,
-    use_rcond: bool = False,
+    l_use_rcond: bool = False,
 ):
     """Tridiagonal solve written for multiple RHS and multiple LHS."""
     # ----------------------- Begin Code -----------------------
@@ -513,14 +535,15 @@ def tridiag_solve_multiple_rhs_lhs(
     # after equilibration (if done).
     rcond = (
         _tridiag_rcond_multiple_lhs(ndim, lhs)
-        if use_rcond
+        if l_use_rcond
         else jnp.zeros((ngrdcol,))
     )
 
     if tridiag_solve_method == lapack:
         print(
             "WARNING: matrix_solver_wrapper.tridiag_solve_multiple_rhs_lhs "
-            "does not yet support the LAPACK tridiagonal solver path."
+            "does not yet support the LAPACK tridiagonal solver path.",
+            file=sys.stderr,
         )
         return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
 
@@ -556,7 +579,7 @@ def tridiag_solve(
     lhs,
     rhs,
     err_info,
-    use_rcond: bool = False,
+    l_use_rcond: bool = False,
     l_implemented: bool = False,
 ):
     """Generic tridiagonal solve interface."""
@@ -568,7 +591,7 @@ def tridiag_solve(
             lhs,
             rhs,
             err_info,
-            use_rcond=use_rcond,
+            l_use_rcond=l_use_rcond,
         )
     if lhs.ndim == 3 and rhs.ndim == 2:
         return tridiag_solve_single_rhs_multiple_lhs(
@@ -580,7 +603,7 @@ def tridiag_solve(
             lhs,
             rhs,
             err_info,
-            use_rcond=use_rcond,
+            l_use_rcond=l_use_rcond,
         )
     if lhs.ndim == 3 and rhs.ndim == 3:
         return tridiag_solve_multiple_rhs_lhs(
@@ -593,7 +616,7 @@ def tridiag_solve(
             lhs,
             rhs,
             err_info,
-            use_rcond=use_rcond,
+            l_use_rcond=l_use_rcond,
         )
     raise ValueError("Unsupported lhs/rhs ranks for tridiag_solve")
 
@@ -665,17 +688,3 @@ def check_nan_soln_3d(
         lambda _: None, operand=None,
     )
     return err_info.set_fatal(mask=l_has_nan[:ngrdcol])
-
-
-__all__ = [
-    "band_solve",
-    "band_solve_single_rhs_multiple_lhs",
-    "band_solve_multiple_rhs_lhs",
-    "tridiag_solve",
-    "tridiag_solve_single_rhs_lhs",
-    "tridiag_solve_single_rhs_multiple_lhs",
-    "tridiag_solve_multiple_rhs_lhs",
-    "check_nan_soln_1d",
-    "check_nan_soln_2d",
-    "check_nan_soln_3d",
-]

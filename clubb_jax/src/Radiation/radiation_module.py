@@ -308,8 +308,3 @@ def update_radiation_variables(
     # BUGSrad is rejected by the initialization boundary for this JAX driver.
 
     return stats
-
-
-__all__ = [
-    "advance_clubb_radiation", "radiation_driver", "update_radiation_variables",
-]

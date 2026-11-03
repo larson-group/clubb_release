@@ -5,6 +5,9 @@ For Fortran-derived source edits or audits in this directory, read
 and its faithful-port standards. The structural completion audit applies even
 when numerical tests pass: preserve routine/file order, definitions and calls,
 comments/dividers, readable spacing, diagnostics and non-default branches.
+That skill also lists which
+[CLUBB coding standards](../doc/clubb_coding_standards.md) apply to the Python
+code you add or change.
 
 Use `README.md` for the current runtime/support boundary. The supported
 standalone is JAX-owned; do not introduce Fortran/F2PY fallbacks. Scope an

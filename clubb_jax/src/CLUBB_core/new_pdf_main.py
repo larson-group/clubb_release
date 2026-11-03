@@ -24,7 +24,8 @@ def _spow(x, p):
     `abs(Skx)**lambda`; x is assumed to be non-negative at the call site.
     """
     xp = jnp.where(x > 0.0, x, 1.0)
-    return jnp.where(x > 0.0, xp ** p, 0.0)
+    pow_x = jnp.where(x > 0.0, xp ** p, 0.0)
+    return pow_x
 
 
 def calc_F_x_zeta_x_setter(Skx, slope_coef_spread_DG_means_x, pdf_component_stdev_factor_x, lambda_):
@@ -130,7 +131,8 @@ def calc_F_x_responder(coef_spread_DG_means_x, exp_factor_x, min_F_x, max_F_x):
     """
     cse = jnp.asarray(coef_spread_DG_means_x) * jnp.asarray(exp_factor_x)
     # F_x must have a value between min_F_x and max_F_x.
-    return jnp.asarray(min_F_x) * (1.0 - cse) + jnp.asarray(max_F_x) * cse
+    F_x = jnp.asarray(min_F_x) * (1.0 - cse) + jnp.asarray(max_F_x) * cse
+    return F_x
 
 
 def calc_responder_var(xm, xp2, sgn_wpxp, mixt_frac, coef_spread_DG_means_x, exp_factor_x,

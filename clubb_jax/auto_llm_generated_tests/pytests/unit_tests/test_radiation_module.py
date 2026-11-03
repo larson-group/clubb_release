@@ -76,7 +76,7 @@ def test_radiation_schedule_preserves_outputs_and_stats(radiation_state, l_rad_i
     """Compiled scheduling preserves retained values and samples every requested step."""
     state = dict(radiation_state)
     state["_jax_stats"] = state["_jax_stats"].begin_timestep(
-        l_sample=l_sample, reset_accumulators=True,
+        l_sample=l_sample, l_reset_accumulators=True,
     )
     # Nonzero, distinct values catch accidental clearing on a retained step.
     for index, name in enumerate(RADIATION_FIELDS, start=1):

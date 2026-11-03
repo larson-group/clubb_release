@@ -325,7 +325,8 @@ def get_target_index(nvar, target_name, retVars):
     for i in range(nvar):
         if retVars[i].name == target_name:
             return i
-    return -1
+    i = -1
+    return i
 
 
 # =============================================================================
@@ -342,19 +343,3 @@ def count_columns(iunit, filename):
         if line.strip() and "!" not in line:
             return len(line.split())
     raise ValueError(f"Fatal error reading data in {filename}")
-
-
-__all__ = [
-    "one_dim_read_var",
-    "read_one_dim_file",
-    "two_dim_read_var",
-    "read_two_dim_file",
-    "fill_blanks_one_dim_vars",
-    "fill_blanks_two_dim_vars",
-    "deallocate_one_dim_vars",
-    "deallocate_two_dim_vars",
-    "read_x_table",
-    "read_x_profile",
-    "get_target_index",
-    "count_columns",
-]

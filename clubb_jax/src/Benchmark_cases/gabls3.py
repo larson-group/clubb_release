@@ -53,6 +53,3 @@ def gabls3_sfclyr(
     bflx = wpthlp_sfc * grav / veg_theta_in_K
     ustar = diag_ustar(lowest_level, bflx, ubar, z0)
     return wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["gabls3_sfclyr"]

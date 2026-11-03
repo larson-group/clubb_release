@@ -47,7 +47,8 @@ def compute_ubar(ngrdcol, um_sfc, vm_sfc):
     ubmin = 0.25
 
     # ---- Begin Code ----
-    return jnp.maximum(ubmin, jnp.sqrt(um_sfc**2 + vm_sfc**2))
+    ubar = jnp.maximum(ubmin, jnp.sqrt(um_sfc**2 + vm_sfc**2))
+    return ubar
 
 
 # ===============================================================================
@@ -136,7 +137,8 @@ def compute_wpthlp_sfc(ngrdcol, Cd, ubar, thlm_sfc, T_sfc, exner_sfc):
     """
 
     # ---- Begin Code ----
-    return -Cd * ubar * (thlm_sfc - T_sfc / exner_sfc)
+    wpthlp_sfc = -Cd * ubar * (thlm_sfc - T_sfc / exner_sfc)
+    return wpthlp_sfc
 
 
 # ===============================================================================
@@ -149,7 +151,8 @@ def compute_wprtp_sfc(ngrdcol, Cd, ubar, rtm_sfc, adjustment):
     """
 
     # ---- Begin Code ----
-    return -Cd * ubar * (rtm_sfc - adjustment)
+    wprtp_sfc = -Cd * ubar * (rtm_sfc - adjustment)
+    return wprtp_sfc
 
 
 # ===============================================================================
@@ -195,7 +198,8 @@ def convert_sens_ht_to_km_s(sens_ht, rho_sfc):
     natural units of k m/s for the wpthlp_sfc variable.
     """
     # --------------------BEGIN CODE-----------------------
-    return sens_ht / (rho_sfc * Cp)
+    convert_sens_ht_to_km_s = sens_ht / (rho_sfc * Cp)
+    return convert_sens_ht_to_km_s
 
 
 # ===============================================================================
@@ -205,16 +209,5 @@ def convert_latent_ht_to_m_s(latent_ht, rho_sfc):
     natural units of m/s for the wprtp_sfc variable.
     """
     # --------------------BEGIN CODE-----------------------
-    return latent_ht / (rho_sfc * Lv)
-
-
-__all__ = [
-    "compute_momentum_flux",
-    "compute_ubar",
-    "compute_ht_mostr_flux",
-    "compute_wprtp_sfc",
-    "compute_wpthlp_sfc",
-    "set_sclr_sfc_rtm_thlm",
-    "convert_sens_ht_to_km_s",
-    "convert_latent_ht_to_m_s",
-]
+    convert_latent_ht_to_m_s = latent_ht / (rho_sfc * Lv)
+    return convert_latent_ht_to_m_s

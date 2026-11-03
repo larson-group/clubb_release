@@ -827,7 +827,7 @@ def wp23_solve(
         l_implemented,
         lhs_solve, rhs_solve, err_info,
         old_soln=old_solut_solve,
-        use_rcond=l_need_rcond,
+        l_use_rcond=l_need_rcond,
     )
 
     if l_need_rcond and stats.l_sample:
@@ -2554,30 +2554,3 @@ def wp3_term_pr1_rhs(
             * (four * C8b[:, None] * Skw_zt[:, 1:-1] ** 4) * wp3[:, 1:-1]
         )
     return rhs_pr1_wp3
-
-
-__all__ = [
-    "advance_wp2_wp3",
-    "wp23_solve",
-    "wp23_lhs",
-    "wp23_rhs",
-    "wp2_term_ta_lhs",
-    "wp2_terms_ac_pr2_lhs",
-    "wp2_term_dp1_lhs",
-    "wp2_term_pr1_lhs",
-    "wp2_terms_bp_pr2_rhs",
-    "wp2_term_dp1_rhs",
-    "wp2_term_pr3_rhs",
-    "wp2_term_pr1_rhs",
-    "wp2_term_pr_dfsn_rhs",
-    "wp3_term_ta_new_pdf_lhs",
-    "wp3_term_ta_ADG1_lhs",
-    "wp3_term_tp_lhs",
-    "wp3_terms_ac_pr2_lhs",
-    "wp3_term_pr1_lhs",
-    "wp3_term_ta_explicit_rhs",
-    "wp3_terms_bp1_pr2_rhs",
-    "wp3_term_pr_turb_rhs",
-    "wp3_term_pr_dfsn_rhs",
-    "wp3_term_pr1_rhs",
-]

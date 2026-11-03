@@ -191,7 +191,8 @@ def compute_category_real_probs(
     precip_factor = jnp.where(importance_categories.l_in_precip, precip_frac_i, 1.0 - precip_frac_i)
 
     # Compute the real PDF probability of the category.
-    return component_factor * cloud_factor * precip_factor
+    category_real_probs = component_factor * cloud_factor * precip_factor
+    return category_real_probs
 
 
 # -----------------------------------------------------------------------------
@@ -207,11 +208,12 @@ def compute_category_sample_weights(category_real_probs, category_prescribed_pro
     """
     # A category with no probability of being sampled has an irrelevant weight.
     absent = jnp.abs(category_prescribed_probs) < jnp.finfo(core_rknd).eps
-    return jnp.where(
+    category_sample_weights = jnp.where(
         absent,
         1.0,
         category_real_probs / jnp.where(absent, 1.0, category_prescribed_probs),
     )
+    return category_sample_weights
 
 
 # -----------------------------------------------------------------------------
@@ -302,7 +304,8 @@ def pick_sample_categories(num_samples, category_prescribed_probs, rand_vect):
             jax.debug.print("Invalid rand_vect number in pick_sample_categories: {r}", r=rand_vect)
 
         jax.lax.cond(jnp.any(~valid), report_invalid, lambda _: None, operand=None)
-        return jnp.where(valid, selected, -1)
+        int_sample_category = jnp.where(valid, selected, -1)
+        return int_sample_category
     return jnp.where(valid, selected, 0)
 
 
@@ -611,11 +614,12 @@ def cloud_importance_sampling(
     """
     cloud_frac = mixt_frac * cloud_frac_1 + (1.0 - mixt_frac) * cloud_frac_2
     scale = jnp.where(importance_categories.l_in_cloud, 2.0 * cloud_frac, 2.0 * (1.0 - cloud_frac))
-    return jnp.where(
+    category_prescribed_probs = jnp.where(
         (cloud_frac >= 0.001) & (cloud_frac < 0.5),
         category_real_probs / jnp.where(scale > 0.0, scale, 1.0),
         category_real_probs,
     )
+    return category_prescribed_probs
 
 
 # -----------------------------------------------------------------------------
@@ -854,8 +858,9 @@ def determine_sample_categories(
     l_in_cloud = X_nl_one_lev[..., hm_metadata.iiPDF_chi] >= 0.0
     l_in_precip = X_nl_one_lev[..., hm_metadata.iiPDF_rr] > 0.0
     l_in_component_1 = X_mixt_comp_one_lev == 1
-    return (
+    int_sample_category = (
         (~l_in_precip).astype(jnp.int32) * 4
         + (~l_in_cloud).astype(jnp.int32) * 2
         + (~l_in_component_1).astype(jnp.int32)
     )
+    return int_sample_category

@@ -55,6 +55,7 @@ from clubb_jax.src.CLUBB_core.parameters_tunable import (
     PARAM_NAMES,
     PARAMETER_HARD_BOUNDS,
     PNAME_IDX,
+    lmin_deltaz,
 )
 
 loss_name_len = 64                 # Maximum stored variable-name length.
@@ -306,13 +307,13 @@ def init_loss_request(
 
 def init_clubb_loss(
     runfile,                                                 # Intent(in)
-    return_default_params=False,                             # Optional output selector
+    l_return_default_params=False,                             # Optional output selector
 ):
     """Initialize CLUBB once and prepare the reusable loss request.
 
     Input: aggregated runfile. Return: clubb_var_names and, when requested,
     clubb_params_all. Adaptation: the shared Python backend API selects the
-    source's optional parameter output with return_default_params; runtime
+    source's optional parameter output with l_return_default_params; runtime
     errors live in state['err_info'] and fatal setup errors raise exceptions.
     """
     global active_request
@@ -333,14 +334,15 @@ def init_clubb_loss(
         clean_up_clubb(state)
         active_request = loss_request_type()
         raise
-    if return_default_params:
+    if l_return_default_params:
         return names, state['clubb_params_all']
     return names
 
 
 def get_loss_time_window_count():
     """Return the time-window count for the active prepared loss request."""
-    return active_request.num_time_windows if active_request.l_initialized else 1
+    num_time_windows = active_request.num_time_windows if active_request.l_initialized else 1
+    return num_time_windows
 
 
 def clubb_get_loss_for_params(clubb_params_all, *, checkpoint=False):
@@ -416,7 +418,7 @@ def clubb_get_loss_for_params(clubb_params_all, *, checkpoint=False):
                 jnp.abs(a - b)
                 <= jnp.abs(a + b) * 0.5 * np.finfo(np.dtype(params.dtype)).eps
             )
-        valid &= params[:, PNAME_IDX['lmin_coef']] * 40.0 >= 1.0
+        valid &= params[:, PNAME_IDX['lmin_coef']] * lmin_deltaz >= 1.0
         params = jnp.where(valid[:, None], params, state['_initial_state']['clubb_params'])
 
         # Reset the state and activate the current parameter batch.
@@ -440,8 +442,9 @@ def clubb_get_loss_for_params(clubb_params_all, *, checkpoint=False):
             )
 
             # Advance through this subwindow for the current batch.
+            l_stdout = False
             advance_clubb_to_end(
-                state, False,                                            # InOut / in
+                state, l_stdout,                                         # InOut / in
                 itime_start=itime_start, itime_end=itime_end,              # Optional in
                 checkpoint_cache=request.checkpoint_cache if checkpoint else None,  # JAX adaptation
             )
@@ -583,7 +586,8 @@ def clubb_get_loss(runfile):
     in source output order. Fatal runtime setup errors raise exceptions.
     """
     # Phase 1: initialize CLUBB and prepare the reusable loss request.
-    names, params = init_clubb_loss(runfile, True)
+    l_return_default_params = True
+    names, params = init_clubb_loss(runfile, l_return_default_params)
     try:
         # Phase 2: run the default parameter matrix through the reusable loss path.
         return (names, *clubb_get_loss_for_params(params))
@@ -800,7 +804,8 @@ def _field_profile(field, stats_snapshot):
     bank, slot = field.stats_var_id
     values = stats_snapshot.buffers[bank][slot, :, field.k_min:field.k_max + 1]
     counts = stats_snapshot.nsamples[bank][slot, :, field.k_min:field.k_max + 1]
-    return jnp.where(counts > 0, values / jnp.maximum(counts, 1), 0.0)
+    profile = jnp.where(counts > 0, values / jnp.maximum(counts, 1), 0.0)
+    return profile
 
 
 def calculate_field_loss(

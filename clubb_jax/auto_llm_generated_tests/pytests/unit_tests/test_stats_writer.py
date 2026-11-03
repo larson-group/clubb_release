@@ -56,7 +56,7 @@ def _writer(tmp_path: Path, **overrides) -> StatsWriter:
 def _jax_stats(writer: StatsWriter) -> JaxStats:
     return JaxStats.from_layout(writer.get_jax_layout(), ncol=writer.ngrdcol).begin_timestep(
         l_sample=writer.l_sample,
-        reset_accumulators=writer.l_reset,
+        l_reset_accumulators=writer.l_reset,
     )
 
 
@@ -219,7 +219,7 @@ def test_direct_banks_accumulate_across_sampled_and_unsampled_steps(tmp_path):
             stats = JaxStats.from_layout(writer.get_jax_layout(), ncol=2)
         stats = stats.begin_timestep(
             l_sample=l_sample,
-            reset_accumulators=writer.l_reset,
+            l_reset_accumulators=writer.l_reset,
         )
         if l_sample:
             value = 2.0 if itime == 1 else 4.0
@@ -346,7 +346,7 @@ def test_multiple_runtime_batches_fill_one_output_file(tmp_path):
     stats = stats.reset()
     writer.start_next_batch()
     writer.begin_timestep(0)
-    stats = stats.begin_timestep(l_sample=writer.l_sample, reset_accumulators=writer.l_reset)
+    stats = stats.begin_timestep(l_sample=writer.l_sample, l_reset_accumulators=writer.l_reset)
     stats = stats.update("profile", np.array([[3.0] * 3, [4.0] * 3]))
     writer.end_timestep(60.0, stats)
     writer.finalize()

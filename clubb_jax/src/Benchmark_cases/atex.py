@@ -158,6 +158,3 @@ def atex_sfclyr(ngrdcol, time, ubar, thlm_sfc, rtm_sfc, exner_sfc):
     wpthlp_sfc = compute_wpthlp_sfc(ngrdcol, C_10, ubar, thlm_sfc, T_sfc, exner_sfc)
     wprtp_sfc = compute_wprtp_sfc(ngrdcol, C_10, ubar, rtm_sfc, adjustment)
     return wpthlp_sfc, wprtp_sfc, ustar, T_sfc
-
-
-__all__ = ["atex_tndcy", "atex_sfclyr"]

@@ -42,7 +42,8 @@ def Skx_func(nz: int, ngrdcol: int, xp2, xp3, x_tol: float, clubb_params):
 
     # Calculation of skewness to help reduce the sensitivity of this value to
     # small values of xp2.
-    return jnp.asarray(xp3) * jnp.sqrt(jnp.asarray(xp2) + Skx_denom_tol) ** (-3)
+    Skx = jnp.asarray(xp3) * jnp.sqrt(jnp.asarray(xp2) + Skx_denom_tol) ** (-3)
+    return Skx
 
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol", "l_gamma_Skw"))
@@ -121,9 +122,10 @@ def LG_2005_ansatz(
     nrmlzd_Skw = Skw / (one_minus_sigma_sqd_w * jnp.sqrt(one_minus_sigma_sqd_w))
 
     # Larson and Golaz (2005) eq. 33
-    return nrmlzd_Skw * nrmlzd_corr_wx * (
+    Skx = nrmlzd_Skw * nrmlzd_corr_wx * (
         beta[:, None] + (one - beta[:, None]) * nrmlzd_corr_wx ** 2
     )
+    return Skx
 
 
 @partial(jax.jit, static_argnames=("nzt", "ngrdcol"))
@@ -167,6 +169,7 @@ def xp3_LG_2005_ansatz(
 
     # Calculate <x'^3> using the reverse of the special sensitivity reduction
     # formula in function Skx_func above.
-    return Skx_zt * (jnp.asarray(xp2_zt) + Skx_denom_tol) * jnp.sqrt(
+    xp3 = Skx_zt * (jnp.asarray(xp2_zt) + Skx_denom_tol) * jnp.sqrt(
         jnp.asarray(xp2_zt) + Skx_denom_tol
     )
+    return xp3

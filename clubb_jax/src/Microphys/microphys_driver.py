@@ -248,6 +248,7 @@ def calc_microphys_scheme_tendcies(
         # Source l_morr_xp2_mc is gated at initialization. Its ordinary path
         # clears sampled variance tendencies before computing mean tendencies.
         rtp2_mc = thlp2_mc = wprtp_mc = wpthlp_mc = rtpthlp_mc = jnp.zeros((ngrdcol, gr.nzm))
+        l_latin_hypercube_input = False
         (
             stats,
             hydromet_mc,
@@ -264,7 +265,7 @@ def calc_microphys_scheme_tendcies(
         ) = morrison_microphys_driver(
             gr, ngrdcol, dt, gr.nzt,                                 # In
             hydromet_dim, hm_metadata,                               # In
-            False, thlm, wm_zt, p_in_Pa,                             # In
+            l_latin_hypercube_input, thlm, wm_zt, p_in_Pa,           # In
             exner, rho, cloud_frac, wtmp,                            # In
             delta_zt, rcm, Ncm_microphys, chi, rtm - rcm, hydromet,  # In
             saturation_formula,                                      # In
@@ -278,6 +279,7 @@ def calc_microphys_scheme_tendcies(
         if parameters.l_local_kk:
             # The source local-KK call replaces mean tendencies only. If
             # l_var_covar_src is enabled, its sampled variance sources remain.
+            l_latin_hypercube_input = False
             (
                 stats,
                 hydromet_mc,
@@ -294,7 +296,7 @@ def calc_microphys_scheme_tendcies(
             ) = KK_local_microphys_driver(
                 gr, ngrdcol, dt, gr.nzt,                    # In
                 hydromet_dim, hm_metadata,                  # In
-                False,                                      # In
+                l_latin_hypercube_input,                    # In
                 thlm, wm_zt, p_in_Pa, exner, rho,           # In
                 cloud_frac, wtmp, delta_zt, rcm,            # In
                 Ncm_microphys, chi, rtm - rcm, hydromet,    # In

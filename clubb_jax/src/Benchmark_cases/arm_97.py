@@ -57,6 +57,3 @@ def arm_97_sfclyr(ngrdcol, time, z, rho_sfc, thlm_sfc, ubar):
         return wpthlp_sfc, wprtp_sfc, ustar
 
     return None
-
-
-__all__ = ["arm_97_sfclyr"]

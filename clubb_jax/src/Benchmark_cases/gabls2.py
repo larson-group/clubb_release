@@ -141,6 +141,3 @@ def gabls2_sfclyr(
     bflx = wpthlp_sfc * grav / sstheta
     ustar = diag_ustar(lowest_level, bflx, ubar, z0)
     return wpthlp_sfc, wprtp_sfc, ustar, T_sfc
-
-
-__all__ = ["gabls2_tndcy", "gabls2_sfclyr"]

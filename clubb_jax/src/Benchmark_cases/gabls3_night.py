@@ -95,31 +95,36 @@ def gabls3_night_sfclyr(
 
 @partial(jax.jit)
 def psi_h(x, xlmo):
-    return (-5.0 * x) / xlmo
+    psi_h = (-5.0 * x) / xlmo
+    return psi_h
 
 
 @partial(jax.jit)
 def gm1(x):
-    return (1.0 - 15.0 * x) ** 0.25
+    gm1 = (1.0 - 15.0 * x) ** 0.25
+    return gm1
 
 
 @partial(jax.jit)
 def gh1(x):
-    return jnp.sqrt(1.0 - 9.0 * x) / 0.74
+    gh1 = jnp.sqrt(1.0 - 9.0 * x) / 0.74
+    return gh1
 
 
 @partial(jax.jit)
 def fm1(x):
     pii = jnp.arccos(-1.0) / 2.0
-    return (
+    fm1 = (
         2.0 * jnp.log((1.0 + x) / 2.0)
         + jnp.log((1.0 + x * x) / 2.0) - 2.0 * jnp.arctan(x) + pii
     )
+    return fm1
 
 
 @partial(jax.jit)
 def fh1(x):
-    return 2.0 * jnp.log((1.0 + 0.74 * x) / 2.0)
+    fh1 = 2.0 * jnp.log((1.0 + 0.74 * x) / 2.0)
+    return fh1
 
 
 @partial(jax.jit)
@@ -195,8 +200,3 @@ def landflx(th, ts, qh, qs, uh, vh, h, z0):
     lhf = 0.4 * ustar * (qs - qh) / denominator
     #-----------------------------
     return shf, lhf, vel, ustar
-
-
-__all__ = [
-    "gabls3_night_sfclyr",
-]

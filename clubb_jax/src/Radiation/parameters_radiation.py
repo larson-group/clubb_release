@@ -208,6 +208,3 @@ def initialize_radiation_parameters(cfg: dict, rad_scheme: str, case_setups_dir:
         lba_zrad=jnp.asarray(lba_zrad),
         lba_krad=jnp.asarray(lba_krad),
     )
-
-
-__all__ = ["RadiationParameters", "initialize_radiation_parameters"]

@@ -79,6 +79,70 @@ their strict interface or waive numerical coverage.
 - Remove swappable driver fallbacks for a layer that is now JAX-owned. Confirm
   the active standalone/core call path actually reaches the new port.
 
+## CLUBB coding standards in Python
+
+These rules are the Python form of the
+[CLUBB coding standards](../../../doc/clubb_coding_standards.md) that matter in
+JAX code; numbers refer to that document. Its other standards are not
+requirements for Python code. These rules do not apply to external code such as
+`clubb_jax/src/Microphys/Morrison_microphys/` and
+`clubb_jax/src/Radiation/BUGSrad/`.
+
+Apply them to the code you add or change, not as a reason to reformat or clean
+up other code. In ported code, the faithful-port rules win: do not rename,
+reorder or restructure against the Fortran to satisfy a rule, and keep a Fortran
+`known magic number` or `known magic flag` comment with its value. Follow these
+rules where the Fortran does not decide, such as in JAX-only code and new
+adaptations.
+
+Names:
+
+- Start logical flags with `l_` (#12, #34).
+- Give a variable its base name on its home levels. Add `_zm` or `_zt` when it
+  is moved to the other levels and on variables with no home level (#37).
+- Use `k` for vertical, `i` for grid column, `j` for scalar, `sample` for
+  subcolumn and `p` for PDF dimension indices (#44).
+
+Values:
+
+- Do not add unnamed numbers (#18). Import shared values from
+  `clubb_jax/src/CLUBB_core/constants_clubb.py` instead of redefining them, so
+  that a value cannot differ between files. Mark an unavoidable value, such as
+  one from a case specification, with `# known magic number`.
+- Do not pass a bare `True` or `False` to a CLUBB routine (#19). Assign a named
+  `l_` variable just above the call, as the Fortran usually does, or mark an
+  unavoidable value with `# known magic flag`.
+- For dtypes and fixed precision (#39), follow the description in
+  `clubb_jax/src/CLUBB_core/clubb_precision.py`.
+
+Data flow:
+
+- Avoid new module variables (#5, #24). A port may mirror a Fortran module
+  variable, but traced code must not change one. A value read during tracing
+  is frozen into the compiled function, so read only static configuration,
+  such as the debug level, that way.
+- Pass individual flags rather than `clubb_config_flags` or
+  `silhs_config_flags`, unless the Fortran routine takes the whole type (#42).
+- Keep each stats or file write immediately after its value is set or at the
+  end of `advance_clubb_core`, so that restarts stay bit-for-bit (#43).
+- Assign each output to a named variable and return that variable, rather than
+  returning a calculation such as `return x * x + 5`. In a port, use the
+  Fortran output name: the output argument or the function result name.
+  Returning existing variables, a tuple of them or a plain call is fine, and
+  short functions nested inside another function, such as `lax.cond` branches
+  and loop bodies, are exempt.
+
+Expressions and output:
+
+- `jnp.where` evaluates both branches, unlike a Fortran `if` or `where` (#41).
+  An unselected branch that divides by zero or takes a power of zero or a
+  negative number can still produce NaN or infinite gradients. Make its input
+  safe with an inner `jnp.where`, as `_pos_pow` does in
+  `clubb_jax/src/Microphys/KK_microphys/PDF_integrals_means.py`.
+- Put non-fatal messages inside a `clubb_at_least_debug_level` check, and write
+  fatal messages to `sys.stderr` (#35). A plain `print` in traced code runs only
+  during tracing, so print traced values with `jax.debug.callback`.
+
 ## Verification and completion
 
 Judge JAX numerical correctness against the corresponding Fortran implementation;
@@ -131,7 +195,8 @@ check selection and reporting Jenkins links, extra local coverage and failures.
 
 Finish with the faithful-port completion audit, including comments, spacing,
 argument grouping, every new helper and no new failures of the filename-parity test.
-Report structural and numerical results separately, remaining support gates
+Check the code you added or changed against the "CLUBB coding standards in
+Python" section above. Report structural and numerical results separately, remaining support gates
 and untested configurations. Do not declare
 complete while known in-scope structural defects remain. Do not redesign output,
 optimize hardware performance, or refactor unrelated files just to polish a port.

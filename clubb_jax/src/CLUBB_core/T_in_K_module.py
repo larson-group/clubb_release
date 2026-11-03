@@ -27,7 +27,8 @@ def thlm2T_in_K(thlm, exner, rcm):
     broadcasting implementation.
     """
     # ---------------------- Begin Code ----------------------
-    return thlm * exner + Lv * rcm / Cp
+    T_in_K = thlm * exner + Lv * rcm / Cp
+    return T_in_K
 
 
 def T_in_K2thlm(T_in_K, exner, rcm):
@@ -41,4 +42,5 @@ def T_in_K2thlm(T_in_K, exner, rcm):
         None
     """
     # ---- Begin Code ----
-    return (T_in_K - Lv / Cp * rcm) / exner
+    thlm = (T_in_K - Lv / Cp * rcm) / exner
+    return thlm

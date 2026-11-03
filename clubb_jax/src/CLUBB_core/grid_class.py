@@ -117,6 +117,9 @@ from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 
 core_rknd = np.float64
 
+# Adaptation: keeps a zero level spacing from dividing by zero; far below any real spacing.
+_DZ_FLOOR = 1.0e-30
+
 T_ABOVE = 0
 T_BELOW = 1
 M_ABOVE = 0
@@ -364,8 +367,8 @@ def _calc_grid_spacings(nzm: int, ngrdcol: int, zm, zt):
     dzm[:, 0] = 2.0 * (zt[:, 0] - zm[:, 0])
     dzm[:, -1] = dzm[:, -2]
 
-    invrs_dzm = np.where(np.abs(dzm) > 1e-30, 1.0 / dzm, 0.0)
-    invrs_dzt = np.where(np.abs(dzt) > 1e-30, 1.0 / dzt, 0.0)
+    invrs_dzm = np.where(np.abs(dzm) > _DZ_FLOOR, 1.0 / dzm, 0.0)
+    invrs_dzt = np.where(np.abs(dzt) > _DZ_FLOOR, 1.0 / dzt, 0.0)
     return dzm, dzt, invrs_dzm, invrs_dzt
 
 
@@ -374,17 +377,17 @@ def _calc_zt2zm_weights(nzm: int, nzt: int, ngrdcol: int, zm, zt):
 
     for k in range(1, nzm - 1):
         denom = zt[:, k] - zt[:, k - 1]
-        weights[:, k, T_ABOVE] = (zm[:, k] - zt[:, k - 1]) / (denom + 1e-30)
-        weights[:, k, T_BELOW] = (zt[:, k] - zm[:, k]) / (denom + 1e-30)
+        weights[:, k, T_ABOVE] = (zm[:, k] - zt[:, k - 1]) / (denom + _DZ_FLOOR)
+        weights[:, k, T_BELOW] = (zt[:, k] - zm[:, k]) / (denom + _DZ_FLOOR)
 
     if nzt >= 2:
         denom0 = zt[:, 1] - zt[:, 0]
-        weights[:, 0, T_ABOVE] = (zm[:, 0] - zt[:, 0]) / (denom0 + 1e-30)
-        weights[:, 0, T_BELOW] = (zt[:, 1] - zm[:, 0]) / (denom0 + 1e-30)
+        weights[:, 0, T_ABOVE] = (zm[:, 0] - zt[:, 0]) / (denom0 + _DZ_FLOOR)
+        weights[:, 0, T_BELOW] = (zt[:, 1] - zm[:, 0]) / (denom0 + _DZ_FLOOR)
 
         denomn = zt[:, -1] - zt[:, -2]
-        weights[:, -1, T_ABOVE] = (zm[:, -1] - zt[:, -2]) / (denomn + 1e-30)
-        weights[:, -1, T_BELOW] = (zt[:, -1] - zm[:, -1]) / (denomn + 1e-30)
+        weights[:, -1, T_ABOVE] = (zm[:, -1] - zt[:, -2]) / (denomn + _DZ_FLOOR)
+        weights[:, -1, T_BELOW] = (zt[:, -1] - zm[:, -1]) / (denomn + _DZ_FLOOR)
     else:
         weights[:, 0, T_ABOVE] = 1.0
         weights[:, -1, T_ABOVE] = 1.0
@@ -395,7 +398,7 @@ def _calc_zt2zm_weights(nzm: int, nzt: int, ngrdcol: int, zm, zt):
 def _calc_zm2zt_weights(nzt: int, ngrdcol: int, zm, zt, dzt):
     weights = np.zeros((ngrdcol, nzt, 2), dtype=core_rknd)
     for k in range(nzt):
-        total_dist = dzt[:, k] + 1e-30
+        total_dist = dzt[:, k] + _DZ_FLOOR
         weights[:, k, M_ABOVE] = (zt[:, k] - zm[:, k]) / total_dist
         weights[:, k, M_BELOW] = (zm[:, k + 1] - zt[:, k]) / total_dist
     return weights
@@ -489,7 +492,8 @@ def zm2zt2zm(nzm: int, nzt: int, ngrdcol: int, gr, azm, zm_min=None):
 def ddzm(nzm: int, nzt: int, ngrdcol: int, gr, azm):
     """2D version of gradzm."""
     # Vertical derivative of azm (thermo. levs.) [units vary / m]
-    return (azm[:, 1:nzm] - azm[:, :nzt]) * gr.invrs_dzt
+    ddzm = (azm[:, 1:nzm] - azm[:, :nzt]) * gr.invrs_dzt
+    return ddzm
 
 
 def ddzt(nzm: int, nzt: int, ngrdcol: int, gr, azt):
@@ -497,18 +501,3 @@ def ddzt(nzm: int, nzt: int, ngrdcol: int, gr, azt):
     # Vertical derivative of azt (mom.levs.) [units vary / m]
     interior = (azt[:, 1:nzt] - azt[:, :nzt - 1]) * gr.invrs_dzm[:, 1:nzm - 1]
     return jnp.concatenate([interior[:, :1], interior, interior[:, -1:]], axis=1)
-
-
-__all__ = [
-    "Grid",
-    "setup_grid",
-    "GRID_TYPE_EVEN",
-    "GRID_TYPE_STRETCHED_ZT",
-    "GRID_TYPE_STRETCHED_ZM",
-    "zt2zm",
-    "zm2zt",
-    "zt2zm2zt",
-    "zm2zt2zm",
-    "ddzm",
-    "ddzt",
-]

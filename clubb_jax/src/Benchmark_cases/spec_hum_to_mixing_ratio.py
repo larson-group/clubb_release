@@ -28,7 +28,8 @@ def flux_spec_hum_to_mixing_ratio(ngrdcol, rtm_zm, wpqtp):
     del ngrdcol
 
     # Solve for flux in terms of total water mixing ratio.
-    return (1.0 + rtm_zm) ** 2 * wpqtp
+    wprtp = (1.0 + rtm_zm) ** 2 * wpqtp
+    return wprtp
 
 
 # =============================================================================
@@ -46,7 +47,5 @@ def force_spec_hum_to_mixing_ratio(ngrdcol, nzt, rtm, qtm_forcing):
     del ngrdcol, nzt
 
     # Solve for forcing in terms of total water mixing ratio.
-    return (1.0 + rtm) ** 2 * qtm_forcing
-
-
-__all__ = ["flux_spec_hum_to_mixing_ratio", "force_spec_hum_to_mixing_ratio"]
+    rtm_forcing = (1.0 + rtm) ** 2 * qtm_forcing
+    return rtm_forcing

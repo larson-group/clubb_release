@@ -745,9 +745,3 @@ def diffusion_zm_lhs(
     maindiag = jnp.concatenate([main_bot, main_int, main_top], axis=1)
     subdiag = jnp.concatenate([sub_bot, sub_int, sub_top], axis=1)
     return jnp.stack([superdiag, maindiag, subdiag], axis=0)
-
-
-__all__ = [
-    "diffusion_zt_lhs",
-    "diffusion_zm_lhs",
-]

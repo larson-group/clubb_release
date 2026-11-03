@@ -26,7 +26,8 @@ def compute_sample_mean(
         jnp.zeros_like(x_sample[:, 0]),
         (jnp.swapaxes(weight, 0, 1), jnp.swapaxes(x_sample, 0, 1)),
     )
-    return mean / n_samples
+    mean = mean / n_samples
+    return mean
 
 
 # -----------------------------------------------------------------------------

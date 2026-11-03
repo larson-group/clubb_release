@@ -125,6 +125,3 @@ def cobra_sfclyr(
             if sclr_idx.iiedsclr_rt > 0:
                 wpedsclrp_sfc = wpedsclrp_sfc.at[:, sclr_idx.iiedsclr_rt - 1].set(wprtp_sfc)
     return wpthlp_sfc, wprtp_sfc, ustar, wpsclrp_sfc, wpedsclrp_sfc, T_sfc
-
-
-__all__ = ["cobra_sfclyr"]

@@ -10,7 +10,7 @@ Usage:
     stdin line until EOF. --quiet suppresses per-timestep progress.
     - main(): select one-shot or worker execution from the command line.
     - worker_main(l_stdout=True): read paths and acknowledge completed cases.
-    - run_case(namelist_path, l_stdout=True, wait_for_completion=False): run the
+    - run_case(namelist_path, l_stdout=True, l_wait_for_completion=False): run the
       full lifecycle, optionally waiting for submitted JAX work.
 
 Understanding:
@@ -78,19 +78,19 @@ def worker_main(l_stdout=True):
     """
     print('CLUBB_WORKER_READY', flush=True)
     for line in sys.stdin:
-        run_case(line.rstrip('\r\n'), l_stdout, wait_for_completion=True)
+        run_case(line.rstrip('\r\n'), l_stdout, l_wait_for_completion=True)
         print('CLUBB_WORKER_DONE', flush=True)
 
 
 # ------------------------------------------------------------------------------
-def run_case(namelist_path, l_stdout=True, *, wait_for_completion=False):
+def run_case(namelist_path, l_stdout=True, *, l_wait_for_completion=False):
     """Run namelist_path's full lifecycle and configured output; return None.
 
     Mirrors run_case's run_clubb call in src/clubb_standalone.F90, using explicit
     Python state. l_stdout controls per-timestep progress. Cleanup runs after
     successful advancement or an advancement exception.
     Runtime batches reset initial conditions before each parameter slice.
-    wait_for_completion fences device work/callbacks for worker acknowledgment.
+    l_wait_for_completion fences device work/callbacks for worker acknowledgment.
     """
     t0 = time.time()
     # A worker request gets the same fresh setup as an independent invocation.
@@ -100,7 +100,7 @@ def run_case(namelist_path, l_stdout=True, *, wait_for_completion=False):
         for batch_num in range(1, num_batches + 1):
             set_case_initial_conditions(state, batch_num=batch_num)
             advance_clubb_to_end(state, l_stdout=l_stdout)
-        if wait_for_completion:
+        if l_wait_for_completion:
             # A worker acknowledgment must include outstanding device work.
             jax.block_until_ready(state)
             jax.effects_barrier()

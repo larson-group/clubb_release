@@ -45,12 +45,13 @@ def bivar_NL_mean(mu_x1, mu_x2_n, sigma_x1, sigma_x2_n,
     """
     s_c = (mu_x1 / sigma_x1) + rho_x1x2_n * sigma_x2_n * beta_exp
     dv = _dvc(-(alpha_exp + 1.0), -s_c) if dv is None else dv
-    return (_INV_SQRT_2PI * sigma_x1 ** alpha_exp
-            * jnp.exp(mu_x2_n * beta_exp
-                      + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2
-                      - 0.25 * s_c ** 2)
-            * _gamma_real(alpha_exp + 1.0)
-            * dv)
+    bivar_NL_mean = (_INV_SQRT_2PI * sigma_x1 ** alpha_exp
+                     * jnp.exp(mu_x2_n * beta_exp
+                               + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2
+                               - 0.25 * s_c ** 2)
+                     * _gamma_real(alpha_exp + 1.0)
+                     * dv)
+    return bivar_NL_mean
 
 
 def bivar_NL_mean_const_x1(mu_x1, mu_x2_n, sigma_x2_n, alpha_exp, beta_exp):
@@ -63,7 +64,8 @@ def bivar_NL_mean_const_x1(mu_x1, mu_x2_n, sigma_x2_n, alpha_exp, beta_exp):
     base = jnp.maximum(mu_x1, 0.0)
     val = (base ** alpha_exp
            * jnp.exp(mu_x2_n * beta_exp + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2))
-    return jnp.where(mu_x1 >= 0.0, val, 0.0)
+    bivar_NL_mean_const_x1 = jnp.where(mu_x1 >= 0.0, val, 0.0)
+    return bivar_NL_mean_const_x1
 
 
 def bivar_NL_mean_const_x2(mu_x1, mu_x2, sigma_x1, alpha_exp, beta_exp, *, dv=None):
@@ -73,10 +75,11 @@ def bivar_NL_mean_const_x2(mu_x1, mu_x2, sigma_x1, alpha_exp, beta_exp, *, dv=No
       * Gamma(alpha+1) * D_{-(alpha+1)}( -mu_x1/sigma_x1 ).
     """
     dv = _dvc(-(alpha_exp + 1.0), -(mu_x1 / sigma_x1)) if dv is None else dv
-    return (_INV_SQRT_2PI * sigma_x1 ** alpha_exp * mu_x2 ** beta_exp
-            * jnp.exp(-0.25 * (mu_x1 ** 2 / sigma_x1 ** 2))
-            * _gamma_real(alpha_exp + 1.0)
-            * dv)
+    bivar_NL_mean_const_x2 = (_INV_SQRT_2PI * sigma_x1 ** alpha_exp * mu_x2 ** beta_exp
+                              * jnp.exp(-0.25 * (mu_x1 ** 2 / sigma_x1 ** 2))
+                              * _gamma_real(alpha_exp + 1.0)
+                              * dv)
+    return bivar_NL_mean_const_x2
 
 
 def bivar_NL_mean_const_all(mu_x1, mu_x2, alpha_exp, beta_exp):
@@ -85,7 +88,8 @@ def bivar_NL_mean_const_all(mu_x1, mu_x2, alpha_exp, beta_exp):
     = mu_x1^alpha mu_x2^beta  for mu_x1 >= 0, else 0.
     """
     base = jnp.maximum(mu_x1, 0.0)
-    return jnp.where(mu_x1 >= 0.0, base ** alpha_exp * mu_x2 ** beta_exp, 0.0)
+    bivar_NL_mean_const_all = jnp.where(mu_x1 >= 0.0, base ** alpha_exp * mu_x2 ** beta_exp, 0.0)
+    return bivar_NL_mean_const_all
 
 
 # ============================================================================
@@ -109,7 +113,8 @@ def _signed_pow(base, exp):
     For base>=0 it is |base|^exp; for odd exp it reduces to sign(base)|base|^exp (the
     evaporation alpha=1 case — means unchanged), and for even exp the sign is +, as the
     covariance alpha+1 term requires. exp is the integer chi exponent (1 or 2)."""
-    return jnp.where(base < 0.0, jnp.cos(jnp.pi * exp), 1.0) * jnp.abs(base) ** exp
+    signed_pow = jnp.where(base < 0.0, jnp.cos(jnp.pi * exp), 1.0) * jnp.abs(base) ** exp
+    return signed_pow
 
 
 def _pos_pow(base, exp):
@@ -117,7 +122,8 @@ def _pos_pow(base, exp):
     base^exp = 0 at base=0 with an inf gradient (exp*0^(exp-1)); the double-where keeps the
     FORWARD exact while never evaluating the power at 0 in the autodiff graph."""
     bp = jnp.where(base > 0.0, base, 1.0)
-    return jnp.where(base > 0.0, bp ** exp, 0.0)
+    pos_pow = jnp.where(base > 0.0, bp ** exp, 0.0)
+    return pos_pow
 
 
 def trivar_NLL_mean(mu_x1, mu_x2_n, mu_x3_n, sigma_x1, sigma_x2_n, sigma_x3_n,
@@ -128,16 +134,17 @@ def trivar_NLL_mean(mu_x1, mu_x2_n, mu_x3_n, sigma_x1, sigma_x2_n, sigma_x3_n,
             + rho_x1x2_n * sigma_x2_n * beta_exp
             + rho_x1x3_n * sigma_x3_n * gamma_exp)
     dv = _dvc(-(alpha_exp + 1.0), s_cc) if dv is None else dv
-    return (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
-            * jnp.exp(mu_x2_n * beta_exp + mu_x3_n * gamma_exp)
-            * jnp.exp(0.5 * ((1.0 - rho_x1x2_n ** 2) * sigma_x2_n ** 2 * beta_exp ** 2
-                             + (1.0 - rho_x1x3_n ** 2) * sigma_x3_n ** 2 * gamma_exp ** 2
-                             + 2.0 * (rho_x2x3_n - rho_x1x2_n * rho_x1x3_n)
-                             * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp))
-            * jnp.exp(0.25 * s_cc ** 2 - (mu_x1 / sigma_x1) * s_cc
-                      + 0.5 * (mu_x1 ** 2 / sigma_x1 ** 2))
-            * _gamma_real(alpha_exp + 1.0)
-            * dv)
+    trivar_NLL_mean = (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
+                       * jnp.exp(mu_x2_n * beta_exp + mu_x3_n * gamma_exp)
+                       * jnp.exp(0.5 * ((1.0 - rho_x1x2_n ** 2) * sigma_x2_n ** 2 * beta_exp ** 2
+                                        + (1.0 - rho_x1x3_n ** 2) * sigma_x3_n ** 2 * gamma_exp ** 2
+                                        + 2.0 * (rho_x2x3_n - rho_x1x2_n * rho_x1x3_n)
+                                        * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp))
+                       * jnp.exp(0.25 * s_cc ** 2 - (mu_x1 / sigma_x1) * s_cc
+                                 + 0.5 * (mu_x1 ** 2 / sigma_x1 ** 2))
+                       * _gamma_real(alpha_exp + 1.0)
+                       * dv)
+    return trivar_NLL_mean
 
 
 def trivar_NLL_mean_const_x1(mu_x1, mu_x2_n, mu_x3_n, sigma_x2_n, sigma_x3_n,
@@ -148,7 +155,8 @@ def trivar_NLL_mean_const_x1(mu_x1, mu_x2_n, mu_x3_n, sigma_x2_n, sigma_x3_n,
                      + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2
                      + 0.5 * sigma_x3_n ** 2 * gamma_exp ** 2
                      + rho_x2x3_n * sigma_x2_n * beta_exp * sigma_x3_n * gamma_exp))
-    return jnp.where(mu_x1 <= 0.0, val, 0.0)
+    trivar_NLL_mean_const_x1 = jnp.where(mu_x1 <= 0.0, val, 0.0)
+    return trivar_NLL_mean_const_x1
 
 
 def trivar_NLL_mean_const_x2(mu_x1, mu_x2, mu_x3_n, sigma_x1, sigma_x3_n,
@@ -156,13 +164,14 @@ def trivar_NLL_mean_const_x2(mu_x1, mu_x2, mu_x3_n, sigma_x1, sigma_x3_n,
     """x2 (r_r) constant (sigma_x2->0). PDF_integrals_means.F90:200."""
     s_cc = (mu_x1 / sigma_x1) + rho_x1x3_n * sigma_x3_n * gamma_exp
     dv = _dvc(-(alpha_exp + 1.0), s_cc) if dv is None else dv
-    return (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
-            * _pos_pow(mu_x2, beta_exp)
-            * jnp.exp(mu_x3_n * gamma_exp
-                      + 0.5 * sigma_x3_n ** 2 * gamma_exp ** 2
-                      - 0.25 * s_cc ** 2)
-            * _gamma_real(alpha_exp + 1.0)
-            * dv)
+    trivar_NLL_mean_const_x2 = (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
+                                * _pos_pow(mu_x2, beta_exp)
+                                * jnp.exp(mu_x3_n * gamma_exp
+                                          + 0.5 * sigma_x3_n ** 2 * gamma_exp ** 2
+                                          - 0.25 * s_cc ** 2)
+                                * _gamma_real(alpha_exp + 1.0)
+                                * dv)
+    return trivar_NLL_mean_const_x2
 
 
 def trivar_NLL_mean_const_x1x2(mu_x1, mu_x2, mu_x3_n, sigma_x3_n,
@@ -170,24 +179,27 @@ def trivar_NLL_mean_const_x1x2(mu_x1, mu_x2, mu_x3_n, sigma_x3_n,
     """chi and x2 constant. PDF_integrals_means.F90:281. Nonzero only mu_x1<=0."""
     val = (_signed_pow(mu_x1, alpha_exp) * _pos_pow(mu_x2, beta_exp)
            * jnp.exp(mu_x3_n * gamma_exp + 0.5 * sigma_x3_n ** 2 * gamma_exp ** 2))
-    return jnp.where(mu_x1 <= 0.0, val, 0.0)
+    trivar_NLL_mean_const_x1x2 = jnp.where(mu_x1 <= 0.0, val, 0.0)
+    return trivar_NLL_mean_const_x1x2
 
 
 def trivar_NLL_mean_const_x2x3(mu_x1, mu_x2, mu_x3, sigma_x1,
                                alpha_exp, beta_exp, gamma_exp, *, dv=None):
     """x2 and x3 constant. PDF_integrals_means.F90:349."""
     dv = _dvc(-(alpha_exp + 1.0), (mu_x1 / sigma_x1)) if dv is None else dv
-    return (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
-            * _pos_pow(mu_x2, beta_exp) * _pos_pow(mu_x3, gamma_exp)
-            * jnp.exp(-0.25 * (mu_x1 ** 2 / sigma_x1 ** 2))
-            * _gamma_real(alpha_exp + 1.0)
-            * dv)
+    trivar_NLL_mean_const_x2x3 = (_INV_SQRT_2PI * _signed_pow(-sigma_x1, alpha_exp)
+                                  * _pos_pow(mu_x2, beta_exp) * _pos_pow(mu_x3, gamma_exp)
+                                  * jnp.exp(-0.25 * (mu_x1 ** 2 / sigma_x1 ** 2))
+                                  * _gamma_real(alpha_exp + 1.0)
+                                  * dv)
+    return trivar_NLL_mean_const_x2x3
 
 
 def trivar_NLL_mean_const_all(mu_x1, mu_x2, mu_x3, alpha_exp, beta_exp, gamma_exp):
     """All constant. PDF_integrals_means.F90:418. Nonzero only mu_x1<=0."""
     val = _signed_pow(mu_x1, alpha_exp) * _pos_pow(mu_x2, beta_exp) * _pos_pow(mu_x3, gamma_exp)
-    return jnp.where(mu_x1 <= 0.0, val, 0.0)
+    trivar_NLL_mean_const_all = jnp.where(mu_x1 <= 0.0, val, 0.0)
+    return trivar_NLL_mean_const_all
 
 
 # ============================================================================
@@ -205,10 +217,11 @@ def bivar_LL_mean(mu_x1_n, mu_x2_n, sigma_x1_n, sigma_x2_n,
 
     = exp( mu_x1_n alpha + mu_x2_n beta + 1/2 sigma_x1_n^2 alpha^2
            + 1/2 sigma_x2_n^2 beta^2 + rho sigma_x1_n alpha sigma_x2_n beta )."""
-    return jnp.exp(mu_x1_n * alpha_exp + mu_x2_n * beta_exp
-                   + 0.5 * sigma_x1_n ** 2 * alpha_exp ** 2
-                   + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2
-                   + rho_x1x2_n * sigma_x1_n * alpha_exp * sigma_x2_n * beta_exp)
+    bivar_LL_mean = jnp.exp(mu_x1_n * alpha_exp + mu_x2_n * beta_exp
+                            + 0.5 * sigma_x1_n ** 2 * alpha_exp ** 2
+                            + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2
+                            + rho_x1x2_n * sigma_x1_n * alpha_exp * sigma_x2_n * beta_exp)
+    return bivar_LL_mean
 
 
 def bivar_LL_mean_const_x1(mu_x1, mu_x2_n, sigma_x2_n, alpha_exp, beta_exp):
@@ -216,10 +229,12 @@ def bivar_LL_mean_const_x1(mu_x1, mu_x2_n, sigma_x2_n, alpha_exp, beta_exp):
 
     = mu_x1^alpha exp( mu_x2_n beta + 1/2 sigma_x2_n^2 beta^2 ).
     (No mu_x1 sign guard in the oracle: x1=r_r/N_r is a positive hydrometeor mean.)"""
-    return (mu_x1 ** alpha_exp
-            * jnp.exp(mu_x2_n * beta_exp + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2))
+    bivar_LL_mean_const_x1 = (mu_x1 ** alpha_exp
+                              * jnp.exp(mu_x2_n * beta_exp + 0.5 * sigma_x2_n ** 2 * beta_exp ** 2))
+    return bivar_LL_mean_const_x1
 
 
 def bivar_LL_mean_const_all(mu_x1, mu_x2, alpha_exp, beta_exp):
     """Both constant. PDF_integrals_means.F90:880.  = mu_x1^alpha mu_x2^beta."""
-    return mu_x1 ** alpha_exp * mu_x2 ** beta_exp
+    bivar_LL_mean_const_all = mu_x1 ** alpha_exp * mu_x2 ** beta_exp
+    return bivar_LL_mean_const_all

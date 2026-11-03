@@ -124,6 +124,3 @@ def astex_a209_sfclyr(
 
     # Momentum fluxes are computed elsewhere
     return wpthlp_sfc, wprtp_sfc, ustar, T_sfc
-
-
-__all__ = ["astex_a209_tndcy", "astex_a209_sfclyr"]

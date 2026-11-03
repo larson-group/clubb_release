@@ -1279,7 +1279,7 @@ def solve_xm_wpxp_with_single_lhs(
                 jnp.asarray(wpxp_field)
             )
 
-    use_rcond = bool(
+    l_use_rcond = bool(
         l_sample
         and (
             stats.var_on_stats_list("thlm_matrix_condt_num")
@@ -1288,7 +1288,7 @@ def solve_xm_wpxp_with_single_lhs(
     )
     solution, rcond, err_info = xm_wpxp_solve(
         nzm, ngrdcol, nrhs, gr, penta_solve_method, l_implemented,
-        old_solution, lhs, rhs, err_info, use_rcond=use_rcond,
+        old_solution, lhs, rhs, err_info, l_use_rcond=l_use_rcond,
     )
 
     rtm, wprtp, err_info, wprtp_cl_num, stats = xm_wpxp_clipping_and_stats(
@@ -1526,7 +1526,7 @@ def xm_wpxp_solve(
     nzm, ngrdcol, nrhs, gr,
     penta_solve_method, l_implemented,
     old_solution, lhs, rhs, err_info,
-    use_rcond=False,
+    l_use_rcond=False,
 ):
     """Solve for xm / w'x' using the band diagonal solver."""
     ndim = 2 * nzm - 1
@@ -1541,7 +1541,7 @@ def xm_wpxp_solve(
         "xm_wpxp", penta_solve_method, ngrdcol, nsup,
         nsub, ndim, nrhs, l_implemented,
         lhs, rhs, err_info,
-        old_soln=old_solution, use_rcond=use_rcond,
+        old_soln=old_solution, l_use_rcond=l_use_rcond,
     )
 
     if l_force_descending_solves and gr.grid_dir_indx > 0:
@@ -2207,7 +2207,7 @@ def _solve_one_xm_wpxp(
     solution, rcond, err_info = xm_wpxp_solve(
         nzm, ngrdcol, 1, gr, penta_solve_method, l_implemented,
         old_solution, lhs, rhs, err_info,
-        use_rcond=bool(
+        l_use_rcond=bool(
             l_sample
             and cond_name.strip()
             and stats.var_on_stats_list(cond_name)

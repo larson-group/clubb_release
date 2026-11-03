@@ -265,6 +265,3 @@ def mpace_a_init(iunit, file_path):
     file_sens_ht = jnp.asarray(
         file_read_1d(iunit, file_path / "mpace_a_sh.dat", file_ntimes, per_line)
     )
-
-
-__all__ = ["mpace_a_tndcy", "mpace_a_sfclyr", "mpace_a_init"]

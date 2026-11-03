@@ -131,7 +131,8 @@ def choose_permuted_random(nt_repeat, p_matrix_element, key):
         key: Native JAX random key for these draws
     """
     rand = rand_uniform_real(key, jnp.shape(p_matrix_element))
-    return (1.0 / nt_repeat) * (p_matrix_element + rand)
+    choose_permuted_random = (1.0 / nt_repeat) * (p_matrix_element + rand)
+    return choose_permuted_random
 
 
 # -----------------------------------------------------------------------------

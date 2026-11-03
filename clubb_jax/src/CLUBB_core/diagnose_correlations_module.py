@@ -23,7 +23,8 @@ _SQRT_FLOOR = jnp.finfo(core_rknd).tiny
 
 def _safe_corr_sqrt(value):
     """sqrt(max(value, 0)) with finite gradient at exactly zero."""
-    return jnp.where(value > 0.0, jnp.sqrt(jnp.maximum(value, _SQRT_FLOOR)), 0.0)
+    sqrt_value = jnp.where(value > 0.0, jnp.sqrt(jnp.maximum(value, _SQRT_FLOOR)), 0.0)
+    return sqrt_value
 
 
 def diagnose_correlations(pdf_dim, iiPDF_w, corr_array_pre, l_calc_w_corr=False):
@@ -96,11 +97,12 @@ def calc_w_corr(wpxp, stdev_w, stdev_x, w_tol, x_tol):
         jnp.maximum(stdev_x, x_tol) * jnp.maximum(stdev_w, w_tol)
     )
     # Make sure the correlation is in [-1,1]
-    return jnp.clip(
+    calc_w_corr = jnp.clip(
         calc_w_corr_value,
         -max_mag_correlation,
         max_mag_correlation,
     )
+    return calc_w_corr
 
 
 def calc_varnce(mixt_frac, x1, x2, xm, x1p2, x2p2):
@@ -110,10 +112,11 @@ def calc_varnce(mixt_frac, x1, x2, xm, x1p2, x2p2):
       Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02,
       page 3535
     """
-    return (
+    calc_varnce = (
         mixt_frac * ((x1 - xm) ** 2 + x1p2)
         + (1.0 - mixt_frac) * ((x2 - xm) ** 2 + x2p2)
     )
+    return calc_varnce
 
 
 def calc_mean(mixt_frac, x1, x2):
@@ -123,7 +126,8 @@ def calc_mean(mixt_frac, x1, x2):
       Larson et al. (2011), J. of Geophysical Research, Vol. 116, D00T02,
       page 3535
     """
-    return mixt_frac * x1 + (1.0 - mixt_frac) * x2
+    calc_mean = mixt_frac * x1 + (1.0 - mixt_frac) * x2
+    return calc_mean
 
 
 def calc_cholesky_corr_mtx_approx(n_variables, iiPDF_w, corr_matrix):
@@ -220,7 +224,8 @@ def cholesky_to_corr_mtx_approx(n_variables, corr_cholesky_mtx_t=None):
         corr_cholesky_mtx_t = n_variables
     else:
         del n_variables
-    return corr_cholesky_mtx_t @ corr_cholesky_mtx_t.T
+    corr_matrix_approx = corr_cholesky_mtx_t @ corr_cholesky_mtx_t.T
+    return corr_matrix_approx
 
 
 def corr_array_assertion_checks(n_variables, corr_array=None):
@@ -241,7 +246,8 @@ def corr_array_assertion_checks(n_variables, corr_array=None):
     diagonal_is_one = bool(
         np.all(np.abs(np.diagonal(corr_array) - 1.0) <= 1.0e-6)
     )
-    return off_diagonal_in_range and diagonal_is_one
+    l_corr_array_valid = off_diagonal_in_range and diagonal_is_one
+    return l_corr_array_valid
 
 
 def rearrange_corr_array(pdf_dim, iiPDF_w, corr_array):

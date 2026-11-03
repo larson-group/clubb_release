@@ -10,6 +10,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     Cp,
     Rd,
     Rv,
+    micron_per_m,
     rho_lw,
     pi,
     rr_tol,
@@ -673,7 +674,8 @@ def KK_upscaled_microphys(
         nzt, ngrdcol, rcm, hydromet,     # In
         hydromet_dim, hm_metadata.iiri,  # In
     )
-    Vrr, VNr = KK_upscaled_sedimentation(ngrdcol, nzt, cloud_top_level, KK_mean_vol_rad, True)
+    l_clip_positive_sed = True  # Clip positive Vrr and VNr terms to zero
+    Vrr, VNr = KK_upscaled_sedimentation(ngrdcol, nzt, cloud_top_level, KK_mean_vol_rad, l_clip_positive_sed)
     hydromet_mc = jnp.zeros_like(hydromet)
     hydromet_vel = jnp.zeros_like(hydromet)
     hydromet_mc = hydromet_mc.at[..., hm_metadata.iirr].set(rrm_mc)
@@ -916,8 +918,8 @@ def KK_upscaled_sedimentation(
 
     # KK00 fall speeds use the mean volume radius in micrometers.
     # Convert to negative downward velocities in CLUBB coordinates.
-    Vrr = -(0.012 * (1.0e6 * KK_mean_vol_rad) - 0.2)
-    VNr = -(0.007 * (1.0e6 * KK_mean_vol_rad) - 0.1)
+    Vrr = -(0.012 * (micron_per_m * KK_mean_vol_rad) - 0.2)
+    VNr = -(0.007 * (micron_per_m * KK_mean_vol_rad) - 0.1)
 
     # Optional clipping prevents upward sedimentation and fall speeds above
     # cloud top; the model upper-boundary velocities are always zero.

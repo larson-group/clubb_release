@@ -235,7 +235,8 @@ def quadrivar_NNLL_MM_const_x2(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x1, sigma_x
                           + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2 * q ** 2
                           + 0.5 * sigma_x4_n ** 2 * gamma_exp ** 2 * q ** 2
                           + rho_x3x4_n * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp * q ** 2)
-    return jnp.where(mu_x2 <= 0.0, total, 0.0)
+    quadrivar_NNLL_MM_const_x2 = jnp.where(mu_x2 <= 0.0, total, 0.0)
+    return quadrivar_NNLL_MM_const_x2
 
 
 def quadrivar_NNLL_MM_const_x1x2(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x3_n, sigma_x4_n, rho_x3x4_n,
@@ -255,4 +256,5 @@ def quadrivar_NNLL_MM_const_x1x2(mu_x1, mu_x2, mu_x3_n, mu_x4_n, sigma_x3_n, sig
                       + 0.5 * sigma_x3_n ** 2 * beta_exp ** 2 * q ** 2
                       + 0.5 * sigma_x4_n ** 2 * gamma_exp ** 2 * q ** 2
                       + rho_x3x4_n * sigma_x3_n * beta_exp * sigma_x4_n * gamma_exp * q ** 2)
-    return jnp.where(mu_x2 <= 0.0, total, 0.0)
+    quadrivar_NNLL_MM_const_x1x2 = jnp.where(mu_x2 <= 0.0, total, 0.0)
+    return quadrivar_NNLL_MM_const_x1x2

@@ -816,7 +816,7 @@ def windm_edsclrm_solve(
     err_info, solution, rcond = tridiag_solve(
         "windm_edsclrm", tridiag_solve_method, ngrdcol, nzt,
         lhs_solve, rhs_solve, err_info,
-        use_rcond=l_need_rcond,
+        l_use_rcond=l_need_rcond,
         l_implemented=l_implemented,
     )
 
@@ -1255,13 +1255,3 @@ def windm_edsclrm_rhs(
             stats = stats.update_budget(name_ta, stats_tmp)
 
     return rhs, stats
-
-
-__all__ = [
-    "advance_windm_edsclrm",
-    "windm_edsclrm_solve",
-    "windm_edsclrm_implicit_stats",
-    "compute_uv_tndcy",
-    "windm_edsclrm_lhs",
-    "windm_edsclrm_rhs",
-]

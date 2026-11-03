@@ -137,7 +137,10 @@ def compute_bugsrad_radiation(setup, T_in_K, rcm, rtm, rsm, rim, cloud_frac, ice
 
     # --- call bugs_rad per column-batch (it is already vectorised over ncol; it does the
     #     den/rmix/cwrho conversion internally, so pass raw mixing ratios + cloud fraction) ---
-    fn = _jitted_bugs_rad(float(sol_const), _GRAV_CLUBB, _CP_CLUBB, 330.0, 1.6, 0.28)
+    umco2 = 330.0  # Concentration of CO2  # known magic number
+    umch4 = 1.6    # Concentration of CH4  # known magic number
+    umn2o = 0.28   # Concentration of N2O  # known magic number
+    fn = _jitted_bugs_rad(float(sol_const), _GRAV_CLUBB, _CP_CLUBB, umco2, umch4, umn2o)
     out = fn(playerinmb, p_rad, diff_pres, T_rad, q_rad, rcmic_rad, rcil_rad, o3_rad,
              ts, amu0, slr, alvdf, alndf, alvdr, alndr, cf_rad)
 

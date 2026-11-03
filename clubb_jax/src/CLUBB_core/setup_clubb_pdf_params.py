@@ -78,6 +78,9 @@ from clubb_jax.src.CLUBB_core.precipitation_fraction import precip_fraction
 
 _MU_HM_MIN_COEF = 0.01   # setup_clubb_pdf_params.F90:2176
 
+# Note:  the ADG2 PDF follows the same standards as the ADG1 PDF.
+l_follow_ADG1_PDF_standards = True
+
 # PDF-variable index layout (0-based), matching the iiPDF indices for the KK PDF.
 IIPDF_CHI = 0
 IIPDF_ETA = 1
@@ -505,7 +508,7 @@ def setup_pdf_parameters_api(
                 hm_metadata.iiPDF_eta,
                 hm_metadata.iiPDF_w,
                 hm_metadata.iiPDF_Ncn,
-                True,
+                l_follow_ADG1_PDF_standards,
             )
         else:
             # The correlation matrices can vary with vertical values. So we need to set the
@@ -650,10 +653,11 @@ def setup_pdf_parameters_api(
         # Preserve symmetry/unit-diagonal checks inside compiled physics.
         from clubb_jax.src.CLUBB_core.constants_clubb import eps
 
+        symmetry_tol = 1.0e-6  # Largest allowed asymmetry of a correlation array [-]
         bad_corr = jnp.zeros((ngrdcol,), dtype=bool)
         for corr_array_n in (corr_array_1_n, corr_array_2_n):
             symmetric = jnp.all(
-                jnp.abs(corr_array_n - jnp.swapaxes(corr_array_n, -1, -2)) <= 1.0e-6, axis=(1, 2, 3)
+                jnp.abs(corr_array_n - jnp.swapaxes(corr_array_n, -1, -2)) <= symmetry_tol, axis=(1, 2, 3)
             )
             unit_diagonal = jnp.all(
                 jnp.abs(jnp.diagonal(corr_array_n, axis1=-2, axis2=-1) - 1.0) <= eps, axis=(1, 2)
@@ -1291,7 +1295,8 @@ def hydrometp2_zt(hmm, precip_frac, ratio):
     (setup_clubb_pdf_params.F90:449): ((hmp2_ip_on_hmm2_ip + 1)/precip_frac − 1) · hm^2 where hm ≥ tol
     (the caller zeroes the sub-tolerance levels). Pure-jnp → differentiable."""
     pf = jnp.where(precip_frac > 0.0, precip_frac, 1.0)
-    return ((ratio + 1.0) / pf - 1.0) * hmm ** 2
+    hydrometp2_zt = ((ratio + 1.0) / pf - 1.0) * hmm ** 2
+    return hydrometp2_zt
 
 
 def compute_mean_stdev(chi_1, chi_2, stdev_chi_1, stdev_chi_2,
@@ -1389,7 +1394,8 @@ def norm_transform_mean_stdev(mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,
 
     Returns (mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n)."""
     def _to_n(mu, s2m2):
-        mu_safe = jnp.maximum(jnp.abs(mu), 1.0e-30)
+        mu_floor = 1.0e-30
+        mu_safe = jnp.maximum(jnp.abs(mu), mu_floor)
         return mean_L2N(mu_safe, s2m2), stdev_L2N(s2m2)
 
     mu_x_1_n = jnp.asarray(mu_x_1)
@@ -1494,8 +1500,9 @@ def component_corr_eta_hm_n_ip(corr_chi_eta_1, corr_chi_hm_n_1, corr_chi_eta_2, 
     """Estimate the component correlation of eta and ln(hm) as corr_chi_eta·corr_chi_hm_n
     (setup_clubb_pdf_params.F90:component_corr_eta_hm_n_ip). This product keeps the correlation array
     Cholesky-decomposable for SILHS. Returns (corr_eta_hm_n_1, corr_eta_hm_n_2)."""
-    return (jnp.asarray(corr_chi_eta_1) * jnp.asarray(corr_chi_hm_n_1),
-            jnp.asarray(corr_chi_eta_2) * jnp.asarray(corr_chi_hm_n_2))
+    corr_eta_hm_n_1 = jnp.asarray(corr_chi_eta_1) * jnp.asarray(corr_chi_hm_n_1)
+    corr_eta_hm_n_2 = jnp.asarray(corr_chi_eta_2) * jnp.asarray(corr_chi_hm_n_2)
+    return corr_eta_hm_n_1, corr_eta_hm_n_2
 
 
 # iiPDF_type enumeration (model_flags.F90:31-37) — imported from its Fortran-home model_flags.py (the PDF types
@@ -1616,8 +1623,9 @@ def comp_corr_norm(mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, sigma_x_1_n, sigma_x_2_
     # eta. Thus, we impose a limitation.
     if l_fix_w_chi_eta_correlations:
         # Correlation of chi (old s) and eta (old t)
+        l_limit_corr_chi_eta = True  # Flag to limit the correlation of chi and eta [-]
         c1, c2 = component_corr_chi_eta(rc_1, rc_2, cc[iiPDF_eta, iiPDF_chi],
-                                        cb[iiPDF_eta, iiPDF_chi], True)
+                                        cb[iiPDF_eta, iiPDF_chi], l_limit_corr_chi_eta)
     else:
         # Preferred, more accurate version.
         c1 = jnp.asarray(pdf_params_corr['corr_chi_eta_1'])
@@ -1627,7 +1635,7 @@ def comp_corr_norm(mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, sigma_x_1_n, sigma_x_2_
     if l_fix_w_chi_eta_correlations:
         # Correlation of chi (old s) and w
         c1, c2 = component_corr_w_x(rc_1, rc_2, cc[iiPDF_w, iiPDF_chi], cb[iiPDF_w, iiPDF_chi],
-                                    iiPDF_type, True)
+                                    iiPDF_type, l_follow_ADG1_PDF_standards)
     else:
         # Preferred, more accurate version.
         c1 = jnp.asarray(pdf_params_corr['corr_w_chi_1']); c2 = jnp.asarray(pdf_params_corr['corr_w_chi_2'])
@@ -1647,7 +1655,7 @@ def comp_corr_norm(mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, sigma_x_1_n, sigma_x_2_
     if l_fix_w_chi_eta_correlations:
         # Correlation of chi (old s) and w
         c1, c2 = component_corr_w_x(rc_1, rc_2, cc[iiPDF_w, iiPDF_eta], cb[iiPDF_w, iiPDF_eta],
-                                    iiPDF_type, True)
+                                    iiPDF_type, l_follow_ADG1_PDF_standards)
         A1 = _set(A1, iiPDF_w, iiPDF_eta, c1); A2 = _set(A2, iiPDF_w, iiPDF_eta, c2)
     else:
         # Faithful to F90:1560 quirk: re-writes (w, chi), leaving (w, eta) at 0.

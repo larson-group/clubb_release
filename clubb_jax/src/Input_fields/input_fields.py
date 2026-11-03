@@ -9,11 +9,12 @@ reader's first column. A single stored column can initialize several columns.
 
 from pathlib import Path
 
+import sys
 import numpy as np
 import jax.numpy as jnp
 from netCDF4 import Dataset, num2date
 
-from clubb_jax.src.CLUBB_core.constants_clubb import eps, w_tol_sqd
+from clubb_jax.src.CLUBB_core.constants_clubb import eps, g_per_kg, sec_per_day, w_tol_sqd
 from clubb_jax.src.CLUBB_core.interpolation import lin_interpolate_two_points
 
 
@@ -1077,7 +1078,8 @@ def compute_timestep(filename, l_restart, time):
         nearest_timestep = int(np.argmin(np.abs(times - time)))
         if l_restart and abs(times[nearest_timestep] - time) > 1.0e-8:
             raise ValueError(f"time_restart={time} is not a saved output time in {filename}")
-        return nearest_timestep + 1
+        nearest_timestep = nearest_timestep + 1
+        return nearest_timestep
 
 
 # -----------------------------------------------------------------------------
@@ -1140,9 +1142,9 @@ def get_clubb_variable_interpolated(
                            else np.asarray(ds.variables[grid_dim][:]))
             units = var.units.strip()
             if units == "g/kg":
-                data = data / 1000.0
+                data = data / g_per_kg
             elif units == "K/day":
-                data = data / 86400.0
+                data = data / sec_per_day
             elif units == "W/m2":
                 raise ValueError("Cannot convert W/m2 restart field to MKS")
 
@@ -1180,5 +1182,5 @@ def get_clubb_variable_interpolated(
                 raise ValueError(f"Restart grid does not cover {varname}")
             return jnp.asarray(data), False
     except (OSError, KeyError, ValueError, IndexError) as exc:
-        print(f"Error reading {varname} from {filename}: {exc}")
+        print(f"Error reading {varname} from {filename}: {exc}", file=sys.stderr)
         return variable_interpolated, True

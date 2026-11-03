@@ -240,7 +240,7 @@ MISSING_SOURCE_MAPPING_EXCEPTIONS = {
 }
 
 ARG_DIFF_EXCEPTIONS = {
-    "return_default_params",
+    "l_return_default_params",
     "stats",
     "use_rcond",
 }

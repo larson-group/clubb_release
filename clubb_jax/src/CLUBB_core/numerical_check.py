@@ -322,13 +322,14 @@ def calculate_spurious_source(
     imbalance as spurious_source where spurious_source is defined negative
     for a spurious sink.
     """
-    return (
+    spurious_source = (
         (jnp.asarray(integral_after) - jnp.asarray(integral_before))
         / jnp.asarray(dt)
         + jnp.asarray(flux_top)
         - jnp.asarray(flux_sfc)
         - jnp.asarray(integral_forcing)
     )
+    return spurious_source
 
 
 def _all_finite(*values):
@@ -463,18 +464,3 @@ def check_clubb_settings(*, err_info, ngrdcol, edsclr_dim, sclr_idx, params, con
             return err_info.set_fatal()
 
     return err_info
-
-
-__all__ = [
-    "CLUBB_FATAL_ERROR",
-    "parameterization_check",
-    "check_negative",
-    "check_nan",
-    "calculate_spurious_source",
-    "sfc_varnce_check",
-    "length_check",
-    "pdf_closure_check",
-    "rad_check",
-    "invalid_model_arrays",
-    "check_clubb_settings",
-]

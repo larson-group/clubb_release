@@ -43,10 +43,9 @@ from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     max_mag_correlation as MAX_MAG_CORRELATION,
     chi_tol as _CHI_TOL, eta_tol as _ETA_TOL, rt_tol as _RT_TOL, thl_tol as _THL_TOL,
+    eps, min_max_smth_mag,
 )
 _TINY = jnp.finfo(core_rknd).tiny  # Fortran tiny(mu_x)
-_MIN_MAX_SMTH_MAG = 1.0e-9           # constants_clubb.F90 min_max_smth_mag
-_EPS = 1.0e-10                       # constants_clubb.F90 eps = max(1e-10, epsilon)
 
 
 
@@ -66,7 +65,8 @@ def mean_L2N(mu_x, sigma2_on_mu2):
     # is used to prevent taking ln 0, which will produce a result of -infinity.
     # This would happen when mu_x is 0.  However, this code should not be
     # entered when mu_x has a value of 0.
-    return jnp.log(jnp.maximum(mu_x / jnp.sqrt(1.0 + sigma2_on_mu2), _TINY))
+    mu_x_n = jnp.log(jnp.maximum(mu_x / jnp.sqrt(1.0 + sigma2_on_mu2), _TINY))
+    return mu_x_n
 
 
 def stdev_L2N(sigma2_on_mu2):
@@ -82,7 +82,8 @@ def stdev_L2N(sigma2_on_mu2):
      -- App. B.
     """
     # Find the standard deviation of ln x for the ith component of the PDF.
-    return jnp.sqrt(jnp.log(1.0 + sigma2_on_mu2))
+    sigma_x_n = jnp.sqrt(jnp.log(1.0 + sigma2_on_mu2))
+    return sigma_x_n
 
 
 def corr_NL2NN(corr_x_y, sigma_y_n, y_sigma2_on_mu2):
@@ -104,13 +105,14 @@ def corr_NL2NN(corr_x_y, sigma_y_n, y_sigma2_on_mu2):
     # divide-by-zero problem needs to be addressed in the code.
     sy_safe = jnp.where(sigma_y_n > 0.0, sigma_y_n, 1.0)
     corr_n = jnp.where(sigma_y_n > 0.0,
-                       corr_x_y * jnp.sqrt(y_sigma2_on_mu2) / sy_safe,
+                       corr_x_y * sqrt_clipped(y_sigma2_on_mu2) / sy_safe,
                        corr_x_y)
     # Clip the magnitude of the correlation of x and ln y in the ith PDF
     # component, just in case the correlation (ith PDF component) of x and y and
     # the standard deviation (ith PDF component) of ln y are inconsistent,
     # resulting in an unrealizable value for corr_x_y_n.
-    return jnp.clip(corr_n, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    corr_x_y_n = jnp.clip(corr_n, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    return corr_x_y_n
 
 
 def corr_LL2NN(corr_x_y, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu2):
@@ -131,10 +133,11 @@ def corr_LL2NN(corr_x_y, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu2)
     # so set it to corr_x_y.
     both_pos = (sigma_x_n > 0.0) & (sigma_y_n > 0.0)
     denom = jnp.where(both_pos, sigma_x_n * sigma_y_n, 1.0)
-    log_arg = 1.0 + corr_x_y * jnp.sqrt(x_sigma2_on_mu2 * y_sigma2_on_mu2)
+    log_arg = 1.0 + corr_x_y * sqrt_clipped(x_sigma2_on_mu2 * y_sigma2_on_mu2)
     corr_n = jnp.where(both_pos, jnp.log(log_arg) / denom, corr_x_y)
     # Clip the magnitude of the correlation of ln x and ln y.
-    return jnp.clip(corr_n, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    corr_x_y_n = jnp.clip(corr_n, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    return corr_x_y_n
 
 
 def corr_NN2NL(corr_x_y_n, sigma_y_n, y_sigma2_on_mu2):
@@ -155,7 +158,8 @@ def corr_NN2NL(corr_x_y_n, sigma_y_n, y_sigma2_on_mu2):
                      corr_x_y_n * sigma_y_n / jnp.sqrt(jnp.maximum(y_sigma2_on_mu2, _TINY)),
                      corr_x_y_n)
     # Clip the magnitude of the correlation of x and y.
-    return jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    corr_x_y = jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    return corr_x_y
 
 
 def corr_NN2LL(corr_x_y_n, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu2):
@@ -164,11 +168,12 @@ def corr_NN2LL(corr_x_y_n, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu
     Inverse of corr_LL2NN: corr_x_y = (exp(sigma_x_n sigma_y_n corr_x_y_n) - 1)
     / sqrt(x_sigma2_on_mu2 y_sigma2_on_mu2) if both sigma_n>0, else corr_x_y_n; clipped."""
     both_pos = (sigma_x_n > 0.0) & (sigma_y_n > 0.0)
-    denom = jnp.where(both_pos, jnp.sqrt(x_sigma2_on_mu2 * y_sigma2_on_mu2), 1.0)
+    denom = jnp.where(both_pos, sqrt_clipped(x_sigma2_on_mu2 * y_sigma2_on_mu2), 1.0)
     corr = jnp.where(both_pos,
                      (jnp.exp(sigma_x_n * sigma_y_n * corr_x_y_n) - 1.0) / denom,
                      corr_x_y_n)
-    return jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    corr_x_y = jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    return corr_x_y
 
 
 def calc_corr_chi_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_chi_i,
@@ -184,7 +189,8 @@ def calc_corr_chi_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_chi_i,
         crt_i * (sigma_rt_i / sig_safe) * corr_rt_x_i
         - cthl_i * (sigma_thl_i / sig_safe) * corr_thl_x_i,
         0.0)
-    return jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    corr_chi_x_i = jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    return corr_chi_x_i
 
 
 def calc_corr_eta_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_eta_i,
@@ -200,7 +206,8 @@ def calc_corr_eta_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_eta_i,
         crt_i * (sigma_rt_i / sig_safe) * corr_rt_x_i
         + cthl_i * (sigma_thl_i / sig_safe) * corr_thl_x_i,
         0.0)
-    return jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    corr_eta_x_i = jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    return corr_eta_x_i
 
 
 def compute_mean_binormal(mu_x_1, mu_x_2, mixt_frac):
@@ -210,7 +217,8 @@ def compute_mean_binormal(mu_x_1, mu_x_2, mixt_frac):
     xm = mixt_frac * mu_x_1 + ( 1 - mixt_frac ) * mu_x_2
     """
     # Calculate the overall mean of x.
-    return mixt_frac * mu_x_1 + (1.0 - mixt_frac) * mu_x_2
+    xm = mixt_frac * mu_x_1 + (1.0 - mixt_frac) * mu_x_2
+    return xm
 
 
 def compute_variance_binormal(xm, mu_x_1, mu_x_2, stdev_x_1, stdev_x_2, mixt_frac):
@@ -222,8 +230,9 @@ def compute_variance_binormal(xm, mu_x_1, mu_x_2, stdev_x_1, stdev_x_2, mixt_fra
           + ( 1 - mixt_frac ) * ( ( mu_x_2 - xm )^2 + stdev_x_2^2 )
     """
     # Calculate the overall variance of x.
-    return (mixt_frac * ((mu_x_1 - xm) ** 2 + stdev_x_1 ** 2)
-            + (1.0 - mixt_frac) * ((mu_x_2 - xm) ** 2 + stdev_x_2 ** 2))
+    xp2 = (mixt_frac * ((mu_x_1 - xm) ** 2 + stdev_x_1 ** 2)
+           + (1.0 - mixt_frac) * ((mu_x_2 - xm) ** 2 + stdev_x_2 ** 2))
+    return xp2
 
 
 def calc_corr_rt_x(crt_i, sigma_rt_i, sigma_chi_i, sigma_eta_i,
@@ -237,7 +246,8 @@ def calc_corr_rt_x(crt_i, sigma_rt_i, sigma_chi_i, sigma_eta_i,
         sigma_rt_i > _RT_TOL,
         (sigma_eta_i * corr_eta_x_i + sigma_chi_i * corr_chi_x_i) / (2.0 * crt_i * sig_safe),
         0.0)
-    return jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    corr_rt_x_i = jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    return corr_rt_x_i
 
 
 def calc_corr_thl_x(cthl_i, sigma_thl_i, sigma_chi_i, sigma_eta_i,
@@ -251,7 +261,8 @@ def calc_corr_thl_x(cthl_i, sigma_thl_i, sigma_chi_i, sigma_eta_i,
         sigma_thl_i > _THL_TOL,
         (sigma_eta_i * corr_eta_x_i - sigma_chi_i * corr_chi_x_i) / (2.0 * cthl_i * sig_safe),
         0.0)
-    return jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    corr_thl_x_i = jnp.clip(corr, -MAX_MAG_CORRELATION, MAX_MAG_CORRELATION)
+    return corr_thl_x_i
 
 
 def smooth_corr_quotient(numerator, denominator, denom_thresh):
@@ -261,14 +272,15 @@ def smooth_corr_quotient(numerator, denominator, denom_thresh):
     denominator is first raised to at least |num|/max_mag_correlation and then
     to at least denom_thresh.
     """
-    coef = jnp.minimum(_MIN_MAX_SMTH_MAG, denom_thresh)
+    coef = jnp.minimum(min_max_smth_mag, denom_thresh)
 
     def _smax(a, b):
         return 0.5 * ((a + b) + jnp.sqrt((a - b) ** 2 + coef ** 2))
 
     tmp = _smax(jnp.abs(numerator) / MAX_MAG_CORRELATION, denominator)
     tmp = _smax(tmp, denom_thresh)
-    return numerator / tmp
+    quotient = numerator / tmp
+    return quotient
 
 
 def calc_comp_corrs_binormal(xpyp, xm, ym, mu_x_1, mu_x_2, mu_y_1, mu_y_2,
@@ -283,5 +295,5 @@ def calc_comp_corrs_binormal(xpyp, xm, ym, mu_x_1, mu_x_2, mu_y_1, mu_y_2,
     denominator = (mixt_frac * sqrt_clipped(sigma_x_1_sqd * sigma_y_1_sqd)
                    + (1.0 - mixt_frac) * sqrt_clipped(sigma_x_2_sqd * sigma_y_2_sqd))
     # Calculate corr_x_y_1 and corr_x_y_2.
-    corr = smooth_corr_quotient(numerator, denominator, _EPS)
+    corr = smooth_corr_quotient(numerator, denominator, eps)
     return corr, corr

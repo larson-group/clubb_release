@@ -40,6 +40,3 @@ def jun25_altocu_read_t_dependent(time):
         time_dependent_input.latent_ht_given[before_time],
     )
     return sens_ht, latent_ht
-
-
-__all__ = ["jun25_altocu_read_t_dependent"]

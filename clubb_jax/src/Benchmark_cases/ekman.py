@@ -31,6 +31,3 @@ def ekman_sfclyr(ngrdcol, um_sfc, vm_sfc, ubar):
         ustar,
     )
     return upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["ekman_sfclyr"]

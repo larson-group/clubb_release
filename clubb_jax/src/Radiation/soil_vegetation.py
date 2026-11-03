@@ -164,6 +164,3 @@ def initialize_soil_veg(ngrdcol):
     # JAX adaptation: the source resets module ``l_soil_veg`` here. Its
     # immutable equivalent is initialized later from the case namelist.
     return deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
-
-
-__all__ = ["advance_soil_veg", "initialize_soil_veg"]

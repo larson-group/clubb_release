@@ -9,7 +9,8 @@ import jax
 import jax.numpy as jnp
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.grid_class import zt2zm, zm2zt, ddzt
-from clubb_jax.src.CLUBB_core.constants_clubb import Lv, Cp, rho_lw, rc_tol, ri_tol, zero_threshold
+from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
+from clubb_jax.src.CLUBB_core.constants_clubb import Lv, Cp, mm_per_m, rho_lw, sec_per_day, rc_tol, ri_tol, zero_threshold
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_driver_api, setup_stats_names
 from clubb_jax.src.Microphys import parameters_microphys
 
@@ -116,12 +117,14 @@ def advance_microphys(
     if hydromet_dim > 0:
         # Down-gradient closure: <w'hm'> = -K_hm * d<hm>/dz. The diffusivity
         # depends on the species mean and variance, as well as the turbulent state.
+        # Use a non-local factor for eddy-diffusivity applied to hydrometeors.
+        l_use_non_local_diff_fac = False
         K_hm = calculate_K_hm(
             gr, gr.ngrdcol, wp2, Kh_zm, Skw_zm, Lscale,  # In
             hydromet_dim, hm_metadata.hydromet_tol,      # In
             hydromet, hydrometp2,                        # InOut
             clubb_params,                                # In
-            False,                                       # In
+            l_use_non_local_diff_fac,                    # In
         )
         l_prevent_hm_ta_above_cloud = False  # Source local parameter.
 
@@ -230,8 +233,8 @@ def advance_microphys(
                     0.0,
                 )
                 * (rho / rho_lw)
-                * 86400.0
-                * 1000.0,
+                * sec_per_day
+                * mm_per_m,
             )
 
             # Precipitation energy flux on momentum levels [W/m^2],
@@ -262,8 +265,8 @@ def advance_microphys(
                         0.0,
                     )
                     * (rho[:, 0] / rho_lw)
-                    * 86400.0
-                    * 1000.0,
+                    * sec_per_day
+                    * mm_per_m,
                 )
 
             # Surface rain energy flux and interpolated mixing ratio.
@@ -448,9 +451,10 @@ def advance_hydrometeor(
         hydromet = hydromet.at[..., i].set(hmm)
 
     # Now that all species have advanced, fill holes in the profiles.
+    l_fill_holes_hm = True
     stats, thlm_mc, rvm_mc, hydromet = fill_holes_driver_api(
         gr, ngrdcol, gr.nzt, dt, hydromet_dim,  # In
-        hm_metadata, True,                      # In
+        hm_metadata, l_fill_holes_hm,           # In
         rho_ds_zt, exner, fill_holes_type,      # In
         stats, thlm_mc, rvm_mc, hydromet,       # InOut
     )
@@ -574,8 +578,9 @@ def advance_Ncm(
     # Crank-Nicholson first half of <w'Nc'> at timestep t; zero boundary fluxes.
     xpwp = (K_Nc + nu_vert_res_dep.nu_hm[:, None]) * ddzt(gr.nzm, gr.nzt, gr.ngrdcol, gr, Ncm)
     wpNcp = (-0.5 * xpwp).at[:, 0].set(0.0).at[:, -1].set(0.0)
+    l_Ncm_sed = False  # Flag to sediment Ncm with sedimentation vel. Ncm_vel
     stats, lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, lhs = microphys_lhs(
-        gr, gr.ngrdcol, "Ncm", False, dt, K_Nc, nu_vert_res_dep.nu_hm, wm_zt,  # In
+        gr, gr.ngrdcol, "Ncm", l_Ncm_sed, dt, K_Nc, nu_vert_res_dep.nu_hm, wm_zt,  # In
         Ncm_vel, Ncm_vel_zt,                                                   # In
         Ncm_vel_covar_zt_impc,                                                 # In
         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,                                 # In
@@ -584,7 +589,7 @@ def advance_Ncm(
     )
     if parameters_microphys.l_in_cloud_Nc_diff:
         stats, rhs = microphys_rhs(
-            gr, gr.ngrdcol, "Ncm", dt, False,                               # In
+            gr, gr.ngrdcol, "Ncm", dt, l_Ncm_sed,     # In
             Nc_in_cloud, Ncm_mc / jnp.maximum(cloud_frac, cloud_frac_min),  # In
             K_Nc, nu_vert_res_dep.nu_hm, cloud_frac,                        # In
             Ncm_vel_covar_zt_expc,                                          # In
@@ -593,7 +598,7 @@ def advance_Ncm(
         )
     else:
         stats, rhs = microphys_rhs(
-            gr, gr.ngrdcol, "Ncm", dt, False,         # In
+            gr, gr.ngrdcol, "Ncm", dt, l_Ncm_sed,     # In
             Ncm, Ncm_mc,                              # In
             K_Nc, nu_vert_res_dep.nu_hm, cloud_frac,  # In
             Ncm_vel_covar_zt_expc,                    # In
@@ -605,7 +610,7 @@ def advance_Ncm(
     # same minimum cloud fraction as the RHS and budget diagnostics.
     if parameters_microphys.l_in_cloud_Nc_diff:
         stats, lhs, rhs, Nc_in_cloud, err_info = microphys_solve(
-            gr, gr.ngrdcol, "Ncm", False,                # In
+            gr, gr.ngrdcol, "Ncm", l_Ncm_sed,            # In
             lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs,  # In
             cloud_frac,                                  # In
             tridiag_solve_method,                        # In
@@ -615,7 +620,7 @@ def advance_Ncm(
         Ncm = Nc_in_cloud * jnp.maximum(cloud_frac, cloud_frac_min)
     else:
         stats, lhs, rhs, Ncm, err_info = microphys_solve(
-            gr, gr.ngrdcol, "Ncm", False,                # In
+            gr, gr.ngrdcol, "Ncm", l_Ncm_sed,            # In
             lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs,  # In
             cloud_frac,                                  # In
             tridiag_solve_method,                        # In
@@ -1621,7 +1626,7 @@ def term_turb_sed_rhs(
     # -----------------------------------------------------------------------
 
     if not parameters_microphys.l_upwind_diff_sed:
-        return (
+        rhs = (
             -invrs_rho_ds_zt
             * invrs_dzt
             * (
@@ -1629,7 +1634,8 @@ def term_turb_sed_rhs(
                 - rho_ds_zm * Vhmphmp_expc
             )
         )
-    return (
+        return rhs
+    rhs = (
         -invrs_rho_ds_zt
         * invrs_dzmp1
         * (
@@ -1637,6 +1643,7 @@ def term_turb_sed_rhs(
             - rho_ds_zt * Vhmphmp_zt_expc
         )
     )
+    return rhs
 
 
 # -----------------------------------------------------------------------------
@@ -1645,7 +1652,7 @@ def calculate_K_hm(
     hydromet_dim, hydromet_tol,               # In
     hydromet, hydrometp2,                     # InOut
     clubb_params,                             # In
-    l_use_non_local_diff_fac,                 # In
+    l_use_non_local_diff_fac,                            # In
 ):
     """Calculate the diffusivity for down-gradient hydrometeor turbulent fluxes.
 
@@ -1707,7 +1714,7 @@ def calculate_K_hm(
             jnp.abs(gradient) > eps,
             jnp.minimum(
                 K,
-                (jnp.sqrt(wp2) * jnp.sqrt(hydrometp2[..., h]))
+                (jnp.sqrt(wp2) * sqrt_clipped(hydrometp2[..., h]))
                 / jnp.where(jnp.abs(gradient) > eps, jnp.abs(gradient), 1.0),
             ),
             K,
@@ -1747,7 +1754,8 @@ def get_cloud_top_level(
     # -----------------------------------------------------------------------
 
     rim = hydromet[..., iiri] if iiri >= 0 else jnp.zeros_like(rcm)
-    return jnp.max(jnp.where((rcm > rc_tol) | (rim > ri_tol), jnp.arange(nzt)[None, :], 0), axis=-1)
+    cloud_top_level = jnp.max(jnp.where((rcm > rc_tol) | (rim > ri_tol), jnp.arange(nzt)[None, :], 0), axis=-1)
+    return cloud_top_level
 
 
 # -----------------------------------------------------------------------------

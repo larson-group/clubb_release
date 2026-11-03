@@ -79,6 +79,3 @@ def lba_sfclyr(ngrdcol, time_current, time_initial, z, rho_sfc, thlm_sfc, ubar):
     # Compute ustar
     ustar = diag_ustar(z, bflx, ubar, z0)
     return wpthlp_sfc, wprtp_sfc, ustar
-
-
-__all__ = ["lba_tndcy", "lba_sfclyr"]

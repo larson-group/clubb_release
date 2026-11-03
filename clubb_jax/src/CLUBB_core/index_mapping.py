@@ -93,7 +93,8 @@ def pdf2hydromet_idx(pdf_idx, hm_metadata):
         idx = _hm(hm_metadata, pdf_name)
         if idx >= 0 and pdf_idx == idx:
             return _hm(hm_metadata, hm_name)
-    return -1
+    hydromet_idx = -1
+    return hydromet_idx
 
 
 def hydromet2pdf_idx(hydromet_idx, hm_metadata):
@@ -129,7 +130,8 @@ def hydromet2pdf_idx(hydromet_idx, hm_metadata):
         idx = _hm(hm_metadata, hm_name)
         if idx >= 0 and hydromet_idx == idx:
             return _hm(hm_metadata, pdf_name)
-    return -1
+    pdf_idx = -1
+    return pdf_idx
 
 
 def rx2Nx_hm_idx(rx_idx, hm_metadata):
@@ -158,7 +160,8 @@ def rx2Nx_hm_idx(rx_idx, hm_metadata):
         idx = _hm(hm_metadata, r_name)
         if idx >= 0 and rx_idx == idx:
             return _hm(hm_metadata, n_name)
-    return -1
+    Nx_idx = -1
+    return Nx_idx
 
 
 def Nx2rx_hm_idx(Nx_idx, hm_metadata):
@@ -187,7 +190,8 @@ def Nx2rx_hm_idx(Nx_idx, hm_metadata):
         idx = _hm(hm_metadata, n_name)
         if idx >= 0 and Nx_idx == idx:
             return _hm(hm_metadata, r_name)
-    return -1
+    rx_idx = -1
+    return rx_idx
 
 
 def mvr_hm_max(hydromet_idx, hm_metadata):
@@ -220,12 +224,3 @@ def mvr_hm_max(hydromet_idx, hm_metadata):
         ):
             return mvr_max
     return 0.0
-
-
-__all__ = [
-    "pdf2hydromet_idx",
-    "hydromet2pdf_idx",
-    "rx2Nx_hm_idx",
-    "Nx2rx_hm_idx",
-    "mvr_hm_max",
-]
