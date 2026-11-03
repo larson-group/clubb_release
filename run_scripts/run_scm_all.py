@@ -70,9 +70,9 @@ def split_values(values) -> list[str]:
     return [part.strip() for value in values or [] for part in value.split(",") if part.strip()]
 
 
-def parse_cases(value):
-    """Argparse type checker for comma-separated case names."""
-    cases = [case.strip() for case in value.split(",") if case.strip()]
+def parse_cases(values):
+    """Return the case names from a CLI list, rejecting an empty list or unknown names."""
+    cases = split_values(values)
     if not cases:
         raise argparse.ArgumentTypeError("must provide at least one case name")
 
@@ -145,7 +145,7 @@ def main():
     args, extra_opts = parse_forwarded_args(parser)
     if args.cases:
         try:
-            args.cases = parse_cases(",".join(split_values(args.cases)))
+            args.cases = parse_cases(args.cases)
         except argparse.ArgumentTypeError as exc:
             parser.error(str(exc))
 
