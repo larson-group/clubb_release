@@ -159,6 +159,9 @@ a_const_minmax                      = 0., 0.
 bv_efold_minmax                     = 0., 0.
 wpxp_Ri_exp_minmax                  = 0., 0.
 z_displace_minmax                   = 0., 0.
+Lscale_tke_multiplier_minmax        = 0., 0.
+Lscale_pdf_launch_frac_minmax       = 0., 0.
+Lscale_up_weight_minmax             = 0., 0.
 /
 
 &parameter_constraints
