@@ -63,16 +63,28 @@ def calc_mass_over_grid_intervals(rho_lin_spline_vals, rho_lin_spline_levels, gr
     computes the exact mass over each interval, such that any target grid with the same lowest
     and highest level would give the same total mass, if the linear spline is the same.
 
-    Returns an array with the dimension grid_levels_idx-1 where at each index the mass of that
-    interval is stored, starting at the bottom level.
-
-    Args:
-        rho_lin_spline_vals:   (ngrdcol, total_idx) density values [kg/m^3], ascending in altitude.
-        rho_lin_spline_levels: (ngrdcol, total_idx) the corresponding altitudes [m], ascending.
-        grid_levels:           (ngrdcol, nlev) grid level altitudes [m], ascending.
-
     Returns:
-        mass_per_interval: (ngrdcol, nlev-1) mass over each cell [kg/m^2 per unit area].
+        mass_per_interval
+
+    Fortran declarations (calc_mass_over_grid_intervals in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          total_idx_lin_spline, &  ! The total numer of indices of the spline points []
+          grid_levels_idx          ! The total numer of indices of the grid levels   []
+
+        real( kind = core_rknd ), dimension(total_idx_lin_spline), intent(in) ::  &
+          lin_spline_rho_vals,  &    ! Dry, static density                   [kg/m^3]
+          lin_spline_rho_levels      ! The altitudes of the given rho values [m]
+        ! Note:  The lin_spline_rho_levels and lin_spline_rho_vals need to be arranged from
+        !        lowest to highest in altitude
+
+        real( kind = core_rknd ), dimension(grid_levels_idx), intent(in) :: &
+          grid_levels ! levels of grid over which the masses shoud be calculated [m]
+
+        !--------------------- Output Variable ----------------------
+        real( kind = core_rknd ), dimension(grid_levels_idx-1) :: &
+          mass_per_interval ! Array to store the mass of each interval
     """
     # Note:  The lin_spline_rho_levels and lin_spline_rho_vals need to be arranged from
     #        lowest to highest in altitude
@@ -100,18 +112,25 @@ def remapping_matrix(levels_source, levels_target):
     'Arbitrary-Order Conservative and Consistent Remapping and a Theory of Linear Maps: Part II'
     in formula (30)
 
-    Built from source/target *pressure* levels (eq. 30): for target cell k and source cell l, the overlap of
-    the pressure intervals normalized by the target cell thickness:
-      omega = |max(tgt[k+1],src[l+1]) − min(tgt[k],src[l])| if that max < that min, else 0;
-      R[k,l] = omega / |tgt[k+1] − tgt[k]|.
-    For identical source/target levels this is the identity (each cell overlaps only itself).
-
-    Args:
-        levels_source: (ngrdcol, ns) source pressure levels [Pa].
-        levels_target: (ngrdcol, nt) target pressure levels [Pa].
-
     Returns:
-        R_ij: (ngrdcol, nt-1, ns-1).
+        remapping_matrix
+
+    Fortran declarations (remapping_matrix in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          levels_source_idx, & ! number of levels in the target grid []
+          levels_target_idx    ! number of levels in the source grid []
+
+        real( kind = core_rknd ), dimension(levels_source_idx), intent(in) :: &
+          levels_source ! the pressure levels in the source grid [kg/(ms^2)]
+
+        real( kind = core_rknd ), dimension(levels_target_idx), intent(in) :: &
+          levels_target ! the pressure levels in the target grid [kg/(ms^2)]
+
+        !--------------------- Output Variable ---------------------
+        real( kind = core_rknd ), dimension(levels_target_idx-1,levels_source_idx-1) :: &
+          remapping_matrix ! matrix to apply to input values for remapping (R_ij) []
     """
     def _one(ls_i, lt_i):
         #--------------------- Begin Code ---------------------
@@ -130,12 +149,26 @@ def matrix_vector_mult(x_vectors, A_matrices):
     and y,x are vectors with x having dim_input many entries and y having dim_output many entries.
     The result y is calculated for every ngrdcol
 
-    Args:
-        x_vectors:  (ngrdcol, dim_input).
-        A_matrices: (ngrdcol, dim_output, dim_input).
-
     Returns:
-        y_vectors: (ngrdcol, dim_output).
+        y_vectors
+
+    Fortran declarations (matrix_vector_mult in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          ngrdcol, &
+          dim_input, & ! dimension of the input vector []
+          dim_output   ! dimension of the output vector []
+
+        real( kind = core_rknd ), dimension(ngrdcol,dim_input), intent(in) :: &
+          x_vectors  ! values of the x vectors (ngrdcol many vectors)
+
+        real( kind = core_rknd ), dimension(ngrdcol,dim_output,dim_input), intent(in) :: &
+          A_matrices ! values of the matrices (ngrdcol many matrices)
+
+        !--------------------- Output Variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,dim_output) :: &
+          y_vectors ! values of the y vectors (ngrdcol many vectors)
     """
     #--------------------- Begin Code ---------------------
     # matrix vector multiplication
@@ -171,7 +204,25 @@ def _pressure_levels(mass_on_cells, p_sfc):
 #-------------------------------------------------------------------------------
 
 def kmppm(dm, AA, AL, AR, A6, lmt):
-    """the monotonicity constrained defined in the PPM paper."""
+    """the monotonicity constrained defined in the PPM paper
+
+    Fortran declarations (kmppm in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        real(core_rknd), intent(in) :: &
+            dm(*)
+        integer, intent(in) :: &
+            itot      ! Total Longitudes
+        integer, intent(in) :: &
+            lmt     ! 0: Standard PPM constraint
+                    ! 1: Improved full monotonicity constraint (Lin)
+                    ! 2: Positive definite constraint
+                    ! 3: do nothing (return immediately)
+
+        !--------------------- Input/Output Variables ---------------------
+        real(core_rknd), intent(inout) :: &
+            a4(4,*)   ! AA <-- a4(1,i)
+    """
     if lmt == 3:
         return AL, AR, A6
     if lmt == 0:
@@ -211,7 +262,23 @@ def kmppm(dm, AA, AL, AR, A6, lmt):
 def ppm2m(AA, delp, iv, kord):
     """PPM sub-grid reconstruction (remapping_module.F90:ppm2m), top→surface ordering. AA=cell means (ncol,km),
     delp=layer thicknesses (ncol,km). Returns (AL, AR, A6) for f(s)=AL+s[(AR-AL)+A6(1-s)]. Faithful to the
-    kord=4 path (the only one map1_ppm uses); the kord>=7 Huynh branch is omitted."""
+    kord=4 path (the only one map1_ppm uses); the kord>=7 Huynh branch is omitted.
+
+    Fortran declarations (ppm2m in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in):: iv    ! iv =-1: winds
+                                    ! iv = 0: positive definite scalars
+                                    ! iv = 1: others
+        integer, intent(in):: i1   ! Starting longitude
+        integer, intent(in):: i2   ! Finishing longitude
+        integer, intent(in):: km   ! vertical dimension
+        integer, intent(in):: kord    ! Order (or more accurately method no.):
+        real (core_rknd), intent(in):: delp(i1:i2,km)     ! layer pressure thickness
+
+        !--------------------- Input/Output Variables ---------------------
+        real (core_rknd), intent(inout):: a4(4,i1:i2,km)  ! Interpolated values
+    """
     ncol, km = AA.shape
     z = jnp.zeros((ncol, 1), dtype=AA.dtype)
     # Developer: S.-J. Lin, NASA-GSFC
@@ -310,7 +377,23 @@ def ppm2m(AA, delp, iv, kord):
 
 
 def steepz(AA, AL, df2, dm, dq, dp, d4):
-    """the discontinuity adjustment defined in the PPM paper."""
+    """the discontinuity adjustment defined in the PPM paper
+
+    Fortran declarations (steepz in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: km                   ! Total levels
+        integer, intent(in) :: i1                   ! Starting longitude
+        integer, intent(in) :: i2                   ! Finishing longitude
+        real(core_rknd), intent(in) ::  dp(i1:i2,km)       ! grid size
+        real(core_rknd), intent(in) ::  dq(i1:i2,km)       ! backward diff of q
+        real(core_rknd), intent(in) ::  d4(i1:i2,km)       ! backward sum:  dp(k)+ dp(k-1)
+        real(core_rknd), intent(in) :: df2(i1:i2,km)       ! first guess mismatch
+        real(core_rknd), intent(in) ::  dm(i1:i2,km)       ! monotonic mismatch
+
+        !--------------------- Input/Output Variables ---------------------
+        real(core_rknd), intent(inout) ::  a4(4,i1:i2,km)  ! first guess/steepened
+    """
     ncol, km = AA.shape
     z = jnp.zeros((ncol, 1), dtype=AA.dtype)
     #--------------------- Begin Code ---------------------
@@ -342,7 +425,35 @@ def steepz(AA, AL, df2, dm, dq, dp, d4):
 def map1_ppm(pe1, q1, pe2, iv, kord):
     """E3SM PPM vertical remap (remapping_module.F90:map1_ppm), all arrays TOP→SURFACE (increasing pressure).
     pe1 (ncol, km+1) source edges, q1 (ncol, km) source means, pe2 (ncol, kn+1) target edges. Returns q2
-    (ncol, kn). Conservative: integrates the PPM sub-grid parabola of each source cell over each target cell."""
+    (ncol, kn). Conservative: integrates the PPM sub-grid parabola of each source cell over each target cell.
+
+    Fortran declarations (map1_ppm in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: i1                ! Starting longitude
+        integer, intent(in) :: i2                ! Finishing longitude
+        integer, intent(in) :: itot              ! Total latitudes
+        integer, intent(in) :: iv                ! Mode: 0 ==  constituents  1 == ???
+        integer, intent(in) :: kord              ! Method order
+        integer, intent(in) :: j                 ! Current latitude
+        integer, intent(in) :: jfirst            ! Starting latitude
+        integer, intent(in) :: jlast             ! Finishing latitude
+        integer, intent(in) :: ng_s              ! Ghosted latitudes south
+        integer, intent(in) :: ng_n              ! Ghosted latitudes north
+        integer, intent(in) :: km                ! Original vertical dimension
+        integer, intent(in) :: kn                ! Target vertical dimension
+
+        real( core_rknd ), intent(in) ::  pe1(itot,km+1)  ! pressure at layer edges
+                                                          ! (from model top to bottom surface)
+                                                          ! in the original vertical coordinate
+        real( core_rknd ), intent(in) ::  pe2(itot,kn+1)  ! pressure at layer edges
+                                                          ! (from model top to bottom surface)
+                                                          ! in the new vertical coordinate
+        real( core_rknd ), intent(in) ::  q1(itot,jfirst-ng_s:jlast+ng_n,km) ! Field input
+
+        !--------------------- Input/Output Variables ---------------------
+        real( core_rknd ), intent(inout)::  q2(itot,jfirst-ng_s:jlast+ng_n,kn) ! Field output
+    """
     ncol, kmp1 = pe1.shape
     km = kmp1 - 1
     kn = pe2.shape[1] - 1
@@ -395,6 +506,38 @@ def map1_ppm(pe1, q1, pe2, iv, kord):
 def remap_vals_ppm(levels_source, levels_target, source_values, iv, kord=4):
     """This is a wrapper function for E3SM's subroutine implementing the
     Piecewise Parabolic Method (PPM) that takes in the pressure levels from surface to top
+
+    Returns:
+        remap_vals_ppm
+
+    Fortran declarations (remap_vals_ppm in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          ngrdcol, &
+          levels_source_idx, & ! number of levels in the target grid []
+          levels_target_idx    ! number of levels in the source grid []
+
+        real( kind = core_rknd ), dimension(ngrdcol,levels_source_idx), intent(in) :: &
+          levels_source ! the pressure levels of the source grid [kg/(ms^2)]
+
+        real( kind = core_rknd ), dimension(ngrdcol,levels_target_idx), intent(in) :: &
+          levels_target ! the pressure levels of the target grid [kg/(ms^2)]
+
+        real( kind = core_rknd ), dimension(ngrdcol,levels_source_idx-1), intent(in) :: &
+          source_values  ! given values on the source grid that should be remapped
+                         ! to the target grid
+
+        integer, intent(in) :: &
+          iv  ! setting for E3SM's PPM method, that sets what type of value is remapped,
+              ! the following are the three valid settings:
+              ! iv =-1: winds
+              ! iv = 0: positive definite scalars
+              ! iv = 1: others
+
+        !--------------------- Output Variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,levels_target_idx-1) :: &
+          remap_vals_ppm ! remapped values with the dimension following the target grid
     """
     # the pressure levels and values are flipped, since map1_ppm takes in the grids
     # from top to surface instead of surface to top, like CLUBB does
@@ -422,6 +565,56 @@ def remap_vals_to_target(levels_source, levels_target, rho_lin_spline_vals, rho_
 
     Returns:
         target_values: (ngrdcol, nt-1).
+
+    Fortran declarations (remap_vals_to_target in src/CLUBB_core/remapping_module.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          ngrdcol, &
+          source_values_idx, & ! dimension of source_values []
+          target_values_idx    ! dimension of remapped source_values on target grid []
+
+        type( grid ) :: &
+          gr_source, & ! source grid object, where source_values are given
+          gr_target    ! target grid object, where source_values are remapped to
+
+        integer, intent(in) :: &
+          total_idx_rho_lin_spline ! number of indices for the linear spline definition arrays []
+
+        real( kind = core_rknd ), dimension(ngrdcol,total_idx_rho_lin_spline), intent(in) :: &
+          rho_lin_spline_vals, & ! rho values at the given altitudes [kg/m^3]
+          rho_lin_spline_levels  ! altitudes for the given rho values [m]
+        ! Note: both these arrays need to be sorted from low to high altitude
+        !       rho_lin_spline_vals, rho_lin_spline_levels build an array of (x,y) points that are
+        !       used to construct a piecewise linear function for rho, such that the exact
+        !       integral can be calculated
+
+        real( kind = core_rknd ), dimension(ngrdcol,source_values_idx), intent(in) :: &
+          source_values  ! given values on the source grid that should be remapped
+                         ! to the target grid
+
+        integer, intent(in) :: &
+          iv ! setting for E3SM's PPM method, that sets what type of value is remapped,
+             ! the following are the three valid settings:
+             ! iv =-1: winds
+             ! iv = 0: positive definite scalars
+             ! iv = 1: others
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          p_sfc ! prescribed pressure at the surface [Pa]
+
+        integer, intent(in) :: &
+          grid_remap_method ! specifies which remapping method should be used
+                            ! options: 1. Ullrich linear remapping scheme (first order)
+                            !          2. Piecewise Parabolic Method (PPM) (high order)
+
+        logical, intent(in) :: &
+          l_zt_variable ! if .true., the variable that was input is given on the zt levels of
+                        ! the grid, if it is .false., it is given on the zm levels
+
+        !--------------------- Output Variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,target_values_idx) :: &
+          remap_vals_to_target ! remapped values with the dimension of the target grid
     """
     if grid_remap_method not in (_CONS_ULLRICH_REMAP, _PPM_REMAP):
         print(

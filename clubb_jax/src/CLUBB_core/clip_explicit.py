@@ -61,24 +61,66 @@ _CORE_EPS = jnp.finfo(core_rknd).eps
 
 @partial(jax.jit, static_argnames=("nzm", "ngrdcol", "solve_type"))
 def clip_covar(nzm: int, ngrdcol: int, solve_type: int, xp2, yp2, xpyp):
-    """Clip covariance x'y' based on the correlation between x and y.
+    """Clipping the value of covariance x'y' based on the correlation between x
+    and y.
+    and y.  This is all done at a single vertical level.
 
     The correlation between variables x and y is:
 
-      corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ]
+    corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
 
-    The correlation must stay between -1 and 1. Therefore, x'y' has upper and
-    lower limits:
+    where x'^2 is the variance of x, y'^2 is the variance of y, and x'y' is
+    the covariance of x and y.
 
-      x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ]
-      x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ]
+    The correlation of two variables must always have a value between -1
+    and 1, such that:
 
-    The values of x'y', x'^2, and y'^2 are all found on momentum levels. The
-    value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is
+    -1 <= corr_(x,y) <= 1.
+
+    Therefore, there is an upper limit on x'y', such that:
+
+    x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
+
+    and a lower limit on x'y', such that:
+
+    x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
+
+    The values of x'y', x'^2, and y'^2 are all found on momentum levels.
+
+    The value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is
     updated.
 
-    References:
-      None
+    The following covariances are found in the code:
+
+    w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp);
+    r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp);
+    u'w', v'w', w'edsclr' (computed in advance_windm_edsclrm);
+    and w'hm' (computed in setup_pdf_parameters).
+
+    Returns:
+        (xpyp_out, xpyp_chnge)
+
+    Fortran declarations (clip_covar in src/CLUBB_core/clip_explicit.F90):
+
+        ! -------------------------- Input Variables --------------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        integer, intent(in) :: &
+          solve_type       ! Variable being solved; used for STATS.
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          xp2, & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
+          yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
+
+        ! ------------------------- InOut Variable -------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
+
+        !-------------------------- Output Variable --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          xpyp_chnge  ! Net change in x'y' due to clipping [{x units}*{y units}]
     """
     del ngrdcol
 
@@ -114,18 +156,48 @@ def clip_variance(
     xp2,
     threshold_hi=None,
 ):
-    """Clip variance x'^2 based on minimum and optional maximum thresholds.
+    """Clipping the value of variance x'^2 based on a minimum and (optional) max threshold value.
+    The threshold value must be greater than or equal to 0.
 
-    The threshold value must be greater than or equal to 0. The values of x'^2
-    are found on momentum levels.
+    The values of x'^2 are found on the momentum levels.
 
     The following variances are found in the code:
 
-    r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, computed in advance_xp2_xpyp; and
-    w'^2, computed in advance_wp2_wp3.
+    r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in advance_xp2_xpyp);
+    w'^2 (computed in advance_wp2_wp3).
 
-    References:
-      None
+    Returns:
+        (xp2_out, stats)
+
+    Fortran declarations (clip_variance in src/CLUBB_core/clip_explicit.F90):
+
+        ! -------------------- Input Variables --------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        type (grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          solve_type  ! Variable being solved; used for STATS
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt          ! Model timestep; used here for STATS     [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          threshold_lo   ! Minimum value of x'^2                   [{x units}^2]
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        ! -------------------- Output Variable --------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
+
+        ! -------------------- Optional Input Variables --------------------
+        real( kind = core_rknd ), intent(in), optional :: &
+          threshold_hi   ! Maximum value of x'^2                   [{x units}^2]
     """
     del ngrdcol, gr
     # TODO: Source threshold_lo > threshold_hi STOP has no JAX fatal contract;
@@ -211,9 +283,7 @@ def clip_covars_denom(
     upwp_pert,
     vpwp_pert,
 ):
-    """Clip covariances after denominator terms have been altered.
-
-    Some of the covariances found in the CLUBB model code need to be clipped
+    """Some of the covariances found in the CLUBB model code need to be clipped
     multiple times during each timestep to ensure that the correlation between
     the two relevant variables stays between -1 and 1 at all times during the
     model run.  The covariances that need to be clipped multiple times are
@@ -227,8 +297,58 @@ def clip_covars_denom(
     in the relevant correlation equation have been altered, ensuring that
     all correlations will remain between -1 and 1 at all times.
 
-    References:
-      None
+    Returns:
+        (wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num, wprtp, wpthlp,
+          upwp, vpwp, wpsclrp, upwp_pert, vpwp_pert, stats)
+
+    Fortran declarations (clip_covars_denom in src/CLUBB_core/clip_explicit.F90):
+
+        ! --------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol, &
+          sclr_dim
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rtp2,  & ! r_t'^2         [(kg/kg)^2]
+          thlp2, & ! theta_l'^2     [K^2]
+          up2,   & ! u'^2           [m^2/s^2]
+          vp2,   & ! v'^2           [m^2/s^2]
+          wp2      ! w'^2           [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) :: &
+          sclrp2 ! sclr'^2  [{units vary}^2]
+
+        logical, intent(in) :: &
+          l_linearize_pbl_winds, & ! Flag (used by E3SM) to linearize PBL winds
+          l_predict_upwp_vpwp      ! Prognose u'w' and v'w'
+
+        ! --------------------- Input/Output Variables ---------------------
+        type(stats_type), intent(inout) :: &
+          stats
+
+        integer, intent(inout) :: &
+          wprtp_cl_num,  &
+          wpthlp_cl_num, &
+          upwp_cl_num,   &
+          vpwp_cl_num
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          wprtp,  & ! w'r_t'        [(kg/kg) m/s]
+          wpthlp, & ! w'theta_l'    [K m/s]
+          upwp,   & ! u'w'          [m^2/s^2]
+          vpwp      ! v'w'          [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(inout) :: &
+          wpsclrp ! w'sclr'         [units m/s]
+
+        ! Variables used to track perturbed version of winds.
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
+          vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
     """
     l_sample = stats.l_sample
 
@@ -360,11 +480,11 @@ def clip_skewness(
 
     For altitudes less than or equal to 100 meters above ground level (AGL):
 
-    -0.2_core_rknd*sqrt(2) <= Sk_w <= 0.2_core_rknd*sqrt(2);
+    -0.2*sqrt(2) <= Sk_w <= 0.2*sqrt(2);
 
     while for all altitudes greater than 100 meters AGL:
 
-    -4.5_core_rknd <= Sk_w <= 4.5_core_rknd.
+    -4.5 <= Sk_w <= 4.5.
 
     Therefore, there is an upper limit on w'^3, such that:
 
@@ -379,8 +499,40 @@ def clip_skewness(
     are interpolated to the thermodynamic levels before being used to
     calculate the upper and lower limits for w'^3.
 
-    References:
-      None
+    Returns:
+        (wp3, stats)
+
+    Fortran declarations (clip_skewness in src/CLUBB_core/clip_explicit.F90):
+
+        ! ----------------------- Input Variables -----------------------
+        integer, intent(in) :: &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt               ! Model timestep; used here for STATS        [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          sfc_elevation,    & ! Elevation of ground level                  [m AMSL]
+          Skw_max_mag         ! Maximum allowable magnitude of Skewness    [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
+
+        ! Flag to activate modifications on wp3 limiters for convergence test
+        ! (use smooth Heaviside 'Preskin' function in the calculation of
+        ! clip_skewness for wp3)
+        logical, intent(in):: &
+          l_use_wp3_lim_with_smth_Heaviside
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        ! ----------------------- Input/Output Variables -----------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
     """
     l_sample = stats.l_sample
     if l_sample:
@@ -432,6 +584,31 @@ def clip_skewness_core(
     For all altitudes greater than 100 meters AGL:
 
       -4.5 <= Sk_w <= 4.5
+
+    Fortran declarations (clip_skewness_core in src/CLUBB_core/clip_explicit.F90):
+
+        !----------------------- Input Variables -----------------------
+        integer, intent(in) :: &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          sfc_elevation,  & ! Elevation of ground level                  [m AMSL]
+          Skw_max_mag       ! Maximum allowable magnitude of Skewness    [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
+
+        ! Flag to activate modifications on wp3 limiters for convergence test
+        ! (use smooth Heaviside 'Preskin' function in the calculation of clip_skewness for wp3)
+        logical, intent(in):: &
+          l_use_wp3_lim_with_smth_Heaviside
+
+        !----------------------- Input/Output Variables -----------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
     """
     wp3_max = 100.0
 
@@ -485,13 +662,29 @@ def clip_skewness_core(
 
 @partial(jax.jit, static_argnames=("nzt", "ngrdcol", "message"))
 def clip_rcm(nzt: int, ngrdcol: int, rtm, message: str, rcm):
-    """Reduce cloud water rcm whenever it exceeds total water rtm.
+    """Subroutine that reduces cloud water (rcm) whenever
+    it exceeds total water (rtm = vapor + liquid).
+    This avoids negative values of rvm = water vapor mixing ratio.
+    However, it will not ensure that rcm <= rtm if rtm <= 0.
 
-    This avoids negative values of rvm, the water vapor mixing ratio. However,
-    it will not ensure that rcm <= rtm if rtm <= 0.
+    Returns:
+        rcm
 
-    References:
-      None
+    Fortran declarations (clip_rcm in src/CLUBB_core/clip_explicit.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzt, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          rtm           ! Total water mixing ratio             [kg/kg]
+
+        character(len= * ), intent(in) :: message
+
+        !--------------------------- Input/Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          rcm           ! Cloud water mixing ratio  [kg/kg]
     """
     del nzt, ngrdcol
     if clubb_at_least_debug_level(3):

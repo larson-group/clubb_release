@@ -779,7 +779,7 @@ module diffusion
       k_mdiag   = 2, & ! Momentum main diagonal index.
       km1_mdiag = 3    ! Momentum subdiagonal index.
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       nzt, &
@@ -798,7 +798,7 @@ module diffusion
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       nu                ! Background constant coef. of eddy diffusivity [m^2/s]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(3,ngrdcol,nzm), intent(out) :: &
       lhs     ! LHS coefficient of diffusion term    [1/s]
 

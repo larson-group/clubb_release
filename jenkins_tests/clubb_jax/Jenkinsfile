@@ -14,6 +14,17 @@ pipeline {
         '''
       }
     }
+    stage('Fortran declaration match') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            # Fails when a JAX docstring no longer carries the argument declarations
+            # of its Fortran routine; fix with -write_declaration (see the script's README).
+            python3 utilities/port_fortran_declarations_to_jax_docstrings/port_fortran_declarations_to_jax_docstrings.py -check
+          '''
+        }
+      }
+    }
     stage('File-name parity') {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {

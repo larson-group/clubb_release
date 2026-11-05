@@ -118,10 +118,133 @@ def advance_windm_edsclrm(
 ):
     """Solves for both mean horizontal wind components, um and vm, and for the
     eddy-scalars (passive scalars that don't use the high-order closure).
+    With l_do_expldiff_rtm_thlm, sclr_idx must identify distinct, valid
+    thlm/rtm slots, which check_clubb_settings verifies. Those slots hold
+    temporary copies for diffusion, so their edsclrm_forcing and surface
+    flux (wpedsclrp at gr.k_lb_zm, i.e. wpedsclrp_sfc) must be zero.
 
-    Uses the LAPACK tridiagonal solver subroutine with 2 + # of scalar(s)
-    back substitutions (since the left hand side matrix is the same for all
-    input variables).
+    References:
+    Eqn. 8 & 9 on p. 3545 of
+    ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+    Method and Model Description'' Golaz, et al. (2002)
+    JAS, Vol. 59, pp. 3540--3551.
+
+    Returns:
+        (upwp_cl_num, vpwp_cl_num, um, vm, thlm, rtm, edsclrm, upwp, vpwp,
+          wpedsclrp, um_pert, vm_pert, upwp_pert, vpwp_pert, err_info, stats)
+
+    Fortran declarations (advance_windm_edsclrm in src/CLUBB_core/advance_windm_edsclrm_module.F90):
+
+        ! ------------------------ Input Variables ------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol, &
+          edsclr_dim
+
+        type (grid), intent(in) :: &
+          gr
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx  ! Indices identifying the eddy scalars for thlm and rtm [-]
+
+        real( kind = core_rknd ), intent(in) ::  &
+          dt                 ! Model timestep                             [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
+          wm_zt,           & ! w wind component on thermodynamic levels    [m/s]
+          ug,              & ! u (west-to-east) geostrophic wind comp.     [m/s]
+          vg,              & ! v (south-to-north) geostrophic wind comp.   [m/s]
+          um_ref,          & ! Reference u wind component for nudging      [m/s]
+          vm_ref,          & ! Reference v wind component for nudging      [m/s]
+          um_forcing,      & ! u forcing                                   [m/s/s]
+          vm_forcing,      & ! v forcing                                   [m/s/s]
+          p_in_Pa,         & ! Air pressure (thermodynamic levels)          [Pa]
+          rho_ds_zt,       & ! Dry, static density on thermodynamic levels  [kg/m^3]
+          invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels  [m^3/kg]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
+          Kh_zm,           & ! Eddy diffusivity for scalars on momentum levs. [m^2/s]
+          wp2,             & ! w'^2 (momentum levels)                      [m^2/s^2]
+          up2,             & ! u'^2 (momentum levels)                      [m^2/s^2]
+          vp2,             & ! v'^2 (momentum levels)                      [m^2/s^2]
+          rho_ds_zm          ! Dry, static density on momentum levels      [kg/m^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) ::  &
+          clubb_params     ! Array of CLUBB's tunable parameters            [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim), intent(in) ::  &
+          edsclrm_forcing  ! Eddy scalar large-scale forcing        [{units vary}/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          fcor           ! Coriolis parameter                            [s^-1]
+
+        logical, intent(in) ::  &
+          l_implemented  ! True if CLUBB is being implemented and run in a host model
+
+        type(nu_vertical_res_dep), intent(in) :: &
+          nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+        real( kind = core_rknd ), intent(in) ::  &
+          ts_nudge               ! Timescale of u/v nudging             [s]
+
+        integer, intent(in) :: &
+          tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
+        logical, intent(in) :: &
+          l_predict_upwp_vpwp,   & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside
+                                   ! the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and
+                                   ! <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise, <u'w'> and
+                                   ! <v'w'> are still approximated by eddy diffusivity when <u> and <v>
+                                   ! are advanced in subroutine advance_windm_edsclrm.
+          l_upwind_xm_ma,        & ! This flag determines whether we want to use an upwind differencing
+                                   ! approximation rather than a centered differencing for turbulent or
+                                   ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+          l_uv_nudge,            & ! For wind speed nudging
+          l_lmm_stepping,        & ! Apply Linear Multistep Method (LMM) Stepping
+          l_linearize_pbl_winds,  & ! Flag (used by E3SM) to linearize PBL winds
+          l_do_expldiff_rtm_thlm   ! Explicitly diffuse rtm and thlm with eddy scalars
+
+        integer, intent(in) :: &
+          fill_holes_type
+
+        integer, intent(inout) :: &
+          upwp_cl_num, &
+          vpwp_cl_num
+
+        ! ------------------------ Input/Output Variables ------------------------
+        type(stats_type), intent(inout) :: &
+          stats
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) ::  &
+          um,   & ! Mean u (west-to-east) wind component         [m/s]
+          vm,   & ! Mean v (south-to-north) wind component       [m/s]
+          thlm, & ! Liquid potential temperature                 [K]
+          rtm     ! Total water mixing ratio                     [kg/kg]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) ::  &
+          upwp, & ! <u'w'> (momentum levels)                     [m^2/s^2]
+          vpwp    ! <v'w'> (momentum levels)                     [m^2/s^2]
+
+        ! Input/Output Variable for eddy-scalars
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim), intent(inout) ::  &
+          edsclrm        ! Mean eddy scalar quantity             [units vary]
+
+        ! Output Variable for eddy-scalars
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,edsclr_dim), intent(inout) ::  &
+          wpedsclrp      ! w'edsclr' (momentum levels)           [m/s {units vary}]
+
+        ! Variables used to track perturbed version of winds.
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          um_pert,   & ! perturbed <u>    [m/s]
+          vm_pert      ! perturbed <v>    [m/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
+          vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
+
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
     """
     # Retain immutable pre-solve values solely for the Fortran failure dump.
     um_before, vm_before = um, vm
@@ -786,7 +909,7 @@ def windm_edsclrm_solve(
     stats, l_need_rcond,
     lhs, rhs, err_info,
 ):
-    """Solves the horizontal wind or eddy-scalar time-tendency equation, and
+    r"""Solves the horizontal wind or eddy-scalar time-tendency equation, and
     diagnoses the turbulent flux.  A Crank-Nicholson time-stepping algorithm
     is used in solving the turbulent advection term and in diagnosing the
     turbulent flux.
@@ -796,11 +919,503 @@ def windm_edsclrm_solve(
     d(xm)/dt = - w * d(xm)/dz - (1/rho_ds) * d( rho_ds * x'w' )/dz
                + xm_forcings.
 
+    The Turbulent Advection Term
+    ----------------------------
+
+    The above equation contains a turbulent advection term:
+
+    - (1/rho_ds) * d( rho_ds * x'w' )/dz;
+
+    where the momentum flux, x'w', is closed using a down gradient approach:
+
+    x'w' = - K_zm * d(xm)/dz.
+
+    The turbulent advection term becomes:
+
+    + (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz;
+
+    which is the same as a standard eddy-diffusion term (if "rho_ds * K_zm" in
+    the term above is substituted for "K_zm" in a standard eddy-diffusion
+    term, and if the standard eddy-diffusion term is multiplied by
+    "1/rho_ds").  Thus, the turbulent advection term is treated and solved in
+    the same way that a standard eddy-diffusion term would be solved.  The
+    term is discretized as follows:
+
+    The values of xm are found on the thermodynamic levels, while the values
+    of K_zm are found on the momentum levels.  Additionally, the values of
+    rho_ds_zm are found on the momentum levels, and the values of
+    invrs_rho_ds_zt are found on the thermodynamic levels.  The
+    derivatives (d/dz) of xm are taken over the intermediate momentum levels.
+    At the intermediate momentum levels, d(xm)/dz is multiplied by K_zm and by
+    rho_ds_zm.  Then, the derivative of the whole mathematical expression is
+    taken over the central thermodynamic level, where it is multiplied by
+    invrs_rho_ds_zt, which yields the desired result.
+
+    ---xm(kp1)----------------------------------------------------- t(k+1)
+
+    ===========d(xm)/dz===K_zm(k+1)===rho_ds_zm(k+1)=============== m(k+1)
+
+    ---xm(k)---invrs_rho_ds_zt---d[rho_ds_zm*K_zm*d(xm)/dz]/dz----- t(k)
+
+    ===========d(xm)/dz===K_zm(k)=====rho_ds_zm(k)================= m(k)
+
+    ---xm(km1)----------------------------------------------------- t(k-1)
+
+    The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
+    with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
+    The letter "t" is used for thermodynamic levels and the letter "m" is used
+    for momentum levels.
+
+    invrs_dzt(k)   = 1 / ( zm(k+1) - zm(k) )
+    invrs_dzm(k+1) = 1 / ( zt(k+1) - zt(k) )
+    invrs_dzm(k)   = 1 / ( zt(k) - zt(k-1) )
+
+    The vertically discretized form of the turbulent advection term (treated
+    as an eddy diffusion term) is written out as:
+
+    + invrs_rho_ds_zt(k)
+      * invrs_dzt(k)
+        * [   rho_ds_zm(k+1) * K_zm(k+1)
+              * invrs_dzm(k+1) * ( xm(k+1) - xm(k) )
+            - rho_ds_zm(k) * K_zm(k)
+              * invrs_dzm(k) * ( xm(k) - xm(k-1) ) ].
+
+    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme is
+    used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
+    eddy-diffusion term.  The discretized implicit portion of the term is
+    written out as:
+
+    + (1/2) * invrs_rho_ds_zt(k)
+      * invrs_dzt(k)
+        * [   rho_ds_zm(k+1) * K_zm(k+1)
+              * invrs_dzm(k+1) * ( xm(k+1,<t+1>) - xm(k,<t+1>) )
+            - rho_ds_zm(k) * K_zm(k)
+              * invrs_dzm(k) * ( xm(k,<t+1>) - xm(k-1,<t+1>) ) ].
+
+    Note:  When the implicit term is brought over to the left-hand side,
+           the sign is reversed and the leading "+" in front of the term
+           is changed to a "-".
+
+    The discretized explicit portion of the term is written out as:
+
+    + (1/2) * invrs_rho_ds_zt(k)
+      * invrs_dzt(k)
+        * [   rho_ds_zm(k+1) * K_zm(k+1)
+              * invrs_dzm(k+1) * ( xm(k+1,<t>) - xm(k,<t>) )
+            - rho_ds_zm(k) * K_zm(k)
+              * invrs_dzm(k) * ( xm(k,<t>) - xm(k-1,<t>) ) ].
+
+    Timestep index (t) stands for the index of the current timestep, while
+    timestep index (t+1) stands for the index of the next timestep, which is
+    being advanced to in solving the d(xm)/dt equation.
+
+    Boundary Conditions:
+
+    An eddy-scalar quantity is not allowed to flux out the upper boundary.
+    Thus, a zero-flux boundary condition is used for the upper boundary in the
+    eddy-diffusion equation.
+
+    The lower boundary condition is much more complicated.  It is neither a
+    zero-flux nor a fixed-point boundary condition.  Rather, it is a
+    fixed-flux boundary condition.  This term is a turbulent advection term,
+    but with the eddy-scalars, the only value of x'w' relevant in solving the
+    d(xm)/dt equation is the value of x'w' at the surface (the first momentum
+    level), which is written as x'w'|_sfc.
+
+    1) x'w' surface flux; generalized explicit form
+
+       The x'w' surface flux is applied to the d(xm)/dt equation through the
+       turbulent advection term, which is:
+
+       - (1/rho_ds) * d( rho_ds * x'w' )/dz.
+
+       At most vertical levels, a substitution can be made for x'w', such
+       that:
+
+       x'w' = - K_zm * d(xm)/dz.
+
+       However, the same substitution cannot be made at the surface (momentum
+       level 1), as x'w'|_sfc is a surface flux that is explicitly computed
+       elsewhere in the model code.
+
+       The lower boundary condition, which in this case needs to be applied to
+       the d(xm)/dt equation at level 1, is discretized as follows:
+
+       --xm(2)------------------------------------------------------- t(2)
+
+       ========[x'w'(2) = -K_zm(2)*d(xm)/dz]===rho_ds_zm(2)========== m(2)
+
+       --xm(1)---invrs_rho_ds_zt(1)---d[rho_ds_zm*K_zm*d(xm)/dz]/dz-- t(1)
+
+       ========[x'w'|_sfc]=====================rho_ds_zm(1)========== m(1) sfc
+
+       where "sfc" is the level of the model surface or lower boundary.
+
+       The vertically discretized form of the turbulent advection term
+       (treated as an eddy diffusion term), with the explicit surface flux,
+       x'w'|_sfc, in place, is written out as:
+
+       - invrs_rho_ds_zt(1)
+         * invrs_dzt(1) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
+
+       and after substituting x'w'(2) = -K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) ),
+       this expression can be re-written as:
+
+       + invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * [   rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) )
+               + rho_ds_zm(1) * x'w'|_sfc ];
+
+       which can be re-written again as:
+
+       + invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) )
+       + invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * rho_ds_zm(1) * x'w'|_sfc.
+
+       For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
+       is used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
+       eddy-diffusion term.  The discretized implicit portion of the term is
+       written out as:
+
+       + (1/2) * invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * [ rho_ds_zm(2) * K_zm(2)
+               * invrs_dzm(2) * ( xm(2,<t+1>) - xm(1,<t+1>) ) ].
+
+       Note:  When the implicit term is brought over to the left-hand side,
+              the sign is reversed and the leading "+" in front of the term
+              is changed to a "-".
+
+       The discretized explicit portion of the term is written out as:
+
+       + (1/2) * invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * [ rho_ds_zm(2) * K_zm(2)
+               * invrs_dzm(2) * ( xm(2,<t>) - xm(1,<t>) ) ]
+       + invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * rho_ds_zm(1) * x'w'|_sfc.
+
+       Note:  The x'w'|_sfc portion of the term written above has been pulled
+              away from the rest of the explicit form written above because
+              the (1/2) factor due to Crank-Nicholson time_stepping does not
+              apply to it, as there isn't an implicit portion for x'w'|_sfc.
+
+       Timestep index (t) stands for the index of the current timestep, while
+       timestep index (t+1) stands for the index of the next timestep, which
+       is being advanced to in solving the d(xm)/dt equation.
+
+    2) x'w' surface flux; implicit form for momentum fluxes u'w' and v'w'
+
+       The x'w' surface flux is applied to the d(xm)/dt equation through the
+       turbulent advection term, which is:
+
+       - (1/rho_ds) * d( rho_ds * x'w' )/dz.
+
+       At most vertical levels, a substitution can be made for x'w', such
+       that:
+
+       x'w' = - K_zm * d(xm)/dz.
+
+       However, the same substitution cannot be made at the surface (momentum
+       level 1), as x'w'|_sfc is a surface momentum flux that is found by the
+       following equation:
+
+       x'w'|_sfc = - [ u_star^2 / sqrt( um^2 + vm^2 ) ] * xm;
+
+       where x'w'|_sfc and xm are either u'w'|_sfc and um, respectively, or
+       v'w'|_sfc and vm, respectively (um and vm are located at the first
+       thermodynamic level above the surface, which is thermodynamic level 1),
+       sqrt( um^2 + vm^2 ) is the wind speed (also at thermodynamic level 1),
+       and u_star is defined as:
+
+       u_star = ( u'w'|_sfc^2 + v'w'|_sfc^2 )^(1/4);
+
+       and thus u_star^2 is defined as:
+
+       u_star^2 = sqrt( u'w'|_sfc^2 + v'w'|_sfc^2 ).
+
+       The value of u_star is either set to a constant value or computed
+       (through function diag_ustar) based on the surface wind speed, the
+       height above surface of the surface wind speed (as compared to the
+       roughness height), and the buoyancy flux at the surface.  Either way,
+       u_star is computed elsewhere in the model, and the values of u'w'|_sfc
+       and v'w'|_sfc are based on it and computed along with it.  The values
+       of u'w'|_sfc and v'w'|_sfc are then passed into advance_clubb_core,
+       and are eventually passed into advance_windm_edsclrm.  In subroutine
+       advance_windm_edsclrm, the value of u_star_sqd is then recomputed
+       based on u'w'|_sfc and v'w'|_sfc.  The value of sqrt( u_star_sqd ) is
+       consistent with the value of the original computation of u_star.
+
+       The equation listed above is substituted for x'w'|_sfc.  The lower
+       boundary condition, which in this case needs to be applied to the
+       d(xm)/dt equation at level 1, is discretized as follows:
+
+       --xm(2)------------------------------------------------------- t(2)
+
+       ===[x'w'(2) = -K_zm(2)*d(xm)/dz]=================rho_ds_zm(2)= m(2)
+
+       --xm(1)---invrs_rho_ds_zt(1)---d[rho_ds_zm*K_zm*d(xm)/dz]/dz-- t(1)
+
+       ===[x'w'|_sfc = -[u_star^2/sqrt(um^2+vm^2)]*xm]==rho_ds_zm(1)= m(1) sfc
+
+       where "sfc" is the level of the model surface or lower boundary.
+
+       The vertically discretized form of the turbulent advection term
+       (treated as an eddy diffusion term), with the implicit surface momentum
+       flux in place, is written out as:
+
+       - invrs_rho_ds_zt(1)
+         * invrs_dzt(1) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
+
+       which can be re-written as:
+
+       - invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * [   rho_ds_zm(2)
+                 * { - K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) ) }
+               - rho_ds_zm(1)
+                 * { - [ u_star^2 / sqrt( um(1)^2 + vm(1)^2 ) ] * xm(1) } ];
+
+       which can be re-written as:
+
+       + invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) )
+       - invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * rho_ds_zm(1) * [ u_star^2 / sqrt( um(1)^2 + vm(1)^2 ) ] * xm(1).
+
+       For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
+       is used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
+       eddy-diffusion term.  The discretized implicit portion of the term is
+       written out as:
+
+       + (1/2) * invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * [ rho_ds_zm(2) * K_zm(2)
+               * invrs_dzm(2) * ( xm(2,<t+1>) - xm(1,<t+1>) ) ]
+       - invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * rho_ds_zm(1)
+           * [u_star^2/sqrt( um(1,<t>)^2 + vm(1,<t>)^2 )] * xm(1,<t+1>).
+
+       Note:  When the implicit term is brought over to the left-hand side,
+              the signs are reversed and the leading "+" in front of the first
+              part of the term is changed to a "-", while the leading "-" in
+              front of the second part of the term is changed to a "+".
+
+       Note:  The x'w'|_sfc portion of the term written above has been pulled
+              away from the rest of the implicit form written above because
+              the (1/2) factor due to Crank-Nicholson time_stepping does not
+              apply to it.  The x'w'|_sfc portion of the term is treated
+              completely implicitly in order to enhance numerical stability.
+
+       The discretized explicit portion of the term is written out as:
+
+       + (1/2) * invrs_rho_ds_zt(1)
+         * invrs_dzt(1)
+           * [ rho_ds_zm(2) * K_zm(2)
+               * invrs_dzm(2) * ( xm(2,<t>) - xm(1,<t>) ) ].
+
+       Timestep index (t) stands for the index of the current timestep, while
+       timestep index (t+1) stands for the index of the next timestep, which
+       is being advanced to in solving the d(xm)/dt equation.
+
+    The lower boundary condition for the implicit and explicit portions of the
+    turbulent advection term, without the x'w'|_sfc portion of the term, can
+    easily be invoked by using the zero-flux boundary conditions found in the
+    generalized diffusion function (function diffusion_zt_lhs), which is used
+    for many other equations in this model.  Either the generalized explicit
+    surface flux needs to be added onto the explicit term after the diffusion
+    function has been called from subroutine windm_edsclrm_rhs, or the
+    implicit momentum surface flux needs to be added onto the implicit term
+    after the diffusion function has been called from subroutine
+    windm_edsclrm_lhs.
+
+    Conservation Properties:
+
+    When a fixed-flux lower boundary condition is used (combined with a
+    zero-flux upper boundary condition), this technique of discretizing the
+    turbulent advection term (treated as an eddy-diffusion term) leads to
+    conservative differencing.  When the implicit momentum surface flux is
+    either zero or not used, the column totals for each column in the
+    left-hand side matrix (for the turbulent advection term) should be equal
+    to 0.  Otherwise, the column total for the second column will be equal to
+    rho_ds_zm(1) * x'w'|_sfc<t+1>.   When the generalized explicit surface
+    flux is either zero or not used, the column total for the right-hand side
+    vector (for the turbulent advection term) should be equal to 0.
+    Otherwise, the column total for the right-hand side vector (for the
+    turbulent advection term) will be equal to rho_ds_zm(1) * x'w'|_sfc<t>.
+    This ensures that the total amount of quantity xm over the entire vertical
+    domain is only changed by the surface flux (neglecting any forcing terms).
+    The total amount of change is equal to rho_ds_zm(1) * x'w'|_sfc.
+
+    To see that this conservation law is satisfied by the left-hand side
+    matrix, compute the turbulent advection (treated as eddy diffusion) of xm,
+    neglecting any implicit momentum surface flux, multiply by rho_ds_zt, and
+    integrate vertically.  In discretized matrix notation (where "i" stands
+    for the matrix column and "j" stands for the matrix row):
+
+     0 = Sum_j Sum_i
+          (rho_ds_zt)_i ( dzt )_i
+          ( 0.5 * (1/rho_ds_zt) * (1/dzt) * (rho_ds_zm*K_zm*(1/dzm)) )_ij (xm<t+1>)_j.
+
+    The left-hand side matrix,
+    ( 0.5 * (1/rho_ds_zt) * (1/dzt) * (rho_ds_zm*K_zm*(1/dzm)) )_ij, is
+    partially written below.  The sum over i in the above equation removes
+    (1/rho_ds_zt) and (1/dzt) everywhere from the matrix below.  The sum
+    over j leaves the column totals that are desired, which are 0.
+
+    Left-hand side matrix contributions from the turbulent advection term
+    (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
+    first four vertical levels:
+
+         -------------------------------------------------------------------------------->
+    k=1 |  +0.5*                    -0.5*                                0
+        |    (1/rho_ds_zt(k))*        (1/rho_ds_zt(k))*
+        |    (1/dzt(k))*              (1/dzt(k))*
+        |    rho_ds_zm(k+1)*          rho_ds_zm(k+1)*
+        |    K_zm(k+1)*(1/dzm(k+1))   K_zm(k+1)*(1/dzm(k+1))
+        |
+    k=2 |  -0.5*                    +0.5*                      -0.5*
+        |    (1/rho_ds_zt(k))*        (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
+        |    (1/dzt(k))*              (1/dzt(k))*                (1/dzt(k))*
+        |    rho_ds_zm(k)*            [ rho_ds_zm(k+1)*          rho_ds_zm(k+1)*
+        |    K_zm(k)*(1/dzm(k))         K_zm(k+1)*(1/dzm(k+1))   K_zm(k+1)*(1/dzm(k+1))
+        |                              +rho_ds_zm(k)*
+        |                               K_zm(k)*(1/dzm(k)) ]
+        |
+    k=3 |            0              -0.5*                      +0.5*
+        |                             (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
+        |                             (1/dzt(k))*                (1/dzt(k))*
+        |                             rho_ds_zm(k)*              [ rho_ds_zm(k+1)*
+        |                             K_zm(k)*(1/dzm(k))           K_zm(k+1)*(1/dzm(k+1))
+        |                                                         +rho_ds_zm(k)*
+        |                                                          K_zm(k)*(1/dzm(k)) ]
+        |
+    k=4 |            0                        0                -0.5*
+        |                                                        (1/rho_ds_zt(k))*
+        |                                                        (1/dzt(k))*
+        |                                                        rho_ds_zm(k)*
+        |                                                        K_zm(k)*(1/dzm(k))
+       \ /
+
+    Note:  The superdiagonal term from level 3 and both the main diagonal and
+           superdiagonal terms from level 4 are not shown on this diagram.
+
+    Note:  If an implicit momentum surface flux is used, an additional term,
+           + (1/rho_ds_zt(1)) * (1/dzt(1)) * rho_ds_zm(1)
+             * [ u_star^2 / sqrt( um(1,<t>)^2 + vm(1,<t>)^2 ) ], is added to
+           row 1 (k=1), column 1.
+
+    To see that the above conservation law is satisfied by the right-hand side
+    vector, compute the turbulent advection (treated as eddy diffusion) of xm,
+    neglecting any generalized explicit surface flux, multiply by rho_ds_zt,
+    and integrate vertically.  In discretized matrix notation (where "i"
+    stands for the matrix column and "j" stands for the matrix row):
+
+     0 = Sum_j Sum_i (rho_ds_zt)_i ( dzt )_i ( rhs_vector )_j.
+
+    The right-hand side vector, ( rhs_vector )_j, is partially written below.
+    The sum over i in the above equation removes (1/rho_ds_zt) and (1/dzt)
+    everywhere from the vector below.  The sum over j leaves the column total
+    that is desired, which is 0.
+
+    Right-hand side vector contributions from the turbulent advection term
+    (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
+    first four vertical levels:
+
+         --------------------------------------------------
+    k=1 | +0.5*(1/rho_ds_zt(k))*                           |
+        |      (1/dzt(k))*                                 |
+        |       [ rho_ds_zm(k+1)*K_zm(k+1)*                |
+        |         (1/dzm(k+1))*(xm(k+1,<t>)-xm(k,<t>)) ]   |
+        |                                                  |
+    k=2 | +0.5*(1/rho_ds_zt(k))*                           |
+        |      (1/dzt(k))*                                 |
+        |       [ rho_ds_zm(k+1)*K_zm(k+1)*                |
+        |         (1/dzm(k+1))*(xm(k+1,<t>)-xm(k,<t>))     |
+        |        -rho_ds_zm(k)*K_zm(k)*                    |
+        |         (1/dzm(k))*(xm(k,<t>)-xm(k-1,<t>)) ]     |
+        |                                                  |
+    k=3 | +0.5*(1/rho_ds_zt(k))*                           |
+        |      (1/dzt(k))*                                 |
+        |       [ rho_ds_zm(k+1)*K_zm(k+1)*                |
+        |         (1/dzm(k+1))*(xm(k+1,<t>)-xm(k,<t>))     |
+        |        -rho_ds_zm(k)*K_zm(k)*                    |
+        |         (1/dzm(k))*(xm(k,<t>)-xm(k-1,<t>)) ]     |
+        |                                                  |
+    k=4 | +0.5*(1/rho_ds_zt(k))*                           |
+        |      (1/dzt(k))*                                 |
+        |       [ rho_ds_zm(k+1)*K_zm(k+1)*                |
+        |         (1/dzm(k+1))*(xm(k+1,<t>)-xm(k,<t>))     |
+        |        -rho_ds_zm(k)*K_zm(k)*                    |
+        |         (1/dzm(k))*(xm(k,<t>)-xm(k-1,<t>)) ]     |
+       \ /                                                \ /
+
+    Note:  If a generalized explicit surface flux is used, an additional term,
+           + (1/rho_ds_zt(1)) * (1/dzt(1)) * rho_ds_zm(1) * x'w'|_sfc, is
+           added to row 1 (k=1).
+
+    Note:  Only the contributions by the turbulent advection term are shown
+           for both the left-hand side matrix and the right-hand side vector.
+           There are more terms in the equation, and thus more factors to be
+           added to both the left-hand side matrix (such as time tendency and
+           mean advection) and the right-hand side vector (such as xm
+           forcings).  The left-hand side matrix is set-up so that a singular
+           matrix is not encountered.
+
     References:
     Eqn. 8 & 9 on p. 3545 of
     ``A PDF-Based Model for Boundary Layer Clouds. Part I:
       Method and Model Description'' Golaz, et al. (2002)
     JAS, Vol. 59, pp. 3540--3551.
+
+    Returns:
+        (solution, err_info, stats)
+
+    Fortran declarations (windm_edsclrm_solve in src/CLUBB_core/advance_windm_edsclrm_module.F90):
+
+        ! ------------------------ Input Variables ------------------------
+        integer, intent(in) :: &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          nrhs ! Number of right-hand side (explicit) vectors & Number of solution vectors.
+
+        integer, intent(in) :: &
+          tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
+        logical, intent(in) :: &
+          l_implemented  ! True if CLUBB is being implemented and run in a host model
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        logical, intent(in) :: &
+          l_need_rcond
+
+        ! ------------------------ Inout variables ------------------------
+        real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(inout) :: &
+          lhs    ! Implicit contributions to um, vm, and eddy scalars  [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs), intent(inout) :: &
+          rhs    ! Right-hand side (explicit) contributions.
+
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+
+        ! ------------------------ Output variables ------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs), intent(out) :: &
+          solution ! Solution to the system of equations    [units vary]
     """
     lhs_solve = lhs
     rhs_solve = rhs
@@ -865,10 +1480,46 @@ def windm_edsclrm_implicit_stats(
     l_imp_sfc_momentum_flux,
     stats,
 ):
-    """Compute implicit contributions to um and vm.
+    """Compute implicit contributions to um and vm
 
-    References:
-    None
+    Fortran declarations (windm_edsclrm_implicit_stats in src/CLUBB_core/advance_windm_edsclrm_module.F90):
+
+        !---------------------- Input Variables ----------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        integer, intent(in) :: &
+          solve_type     ! Desc. of what is being solved for
+
+        type(grid), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xm,         & !  Computed value um or vm at <t+1>    [m/s]
+          invrs_dzt     ! The inverse spacing between momentum grid levels;
+                        ! centered over thermodynamic grid levels.
+
+        real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(in) :: &
+          lhs_diff, & ! LHS diffustion terms
+          lhs_ma_zt   ! LHS mean advection terms
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wind_speed,      & ! wind speed; sqrt(u^2 + v^2)              [m/s]
+          invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels  [m^3/kg]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rho_ds_zm          ! Dry, static density on momentum levels      [kg/m^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          u_star_sqd   ! Surface friction velocity, u_star, squared      [m/s]
+
+        logical, intent(in) :: &
+          l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
+
+        type(stats_type), intent(inout) :: &
+          stats
     """
     del nzm
     if not stats.l_sample:
@@ -1015,6 +1666,37 @@ def compute_uv_tndcy(
     and v_g are all found on the thermodynamic levels.
 
     Wind forcing from the GCSS cases is also added here.
+
+    Returns:
+        (xm_tndcy, stats)
+
+    Fortran declarations (compute_uv_tndcy in src/CLUBB_core/advance_windm_edsclrm_module.F90):
+
+        ! -------------------------- Input Variables --------------------------
+        integer, intent(in) :: &
+          nzt, &
+          ngrdcol
+
+        integer, intent(in) ::  &
+          solve_type      ! Description of what is being solved for
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          fcor            ! Coriolis parameter     [s^-1]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
+          perp_wind_g,  & ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
+          xm_forcing      ! Prescribed wind forcing                                          [m/s/s]
+
+        logical, intent(in) :: &
+          l_implemented   ! True if CLUBB is being implemented and run in a host model
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        ! -------------------------- Output Variables --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
+          xm_tndcy        ! xm tendency            [m/s^2]
     """
     if not l_implemented:
         # Only compute the Coriolis term if the model is running on it's own,
@@ -1072,12 +1754,46 @@ def windm_edsclrm_lhs(
     l_implemented, l_imp_sfc_momentum_flux,
 ):
     """Calculate the implicit portion of the horizontal wind or eddy-scalar
-    time-tendency equation.  See the description in subroutine
+    time-tendency equation.  See the description in function
     windm_edsclrm_solve for more details.
 
-      --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
-      Simple changes to this procedure may adversely affect computational speed
-          - Gunther Huebler, Aug. 2018, clubb:ticket:834
+    Returns:
+        lhs
+
+    Fortran declarations (windm_edsclrm_lhs in src/CLUBB_core/advance_windm_edsclrm_module.F90):
+
+        ! ----------------------- Input Variables -----------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt                 ! Model timestep                             [s]
+
+        real( kind = core_rknd ), intent(in), dimension(3,ngrdcol,nzt) :: &
+          lhs_diff, & ! LHS diffustion terms
+          lhs_ma_zt   ! LHS mean advection terms
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wind_speed,      & ! wind speed; sqrt( u^2 + v^2 )              [m/s]
+          invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels [m^3/kg]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rho_ds_zm          ! Dry, static density on momentum levels     [kg/m^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          u_star_sqd    ! Surface friction velocity, u_*, squared  [m/s]
+
+        logical, intent(in) ::  &
+          l_implemented, & ! True if CLUBB is being implemented and run in a host model
+          l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
+
+        ! ----------------------- Output Variable -----------------------
+        real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(out) :: &
+          lhs           ! Implicit contributions to xm (tridiagonal matrix)
     """
     del nzm, ngrdcol
     # Calculate coefs of eddy diffusivity and inverse of dt
@@ -1127,15 +1843,53 @@ def windm_edsclrm_rhs(
     stats,
 ):
     """Calculate the explicit portion of the horizontal wind or eddy-scalar
-    time-tendency equation.  See the description in subroutine
+    time-tendency equation.  See the description in function
     windm_edsclrm_solve for more details.
 
-    References:
-      None
+    Returns:
+        (rhs, stats)
 
-      --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
-      Simple changes to this procedure may adversely affect computational speed
-          - Gunther Huebler, Aug. 2018, clubb:ticket:834
+    Fortran declarations (windm_edsclrm_rhs in src/CLUBB_core/advance_windm_edsclrm_module.F90):
+
+        !------------------- Input Variables -------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          solve_type ! Description of what is being solved for
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt                 ! Model timestep                             [s]
+
+        real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(in) :: &
+          lhs_diff   ! LHS diffusion terms
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xm,              & ! Eddy-scalar variable, xm (thermo. levels)  [units vary]
+          xm_tndcy,        & ! The explicit time-tendency acting on xm    [units vary]
+          invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels [m^3/kg]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rho_ds_zm          ! Dry, static density on momentum levels     [kg/m^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          xpwp_sfc     ! x'w' at the surface                              [units vary]
+
+        logical, intent(in) :: &
+          l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
+
+        !------------------- Inout Variable -------------------
+        type(stats_type), intent(inout) :: &
+          stats
+
+        !------------------- Output Variable -------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+          rhs          ! Right-hand side (explicit) contributions.
     """
     del nzm
     # Precalculate 1.0/dt to avoid redoing the divide

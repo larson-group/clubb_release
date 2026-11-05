@@ -115,7 +115,73 @@ def stats_accumulate(
     saturation_formula,
     stats,
 ):
-    """Accumulate per-timestep CLUBB statistics into ``JaxStats`` banks."""
+    """Accumulate per-timestep CLUBB statistics into ``JaxStats`` banks.
+
+    Fortran declarations (stats_accumulate in src/CLUBB_core/stats_clubb_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
+
+        type(grid), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt
+
+        logical, intent(in) :: &
+          l_implemented, &
+          l_host_applies_sfc_fluxes, &
+          l_stability_correct_tau_zm
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
+          clubb_params
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          um, vm, thlm, rtm, thlm_before, rtm_before, thlm_forcing, rtm_forcing, &
+          wp3, rtp3, thlp3
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          upwp, vpwp, up2, vp2, wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
+          wpthlp_sfc, &
+          wprtp_sfc
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          p_in_Pa, exner, rho, rho_ds_zt, thv_ds_zt, wm_zt
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          rho_zm, rho_ds_zm, thv_ds_zm, wm_zm
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          rcm, cloud_frac
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          thvm, ug, vg, Kh_zt, rsat
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          ddzt_umvm_sqd, stability_correction, Kh_zm, em
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
+          sclrm, sclrm_forcing
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
+          sclrp2, sclrprtp, sclrpthlp, wpsclrp
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,edsclr_dim) :: &
+          edsclrm, edsclrm_forcing
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,edsclr_dim) :: &
+          wpedsclrp
+
+        integer, intent(in) :: &
+          saturation_formula
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(stats_type), intent(inout) :: &
+          stats
+    """
     # ---- Begin Code ----
 
     # Sample fields
@@ -440,16 +506,33 @@ def stats_accumulate_hydromet_api(
     rho_ds_zt,                  # In
     stats,                      # InOut
 ):
-    """Compute hydrometeor statistics; columns are batched in JAX.
+    """Compute hydrometeor statistics for all model columns.
 
-    Arguments:
-        gr: Grid coordinates, interpolation weights and vertical metrics.
-        ngrdcol: Number of grid columns.
-        hydromet_dim: Number of precipitating hydrometeor fields.
-        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
-        hydromet: All hydrometeors except for rcm [units vary]
-        rho_ds_zt: Dry, static density (thermo. levs.) [kg/m^3]
-        stats: Immutable statistics state; return its updated value.
+    Returns:
+        stats
+
+    Fortran declarations (stats_accumulate_hydromet_api in src/CLUBB_core/stats_clubb_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        type(grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          ngrdcol, &    ! Number of model columns
+          hydromet_dim  ! Number of hydrometeor species
+
+        type(hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        real(kind=core_rknd), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
+          hydromet             ! All hydrometeors except for rcm        [units vary]
+
+        real(kind=core_rknd), dimension(ngrdcol,gr%nzt), intent(in) :: &
+          rho_ds_zt            ! Dry, static density (thermo. levs.)      [kg/m^3]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(stats_type), intent(inout) :: &
+          stats
     """
     # Mean species profiles, omitting fields absent from the selected scheme.
     for name, idx in [
@@ -491,26 +574,44 @@ def stats_accumulate_lh_tend(
     lh_rcm_avg, AKm_rcm, AKm_rcc,            # In
     stats,                                   # InOut
 ):
-    """Sampled tendencies from stats_accumulate_lh_tend in the Fortran module.
+    """Compute full-field stats for the tendency of latin hypercube sample points.
 
-    Arguments:
-        gr: Grid coordinates, interpolation weights and vertical metrics.
-        ngrdcol: Number of grid columns.
-        hydromet_dim: Number of precipitating hydrometeor fields.
-        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
-        lh_hydromet_mc: Tendency of hydrometeors except for rvm/rcm [units vary]
-        lh_Ncm_mc: Tendency of cloud droplet concentration [num/kg/s]
-        lh_thlm_mc: Tendency of liquid potential temperature [kg/kg/s]
-        lh_rvm_mc: Tendency of vapor [kg/kg/s]
-        lh_rcm_mc: Tendency of cloud water [kg/kg/s]
-        lh_AKm: Kessler ac estimate [kg/kg/s]
-        AKm: Exact Kessler ac [kg/kg/s]
-        AKstd: St dev of exact Kessler ac [kg/kg/s]
-        AKstd_cld: Stdev of exact w/in cloud ac [kg/kg/s]
-        lh_rcm_avg: Monte Carlo rcm estimate [kg/kg]
-        AKm_rcm: Kessler ac based on rcm [kg/kg/s]
-        AKm_rcc: Kessler ac based on rcm/cloud_frac [kg/kg/s]
-        stats: Immutable statistics state; return its updated value.
+    Returns:
+        stats
+
+    Fortran declarations (stats_accumulate_lh_tend in src/CLUBB_core/stats_clubb_utilities.F90):
+
+        !----------------------- Input Variables -----------------------
+        type (grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          ngrdcol, &      ! Number of model columns [-]
+          hydromet_dim    ! Number of hydrometeor species [-]
+
+        type (hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(in) :: &
+          lh_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
+          lh_Ncm_mc,  & ! Tendency of cloud droplet concentration  [num/kg/s]
+          lh_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
+          lh_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
+          lh_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
+          lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
+          AKm,        & ! Exact Kessler ac                    [kg/kg/s]
+          AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
+          AKstd_cld,  & ! Stdev of exact w/in cloud ac        [kg/kg/s]
+          lh_rcm_avg, & ! Monte Carlo rcm estimate            [kg/kg]
+          AKm_rcm,    & ! Kessler ac based on rcm             [kg/kg/s]
+          AKm_rcc       ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
+
+        type(stats_type), intent(inout) :: &
+          stats
     """
     # Accumulate mean sampled tendencies, followed by available hydrometeors
     # and Kessler sampling/analytic diagnostics, in the source update order.

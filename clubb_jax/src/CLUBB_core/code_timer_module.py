@@ -113,10 +113,16 @@ def timer_disable():
 
 
 def timer_start(timer_name, *, step_num=None):
-    """Start or enter a named timer region.
+    """Starts or enters a named timer region.
 
     step_num is optional JAX profiling metadata identifying a model timestep.
-    Ordinary timer calls retain the source's one-name interface.
+    Ordinary timer calls keep the one-name interface of the Fortran routine.
+
+    Fortran declarations (timer_start in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          timer_name    ! Name of the timer region. [-]
     """
     if not l_timer_enabled:
         return
@@ -134,7 +140,14 @@ def timer_start(timer_name, *, step_num=None):
 
 
 def timer_stop(timer_name):
-    """Stop the most recent matching named timer region."""
+    """Stops or exits a named timer region.
+
+    Fortran declarations (timer_stop in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          timer_name    ! Name of the timer region. [-]
+    """
     if not l_timer_enabled:
         return
     if not l_timer_initialized:
@@ -143,12 +156,19 @@ def timer_stop(timer_name):
 
 
 def timer_finalize(output_file, *, state=None):
-    """Write the wall-clock summary and finalize any enabled deep trace.
+    """Prints timer output and finalizes the active timing backend.
 
-    JAX adaptations: state supplies outstanding arrays for trace completion;
-    return the exported capture directory, or None when no capture was made.
-    Basic timing does not wait for arrays, and neither backend synchronizes
-    individual timer regions. The caller owns presentation of the capture.
+    JAX adaptations: state supplies outstanding arrays for trace completion,
+    and the function returns the exported capture directory, or None when no
+    capture was made. Basic timing does not wait for arrays, and neither
+    backend synchronizes individual timer regions. The caller owns
+    presentation of the capture.
+
+    Fortran declarations (timer_finalize in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          output_file    ! File used for timer output. [-]
     """
     global l_timer_initialized
 
@@ -176,7 +196,14 @@ def timer_finalize(output_file, *, state=None):
 
 
 def cpu_timer_start(timer_name):
-    """Start or enter a named timer region using host wall-clock time."""
+    """Starts or enters a named timer region using cpu_time.
+
+    Fortran declarations (cpu_timer_start in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          timer_name    ! Name of the timer region. [-]
+    """
     start_time = time.perf_counter()
     timer_id = get_timer_id(timer_name, l_create=True)
     # JAX/Python adaptation: lists grow dynamically, replacing the source's
@@ -186,7 +213,15 @@ def cpu_timer_start(timer_name):
 
 
 def cpu_timer_stop(timer_name):
-    """Stop the current timer; stops must match the most recent active start."""
+    """Stops or exits the current named cpu_time timer region.  Timer stops
+    must match the most recent active timer start.
+
+    Fortran declarations (cpu_timer_stop in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          timer_name    ! Name of the timer region. [-]
+    """
     stop_time = time.perf_counter()
     timer_id = get_timer_id(timer_name, l_create=False)
     if not timer_stack:
@@ -209,7 +244,25 @@ def cpu_timer_stop(timer_name):
 
 
 def get_timer_id(timer_name, l_create):
-    """Return a name's registry index, optionally creating a new entry."""
+    """Returns the registry index for timer_name, optionally creating a new
+    entry when the name has not been seen before.
+
+    Returns:
+        timer_id
+
+    Fortran declarations (get_timer_id in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          timer_name    ! Name of the timer region. [-]
+
+        logical, intent(in) :: &
+          l_create    ! Whether to create a missing timer entry. [-]
+
+        !--------------------------- Output Variables ---------------------------
+        integer :: &
+          timer_id    ! Registry index for timer_name, or 0 if not found. [-]
+    """
     trimmed_name = timer_name.rstrip()
     if not trimmed_name:
         timer_fail("Timer name must not be empty")
@@ -224,7 +277,14 @@ def get_timer_id(timer_name, l_create):
 
 
 def print_cpu_timer_summary(timer_unit):
-    """Print the source-format registry table with JAX wall-clock labels."""
+    """Prints a flat summary of the cpu_time backend timer registry.
+
+    Fortran declarations (print_cpu_timer_summary in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          timer_unit    ! Unit used for timer output. [-]
+    """
     timer_unit.write("========================= CLUBB TIMER SUMMARY =========================\n")
     timer_unit.write("Backend: wall_clock\n")
     if not timer_entries:
@@ -258,7 +318,21 @@ def print_cpu_timer_summary(timer_unit):
 
 
 def timer_display_name(timer_name):
-    """Return a fixed-width timer name for the timer summary table."""
+    """Returns a fixed-width timer name for the cpu_time summary table.
+
+    Returns:
+        display_name
+
+    Fortran declarations (timer_display_name in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          timer_name    ! Full timer name. [-]
+
+        !--------------------------- Output Variables ---------------------------
+        character(len=display_name_length) :: &
+          display_name    ! Fixed-width display name. [-]
+    """
     name = timer_name.rstrip()
     if len(name) > display_name_length:
         name = name[:display_name_length - 3] + "..."
@@ -266,7 +340,14 @@ def timer_display_name(timer_name):
 
 
 def require_empty_stack(caller_name):
-    """Verify that no timer regions are active."""
+    """Verifies that no cpu_time timer regions are active.
+
+    Fortran declarations (require_empty_stack in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          caller_name    ! Name of the routine checking the stack. [-]
+    """
     if timer_stack:
         name = timer_entries[timer_stack[-1].timer_id].name
         timer_fail(f"{caller_name.rstrip()} called while timer {name} is still active.")
@@ -279,12 +360,33 @@ def reset_cpu_timer_state():
 
 
 def timer_absolute_path(file_path):
-    """Return an absolute output path, resolving relative paths from the cwd."""
+    """Returns an absolute timer output path, using PWD for relative paths.
+
+    Returns:
+        absolute_path
+
+    Fortran declarations (timer_absolute_path in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          file_path    ! Timer output path, absolute or relative. [-]
+
+        !--------------------------- Output Variables ---------------------------
+        character(len=1024) :: &
+          absolute_path    ! Absolute timer output path. [-]
+    """
     return Path(str(file_path).rstrip()).resolve()
 
 
 def timer_fail(message):
-    """Report an unrecoverable timer API error through the host error guard."""
+    """Reports an unrecoverable timer API error and stops execution.
+
+    Fortran declarations (timer_fail in src/CLUBB_core/code_timer_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: &
+          message    ! Error message. [-]
+    """
     # JAX adaptation: preserve driver exception handling instead of ERROR STOP.
     raise RuntimeError(f"CLUBB timer error: {message}")
 

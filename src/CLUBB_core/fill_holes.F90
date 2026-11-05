@@ -1926,12 +1926,12 @@ module fill_holes
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: num_hm_fill ! number of hydrometeors involved
 
     real(kind = core_rknd), dimension(num_hm_fill), intent(in) :: hm_one_lev
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real(kind = core_rknd), dimension(num_hm_fill), intent(out) :: hm_one_lev_filled
 
     ! Local Variables
@@ -2052,7 +2052,7 @@ module fill_holes
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: hydromet_dim, nzt
 
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
@@ -2062,7 +2062,7 @@ module fill_holes
       l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_filled
 
@@ -2150,7 +2150,7 @@ module fill_holes
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: nzt
 
     real( kind = core_rknd ), intent(in) ::  &
@@ -2161,7 +2161,7 @@ module fill_holes
     real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       exner        ! Exner function                            [-]
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nzt), intent(inout) :: &
       hydromet, &  ! Hydrometeor array                         [units vary]
       rvm_mc, &
@@ -2509,7 +2509,7 @@ module fill_holes
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzt
     
@@ -2522,7 +2522,7 @@ module fill_holes
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor fields    [units vary]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_clipped    ! Clipped mean of hydrometeor fields    [units vary]
 
@@ -2641,17 +2641,21 @@ module fill_holes
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: ihm, hydromet_dim
 
     character(len=10), dimension(hydromet_dim), intent(in) :: &
       hydromet_list
 
+    !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), intent(inout) :: &
       max_velocity ! Maximum sedimentation velocity [m/s]
 
+    !--------------------------- Optional Output Variables ---------------------------
     character(len=*), intent(out), optional :: &
       name_bt, name_hf, name_wvhf, name_cl, name_mc
 
+    !--------------------------- Local Variables ---------------------------
     character(len=32) :: &
       name_bt_local, name_hf_local, name_wvhf_local, name_cl_local, name_mc_local
 

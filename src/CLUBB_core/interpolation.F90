@@ -62,7 +62,7 @@ module interpolation
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
 
     real( kind = core_rknd ), intent(in) :: &
       height_int,  & ! Height to be interpolated to     [m]
@@ -71,7 +71,7 @@ module interpolation
       var_high,    & ! Variable above the interpolation [units vary]
       var_low        ! Variable below the interpolation [units vary]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: lin_interpolate_two_points
     
     ! Check for valid input
@@ -105,6 +105,7 @@ module interpolation
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       factor,   & ! Factor                           [units vary]  
       var_high, & ! Variable above the interpolation [units vary]
@@ -150,7 +151,7 @@ module interpolation
     ! External
     intrinsic :: sign, abs, min
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: & 
       z_in ! The altitude to be interpolated to [m]
 
@@ -162,7 +163,7 @@ module interpolation
       zm1, z00, zp1, zp2, & ! The altitudes for km1, k00, kp1, kp2      [m]
       fm1, f00, fp1, fp2    ! The field at km1, k00, kp1, and kp2       [units vary]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: f_out ! The interpolated field
    
     ! Local Variables 
@@ -381,7 +382,7 @@ module interpolation
 
     implicit none
 
-    ! Input variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: dim_out, dim_src
 
     real( kind = core_rknd ), dimension(dim_src), intent(in) ::  & 
@@ -391,7 +392,7 @@ module interpolation
     real( kind = core_rknd ), dimension(dim_out), intent(in) :: &
       grid_out ! [m]
 
-    ! Output variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(dim_out) :: &
       var_out ! [units vary]
 
@@ -421,7 +422,7 @@ module interpolation
 
     implicit none
 
-    ! Input variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: dim_out, dim_src
 
     real( kind = core_rknd ), dimension(dim_src), intent(in) ::  & 
@@ -431,7 +432,7 @@ module interpolation
     real( kind = core_rknd ), dimension(dim_out), intent(in) :: &
       grid_out ! [m]
 
-    ! Output variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(dim_out) :: &
       var_out ! [units vary]
 

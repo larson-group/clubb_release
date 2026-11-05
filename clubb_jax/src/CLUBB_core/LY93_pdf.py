@@ -30,16 +30,35 @@ def _scbrt(x):
 
 
 def calc_params_LY93(xm, xp2, Skx, mixt_frac):
-    """Calculate the LY93 PDF parameters for one variable.
-
-    Description:
-    Calculates the PDF component means and PDF component variances for
+    """Calculates the PDF component means and PDF component variances for
     variable x according to Lewellen and Yoh.
 
     References:
     Eq. (14), Eq. (15), Eq. (16), Eq. (17), and Eq. (18) of
     Lewellen, W. S. and Yoh, S., 1993.  Binormal Model of Ensemble Partial
     Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
+
+    Returns:
+        (mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd)
+
+    Fortran declarations (calc_params_LY93 in src/CLUBB_core/LY93_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd), dimension(nz), intent(in) :: &
+          xm,        & ! Mean of x (overall)        [units vary]
+          xp2,       & ! Variance of x (overall)    [(units vary)^2]
+          Skx,       & ! Skewness of x (overall)    [-]
+          mixt_frac    ! Mixture fraction           [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd), dimension(nz), intent(out) :: &
+          mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
+          mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
+          sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
+          sigma_x_2_sqd    ! Variance of x (2nd PDF component)    [(units vary)^2]
     """
     omf = 1.0 - mixt_frac
 
@@ -64,14 +83,27 @@ def calc_params_LY93(xm, xp2, Skx, mixt_frac):
 
 
 def calc_mixt_frac_LY93(Sk_max, itermax=60):
-    """Calculate the LY93 mixture fraction.
-
-    Description:
-    Calculates mixture fraction iteratively according to Lewellen and Yoh.
+    """Calculates mixture fraction iteratively according to Lewellen and Yoh.
 
     References:
     Eq. (21) of Lewellen, W. S. and Yoh, S., 1993.  Binormal Model of Ensemble
     Partial Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
+
+    Returns:
+        mixt_frac
+
+    Fortran declarations (calc_mixt_frac_LY93 in src/CLUBB_core/LY93_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd), dimension(nz), intent(in) :: &
+          Sk_max    ! Maximum of magnitudes of skewness        [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd), dimension(nz) :: &
+          mixt_frac    ! Mixture fraction                      [-]
     """
     # Tolerance for mixture fraction in solver [-]
     tol = 1.0e-4
@@ -100,15 +132,49 @@ def calc_mixt_frac_LY93(Sk_max, itermax=60):
 
 
 def LY93_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl):
-    """Calculate the LY93 PDF parameters for w, rt, and theta-l.
-
-    Description:
-    Calculates the mixture fraction and the PDF component means and PDF
+    """Calculates the mixture fraction and the PDF component means and PDF
     component variances of w, rt, and theta-l following Lewellen and Yoh.
 
     References:
     Lewellen, W. S. and Yoh, S., 1993.  Binormal Model of Ensemble Partial
     Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
+
+    Returns:
+        (mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, sig_w_1, sig_w_2,
+          sig_rt_1, sig_rt_2, sig_thl_1, sig_thl_2, mixt_frac)
+
+    Fortran declarations (LY93_driver in src/CLUBB_core/LY93_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd), dimension(nz), intent(in) :: &
+          wm,    & ! Mean of w (overall)                      [m/s]
+          wp2,   & ! Variance of w (overall)                  [m^2/s^2]
+          Skw,   & ! Skewness of w (overall)                  [-]
+          rtm,   & ! Mean of rt (overall)                     [kg/kg]
+          rtp2,  & ! Variance of rt (overall)                 [kg^2/kg^2]
+          Skrt,  & ! Skewness of rt (overall)                 [-]
+          thlm,  & ! Mean of thl (overall)                    [K]
+          thlp2, & ! Variance of thl (overall)                [K^2]
+          Skthl    ! Skewness of thl (overall)                [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd), dimension(nz), intent(out) :: &
+          mu_w_1,          & ! Mean of w (1st PDF component)          [m/s]
+          mu_w_2,          & ! Mean of w (2nd PDF component)          [m/s]
+          mu_rt_1,         & ! Mean of rt (1st PDF component)         [kg/kg]
+          mu_rt_2,         & ! Mean of rt (2nd PDF component)         [kg/kg]
+          mu_thl_1,        & ! Mean of thl (1st PDF component)        [K]
+          mu_thl_2,        & ! Mean of thl (2nd PDF component)        [K]
+          sigma_w_1_sqd,   & ! Variance of w (1st PDF component)      [m^2/s^2]
+          sigma_w_2_sqd,   & ! Variance of w (2nd PDF component)      [m^2/s^2]
+          sigma_rt_1_sqd,  & ! Variance of rt (1st PDF component)     [m^2/s^2]
+          sigma_rt_2_sqd,  & ! Variance of rt (2nd PDF component)     [m^2/s^2]
+          sigma_thl_1_sqd, & ! Variance of thl (1st PDF component)    [m^2/s^2]
+          sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)    [m^2/s^2]
+          mixt_frac          ! Mixture fraction                       [-]
     """
 
     # Find the maximum of the magnitudes of skewness.

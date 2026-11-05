@@ -141,20 +141,107 @@ def calc_Lscale(
     stats, err_info,
 ):
     """Compute CLUBB's mixing length and dissipation time scales, including
-    Richardson-number-dependent damping terms and Lscale-related statistics.
-
-    Read thermodynamic fields on ``nzt`` levels, moments on ``nzm`` levels, and
-    per-column parameters. Grid and PDF state must be initialized by the caller.
-    ``Lscale_method`` selects methods 1--3. Lengths are
-    in m, times in s, and inverse times in 1/s; ``_zt``/``_zm`` name the grids.
-
-    Return ``(err_info, invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm,
-    invrs_tau_wp3_zt, invrs_tau_C1_zm, invrs_tau_C4_zm, invrs_tau_C6_zm,
-    invrs_tau_C14_zm, tau_max_zm, tau_max_zt, tau_zm, Lscale, Lscale_zm,
-    Lscale_up, Lscale_down, stats)``. Retain the returned error/statistics state.
+    Richardson-number-dependent damping terms and Lscale-related stats.
+    Read thermodynamic fields on nzt levels, moments on nzm levels, and
+    per-column tunable parameters; Lscale_method selects methods 1--3.
+    Return lengths [m], time scales [s], and inverse times [1/s], and update
+    stats and err_info. Grid and PDF state must be initialized by the caller.
 
     References:
-      Guo et al. (2021, JAMES) for the diagnosed Lscale-from-tau option.
+    Guo et al. (2021, JAMES) for the diagnosed Lscale-from-tau option.
+
+    Returns:
+        (err_info, invrs_tau_zt, invrs_tau_zm, invrs_tau_xp2_zm,
+          invrs_tau_wp3_zt, invrs_tau_C1_zm, invrs_tau_C4_zm, invrs_tau_C6_zm,
+          invrs_tau_C14_zm, tau_max_zm, tau_max_zt, tau_zm, Lscale, Lscale_zm,
+          Lscale_up, Lscale_down, stats)
+
+    Fortran declarations (calc_Lscale in src/CLUBB_core/mixing_length.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm,    & ! Number of momentum levels
+          nzt,    & ! Number of thermodynamic levels
+          ngrdcol   ! Number of grid columns
+
+        type(grid), intent(in) :: &
+          gr   ! Grid structure
+
+        logical, intent(in) :: &
+          l_implemented,                    & ! True when current configuration is implemented
+          l_Lscale_plume_centered,          & ! Whether to use plume-centered Lscale calculation
+          l_e3sm_config,                    & ! Whether E3SM configuration options are active
+          l_smooth_Heaviside_tau_wpxp,      & ! Whether to smooth Heaviside functions in wpxp tau
+          l_modify_limiters_for_cnvg_test,  & ! Whether to modify limiters for convergence tests
+          l_use_invrs_tau_N2_iso              ! Whether to use isotropic N2 inverse tau
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          host_dx,        & ! Host-model grid spacing in x direction [m]
+          host_dy,        & ! Host-model grid spacing in y direction [m]
+          upwp_sfc,       & ! Surface value of u'w' [m^2/s^2]
+          vpwp_sfc,       & ! Surface value of v'w' [m^2/s^2]
+          sfc_elevation     ! Surface elevation [m]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          p_in_Pa,           & ! Pressure [Pa]
+          exner,             & ! Exner function [-]
+          rtm,               & ! Total water mixing ratio [kg/kg]
+          thlm,              & ! Liquid water potential temperature [K]
+          thvm,              & ! Virtual potential temperature [K]
+          thv_ds_zt,         & ! Reference-state virtual potential temperature [K]
+          ice_supersat_frac    ! Ice supersaturation fraction [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          thlp2,                       & ! Variance of thl [K^2]
+          rtp2,                        & ! Variance of rt [(kg/kg)^2]
+          rtpthlp,                     & ! Covariance of rt and thl [K kg/kg]
+          em,                          & ! Turbulent kinetic energy [m^2/s^2]
+          ddzt_umvm_sqd,               & ! Squared vertical shear of horizontal wind [s^-2]
+          brunt_vaisala_freq_sqd_smth    ! Smoothed Brunt-Vaisala frequency squared [s^-2]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          lmin ! Minimum mixing length [m]
+
+        real( kind = core_rknd ), intent(in) :: &
+          ufmin, & ! Minimum velocity scale [m/s]
+          tau_const ! Constant eddy dissipation time scale [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params   ! Tunable CLUBB parameters
+
+        integer, intent(in) :: &
+          saturation_formula, & ! Saturation vapor pressure formula selector
+          Lscale_method         ! Mixing-length formulation
+
+        type(pdf_parameter), intent(in) :: &
+          pdf_params   ! PDF parameters
+
+        !----------------------- Input/Output Variables ------------------------
+        type(stats_type), intent(inout) :: &
+          stats   ! Statistics accumulator
+
+        type(err_info_type), intent(inout) :: &
+          err_info   ! Error information
+
+        !--------------------------- Output Variables --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          invrs_tau_zm,      & ! Inverse time scale on momentum levels [1/s]
+          invrs_tau_xp2_zm,  & ! Inverse time scale for xp2 terms on momentum levels [1/s]
+          invrs_tau_C1_zm,   & ! Inverse time scale used for C1 term on momentum levels [1/s]
+          invrs_tau_C4_zm,   & ! Inverse time scale used for C4 terms on momentum levels [1/s]
+          invrs_tau_C6_zm,   & ! Inverse time scale used for C6 term on momentum levels [1/s]
+          invrs_tau_C14_zm,  & ! Inverse time scale used for C14 terms on momentum levels [1/s]
+          tau_max_zm,        & ! Maximum allowable eddy dissipation time scale on momentum levels [s]
+          tau_zm,            & ! Eddy dissipation time scale on momentum levels [s]
+          Lscale_zm            ! Turbulent mixing length on momentum levels [m]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+          invrs_tau_zt,      & ! Inverse time scale on thermodynamic levels [1/s]
+          invrs_tau_wp3_zt,  & ! Inverse time scale for wp3 terms on thermodynamic levels [1/s]
+          tau_max_zt,        & ! Maximum allowable eddy dissipation time scale on thermodynamic levels [s]
+          Lscale,            & ! Turbulent mixing length on thermodynamic levels [m]
+          Lscale_up,         & ! Upward component of turbulent mixing length [m]
+          Lscale_down          ! Downward component of turbulent mixing length [m]
     """
     l_smooth_min_max = False  # Fortran compile-time parameter; retain both branches.
 
@@ -335,15 +422,34 @@ def calc_Lscale(
 #===============================================================================
 
 def set_Lscale_max(ngrdcol, l_implemented, host_dx, host_dy):
-    """Return one maximum mixing length per column, in meters.
+    """This subroutine sets the value of Lscale_max, which is the maximum
+    allowable value of Lscale.  For standard CLUBB, it is set to a very large
+    value so that Lscale will not be limited.  However, when CLUBB is running
+    as part of a host model, the value of Lscale_max is dependent on the size
+    of the host model's horizontal grid spacing.  The smaller the host model's
+    horizontal grid spacing, the smaller the value of Lscale_max.  When Lscale
+    is limited to a small value, the value of time-scale Tau is reduced, which
+    in turn produces greater damping on CLUBB's turbulent parameters.  This
+    is the desired effect on turbulent parameters for a host model with small
+    horizontal grid spacing, for small areas usually contain much less
+    variation in meteorological quantities than large areas.
 
-    For a host model, the cap is one quarter of the smaller horizontal spacing
-    ``host_dx`` or ``host_dy`` [m]. Smaller host cells therefore limit parcel
-    lengths and shorten damping times, increasing damping of the turbulent
-    moments. The source rationale is that smaller host cells usually contain
-    less variation in meteorological quantities than larger cells.
-    Standalone calls return 100000 m for each of ``ngrdcol`` columns,
-    independently of the supplied spacings, so this cap ordinarily does not bind.
+    Fortran declarations (set_Lscale_max in src/CLUBB_core/mixing_length.F90):
+
+        !----------------------- Input Variables -----------------------
+        integer, intent(in) :: &
+          ngrdcol
+
+        logical, intent(in) :: &
+          l_implemented     ! True if CLUBB is being implemented and run in a host model
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          host_dx, & ! Host model's east-west horizontal grid spacing     [m]
+          host_dy    ! Host model's north-south horizontal grid spacing   [m]
+
+        !----------------------- Output Variable -----------------------
+        real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+          Lscale_max    ! Maximum allowable value for Lscale   [m]
     """
     # Determine the maximum allowable value for Lscale (in meters).
     if l_implemented:
@@ -362,90 +468,73 @@ def compute_mixing_length(
     l_implemented,
     err_info,
 ):
-    """Compute the legacy moist, nonlocal parcel mixing length.
+    """Larson's 5th moist, nonlocal length scale
 
-    Read environmental profiles on thermodynamic levels, momentum-level TKE
-    [m^2/s^2], per-column entrainment rates [1/m], and length floors/caps [m].
-    Return ``(err_info, Lscale, Lscale_up, Lscale_down)`` with lengths shaped
-    ``(ngrdcol, nzt)`` in m. ``saturation_formula`` selects shared saturation.
-
-    The layer-linear environment permits analytic entrainment updates. Initial
-    TKE is exhausted by trapezoidal buoyancy work; a linear/quadratic root gives
-    the distance within the first impassable layer. Previous launch endpoints
-    extend the local lengths before the surface floor and geometric mean.
+    References:
+    Section 3b ( /Eddy length formulation/ ) of
+    ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+    Method and Model Description'' Golaz, et al. (2002)
+    JAS, Vol. 59, pp. 3540--3551.
 
     Notes:
-      The equation for the rate of change of theta_l and r_t of the parcel with
-      respect to height, due to entrainment, is:
 
-              d(thl_par)/dz = - Lscale_mu_entrain * ( thl_parcel - thl_environment );
+    The equation for the rate of change of theta_l and r_t of the parcel with
+    respect to height, due to entrainment, is:
 
-              d(rt_par)/dz = - Lscale_mu_entrain * ( rt_parcel - rt_environment );
+            d(thl_par)/dz = - Lscale_mu_entrain * ( thl_parcel - thl_environment );
 
-      where Lscale_mu_entrain is the entrainment rate,
-      such that:
+            d(rt_par)/dz = - Lscale_mu_entrain * ( rt_parcel - rt_environment );
 
-              Lscale_mu_entrain = (1/m)*(dm/dz);
+    where Lscale_mu_entrain is the entrainment rate,
+    such that:
 
-      where m is the mass of the parcel.  The value of Lscale_mu_entrain is set to be a
-      constant.
+            Lscale_mu_entrain = (1/m)*(dm/dz);
 
-      The differential equations are solved for given the boundary condition
-      and given the fact that the value of thl_environment and rt_environment
-      are treated as changing linearly for a parcel of air from one grid level
-      to the next.
+    where m is the mass of the parcel.  The value of Lscale_mu_entrain is set to be a
+    constant.
 
-      For the special case where entrainment rate, Lscale_mu_entrain, is set to 0,
-      thl_parcel and rt_parcel remain constant
+    The differential equations are solved for given the boundary condition
+    and given the fact that the value of thl_environment and rt_environment
+    are treated as changing linearly for a parcel of air from one grid level
+    to the next.
 
+    For the special case where entrainment rate, Lscale_mu_entrain, is set to 0,
+    thl_parcel and rt_parcel remain constant
 
-      The equation for Lscale_up is:
+    The equation for Lscale_up is:
 
-          INT(z_i:z_i+Lscale_up) g * ( thv_par - thvm ) / thvm dz = -em(z_i);
+        INT(z_i:z_i+Lscale_up) g * ( thv_par - thvm ) / thvm dz = -em(z_i);
 
-      and for Lscale_down
+    and for Lscale_down
 
-          INT(z_i-Lscale_down:z_i) g * ( thv_par - thvm ) / thvm dz = em(z_i);
+        INT(z_i-Lscale_down:z_i) g * ( thv_par - thvm ) / thvm dz = em(z_i);
 
-      where thv_par is theta_v of the parcel, thvm is the mean
-      environmental value of theta_v, z_i is the altitude that the parcel
-      started from, and em is the mean value of TKE at
-      altitude z_i (which gives the parcel its initial boost)
+    where thv_par is theta_v of the parcel, thvm is the mean
+    environmental value of theta_v, z_i is the altitude that the parcel
+    started from, and em is the mean value of TKE at
+    altitude z_i (which gives the parcel its initial boost)
 
-      The increment of CAPE (convective air potential energy) for any two
-      successive vertical levels is:
+    The increment of CAPE (convective air potential energy) for any two
+    successive vertical levels is:
 
-          Upwards:
-              CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
+        Upwards:
+            CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
 
-          Downwards:
-              CAPE_incr = INT(z_(-1):z_0) g * ( thv_par - thvm ) / thvm dz
+        Downwards:
+            CAPE_incr = INT(z_(-1):z_0) g * ( thv_par - thvm ) / thvm dz
 
-      Thus, the derivative of CAPE with respect to height is:
+    Thus, the derivative of CAPE with respect to height is:
 
-              dCAPE/dz = g * ( thv_par - thvm ) / thvm.
+            dCAPE/dz = g * ( thv_par - thvm ) / thvm.
 
-      A purely trapezoidal rule is used between levels, and is considered
-      to vary linearly at all altitudes.  Thus, dCAPE/dz is considered to be
-      of the form:  A * (z-zo) + dCAPE/dz|_(z_0),
-      where A = ( dCAPE/dz|_(z_1) - dCAPE/dz|_(z_0) ) / ( z_1 - z_0 )
+    A purely trapezoidal rule is used between levels, and is considered
+    to vary linearly at all altitudes.  Thus, dCAPE/dz is considered to be
+    of the form:  A * (z-zo) + dCAPE/dz|_(z_0),
+    where A = ( dCAPE/dz|_(z_1) - dCAPE/dz|_(z_0) ) / ( z_1 - z_0 )
 
-      The integral is evaluated to find the CAPE increment between two
-      successive vertical levels.  The result either adds to or depletes
-      from the total amount of energy that keeps the parcel ascending/descending.
-
-
-      IMPORTANT NOTE:
-      This subroutine has been optimized by adding precalculations, rearranging
-      equations to avoid divides, and modifying the algorithm entirely.
-          -Gunther Huebler
-
-      The algorithm previously used looped over every grid level, following a
-      a parcel up from its initial grid level to its max. The very nature of this
-      algorithm is an N^2
-
-      The analytic zero-entrainment limit above is not implemented: this
-      routine reports fatal status for abs(Lscale_mu_entrain) < eps.
+    The integral is evaluated to find the CAPE increment between two
+    successive vertical levels.  The result either adds to or depletes
+    from the total amount of energy that keeps the parcel ascending/descending.
 
     JAX adaptation:
       Fixed-length scans advance independent column/launch pairs by a common
@@ -459,9 +548,56 @@ def compute_mixing_length(
       Blocks of eight offsets skip inactive tails. CPU batches above four columns
       use groups of four launches; accelerators evaluate all launches together.
 
-    References:
-      Larson's fifth moist length scale; Section 3b, Golaz et al. (2002),
-      JAS 59, 3540--3551.
+    Returns:
+        (err_info, Lscale, Lscale_up, Lscale_down)
+
+    Fortran declarations (compute_mixing_length in src/CLUBB_core/mixing_length.F90):
+
+        !--------------------------------- Input Variables ---------------------------------
+        integer, intent(in) :: &
+          nzm, & ! Number of momentum levels
+          nzt, & ! Number of thermodynamic levels
+          ngrdcol ! Number of grid columns
+
+        type (grid), intent(in) :: &
+          gr ! Grid heights, interpolation weights, and orientation
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
+          thvm,    & ! Virtual potential temp. on themodynamic level  [K]
+          thlm,    & ! Liquid potential temp. on themodynamic level   [K]
+          rtm,     & ! Total water mixing ratio on themodynamic level [kg/kg]
+          exner,   & ! Exner function on thermodynamic level          [-]
+          p_in_Pa, & ! Pressure on thermodynamic level                [Pa]
+          thv_ds     ! Dry, base-state theta_v on thermodynamic level [K]
+        ! Note:  thv_ds used as a reference theta_l here
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
+          em         ! em = 3/2 * w'^2; on momentum level             [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          Lscale_max ! Maximum allowable value for Lscale             [m]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          Lscale_mu_entrain      ! Fractional entrainment rate per unit altitude [1/m]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          lmin ! CLUBB tunable parameter lmin
+
+        integer, intent(in) :: &
+          saturation_formula ! Integer that stores the saturation formula to be used
+
+        logical, intent(in) :: &
+          l_implemented ! True if CLUBB is being implemented and run in a host model
+
+        !--------------------------------- InOut Variables ---------------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+
+        !--------------------------------- Output Variables ---------------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
+          Lscale,    & ! Mixing length      [m]
+          Lscale_up, & ! Mixing length up   [m]
+          Lscale_down  ! Mixing length down [m]
     """
     zlmin = 0.1
     Lscale_sfclyr_depth = 500.0
@@ -853,13 +989,72 @@ def calc_Lscale_directly(
     Lscale_method,
     stats, err_info,
 ):
-    """Select the legacy or coherent parcel calculation (methods 1 or 3).
+    """Select the legacy or coherent parcel calculation (methods 1 or 3)
+    using environmental profiles, momentum-level TKE, PDF properties, and
+    per-column parameters. Return thermodynamic-level combined, upward,
+    and downward lengths [m], updating stats and err_info.
+    If source constant l_avg_Lscale is enabled, compute perturbed launches
+    before the mean launch so the directional outputs describe the mean.
 
-    Environmental profiles, momentum-level TKE, PDF properties, and per-column
-    parameters supply the launches. Return ``(err_info, Lscale, Lscale_up,
-    Lscale_down, stats)`` with lengths in m. Retain both returned state objects.
-    The source constant ``l_avg_Lscale`` enables optional perturbed launches;
-    those calls precede the mean call so directional outputs describe the mean.
+    Fortran declarations (calc_Lscale_directly in src/CLUBB_core/mixing_length.F90):
+
+        !--------------------------------- Input Variables ---------------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: &
+          gr
+
+        logical, intent(in) ::  &
+          l_implemented ! True if CLUBB is being implemented and run in a host model
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
+          rtp2_zt,    & ! Total-water variance [(kg/kg)^2]
+          thlp2_zt,   & ! Liquid-water potential-temperature variance [K^2]
+          rtpthlp_zt, & ! Total-water/temperature covariance [K kg/kg]
+          thlm,       & ! Mean liquid-water potential temperature [K]
+          thvm,       & ! Mean virtual potential temperature [K]
+          rtm,        & ! Mean total-water mixing ratio [kg/kg]
+          p_in_Pa,    & ! Air pressure (thermodynamic levels)       [Pa]
+          exner,      & ! Exner function [-]
+          thv_ds_zt      ! Reference-state virtual potential temperature [K]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
+          em   ! Turbulent kinetic energy [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          Lscale_max ! Per-column cap on combined mixing length [m]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          lmin ! Surface value of the height-dependent length floor [m]
+
+        type (pdf_parameter), intent(in) :: &
+          pdf_params    ! PDF Parameters  [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        integer, intent(in) :: &
+          saturation_formula, & ! Integer that stores the saturation formula to be used
+          Lscale_method         ! Mixing-length formulation
+
+        logical, intent(in) :: &
+          l_Lscale_plume_centered ! Alternate that uses the PDF to compute the perturbed values
+
+        !----------------------- Input/Output Variables ------------------------
+        type(stats_type), intent(inout) :: &
+          stats ! Statistics accumulator
+
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+
+        !--------------------------------- Output Variables ---------------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
+          Lscale,    & ! Mixing length      [m]
+          Lscale_up, & ! Mixing length up   [m]
+          Lscale_down  ! Mixing length down [m]
     """
     # This mirrors the Fortran compile-time parameter, not a runtime option.
     l_avg_Lscale = False
@@ -1004,17 +1199,91 @@ def diagnose_Lscale_from_tau(
     brunt_vaisala_freq_sqd_smth, Ri_zm,
     err_info,
 ):
-    """Diagnose damping times and mixing length from stress, shear, and stability.
-
-    Method 2 reads surface stresses, momentum-level TKE and gradient profiles,
-    thermodynamic-level ice fractions, and per-column tunable parameters.
-    Return ``err_info``, the separate inverse-time contributions [1/s], bounded
-    time scales [s], combined/directional lengths [m], and ``stats`` in source
-    output order. Directional lengths are zero placeholders for this method.
-    Suffixes ``_zt`` and ``_zm`` identify thermodynamic and momentum grids.
+    """Diagnose inverse damping times and mixing length from surface stress,
+    momentum-level TKE, shear, and stability profiles (method 2). Return the
+    separate inverse-time contributions [1/s], bounded time scales [s], and
+    thermodynamic-level lengths [m]; update statistics and error information.
 
     References:
-      Guo et al. (2021, JAMES).
+    Guo et al.(2021, JAMES)
+
+    Returns:
+        (err_info, invrs_tau_zt, invrs_tau_zm, invrs_tau_sfc,
+          invrs_tau_no_N2_zm, invrs_tau_bkgnd, invrs_tau_shear,
+          invrs_tau_N2_iso, invrs_tau_wp2_zm, invrs_tau_xp2_zm,
+          invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, tau_max_zm,
+          tau_max_zt, tau_zm, tau_zt, Lscale, Lscale_up, Lscale_down, stats)
+
+    Fortran declarations (diagnose_Lscale_from_tau in src/CLUBB_core/mixing_length.F90):
+
+        !--------------------------------- Input Variables ---------------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          upwp_sfc,      &
+          vpwp_sfc
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          ice_supersat_frac
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          em,                           &
+          ddzt_umvm_sqd,                &
+          brunt_vaisala_freq_sqd_smth,  &     ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+          Ri_zm                               ! Richardson number
+
+        real(kind = core_rknd), intent(in) :: &
+          ufmin,         &
+          tau_const
+
+        real(kind = core_rknd), dimension(ngrdcol), intent(in) :: &
+          sfc_elevation, &
+          Lscale_max
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        logical, intent(in) :: &
+          l_e3sm_config,              &
+          l_smooth_Heaviside_tau_wpxp   ! Use the smoothed Heaviside 'Peskin' function
+                                        ! to compute invrs_tau_wpxp_zm
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+
+        !--------------------------------- Output Variables ---------------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          invrs_tau_zm,                 &
+          invrs_tau_sfc,                &
+          invrs_tau_no_N2_zm,           &
+          invrs_tau_bkgnd,              &
+          invrs_tau_shear,              &
+          invrs_tau_N2_iso,             &
+          invrs_tau_wp2_zm,             &
+          invrs_tau_xp2_zm,             &
+          invrs_tau_wp3_zm,             &
+          invrs_tau_wpxp_zm,            &
+          tau_max_zm,                   &
+          tau_zm
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+          invrs_tau_zt,                 &
+          invrs_tau_wp3_zt,             &
+          tau_max_zt,                   &
+          tau_zt,                       &
+          Lscale,                       &
+          Lscale_up,                    &
+          Lscale_down
     """
     l_smooth_min_max = False  # Fortran compile-time parameter; retain both branches.
     heaviside_smth_range = 1.0
@@ -1343,12 +1612,10 @@ def compute_coherent_mixing_length(
 ):
     """Diagnose mixing length by weighting entraining moist-parcel travel with
     the fraction of assumed launch energies able to cross each energy barrier.
-
-    Read thermodynamic-level environmental/PDF properties, momentum-level TKE
-    [m^2/s^2], positive entrainment rates [1/m], and per-column launch/mixing
-    weights. Return ``(err_info, Lscale, Lscale_up, Lscale_down)`` with lengths
-    shaped ``(ngrdcol, nzt)`` in m; ``err_info`` passes through unchanged.
-    Parcel saturation always uses the local Flatau polynomial.
+    Read thermodynamic-level environmental and PDF properties, momentum-level
+    TKE, positive entrainment rates [1/m], and per-column launch/mixing weights.
+    Return combined, upward, and downward lengths on thermodynamic levels [m];
+    err_info is passed through unchanged.
 
     Analytic layer updates advance each trajectory in path order. With launch
     energy scale E and running adverse-work barrier H [m^2/s^2], endpoint
@@ -1356,6 +1623,11 @@ def compute_coherent_mixing_length(
     the layer, include the first layer at mean coherence <= 0.01, then stop.
     A source constant selects local, maximum-endpoint, or arrival-weighted
     directional lengths before floors, geometric mixing, and the final cap.
+    Parcel saturation always uses the local Flatau polynomial.
+
+    References:
+    doc/coherence_mixing_length.md: survival law and aggregation equations.
+    Golaz et al. (2002), J. Atmos. Sci., 59, 3540--3551: parcel background.
 
     JAX adaptation:
       Fixed-length scans and masks include the first layer at mean coherence
@@ -1364,8 +1636,7 @@ def compute_coherent_mixing_length(
       raw travel distances, crossing/arrival sums, and a group-activity flag.
       CPU batches of at least five columns default to eight-launch groups for
       forward speed; smaller batches and GPUs evaluate all launches together.
-      COHERENT_* constants above set this layout. Changing group width to zero
-      improved reverse throughput on the measured wide CPU profiles.
+      The COHERENT_* module constants set this layout.
 
       Grouped scans skip inactive layers and blocks. Ungrouped scans check only
       block boundaries to avoid per-layer synchronization. Forward working state
@@ -1373,9 +1644,53 @@ def compute_coherent_mixing_length(
       tape. CPU aggregation follows the source recurrence; GPU prefix sums and
       launch grouping change floating-point addition order.
 
-    References:
-      ``doc/coherence_mixing_length.md``: survival and aggregation equations.
-      Golaz et al. (2002), JAS 59, 3540--3551: parcel-method background.
+    Fortran declarations (compute_coherent_mixing_length in src/CLUBB_core/mixing_length.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm,     & ! Number of momentum levels
+          nzt,     & ! Number of thermodynamic levels
+          ngrdcol    ! Number of grid columns
+
+        type(grid), intent(in) :: &
+          gr   ! Grid structure
+
+        type(pdf_parameter), intent(in) :: &
+          pdf_params   ! PDF parameters used for directional launch properties
+
+        logical, intent(in) :: &
+          l_implemented   ! True when CLUBB is run within a host model
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          thvm,     & ! Environmental virtual potential temperature [K]
+          thlm,     & ! Environmental liquid-water potential temperature [K]
+          rtm,      & ! Environmental total-water mixing ratio [kg/kg]
+          p_in_Pa,  & ! Pressure [Pa]
+          exner,    & ! Exner function [-]
+          thv_ds      ! Reference-state virtual potential temperature [K]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          em   ! Turbulent kinetic energy on momentum levels [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          Lscale_max,  & ! Maximum allowable mixing length [m]
+          Lscale_mu_entrain,                    & ! Fractional entrainment rate [1/m]
+          Lscale_tke_multiplier, & ! Mean launch energy divided by TKE [-]
+          Lscale_pdf_launch_frac,    & ! PDF departure retained in launch properties [-]
+          Lscale_up_weight           ! Upward weight in directional geometric mixing [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          lmin ! Surface minimum mixing length [m]
+
+        !----------------------- Input/Output Variables ------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info   ! Error information
+
+        !--------------------------- Output Variables --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+          Lscale,      & ! Turbulent mixing length [m]
+          Lscale_up,   & ! Upward component of turbulent mixing length [m]
+          Lscale_down    ! Downward component of turbulent mixing length [m]
     """
     no_overwrite = 0                 # Retain each locally launched reach
     legacy_max_overwrite = 1         # Extend the most distant parcel endpoint
@@ -1782,13 +2097,8 @@ def compute_coherent_mixing_length(
 
 def sat_mixrat_liq_flatau(pressure, temperature):
     """Compute liquid saturation mixing ratio using only the Flatau polynomial.
+    This compact specialization is colocated with the mixing-length closure.
 
-    This compact specialization is colocated with the mixing-length closure
-    so the compiler can inline it into parcel trajectories.
-
-    It is also intentionally the serial method as opposed to the
-    complex pipeline / multi-fma unit friendlier version. This was
-    to minimize register usage in the complex loop it is used in.
     See saturation.py for more details.
 
     Note:
@@ -1802,16 +2112,31 @@ def sat_mixrat_liq_flatau(pressure, temperature):
       arbitrary, and none of that internal information escapes.
 
     Inputs and output:
-      pressure [Pa] and temperature [K] broadcast as JAX arrays; return liquid
-      saturation mixing ratio [kg/kg]. Evaluate the polynomial no lower than
-      -85 deg C. If pressure minus saturation vapor pressure is less than 1 Pa,
-      return ep (the dry-air/water-vapor gas-constant ratio) instead of dividing.
-      Inactive division operands are guarded for finite reverse derivatives.
+      pressure [Pa] and temperature [K] broadcast as arrays; saturation_rt [kg/kg]
+      is returned. Evaluate the polynomial no lower than -85 deg C. If pressure
+      minus saturation vapor pressure is less than 1 Pa, return ep (the ratio
+      of dry-air to water-vapor gas constants) instead of dividing.
 
     References:
-      Flatau et al. (1992), J. Appl. Meteor., 31, 1507--1513.
-      saturation.py: shared saturation formulas and polynomial evaluations.
-      src/CLUBB_core/saturation.F90: underlying Fortran saturation routines.
+    Flatau et al. (1992), J. Appl. Meteor., 31, 1507--1513.
+    saturation.py: shared saturation formulas and polynomial evaluations.
+
+    Inactive division operands are guarded so that reverse-mode derivatives
+    stay finite.
+
+    Returns:
+        saturation_rt
+
+    Fortran declarations (sat_mixrat_liq_flatau in src/CLUBB_core/mixing_length.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          pressure,     & ! Pressure [Pa]
+          temperature    ! Temperature [K]
+
+        !--------------------------- Output Variables --------------------------
+        real( kind = core_rknd ) :: &
+          saturation_rt   ! Saturation mixing ratio [kg/kg]
     """
     minimum_temperature = -85.0
     temperature_celsius = jnp.maximum(temperature - T_freeze_K, minimum_temperature)

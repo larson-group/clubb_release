@@ -80,14 +80,14 @@ contains
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       pdf_idx    ! Index of a hydrometeor in the PDF array.
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     integer :: &
       hydromet_idx    ! Index of a hydrometeor in the hydromet array.
 
@@ -157,14 +157,14 @@ contains
 
     implicit none
 
-    ! Input Variable
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       hydromet_idx    ! Index of a hydrometeor in the hydromet array.
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     integer :: &
       pdf_idx    ! Index of a hydrometeor in the PDF array.
 
@@ -236,14 +236,14 @@ contains
 
     implicit none
 
-    ! Input Variable
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       rx_idx    ! Index of the mixing ratio in the hydrometeor array.
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     integer :: &
       Nx_idx    ! Index of the concentration in the hydrometeor array.
 
@@ -294,14 +294,14 @@ contains
 
     implicit none
 
-    ! Input Variable
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       Nx_idx    ! Index of the concentration in the hydrometeor array.
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     integer :: &
       rx_idx    ! Index of the mixing ratio in the hydrometeor array.
 
@@ -363,7 +363,7 @@ contains
 
     implicit none
 
-    ! Input Variable
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       hydromet_idx    ! Index of a hydrometeor in the hydromet array.
 
@@ -371,7 +371,7 @@ contains
       hm_metadata
 
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       mvr_hydromet_max    ! Maximum allowable mean volume radius    [m]
 

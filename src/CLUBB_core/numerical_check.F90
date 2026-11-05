@@ -48,19 +48,21 @@ module numerical_check
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzt
 
+    !--------------------------- Local Variables ---------------------------
     ! Constant Parameters
     character(*), parameter :: proc_name = "compute_mixing_length"
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       Lscale,     & ! Mixing length                 [m]
       Lscale_up,  & ! Upward mixing length          [m]
       Lscale_down   ! Downward mixing length        [m]
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 !-----------------------------------------------------------------------------
@@ -109,15 +111,17 @@ module numerical_check
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz, &
       sclr_dim
 
+    !--------------------------- Local Variables ---------------------------
     ! Parameter Constants
     character(len=*), parameter :: proc_name = &
       "pdf_closure"
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wp4,             & ! w'^4                  [m^4/s^4]
       wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
@@ -155,7 +159,7 @@ module numerical_check
     type(stats_type), intent(in) :: &
       stats
 
-    ! Input/Output variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
@@ -637,7 +641,7 @@ module numerical_check
     character(len=*), parameter :: &
       proc_name = "calc_surface_varnce"
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       sclr_dim
 
@@ -655,7 +659,7 @@ module numerical_check
       sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
       sclrpthlp_sfc    ! Passive scalar theta_l covariance       [units K]
 
-    ! Input/Output variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 !-----------------------------------------------------------------------
@@ -710,16 +714,18 @@ module numerical_check
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol, &
       nzm, &
       nzt
 
+    !--------------------------- Local Variables ---------------------------
     ! Constant Parameters
     character(len=*), parameter :: &
       proc_name = "Before BUGSrad."
 
-    ! Input/Output variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       thlm,           & ! Liquid Water Potential Temperature   [K/s]
       rcm,            & ! Liquid Water Mixing Ratio            [kg/kg]
@@ -732,7 +738,7 @@ module numerical_check
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       rho_zm            ! Air Density                          [kg/m^3]
 
-    ! Input/Output variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
@@ -792,6 +798,7 @@ module numerical_check
 
     implicit none
     
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       nzt, &
@@ -989,13 +996,14 @@ module numerical_check
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: var(:,:)
 
     character(len=*), intent(in):: &
       varname,   & ! Variable being examined
       operation    ! Procedure calling check_zero
 
-    ! Input/Output variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
@@ -1051,14 +1059,14 @@ module numerical_check
     ! External
     intrinsic :: present
 
-    ! Input variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in), dimension(:) :: var ! Variable being examined
 
     character(len=*), intent(in):: &
       varname,  & ! Name of variable
       operation   ! Procedure calling check_nan
 
-    ! Input/Output variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
@@ -1100,14 +1108,14 @@ module numerical_check
     ! External
     intrinsic :: present
 
-    ! Input variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in), dimension(:,:) :: var ! Variable being examined
 
     character(len=*), intent(in):: &
       varname,  & ! Name of variable
       operation   ! Procedure calling check_nan
 
-    ! Input/Output variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
@@ -1148,14 +1156,14 @@ module numerical_check
     ! External
     intrinsic :: present
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: var        ! Variable being examined
 
     character(len=*), intent(in):: &
       varname,    & ! Name of variable being examined
       operation     ! Procedure calling check_nan
 
-    ! Input/Output variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
@@ -1190,7 +1198,7 @@ module numerical_check
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       integral_after, &   ! Vertically-integrated quantity after dt time  [units vary]
       integral_before, &  ! Vertically-integrated quantity before dt time [units vary]
@@ -1199,7 +1207,7 @@ module numerical_check
       integral_forcing, & ! Vertically-integrated forcing                 [units vary]
       dt                  ! Timestep size                                 [s]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: spurious_source ! [units vary]
 
 !--------------------------------------------------------------------

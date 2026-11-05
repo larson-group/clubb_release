@@ -372,17 +372,17 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Skx,      & ! Skewness of x                                            [-]
       F_x,      & ! Parameter for the spread of the PDF component means of x [-]
       zeta_x,   & ! Parameter for the PDF component variances of x           [-]
       sgn_wpxp    ! Sign of the covariance of w and x                        [-]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz) :: &
       mixt_frac    ! Mixture fraction    [-]
 
@@ -465,10 +465,10 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       xm,       & ! Mean of x (overall)                             [units vary]
       xp2,      & ! Variance of x (overall)                     [(units vary)^2]
@@ -477,7 +477,7 @@ module new_pdf
       F_x,      & ! Parameter for the spread of the PDF component means of x [-]
       zeta_x      ! Parameter for the PDF component variances of x           [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mu_x_1,    & ! Mean of x (1st PDF component)                  [units vary]
       mu_x_2,    & ! Mean of x (2nd PDF component)                  [units vary]
@@ -833,10 +833,10 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       xm,       & ! Mean of x (overall)                             [units vary]
       xp2,      & ! Variance of x (overall)                     [(units vary)^2]
@@ -845,7 +845,7 @@ module new_pdf
       F_x,      & ! Parameter for the spread of the PDF component means of x [-]
       mixt_frac   ! Mixture fraction                                         [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
@@ -945,10 +945,10 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       mixt_frac, & ! Mixture fraction                 [-]
       Skx,       & ! Skewness of x                    [-]
@@ -958,7 +958,7 @@ module new_pdf
       max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
       max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       min_F_x, & ! Minimum allowable value of F_x    [-]
       max_F_x    ! Maximum allowable value of F_x    [-]
@@ -1094,14 +1094,14 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variable
     real( kind = core_rknd ), dimension(nz,3), intent(in) :: &
       roots    ! Roots    [-]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz,3) :: &
       roots_sorted    ! Roots sorted from smallest to largest    [-]
 
@@ -1269,17 +1269,17 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real ( kind = core_rknd ), dimension(nz), intent(in) :: &
       mixt_frac,          & ! Mixture fraction                               [-]
       F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
       coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
       coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real ( kind = core_rknd ), dimension(nz) :: &
       coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
 
@@ -1497,10 +1497,10 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real ( kind = core_rknd ), dimension(nz), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       xp2,                & ! Variance of x (overall)           [(units vary)^2]
@@ -1514,7 +1514,7 @@ module new_pdf
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real ( kind = core_rknd ), dimension(nz) :: &
       coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
 
@@ -1788,10 +1788,10 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real ( kind = core_rknd ), dimension(nz), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       xp2,                & ! Variance of x (overall)           [(units vary)^2]
@@ -1804,7 +1804,7 @@ module new_pdf
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     ! Coefs.: <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit
     real ( kind = core_rknd ), dimension(nz), intent(out) :: &
       coef_wp2xp_implicit, & ! Coefficient that is multiplied by <w'x'>    [m/s]
@@ -2141,10 +2141,10 @@ module new_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real ( kind = core_rknd ), dimension(nz), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       xp2,                & ! Variance of x (overall)              [(x units)^2]
@@ -2164,7 +2164,7 @@ module new_pdf
       coef_sigma_y_1_sqd, & ! sigma_y_1^2 = coef_sigma_y_1_sqd * <y'^2>      [-]
       coef_sigma_y_2_sqd    ! sigma_y_2^2 = coef_sigma_y_2_sqd * <y'^2>      [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     ! Coefs.: <w'x'y'> = coef_wpxpyp_implicit * <x'y'> + term_wpxpyp_explicit
     real ( kind = core_rknd ), dimension(nz), intent(out) :: &
       coef_wpxpyp_implicit, & ! Coefficient that is multiplied by <x'y'>   [m/s]

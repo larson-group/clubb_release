@@ -4255,7 +4255,7 @@ module advance_wp2_wp3_module
     ! - (1/rho_ds) * d( rho_ds * coef_wp4_implicit * <w'^2>^2 )/dz.
     !
     ! The <w'^2>^2 term is timestep split so that it can be expressed linearly
-    ! intent(in) terms of <w'^2> at the (t+1) timestep, such that:
+    ! in terms of <w'^2> at the (t+1) timestep, such that:
     !
     ! <w'^2>^2 = <w'^2>(t) * <w'^2>(t+1);
     !
@@ -5145,7 +5145,7 @@ module advance_wp2_wp3_module
     ! - (1/rho_ds) * d( rho_ds * <w'^4> )/dz.
     !
     ! The value of <w'^4> is found by integrating over the PDF of w, as detailed
-    ! intent(in) function calc_wp4_pdf, which is found in module pdf_closure_module in
+    ! in function calc_wp4_pdf, which is found in module pdf_closure_module in
     ! pdf_closure_module.F90.
     !
     ! The explicit discretization of this term is as follows:

@@ -55,10 +55,7 @@ def _exner_step(exner_1, z_1, z_2, thvm_1, thvm_2):
 # JIT gives its locally defined scan body a stable compilation-cache owner.
 @partial(jax.jit)
 def init_pressure(thvm, p_sfc, gr):
-    """Calculate hydrostatic pressure and Exner on thermodynamic and momentum levels.
-
-    Description:
-    Calculates the initial pressure according to the hydrostatic
+    """Calculates the initial pressure according to the hydrostatic
     approximation.  Combining the moist equation of state and the hydrostatic
     approximation, the change of pressure with respect to height can be
     calculated based on theta_v, such that:
@@ -96,7 +93,32 @@ def init_pressure(thvm, p_sfc, gr):
     Since the surface pressure is known at the initial time, that allows
     pressure to be calculated for the rest of the vertical profile.
 
-    References:
+    Returns:
+        (p_in_Pa, exner, p_in_Pa_zm, exner_zm)
+
+    Fortran declarations (init_pressure in src/CLUBB_core/calc_pressure.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          ngrdcol
+
+        type (grid), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
+          thvm    ! Mean theta_v (thermodynamic levels)                [K]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          p_sfc    ! Surface pressure                                   [Pa]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
+          p_in_Pa,    & ! Pressure (thermodynamic levels)        [Pa]
+          exner         ! Exner function (thermodynamic levels)  [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(out) :: &
+          p_in_Pa_zm, & ! Pressure on momentum levels            [Pa]
+          exner_zm      ! Exner function on momentum levels      [-]
     """
     thvm = jnp.asarray(thvm)
     p_sfc = jnp.asarray(p_sfc)
@@ -176,13 +198,29 @@ def calculate_thvm(
     exner,
     thv_ds_zt,
 ):
-    """Calculate mean theta_v.
-
-    Description:
-    Calculates mean theta_v based on a linearized approximation to the theta_v
+    """Calculates mean theta_v based on a linearized approximation to the theta_v
     equation.  This equation also includes liquid water loading.
 
-    References:
+    Returns:
+        thvm
+
+    Fortran declarations (calculate_thvm in src/CLUBB_core/calc_pressure.F90):
+
+        ! ---------------------------- Input Variables ----------------------------
+        integer, intent(in) :: &
+          nzt, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          thlm,      & ! Mean theta_l (thermodynamic levels)          [K]
+          rtm,       & ! Mean total water (thermodynamic levels)      [kg/kg]
+          rcm,       & ! Mean cloud water (thermodynamic levels)      [kg/kg]
+          exner,     & ! Exner function (thermodynamic levels)        [-]
+          thv_ds_zt    ! Reference theta_v on thermodynamic levels    [K]
+
+        ! ---------------------------- Return Variable ----------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+          thvm    ! Mean theta_v (thermodynamic levels)    [K]
     """
     del nzt, ngrdcol
 

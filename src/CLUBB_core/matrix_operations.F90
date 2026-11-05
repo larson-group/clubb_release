@@ -139,12 +139,12 @@ module matrix_operations
     real( kind = core_rknd), parameter :: d_coef = 0.1_core_rknd 
        ! Coefficient applied if the decomposition doesn't work
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: ndim
 
     real( kind = core_rknd ), dimension(ndim,ndim), intent(in) :: a_input
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ndim), intent(out) :: a_scaling
 
     real( kind = core_rknd ), dimension(ndim,ndim), intent(out) :: a_Cholesky
@@ -530,11 +530,11 @@ module matrix_operations
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nvars ! Number of variables in each dimension of square matrix
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nvars,nvars), intent(inout) :: &
       matrix  ! Lower triangluar square matrix
 

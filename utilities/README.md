@@ -31,6 +31,15 @@ python utilities/print_tunable_parameters_table.py input/clubb_params.jsonc
 python utilities/print_tunable_parameters_table.py first.json second.json -bare -output_file /tmp/parameters.md
 ```
 
+[port_fortran_declarations_to_jax_docstrings/](port_fortran_declarations_to_jax_docstrings/README.md) copies the argument
+declarations of each Fortran routine in src/CLUBB_core into the docstring of
+its JAX port and checks that they stay in step.
+
+```bash
+python3 utilities/port_fortran_declarations_to_jax_docstrings/port_fortran_declarations_to_jax_docstrings.py
+python3 utilities/port_fortran_declarations_to_jax_docstrings/port_fortran_declarations_to_jax_docstrings.py -write_declaration -modules new_pdf
+```
+
 Other files in this directory:
 
 [__init__.py](https://github.com/larson-group/clubb/blob/bc8d70735e710ef36f81e42f58843908ae3ddcbc/utilities/__init__.py) makes utilities/ a Python package, so other code can use

@@ -99,7 +99,7 @@ module sponge_layer_damping
     ! External
     intrinsic :: allocated
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
     type( grid ), intent(in) :: &
       gr
 
@@ -121,7 +121,7 @@ module sponge_layer_damping
     type(sponge_damp_profile), intent(in) :: &
       damping_profile
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nzt) :: &
       xm_p   ! Damped value of xm  [units_vary]
 
@@ -229,7 +229,7 @@ module sponge_layer_damping
 
     implicit none
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
     type( grid ), intent(in) :: &
       gr
 
@@ -249,7 +249,7 @@ module sponge_layer_damping
     type(sponge_damp_profile), intent(in) :: &
       damping_profile
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nzm) :: &
       xp2_damped    ! Variance of x, <x'^2>, after damping   [units vary]
 
@@ -356,7 +356,7 @@ module sponge_layer_damping
 
     implicit none
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
     type( grid ), intent(in) :: &
       gr
 
@@ -377,7 +377,7 @@ module sponge_layer_damping
     type(sponge_damp_profile), intent(in) :: &
       damping_profile
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nzt) :: &
       xp3_damped    ! <x'^3> after damping   [units vary]
 

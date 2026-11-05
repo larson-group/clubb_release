@@ -265,34 +265,60 @@ def calc_derived_params(
     clubb_params: np.ndarray,                            # In
     l_prescribed_avg_deltaz: bool,                       # In
 ) -> tuple[NuVertResDep, np.ndarray, np.ndarray]:
-    """Calculate parameters that should be derived from other quantities.
+    """Calculates CLUBB parameters that should be derived from other quantities.
 
-    Description:
-      Calculates CLUBB parameters that should be derived from other quantities.
+    Adjusts the values of background eddy diffusivity based on
+    vertical grid spacing.
+    This code was made into a public subroutine so that it may be
+    called multiple times per model run in scenarios where grid
+    altitudes, and hence average grid spacing, change through space
+    and/or time.  This occurs, for example, when CLUBB is
+    implemented in WRF.  --ldgrant Jul 2010
 
-      Adjusts the values of background eddy diffusivity based on
-      vertical grid spacing.
-      This code was made into a public subroutine so that it may be
-      called multiple times per model run in scenarios where grid
-      altitudes, and hence average grid spacing, change through space
-      and/or time.  This occurs, for example, when CLUBB is
-      implemented in WRF.  --ldgrant Jul 2010
-
-    Args:
-      gr: Grid definition.
-      ngrdcol: Number of grid columns.
-      grid_type: Even grid (1), stretched thermodynamic (2), or momentum (3).
-      deltaz: Change per height level [m].
-      clubb_params: Tunable model parameters [-].
-      l_prescribed_avg_deltaz: If true, avg_deltaz = deltaz.
+    Immutable returned values replace the Fortran inout allocations;
+    initialization and reset perform the Fortran lmin fatal check on the host.
 
     Returns:
-      nu_vert_res_dep: Vertical resolution dependent nu values.
-      lmin: Per-column minimum length, shape (ngrdcol,) [m].
-      mixt_frac_max_mag: Per-column maximum mixture fraction, shape (ngrdcol,) [-].
+        (nu_vert_res_dep, lmin, mixt_frac_max_mag)
 
-    Adaptation: immutable output values replace source inout allocations;
-    initialization and reset perform the source lmin fatal check on the host.
+    Fortran declarations (calc_derived_params in src/CLUBB_core/parameters_tunable.F90):
+
+        !------------------------------ Input Variables ------------------------------
+
+        ! Grid definition
+        type(grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          ngrdcol
+
+        ! If CLUBB is running on it's own, this option determines
+        ! if it is using:
+        ! 1) an evenly-spaced grid,
+        ! 2) a stretched (unevenly-spaced) grid entered on the
+        !    thermodynamic grid levels (with momentum levels set
+        !    halfway between thermodynamic levels), or
+        ! 3) a stretched (unevenly-spaced) grid entered on the
+        !    momentum grid levels (with thermodynamic levels set
+        !    halfway between momentum levels).
+        integer, intent(in) :: grid_type
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          deltaz  ! Change per height level        [m]
+
+        logical, intent(in) :: &
+          l_prescribed_avg_deltaz ! used in calc_derived_params_api. If .true., avg_deltaz = deltaz
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
+          clubb_params  ! Tuneable model parameters      [-]
+
+        !------------------------------ Output Variables ------------------------------
+        type(nu_vertical_res_dep), intent(inout) :: &
+          nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
+          mixt_frac_max_mag, & ! Maximum allowable mag. of mixt_frac   [-]
+          lmin ! Min. value for the length scale    [m]
     """
     # ------------------------------ Constant Parameters ------------------------------
     # Flag for adjusting the values of the constant background eddy diffusivity
@@ -398,7 +424,21 @@ def check_parameter_hard_bounds(
     clubb_params: np.ndarray,
     err_info,
 ):
-    """Apply the same inclusive hard-bound table as Fortran."""
+    """Apply the same inclusive hard-bound table as Fortran.
+
+    Fortran declarations (check_parameter_hard_bounds in src/CLUBB_core/parameters_tunable.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          ngrdcol ! Number of grid columns [#]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
+          clubb_params ! Tunable model parameters [-]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info ! Shared CLUBB error state
+    """
     values = np.asarray(clubb_params, dtype=np.float64)
     if values.shape != (ngrdcol, len(PARAM_NAMES)):
         raise ValueError(

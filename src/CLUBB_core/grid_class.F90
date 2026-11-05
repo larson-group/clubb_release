@@ -307,13 +307,15 @@ module grid_class
     integer, parameter :: & 
       NWARNING = 250 ! Issue a warning if nzmax exceeds this number.
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) ::  & 
       nzmax, &  ! Number of vertical levels in grid      [#]
       ngrdcol
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(grid), intent(inout) :: gr
 
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
 
@@ -358,7 +360,7 @@ module grid_class
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) :: &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    ! InOut Variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 
@@ -2650,6 +2652,7 @@ module grid_class
 
     implicit none
     
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       nzt, &
@@ -2657,11 +2660,10 @@ module grid_class
 
     type (grid), intent(in) :: gr
 
-    ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       gradzm_2D    ! Vertical derivative of azm (thermo. levs.) [units vary / m]
 
@@ -2698,13 +2700,13 @@ module grid_class
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     type (grid), intent(in) :: gr
 
-    ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(gr%nzt) :: &
       gradzm_1D    ! Vertical derivative of azm (thermo. levs.) [units vary / m]
       
@@ -2746,6 +2748,7 @@ module grid_class
 
     implicit none
     
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       nzt, &
@@ -2753,11 +2756,10 @@ module grid_class
 
     type (grid), intent(in) :: gr
 
-    ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       gradzt_2D    ! Vertical derivative of azt (mom.levs.) [units vary / m]
 
@@ -2807,13 +2809,13 @@ module grid_class
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     type (grid), intent(in) :: gr
 
-    ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(gr%nzm) :: &
       gradzt_1D    ! Vertical derivative of azt (mom. levs.) [units vary / m]
 

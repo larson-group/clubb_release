@@ -101,10 +101,26 @@ import jax.numpy as jnp
 
 @partial(jax.jit, static_argnames=("ndim", "ngrdcol"))
 def penta_lu_solve_single_rhs_multiple_lhs(ndim: int, ngrdcol: int, lhs, rhs):
-    """Solve multiple pentadiagonal systems with one right-hand side each.
+    """Written for single RHS and multiple LHS.
 
-    Description:
-      Written for single RHS and multiple LHS.
+    Fortran declarations (penta_lu_solve_single_rhs_multiple_lhs in src/CLUBB_core/penta_lu_solver.F90):
+
+        ! ----------------------- Input Variables -----------------------
+        integer, intent(in) :: &
+          ndim,   & ! Matrix size
+          ngrdcol   ! Number of grid columns
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim) ::  &
+          rhs       !
+
+        ! ----------------------- Input/Output Variables -----------------------
+        real( kind = core_rknd ), intent(inout), dimension(-2:2,ngrdcol,ndim) :: &
+          lhs   ! Matrices to solve, stored using band diagonal vectors
+                ! -2 is the uppermost band, 2 is the lower most band, 0 is diagonal
+
+        ! ----------------------- Output Variables -----------------------
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim) ::  &
+          soln     ! Solution vector
     """
     del ngrdcol
 
@@ -265,10 +281,30 @@ def penta_lu_solve_single_rhs_multiple_lhs(ndim: int, ngrdcol: int, lhs, rhs):
 def penta_lu_solve_multiple_rhs_lhs(
     ndim: int, nrhs: int, ngrdcol: int, lhs, rhs
 ):
-    """Solve multiple pentadiagonal systems with multiple right-hand sides.
+    """Written for multiple RHS and multiple LHS.
 
-    Description:
-      Written for multiple RHS and multiple LHS.
+    Returns:
+        soln
+
+    Fortran declarations (penta_lu_solve_multiple_rhs_lhs in src/CLUBB_core/penta_lu_solver.F90):
+
+        ! ----------------------- Input Variables -----------------------
+        integer, intent(in) :: &
+          ndim,   & ! Matrix size
+          nrhs,   & ! Number of right hand sides
+          ngrdcol   ! Number of grid columns
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim,nrhs) ::  &
+          rhs       !
+
+        ! ----------------------- Input/Output Variables -----------------------
+        real( kind = core_rknd ), intent(inout), dimension(-2:2,ngrdcol,ndim) :: &
+          lhs   ! Matrices to solve, stored using band diagonal vectors
+                ! -2 is the uppermost band, 2 is the lower most band, 0 is diagonal
+
+        ! ----------------------- Output Variables -----------------------
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim,nrhs) ::  &
+          soln     ! Solution vector
     """
     del nrhs, ngrdcol
 
@@ -438,7 +474,27 @@ def penta_lu_solve_multiple_rhs_lhs(
 
 
 def penta_lu_solve(ndim: int, ngrdcol: int, lhs, rhs):
-    """Generic pentadiagonal LU solve interface."""
+    """Written for single RHS and multiple LHS.
+
+    Fortran declarations (penta_lu_solve_single_rhs_multiple_lhs in src/CLUBB_core/penta_lu_solver.F90):
+
+        ! ----------------------- Input Variables -----------------------
+        integer, intent(in) :: &
+          ndim,   & ! Matrix size
+          ngrdcol   ! Number of grid columns
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim) ::  &
+          rhs       !
+
+        ! ----------------------- Input/Output Variables -----------------------
+        real( kind = core_rknd ), intent(inout), dimension(-2:2,ngrdcol,ndim) :: &
+          lhs   ! Matrices to solve, stored using band diagonal vectors
+                ! -2 is the uppermost band, 2 is the lower most band, 0 is diagonal
+
+        ! ----------------------- Output Variables -----------------------
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim) ::  &
+          soln     ! Solution vector
+    """
     if rhs.ndim == 2:
         return penta_lu_solve_single_rhs_multiple_lhs(ndim, ngrdcol, lhs, rhs)
     if rhs.ndim == 3:

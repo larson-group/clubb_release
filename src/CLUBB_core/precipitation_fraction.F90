@@ -446,7 +446,7 @@ module precipitation_fraction
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     type(grid), intent(in) :: &
       gr    ! Grid type variable
 
@@ -475,7 +475,7 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
@@ -802,7 +802,7 @@ module precipitation_fraction
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzt,          & ! Number of model thermodynamic vertical grid levels
       ngrdcol,      & ! Number of grid columns
@@ -824,11 +824,12 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
+    !--------------------------- Local Variables ---------------------------
     integer :: k, j  ! Loop index.
 
 
@@ -960,7 +961,7 @@ module precipitation_fraction
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzt,          & ! Number of model thermodynamic vertical grid levels
       hydromet_dim    ! Number of hydrometeor species
@@ -980,7 +981,7 @@ module precipitation_fraction
     real( kind = core_rknd ), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info        ! err_info struct containing err_code and err_header
 

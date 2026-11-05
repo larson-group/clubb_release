@@ -56,9 +56,23 @@ def mean_L2N(mu_x, sigma2_on_mu2):
     value ln x is distributed normally when x is distributed lognormally.
 
     References:
-     Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
-       Marcel Dekker, 401 pp.
-     -- App. B.
+    Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+      Marcel Dekker, 401 pp.
+    -- App. B.
+
+    Returns:
+        mu_x_n
+
+    Fortran declarations (mean_L2N in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) ::  &
+          mu_x,          & ! Mean of x (ith PDF component)                     [-]
+          sigma2_on_mu2    ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)    [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) ::  &
+          mu_x_n  ! Mean of ln x (ith PDF component)           [-]
     """
     # Find the mean of ln x for the ith component of the PDF.
     # The max( mu_x / sqrt( 1 + sigma_x^2 / mu_x^2 ), tiny( mu_x ) ) statement
@@ -77,9 +91,22 @@ def stdev_L2N(sigma2_on_mu2):
     lognormally.
 
     References:
-     Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
-       Marcel Dekker, 401 pp.
-     -- App. B.
+    Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+      Marcel Dekker, 401 pp.
+    -- App. B.
+
+    Returns:
+        sigma_x_n
+
+    Fortran declarations (stdev_L2N in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) ::  &
+          sigma2_on_mu2    ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)    [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) ::  &
+          sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
     """
     # Find the standard deviation of ln x for the ith component of the PDF.
     sigma_x_n = jnp.sqrt(jnp.log(1.0 + sigma2_on_mu2))
@@ -95,9 +122,24 @@ def corr_NL2NN(corr_x_y, sigma_y_n, y_sigma2_on_mu2):
     distributed lognormally.
 
     References:
-     Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
-       Marcel Dekker, 401 pp.
-     -- Eq. B-1.
+    Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+      Marcel Dekker, 401 pp.
+    -- Eq. B-1.
+
+    Returns:
+        corr_x_y_n
+
+    Fortran declarations (corr_NL2NN in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          corr_x_y,        & ! Correlation of x and y (ith PDF component)       [-]
+          sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+          y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) ::  &
+          corr_x_y_n  ! Correlation of x and ln y (ith PDF component) [-]
     """
     # Find the correlation of x and ln y for the ith component of the PDF.
     # When sigma_y = 0 and mu_y > 0, y_sigma2_on_mu2 = 0.  This results in
@@ -117,16 +159,33 @@ def corr_NL2NN(corr_x_y, sigma_y_n, y_sigma2_on_mu2):
 
 def corr_LL2NN(corr_x_y, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu2):
     """For lognormally-distributed variables x and y, this function finds the
-    correlation of ln x and ln y (corr_x_y_n) for the ith component of the PDF,
-    given the correlation of x and y (corr_x_y) and the standard deviations of
-    ln x and ln y (sigma_x_n and sigma_y_n) for the ith component of the PDF.
-    The values ln x and ln y are distributed normally when x and y are
-    distributed lognormally.
+    correlation of ln x and ln y (corr_x_y_n) for the ith component of the
+    PDF, given the correlation of x and y (corr_x_y), the standard deviation
+    of ln x (sigma_x_n), and the standard deviation of ln y (sigma_y_n) for
+    the ith component of the PDF.  The value of ln x (or ln y) is distributed
+    normally when x (or y) is distributed lognormally.
 
     References:
-     Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
-       Marcel Dekker, 401 pp.
-     -- Eq. C-3.
+    Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+      Marcel Dekker, 401 pp.
+    -- Eq. C-3.
+
+    Returns:
+        corr_x_y_n
+
+    Fortran declarations (corr_LL2NN in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) ::  &
+          corr_x_y,        & ! Correlation of x and y (ith PDF component)       [-]
+          sigma_x_n,       & ! Standard deviation of ln x (ith PDF component)   [-]
+          sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+          x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
+          y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) ::  &
+          corr_x_y_n  ! Correlation of ln x and ln y (ith PDF component)  [-]
     """
     # Find the correlation of ln x and ln y for the ith component of the PDF.
     # If sigma_x_n = 0 or sigma_y_n = 0, the value of corr_x_y_n is undefined,
@@ -149,9 +208,28 @@ def corr_NN2NL(corr_x_y_n, sigma_y_n, y_sigma2_on_mu2):
     distributed lognormally.
 
     References:
-     Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
-       Marcel Dekker, 401 pp.
-     -- Eq. B-1.
+    Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+      Marcel Dekker, 401 pp.
+    -- Eq. B-1.
+
+    Returns:
+        corr_x_y
+
+    Fortran declarations (corr_NN2NL in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz,      & ! Number of vertical levels
+          ngrdcol    ! Number of grid columns
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          corr_x_y_n,      & ! Correlation of x and ln y (ith PDF component)    [-]
+          sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+          y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+          corr_x_y  ! Correlation of x and y (ith PDF component) [-]
     """
     # Find the correlation of x and y for the ith component of the PDF.
     corr = jnp.where(sigma_y_n > 0.0,
@@ -163,10 +241,39 @@ def corr_NN2NL(corr_x_y_n, sigma_y_n, y_sigma2_on_mu2):
 
 
 def corr_NN2LL(corr_x_y_n, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu2):
-    """Correlation of x and y (both lognormal) from corr(ln x, ln y). pdf_utilities.F90:590.
+    """For lognormally-distributed variables x and y, this function finds the
+    correlation of x and y (corr_x_y) for the ith component of the PDF, given
+    the correlation of ln x and ln y (corr_x_y_n), the standard deviation of
+    ln x (sigma_x_n), and the standard deviation of ln y (sigma_y_n) for
+    the ith component of the PDF.  The value of ln x (or ln y) is distributed
+    normally when x (or y) is distributed lognormally.
 
-    Inverse of corr_LL2NN: corr_x_y = (exp(sigma_x_n sigma_y_n corr_x_y_n) - 1)
-    / sqrt(x_sigma2_on_mu2 y_sigma2_on_mu2) if both sigma_n>0, else corr_x_y_n; clipped."""
+    References:
+    Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+      Marcel Dekker, 401 pp.
+    -- Eq. C-3.
+
+    Returns:
+        corr_x_y
+
+    Fortran declarations (corr_NN2LL in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz,      & ! Number of vertical levels
+          ngrdcol    ! Number of grid columns
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          corr_x_y_n,      & ! Correlation of ln x and ln y (ith PDF component) [-]
+          sigma_x_n,       & ! Standard deviation of ln x (ith PDF component)   [-]
+          sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+          x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
+          y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+          corr_x_y  ! Correlation of x and y (ith PDF component)  [-]
+    """
     both_pos = (sigma_x_n > 0.0) & (sigma_y_n > 0.0)
     denom = jnp.where(both_pos, sqrt_clipped(x_sigma2_on_mu2 * y_sigma2_on_mu2), 1.0)
     corr = jnp.where(both_pos,
@@ -178,11 +285,75 @@ def corr_NN2LL(corr_x_y_n, sigma_x_n, sigma_y_n, x_sigma2_on_mu2, y_sigma2_on_mu
 
 def calc_corr_chi_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_chi_i,
                     corr_rt_x_i, corr_thl_x_i):
-    """Correlation of chi and x in a PDF component, from corr(rt,x), corr(thl,x).
-    pdf_utilities.F90:912 (Larson et al. 2001 chi linearization).
+    """This function calculates the correlation of extended liquid water mixing
+    ratio, chi (old s), and a generic variable x, within the ith component of
+    the PDF.  The variable chi can be split into mean and turbulent
+    components, such that:
 
-    corr_chi_x = crt (sigma_rt/sigma_chi) corr_rt_x - cthl (sigma_thl/sigma_chi) corr_thl_x
-    when sigma_chi > chi_tol, else 0; clipped to +/- max_mag_correlation."""
+    chi = <chi> + chi';
+
+    where < > denotes a mean field an ' denotes a turbulent component.
+
+    The linearized equation for chi' is given in Larson et al. (2001), where
+    within the ith component of the PDF:
+
+    chi_(i)' = Coef_rt(i) * r_t(i)' - Coef_thl(i) * th_l(i)'.
+
+    The equation for chi' can be multiplied by x'.  The equation becomes:
+
+    chi'x'_(i) = Coef_rt(i) * r_t'x'_(i) - Coef_thl(i) * th_l'x'_(i).
+
+    Averaging both sides, the covariance <chi'x'> is given by the equation:
+
+    <chi'x'_(i)> = Coef_rt(i) * <r_t'x'_(i)> - Coef_thl(i) * <th_l'x'_(i)>.
+
+    This equation can be rewritten as:
+
+    sigma_chi(i) * sigma_x(i) * corr_chi_x(i)
+      = Coef_rt(i) * sigma_rt(i) * sigma_x(i) * corr_rt_x(i)
+        - Coef_thl(i) * sigma_thl(i) * sigma_x(i) * corr_thl_x(i).
+
+    This equation can be solved for corr_chi_x(i):
+
+    corr_chi_x(i)
+    = Coef_rt(i) * ( sigma_rt(i) / sigma_chi(i) ) * corr_rt_x(i)
+      - Coef_thl(i) * ( sigma_thl(i) / sigma_chi(i) ) * corr_thl_x(i).
+
+    The correlation of chi and x within the ith component of the PDF is
+    calculated.
+
+    References:
+    Eq. (13) and Eq. (14) of Larson, V. E., R. Wood, P. R. Field, J.-C. Golaz,
+    T. H. Vonder Haar, W. R. Cotton, 2001:  Systematic Biases in the
+    Microphysics and Thermodynamics of Numerical Models That Ignore
+    Subgrid-Scale Variability. J. Atmos. Sci., 58, 1117--1128,
+    doi:https://doi.org/10.1175/1520-0469(2001)058%3C1117:SBITMA%3E2.0.CO;2.
+
+    Eq. (A29) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    Multivariate PDF.  Doctoral dissertation, University of
+    Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+
+    Returns:
+        corr_chi_x_i
+
+    Fortran declarations (calc_corr_chi_x in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          crt_i,        & ! Coefficient of r_t for chi (old s) (ith PDF comp.)   [-]
+          cthl_i,       & ! Coefficient of th_l for chi (ith PDF comp.)  [(kg/kg)/K]
+          sigma_rt_i,   & ! Standard deviation of r_t (ith PDF component)    [kg/kg]
+          sigma_thl_i,  & ! Standard deviation of th_l (ith PDF component)       [K]
+          sigma_chi_i,  & ! Standard deviation of chi (ith PDF component)    [kg/kg]
+          corr_rt_x_i,  & ! Correlation of r_t and x (ith PDF component)         [-]
+          corr_thl_x_i    ! Correlation of th_l and x (ith PDF component)        [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          corr_chi_x_i  ! Correlation of chi and x (ith PDF component)   [-]
+    """
     sig_safe = jnp.where(sigma_chi_i > _CHI_TOL, sigma_chi_i, 1.0)
     corr = jnp.where(
         sigma_chi_i > _CHI_TOL,
@@ -195,11 +366,33 @@ def calc_corr_chi_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_chi_i,
 
 def calc_corr_eta_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_eta_i,
                     corr_rt_x_i, corr_thl_x_i):
-    """Correlation of eta (old t) and x in a PDF component. pdf_utilities.F90:1028.
+    """This function calculates the correlation of the variable that is
+    orthogonal to extended liquid water mixing ratio in a PDF transformation,
+    eta (old t), and a generic variable x, within the ith component of
+    the PDF.
 
-    eta' = crt·rt' + cthl·thl' (note the + on cthl, vs - for chi), so
-    corr_eta_x = crt (sigma_rt/sigma_eta) corr_rt_x + cthl (sigma_thl/sigma_eta) corr_thl_x
-    when sigma_eta > eta_tol (= chi_tol), else 0; clipped to +/- max_mag_correlation."""
+    References:
+    Eq. (A30) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    Multivariate PDF.  Doctoral dissertation, University of
+    Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+
+    Returns:
+        corr_eta_x_i
+
+    Fortran declarations (calc_corr_eta_x in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          crt_i,        & ! Coefficient of r_t for chi (old s) (ith PDF comp.)   [-]
+          cthl_i,       & ! Coefficient of th_l for chi (ith PDF comp.)  [(kg/kg)/K]
+          sigma_rt_i,   & ! Standard deviation of r_t (ith PDF component)    [kg/kg]
+          sigma_thl_i,  & ! Standard deviation of th_l (ith PDF component)       [K]
+          sigma_eta_i,  & ! Standard deviation of eta (ith PDF component)    [kg/kg]
+          corr_rt_x_i,  & ! Correlation of r_t and x (ith PDF component)         [-]
+          corr_thl_x_i    ! Correlation of th_l and x (ith PDF component)        [-]
+    """
     sig_safe = jnp.where(sigma_eta_i > _ETA_TOL, sigma_eta_i, 1.0)
     corr = jnp.where(
         sigma_eta_i > _ETA_TOL,
@@ -211,10 +404,23 @@ def calc_corr_eta_x(crt_i, cthl_i, sigma_rt_i, sigma_thl_i, sigma_eta_i,
 
 
 def compute_mean_binormal(mu_x_1, mu_x_2, mixt_frac):
-    """For a two-component PDF, this function computes the overall mean of
-    variable x from the mean of x in each PDF component and the mixture fraction.
+    """Computes the overall grid-box mean of a binormal distribution from the
+    mean of each component
 
-    xm = mixt_frac * mu_x_1 + ( 1 - mixt_frac ) * mu_x_2
+    Returns:
+        xm
+
+    Fortran declarations (compute_mean_binormal in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          mu_x_1,    & ! First PDF component mean of 'x'                       [?]
+          mu_x_2,    & ! Second PDF component mean of 'x'                      [?]
+          mixt_frac    ! Weight of the first PDF component                     [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          xm           ! Mean of 'x' (overall)                                 [?]
     """
     # Calculate the overall mean of x.
     xm = mixt_frac * mu_x_1 + (1.0 - mixt_frac) * mu_x_2
@@ -222,12 +428,26 @@ def compute_mean_binormal(mu_x_1, mu_x_2, mixt_frac):
 
 
 def compute_variance_binormal(xm, mu_x_1, mu_x_2, stdev_x_1, stdev_x_2, mixt_frac):
-    """For a two-component PDF, this function computes the overall variance of
-    variable x from the overall mean of x, the mean of x in each PDF component,
-    the standard deviation of x in each PDF component, and the mixture fraction.
+    """Computes the overall grid-box variance of a binormal distribution from the
+    variance of each component.
 
-    xp2 = mixt_frac * ( ( mu_x_1 - xm )^2 + stdev_x_1^2 )
-          + ( 1 - mixt_frac ) * ( ( mu_x_2 - xm )^2 + stdev_x_2^2 )
+    Returns:
+        xp2
+
+    Fortran declarations (compute_variance_binormal in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          xm,        & ! Overall mean of 'x'                                   [?]
+          mu_x_1,    & ! First PDF component mean of 'x'                       [?]
+          mu_x_2,    & ! Second PDF component mean of 'x'                      [?]
+          stdev_x_1, & ! Standard deviation of 'x' in the first PDF component  [?]
+          stdev_x_2, & ! Standard deviation of 'x' in the second PDF component [?]
+          mixt_frac    ! Weight of the first PDF component                     [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          xp2          ! Variance of 'x' (overall)                             [?^2]
     """
     # Calculate the overall variance of x.
     xp2 = (mixt_frac * ((mu_x_1 - xm) ** 2 + stdev_x_1 ** 2)
@@ -237,10 +457,27 @@ def compute_variance_binormal(xm, mu_x_1, mu_x_2, stdev_x_1, stdev_x_2, mixt_fra
 
 def calc_corr_rt_x(crt_i, sigma_rt_i, sigma_chi_i, sigma_eta_i,
                    corr_chi_x_i, corr_eta_x_i):
-    """Correlation of rt and x from corr(chi,x), corr(eta,x). pdf_utilities.F90:1106.
+    """This function calculates the correlation of rt and x based on the
+    correlation of chi and x and the correlation of eta and x.
 
-    Inverts the chi/eta decomposition: corr_rt_x = (sigma_eta corr_eta_x + sigma_chi corr_chi_x)
-    / (2 crt sigma_rt) when sigma_rt > rt_tol, else 0; clipped."""
+    Returns:
+        corr_rt_x_i
+
+    Fortran declarations (calc_corr_rt_x in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          crt_i,        & ! Coef. of r_t in chi/eta eqns. (ith PDF component)    [-]
+          sigma_rt_i,   & ! Standard deviation of r_t (ith PDF component)    [kg/kg]
+          sigma_chi_i,  & ! Standard deviation of chi (ith PDF component)    [kg/kg]
+          sigma_eta_i,  & ! Standard deviation of eta (ith PDF component)    [kg/kg]
+          corr_chi_x_i, & ! Correlation of chi and x (ith PDF component)         [-]
+          corr_eta_x_i    ! Correlation of eta and x (ith PDF component)         [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          corr_rt_x_i   ! Correlation of rt and x (ith PDF component)            [-]
+    """
     sig_safe = jnp.where(sigma_rt_i > _RT_TOL, sigma_rt_i, 1.0)
     corr = jnp.where(
         sigma_rt_i > _RT_TOL,
@@ -252,10 +489,27 @@ def calc_corr_rt_x(crt_i, sigma_rt_i, sigma_chi_i, sigma_eta_i,
 
 def calc_corr_thl_x(cthl_i, sigma_thl_i, sigma_chi_i, sigma_eta_i,
                     corr_chi_x_i, corr_eta_x_i):
-    """Correlation of thl and x from corr(chi,x), corr(eta,x). pdf_utilities.F90:1175.
+    """This function calculates the correlation of thl and x based on the
+    correlation of chi and x and the correlation of eta and x.
 
-    corr_thl_x = (sigma_eta corr_eta_x - sigma_chi corr_chi_x) / (2 cthl sigma_thl)
-    when sigma_thl > thl_tol, else 0; clipped."""
+    Returns:
+        corr_thl_x_i
+
+    Fortran declarations (calc_corr_thl_x in src/CLUBB_core/pdf_utilities.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          cthl_i,       & ! Coef. of thl:  chi/eta eqns. (ith PDF comp.) [(kg/kg)/K]
+          sigma_thl_i,  & ! Standard deviation of thl (ith PDF component)        [K]
+          sigma_chi_i,  & ! Standard deviation of chi (ith PDF component)    [kg/kg]
+          sigma_eta_i,  & ! Standard deviation of eta (ith PDF component)    [kg/kg]
+          corr_chi_x_i, & ! Correlation of chi and x (ith PDF component)         [-]
+          corr_eta_x_i    ! Correlation of eta and x (ith PDF component)         [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          corr_thl_x_i    ! Correlation of thl and x (ith PDF component)         [-]
+    """
     sig_safe = jnp.where(sigma_thl_i > _THL_TOL, sigma_thl_i, 1.0)
     corr = jnp.where(
         sigma_thl_i > _THL_TOL,
@@ -271,6 +525,24 @@ def smooth_corr_quotient(numerator, denominator, denom_thresh):
     Two smooth_max operations keep the result a valid correlation: the
     denominator is first raised to at least |num|/max_mag_correlation and then
     to at least denom_thresh.
+
+    Fortran declarations (smooth_corr_quotient in src/CLUBB_core/pdf_utilities.F90):
+
+        ! ---------------- Input Variables ----------------
+        integer, intent(in) :: &
+          ngrdcol, & ! Number of grid columns
+          nz         ! Number of vertical levels
+
+        real ( kind = core_rknd ), intent(in) :: &
+          denom_thresh
+
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          numerator, &
+          denominator
+
+        ! ---------------- Output Variable ----------------
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+          quotient
     """
     coef = jnp.minimum(min_max_smth_mag, denom_thresh)
 
@@ -285,8 +557,87 @@ def smooth_corr_quotient(numerator, denominator, denom_thresh):
 
 def calc_comp_corrs_binormal(xpyp, xm, ym, mu_x_1, mu_x_2, mu_y_1, mu_y_2,
                              sigma_x_1_sqd, sigma_x_2_sqd, sigma_y_1_sqd, sigma_y_2_sqd, mixt_frac):
-    """Diagnoses PDF-component correlations of x and y from their overall
-    covariance, component means, component variances, and mixture fraction.
+    """Calculates the PDF component correlations of variables x and y, where
+    x and y are both distributed as two-component normals (or binormals).
+    The PDF component correlations are set equal to each other.
+
+    The overall covariance of x and y, <x'y'>, can be expressed in terms of
+    PDF parameters by integrating over the PDF:
+
+    <x'y'> = INT(-inf:inf) INT(-inf:inf) ( x - <x> ) ( y - <y> ) P(x,y) dy dx;
+
+    where <x> is the overall mean of x, <y> is the overall mean of y, and
+    P(x,y) is the equation for the two-component normal PDF of x and y.
+
+    The integral is evaluated, and the equation for <x'y'> is:
+
+    <x'y'> = mixt_frac * ( ( mu_x_1 - <x> ) * ( mu_y_1 - <y> )
+                           + corr_x_y_1 * sigma_x_1 * sigma_y_1 )
+             + ( 1 - mixt_frac ) * ( ( mu_x_2 - <x> ) * ( mu_y_2 - <y> )
+                                     + corr_x_y_2 * sigma_x_2 * sigma_y_2 );
+
+    where mu_x_1 is the mean of x in the 1st PDF component, mu_x_2 is the mean
+    of x in the 2nd PDF component, mu_y_1 is the mean of y in the 1st PDF
+    component, mu_y_2 is the mean of y in the 2nd PDF component, sigma_x_1 is
+    the standard deviation of x in the 1st PDF component, sigma_x_2 is the
+    standard deviation of x in the 2nd PDF component, sigma_y_1 is the
+    standard deviation of y in the 1st PDF component, sigma_y_2 is the
+    standard deviation of y in the 2nd PDF component, corr_x_y_1 is the
+    correlation of x and y in the 1st PDF component, corr_x_y_2 is the
+    correlation of x and y in the 2nd PDF component, and mixt_frac is the
+    mixture fraction (weight of the 1st PDF component).
+
+    This equation can be rewritten as:
+
+    <x'y'> = mixt_frac * ( mu_x_1 - <x> ) * ( mu_y_1 - <y> )
+             + mixt_frac * corr_x_y_1 * sigma_x_1 * sigma_y_1
+             + ( 1 - mixt_frac ) * ( mu_x_2 - <x> ) * ( mu_y_2 - <y> )
+             + ( 1 - mixt_frac ) * corr_x_y_2 * sigma_x_2 * sigma_y_2.
+
+    Setting the two PDF component correlations equal to each other
+    (corr_x_y_1 = corr_x_y_2), the equation can be solved for the PDF
+    component correlations:
+
+    corr_x_y_1 = corr_x_y_2
+    = ( <x'y'> - mixt_frac * ( mu_x_1 - <x> ) * ( mu_y_1 - <y> )
+               - ( 1 - mixt_frac ) * ( mu_x_2 - <x> ) * ( mu_y_2 - <y> ) )
+      / ( mixt_frac * sigma_x_1 * sigma_y_1
+          + ( 1 - mixt_frac ) * sigma_x_2 * sigma_y_2 );
+
+    where -1 <= corr_x_y_1 = corr_x_y_2 <= 1.
+
+    When sigma_x_1 * sigma_y_1 = 0 and sigma_x_2 * sigma_y_2 = 0, at least one
+    of x or y are constant within each PDF component, and both PDF component
+    correlations are undefined.
+
+    Returns:
+        (corr, corr)
+
+    Fortran declarations (calc_comp_corrs_binormal in src/CLUBB_core/pdf_utilities.F90):
+
+        ! ---------------- Input Variables ----------------
+        integer, intent(in) :: &
+          nz,      & ! Number of vertical levels
+          ngrdcol    ! Number of grid columns
+
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          xpyp,          & ! Covariance of x and y (overall)    [(x units)(y units)]
+          xm,            & ! Mean of x (overall)                [x units]
+          ym,            & ! Mean of y (overall)                [y units]
+          mu_x_1,        & ! Mean of x (1st PDF component)      [x units]
+          mu_x_2,        & ! Mean of x (2nd PDF component)      [x units]
+          mu_y_1,        & ! Mean of y (1st PDF component)      [y units]
+          mu_y_2,        & ! Mean of y (2nd PDF component)      [y units]
+          sigma_x_1_sqd, & ! Variance of x (1st PDF component)  [(x units)^2]
+          sigma_x_2_sqd, & ! Variance of x (2nd PDF component)  [(x units)^2]
+          sigma_y_1_sqd, & ! Variance of y (1st PDF component)  [(y units)^2]
+          sigma_y_2_sqd, & ! Variance of y (2nd PDF component)  [(y units)^2]
+          mixt_frac        ! Mixture fraction                   [-]
+
+        ! ---------------- Output Variables ----------------
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+          corr_x_y_1, & ! Correlation of x and y (1st PDF component)    [-]
+          corr_x_y_2    ! Correlation of x and y (2nd PDF component)    [-]
     """
     # Calculate the numerator of the component correlation equation.
     numerator = (xpyp - mixt_frac * (mu_x_1 - xm) * (mu_y_1 - ym)

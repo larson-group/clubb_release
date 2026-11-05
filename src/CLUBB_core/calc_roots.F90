@@ -71,7 +71,7 @@ module calc_roots
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz    ! Number of vertical levels
 
@@ -81,7 +81,7 @@ module calc_roots
       c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
       d_coef    ! Coefficient d in a*x^3 + b*x^2 + c^x + d = 0             [-]
 
-    ! Return Variables
+    !--------------------------- Output Variables ---------------------------
     complex( kind = core_rknd ), dimension(nz,3) :: &
       roots    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0       [-]
 
@@ -219,7 +219,7 @@ module calc_roots
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz    ! Number of vertical levels
 
@@ -228,7 +228,7 @@ module calc_roots
       b_coef, & ! Coefficient b (of x) in a*x^2 + b*x + c = 0      [-]
       c_coef    ! Coefficient c in a*x^2 + b*x + c = 0             [-]
 
-    ! Return Variables
+    !--------------------------- Output Variables ---------------------------
     complex( kind = core_rknd ), dimension(nz,2) :: &
       roots    ! Roots of x that satisfy a*x^2 + b*x + c = 0       [-]
 
@@ -291,11 +291,11 @@ module calc_roots
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       x  ! Variable x
 
-    ! Return Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       cube_root  ! Cube root of x
 

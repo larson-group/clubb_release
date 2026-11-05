@@ -23,7 +23,6 @@ from clubb_jax.src.CLUBB_core.constants_clubb import eps
 
 def lin_interpolate_two_points(height_int, height_high, height_low, var_high, var_low):
     """This function computes a linear interpolation of the value of variable.
-
     Given two known values of a variable at two height values, the value
     of that variable at a height between those two height levels (rather
     than a height outside of those two height levels) is computed.
@@ -32,16 +31,9 @@ def lin_interpolate_two_points(height_int, height_high, height_low, var_high, va
 
      ################################ Height high, know variable value
 
-
-
      -------------------------------- Height to be interpolated to; linear interpolation
 
-
-
-
-
      ################################ Height low, know variable value
-
 
     FORMULA:
 
@@ -50,10 +42,22 @@ def lin_interpolate_two_points(height_int, height_high, height_low, var_high, va
     [ (variable(@ Height high) - variable(@ Height low)) / (Height high - Height low) ]
     * (Height interpolation - Height low)  +  variable(@ Height low)
 
-    Comments from WRF-HOC, Brian Griffin.
+    Returns:
+        lin_interpolate_two_points
 
-    References:
-    None
+    Fortran declarations (lin_interpolate_two_points in src/CLUBB_core/interpolation.F90):
+
+        !--------------------------- Input Variables ---------------------------
+
+        real( kind = core_rknd ), intent(in) :: &
+          height_int,  & ! Height to be interpolated to     [m]
+          height_high, & ! Height above the interpolation   [m]
+          height_low,  & ! Height below the interpolation   [m]
+          var_high,    & ! Variable above the interpolation [units vary]
+          var_low        ! Variable below the interpolation [units vary]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: lin_interpolate_two_points
     """
     # Diagnostic-only restoration; retain the existing numerical/STOP boundary.
     jax.lax.cond(
@@ -73,20 +77,31 @@ def lin_interpolate_two_points(height_int, height_high, height_low, var_high, va
 
 def mono_cubic_interp(z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2,
                       l_quintic_poly_interp=False):
-    """Steffen's monotone cubic interpolation method.
-
+    """Steffen's monotone cubic interpolation method
     Returns monotone cubic interpolated value between x00 and xp1
 
-    Original Author:
-      Takanobu Yamaguchi
-      tak.yamaguchi@noaa.gov
-
-      This version has been modified slightly for CLUBB's coding standards and
-      adds the 3/2 from eqn 21. -dschanen 26 Oct 2011
-      We have also added a quintic polynomial option.
-
     References:
-      M. Steffen, Astron. Astrophys. 239, 443-450 (1990)
+    M. Steffen, Astron. Astrophys. 239, 443-450 (1990)
+
+    Returns:
+        f_out
+
+    Fortran declarations (mono_cubic_interp in src/CLUBB_core/interpolation.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          z_in ! The altitude to be interpolated to [m]
+
+        ! k-levels;  their meaning depends on whether we're extrapolating or interpolating
+        integer, intent(in) :: &
+          km1, k00, kp1, kp2
+
+        real( kind = core_rknd ), intent(in) :: &
+          zm1, z00, zp1, zp2, & ! The altitudes for km1, k00, kp1, kp2      [m]
+          fm1, f00, fp1, fp2    ! The field at km1, k00, kp1, and kp2       [units vary]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: f_out ! The interpolated field
     """
     coef1 = 1.0
     coef2 = 1.0
@@ -176,17 +191,50 @@ def mono_cubic_interp(z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp
 
 
 def linear_interp_factor(factor, var_high, var_low):
-    """Determines the coefficient for a linear interpolation.
+    """Determines the coefficient for a linear interpolation
 
-    References:
-      None
+    Returns:
+        linear_interp_factor
+
+    Fortran declarations (linear_interp_factor in src/CLUBB_core/interpolation.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          factor,   & ! Factor                           [units vary]
+          var_high, & ! Variable above the interpolation [units vary]
+          var_low     ! Variable below the interpolation [units vary]
     """
     linear_interp_factor = factor * (var_high - var_low) + var_low
     return linear_interp_factor
 
 
 def lin_interp_between_grids(interpolate_altitudes, current_altitudes, current_values):
-    """Interpolates from the values (gr_current_values) on the current grid (gr_current) to the gr_interpolate grid."""
+    """interpolates from the values (gr_current_values) on the current grid (gr_current) to the
+    gr_interpolate grid
+
+    Returns:
+        lin_interp_between_grids
+
+    Fortran declarations (lin_interp_between_grids in src/CLUBB_core/interpolation.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+            size_interpolate, &
+            size_current
+
+        real( kind = core_rknd ), dimension(size_interpolate) :: &
+          interpolate_altitudes ! altitudes where the values should be interpolated to
+
+        real( kind = core_rknd ), dimension(size_current) :: &
+          current_altitudes ! altitudes where the given values are currently on
+
+        real( kind = core_rknd ), dimension(size_current) :: &
+          current_values ! given values on the current_altitudes altitudes that should be interpolated
+                         ! to the interpolate_altitudes altitudes
+
+        real( kind = core_rknd ), dimension(size_interpolate) :: &
+          lin_interp_between_grids ! interpolated values with the dimension of gr_interpolate
+    """
     current_values = jnp.asarray(current_values)
 
     # --------------------- Begin Code ---------------------
@@ -226,29 +274,63 @@ def lin_interp_between_grids(interpolate_altitudes, current_altitudes, current_v
 
 
 def zlinterp_fnc(grid_out, grid_src, var_src):
-    """Do a linear interpolation in the vertical.
-
-    Assumes values that
+    """Do a linear interpolation in the vertical.  Assumes values that
     are less than lowest source point are zero and above the highest
     source point are zero. Also assumes altitude increases linearly.
 
     References:
-      function LIN_INT from WRF-HOC
+    function LIN_INT from WRF-HOC
+
+    Returns:
+        var_out
+
+    Fortran declarations (zlinterp_fnc in src/CLUBB_core/interpolation.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: dim_out, dim_src
+
+        real( kind = core_rknd ), dimension(dim_src), intent(in) ::  &
+          grid_src,  & ! [m]
+          var_src      ! [units vary]
+
+        real( kind = core_rknd ), dimension(dim_out), intent(in) :: &
+          grid_out ! [m]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(dim_out) :: &
+          var_out ! [units vary]
     """
     # ---- Begin Code ----
     return jnp.interp(grid_out, grid_src, var_src, left=0.0, right=0.0)
 
 
 def plinterp_fnc(grid_out, grid_src, var_src):
-    """Do a linear interpolation in the vertical with pressures.
-
-    Assumes
+    """Do a linear interpolation in the vertical with pressures.  Assumes
     values that are less than lowest source point are zero and above the
     highest source point are zero. Also assumes altitude increases linearly.
     This function just calls zlinterp_fnc, but negates grid_out and grid_src.
 
     References:
-      function LIN_INT from WRF-HOC
+    function LIN_INT from WRF-HOC
+
+    Returns:
+        var_out
+
+    Fortran declarations (plinterp_fnc in src/CLUBB_core/interpolation.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: dim_out, dim_src
+
+        real( kind = core_rknd ), dimension(dim_src), intent(in) ::  &
+          grid_src,  & ! [m]
+          var_src      ! [units vary]
+
+        real( kind = core_rknd ), dimension(dim_out), intent(in) :: &
+          grid_out ! [m]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(dim_out) :: &
+          var_out ! [units vary]
     """
     # ---- Begin Code ----
     return zlinterp_fnc(-grid_out, -grid_src, var_src)

@@ -5244,6 +5244,7 @@ module advance_xm_wpxp_module
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       nzt, &
@@ -5251,19 +5252,20 @@ module advance_xm_wpxp_module
 
     type (grid), intent(in) :: gr
 
+    !--------------------------- Local Variables ---------------------------
     ! Constant parameters
     integer, parameter :: & 
       kp1_mdiag = 1,  & ! Momentum superdiagonal index.
       k_mdiag   = 2     ! Momentum subdiagonal index.
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       rho_ds_zm          ! Dry, static density at momentum levels     [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       invrs_rho_ds_zt    ! Inverse dry, static density at thermo levs [m^3/kg]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzt), intent(out) :: &
       lhs_ta_xm    ! LHS coefficient of xm turbulent advection  [1/m]
 
@@ -5347,22 +5349,24 @@ module advance_xm_wpxp_module
 
     implicit none
     
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       ngrdcol
 
     type (grid), intent(in) :: gr
 
+    !--------------------------- Local Variables ---------------------------
     ! Constant parameters
     integer, parameter :: & 
       k_tdiag = 1,    & ! Thermodynamic superdiagonal index.
       km1_tdiag = 2     ! Thermodynamic subdiagonal index.
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
       wp2  ! w'^2                       [m^2/s^2]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzm), intent(out) :: &
       lhs_tp    ! LHS coefficient of xm for turbulent production  [1/s]
 
@@ -5471,7 +5475,7 @@ module advance_xm_wpxp_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       nzt, &
@@ -5487,7 +5491,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       wm_zt          ! w wind component on thermodynamic levels     [m/s]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       lhs_ac_pr2    ! LHS coefficient of accumulation and pressure term 2 [1/s]
 
@@ -5983,13 +5987,13 @@ module advance_xm_wpxp_module
 
     implicit none
     
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       ngrdcol
 
     type (grid), intent(in) :: gr
 
-    ! Input variables
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       coefficient,        & ! The coefficient to be damped
       max_coeff_value,    & ! Maximum value the damped coefficient should have
@@ -6000,7 +6004,7 @@ module advance_xm_wpxp_module
       Lscale_zm,        &   ! Current value of Lscale (interp to momentum levels)
       Cx_Skw_fnc            ! Initial skewness function before damping
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: damped_value
     
     ! Local Variables
@@ -6172,7 +6176,7 @@ module advance_xm_wpxp_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, &
       nzt, &
@@ -6300,7 +6304,6 @@ module advance_xm_wpxp_module
       wprtp_old,  & ! Saved value of w'r_t'     [(kg/kg) m/s]
       wpthlp_old    ! Saved value of w'th_l'    [K m/s]
 
-    ! Input/Output Variables
     real( kind = core_rknd ), dimension(nzt,sclr_dim), intent(in) ::  & 
       sclrm_old      ! Saved value of sclrm     [units vary]
 

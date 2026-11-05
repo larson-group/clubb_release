@@ -73,20 +73,20 @@ module calc_pressure
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol
 
     type (grid), intent(in) :: &
       gr
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(in) :: &
       thvm    ! Mean theta_v (thermodynamic levels)                [K]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       p_sfc    ! Surface pressure                                   [Pa]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
       p_in_Pa,    & ! Pressure (thermodynamic levels)        [Pa]
       exner         ! Exner function (thermodynamic levels)  [-]

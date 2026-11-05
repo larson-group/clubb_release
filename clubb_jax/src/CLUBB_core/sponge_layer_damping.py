@@ -72,19 +72,43 @@ def initialize_tau_sponge_damp(z, dt, zm_top, tau_min, tau_max, sponge_damp_dept
 
 
 def sponge_damp_xm(xm, xm_ref, z, zm_top, tau, sponge_layer_depth, dt):
-    """Damps specified mean field toward a reference profile.
+    """Damps specified mean field toward a reference profile.  The module must be
+    initialized for this function to work.  Otherwise a stop is issued.
 
-    Description:
-      Damps specified mean field toward a reference profile.  The module must be
-      initialized for this function to work.  Otherwise a stop is issued.
+    tau is inf outside the sponge layer, so dt/tau == 0 there and the damping
+    formula leaves xm unchanged. z, zm_top and sponge_layer_depth are kept only
+    for signature compatibility.
 
-    References:
-      None
+    Returns:
+        xm_p
 
-    JAX note:
-      `tau` is `inf` outside the sponge layer, so `dt/tau == 0` there and the
-      formula is a no-op. `z`, `zm_top`, and `sponge_layer_depth` are kept only
-      for signature compatibility.
+    Fortran declarations (sponge_damp_xm in src/CLUBB_core/sponge_layer_damping.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        type( grid ), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          nzm, & ! Number of momentum vertical levels
+          nzt    ! Number of thermodynamic vertical levels
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt    ! Model Timestep  [s]
+
+        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+          zt,     & ! Height of model grid levels                [m]
+          xm_ref, & ! Reference profile of x to damp xm towards  [units vary]
+          xm        ! Mean field being damped                    [units vary]
+
+        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+          zm        ! Momentum grid
+
+        type(sponge_damp_profile), intent(in) :: &
+          damping_profile
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nzt) :: &
+          xm_p   ! Damped value of xm  [units_vary]
     """
     del z, zm_top, sponge_layer_depth
     #  "Sponge"-layer damping at the domain top region
@@ -96,44 +120,68 @@ def sponge_damp_xm(xm, xm_ref, z, zm_top, tau, sponge_layer_depth, dt):
 
 
 def sponge_damp_xp2(dt, zm, xp2, x_tol_sqd, tau, sponge_layer_depth):
-    """Calculate the effects of "sponge"-layer damping on the variance of x.
+    """Calculates the effects of "sponge"-layer damping on the variance of x,
+    xp2.
 
-    Description:
-      Calculates the effects of "sponge"-layer damping on the variance of x,
-      xp2.
+    Sponge damping on a local value of x is given by the equation:
 
-      Sponge damping on a local value of x is given by the equation:
+    x_d = x - ( delta_t / tau ) * ( x - <x> ),
 
-      x_d = x - ( delta_t / tau ) * ( x - <x> ),
+    where x is the local value prior to damping, x_d is the damped local value
+    of x, <x> is the grid-level mean value of x, delta_t is the model time
+    step duration, and tau is the damping time scale.  Since delta_t / tau has
+    the same value everywhere at a grid level, the grid-level mean of x does
+    not change as a result of damping.
 
-      where x is the local value prior to damping, x_d is the damped local value
-      of x, <x> is the grid-level mean value of x, delta_t is the model time
-      step duration, and tau is the damping time scale.  Since delta_t / tau has
-      the same value everywhere at a grid level, the grid-level mean of x does
-      not change as a result of damping.
+    Subtracting <x> from both sides:
 
-      Subtracting <x> from both sides:
+    x_d - <x> = ( x - <x> ) - ( delta_t / tau ) * ( x - <x> ),
 
-      x_d - <x> = ( x - <x> ) - ( delta_t / tau ) * ( x - <x> ),
+    which results in:
 
-      which results in:
+    x_d - <x> = ( 1 - delta_t / tau ) * ( x - <x> ).
 
-      x_d - <x> = ( 1 - delta_t / tau ) * ( x - <x> ).
+    Squaring both sides:
 
-      Squaring both sides:
+    ( x_d - <x> )^2 = ( 1 - delta_t / tau )^2 * ( x - <x> )^2.
 
-      ( x_d - <x> )^2 = ( 1 - delta_t / tau )^2 * ( x - <x> )^2.
+    After averaging both sides, the damped value of xp2 is:
 
-      After averaging both sides, the damped value of xp2 is:
+    < x_d'^2 > = ( 1 - delta_t / tau )^2 * < x'^2 >.
 
-      < x_d'^2 > = ( 1 - delta_t / tau )^2 * < x'^2 >.
+    Any sponge damping is applied to (predictive) xp2 after the field has been
+    advanced in time.  This allows sponge damping to be applied in an implicit
+    manner.  The damped value of xp2 must also be limited at a minimum value
+    of x_tol^2.
 
-      Any sponge damping is applied to (predictive) xp2 after the field has been
-      advanced in time.  This allows sponge damping to be applied in an implicit
-      manner.  The damped value of xp2 must also be limited at a minimum value
-      of x_tol^2.
+    Returns:
+        xp2_damped
 
-    References:
+    Fortran declarations (sponge_damp_xp2 in src/CLUBB_core/sponge_layer_damping.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        type( grid ), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          nzm
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt    ! Model Timestep  [s]
+
+        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+          zm,  & ! Height of model grid levels               [m]
+          xp2    ! Variance of x, <x'^2>, prior to damping   [units vary]
+
+        real( kind = core_rknd ), intent(in) :: &
+          x_tol_sqd    ! Square of the tolerance value of x    [units vary]
+
+        type(sponge_damp_profile), intent(in) :: &
+          damping_profile
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nzm) :: &
+          xp2_damped    ! Variance of x, <x'^2>, after damping   [units vary]
     """
     zm_top = zm[:, -1:]
     in_sponge = (zm_top - zm) < sponge_layer_depth
@@ -145,42 +193,67 @@ def sponge_damp_xp2(dt, zm, xp2, x_tol_sqd, tau, sponge_layer_depth):
 
 
 def sponge_damp_xp3(dt, z, zm, xp3, tau, sponge_layer_depth):
-    """Calculate the effects of "sponge"-layer damping on xp3.
+    """Calculates the effects of "sponge"-layer damping on xp3.
 
-    Description:
-      Calculates the effects of "sponge"-layer damping on xp3.
+    Sponge damping on a local value of x is given by the equation:
 
-      Sponge damping on a local value of x is given by the equation:
+    x_d = x - ( delta_t / tau ) * ( x - <x> ),
 
-      x_d = x - ( delta_t / tau ) * ( x - <x> ),
+    where x is the local value prior to damping, x_d is the damped local value
+    of x, <x> is the grid-level mean value of x, delta_t is the model time
+    step duration, and tau is the damping time scale.  Since delta_t / tau has
+    the same value everywhere at a grid level, the grid-level mean of x does
+    not change as a result of damping.
 
-      where x is the local value prior to damping, x_d is the damped local value
-      of x, <x> is the grid-level mean value of x, delta_t is the model time
-      step duration, and tau is the damping time scale.  Since delta_t / tau has
-      the same value everywhere at a grid level, the grid-level mean of x does
-      not change as a result of damping.
+    Subtracting <x> from both sides:
 
-      Subtracting <x> from both sides:
+    x_d - <x> = ( x - <x> ) - ( delta_t / tau ) * ( x - <x> ),
 
-      x_d - <x> = ( x - <x> ) - ( delta_t / tau ) * ( x - <x> ),
+    which results in:
 
-      which results in:
+    x_d - <x> = ( 1 - delta_t / tau ) * ( x - <x> ).
 
-      x_d - <x> = ( 1 - delta_t / tau ) * ( x - <x> ).
+    Taking both sides to the third power:
 
-      Taking both sides to the third power:
+    ( x_d - <x> )^3 = ( 1 - delta_t / tau )^3 * ( x - <x> )^3.
 
-      ( x_d - <x> )^3 = ( 1 - delta_t / tau )^3 * ( x - <x> )^3.
+    After averaging both sides, the damped value of xp3 is:
 
-      After averaging both sides, the damped value of xp3 is:
+    < x_d'^3 > = ( 1 - delta_t / tau )^3 * < x'^3 >.
 
-      < x_d'^3 > = ( 1 - delta_t / tau )^3 * < x'^3 >.
+    Any sponge damping is applied to (predictive) xp3 after the field has been
+    advanced in time.  This allows sponge damping to be applied in an implicit
+    manner.
 
-      Any sponge damping is applied to (predictive) xp3 after the field has been
-      advanced in time.  This allows sponge damping to be applied in an implicit
-      manner.
+    Returns:
+        xp3_damped
 
-    References:
+    Fortran declarations (sponge_damp_xp3 in src/CLUBB_core/sponge_layer_damping.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        type( grid ), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          nzm,   &
+          nzt
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt    ! Model Timestep  [s]
+
+        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+          z,   & ! Height of model grid levels     [m]
+          xp3    ! <x'^3> prior to damping         [units vary]
+
+        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+          zm     ! Momentum grid
+
+        type(sponge_damp_profile), intent(in) :: &
+          damping_profile
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nzt) :: &
+          xp3_damped    ! <x'^3> after damping   [units vary]
     """
     tau = jnp.asarray(tau)
     zm_top = zm[:, -1:]

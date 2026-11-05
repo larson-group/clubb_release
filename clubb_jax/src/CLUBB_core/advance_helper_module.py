@@ -97,13 +97,28 @@ def set_boundary_conditions_lhs(
     low_bound2=None,
     high_bound2=None,
 ):
-    """Set boundary conditions for a left-hand side LAPACK matrix.
+    """Sets the boundary conditions for a left-hand side matrix.
 
-    References:
-      none
+    The Fortran level indices are 1-based; they are converted to 0-based
+    indices before lhs is updated.
 
-    Fortran indices are 1-based; this JAX/Python port converts them to
-    0-based indices before updating `lhs`.
+    Returns:
+        lhs
+
+    Fortran declarations (set_boundary_conditions_lhs in src/CLUBB_core/advance_helper_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          diag_index, low_bound, high_bound ! boundary indexes for the first variable
+
+        !--------------------------- Input/Output Variables ---------------------------
+        ! Input / Output Variables
+        real( kind = core_rknd ), dimension(:,:), intent(inout) :: &
+          lhs ! left hand side of the LAPACK matrix equation
+
+        !--------------------------- Optional Input Variables ---------------------------
+        integer, intent(in), optional :: &
+          diag_index2, low_bound2, high_bound2 ! boundary indexes for the second variable
     """
     diag = int(diag_index) - 1
     low = int(low_bound) - 1
@@ -145,10 +160,34 @@ def set_boundary_conditions_rhs(
     high_value2=None,
     high_bound2=None,
 ):
-    """Set boundary conditions for a right-hand side LAPACK vector.
+    """Sets the boundary conditions for a right-hand side vector.
 
-    References:
-      None
+    Returns:
+        rhs
+
+    Fortran declarations (set_boundary_conditions_rhs in src/CLUBB_core/advance_helper_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+
+        ! The values for the first variable
+        real( kind = core_rknd ), intent(in) :: low_value, high_value
+
+        ! The bounds for the first variable
+        integer, intent(in) :: low_bound, high_bound
+
+        ! Input / Output Variables
+
+        !--------------------------- Input/Output Variables ---------------------------
+        ! The right-hand side vector
+        real( kind = core_rknd ), dimension(:), intent(inout) :: rhs
+
+        !--------------------------- Optional Input Variables ---------------------------
+
+        ! The values for the second variable
+        real( kind = core_rknd ), intent(in), optional :: low_value2, high_value2
+
+        ! The bounds for the second variable
+        integer, intent(in), optional :: low_bound2, high_bound2
     """
     # Set the lower and upper bounds for the first variable.
     rhs = rhs.at[int(low_bound) - 1].set(low_value)
@@ -174,11 +213,27 @@ def calc_ddzt_umvm_sqd(nzm: int, nzt: int, ngrdcol: int, gr, um, vm):
     """Computes the squared vertical norm of the derivative of the mean
     horizontal wind.
 
-    `um` and `vm` are mean horizontal winds on thermodynamic levels [m/s].
-    The result is squared vertical shear of horizontal wind [s^-2].
+    Returns:
+        ddzt_umvm_sqd
 
-    References:
-      None
+    Fortran declarations (calc_ddzt_umvm_sqd in src/CLUBB_core/advance_helper_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm,     & ! Number of momentum levels
+          nzt,     & ! Number of thermodynamic levels
+          ngrdcol    ! Number of grid columns
+
+        type(grid), intent(in) :: &
+          gr    ! Grid structure
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          um, & ! Mean u wind on thermodynamic levels [m/s]
+          vm    ! Mean v wind on thermodynamic levels [m/s]
+
+        !--------------------------- Output Variables --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          ddzt_umvm_sqd    ! Squared vertical shear of horizontal wind [s^-2]
     """
     ddzt_um = ddzt(nzm, nzt, ngrdcol, gr, um)
     ddzt_vm = ddzt(nzm, nzt, ngrdcol, gr, vm)
@@ -191,13 +246,32 @@ def calc_wp3_on_wp2(nzm: int, nzt: int, ngrdcol: int, gr, wp2, wp3):
     """Computes a smoothed ratio of w'^3 to w'^2 on thermodynamic and momentum
     levels.
 
-    `wp2` is the variance of vertical velocity on momentum levels [m^2/s^2].
-    `wp3` is the third moment of vertical velocity on thermodynamic levels
-    [m^3/s^3]. The returned ratios are on momentum levels and thermodynamic
-    levels [m/s].
+    Returns:
+        (wp3_on_wp2, wp3_on_wp2_zt)
 
-    References:
-      None
+    Fortran declarations (calc_wp3_on_wp2 in src/CLUBB_core/advance_helper_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm,     & ! Number of momentum levels
+          nzt,     & ! Number of thermodynamic levels
+          ngrdcol    ! Number of grid columns
+
+        type(grid), intent(in) :: &
+          gr    ! Grid structure
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          wp2    ! Variance of vertical velocity on momentum levels [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wp3    ! Third moment of vertical velocity on thermodynamic levels [m^3/s^3]
+
+        !--------------------------- Output Variables --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          wp3_on_wp2    ! Ratio of wp3 to wp2 on momentum levels [m/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+          wp3_on_wp2_zt    ! Ratio of wp3 to wp2 on thermodynamic levels [m/s]
     """
     wp2_zt = zm2zt(nzm, nzt, ngrdcol, gr, wp2, w_tol_sqd)
 
@@ -224,11 +298,29 @@ def calc_stability_correction(
     em,
     lambda0_stability_coef,
 ):
-    """Stability factor.
+    """Stability Factor
 
-    `brunt_vaisala_freq_sqd` is the Brunt-Vaisala frequency squared [1/s^2],
-    `Lscale_zm` is the turbulent mixing length interpolated to momentum levels
-    [m], and `em` is TKE [m^2/s^2].
+    Returns:
+        stability_correction
+
+    Fortran declarations (calc_stability_correction in src/CLUBB_core/advance_helper_module.F90):
+
+        ! ---------------- Input Variables ----------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared      [1/s^2]
+          Lscale_zm,              & ! Turbulent mixing length interp to m levs  [m]
+          em                        ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          lambda0_stability_coef        ! CLUBB tunable parameter lambda0_stability_coef
+
+        ! ---------------- Output Variables ----------------
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzm) :: &
+          stability_correction
     """
     del nzm, ngrdcol
     lambda0_stability = jnp.where(
@@ -276,20 +368,63 @@ def calc_brunt_vaisala_freq_sqd(
 ):
     """Calculate the Brunt-Vaisala frequency squared, N^2.
 
-    `l_brunt_vaisala_freq_moist` uses a different formula for saturated
-    atmospheres from Durran and Klemp (1982). `l_use_thvm_in_bv_freq` uses
-    virtual potential temperature in the Brunt-Vaisala calculation.
-
     References:
-      ?
+    ?
 
-    Flag to activate modifications on limiters for convergence test
-    (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
-    (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
-    (reduce threshold on limiters for Ri_zm in mixing_length.F90)
+    Returns:
+        (brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,
+          brunt_vaisala_freq_sqd_smth, brunt_vaisala_freq_sqd_dry,
+          brunt_vaisala_freq_sqd_moist)
 
-    `bv_efold` controls the inverse e-folding of cloud fraction in the mixed
-    Brunt-Vaisala frequency. `T0` is the reference temperature, usually 300 K.
+    Fortran declarations (calc_brunt_vaisala_freq_sqd in src/CLUBB_core/advance_helper_module.F90):
+
+        !---------------------------- Input Variables ----------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          thlm,              &  ! th_l (thermo. levels)              [K]
+          exner,             &  ! Exner function                     [-]
+          rtm,               &  ! total water mixing ratio, r_t      [kg/kg]
+          rcm,               &  ! cloud water mixing ratio, r_c      [kg/kg]
+          p_in_Pa,           &  ! Air pressure                       [Pa]
+          thvm,              &  ! Virtual potential temperature      [K]
+          ice_supersat_frac
+
+        integer, intent(in) :: &
+          saturation_formula ! Integer that stores the saturation formula to be used
+
+        logical, intent(in) :: &
+          l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
+                                        ! saturated atmospheres (from Durran and Klemp, 1982)
+          l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
+
+        ! Flag to activate modifications on limiters for convergence test
+        ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+        ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+        ! (reduce threshold on limiters for Ri_zm in mixing_length.F90)
+        logical, intent(in) :: &
+          l_modify_limiters_for_cnvg_test
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          bv_efold                      ! Control parameter for inverse e-folding of
+                                        ! cloud fraction in the mixed Brunt Vaisala frequency
+
+        real( kind = core_rknd ), intent(in) :: &
+          T0                    ! Reference temperature (usually 300)  [K]
+
+        !---------------------------- Output Variables ----------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
+          brunt_vaisala_freq_sqd_mixed, &
+          brunt_vaisala_freq_sqd_smth
+
+        type(stats_type), intent(inout), optional :: &
+          stats
     """
     ddzt_thlm = ddzt(nzm, nzt, ngrdcol, gr, thlm)
     thvm_zm = zt2zm(nzm, nzt, ngrdcol, gr, thvm, zero_threshold)
@@ -366,15 +501,33 @@ def calc_brunt_vaisala_freq_sqd(
 
 @partial(jax.jit, static_argnames=("nzm", "ngrdcol"))
 def calc_Ri_zm(nzm: int, ngrdcol: int, bv_freq_sqd, shear, lim_bv: float, lim_shear: float):
-    """Calculate Richardson number from clipped Brunt-Vaisala and shear.
-
-    Calculate the Richardson number as a quotient of a clipped Brunt-Vaisala frequency
+    """Calculate the Richardson number as a quotient of a clipped Brunt-Vaisala frequency
     and a clipped shear
 
     References:
-      ?
+    ?
 
-    `shear` is usually norm squared of horizontal wind speeds.
+    Returns:
+        Ri_zm
+
+    Fortran declarations (calc_Ri_zm in src/CLUBB_core/advance_helper_module.F90):
+
+        !-------------------------- Input Variables --------------------------
+        integer, intent(in) :: &
+            nzm, &
+            ngrdcol
+
+        real ( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) :: &
+            bv_freq_sqd, &      ! Square of Brunt Vaisala frequency
+            shear               ! Shear variable, usually norm squared of horizontal wind speeds
+
+        real ( kind = core_rknd ), intent(in) :: &
+            lim_bv, &           ! Clipping value in numerator
+            lim_shear           ! Clipping value in denominator
+
+        !-------------------------- Result Variable --------------------------
+        real (kind = core_rknd ), dimension(ngrdcol, nzm), intent(out) :: &
+            Ri_zm               ! Richardson number
     """
     del nzm, ngrdcol
     Ri_zm = jnp.maximum(bv_freq_sqd, lim_bv) / jnp.maximum(shear, lim_shear)
@@ -405,25 +558,55 @@ def compute_Cx_fnc_Richardson(
     l_use_shear_Richardson: bool,
     l_modify_limiters_for_cnvg_test: bool,
 ):
-    """Compute Cx as a function of the Richardson number.
+    """Compute Cx as a function of the Richardson number
 
     References:
-      cam:ticket:59
-
-    `brunt_vaisala_freq_sqd` is Brunt-Vaisala frequency squared, N^2 [1/s^2].
-    `brunt_vaisala_freq_sqd_mixed` is a mixture of dry and moist N^2 [s^-2].
-    `ddzt_umvm_sqd` is squared vertical norm of derivative of mean horizontal
-    wind speed [s^-2]. `Lscale_zm` and `rho_ds_zm` are accepted for parity with
-    the Fortran interface.
-
-    Flag to activate modifications on limiters for convergence test
-    (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
-    (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
-    (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+    cam:ticket:59
 
     The Fortran routine also contains a disabled path that vertically averages
-    `Cx_fnc_Richardson` over a distance of `Lscale`. That flag is a compile-time
-    `.false.` parameter there, so the JAX port keeps only the active path.
+    Cx_fnc_Richardson over a distance of Lscale. Its flag is a compile-time
+    .false. parameter there, so only the active path is ported; Lscale_zm and
+    rho_ds_zm, used only by that path, are accepted for parity with Fortran.
+
+    Returns:
+        Cx_fnc_Richardson
+
+    Fortran declarations (compute_Cx_fnc_Richardson in src/CLUBB_core/advance_helper_module.F90):
+
+                                                    !  distance of Lscale
+
+        !------------------------------ Input Variables ------------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          brunt_vaisala_freq_sqd, &         ! Brunt-Vaisala frequency squared, N^2  [1/s^2]
+          brunt_vaisala_freq_sqd_mixed, &   ! A mixture of dry and moist N^2        [s^-2]
+          ddzt_umvm_sqd, &                  ! Squared vertical norm of derivative of
+                                            ! mean horizontal wind speed            [s^-2]
+          Lscale_zm, &                      ! Length scale on momentum levels       [m]
+          rho_ds_zm                         ! Dry static density on momentum levels [kg/m^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        logical, intent(in) :: &
+          l_use_shear_Richardson        ! Use shear in the calculation of Richardson number
+
+        ! Flag to activate modifications on limiters for convergence test
+        ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+        ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+        ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+        logical, intent(in) :: &
+          l_modify_limiters_for_cnvg_test
+
+        !------------------------------ Output Variable ------------------------------
+        real( kind = core_rknd), dimension(ngrdcol,nzm), intent(out) :: &
+          Cx_fnc_Richardson
     """
     del Lscale_zm, rho_ds_zm
     Richardson_num_divisor_threshold = 1.0e-6
@@ -491,15 +674,35 @@ def Lscale_width_vert_avg(
     rho_ds_zm,
     var_below_ground_value: float,
 ):
-    """Average a profile with a running mean of width Lscale_zm.
+    """Averages a profile with a running mean of width Lscale_zm
 
     References:
-      cam:ticket:59
+    cam:ticket:59
 
-    The result is a vertically averaged profile on momentum levels. Values below
-    ground use `var_below_ground_value`. `var_profile`, `Lscale_zm`, and
-    `rho_ds_zm` are on momentum levels. The Fortran comment labels `rho_ds_zm`
-    as dry static energy, but its use here is dry static density.
+    Returns:
+        Lscale_width_vert_avg_output
+
+    Fortran declarations (Lscale_width_vert_avg in src/CLUBB_core/advance_helper_module.F90):
+
+        !-------------------------- Input Variables --------------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol, &
+          smth_type
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          var_profile, &      ! Profile on momentum levels
+          Lscale_zm, &        ! Lscale on momentum levels
+          rho_ds_zm           ! Dry, static density on momentum levels [kg/m^3]
+
+        real( kind = core_rknd ), intent(in) :: &
+          var_below_ground_value ! Value to use below ground
+
+        !-------------------------- Result Variable --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+          Lscale_width_vert_avg_output ! Vertically averaged profile (on momentum levels)
     """
     del nzm, ngrdcol
     if smth_type == 1:
@@ -575,12 +778,41 @@ def wp23_term_splat_lhs(
     Lscale_zm,
     rho_ds_zm,
 ):
-    """Calculate LHS coefficients for the wp2 and wp3 splatting terms.
+    """Description
+      Calculate the LHS coefficients for the wp2 and wp3 splatting terms.
 
-    `brunt_vaisala_freq_sqd_mixed` is the mixture of dry and moist
-    Brunt-Vaisala frequency squared [s^-2], `Lscale_zm` is the turbulent mixing
-    length on momentum levels [m], and `rho_ds_zm` is dry static density on
-    momentum levels [kg/m^3].
+    Returns:
+        (lhs_splat_wp2, lhs_splat_wp3, brunt_vaisala_freq_sqd_splat)
+
+    Fortran declarations (wp23_term_splat_lhs in src/CLUBB_core/advance_helper_module.F90):
+
+        ! --------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          nzm,    & ! Number of momentum levels
+          nzt,    & ! Number of thermodynamic levels
+          ngrdcol   ! Number of grid columns
+
+        type (grid), intent(in) :: &
+          gr   ! Grid structure
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          brunt_vaisala_freq_sqd_mixed, & ! Mixture of dry and moist Brunt-Vaisala frequency squared [s^-2]
+          Lscale_zm,                    & ! Turbulent mixing length on momentum levels [m]
+          rho_ds_zm                       ! Dry, static density on momentum levels [kg/m^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          C_wp2_splat    ! Model parameter C_wp2_splat             [ -]
+
+        ! --------------------- Input/Output Variables ---------------------
+        type(stats_type), intent(inout) :: &
+          stats   ! Statistics accumulator
+
+        ! --------------------- Output Variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          lhs_splat_wp2    ! LHS coefficient of wp2 splatting term  [1/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+          lhs_splat_wp3    ! LHS coefficient of wp3 splatting term [1/s]
     """
     below_grnd_val = 0.01
     smth_type = 2
@@ -618,17 +850,35 @@ def wp23_term_splat_lhs(
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol"))
 def smooth_min(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
-    """Compute a smoothed version of the min function.
-
-    This single JAX implementation covers the Fortran scalar/array overloads.
-    For more details, see the module-level interface notes.
-
-    `input_var1` and `input_var2` have units that vary by caller, and the output
-    has the same unit as those inputs. `smth_coef` is the smoothing intensity and
-    should be of a similar magnitude to the input data structures.
+    """Computes a smoothed version of the min function, using two 1d arrays as inputs.
+    This single JAX function covers all Fortran versions of the smooth_min
+    interface (array and scalar inputs broadcast); the declarations below
+    are those of smooth_min_arrays.
 
     References:
-      See clubb:ticket:894, updated version: 965
+    See clubb:ticket:894, updated version: 965
+
+    Returns:
+        output_var
+
+    Fortran declarations (smooth_min_arrays in src/CLUBB_core/advance_helper_module.F90):
+
+        !----------------------------- Input Variables-----------------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
+          input_var1, &       ! Units vary
+          input_var2          ! Units vary
+
+        real ( kind = core_rknd ), intent(in) :: &
+          smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                              ! that of the data structures input_var1 and input_var2
+
+        !----------------------------- Output Variables -----------------------------
+        real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
+          output_var          ! Same unit as input_var1 and input_var2
     """
     del nz, ngrdcol
     output_var = one_half * (
@@ -640,17 +890,35 @@ def smooth_min(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol"))
 def smooth_max(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
-    """Compute a smoothed version of the max function.
-
-    This single JAX implementation covers the Fortran scalar/array overloads.
-    For more details, see the module-level interface notes.
-
-    `input_var1` and `input_var2` have units that vary by caller, and the output
-    has the same unit as those inputs. `smth_coef` is the smoothing intensity and
-    should be of a similar magnitude to the input data structures.
+    """Computes a smoothed version of the max function, using two 1d arrays as inputs.
+    This single JAX function covers all Fortran versions of the smooth_max
+    interface (array and scalar inputs broadcast); the declarations below
+    are those of smooth_max_arrays.
 
     References:
-      See clubb:ticket:894, updated version: 965
+    See clubb:ticket:894, updated version: 965
+
+    Returns:
+        output_var
+
+    Fortran declarations (smooth_max_arrays in src/CLUBB_core/advance_helper_module.F90):
+
+        !----------------------------- Input Variables -----------------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
+          input_var1, &       ! Units vary
+          input_var2          ! Units vary
+
+        real( kind = core_rknd ), intent(in) :: &
+          smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                              ! that of the data structures input_var1 and input_var2
+
+        !----------------------------- Output Variables -----------------------------
+        real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
+          output_var          ! Same unit as input_var1 and input_var2
     """
     del nz, ngrdcol
     output_var = one_half * (
@@ -662,17 +930,32 @@ def smooth_max(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol"))
 def smooth_heaviside_peskin(nz: int, ngrdcol: int, input, smth_range: float):
-    """Compute a smoothed Heaviside function.
-
-    Computes a smoothed heaviside function as in
+    """Computes a smoothed heaviside function as in
         [Lin, Lee et al., 2005, A level set characteristic Galerkin
         finite element method for free surface flows], equation (2)
 
-    `smth_range` defines the smooth Heaviside interval
-    [-smth_range, smth_range]. The output has the same units as `input`.
-
     References:
-      See clubb:ticket:965
+    See clubb:ticket:965
+
+    Returns:
+        smth_output
+
+    Fortran declarations (smooth_heaviside_peskin in src/CLUBB_core/advance_helper_module.F90):
+
+        !------------------------- Input Variables -------------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          input    ! Units vary
+
+        real ( kind = core_rknd ), intent(in) :: &
+          smth_range  ! Smooth Heaviside function on [-smth_range, smth_range]
+
+        !------------------------- Output Variables -------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+          smth_output    ! Same units as input
     """
     del nz, ngrdcol
     input_over_smth_range = input / smth_range
@@ -692,12 +975,30 @@ def smooth_heaviside_peskin(nz: int, ngrdcol: int, input, smth_range: float):
 
 @partial(jax.jit, static_argnames=("nzm", "nzt", "ngrdcol"))
 def calc_xpwp(nzm: int, nzt: int, ngrdcol: int, gr, Km_zm, xm):
-    """Compute x'w' from x<k>, x<k-1>, Km_zm, and invrs_dzm.
+    """Compute x'w' from x<k>, x<k+1>, Kh and invrs_dzm
 
-    References:
-      None
+    This single JAX function covers the Fortran calc_xpwp_1D and calc_xpwp_2D
+    versions; the declarations below are those of calc_xpwp_2D.
 
-    This combines the Fortran `calc_xpwp_1D` and `calc_xpwp_2D` overloads.
+    Fortran declarations (calc_xpwp_2D in src/CLUBB_core/advance_helper_module.F90):
+
+        ! ----------------------- Input variables -----------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          Km_zm    ! Eddy diff. (k momentum level)                 [m^2/s]
+
+          real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xm       ! x (k thermo level)                            [units vary]
+
+        ! ----------------------- Output variable -----------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          xpwp ! x'w'   [(units vary)(m/s)]
     """
     del nzt, ngrdcol
     if Km_zm.ndim == 1:
@@ -713,79 +1014,49 @@ def calc_xpwp(nzm: int, nzt: int, ngrdcol: int, gr, Km_zm, xm):
 
 
 def vertical_avg(total_idx: int, rho_ds, field, dz):
-    """Compute the density-weighted vertical average of a field.
+    """Computes the density-weighted vertical average of a field.
 
-    The average value of a function, f, over a set domain, [a,b], is calculated
-    by the equation:
+    The average value of a function, f, over a set domain, [a,b], is
+    calculated by the equation:
 
-      f_avg = ( INT(a:b) f*g ) / ( INT(a:b) g )
+    f_avg = ( INT(a:b) f*g ) / ( INT(a:b) g );
 
     as long as f is continous and g is nonnegative and integrable.  Therefore,
     the density-weighted (by dry, static, base-static density) vertical
     average value of any model field, x, is calculated by the equation:
 
-      x_avg|_z = ( INT(z_bot:z_top) x rho_ds dz )
-                 / ( INT(z_bot:z_top) rho_ds dz )
+    x_avg|_z = ( INT(z_bot:z_top) x rho_ds dz )
+               / ( INT(z_bot:z_top) rho_ds dz );
 
-    For numerical purposes, both thermodynamic-level and momentum-level
-    computations use sums of x(k) * rho_ds(k) * delta_z(k) for the numerator
-    and rho_ds(k) * delta_z(k) for the denominator over the selected vertical
-    levels. The caller chooses the included levels by passing arrays arranged
-    from lowest to highest altitude and setting `total_idx`.
+    where z_bot is the bottom of the vertical domain, and z_top is the top of
+    the vertical domain.
+
+    This calculation is done slightly differently depending on whether x is a
+    thermodynamic-level or a momentum-level variable.
 
     Thermodynamic-level computation:
-    For numerical purposes, INT(z_bot:z_top) x rho_ds dz, which is the numerator
-    integral, is calculated as:
 
-      SUM(k_bot:k_top) x(k) rho_ds(k) delta_z(k)
+    Returns:
+        vertical_avg_result
 
-    where k is the index of the given thermodynamic level, x and rho_ds are both
-    thermodynamic-level variables, and delta_z(k) = zm(k) - zm(k-1). The indices
-    k_bot and k_top are the indices of the respective lower and upper
-    thermodynamic levels involved in the integration.
+    Fortran declarations (vertical_avg in src/CLUBB_core/advance_helper_module.F90):
 
-    Likewise, INT(z_bot:z_top) rho_ds dz, which is the denominator integral, is
-    calculated as:
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          total_idx ! The total numer of indices within the range of averaging
 
-      SUM(k_bot:k_top) rho_ds(k) delta_z(k)
+        real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
+          rho_ds, & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
+          field,  & ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
+          dz  ! Reciprocal of thermodynamic or momentum level thickness           [1/m]
+                    ! depending on whether we're on zt or zm grid.
+        ! Note:  The rho_ds and field points need to be arranged from
+        !        lowest to highest in altitude, with rho_ds(1) and
+        !        field(1) actually their respective values at level k = 1.
 
-    The first (k=1) thermodynamic level is below ground, or below the official
-    lower boundary at the first momentum level, so it should not count in a
-    vertical average for hole-filling or statistics. Begin no lower than level
-    k=2, the first thermodynamic level above ground. For full-domain
-    hole-filling or statistics, lower thermodynamic-level index k=2 and upper
-    thermodynamic-level index k=gr%nz means the overall vertical domain is
-    gr%zm(1,gr%nz) - gr%zm(1,1).
-
-    Momentum-level computation:
-    For numerical purposes, INT(z_bot:z_top) x rho_ds dz is calculated as:
-
-      SUM(k_bot:k_top) x(k) rho_ds(k) delta_z(k)
-
-    where k is the index of the given momentum level, x and rho_ds are both
-    momentum-level variables, and delta_z(k) = zt(k+1) - zt(k). The indices
-    k_bot and k_top are the respective lower and upper momentum levels involved
-    in the integration. The denominator integral is:
-
-      SUM(k_bot:k_top) rho_ds(k) delta_z(k)
-
-    The first (k=1) momentum level is at ground level, or at the official lower
-    boundary. Momentum-level variables that call the hole-filling scheme have
-    set values at the surface, so those values should not be changed. For
-    hole-filling, begin no lower than level k=2, the second momentum level above
-    ground. The value at the model upper boundary (k=gr%nz) is also set for
-    momentum-level variables and should not be changed.
-
-    This function is also used for statistical vertical averages of certain
-    variables. In that case, the vertical average needs to be taken over the
-    entire vertical domain, level 1 to level gr%nz.
-
-    In both thermodynamic-level and momentum-level computations, the numerator
-    integral is divided by the denominator integral to find the average value of
-    x over the vertical domain.
-
-    References:
-      None
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          vertical_avg  ! Vertical average of field    [Units of field]
     """
     # Initialize variable
     # Compute the numerator and denominator integral.
@@ -799,15 +1070,32 @@ def vertical_avg(total_idx: int, rho_ds, field, dz):
 
 
 def vertical_integral(total_idx: int, rho_ds, field, dz):
-    """Compute the vertical integral.
+    """Computes the vertical integral. rho_ds, field, and dz must all be
+    of size total_idx and should all start at the same index.
 
-    `rho_ds`, `field`, and `dz` must all be of size `total_idx` and should all
-    start at the same index. The values need to be arranged from lowest to
-    highest altitude, with `field[0]` and `rho_ds[0]` corresponding to the
-    original field and density at the caller's starting level.
+    field[0], rho_ds[0] and dz[0] are the values at the lowest level of the
+    integral.
 
-    References:
-      None
+    Returns:
+        vertical_integral
+
+    Fortran declarations (vertical_integral in src/CLUBB_core/advance_helper_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          total_idx  ! The total numer of indices within the range of averaging
+
+        real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
+          rho_ds,  & ! Dry, static density                   [kg/m^3]
+          field,   & ! The field to be vertically averaged   [Units vary]
+          dz         ! Level thickness                       [1/m]
+        ! Note:  The rho_ds and field points need to be arranged from
+        !        lowest to highest in altitude, with rho_ds(1) and
+        !        field(1) actually their respective values at level k = k_start.
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          vertical_integral ! Integral in the numerator (see description)
     """
     # Assertion checks: that k_start <= gr%nz - 1
     #                   that k_end   >= 2
@@ -830,6 +1118,27 @@ def pvertinterp(nzt: int, ngrdcol: int, gr, p_mid, p_out: float, input_var):
     `p_mid` contains input pressure levels, `p_out` is the output pressure
     level, and `input_var` is the input array. The result is the interpolated
     output array.
+
+    Fortran declarations (pvertinterp in src/CLUBB_core/advance_helper_module.F90):
+
+        !------------------------ Input Variables ------------------------
+        integer , intent(in)  :: &
+          nzt, &
+          ngrdcol
+
+        type( grid ), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in)  :: &
+          p_mid,      & ! input level pressure levels
+          input_var     ! input  array
+
+        real( kind = core_rknd ), intent(in)  :: &
+          p_out         ! output pressure level
+
+        !------------------------ Output Variables ------------------------
+        real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+          interp_var    ! output array (interpolated)
     """
     del nzt, ngrdcol, gr
     # Initialize index array and logical flags
@@ -858,14 +1167,38 @@ def calculate_thlp2_rad(
     clubb_params,
     thlp2_forcing,
 ):
-    """Computes the contribution of radiative cooling to thlp2.
+    """Computes the contribution of radiative cooling to thlp2
 
     References:
-      See clubb:ticket:632
+    See clubb:ticket:632
 
-    `rcm` is cloud water mixing ratio, `radht` is SW + LW heating rate [K/s],
-    `thlprcp` is thl'rc' [K kg/kg], and `thlp2_forcing` is the
-    <th_l'^2> forcing on momentum levels [K^2/s].
+    Returns:
+        thlp2_forcing
+
+    Fortran declarations (calculate_thlp2_rad in src/CLUBB_core/advance_helper_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          ngrdcol, &            ! Number of grid columns
+          nzm, &                ! Number of thermod vertical levels              [-]
+          nzt                   ! Number of momentum vertical levels             [-]
+
+        type( grid ), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          rcm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+          radht              ! SW + LW heating rate (on momentum grid)        [K/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          thlprcp            ! thl'rc'                                        [K kg/kg]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
     """
     rcm_zm = zt2zm(nzm, nzt, ngrdcol, gr, rcm)
     radht_zm = zt2zm(nzm, nzt, ngrdcol, gr, radht)

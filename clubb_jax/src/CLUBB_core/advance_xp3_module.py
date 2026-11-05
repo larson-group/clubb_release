@@ -63,6 +63,78 @@ def advance_xp3(
     simplified form of the <x'^3> predictive equation.  The simplified <x'^3>
     equation can either be advanced from its previous value or calculated
     using a steady-state approximation.
+
+    Returns:
+        (rtp3, thlp3, sclrp3, up3, vp3, stats)
+
+    Fortran declarations (advance_xp3 in src/CLUBB_core/advance_xp3_module.F90):
+
+        ! --------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          nzm,          & ! Number of momentum vertical levels
+          nzt,          & ! Number of thermodynamic vertical levels
+          ngrdcol,      & ! Number of grid columns
+          sclr_dim        ! Number of passive scalars
+
+        real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+          sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+        type (grid), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt                 ! Model timestep                            [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          rtm,             & ! Mean (overall) of rt (thermo. levels)                [kg/kg]
+          thlm,            & ! Mean (overall) of thl (thermo. levels)               [K]
+          wprtp2,          & ! <w'rt'^2> (thermodynamic levels)                     [m/s(kg/kg)^2]
+          wpthlp2,         & ! <w'thl'^2> (thermodynamic levels)                    [m/s K^2]
+          invrs_rho_ds_zt, & ! Inv. dry, static density at thermo. levels           [m^3/kg]
+          invrs_tau_zt,    & ! Inverse time-scale tau on thermodynamic levels       [1/s]
+          tau_max_zt         ! Max. allowable eddy dissipation time scale on t-levs [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wp3,    & ! w'^3 on thermo. grid     [m^3/s^3]
+          thvm      ! Virtual potential temperature on thermodynamic levels [K]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rtp2,            & ! Variance (overall) of rt (m-levs.)                   [kg^2/kg^2]
+          thlp2,           & ! Variance (overall) of thl (m-levs.)                  [K^2]
+          wprtp,           & ! Turbulent flux of rt (momentum levs.)                [m/s kg/kg]
+          wpthlp,          & ! Turbulent flux of thl (momentum levs.)               [m/s K]
+          rho_ds_zm,        & ! Dry, static density on momentum levels               [kg/m^3]
+          upwp,             & ! u'w' (momentum levels)                              [m^2/s^2]
+          vpwp,             & ! v'w' (momentum levels)                              [m^2/s^2]
+          wp2,              & ! w'^2 (momentum levels)                              [m^2/s^2]
+          up2,              & ! u'^2 (momentum levels)                              [m^2/s^2]
+          vp2                 ! v'^2 (momentum levels)                              [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) :: &
+          sclrm,    & ! Mean (overall) of sclr (thermo. levels) [sclr units]
+          wpsclrp2    ! <w'sclr'^2> (thermodynamic levels)      [m/s(sclr units)^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) :: &
+          sclrp2,   & ! Variance (overall) of sclr (m-levs.)    [(sclr units)^2]
+          wpsclrp     ! Turbulent flux of sclr (momentum levs.) [m/s(sclr units)]
+
+        logical, intent(in) :: &
+          l_lmm_stepping    ! Apply Linear Multistep Method (LMM) Stepping
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          rtp3,  & ! <rt'^3> (thermodynamic levels)     [kg^3/kg^3]
+          thlp3, & ! <thl'^3> (thermodynamic levels)    [K^3]
+          up3,   & ! u'^3 (thermodynamic levels)        [m^3/s^3]
+          vp3      ! v'^3 (thermodynamic levels)        [m^3/s^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(inout) :: &
+          sclrp3    ! <sclr'^3> (thermodynamic levels)    [(sclr units)^3]
     """
 
     wp2_zt = zm2zt(nzm, nzt, ngrdcol, gr, wp2, w_tol_sqd)
@@ -193,7 +265,62 @@ def diagnose_xp3(
     current second-order moments and PDF width information.
 
     References:
-      Larson and Golaz (2005) for the diagnostic ansatz.
+    Larson and Golaz (2005) for the diagnostic ansatz.
+
+    Returns:
+        (rtp3, thlp3, up3, vp3, sclrp3, stats)
+
+    Fortran declarations (diagnose_xp3 in src/CLUBB_core/advance_xp3_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm,       & ! Number of momentum levels
+          nzt,       & ! Number of thermodynamic levels
+          ngrdcol,   & ! Number of grid columns
+          sclr_dim,  & ! Number of passive scalars
+          iiPDF_type   ! PDF type selector
+
+        real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+          sclr_tol   ! Thresholds for passive scalars [units vary]
+
+        type(grid), intent(in) :: &
+          gr   ! Grid structure
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params   ! Array of CLUBB tunable parameters [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wp3,  & ! Third moment of vertical velocity [m^3/s^3]
+          thvm    ! Virtual potential temperature [K]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          wp2,         & ! Variance of vertical velocity [m^2/s^2]
+          wprtp,       & ! Turbulent flux of rt [m kg/(kg s)]
+          wpthlp,      & ! Turbulent flux of thl [m K/s]
+          rtp2,        & ! Variance of rt [(kg/kg)^2]
+          thlp2,       & ! Variance of thl [K^2]
+          upwp,        & ! Turbulent flux of u [m^2/s^2]
+          vpwp,        & ! Turbulent flux of v [m^2/s^2]
+          up2,         & ! Variance of u wind [m^2/s^2]
+          vp2,         & ! Variance of v wind [m^2/s^2]
+          sigma_sqd_w    ! PDF width parameter [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) :: &
+          wpsclrp, & ! Turbulent flux of passive scalars [m sclr/s]
+          sclrp2     ! Variance of passive scalars [units vary]
+
+        !----------------------- Input/Output Variables ------------------------
+        type(stats_type), intent(inout) :: &
+          stats   ! Statistics accumulator
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          rtp3,  & ! Third moment of rt [(kg/kg)^3]
+          thlp3, & ! Third moment of thl [K^3]
+          up3,   & ! Third moment of u wind [m^3/s^3]
+          vp3      ! Third moment of v wind [m^3/s^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(inout) :: &
+          sclrp3   ! Third moments of passive scalars [units vary]
     """
 
     wp2_zt = zm2zt(nzm, nzt, ngrdcol, gr, wp2, w_tol_sqd)
@@ -380,24 +507,141 @@ def advance_xp3_simplified(
     predictive equation.
 
     The full predictive equation for <x'^3>, where <x'^3> can be <rt'^3>,
-    <thl'^3>, or <sclr'^3>, contains time tendency, mean advection,
-    turbulent advection, accumulation, turbulent production, turbulent
-    dissipation, diffusion, and microphysics/other forcing.
+    <thl'^3>, or <sclr'^3>, is:
+
+    d<x'^3>/dt = - <w> * d<x'^3>/dz
+                 - (1/rho_ds) * d( rho_ds * <w'x'^3> )/dz
+                 - 3 * <w'x'^2> * d<x>/dz
+                 + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz
+                 - ( C_xp3_dissipation / tau ) * <x'^3>
+                 + d ( ( K_xp3 + nu_xp3 ) * d<x'^3>/dz )/dz
+                 + 3 * < x'^2 (dx/dt)|_f' >;
+
+    where (dx/dt)|_f is the "forcing" term, which may include effects such as
+    microphysical effects or radiative effects.  The tunable coefficients are
+    C_xp3_dissipation, K_xp3, and nu_xp3.  The terms are listed as follows:
+
+    time tendency: d<x'^3>/dt;
+    mean advection: - <w> * d<x'^3>/dz;
+    turbulent advection: - (1/rho_ds) * d( rho_ds * <w'x'^3> )/dz;
+    accumulation: - 3 * <w'x'^2> * d<x>/dz;
+    turbulent production: + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz;
+    turbulent dissipation: - ( C_xp3_dissipation / tau ) * <x'^3>;
+    diffusion: + d ( ( K_xp3 + nu_xp3 ) * d<x'^3>/dz )/dz; and
+    microphysics/other forcing: + 3 * < x'^2 (dx/dt)|_f' >.
 
     The microphysics and turbulent advection terms are both found by
     integration over the subgrid PDF.  This requires new integrated terms.
     The turbulent advection term may need to be made semi-implicit in order
     to aid model stability.  This may be difficult to do for <x'^3>.
+    Additionally, if it could be made semi-implicit, it involves a derivative
+    and would require a tridiagonal solver to include contributions from
+    <x'^3> on three grid levels.  While the microphysics term and turbulent
+    advection term are important contributors to <x'^3>, they are being
+    omitted because of the additional complications they bring.
+
+    The mean advection and diffusion terms also would require a tridiagonal
+    solver in order to make the terms implicit because they involve
+    derivatives and values of <x'^3> on three grid levels.  While tridiagonal
+    solvers are not very computationally expensive, they are still more
+    expensive than a simplified one-line equation.  The mean advection and
+    diffusion terms are also rather small in magnitude, so they are also
+    being neglected.
 
     This leaves the following equation:
 
     d<x'^3>/dt = - 3 * <w'x'^2> * d<x>/dz
-                 + 3 * <x'^2> / rho_ds * d( rho_ds * <w'x'> )/dz
-                 - ( C_xp3_dissipation / tau ) * <x'^3>.
+                 + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz
+                 - ( C_xp3_dissipation / tau ) * <x'^3>;
+
+    which is a balance of time-tendency, accumulation, turbulent production,
+    and turbulent dissipation.  This equation can be handled semi-implicitly
+    as:
+
+    ( <x'^3>(t+1) - <x'^3>(t) ) / delta_t
+    = - 3 * <w'x'^2> * d<x>/dz
+      + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz
+      - ( C_xp3_dissipation / tau ) * <x'^3>(t+1);
+
+    which can be rewritten as:
+
+    ( 1 / delta_t + ( C_xp3_dissipation / tau ) ) * <x'^3>(t+1)
+    = ( <x'^3>(t) / delta_t )
+      - 3 * <w'x'^2> * d<x>/dz
+      + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz.
+
+    The predictive equation can be solved for <x'^3> as:
+
+    <x'^3>(t+1)
+    = ( ( <x'^3>(t) / delta_t )
+        - 3 * <w'x'^2> * d<x>/dz
+        + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz )
+      / ( 1 / delta_t + ( C_xp3_dissipation / tau ) ).
+
+    Alternatively, a steady-state approximation can be used, which
+    approximates d<x'^3>/dt = 0.  The equation becomes a balance of
+    accumulation, turbulent production, and turbulent dissipation, and is
+    written as:
+
+    0 = - 3 * <w'x'^2> * d<x>/dz
+        + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz
+        - ( C_xp3_dissipation / tau ) * <x'^3>.
+
+    The equation can be solved for <x'^3> as:
+
+    <x'^3>
+    = ( tau / C_xp3_dissipation )
+      * ( - 3 * <w'x'^2> * d<x>/dz
+          + 3 * ( <x'^2> / rho_ds ) * d( rho_ds * <w'x'> )/dz ).
 
     When the flag l_predict_xp3 is enabled, the predictive version of <x'^3>
     is used.  When the flag is turned off, the steady-state approximation is
     used.
+
+    Returns:
+        (xp3, stats)
+
+    Fortran declarations (advance_xp3_simplified in src/CLUBB_core/advance_xp3_module.F90):
+
+        ! ----------------------- Input Variables -----------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        integer, intent(in) :: &
+          solve_type    ! Flag for solving for rtp3, thlp3, or sclrp3
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt                 ! Model timestep                            [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xm,              & ! Mean (overall) of x (thermo. levels)                 [(x units)]
+          wpxp2,           & ! <w'x'^2> (thermodynamic levels)                      [m/s(x units)^2]
+          invrs_rho_ds_zt, & ! Inv. dry, static density at thermo. levels           [m^3/kg]
+          invrs_tau_zt,    & ! Inverse time-scale tau on thermodynamic levels       [1/s]
+          tau_max_zt         ! Max. allowable eddy dissipation time scale on t-levs [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          xp2,             & ! Variance (overall) of x (m-levs.)       [(x units)^2]
+          wpxp,            & ! Turbulent flux of x (momentum levs.)    [m/s(x units)]
+          rho_ds_zm          ! Dry, static density on momentum levels  [kg/m^3]
+
+        real( kind = core_rknd ), intent(in) :: &
+          x_tol    ! Tolerance value of x                           [(x units)]
+
+        logical, intent(in) :: &
+          l_lmm_stepping    ! Apply Linear Multistep Method (LMM) Stepping
+
+        ! --------------------- Input/Output Variables ---------------------
+        ! ----------------------- Input/Output Variable -----------------------
+        type(stats_type), intent(inout) :: &
+          stats
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          xp3    ! <x'^3> (thermodynamic levels)    [(x units)^3]
     """
 
     # Coefficient in the <x'^3> turbulent dissipation term    [-]
@@ -523,8 +767,46 @@ def term_tp_rhs(
 
     The values of <x'^3> are found on the thermodynamic levels, while the
     values of <w'x'> and <x'^2> are found on the momentum levels.
+    Additionally, the values of rho_ds_zm are found on the momentum levels,
+    and the values of invrs_rho_ds_zt are found on the thermodynamic levels.
+    The values of <x'^2> are interpolated to the central thermodynamic level
+    as <x'^2>|_zt.  On the momentum levels, the values of <w'x'> are
+    multiplied by rho_ds_zm.  Then, the derivative (d/dz) of
+    rho_ds_zm * <w'x'> is taken over the central thermodynamic level.  At the
+    central thermodynamic level, the derivative is multiplied by
+    invrs_rho_ds_zt, and their product is also multiplied by 3 * <x'^2>|_zt,
+    yielding the desired results.
+
+    =========wpxpp1=========rho_ds_zmp1===========xp2p1================ m(k+1)
+
+    --xp3--d( rho_ds_zm * wpxp )/dz--invrs_rho_ds_zt--xp2_zt(interp.)-- t(k)
+
+    =========wpxp===========rho_ds_zm=============xp2================== m(k)
+
+    The vertical indices m(k+1), t(k), and m(k) correspond with altitudes
+    zm(k+1), zt(k), and zm(k), respectively.  The letter "t" is used for
+    thermodynamic levels and the letter "m" is used for momentum levels.
 
     invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) )
+
+    Returns:
+        term_tp
+
+    Fortran declarations (term_tp_rhs in src/CLUBB_core/advance_xp3_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          xp2_zt,          & ! <x'^2> interp. to thermo. level (k)     [(x units)^2]
+          wpxpp1,          & ! <w'x'> at momentum level (k+1)         [m/s(x units)]
+          wpxp,            & ! <w'x'> at momentum level (k)           [m/s(x units)]
+          rho_ds_zmp1,     & ! Dry, static density on momentum level (k+1)  [kg/m^3]
+          rho_ds_zm,       & ! Dry, static density on momentum level (k)    [kg/m^3]
+          invrs_rho_ds_zt, & ! Inv. dry, static density at thermo. lev. (k) [m^3/kg]
+          invrs_dzt          ! Inverse of grid spacing (k)                     [1/m]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          term_tp    ! <x'^3> turbulent production term              [(x units)^3/s]
     """
 
     # The <x'^3> turbulent production term.
@@ -551,8 +833,42 @@ def term_ac_rhs(
     follows:
 
     The values of <x'^3>, <x>, and <w'x'^2> are found on thermodynamic levels.
+    The values of <x> are interpolated to the intermediate momentum levels as
+    <x>|_zm.  Then, the derivative (d/dz) of <x>|_zm is taken over the
+    central thermodynamic level, where it is multiplied by -3 * <w'x'^2>.
+
+    ----------------------xmp1----------------------------------------- t(k+1)
+
+    =========================xm_zmp1(interp.)========================== m(k+1)
+
+    ----------xp3---------xm---------dxm_zm/dz---------wpxp2----------- t(k)
+
+    =========================xm_zm(interp.)============================ m(k)
+
+    ----------------------xmm1----------------------------------------- t(k-1)
+
+    The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
+    with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
+    The letter "t" is used for thermodynamic levels and the letter "m" is
+    used for momentum levels.
 
     invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) )
+
+    Returns:
+        term_ac
+
+    Fortran declarations (term_ac_rhs in src/CLUBB_core/advance_xp3_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          xm_zmp1,   & ! <x> interpolated to momentum level (k+1)  [(x units)]
+          xm_zm,     & ! <x> interpolated to momentum level (k)    [(x units)]
+          wpxp2,     & ! <w'x'^2> at thermodynamic level (k)       [m/s(x units)^2]
+          invrs_dzt    ! Inverse of grid spacing (k)               [1/m]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          term_ac    ! <x'^3> accumulation term                    [(x units)^3/s]
     """
 
     # The <x'^3> accumulation term.

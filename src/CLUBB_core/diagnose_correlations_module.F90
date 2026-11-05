@@ -44,7 +44,7 @@ module diagnose_correlations_module
 
     intrinsic :: max, sqrt, transpose
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       pdf_dim, &  ! number of diagnosed correlations
       iiPDF_w
@@ -55,7 +55,7 @@ module diagnose_correlations_module
     logical, intent(in) :: &
       l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
 
-    ! Output variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
       corr_array
 
@@ -124,7 +124,7 @@ module diagnose_correlations_module
     intrinsic :: &
       sqrt, abs, sign
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       n_variables  ! number of variables in the correlation matrix [-]
     
@@ -134,7 +134,7 @@ module diagnose_correlations_module
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
       corr_matrix_prescribed ! correlation matrix [-]
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(inout) :: &
       corr_matrix_approx ! correlation matrix [-]
 
@@ -437,7 +437,7 @@ module diagnose_correlations_module
 
     intrinsic :: max
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       stdev_w,  & ! standard deviation of w [m/s]
       stdev_x,  & ! standard deviation of x [units vary]
@@ -445,6 +445,7 @@ module diagnose_correlations_module
       w_tol,    & ! tolerance for w [m/s]
       x_tol       ! tolerance for x [units vary]
 
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       calc_w_corr
 
@@ -482,7 +483,7 @@ module diagnose_correlations_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       mixt_frac, &  ! mixing ratio [-]
       x1, &         ! first component of the double gaussian [units vary]
@@ -491,7 +492,7 @@ module diagnose_correlations_module
       x1p2, &       ! variance of the first component [units vary]
       x2p2          ! variance of the second component [units vary]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       calc_varnce ! variance of x (both components) [units vary]
 
@@ -520,13 +521,13 @@ module diagnose_correlations_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       mixt_frac, &  ! mixing ratio [-]
       x1, &         ! first component of the double gaussian [units vary]
       x2            ! second component of the double gaussian [units vary]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       calc_mean  ! mean of x (both components) [units vary]
 
@@ -560,7 +561,7 @@ module diagnose_correlations_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       n_variables, &  ! number of variables in the correlation matrix [-]
       iiPDF_w
@@ -568,7 +569,7 @@ module diagnose_correlations_module
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
       corr_matrix ! correlation matrix [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
 
     ! correlation cholesky matrix transposed L', C = LL'; see reference 1 formula 10
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
@@ -642,14 +643,14 @@ module diagnose_correlations_module
 
     intrinsic :: sqrt
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       n_variables  ! number of variables in the correlation matrix [-]
 
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
       corr_matrix ! correlation matrix [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
 
     ! correlation cholesky matrix transposed L', C = LL'; see reference 1 formula 10
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
@@ -749,14 +750,14 @@ module diagnose_correlations_module
 
     intrinsic :: matmul, transpose
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       n_variables  ! number of variables in the correlation matrix [-]
 
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
       corr_cholesky_mtx_t ! transposed correlation cholesky matrix [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
       corr_matrix_approx ! correlation matrix [-]
 
@@ -796,7 +797,7 @@ module diagnose_correlations_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       n_variables  ! number of variables in the correlation matrix [-]
 
@@ -872,7 +873,7 @@ module diagnose_correlations_module
 
     intrinsic :: max, sqrt, transpose
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       pdf_dim, &  ! number of diagnosed correlations
       iiPDF_w
@@ -880,7 +881,7 @@ module diagnose_correlations_module
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
       corr_array   ! Correlation matrix
 
-    ! Output variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
       corr_array_swapped   ! Swapped correlation matrix
 

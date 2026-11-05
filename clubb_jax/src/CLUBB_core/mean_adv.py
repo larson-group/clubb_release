@@ -47,21 +47,22 @@ def term_ma_zt_lhs(
     l_upwind_xm_ma: bool,
     grid_dir: float,
 ):
-    """Mean advection of var_zt: implicit portion of the code.
+    """Mean advection of var_zt:  implicit portion of the code.
 
     The variable "var_zt" stands for a variable that is located at
     thermodynamic grid levels.
 
     The d(var_zt)/dt equation contains a mean advection term:
 
-      - w * d(var_zt)/dz.
+    - w * d(var_zt)/dz.
 
     This term is solved for completely implicitly, such that:
 
-      - w * d( var_zt(t+1) )/dz.
+    - w * d( var_zt(t+1) )/dz.
 
-    Note: When the term is brought over to the left-hand side, the sign is
-    reversed and the leading "-" in front of the term is changed to a "+".
+    Note:  When the term is brought over to the left-hand side, the sign
+           is reversed and the leading "-" in front of the term is changed to
+           a "+".
 
     The timestep index (t+1) means that the value of var_zt being used is from
     the next timestep, which is being advanced to in solving the d(var_zt)/dt
@@ -76,74 +77,106 @@ def term_ma_zt_lhs(
     thermodynamic level.  The derivative is multiplied by wm_zt at the central
     thermodynamic level to get the desired result.
 
-      -----var_zt---------------------------------------------- t(k+1)
+    -----var_zt---------------------------------------------- t(k+1)
 
-      =================var_zt(interp)========================== m(k+1)
+    =================var_zt(interp)========================== m(k+1)
 
-      -----var_zt---------------------d(var_zt)/dz-----wm_zt--- t(k)
+    -----var_zt---------------------d(var_zt)/dz-----wm_zt--- t(k)
 
-      =================var_zt(interp)========================== m(k)
+    =================var_zt(interp)========================== m(k)
 
-      -----var_zt---------------------------------------------- t(k-1)
+    -----var_zt---------------------------------------------- t(k-1)
 
     The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
     with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
     The letter "t" is used for thermodynamic levels and the letter "m" is used
     for momentum levels.
 
-      invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
+    invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
 
     Special discretization for upper and lower boundary levels:
 
     Zero derivative method: the derivative d(var_zt)/dz is set to 0 over the
     model top and the model bottom.
 
-    This method corresponds with the "zero-flux" boundary condition option for
-    eddy diffusion, where d(var_zt)/dz is set to 0 across the upper boundary.
+    This method corresponds with the "zero-flux" boundary condition option
+    for eddy diffusion, where d(var_zt)/dz is set to 0 across the upper
+    boundary.
 
     In order to discretize the upper boundary condition, consider a new level
-    outside the model (thermodynamic level gr%nzt+1) just above the upper
-    boundary level (thermodynamic level gr%nzt).  The value of var_zt at the
+    outside the model (thermodynamic level gr.nzt+1) just above the upper
+    boundary level (thermodynamic level gr.nzt).  The value of var_zt at the
     level just outside the model is defined to be the same as the value of
-    var_zt at thermodynamic level gr%nzt.  Therefore, the value of
+    var_zt at thermodynamic level gr.nzt.  Therefore, the value of
     d(var_zt)/dz between the level just outside the model and the uppermost
     thermodynamic level is 0, staying consistent with the zero-flux boundary
     condition option for the eddy diffusion portion of the code.  Therefore,
-    the value of var_zt at momentum level gr%nzm, which is the upper boundary
+    the value of var_zt at momentum level gr.nzm, which is the upper boundary
     of the model, would be the same as the value of var_zt at the uppermost
     thermodynamic level.
 
     The values of var_zt are found on the thermodynamic levels, as are the
     values of wm_zt (mean vertical velocity on the thermodynamic levels).  The
-    variable var_zt is interpolated to momentum level gr%nzm-1, based on the
-    values of var_zt at thermodynamic levels gr%nzt and gr%nzt-1.  The value
-    of var_zt at momentum level gr%nzm is set equal to the value of var_zt at
-    thermodynamic level gr%nzt, as described above.  The derivative of the set
-    and interpolated values, d(var_zt)/dz, is taken over the central
-    thermodynamic level.  The derivative is multiplied by wm_zt at the central
-    thermodynamic level to get the desired result.
+    variable var_zt is interpolated to momentum level gr.nzm-1, based on
+    the values of var_zt at thermodynamic levels gr.nzt and gr.nzt-1.  The
+    value of var_zt at momentum level gr.nzm is set equal to the value of
+    var_zt at thermodynamic level gr.nzt, as described above.  The derivative
+    of the set and interpolated values, d(var_zt)/dz, is taken over the
+    central thermodynamic level.  The derivative is multiplied by wm_zt at the
+    central thermodynamic level to get the desired result.
 
-    For the following diagram, k = gr%nzm, which is the uppermost level of the
-    model:
+    For the following diagram, k = gr.nzm, which is the uppermost level of
+    the model:
 
-      --[var_zt(k+1) = var_zt(k)]----(level outside model)----- t(k+1)
+    --[var_zt(k+1) = var_zt(k)]----(level outside model)----- t(k+1)
 
-      ==[var_zt(top) = var_zt(k)]===[d(var_zt)/dz|_(top) = 0]== m(k+1) Boundary
+    ==[var_zt(top) = var_zt(k)]===[d(var_zt)/dz|_(top) = 0]== m(k+1) Boundary
 
-      -----var_zt(k)------------------d(var_zt)/dz-----wm_zt--- t(k)
+    -----var_zt(k)------------------d(var_zt)/dz-----wm_zt--- t(k)
 
-      =================var_zt(interp)========================== m(k)
+    =================var_zt(interp)========================== m(k)
 
-      -----var_zt(k-1)----------------------------------------- t(k-1)
+    -----var_zt(k-1)----------------------------------------- t(k-1)
 
-    where (top) stands for the grid index of momentum level k = gr%nzm, which
+    where (top) stands for the grid index of momentum level k = gr.nzm, which
     is the upper boundary of the model.
 
     An analogous discretization occurs at the lower boundary.
 
-    JAX adaptation: the Fortran out-argument `lhs_ma` is returned as an array
-    with diagonal order [superdiagonal, main diagonal, subdiagonal].  Fortran
-    1-based grid indices are represented by 0-based Python slices.
+    The Fortran out-argument lhs_ma is returned as an array with diagonal
+    order [superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid
+    indices are represented by 0-based Python slices.
+
+    Fortran declarations (term_ma_zt_lhs in src/CLUBB_core/mean_adv.F90):
+
+        ! -------------------------- Input Variables --------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wm_zt,     & ! wm_zt                        [m/s]
+          invrs_dzt    ! Inverse of grid spacing      [1/m]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          invrs_dzm    ! Inverse of grid spacing      [1/m]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,t_above:t_below), intent(in) :: &
+          weights_zt2zm
+
+        logical, intent(in) :: &
+          l_upwind_xm_ma    ! This flag determines whether we want to use an upwind
+                            ! differencing approximation rather than a centered
+                            ! differencing for turbulent or mean advection terms.
+                            ! It affects rtm, thlm, sclrm, um and vm.
+
+        real( kind = core_rknd ), intent(in) :: &
+          grid_dir    ! Grid direction multiplier (+1 = ascending; -1 = descending)
+
+        ! -------------------------- Return Variable --------------------------
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzt), intent(out) :: &
+          lhs_ma    ! Mean advection contributions to lhs    [1/s]
     """
     # -------------------------- Begin Code --------------------------
 
@@ -244,21 +277,22 @@ def term_ma_zm_lhs(
     invrs_dzm,
     weights_zm2zt,
 ):
-    """Mean advection of var_zm: implicit portion of the code.
+    """Mean advection of var_zm:  implicit portion of the code.
 
     The variable "var_zm" stands for a variable that is located at momentum
     grid levels.
 
     The d(var_zm)/dt equation contains a mean advection term:
 
-      - w * d(var_zm)/dz.
+    - w * d(var_zm)/dz.
 
     This term is solved for completely implicitly, such that:
 
-      - w * d( var_zm(t+1) )/dz.
+    - w * d( var_zm(t+1) )/dz.
 
-    Note: When the term is brought over to the left-hand side, the sign is
-    reversed and the leading "-" in front of the term is changed to a "+".
+    Note:  When the term is brought over to the left-hand side, the sign
+           is reversed and the leading "-" in front of the term is changed to
+           a "+".
 
     The timestep index (t+1) means that the value of var_zm being used is from
     the next timestep, which is being advanced to in solving the d(var_zm)/dt
@@ -266,33 +300,52 @@ def term_ma_zm_lhs(
 
     This term is discretized as follows:
 
-    The values of var_zm are found on the momentum levels, as are the values of
-    wm_zm (mean vertical velocity on momentum levels).  The variable var_zm is
-    interpolated to the intermediate thermodynamic levels.  The derivative of
-    the interpolated values is taken over the central momentum level.  The
+    The values of var_zm are found on the momentum levels, as are the values
+    of wm_zm (mean vertical velocity on momentum levels).  The variable var_zm
+    is interpolated to the intermediate thermodynamic levels.  The derivative
+    of the interpolated values is taken over the central momentum level.  The
     derivative is multiplied by wm_zm at the central momentum level to get the
     desired result.
 
-      =====var_zm============================================== m(k+1)
+    =====var_zm============================================== m(k+1)
 
-      -----------------var_zm(interp)-------------------------- t(k)
+    -----------------var_zm(interp)-------------------------- t(k)
 
-      =====var_zm=====================d(var_zm)/dz=====wm_zm=== m(k)
+    =====var_zm=====================d(var_zm)/dz=====wm_zm=== m(k)
 
-      -----------------var_zm(interp)-------------------------- t(k-1)
+    -----------------var_zm(interp)-------------------------- t(k-1)
 
-      =====var_zm============================================== m(k-1)
+    =====var_zm============================================== m(k-1)
 
     The vertical indices m(k+1), t(k), m(k), t(k-1), and m(k-1) correspond
     with altitudes zm(k+1), zt(k), zm(k), zt(k-1), and zm(k-1), respectively.
     The letter "t" is used for thermodynamic levels and the letter "m" is used
     for momentum levels.
 
-      invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
+    invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
 
-    JAX adaptation: the Fortran out-argument `lhs_ma` is returned as an array
-    with diagonal order [superdiagonal, main diagonal, subdiagonal].  Fortran
-    1-based grid indices are represented by 0-based Python slices.
+    The Fortran out-argument lhs_ma is returned as an array with diagonal
+    order [superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid
+    indices are represented by 0-based Python slices.
+
+    Fortran declarations (term_ma_zm_lhs in src/CLUBB_core/mean_adv.F90):
+
+        ! -------------------------- Input Variables --------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          wm_zm,     & ! wm_zm                        [m/s]
+          invrs_dzm    ! Inverse of grid spacing      [1/m]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,m_above:m_below), intent(in) :: &
+          weights_zm2zt
+
+        ! -------------------------- Return Variable --------------------------
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(out) :: &
+          lhs_ma    ! Mean advection contributions to lhs  [1/s]
     """
     # -------------------------- Begin Code --------------------------
 

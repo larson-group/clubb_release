@@ -114,12 +114,95 @@ def parameterization_check(
     edsclrm_forcing,
     err_info: ErrInfo,
 ):
-    """Determine what input variables may have NaN or invalid negative values.
+    """This subroutine determines what input variables may have NaN values.
+    In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
+    wp2, rtp2, thlp2, or tau_zm have negative values.
 
-    Description:
-      This subroutine determines what input variables may have NaN values.
-      In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
-      wp2, rtp2, thlp2, or tau_zm have negative values.
+    Returns:
+        err_info
+
+    Fortran declarations (parameterization_check in src/CLUBB_core/numerical_check.F90):
+
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol, &
+          sclr_dim, &
+          edsclr_dim
+
+        ! Input variables
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
+          rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
+          um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
+          vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+          wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
+          p_in_Pa,         & ! Air pressure (thermodynamic levels)       [Pa]
+          rho,             & ! Air density on thermodynamic levels       [kg/m^3]
+          exner,           & ! Exner function (thermodynamic levels)     [-]
+          rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+          invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+          thv_ds_zt        ! Dry, base-state theta_v on thermo. levs.  [K]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          wm_zm,           & ! w mean wind component on momentum levels  [m/s]
+          rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+          rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+          invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+          thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
+          wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
+          wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
+          upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
+          vpwp_sfc,     & ! v'w' at surface.          [m^2/s^2]
+          p_sfc           ! pressure at surface       [Pa]
+
+        ! These are prognostic or are planned to be in the future
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+          vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+          rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+          thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+          wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+          vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+          up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+          vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+          wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+          wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+          rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+          thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+          rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+          wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
+
+        character(len=*), intent(in) :: prefix ! Location where subroutine is called
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,sclr_dim) :: &
+          wpsclrp_sfc    ! Scalar flux at surface [units m/s]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,edsclr_dim) :: &
+          wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
+
+        real( kind = core_rknd ), intent(in),dimension(ngrdcol,nzt,sclr_dim) :: &
+          sclrm,         & ! Passive scalar mean      [units vary]
+          sclrm_forcing    ! Passive scalar forcing   [units / s]
+
+        real( kind = core_rknd ), intent(in),dimension(ngrdcol,nzm,sclr_dim) :: &
+          wpsclrp,       & ! w'sclr'                  [units vary]
+          sclrp2,        & ! sclr'^2                  [units vary]
+          sclrprtp,      & ! sclr'rt'                 [units vary]
+          sclrpthlp        ! sclr'thl'                [units vary]
+
+        real( kind = core_rknd ), intent(in),dimension(ngrdcol,nzt,edsclr_dim) :: &
+          edsclrm,         & ! Eddy passive scalar mean    [units vary]
+          edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
+
+        ! Input/Output variables
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
     """
     del nzm, nzt, ngrdcol
 
@@ -254,9 +337,21 @@ def parameterization_check(
 
 
 def check_negative(var, varname, operation, err_info: ErrInfo):
-    """Checks for negative values in the var array and reports the column and
-    vertical indices in which the negative values occur.
+    """Checks for negative values in the var array and reports
+    the column and vertical indices in which the negative values occur.
 
+    Fortran declarations (check_negative in src/CLUBB_core/numerical_check.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: var(:,:)
+
+        character(len=*), intent(in):: &
+          varname,   & ! Variable being examined
+          operation    ! Procedure calling check_zero
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
     """
     # Host I/O adaptation of Fortran's per-index writes, in level/column order.
     def print_negative(values, info):
@@ -287,7 +382,18 @@ def check_negative(var, varname, operation, err_info: ErrInfo):
 def check_nan(var, varname, operation, err_info: ErrInfo):
     """Checks for a NaN in the var array and reports it.
 
-    JAX treats any non-finite value as fatal, as does Fortran's IEEE check.
+    Fortran declarations (check_nan_2d in src/CLUBB_core/numerical_check.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in), dimension(:,:) :: var ! Variable being examined
+
+        character(len=*), intent(in):: &
+          varname,  & ! Name of variable
+          operation   ! Procedure calling check_nan
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
     """
     def print_nan(info):
         if isinstance(info, ErrInfo):
@@ -321,6 +427,23 @@ def calculate_spurious_source(
     """Checks whether there is conservation within the column and returns any
     imbalance as spurious_source where spurious_source is defined negative
     for a spurious sink.
+
+    Returns:
+        spurious_source
+
+    Fortran declarations (calculate_spurious_source in src/CLUBB_core/numerical_check.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          integral_after, &   ! Vertically-integrated quantity after dt time  [units vary]
+          integral_before, &  ! Vertically-integrated quantity before dt time [units vary]
+          flux_top, &         ! Total flux at the top of the domain           [units vary]
+          flux_sfc, &         ! Total flux at the bottom of the domain        [units vary]
+          integral_forcing, & ! Vertically-integrated forcing                 [units vary]
+          dt                  ! Timestep size                                 [s]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: spurious_source ! [units vary]
     """
     spurious_source = (
         (jnp.asarray(integral_after) - jnp.asarray(integral_before))
@@ -353,7 +476,35 @@ def sfc_varnce_check(
     sclrprtp_sfc=None,
     sclrpthlp_sfc=None,
 ):
-    """Determine whether calc_surface_varnce outputs carry values that are nans."""
+    """This subroutine determines if any of the output
+           variables for the calc_surface_varnce subroutine carry values that
+           are nans.
+
+           Joshua Fasching February 2008
+
+    Fortran declarations (sfc_varnce_check in src/CLUBB_core/numerical_check.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          sclr_dim
+
+        real( kind = core_rknd ),intent(in) :: &
+          wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
+          up2_sfc,     & ! u'^2                              [m^2/s^2]
+          vp2_sfc,     & ! u'^2                              [m^2/s^2]
+          thlp2_sfc,   & ! thetal variance                   [K^2]
+          rtp2_sfc,    & ! rt variance                       [(kg/kg)^2]
+          rtpthlp_sfc    ! thetal rt covariance              [kg K/kg]
+
+        real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+          sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
+          sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
+          sclrpthlp_sfc    ! Passive scalar theta_l covariance       [units K]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+    """
     values = [wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc]
     if int(sclr_dim) > 0:
         values.extend([sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc])
@@ -367,10 +518,30 @@ def sfc_varnce_check(
 
 
 def length_check(Lscale, Lscale_up, Lscale_down):
-    """Report nonfinite combined/upward/downward lengths [m] and return host validity.
+    """This subroutine determines if any of the output
+            variables for the length_new subroutine carry values that
+            are NaNs.
 
-    The mixing-length JIT kernel checks finite values with JAX and invokes
-    this diagnostic only inside its host error callback.
+            Joshua Fasching February 2008
+
+    The JIT-compiled mixing-length kernel checks for finite values with JAX and
+    calls this diagnostic only inside its host error callback.
+
+    Fortran declarations (length_check in src/CLUBB_core/numerical_check.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzt
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+          Lscale,     & ! Mixing length                 [m]
+          Lscale_up,  & ! Upward mixing length          [m]
+          Lscale_down   ! Downward mixing length        [m]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
     """
     for name, value in (("Lscale", Lscale), ("Lscale_up", Lscale_up), ("Lscale_down", Lscale_down)):
         if value is not None and np.any(~np.isfinite(np.asarray(value))):
@@ -379,7 +550,61 @@ def length_check(Lscale, Lscale_up, Lscale_down):
 
 
 def pdf_closure_check(closure_fields, pdf_params, sclr_dim=0, sclr_fields=None):
-    """Determine whether pdf_closure output variables carry values that are NaNs."""
+    """This subroutine determines if any of the output
+       variables for the pdf_closure subroutine carry values that
+       are NaNs.
+
+     Joshua Fasching February 2008
+
+    Fortran declarations (pdf_closure_check in src/CLUBB_core/numerical_check.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz, &
+          sclr_dim
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          wp4,             & ! w'^4                  [m^4/s^4]
+          wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
+          wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
+          wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
+          wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
+          cloud_frac,      & ! Cloud fraction        [-]
+          rcm,             & ! Mean liquid water     [kg/kg]
+          wpthvp,          & ! Buoyancy flux         [(K m)/s]
+          wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
+          wp2up,           & ! w'^2 u'               [m^3/s^3]
+          rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
+          thlpthvp,        & ! th_l' th_v'           [K^2]
+          wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
+          wp2rcp,          & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
+          rtprcp,          & ! r_t' r_c'             [(kg^2)/(kg^2)]
+          thlprcp,         & ! th_l' r_c'            [(K kg)/kg]
+          rcp2,            & ! r_c'^2                [(kg^2)/(kg^2)]
+          wprtpthlp,       & ! w' r_t' th_l'         [(m kg K)/(s kg)]
+          crt_1, crt_2,  &
+          cthl_1, cthl_2
+
+        type(pdf_parameter), intent(in) :: &
+          pdf_params        ! PDF parameters          [units vary]
+
+        ! Input (Optional passive scalar variables)
+        real( kind = core_rknd ), dimension(nz,sclr_dim), intent(in) :: &
+          sclrpthvp, &
+          sclrprcp, &
+          wpsclrp2, &
+          wpsclrprtp, &
+          wpsclrpthlp, &
+          wp2sclrp
+
+        type(stats_type), intent(in) :: &
+          stats
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+    """
     values = []
     if isinstance(closure_fields, dict):
         values.extend(closure_fields.values())
@@ -397,7 +622,34 @@ def pdf_closure_check(closure_fields, pdf_params, sclr_dim=0, sclr_fields=None):
 
 
 def rad_check(thlm, rcm, rtm, rim, cloud_frac, p_in_Pa, exner, rho_zm):
-    """Checks radiation input variables. If they are < 0 it reports to the console."""
+    """Checks radiation input variables. If they are < 0 it reports
+    to the console.
+
+    Fortran declarations (rad_check in src/CLUBB_core/numerical_check.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          ngrdcol, &
+          nzm, &
+          nzt
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          thlm,           & ! Liquid Water Potential Temperature   [K/s]
+          rcm,            & ! Liquid Water Mixing Ratio            [kg/kg]
+          rtm,            & ! Total Water Mixing Ratio             [kg/kg]
+          rim,            & ! Ice Water Mixing Ratio               [kg/kg]
+          cloud_frac,     & ! Cloud Fraction                       [-]
+          p_in_Pa,        & ! Pressure                             [Pa]
+          exner             ! Exner Function                       [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rho_zm            ! Air Density                          [kg/m^3]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+    """
     values = [thlm, rcm, rtm, rim, cloud_frac, p_in_Pa, exner, rho_zm]
     if not _all_finite(*values):
         return False
@@ -409,8 +661,49 @@ def rad_check(thlm, rcm, rtm, rim, cloud_frac, p_in_Pa, exner, rho_zm):
 def invalid_model_arrays(**arrays):
     """Checks for invalid floating point values in select model arrays.
 
-    References:
-      None
+    Returns:
+        invalid_model_arrays
+
+    Fortran declarations (invalid_model_arrays in src/CLUBB_core/numerical_check.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          hydromet_dim, &
+          sclr_dim, &
+          edsclr_dim
+
+        character(len=10), dimension(hydromet_dim), intent(in) :: &
+          hydromet_list
+
+        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+          um,       & ! eastward grid-mean wind comp. (thermo. levs.)  [m/s]
+          vm,       & ! northward grid-mean wind comp. (thermo. levs.) [m/s]
+          rtm,      & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+          thlm,     & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+          wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+          wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+          wp2up       ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
+
+        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+          wprtp,    & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+          wpthlp,   & ! w'th_l' (momentum levels)                      [(m/s) K]
+          rtp2,     & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+          thlp2,    & ! th_l'^2 (momentum levels)                      [K^2]
+          rtpthlp,  & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+          wp2,      & ! w'^2 (momentum levels)                         [m^2/s^2]
+          rtpthvp,  & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+          thlpthvp    ! < th_l' th_v' > (momentum levels)              [K^2]
+
+        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+          hydromet    ! Array of hydrometeors                          [units vary]
+
+        real( kind = core_rknd ), dimension(nzt,sclr_dim), intent(in) :: &
+          sclrm    ! Passive scalar mean (thermo. levels)              [units vary]
+
+        real( kind = core_rknd ), dimension(nzt,edsclr_dim), intent(in) :: &
+          edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
     """
     for name, value in arrays.items():
         if value is None:

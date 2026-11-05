@@ -207,7 +207,72 @@ def setup_grid(
     momentum_heights=None,
     thermodynamic_heights=None,
 ) -> Grid:
-    """Construct a JAX `Grid` with CLUBB-style heights, spacings, and weights."""
+    """Grid Constructor
+
+    This subroutine sets up the CLUBB vertical grid.
+
+    References:
+    ``Equations for CLUBB'',  Sec. 8,  Grid Configuration.
+
+    Fortran declarations (setup_grid in src/CLUBB_core/grid_class.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) ::  &
+          nzmax, &  ! Number of vertical levels in grid      [#]
+          ngrdcol
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(grid), intent(inout) :: gr
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          sfc_elevation  ! Elevation of ground level    [m AMSL]
+
+        ! True if CLUBB is being implemented and run in a host model
+        logical, intent(in) :: l_implemented
+
+        ! Flag for having the model use its traditional ascending grid (where the
+        ! lowest-numbered grid level is at the surface or model lower boundary).
+        ! When this flag is turned off, a descending grid is used (where the
+        ! lowest-numbered grid level is at the model upper boundary).
+        logical, intent(in) :: l_ascending_grid
+
+        ! If CLUBB is running on it's own, this option determines if it is using:
+        ! 1) an evenly-spaced grid;
+        ! 2) a stretched (unevenly-spaced) grid entered on the thermodynamic grid
+        !    levels (with momentum levels set halfway between thermodynamic levels);
+        !    or
+        ! 3) a stretched (unevenly-spaced) grid entered on the momentum grid levels
+        !    (with thermodynamic levels set halfway between momentum levels).
+        integer, intent(in) :: grid_type
+
+        ! If the CLUBB model is running by itself, and is using an evenly-spaced
+        ! grid (grid_type = 1), it needs the vertical grid spacing and
+        ! momentum-level starting altitude as input.
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          deltaz,   & ! Vertical grid spacing                  [m]
+          zm_init,  & ! Initial grid altitude (momentum level) [m]
+          zm_top      ! Maximum grid altitude (momentum level) [m]
+
+        ! If the CLUBB parameterization is implemented in a host model, it needs to
+        ! use the host model's momentum level altitudes and thermodynamic level
+        ! altitudes.
+        ! If the CLUBB model is running by itself, but is using a stretched grid
+        ! entered on thermodynamic levels (grid_type = 2), it needs to use the
+        ! thermodynamic level altitudes as input.
+        ! If the CLUBB model is running by itself, but is using a stretched grid
+        ! entered on momentum levels (grid_type = 3), it needs to use the momentum
+        ! level altitudes as input.
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
+          momentum_heights    ! Momentum level altitudes (input)      [m]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) :: &
+          thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info        ! err_info struct containing err_code and err_header
+    """
     deltaz_arr = _as_column_input(deltaz, ngrdcol, "deltaz")
     zm_init_arr = _as_column_input(zm_init, ngrdcol, "zm_init")
     zm_top_arr = _as_column_input(zm_top, ngrdcol, "zm_top")
@@ -470,6 +535,30 @@ def zt2zm2zt(nzm: int, nzt: int, ngrdcol: int, gr, azt, zt_min=None):
 
     Note:
       This is intended for smoothing variables.
+
+    Returns:
+        zt2zm2zt
+
+    Fortran declarations (zt2zm2zt in src/CLUBB_core/grid_class.F90):
+
+        ! ------------------------------ Input Variable ------------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          azt    ! Variable on thermodynamic grid levels    [units vary]
+
+        ! ------------------------------ Return Variable ------------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+          zt2zm2zt    ! Variable when smoothed and back on thermodynamic levels
+
+        !---------------------------- Optional Input Variable ----------------------------
+        real( kind = core_rknd ), optional, intent(in) :: &
+          zt_min
     """
     # Interpolate azt to momentum levels
     # Interpolate back to thermodynamic levels
@@ -483,6 +572,30 @@ def zm2zt2zm(nzm: int, nzt: int, ngrdcol: int, gr, azm, zm_min=None):
 
     Note:
       This is intended for smoothing variables.
+
+    Returns:
+        zm2zt2zm
+
+    Fortran declarations (zm2zt2zm in src/CLUBB_core/grid_class.F90):
+
+        ! ------------------------------ Input Variable ------------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          azm    ! Variable on momentum grid levels    [units vary]
+
+        ! ------------------------------ Return Variable ------------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+          zm2zt2zm    ! Variable when smoothed and back on momentum levels
+
+        !---------------------------- Optional Input Variable ----------------------------
+        real( kind = core_rknd ), optional, intent(in) :: &
+          zm_min
     """
     # Interpolate azt to termodynamic levels
     # Interpolate back to momentum levels
@@ -490,14 +603,64 @@ def zm2zt2zm(nzm: int, nzt: int, ngrdcol: int, gr, azm, zm_min=None):
 
 
 def ddzm(nzm: int, nzt: int, ngrdcol: int, gr, azm):
-    """2D version of gradzm."""
+    """2D version of gradzm
+
+    Takes the derivative of variables that are located on momentum grid levels
+    across the thermodynamic grid levels. Output is located on thermodynamic
+    levels.
+
+    Returns:
+        ddzm
+
+    Fortran declarations (gradzm_2D in src/CLUBB_core/grid_class.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          azm    ! Variable on momentum grid levels    [units vary]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+          gradzm_2D    ! Vertical derivative of azm (thermo. levs.) [units vary / m]
+    """
     # Vertical derivative of azm (thermo. levs.) [units vary / m]
     ddzm = (azm[:, 1:nzm] - azm[:, :nzt]) * gr.invrs_dzt
     return ddzm
 
 
 def ddzt(nzm: int, nzt: int, ngrdcol: int, gr, azt):
-    """2D version of gradzt."""
+    """2D version of gradzt
+
+    Takes the derivative of variables that are located on thermodynamic
+    grid levels across the momentum grid levels. Output is located on
+    momentum levels.
+
+    Returns:
+        gradzt_2D
+
+    Fortran declarations (gradzt_2D in src/CLUBB_core/grid_class.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          azt    ! Variable on thermodynamic grid levels    [units vary]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+          gradzt_2D    ! Vertical derivative of azt (mom.levs.) [units vary / m]
+    """
     # Vertical derivative of azt (mom.levs.) [units vary / m]
     interior = (azt[:, 1:nzt] - azt[:, :nzt - 1]) * gr.invrs_dzm[:, 1:nzm - 1]
     return jnp.concatenate([interior[:, :1], interior, interior[:, -1:]], axis=1)

@@ -1865,11 +1865,11 @@ module pdf_closure_module
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                           [m/s]
       w_1,        & ! Mean of w (1st PDF component)                 [m/s]
@@ -1878,7 +1878,7 @@ module pdf_closure_module
       varnce_w_2, & ! Variance of w (2nd PDF component)             [m^2/s^2]
       mixt_frac     ! Mixture fraction                              [-]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       wp4    ! <w'^4>                   [m^4/s^4]
 
@@ -1963,11 +1963,11 @@ module pdf_closure_module
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
@@ -1983,7 +1983,7 @@ module pdf_closure_module
       corr_w_x_2, & ! Correlation of w and x (2nd PDF comp.)    [-]
       mixt_frac     ! Mixture fraction                          [-]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wp2xp2        ! <w'^2x'^2>                   [m^2/s^2 (units vary)^2]
 
@@ -2068,11 +2068,11 @@ module pdf_closure_module
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
@@ -2088,7 +2088,7 @@ module pdf_closure_module
       corr_w_x_2, & ! Correlation of w and x (2nd PDF comp.)    [-]
       mixt_frac     ! Mixture fraction                          [-]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wp2xp    ! <w'^2 x'>                   [m^2/s^2 (units vary)]
 
@@ -2170,11 +2170,11 @@ module pdf_closure_module
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
@@ -2190,7 +2190,7 @@ module pdf_closure_module
       corr_w_x_2, & ! Correlation of w and x (2nd PDF comp.)    [-]
       mixt_frac     ! Mixture fraction                          [-]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wpxp2    ! <w'x'^2>                   [m/s (units vary)^2]
       
@@ -2286,11 +2286,11 @@ module pdf_closure_module
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,         & ! Mean of w (overall)                          [m/s]
       xm,         & ! Mean of x (overall)                          [x units]
@@ -2315,7 +2315,7 @@ module pdf_closure_module
       corr_x_y_2, & ! Correlation of x and y (2nd PDF component)   [-]
       mixt_frac     ! Mixture fraction                             [-]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       wpxpyp    ! <w'x'y'>                   [m/s (units vary)]
 
@@ -3028,11 +3028,11 @@ module pdf_closure_module
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,             & ! Mean of w (overall)                          [m/s]
       rtm,            & ! Mean of rt (overall)                         [kg/kg]
@@ -3064,7 +3064,7 @@ module pdf_closure_module
                     ! w, chi, and eta) portion of CLUBB's multivariate,
                     ! two-component PDF.
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wprcp_contrib_comp_i,   & ! <w'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
       wp2rcp_contrib_comp_i,  & ! <w'^2rc'> contrib. (ith comp) [m^2/s^2(kg/kg)]

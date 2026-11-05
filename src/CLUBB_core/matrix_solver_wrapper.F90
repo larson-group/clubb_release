@@ -731,6 +731,7 @@ module matrix_solver_wrapper
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     character(len=*), intent(in) :: &
       solve_name
 
@@ -740,9 +741,11 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), intent(in), dimension(ndim) :: &
       soln
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info
 
+    !--------------------------- Local Variables ---------------------------
     integer :: k
     logical :: l_has_nan
 
@@ -774,6 +777,7 @@ module matrix_solver_wrapper
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     character(len=*), intent(in) :: &
       solve_name
 
@@ -783,9 +787,11 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim) :: &
       soln
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info
 
+    !--------------------------- Local Variables ---------------------------
     integer :: i, k
     logical :: l_has_nan
 
@@ -821,6 +827,7 @@ module matrix_solver_wrapper
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     character(len=*), intent(in) :: &
       solve_name
 
@@ -830,9 +837,11 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,ndim,nrhs) :: &
       soln
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info
 
+    !--------------------------- Local Variables ---------------------------
     integer :: i, k, j
     logical :: l_has_nan
 

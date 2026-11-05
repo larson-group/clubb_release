@@ -166,7 +166,21 @@ class pdf_parameter(NamedTuple):
 
 
 def init_pdf_implicit_coefs_terms_api(nz: int, ngrdcol: int, sclr_dim: int) -> implicit_coefs_terms:
-    """JAX equivalent of pdf_parameter_module.F90:init_pdf_implicit_coefs_terms_api."""
+    """Initializes all PDF implicit coefficients and explicit terms in the
+    variable type implicit_coefs_terms.
+
+    Fortran declarations (init_pdf_implicit_coefs_terms_api in src/CLUBB_core/pdf_parameter_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz,       & ! Number of vertical grid levels    [-]
+          ngrdcol,  & ! Number of grid columns            [-]
+          sclr_dim    ! Number of scalar variables        [-]
+
+        !--------------------------- Output Variables ---------------------------
+        type(implicit_coefs_terms), intent(out) :: &
+          pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+    """
     zero_2d = jnp.zeros((ngrdcol, nz))
 
     if sclr_dim > 0:
@@ -224,12 +238,33 @@ def init_pdf_implicit_coefs_terms_api(nz: int, ngrdcol: int, sclr_dim: int) -> i
 
 
 def zero_pdf_implicit_coefs_terms_api(coefs: implicit_coefs_terms) -> implicit_coefs_terms:
-    """Return a zeroed implicit-coefficient container with the same dimensions."""
+    """Zeros all PDF implicit coefficients and explicit terms in the
+    variable type implicit_coefs_terms.
+
+    Fortran declarations (zero_pdf_implicit_coefs_terms_api in src/CLUBB_core/pdf_parameter_module.F90):
+
+        !--------------------------- Input/Output Variables ---------------------------
+        !----------------------------------- Inout Variable(s) -----------------------------------
+        type(implicit_coefs_terms), intent(inout) :: &
+          pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+    """
     return init_pdf_implicit_coefs_terms_api(coefs.nz, coefs.ngrdcol, coefs.sclr_dim)
 
 
 def init_pdf_params(nz: int, ngrdcol: int) -> pdf_parameter:
-    """JAX equivalent of pdf_parameter_module.F90:init_pdf_params."""
+    """Initializes all PDF parameters in the variable type pdf_parameter.
+
+    Fortran declarations (init_pdf_params in src/CLUBB_core/pdf_parameter_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz,   & ! Number of vertical grid levels    [-]
+          ngrdcol ! Number of grid columns            [-]
+
+        !--------------------------- Output Variables ---------------------------
+        type(pdf_parameter), intent(out) :: &
+          pdf_params    ! PDF parameters            [units vary]
+    """
     zero_2d = jnp.zeros((ngrdcol, nz))
     values = {
         field: zero_2d
@@ -240,12 +275,30 @@ def init_pdf_params(nz: int, ngrdcol: int) -> pdf_parameter:
 
 
 def zero_pdf_params_api(params: pdf_parameter) -> pdf_parameter:
-    """Return a zeroed PDF-parameter container with the same dimensions."""
+    """Zeros all PDF parameters in the variable type pdf_parameter.
+
+    Fortran declarations (zero_pdf_params_api in src/CLUBB_core/pdf_parameter_module.F90):
+
+        !--------------------------- Input/Output Variables ---------------------------
+        !----------------------------------- Inout Variable(s) -----------------------------------
+        type(pdf_parameter), intent(inout) :: &
+          pdf_params    ! PDF parameters            [units vary]
+    """
     return init_pdf_params(params.nz, params.ngrdcol)
 
 
 def print_pdf_params(pdf_params, ngrdcol):
-    """Print all PDF fields by column, mirroring Fortran ``print_pdf_params``."""
+    """Prints every value found in type pdf_parameter
+
+    Fortran declarations (print_pdf_params in src/CLUBB_core/pdf_parameter_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        type(pdf_parameter), intent(in) :: &
+          pdf_params    ! PDF parameters            [units vary]
+
+        integer, intent(in) :: &
+          ngrdcol    ! Number of horizontal grid columns
+    """
     # Host I/O adaptation of source writes; all field arrays are callback inputs.
     def print_values(values):
         import sys
@@ -305,7 +358,24 @@ def print_pdf_params(pdf_params, ngrdcol):
 
 
 def pack_pdf_params_api(params: pdf_parameter, nz: int):
-    """Pack the first column of a pdf_parameter into a ``(nz, 47)`` array."""
+    """Pack the first column of a pdf_parameter into a ``(nz, 47)`` array.
+
+    Fortran declarations (pack_pdf_params_api in src/CLUBB_core/pdf_parameter_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: nz ! Num Vert Model Levs
+
+        ! Input a pdf_parameter array with nz instances of pdf_parameter
+        type (pdf_parameter), intent(in) :: pdf_params
+
+        !--------------------------- Output Variables ---------------------------
+        ! Output a two dimensional real array with all values
+        real (kind = core_rknd), dimension(nz,num_pdf_params), intent(out) :: &
+           r_param_array
+
+        !--------------------------- Optional Input Variables ---------------------------
+        integer, optional, intent(in) :: k_start_in, k_end_in
+    """
     slots = []
     for field in pdf_parameter._fields[2:]:
         value = jnp.asarray(getattr(params, field))
@@ -317,7 +387,24 @@ def pack_pdf_params_api(params: pdf_parameter, nz: int):
 
 
 def unpack_pdf_params_api(r_param_array, nz: int, template: pdf_parameter) -> pdf_parameter:
-    """Unpack a ``(nz, 47)`` array into the first column of a pdf_parameter."""
+    """Unpack a ``(nz, 47)`` array into the first column of a pdf_parameter.
+
+    Fortran declarations (unpack_pdf_params_api in src/CLUBB_core/pdf_parameter_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: nz ! Num Vert Model Levs
+
+        ! Input a two dimensional real array with pdf values
+        real (kind = core_rknd), dimension(nz,num_pdf_params), intent(in) :: &
+           r_param_array
+
+        !--------------------------- Input/Output Variables ---------------------------
+        ! Output a pdf_parameter array with nz instances of pdf_parameter
+        type (pdf_parameter), intent(inout) :: pdf_params
+
+        !--------------------------- Optional Input Variables ---------------------------
+        integer, optional, intent(in) :: k_start_in, k_end_in
+    """
     values = {}
     for idx, field in enumerate(pdf_parameter._fields[2:]):
         arr = jnp.zeros((template.ngrdcol, nz))

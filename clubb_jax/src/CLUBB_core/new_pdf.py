@@ -255,62 +255,97 @@ from clubb_jax.src.CLUBB_core.advance_helper_module import sqrt_clipped
 
 
 def calc_coef_wp4_implicit(mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd):
-    """Calculate coef_wp4_implicit.
+    """The predictive equation for <w'^3> contains a turbulent advection term of
+    the form:
 
-    ! Description:
-    ! The predictive equation for <w'^3> contains a turbulent advection term of
-    ! the form:
-    !
-    ! - ( 1 / rho_ds ) * d ( rho_ds * <w'^4> ) / dz;
-    !
-    ! where z is height, rho_ds is the dry, base-state density, and <w'^4> is
-    ! calculated by integrating over the PDF.  The equation for <w'^4> is:
-    !
-    ! <w'^4> = mixt_frac * ( 3 * sigma_w_1^4
-    !                        + 6 * ( mu_w_1 - <w> )^2 * sigma_w_1^2
-    !                        + ( mu_w_1 - <w> )^4 )
-    !          + ( 1 - mixt_frac ) * ( 3 * sigma_w_2^4
-    !                                  + 6 * ( mu_w_2 - <w> )^2 * sigma_w_2^2
-    !                                  + ( mu_w_2 - <w> )^4 ).
-    !
-    ! The following substitutions are made into the above equation:
-    !
-    ! mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
-    !                * sqrt( <w'^2> );
-    !
-    ! mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
-    !                  * sqrt( <w'^2> );
-    !
-    ! sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> ); and
-    !
-    ! sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> ).
-    !
-    ! The equation for <w'4> becomes:
-    !
-    ! <w'^4> = ( 3 * mixt_frac * coef_sigma_w_1_sqd^2
-    !            + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
-    !            + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
-    !            + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
-    !            + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
-    !            + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ) ) * <w'^2>^2.
-    !
-    ! This equation is of the form:
-    !
-    ! <w'^4> = coef_wp4_implicit * <w'^2>^2;
-    !
-    ! where:
-    !
-    ! coef_wp4_implicit = 3 * mixt_frac * coef_sigma_w_1_sqd^2
-    !                     + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
-    !                     + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
-    !                     + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
-    !                     + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
-    !                     + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ).
-    !
-    ! While the <w'^4> term is found in the <w'^3> predictive equation and not
-    ! the <w'^2> predictive equation, the <w'^3> and <w'^2> predictive equations
-    ! are solved together.  This allows the term containing <w'^4> to be solved
-    ! implicitly.
+    - ( 1 / rho_ds ) * d ( rho_ds * <w'^4> ) / dz;
+
+    where z is height, rho_ds is the dry, base-state density, and <w'^4> is
+    calculated by integrating over the PDF.  The equation for <w'^4> is:
+
+    <w'^4> = mixt_frac * ( 3 * sigma_w_1^4
+                           + 6 * ( mu_w_1 - <w> )^2 * sigma_w_1^2
+                           + ( mu_w_1 - <w> )^4 )
+             + ( 1 - mixt_frac ) * ( 3 * sigma_w_2^4
+                                     + 6 * ( mu_w_2 - <w> )^2 * sigma_w_2^2
+                                     + ( mu_w_2 - <w> )^4 ).
+
+    The following substitutions are made into the above equation:
+
+    mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+                   * sqrt( <w'^2> );
+
+    mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+                     * sqrt( <w'^2> );
+
+    sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> ); and
+
+    sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> ).
+
+    When w is the setting variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    are given by:
+
+    coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+                         / ( ( zeta_w + 2 ) * mixt_frac ); and
+
+    coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
+
+    When w is a responding variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    are given by:
+
+    coef_sigma_w_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
+                         / ( 3 * mixt_frac * sqrt( F_w ) )
+                         - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
+                         + 1; and
+
+    coef_sigma_w_2_sqd = ( ( 1 - F_w ) - mixt_frac * coef_sigma_w_1_sqd )
+                         / ( 1 - mixt_frac ).
+
+    The equation for <w'4> becomes:
+
+    <w'^4> = ( 3 * mixt_frac * coef_sigma_w_1_sqd^2
+               + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
+               + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
+               + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
+               + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
+               + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ) ) * <w'^2>^2.
+
+    This equation is of the form:
+
+    <w'^4> = coef_wp4_implicit * <w'^2>^2;
+
+    where:
+
+    coef_wp4_implicit = 3 * mixt_frac * coef_sigma_w_1_sqd^2
+                        + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
+                        + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
+                        + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
+                        + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
+                        + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ).
+
+    While the <w'^4> term is found in the <w'^3> predictive equation and not
+    the <w'^2> predictive equation, the <w'^3> and <w'^2> predictive equations
+    are solved together.  This allows the term containing <w'^4> to be solved
+    implicitly.
+
+    Returns:
+        coef_wp4_implicit
+
+    Fortran declarations (calc_coef_wp4_implicit in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real ( kind = core_rknd ), dimension(nz), intent(in) :: &
+          mixt_frac,          & ! Mixture fraction                               [-]
+          F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+          coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+          coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real ( kind = core_rknd ), dimension(nz) :: &
+          coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
     """
     omf = 1.0 - mixt_frac
     # Calculate coef_wp4_implicit.
@@ -326,8 +361,27 @@ def calc_coef_wp4_implicit(mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sq
 def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
     """Calculates mixture fraction.
 
-    ! References:
-    ! Griffin and Larson (2018)
+    References:
+    Griffin and Larson (2018)
+
+    Returns:
+        mixt_frac
+
+    Fortran declarations (calc_mixture_fraction in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          Skx,      & ! Skewness of x                                            [-]
+          F_x,      & ! Parameter for the spread of the PDF component means of x [-]
+          zeta_x,   & ! Parameter for the PDF component variances of x           [-]
+          sgn_wpxp    ! Sign of the covariance of w and x                        [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz) :: &
+          mixt_frac    ! Mixture fraction    [-]
     """
     zp2 = zeta_x + 2.0
 
@@ -363,26 +417,208 @@ def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
 def calc_coef_wpxp2_implicit(wp2, xp2, wpxp, sgn_wpxp, mixt_frac, F_w, F_x,
                              coef_sigma_w_1_sqd, coef_sigma_w_2_sqd,
                              coef_sigma_x_1_sqd, coef_sigma_x_2_sqd):
-    """Calculate coef_wpxp2_implicit.
+    """The predictive equation for <x'^2> contains a turbulent advection term of
+    the form:
 
-    ! Description:
-    ! The predictive equation for <x'^2> contains a turbulent advection term of
-    ! the form:
-    !
-    ! - ( 1 / rho_ds ) * d ( rho_ds * <w'x'^2> ) / dz;
-    !
-    ! where z is height, rho_ds is the dry, base-state density, and <w'x'^2> is
-    ! calculated by integrating over the PDF.
-    !
-    ! This equation is of the form:
-    !
-    ! <w'x'^2> = coef_wpxp2_implicit * <x'^2>;
-    !
-    ! In the special case that coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0 and
-    ! coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0, the above equation is
-    ! undefined.  However, the equation for this special case can be derived by
-    ! taking the original equation for <w'x'^2> and setting both
-    ! sigma_w_1 * sigma_x_1 = 0 and sigma_w_2 * sigma_x_2 = 0.
+    - ( 1 / rho_ds ) * d ( rho_ds * <w'x'^2> ) / dz;
+
+    where z is height, rho_ds is the dry, base-state density, and <w'x'^2> is
+    calculated by integrating over the PDF.  The equation for <w'x'^2> is:
+
+    <w'x'^2>
+    = mixt_frac * ( ( mu_w_1 - <w> ) * ( ( mu_x_1 - <x> )^2 + sigma_x_1^2 )
+                    + 2 * corr_w_x_1 * sigma_w_1 * sigma_x_1
+                      * ( mu_x_1 - <x> ) )
+      + ( 1 - mixt_frac ) * ( ( mu_w_2 - <w> )
+                              * ( ( mu_x_2 - <x> )^2 + sigma_x_2^2 )
+                              + 2 * corr_w_x_2 * sigma_w_2 * sigma_x_2
+                                * ( mu_x_2 - <x> ) ).
+
+    The following substitutions are made into the above equation:
+
+    mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+                   * sqrt( <w'^2> );
+
+    mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+                     * sqrt( <w'^2> );
+
+    mu_x_1 - <x> = sqrt(F_x) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+                   * sqrt( <x'^2> ) * sgn( <w'x'> );
+
+    mu_x_2 - <x> = - sqrt(F_x) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+                     * sqrt( <x'^2> ) * sgn( <w'x'> );
+
+    sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> );
+
+    sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> );
+
+    sigma_x_1 = sqrt( coef_sigma_x_1_sqd * <x'^2> ); and
+
+    sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> ).
+
+    Either w can be the setting variable and x can be a responding variable,
+    x can be the setting variable and w can be a responding variable, or both
+    w and x can be responding variables.
+
+    When w is the setting variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    are given by:
+
+    coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+                         / ( ( zeta_w + 2 ) * mixt_frac ); and
+
+    coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
+
+    When w is a responding variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    are given by:
+
+    coef_sigma_w_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
+                         / ( 3 * mixt_frac * sqrt( F_w ) )
+                         - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
+                         + 1; and
+
+    coef_sigma_w_2_sqd = ( ( 1 - F_w ) - mixt_frac * coef_sigma_w_1_sqd )
+                         / ( 1 - mixt_frac ).
+
+    When x is the setting variable, coef_sigma_x_1_sqd and coef_sigma_x_2_sqd
+    are given by:
+
+    coef_sigma_x_1_sqd = ( ( zeta_x + 1 ) * ( 1 - F_x ) )
+                         / ( ( zeta_x + 2 ) * mixt_frac ); and
+
+    coef_sigma_x_2_sqd = ( 1 - F_x ) / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ).
+
+    When x is a responding variable, coef_sigma_x_1_sqd and coef_sigma_x_2_sqd
+    are given by:
+
+    coef_sigma_x_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+                         * Skx * sgn( <w'x'> )
+                         / ( 3 * mixt_frac * sqrt( F_x ) )
+                         - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
+                         + 1; and
+
+    coef_sigma_x_2_sqd = ( ( 1 - F_x ) - mixt_frac * coef_sigma_x_1_sqd )
+                         / ( 1 - mixt_frac ).
+
+    Additionally:
+
+    corr_w_x_1 = corr_w_x_2
+    = ( <w'x'> - mixt_frac * ( mu_w_1 - <w> ) * ( mu_x_1 - <x> )
+               - ( 1 - mixt_frac ) * ( mu_w_2 - <w> ) * ( mu_x_2 - <x> ) )
+      / ( mixt_frac * sigma_w_1 * sigma_x_1
+          + ( 1 - mixt_frac ) * sigma_w_2 * sigma_x_2 );
+
+    where -1 <= corr_w_x_1 = corr_w_x_2 <= 1.  This equation can be rewritten
+    as:
+
+    corr_w_x_1 = corr_w_x_2
+    = ( <w'x'>
+        - sqrt( F_w ) * sqrt( F_x ) * sgn( <w'x'> )
+          * sqrt( <w'^2> ) * sqrt( <x'^2 > ) )
+      / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+            + ( 1 - mixt_frac )
+              * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+          * sqrt( <w'^2> ) * sqrt( <x'^2> ) ).
+
+    The equation for <w'x'^2> becomes:
+
+    <w'x'^2>
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( <w'^2> )
+      * ( sqrt( F_w ) * F_x
+          * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac ) )
+          + sqrt( F_w ) * ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd )
+          + ( 2 * sqrt( F_x ) * sgn( <w'x'> ) * <w'x'>
+              * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                  - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
+            / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                  + ( 1 - mixt_frac )
+                    * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+                * sqrt( <w'^2> ) * sqrt( <x'^2> ) )
+          - ( 2 * sqrt( F_w ) * F_x
+              * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                  - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
+            / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                + ( 1 - mixt_frac )
+                  * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
+      * <x'^2>
+
+    This equation is of the form:
+
+    <w'x'^2> = coef_wpxp2_implicit * <x'^2>;
+
+    where:
+
+    coef_wpxp2_implicit
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( <w'^2> )
+      * ( sqrt( F_w ) * F_x
+          * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac ) )
+          + sqrt( F_w ) * ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd )
+          + ( 2 * sqrt( F_x ) * sgn( <w'x'> ) * <w'x'>
+              * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                  - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
+            / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                  + ( 1 - mixt_frac )
+                    * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+                * sqrt( <w'^2> ) * sqrt( <x'^2> ) )
+          - ( 2 * sqrt( F_w ) * F_x
+              * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                  - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
+            / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                + ( 1 - mixt_frac )
+                  * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) ).
+
+    In the special case that coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0 and
+    coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0, the above equation is
+    undefined.  However, the equation for this special case can be derived by
+    taking the original equation for <w'x'^2> and setting both
+    sigma_w_1 * sigma_x_1 = 0 and sigma_w_2 * sigma_x_2 = 0.  The equation
+    becomes:
+
+    <w'x'^2>
+    = mixt_frac * ( ( mu_w_1 - <w> ) * ( ( mu_x_1 - <x> )^2 + sigma_x_1^2 )
+      + ( 1 - mixt_frac ) * ( ( mu_w_2 - <w> )
+                              * ( ( mu_x_2 - <x> )^2 + sigma_x_2^2 );
+
+    and making the same substitutions as before, it can be rewritten as:
+
+    <w'x'^2>
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( <w'^2> ) * sqrt( F_w )
+      * ( F_x * ( ( 1 - mixt_frac ) / mixt_frac
+                  - mixt_frac / ( 1 - mixt_frac ) )
+          + ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) ) * <x'^2>.
+
+    The coefficient in this special case is:
+
+    coef_wpxp2_implicit
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( <w'^2> ) * sqrt( F_w )
+      * ( F_x * ( ( 1 - mixt_frac ) / mixt_frac
+                  - mixt_frac / ( 1 - mixt_frac ) )
+          + ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) ).
+
+    Returns:
+        coef_wpxp2_implicit
+
+    Fortran declarations (calc_coef_wpxp2_implicit in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real ( kind = core_rknd ), dimension(nz), intent(in) :: &
+          wp2,                & ! Variance of w (overall)                  [m^2/s^2]
+          xp2,                & ! Variance of x (overall)           [(units vary)^2]
+          wpxp,               & ! Covariance of w and x           [m/s (units vary)]
+          sgn_wpxp,           & ! Sign of the covariance of w and x              [-]
+          mixt_frac,          & ! Mixture fraction                               [-]
+          F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+          F_x,                & ! Parameter: spread of the PDF comp. means of x  [-]
+          coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+          coef_sigma_w_2_sqd, & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+          coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+          coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real ( kind = core_rknd ), dimension(nz) :: &
+          coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
     """
     omf = 1.0 - mixt_frac
 
@@ -415,8 +651,38 @@ def calc_setter_var_params(xm, xp2, Skx, sgn_wpxp, F_x, zeta_x):
     """Calculates the PDF component means, the PDF component standard deviations,
     and the mixture fraction for the variable that sets the PDF.
 
-    ! References:
-    ! Griffin and Larson (2018)
+    References:
+    Griffin and Larson (2018)
+
+    Returns:
+        (mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, mixt_frac, coef_sigma_x_1_sqd,
+          coef_sigma_x_2_sqd)
+
+    Fortran declarations (calc_setter_var_params in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          xm,       & ! Mean of x (overall)                             [units vary]
+          xp2,      & ! Variance of x (overall)                     [(units vary)^2]
+          Skx,      & ! Skewness of x                                            [-]
+          sgn_wpxp, & ! Sign of the covariance of w and x (overall)              [-]
+          F_x,      & ! Parameter for the spread of the PDF component means of x [-]
+          zeta_x      ! Parameter for the PDF component variances of x           [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+          mu_x_1,    & ! Mean of x (1st PDF component)                  [units vary]
+          mu_x_2,    & ! Mean of x (2nd PDF component)                  [units vary]
+          sigma_x_1, & ! Standard deviation of x (1st PDF component)    [units vary]
+          sigma_x_2, & ! Standard deviation of x (2nd PDF component)    [units vary]
+          mixt_frac    ! Mixture fraction                                        [-]
+
+        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+          coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+          coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
     """
 
     # Calculate the mixture fraction.
@@ -446,34 +712,37 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
     deviations for a responding variable (a variable that is not used to set
     the mixture fraction).
 
-    ! DESCRIPTION OF THE METHOD FOR EACH RESPONDING VARIABLE
-    ! ======================================================
-    !
-    ! In order to find equations for the four PDF parameters for each responding
-    ! variable, which are mu_x_1, mu_x_2, sigma_x_1, and sigma_x_2 (where x stands
-    ! for a responding variable here), four equations are needed.  These four
-    ! equations are the equations for <x>, <x'^2>, and <x'^3> as found by
-    ! integrating over the PDF.  Additionally, one more equation, which involves
-    ! a tunable parameter F_x, and which is used to help control the spread of the
-    ! PDF component means, is used in this equation set.
-    !
-    ! The resulting equations for the four PDF parameters are:
-    !
-    ! mu_x_1 = <x> + sqrt( F_x * ( ( 1 - mixt_frac ) / mixt_frac ) * <x'^2> )
-    !                * sgn( <w'x'> );
-    !
-    ! mu_x_2 = <x> - ( mixt_frac / ( 1 - mixt_frac ) ) * ( mu_x_1 - <x> );
-    !
-    ! sigma_x_1^2
-    ! = ( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
-    !       - ( 1 + mixt_frac ) * F_x^1.5 + 3 * mixt_frac * sqrt( F_x ) )
-    !     / ( 3 * mixt_frac * sqrt( F_x ) ) )
-    !   * <x'^2>; and
-    !
-    ! sigma_x_2^2 = ( ( 1 - F_x ) / ( 1 - mixt_frac ) ) * <x'^2>
-    !               - ( mixt_frac / ( 1 - mixt_frac ) ) * sigma_x_1^2;
-    !
-    ! where Skx is the skewness of x, and Skx = <x'^3> / <x'^2>^(3/2).
+    References:
+    Griffin and Larson (2018)
+
+    Returns:
+        (mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, coef_sigma_x_1_sqd,
+          coef_sigma_x_2_sqd)
+
+    Fortran declarations (calc_responder_params in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          xm,       & ! Mean of x (overall)                             [units vary]
+          xp2,      & ! Variance of x (overall)                     [(units vary)^2]
+          Skx,      & ! Skewness of x                                            [-]
+          sgn_wpxp, & ! Sign of the covariance of w and x (overall)              [-]
+          F_x,      & ! Parameter for the spread of the PDF component means of x [-]
+          mixt_frac   ! Mixture fraction                                         [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+          mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
+          mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
+          sigma_x_1_sqd, & ! Variance of x (1st PDF component)      [(units vary)^2]
+          sigma_x_2_sqd    ! Variance of x (2nd PDF component)      [(units vary)^2]
+
+        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+          coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+          coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
     """
     omf = 1.0 - mixt_frac
     F_safe = jnp.where(F_x > 0.0, F_x, 1.0)
@@ -521,9 +790,24 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
 def sort_roots(roots):
     """Sorts roots from smallest to largest.
 
-    The Fortran implementation uses an explicit three-root sorting network with
-    comments for each branch.  jnp.sort is the same operation for the returned
-    values.
+    The Fortran routine sorts the three roots with an explicit sorting
+    network; jnp.sort performs the same operation on the returned values.
+
+    Returns:
+        roots_sorted
+
+    Fortran declarations (sort_roots in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd ), dimension(nz,3), intent(in) :: &
+          roots    ! Roots    [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz,3) :: &
+          roots_sorted    ! Roots sorted from smallest to largest    [-]
     """
     roots_sorted = jnp.sort(jnp.asarray(roots), axis=-1)
     return roots_sorted
@@ -534,50 +818,28 @@ def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
     """Calculates the minimum and maximum allowable values for F_x for a
     responding variable.
 
-    ! Limits on F_x:
-    !
-    ! Since the PDF parameters for this variable need to work with the mixture
-    ! fraction that has been provided by the setting variable, the method does
-    ! not work for all values of F_x and Skx.  However, the limits of Skx and F_x
-    ! can always be calculated.  The limits are based on keeping the values of
-    ! sigma_x_1 and sigma_x_2 greater than or equal to 0.  The equation for
-    ! keeping the value of sigma_x_1 greater than or equal to 0 is:
-    !
-    ! - ( 1 + mixt_frac ) * sqrt( F_x )^3 + 3 * mixt_frac * sqrt( F_x )
-    ! + sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> ) >= 0.
-    !
-    ! The roots of sqrt( F_x ) can be solved by an equation of the form:
-    !
-    ! A * sqrt( F_x )^3 + B * sqrt( F_x )^2 + C * sqrt( F_x ) + D = 0;
-    !
-    ! where:
-    !
-    ! A = - ( 1 + mixt_frac );
-    ! B = 0;
-    ! C = 3 * mixt_frac; and
-    ! D = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> ).
-    !
-    ! The equation for keeping the value of sigma_x_2 greater than or equal to 0
-    ! is:
-    !
-    ! - ( 2 - mixt_frac ) * sqrt( F_x )^3 + 3 * ( 1 - mixt_frac ) * sqrt( F_x )
-    ! - sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> ) >= 0.
-    !
-    ! The roots of sqrt( F_x ) can be solved by an equation of the form:
-    !
-    ! A * sqrt( F_x )^3 + B * sqrt( F_x )^2 + C * sqrt( F_x ) + D = 0;
-    !
-    ! where:
-    !
-    ! A = - ( 2 - mixt_frac );
-    ! B = 0;
-    ! C = 3 * ( 1 - mixt_frac ); and
-    ! D = - sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> ).
-    !
-    ! The value of sqrt( F_x ) is also limited with a minimum of 0 and a maximum
-    ! of 1.  The minimum and maximum allowable values of F_x are found by taking
-    ! the square of the minimum and maximum allowable values of sqrt( F_x ),
-    ! respectively.
+    Returns:
+        (min_F_x, max_F_x)
+
+    Fortran declarations (calc_limits_F_x_responder in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          mixt_frac, & ! Mixture fraction                 [-]
+          Skx,       & ! Skewness of x                    [-]
+          sgn_wpxp     ! Sign of covariance of w and x    [-]
+
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
+          max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+          min_F_x, & ! Minimum allowable value of F_x    [-]
+          max_F_x    ! Maximum allowable value of F_x    [-]
     """
     from clubb_jax.src.CLUBB_core.calc_roots import cubic_solve
     omf = 1.0 - mixt_frac
@@ -636,26 +898,234 @@ def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
 def calc_coefs_wp2xp_semiimpl(wp2, xp2, sgn_wpxp, mixt_frac, F_w, F_x,
                               coef_sigma_w_1_sqd, coef_sigma_w_2_sqd,
                               coef_sigma_x_1_sqd, coef_sigma_x_2_sqd):
-    """Calculate coef_wp2xp_implicit and term_wp2xp_explicit.
+    """The predictive equation for <w'x'> contains a turbulent advection term of
+    the form:
 
-    ! Description:
-    ! The predictive equation for <w'x'> contains a turbulent advection term of
-    ! the form:
-    !
-    ! - ( 1 / rho_ds ) * d ( rho_ds * <w'^2 x'> ) / dz;
-    !
-    ! where z is height, rho_ds is the dry, base-state density, and <w'^2 x'> is
-    ! calculated by integrating over the PDF.
-    !
-    ! This equation is of the form:
-    !
-    ! <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit;
-    !
-    ! In the special case that coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0 and
-    ! coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0, the above equation is
-    ! undefined.  However, the equation for this special case can be derived by
-    ! taking the original equation for <w'^2 x'> and setting both
-    ! sigma_w_1 * sigma_x_1 = 0 and sigma_w_2 * sigma_x_2 = 0.
+    - ( 1 / rho_ds ) * d ( rho_ds * <w'^2 x'> ) / dz;
+
+    where z is height, rho_ds is the dry, base-state density, and <w'^2 x'> is
+    calculated by integrating over the PDF.  The equation for <w'^2 x'> is:
+
+    <w'^2 x'>
+    = mixt_frac * ( ( mu_x_1 - <x> ) * ( ( mu_w_1 - <w> )^2 + sigma_w_1^2 )
+                    + 2 * corr_w_x_1 * sigma_w_1 * sigma_x_1
+                      * ( mu_w_1 - <w> ) )
+      + ( 1 - mixt_frac ) * ( ( mu_x_2 - <x> )
+                              * ( ( mu_w_2 - <w> )^2 + sigma_w_2^2 )
+                              + 2 * corr_w_x_2 * sigma_w_2 * sigma_x_2
+                                * ( mu_w_2 - <w> ) ).
+
+    The following substitutions are made into the above equation:
+
+    mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+                   * sqrt( <w'^2> );
+
+    mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+                     * sqrt( <w'^2> );
+
+    mu_x_1 - <x> = sqrt(F_x) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+                   * sqrt( <x'^2> ) * sgn( <w'x'> );
+
+    mu_x_2 - <x> = - sqrt(F_x) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+                     * sqrt( <x'^2> ) * sgn( <w'x'> );
+
+    sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> );
+
+    sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> );
+
+    sigma_x_1 = sqrt( coef_sigma_x_1_sqd * <x'^2> ); and
+
+    sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> ).
+
+    Either w can be the setting variable and x can be a responding variable,
+    x can be the setting variable and w can be a responding variable, or both
+    w and x can be responding variables.
+
+    When w is the setting variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    are given by:
+
+    coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+                         / ( ( zeta_w + 2 ) * mixt_frac ); and
+
+    coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
+
+    When w is a responding variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    are given by:
+
+    coef_sigma_w_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
+                         / ( 3 * mixt_frac * sqrt( F_w ) )
+                         - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
+                         + 1; and
+
+    coef_sigma_w_2_sqd = ( ( 1 - F_w ) - mixt_frac * coef_sigma_w_1_sqd )
+                         / ( 1 - mixt_frac ).
+
+    When x is the setting variable, coef_sigma_x_1_sqd and coef_sigma_x_2_sqd
+    are given by:
+
+    coef_sigma_x_1_sqd = ( ( zeta_x + 1 ) * ( 1 - F_x ) )
+                         / ( ( zeta_x + 2 ) * mixt_frac ); and
+
+    coef_sigma_x_2_sqd = ( 1 - F_x ) / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ).
+
+    When x is a responding variable, coef_sigma_x_1_sqd and coef_sigma_x_2_sqd
+    are given by:
+
+    coef_sigma_x_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+                         * Skx * sgn( <w'x'> )
+                         / ( 3 * mixt_frac * sqrt( F_x ) )
+                         - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
+                         + 1; and
+
+    coef_sigma_x_2_sqd = ( ( 1 - F_x ) - mixt_frac * coef_sigma_x_1_sqd )
+                         / ( 1 - mixt_frac ).
+
+    Additionally:
+
+    corr_w_x_1 = corr_w_x_2
+    = ( <w'x'> - mixt_frac * ( mu_w_1 - <w> ) * ( mu_x_1 - <x> )
+               - ( 1 - mixt_frac ) * ( mu_w_2 - <w> ) * ( mu_x_2 - <x> ) )
+      / ( mixt_frac * sigma_w_1 * sigma_x_1
+          + ( 1 - mixt_frac ) * sigma_w_2 * sigma_x_2 );
+
+    where -1 <= corr_w_x_1 = corr_w_x_2 <= 1.  This equation can be rewritten
+    as:
+
+    corr_w_x_1 = corr_w_x_2
+    = ( <w'x'>
+        - sqrt( F_w ) * sqrt( F_x ) * sgn( <w'x'> )
+          * sqrt( <w'^2> ) * sqrt( <x'^2 > ) )
+      / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+            + ( 1 - mixt_frac )
+              * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+          * sqrt( <w'^2> ) * sqrt( <x'^2> ) ).
+
+    The equation for <w'^2 x'> becomes:
+
+    <w'^2 x'>
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_x )
+      * sqrt( <x'^2> ) * <w'^2> * sgn( <w'x'> )
+      * ( F_w * ( ( 1 - mixt_frac ) / mixt_frac
+                  - mixt_frac / ( 1 - mixt_frac ) )
+          + ( coef_sigma_w_1_sqd - coef_sigma_w_2_sqd )
+          - ( 2 * F_w * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                          - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+            / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                + ( 1 - mixt_frac )
+                  * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) ) )
+      + ( sqrt( mixt_frac * ( 1 - mixt_frac ) )
+          * 2 * sqrt( F_w ) * sqrt( <w'^2> )
+          * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+              - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+            / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                + ( 1 - mixt_frac )
+                  * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
+        * <w'x'>
+
+    This equation is of the form:
+
+    <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit;
+
+    where:
+
+    coef_wp2xp_implicit
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * 2 * sqrt( F_w ) * sqrt( <w'^2> )
+      * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+          - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+        / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+            + ( 1 - mixt_frac )
+              * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ); and
+
+    term_wp2xp_explicit
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_x )
+      * sqrt( <x'^2> ) * <w'^2> * sgn( <w'x'> )
+      * ( F_w * ( ( 1 - mixt_frac ) / mixt_frac
+                  - mixt_frac / ( 1 - mixt_frac ) )
+          + ( coef_sigma_w_1_sqd - coef_sigma_w_2_sqd )
+          - ( 2 * F_w * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                          - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+            / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                + ( 1 - mixt_frac )
+                  * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) ) ).
+
+    In the special case that coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0 and
+    coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0, the above equation is
+    undefined.  However, the equation for this special case can be derived by
+    taking the original equation for <w'^2 x'> and setting both
+    sigma_w_1 * sigma_x_1 = 0 and sigma_w_2 * sigma_x_2 = 0.  The equation
+    becomes:
+
+    <w'^2 x'>
+    = mixt_frac * ( ( mu_x_1 - <x> ) * ( ( mu_w_1 - <w> )^2 + sigma_w_1^2 )
+      + ( 1 - mixt_frac ) * ( ( mu_x_2 - <x> )
+                              * ( ( mu_w_2 - <w> )^2 + sigma_w_2^2 );
+
+    and making the same substitutions as before, it can be rewritten as:
+
+    <w'^2 x'>
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+      * sqrt( F_x ) * sqrt( <x'^2> ) * <w'^2> * sgn( <w'x'> )
+      * ( F_w * ( ( 1 - mixt_frac ) / mixt_frac
+                  - mixt_frac / ( 1 - mixt_frac ) )
+          + ( coef_sigma_w_1_sqd - coef_sigma_w_2_sqd ) ).
+
+    Likewise, the equation for <w'x'> in this special case becomes:
+
+    <w'x'> = mixt_frac * ( mu_w_1 - <w> ) * ( mu_x_1 - <x> )
+             + ( 1 - mixt_frac ) * ( mu_w_2 - <w> ) * ( mu_x_2 - <x> );
+
+    and making the same substitutions as before, it can be rewritten as:
+
+    <w'x'> = sqrt( F_w ) * sqrt( F_x )
+             * sqrt( <w'^2> ) * sqrt( <x'^2> ) * sgn( <w'x'> ).
+
+    The equation for <w'^2 x'> can be rewritten as:
+
+    <w'^2 x'>
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w ) * sqrt( <w'^2> )
+      * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac ) )
+      * <w'x'>
+      + sqrt( mixt_frac * ( 1 - mixt_frac ) )
+        * sqrt( F_x ) * sqrt( <x'^2> ) * <w'^2> * sgn( <w'x'> )
+        * ( coef_sigma_w_1_sqd - coef_sigma_w_2_sqd ).
+
+    The coefficients in this special case are:
+
+    coef_wp2xp_implicit
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w ) * sqrt( <w'^2> )
+      * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac ) ); and
+
+    term_wp2xp_explicit
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+      * sqrt( F_x ) * sqrt( <x'^2> ) * <w'^2> * sgn( <w'x'> )
+      * ( coef_sigma_w_1_sqd - coef_sigma_w_2_sqd ).
+
+    Returns:
+        (coef_wp2xp_implicit, term_wp2xp_explicit)
+
+    Fortran declarations (calc_coefs_wp2xp_semiimpl in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real ( kind = core_rknd ), dimension(nz), intent(in) :: &
+          wp2,                & ! Variance of w (overall)                  [m^2/s^2]
+          xp2,                & ! Variance of x (overall)           [(units vary)^2]
+          sgn_wpxp,           & ! Sign of the covariance of w and x              [-]
+          mixt_frac,          & ! Mixture fraction                               [-]
+          F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+          F_x,                & ! Parameter: spread of the PDF comp. means of x  [-]
+          coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+          coef_sigma_w_2_sqd, & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+          coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+          coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
+
+        !--------------------------- Output Variables ---------------------------
+        ! Coefs.: <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit
+        real ( kind = core_rknd ), dimension(nz), intent(out) :: &
+          coef_wp2xp_implicit, & ! Coefficient that is multiplied by <w'x'>    [m/s]
+          term_wp2xp_explicit    ! Term that is on the RHS    [m^2/s^2 (units vary)]
     """
     omf = 1.0 - mixt_frac
 
@@ -690,22 +1160,292 @@ def calc_coefs_wpxpyp_semiimpl(wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mi
                                F_w, F_x, F_y, coef_sigma_w_1_sqd, coef_sigma_w_2_sqd,
                                coef_sigma_x_1_sqd, coef_sigma_x_2_sqd,
                                coef_sigma_y_1_sqd, coef_sigma_y_2_sqd):
-    """Calculate coef_wpxpyp_implicit and term_wpxpyp_explicit.
+    """The predictive equation for <w'x'y'> contains a turbulent advection term
+    of the form:
 
-    ! Description:
-    ! The predictive equation for <w'x'y'> contains a turbulent advection term
-    ! of the form:
-    !
-    ! - ( 1 / rho_ds ) * d ( rho_ds * <w'x'y'> ) / dz;
-    !
-    ! where z is height, rho_ds is the dry, base-state density, and <w'x'y'> is
-    ! calculated by integrating over the PDF.
-    !
-    ! This equation is of the form:
-    !
-    ! <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit;
-    !
-    ! There are also special cases for the above equations.
+    - ( 1 / rho_ds ) * d ( rho_ds * <w'x'y'> ) / dz;
+
+    where z is height, rho_ds is the dry, base-state density, and <w'x'y'> is
+    calculated by integrating over the PDF.  The equation for <w'x'y'> is:
+
+    <w'x'y'>
+    = mixt_frac
+      * ( ( mu_w_1 - <w> ) * ( mu_x_1 - <x> ) * ( mu_y_1 - <y> )
+          + corr_x_y_1 * sigma_x_1 * sigma_y_1 * ( mu_w_1 - <w> )
+          + corr_w_y_1 * sigma_w_1 * sigma_y_1 * ( mu_x_1 - <x> )
+          + corr_w_x_1 * sigma_w_1 * sigma_x_1 * ( mu_y_1 - <y> ) )
+      + ( 1 - mixt_frac )
+        * ( ( mu_w_2 - <w> ) * ( mu_x_2 - <x> ) * ( mu_y_2 - <y> )
+            + corr_x_y_2 * sigma_x_2 * sigma_y_2 * ( mu_w_2 - <w> )
+            + corr_w_y_2 * sigma_w_2 * sigma_y_2 * ( mu_x_2 - <x> )
+            + corr_w_x_2 * sigma_w_2 * sigma_x_2 * ( mu_y_2 - <y> ) ).
+
+    The following substitutions are made into the above equation:
+
+    mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+                   * sqrt( <w'^2> );
+
+    mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+                     * sqrt( <w'^2> );
+
+    mu_x_1 - <x> = sqrt(F_x) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+                   * sqrt( <x'^2> ) * sgn( <w'x'> );
+
+    mu_x_2 - <x> = - sqrt(F_x) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+                     * sqrt( <x'^2> ) * sgn( <w'x'> );
+
+    mu_y_1 - <y> = sqrt(F_y) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+                   * sqrt( <y'^2> ) * sgn( <w'y'> );
+
+    mu_y_2 - <y> = - sqrt(F_y) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+                     * sqrt( <y'^2> ) * sgn( <w'y'> );
+
+    sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> );
+
+    sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> );
+
+    sigma_x_1 = sqrt( coef_sigma_x_1_sqd * <x'^2> );
+
+    sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> );
+
+    sigma_y_1 = sqrt( coef_sigma_y_1_sqd * <y'^2> ); and
+
+    sigma_y_2 = sqrt( coef_sigma_y_2_sqd * <y'^2> ).
+
+    Either w can be the setting variable and both x and y can be responding
+    variables, x can be the setting variable and both w and y can be
+    responding variables, y can be the setting variable and both w and x can
+    be responding variables, or all of w, x, and y can be responding
+    variables.
+
+    When w is the setting variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    are given by:
+
+    coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+                         / ( ( zeta_w + 2 ) * mixt_frac ); and
+
+    coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
+
+    When w is a responding variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    are given by:
+
+    coef_sigma_w_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
+                         / ( 3 * mixt_frac * sqrt( F_w ) )
+                         - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
+                         + 1; and
+
+    coef_sigma_w_2_sqd = ( ( 1 - F_w ) - mixt_frac * coef_sigma_w_1_sqd )
+                         / ( 1 - mixt_frac ).
+
+    When x is the setting variable, coef_sigma_x_1_sqd and coef_sigma_x_2_sqd
+    are given by:
+
+    coef_sigma_x_1_sqd = ( ( zeta_x + 1 ) * ( 1 - F_x ) )
+                         / ( ( zeta_x + 2 ) * mixt_frac ); and
+
+    coef_sigma_x_2_sqd = ( 1 - F_x ) / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ).
+
+    When x is a responding variable, coef_sigma_x_1_sqd and coef_sigma_x_2_sqd
+    are given by:
+
+    coef_sigma_x_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+                         * Skx * sgn( <w'x'> )
+                         / ( 3 * mixt_frac * sqrt( F_x ) )
+                         - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
+                         + 1; and
+
+    coef_sigma_x_2_sqd = ( ( 1 - F_x ) - mixt_frac * coef_sigma_x_1_sqd )
+                         / ( 1 - mixt_frac ).
+
+    When y is the setting variable, coef_sigma_y_1_sqd and coef_sigma_y_2_sqd
+    are given by:
+
+    coef_sigma_y_1_sqd = ( ( zeta_y + 1 ) * ( 1 - F_y ) )
+                         / ( ( zeta_y + 2 ) * mixt_frac ); and
+
+    coef_sigma_y_2_sqd = ( 1 - F_y ) / ( ( zeta_y + 2 ) * ( 1 - mixt_frac ) ).
+
+    When y is a responding variable, coef_sigma_y_1_sqd and coef_sigma_y_2_sqd
+    are given by:
+
+    coef_sigma_y_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+                         * Sky * sgn( <w'y'> )
+                         / ( 3 * mixt_frac * sqrt( F_y ) )
+                         - ( 1 + mixt_frac ) * F_y / ( 3 * mixt_frac )
+                         + 1; and
+
+    coef_sigma_y_2_sqd = ( ( 1 - F_y ) - mixt_frac * coef_sigma_y_1_sqd )
+                         / ( 1 - mixt_frac ).
+
+    Additionally:
+
+    corr_w_x_1 = corr_w_x_2
+    = ( <w'x'> - mixt_frac * ( mu_w_1 - <w> ) * ( mu_x_1 - <x> )
+               - ( 1 - mixt_frac ) * ( mu_w_2 - <w> ) * ( mu_x_2 - <x> ) )
+      / ( mixt_frac * sigma_w_1 * sigma_x_1
+          + ( 1 - mixt_frac ) * sigma_w_2 * sigma_x_2 );
+
+    where -1 <= corr_w_x_1 = corr_w_x_2 <= 1.  This equation can be rewritten
+    as:
+
+    corr_w_x_1 = corr_w_x_2
+    = ( <w'x'>
+        - sqrt( F_w ) * sqrt( F_x ) * sgn( <w'x'> )
+          * sqrt( <w'^2> ) * sqrt( <x'^2 > ) )
+      / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+            + ( 1 - mixt_frac )
+              * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+          * sqrt( <w'^2> ) * sqrt( <x'^2> ) ).
+
+    Likewise:
+
+    corr_w_y_1 = corr_w_y_2
+    = ( <w'y'>
+        - sqrt( F_w ) * sqrt( F_y ) * sgn( <w'y'> )
+          * sqrt( <w'^2> ) * sqrt( <y'^2 > ) )
+      / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+            + ( 1 - mixt_frac )
+              * sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+          * sqrt( <w'^2> ) * sqrt( <y'^2> ) ); and
+
+    corr_x_y_1 = corr_x_y_2
+    = ( <x'y'>
+        - sqrt( F_x ) * sqrt( F_y ) * sgn( <w'x'> ) * sgn( <w'y'> )
+          * sqrt( <x'^2> ) * sqrt( <y'^2 > ) )
+      / ( ( mixt_frac * sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+            + ( 1 - mixt_frac )
+              * sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
+          * sqrt( <x'^2> ) * sqrt( <y'^2> ) ).
+
+    The equation for <w'x'y'> becomes:
+
+    <w'x'y'>
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w ) * sqrt( <w'^2> )
+      * ( sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+                - sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
+        / ( mixt_frac * sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+            + ( 1 - mixt_frac )
+              * sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
+      * <x'y'>
+      + sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w ) * sqrt( <w'^2> )
+        * sqrt( F_x ) * sqrt( <x'^2> ) * sgn( <w'x'> )
+        * sqrt( F_y ) * sqrt( <y'^2> ) * sgn( <w'y'> )
+        * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac )
+            - ( sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+                - sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
+              / ( mixt_frac * sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+                  + ( 1 - mixt_frac )
+                    * sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
+            - ( sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+                - sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+              / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+                  + ( 1 - mixt_frac )
+                    * sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+            - ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+              / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                  + ( 1 - mixt_frac )
+                    * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
+      + sqrt( mixt_frac * ( 1 - mixt_frac ) )
+        * sqrt( F_x ) * sqrt( <x'^2> ) * sgn( <w'x'> )
+        * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+            - sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+          / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+              + ( 1 - mixt_frac )
+                * sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+        * <w'y'>
+      + sqrt( mixt_frac * ( 1 - mixt_frac ) )
+        * sqrt( F_y ) * sqrt( <y'^2> ) * sgn( <w'y'> )
+        * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+            - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+          / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+              + ( 1 - mixt_frac )
+                * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+        * <w'x'>.
+
+    This equation is of the form:
+
+    <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit;
+
+    where:
+
+    coef_wpxpyp_implicit
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w ) * sqrt( <w'^2> )
+      * ( sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+                - sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
+        / ( mixt_frac * sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+            + ( 1 - mixt_frac )
+              * sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) ); and
+
+    term_wpxpyp_explicit
+    = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w ) * sqrt( <w'^2> )
+      * sqrt( F_x ) * sqrt( <x'^2> ) * sgn( <w'x'> )
+      * sqrt( F_y ) * sqrt( <y'^2> ) * sgn( <w'y'> )
+      * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac )
+          - ( sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+              - sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
+            / ( mixt_frac * sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
+                + ( 1 - mixt_frac )
+                  * sqrt( coef_sigma_x_2_sqd * coef_sigma_y_2_sqd ) )
+          - ( sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+              - sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+            / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+                + ( 1 - mixt_frac )
+                  * sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+          - ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+              - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+            / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+                + ( 1 - mixt_frac )
+                  * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
+      + sqrt( mixt_frac * ( 1 - mixt_frac ) )
+        * sqrt( F_x ) * sqrt( <x'^2> ) * sgn( <w'x'> )
+        * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+            - sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+          / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_y_1_sqd )
+              + ( 1 - mixt_frac )
+                * sqrt( coef_sigma_w_2_sqd * coef_sigma_y_2_sqd ) )
+        * <w'y'>
+      + sqrt( mixt_frac * ( 1 - mixt_frac ) )
+        * sqrt( F_y ) * sqrt( <y'^2> ) * sgn( <w'y'> )
+        * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+            - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+          / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
+              + ( 1 - mixt_frac )
+                * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+        * <w'x'>.
+
+    There are also special cases for the above equations.
+
+    Fortran declarations (calc_coefs_wpxpyp_semiimpl in src/CLUBB_core/new_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real ( kind = core_rknd ), dimension(nz), intent(in) :: &
+          wp2,                & ! Variance of w (overall)                  [m^2/s^2]
+          xp2,                & ! Variance of x (overall)              [(x units)^2]
+          yp2,                & ! Variance of y (overall)              [(y units)^2]
+          wpxp,               & ! Covariance of w and x (overall)     [m/s(x units)]
+          wpyp,               & ! Covariance of w and y (overall)     [m/s(y units)]
+          sgn_wpxp,           & ! Sign of the covariance of w and x              [-]
+          sgn_wpyp,           & ! Sign of the covariance of w and y              [-]
+          mixt_frac,          & ! Mixture fraction                               [-]
+          F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+          F_x,                & ! Parameter: spread of the PDF comp. means of x  [-]
+          F_y,                & ! Parameter: spread of the PDF comp. means of y  [-]
+          coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+          coef_sigma_w_2_sqd, & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+          coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+          coef_sigma_x_2_sqd, & ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
+          coef_sigma_y_1_sqd, & ! sigma_y_1^2 = coef_sigma_y_1_sqd * <y'^2>      [-]
+          coef_sigma_y_2_sqd    ! sigma_y_2^2 = coef_sigma_y_2_sqd * <y'^2>      [-]
+
+        !--------------------------- Output Variables ---------------------------
+        ! Coefs.: <w'x'y'> = coef_wpxpyp_implicit * <x'y'> + term_wpxpyp_explicit
+        real ( kind = core_rknd ), dimension(nz), intent(out) :: &
+          coef_wpxpyp_implicit, & ! Coefficient that is multiplied by <x'y'>   [m/s]
+          term_wpxpyp_explicit    ! Term that is on the RHS  [m/s(x units)(y units)]
     """
     omf = 1.0 - mixt_frac
 

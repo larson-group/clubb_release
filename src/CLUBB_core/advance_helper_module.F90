@@ -256,15 +256,16 @@ module advance_helper_module
     ! Exernal
     intrinsic :: present
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       diag_index, low_bound, high_bound ! boundary indexes for the first variable
 
+    !--------------------------- Input/Output Variables ---------------------------
     ! Input / Output Variables
     real( kind = core_rknd ), dimension(:,:), intent(inout) :: &
       lhs ! left hand side of the LAPACK matrix equation
 
-    ! Optional Input Variables
+    !--------------------------- Optional Input Variables ---------------------------
     integer, intent(in), optional :: &
       diag_index2, low_bound2, high_bound2 ! boundary indexes for the second variable
 
@@ -325,7 +326,7 @@ module advance_helper_module
     ! Exernal
     intrinsic :: present
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
 
     ! The values for the first variable
     real( kind = core_rknd ), intent(in) :: low_value, high_value
@@ -335,10 +336,11 @@ module advance_helper_module
 
     ! Input / Output Variables
 
+    !--------------------------- Input/Output Variables ---------------------------
     ! The right-hand side vector
     real( kind = core_rknd ), dimension(:), intent(inout) :: rhs
 
-    ! Optional Input Variables
+    !--------------------------- Optional Input Variables ---------------------------
 
     ! The values for the second variable
     real( kind = core_rknd ), intent(in), optional :: low_value2, high_value2
@@ -1021,7 +1023,7 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       var_profile, &      ! Profile on momentum levels
       Lscale_zm, &        ! Lscale on momentum levels
-      rho_ds_zm           ! Dry static energy on momentum levels!
+      rho_ds_zm           ! Dry, static density on momentum levels [kg/m^3]
 
     real( kind = core_rknd ), intent(in) :: &
       var_below_ground_value ! Value to use below ground
@@ -1483,14 +1485,14 @@ module advance_helper_module
 
     implicit none
 
-  ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2, &       ! Units vary
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
                           ! that of the data structures input_var1 and input_var2
 
-  ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
@@ -2031,7 +2033,7 @@ module advance_helper_module
 
     implicit none
 
-    ! Input variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       total_idx ! The total numer of indices within the range of averaging
 
@@ -2044,7 +2046,7 @@ module advance_helper_module
     !        lowest to highest in altitude, with rho_ds(1) and
     !        field(1) actually their respective values at level k = 1.
 
-    ! Output variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       vertical_avg  ! Vertical average of field    [Units of field]
 
@@ -2097,7 +2099,7 @@ module advance_helper_module
 
     implicit none
 
-    ! Input variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       total_idx  ! The total numer of indices within the range of averaging
 
@@ -2109,7 +2111,7 @@ module advance_helper_module
     !        lowest to highest in altitude, with rho_ds(1) and
     !        field(1) actually their respective values at level k = k_start.
 
-    ! Local variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       vertical_integral ! Integral in the numerator (see description)
 
@@ -2263,7 +2265,7 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol, &            ! Number of grid columns
       nzm, &                ! Number of thermod vertical levels              [-]
@@ -2282,7 +2284,7 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
 

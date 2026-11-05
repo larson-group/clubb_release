@@ -255,7 +255,17 @@ def get_default_config_flags() -> ConfigFlags:
 
 
 def print_clubb_config_flags_api(iunit, clubb_config_flags):
-    """Print all flags in Fortran order; iunit is a Python output stream."""
+    """Prints the clubb_config_flags.
+
+    Fortran declarations (print_clubb_config_flags_api in src/CLUBB_core/model_flags.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          iunit ! The file to write to
+
+        type(clubb_config_flags_type), intent(in) :: &
+          clubb_config_flags ! Derived type holding all configurable CLUBB flags
+    """
     print('iiPDF_type = ', clubb_config_flags.iiPDF_type, file=iunit)
     print('ipdf_call_placement = ', clubb_config_flags.ipdf_call_placement, file=iunit)
     print('penta_solve_method = ', clubb_config_flags.penta_solve_method, file=iunit)

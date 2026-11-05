@@ -80,7 +80,49 @@ def compute_sigma_sqd_w(
     where 0 <= gamma_Skw_fnc <= 1.
 
     References:
-      Eqn 22 in ``Equations for CLUBB''
+    Eqn 22 in ``Equations for CLUBB''
+
+    Returns:
+        sigma_sqd_w
+
+    Fortran declarations (compute_sigma_sqd_w in src/CLUBB_core/sigma_sqd_w_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type(grid), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wp3             ! Third moment of vertical velocity            [m^3/s^3]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          wp2,           & ! Variance of vertical velocity               [m^2/s^2]
+          thlp2,         & ! Variance of liquid water potential temp.    [K^2]
+          rtp2,          & ! Variance of total water mixing ratio        [kg^2/kg^2]
+          up2,           & ! Variance of west-east horizontal velocity   [m^2/s^2]
+          vp2,           & ! Variance of south-north horizontal velocity [m^2/s^2]
+          wpthlp,        & ! Flux of liquid water potential temp.        [m/s K]
+          wprtp,         & ! Flux of total water mixing ratio            [m/s kg/kg]
+          upwp,          & ! Flux of west-east horizontal velocity       [m^2/s^2]
+          vpwp             ! Flux of south-north horizontal velocity     [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params     ! Array of CLUBB tunable parameters           [units vary]
+
+        logical, intent(in) :: &
+          l_predict_upwp_vpwp ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
+                              ! advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'> in
+                              ! subroutine advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+                              ! approximated by eddy diffusivity when <u> and <v> are advanced in
+                              ! subroutine advance_windm_edsclrm.
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          sigma_sqd_w ! PDF width parameter      [-]
     """
 
     # ---- Begin Code ----

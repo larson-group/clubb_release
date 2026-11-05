@@ -39,7 +39,7 @@ module calendar
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       day,        & ! Gregorian Calendar Day for given Month        [dd]
       month,      & ! Gregorian Calendar Month for given Year       [mm]
@@ -74,10 +74,10 @@ module calendar
 !------------------------------------------------------------------
     implicit none
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: julian_date ! Julian date being converted from
 
-    ! Output Variable(s)
+    !--------------------------- Output Variables ---------------------------
     integer, intent(out)::  & 
       day,     & ! Gregorian calender day for given Month       [dd]
       month,   & ! Gregorian calender month for given Year      [mm]
@@ -121,7 +121,7 @@ module calendar
     ! External
     intrinsic :: mod
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: year ! Gregorian Calendar Year [yyyy]
 
     ! ---- Begin Code ----
@@ -155,7 +155,7 @@ module calendar
 
     implicit none
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
 
     ! Previous date
     integer, intent(in) :: &
@@ -166,7 +166,7 @@ module calendar
     real(kind=time_precision), intent(in) :: &
       seconds_since_previous_date ! [s]
 
-    ! Output Variable(s)
+    !--------------------------- Output Variables ---------------------------
 
     ! Current date
     integer, intent(out) :: &
@@ -177,6 +177,7 @@ module calendar
     real(kind=time_precision), intent(out) :: &
       seconds_since_current_date
 
+    !--------------------------- Local Variables ---------------------------
     integer :: &
       days_since_1jan4713bc, &
       days_since_start
@@ -225,7 +226,7 @@ module calendar
     ! External
     intrinsic :: sum
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
      day,             & ! Day of the Month      [dd]
      month,           & ! Month of the Year     [mm]

@@ -907,7 +907,7 @@ module advance_xp3_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       xp2_zt,          & ! <x'^2> interp. to thermo. level (k)     [(x units)^2]
       wpxpp1,          & ! <w'x'> at momentum level (k+1)         [m/s(x units)]
@@ -917,7 +917,7 @@ module advance_xp3_module
       invrs_rho_ds_zt, & ! Inv. dry, static density at thermo. lev. (k) [m^3/kg]
       invrs_dzt          ! Inverse of grid spacing (k)                     [1/m]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       term_tp    ! <x'^3> turbulent production term              [(x units)^3/s]
 
@@ -980,14 +980,14 @@ module advance_xp3_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       xm_zmp1,   & ! <x> interpolated to momentum level (k+1)  [(x units)]
       xm_zm,     & ! <x> interpolated to momentum level (k)    [(x units)]
       wpxp2,     & ! <w'x'^2> at thermodynamic level (k)       [m/s(x units)^2]
       invrs_dzt    ! Inverse of grid spacing (k)               [1/m]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       term_ac    ! <x'^3> accumulation term                    [(x units)^3/s]
 

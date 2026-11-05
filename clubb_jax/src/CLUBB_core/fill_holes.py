@@ -58,6 +58,36 @@ def fill_holes_global(
 
     This subroutine does not guarantee that the clipped field will exceed
     threshold everywhere; blunt clipping is needed for that.
+
+    Fortran declarations (fill_holes_global in src/CLUBB_core/fill_holes.F90):
+
+        ! --------------------- Input variables ---------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          dz      ! Spacing between thermodynamic grid levels; centered over
+                  ! momentum grid levels
+                  ! OR
+                  ! Spcaing between momentum grid levels; centered over
+                  ! thermodynamic grid levels
+
+        integer, intent(in) :: &
+          lower_hf_level, & ! Lower grid level of global hole-filling range      []
+          upper_hf_level, & ! Upper grid level of global hole-filling range      []
+          grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+        real( kind = core_rknd ), intent(in) :: &
+          threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                     ! fall                           [Units vary; same as field]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+        ! --------------------- Input/Output variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+          field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
     """
     del ngrdcol
     # --------------------- Begin Code ---------------------
@@ -136,8 +166,38 @@ def fill_holes_sliding_window(
     multiplicative coefficient.
 
     References:
-      ``Numerical Methods for Wave Equations in Geophysical Fluid
-        Dynamics'', Durran (1999), p. 292.
+    ``Numerical Methods for Wave Equations in Geophysical Fluid
+      Dynamics'', Durran (1999), p. 292.
+
+    Fortran declarations (fill_holes_sliding_window in src/CLUBB_core/fill_holes.F90):
+
+        ! --------------------- Input variables ---------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          dz      ! Spacing between thermodynamic grid levels; centered over
+                  ! momentum grid levels
+                  ! OR
+                  ! Spcaing between momentum grid levels; centered over
+                  ! thermodynamic grid levels
+
+        integer, intent(in) :: &
+          lower_hf_level, & ! Lower grid level of global hole-filling range      []
+          upper_hf_level, & ! Upper grid level of global hole-filling range      []
+          grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+        real( kind = core_rknd ), intent(in) :: &
+          threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                     ! fall                           [Units vary; same as field]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+        ! --------------------- Input/Output variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+          field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
     """
     del nz
     # --------------------- Begin Code ---------------------
@@ -353,6 +413,29 @@ def fill_holes_wp2_from_horz_tke(
     alter the set value of 'field' at the upper boundary level (k=nz).
     So for momemtum level variables, call with upper_hf_level=nz-1, and
     for thermodynamic level variables, call with upper_hf_level=nz.
+
+    Returns:
+        (wp2_out, up2_out, vp2_out)
+
+    Fortran declarations (fill_holes_wp2_from_horz_tke in src/CLUBB_core/fill_holes.F90):
+
+        ! --------------------- Input variables ---------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        integer, intent(in) :: &
+          lower_hf_level, & ! Lower grid level of global hole-filling range      []
+          upper_hf_level    ! Upper grid level of global hole-filling range      []
+
+        real( kind = core_rknd ), intent(in) :: &
+          threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                     ! fall                           [Units vary; same as field]
+
+        ! --------------------- Input/Output variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+          wp2, &    ! The field (here wp2) that contains holes [m^2/s^2]
+          up2, vp2  ! The fields (here up2, vp2) that will be used to fill holes [m^2/s^2]
     """
     del ngrdcol
     # --------------------- Begin Code ---------------------
@@ -471,11 +554,24 @@ def fill_holes_wp2_from_horz_tke(
 # Microphysics callers use batched columns; source vertical/species loops below
 # are expressed as array operations and static species loops.
 def hole_filling_hm_one_lev(num_hm_fill, hm_one_lev):
-    """Fill same-phase hydrometeor holes at one height, batched over columns/levels.
+    """Fills holes between same-phase (i.e. either liquid or frozen) hydrometeors for
+    one height level.
 
-    Arguments:
-        num_hm_fill: number of hydrometeors involved
-        hm_one_lev: Same-phase mixing ratios, with species on the last axis [kg/kg].
+    Warning: Do not input hydrometeors of different phases, e.g. liquid and frozen.
+    Otherwise heat will not be conserved.
+
+    Returns:
+        result
+
+    Fortran declarations (hole_filling_hm_one_lev in src/CLUBB_core/fill_holes.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: num_hm_fill ! number of hydrometeors involved
+
+        real(kind = core_rknd), dimension(num_hm_fill), intent(in) :: hm_one_lev
+
+        !--------------------------- Output Variables ---------------------------
+        real(kind = core_rknd), dimension(num_hm_fill), intent(out) :: hm_one_lev_filled
     """
 
     from clubb_jax.src.CLUBB_core.constants_clubb import eps
@@ -524,14 +620,29 @@ def fill_holes_hydromet_api(
     nzt, hydromet_dim, hydromet,  # In
     l_frozen_hm, l_mix_rat_hm,    # In
 ):
-    """Fill frozen mixing-ratio holes using other frozen hydrometeors at each level.
+    """Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
+    The hole filling conserves water substance between all same-phase (frozen or liquid)
+    hydrometeors at each height level.
 
-    Arguments:
-        nzt: Number of thermodynamic levels.
-        hydromet_dim: Number of precipitating hydrometeor fields.
-        hydromet: Hydrometeor profiles with species on the last axis [units vary].
-        l_frozen_hm: if true, then the hydrometeor is frozen; otherwise liquid
-        l_mix_rat_hm: if true, then the quantity is a hydrometeor mixing ratio
+    Attention: The hole filling for the liquid phase hydrometeors is not yet implemented
+
+    Attention: l_frozen_hm and l_mix_rat_hm need to be set up before this subroutine is called!
+
+    Fortran declarations (fill_holes_hydromet_api in src/CLUBB_core/fill_holes.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: hydromet_dim, nzt
+
+        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+          hydromet
+
+        logical, dimension(hydromet_dim), intent(in) :: &
+          l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
+          l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
+          hydromet_filled
     """
 
     # Restrict same-level redistribution to frozen mixing ratios. Liquid
@@ -546,16 +657,29 @@ def fill_holes_wv(
     nzt, dt, exner, hydromet_name,  # In
     rvm_mc, thlm_mc, hydromet,      # InOut
 ):
-    """Fill remaining mixing-ratio holes using water vapor and compensate latent heat.
+    """Fills holes using the cloud water mixing ratio from the current height level.
 
-    Arguments:
-        nzt: Number of thermodynamic levels.
-        dt: Timestep [s]
-        exner: Exner function [-]
-        hydromet_name: Species name: rrm for liquid rain, or rim/rsm/rgm for frozen water.
-        rvm_mc: Water-vapor tendency, updated to compensate hole filling [kg/kg/s].
-        thlm_mc: Liquid-water potential-temperature tendency including latent heating [K/s].
-        hydromet: Hydrometeor array [units vary]
+    Returns:
+        (rvm_mc, thlm_mc, hydromet)
+
+    Fortran declarations (fill_holes_wv in src/CLUBB_core/fill_holes.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: nzt
+
+        real( kind = core_rknd ), intent(in) ::  &
+          dt           ! Timestep         [s]
+
+        character(len=10), intent(in) :: hydromet_name
+
+        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+          exner        ! Exner function                            [-]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nzt), intent(inout) :: &
+          hydromet, &  ! Hydrometeor array                         [units vary]
+          rvm_mc, &
+          thlm_mc
     """
 
     from clubb_jax.src.CLUBB_core.constants_clubb import zero_threshold, Lv, Ls, Cp
@@ -580,24 +704,53 @@ def fill_holes_driver_api(
     rho_ds_zt, exner, fill_holes_type,   # In
     stats, thlm_mc, rvm_mc, hydromet,    # InOut
 ):
-    """Fill hydrometeor holes, clip small amounts, and enforce concentration limits.
+    """Apply hydrometeor hole filling and clipping to all model columns.
+    Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
+    The hole filling conserves water substance between all same-phase (frozen or liquid)
+    hydrometeors at each height level.
 
-    Arguments:
-        gr: Grid coordinates, interpolation weights and vertical metrics.
-        ngrdcol: Number of grid columns.
-        nzt: Number of thermodynamic levels.
-        dt: Timestep [s]
-        hydromet_dim: Number of precipitating hydrometeor fields.
-        hm_metadata: Hydrometeor/PDF names, zero-based species indices and tolerances.
-        l_fill_holes_hm: Fill frozen mixing-ratio holes using other frozen species at the same
-            level.
-        rho_ds_zt: Dry, static density on thermo. levels [kg/m^3]
-        exner: Exner function [-]
-        fill_holes_type: Choice of vertical hole-filling algorithm.
-        stats: Immutable statistics state; return its updated value.
-        thlm_mc: Microphysics contributions to liquid potential temp [K/s]
-        rvm_mc: Microphysics contributions to vapor water [kg/kg/s]
-        hydromet: Mean of hydrometeor fields [units vary]
+    Attention: The hole filling for the liquid phase hydrometeors is not yet implemented
+
+    Attention: l_frozen_hm and l_mix_rat_hm need to be set up before this subroutine is called!
+
+    Returns:
+        (stats, thlm_mc, rvm_mc, hydromet)
+
+    Fortran declarations (fill_holes_driver_api in src/CLUBB_core/fill_holes.F90):
+
+        !----------------------- Input Variables -----------------------
+        type(grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          ngrdcol, & ! Number of model columns
+          nzt, &     ! Number of vertical levels
+          hydromet_dim, & ! Number of hydrometeor fields
+          fill_holes_type
+
+        real(kind=core_rknd), intent(in) :: &
+          dt                   ! Timestep         [s]
+
+        type(hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        logical, intent(in) :: &
+          l_fill_holes_hm
+
+        real(kind=core_rknd), dimension(ngrdcol,nzt), intent(in) :: &
+          rho_ds_zt, & ! Dry, static density on thermo. levels    [kg/m^3]
+          exner        ! Exner function                           [-]
+
+        !----------------------- Input/Output Variables -----------------------
+        type(stats_type), intent(inout) :: &
+          stats
+
+        real(kind=core_rknd), dimension(ngrdcol,nzt), intent(inout) :: &
+          thlm_mc, &           ! Microphysics contributions to liquid potential temp [K/s]
+          rvm_mc               ! Microphysics contributions to vapor water           [kg/kg/s]
+
+        real(kind=core_rknd), dimension(ngrdcol,nzt,hydromet_dim), intent(inout) :: &
+          hydromet    ! Mean of hydrometeor fields    [units vary]
     """
 
     from clubb_jax.src.CLUBB_core.constants_clubb import zero_threshold, Lv, Ls, Cp
@@ -693,19 +846,32 @@ def clip_hydromet_conc_mvr(
     nzt, hydromet_dim, hm_metadata,  # In
     hydromet,                        # In
 ):
-    """Increase number concentrations to keep mean volume radii below their maxima.
-
-    Mixing ratios remain unchanged. A species with no positive mixing ratio has zero concentration,
-    as in fill_holes.F90. Columns/levels are batched.
-
-    Arguments:
-        nzt: Number of thermodynamic levels.
-        hydromet_dim: Number of precipitating hydrometeor fields.
-        hm_metadata: Species names, mixing-ratio indices and maximum-radius metadata.
-        hydromet: Mean hydrometeor profiles [kg/kg or num/kg].
+    """Increases the value of a hydrometeor concentration when it is too small,
+    according to the hydrometeor mixing ratio (which remains unchanged) and
+    the maximum acceptable drop or particle mean volume radius for that
+    hydrometeor species.
 
     Returns:
-        Hydrometeor profiles with clipped number concentrations.
+        hydromet_clipped
+
+    Fortran declarations (clip_hydromet_conc_mvr in src/CLUBB_core/fill_holes.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzt
+
+        integer, intent(in) :: &
+          hydromet_dim    ! Number of hydrometeor fields
+
+        type (hm_metadata_type), intent(in) :: &
+              hm_metadata
+
+        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+          hydromet    ! Mean of hydrometeor fields    [units vary]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
+          hydromet_clipped    ! Clipped mean of hydrometeor fields    [units vary]
     """
     from clubb_jax.src.CLUBB_core.constants_clubb import pi, rho_lw, rho_ice
     from clubb_jax.src.CLUBB_core.index_mapping import Nx2rx_hm_idx, mvr_hm_max
@@ -729,12 +895,26 @@ def clip_hydromet_conc_mvr(
 
 
 def setup_stats_names(ihm, hydromet_dim, hydromet_list):
-    """Return the species fall-speed limit and budget/hole-filling/clipping/statistics names.
+    """Determines the stats output names depending on the hydrometeor.
+    Attention: hydromet_list needs to be set up before this routine is called.
 
-    Arguments:
-        ihm: Zero-based hydrometeor species index.
-        hydromet_dim: Number of precipitating hydrometeor fields.
-        hydromet_list: Initialized species names in hydrometeor array order.
+    Bogus example
+
+    Fortran declarations (setup_stats_names in src/CLUBB_core/fill_holes.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: ihm, hydromet_dim
+
+        character(len=10), dimension(hydromet_dim), intent(in) :: &
+          hydromet_list
+
+        !--------------------------- Input/Output Variables ---------------------------
+        real( kind = core_rknd ), intent(inout) :: &
+          max_velocity ! Maximum sedimentation velocity [m/s]
+
+        !--------------------------- Optional Output Variables ---------------------------
+        character(len=*), intent(out), optional :: &
+          name_bt, name_hf, name_wvhf, name_cl, name_mc
     """
 
     # Negative speeds denote downward sedimentation. Ice uses the source

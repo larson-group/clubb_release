@@ -73,6 +73,7 @@ module adg1_adg2_3d_luhar_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz,           & ! Number of vertical levels
       ngrdcol,      & ! Number of grid columns
@@ -81,7 +82,6 @@ module adg1_adg2_3d_luhar_pdf
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       wm,          & ! Mean of w-wind comp. (vert. vel.)    [m/s] 
       rtm,         & ! Mean of total water mixing ratio     [kg/kg]
@@ -115,10 +115,11 @@ module adg1_adg2_3d_luhar_pdf
     logical, intent(in) :: &
       l_scalar_calc    ! Flag to perform calculations for passive scalars
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       w_1,          & ! Mean of w (1st PDF component)                      [m/s]
       w_2,          & ! Mean of w (2nd PDF component)                      [m/s]
@@ -276,6 +277,7 @@ module adg1_adg2_3d_luhar_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz,           & ! Number of vertical levels
       ngrdcol,      & ! Number of grid columns
@@ -284,7 +286,6 @@ module adg1_adg2_3d_luhar_pdf
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       wm,       & ! Mean of w-wind component (vertical velocity)  [m/s] 
       rtm,      & ! Mean of total water mixing ratio              [kg/kg]
@@ -308,10 +309,11 @@ module adg1_adg2_3d_luhar_pdf
     logical, intent(in) :: &
       l_scalar_calc    ! Flag to perform calculations for passive scalars
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       w_1,          & ! Mean of w (1st PDF component)                      [m/s]
       w_2,          & ! Mean of w (2nd PDF component)                      [m/s]
@@ -437,10 +439,10 @@ module adg1_adg2_3d_luhar_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(nz), intent(in) ::  & 
       wm,     & ! Mean of w-wind component (vertical velocity)  [m/s] 
       rtm,    & ! Mean of total water mixing ratio              [kg/kg]
@@ -454,7 +456,7 @@ module adg1_adg2_3d_luhar_pdf
       wprtp,  & ! Covariance of w and r_t                       [(kg/kg)(m/s)]
       wpthlp    ! Covariance of w and th_l                      [K(m/s)]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) ::  &
       w_1,          & ! Mean of w (1st PDF component)                      [m/s]
       w_2,          & ! Mean of w (2nd PDF component)                      [m/s]
@@ -470,6 +472,7 @@ module adg1_adg2_3d_luhar_pdf
       varnce_thl_2, & ! Variance of th_l (2nd PDF component)               [K^2]
       mixt_frac       ! Mixture fraction (weight of 1st PDF component)       [-]
 
+    !--------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(nz) ::  &
       w_1_n,           & ! Normalized mean of w (1st PDF component)          [-]
       w_2_n,           & ! Normalized mean of w (2nd PDF component)          [-]
@@ -674,11 +677,11 @@ module adg1_adg2_3d_luhar_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz),  intent(in) :: &
       wm,                & ! Mean of w (overall)                   [m/s]
       wp2,               & ! Variance of w (overall)               [m^2/s^2]
@@ -689,10 +692,11 @@ module adg1_adg2_3d_luhar_pdf
     real( kind = core_rknd ), dimension(ngrdcol),  intent(in) :: &
       mixt_frac_max_mag ! Maximum allowable mag. of mixt_frac   [-]
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(err_info_type), intent(inout) :: &
       err_info
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       w_1,        & ! Mean of w (1st PDF component)                [m/s]
       w_2,        & ! Mean of w (2nd PDF component)                [m/s]
@@ -875,7 +879,7 @@ module adg1_adg2_3d_luhar_pdf
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz    ! Number of vertical levels
 
@@ -887,7 +891,7 @@ module adg1_adg2_3d_luhar_pdf
     real( kind = core_rknd ), intent(in) :: &
       x_tol_sqd    ! Tolerance value of x squared           [(x units)^2]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mixt_frac, & ! Mixture fraction                       [-]
       big_m,     & ! Luhar's M                              [-]
@@ -978,7 +982,7 @@ module adg1_adg2_3d_luhar_pdf
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz    ! Number of vertical levels
 
@@ -992,7 +996,7 @@ module adg1_adg2_3d_luhar_pdf
     real( kind = core_rknd ), intent(in) :: &
       x_tol_sqd    ! Tolerance value of x squared                [(x units)^2]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       sigma_sqd_x_1, & ! Normalized width parameter of x (1st PDF component) [-]
       sigma_sqd_x_2, & ! Normalized width parameter of x (1st PDF component) [-]
@@ -1297,14 +1301,14 @@ module adg1_adg2_3d_luhar_pdf
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       Sk_max,    & ! Maximum skewness                                      [-]
       Skx,       & ! Skewness of the variate solving small_m and big_m for [-]
       big_m_max, & ! Luhar's big_m of the variate with maximum skewness    [-]
       mixt_frac    ! Mixture fraction                                      [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), intent(out) :: &
       big_m_x,   & ! Luhar's big_m for the variate being solved for    [-]
       small_m_x    ! Luhar's small_m for the variate being solved for  [-]
@@ -1462,14 +1466,14 @@ module adg1_adg2_3d_luhar_pdf
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), dimension(1), intent(in) :: &
       a_coef, & ! Coefficient a (of x^3) in a*x^3 + b*x^2 + c^x + d = 0    [-]
       b_coef, & ! Coefficient b (of x^2) in a*x^3 + b*x^2 + c^x + d = 0    [-]
       c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
       d_coef    ! Coefficient d in a*x^3 + b*x^2 + c^x + d = 0             [-]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ) :: &
       max_root    ! Maximum root that solves the cubic equation            [-]
 

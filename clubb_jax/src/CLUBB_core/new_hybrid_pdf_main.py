@@ -54,25 +54,101 @@ def calc_F_w_zeta_w(Skw, wprtp, wpthlp, upwp, vpwp, wp2, rtp2, thlp2, up2, vp2,
     """Calculates the values of F_w and zeta_w for w, which is the setter
     variable (which is the variable that sets the mixture fraction).
 
-    ! Based purely on the PDF of w and not considering restrictions caused by
-    ! other variables in the multivariate PDF, the value of F_w is calculated
-    ! between 0 (min_F_w) and 1 (max_F_w).  However, other variables in the PDF
-    ! place restrictions on the minimum value of F_w.  The range of acceptible
-    ! values for F_w is given by:
-    !
-    ! max( <w'x'>^2 / ( <w'^2> * <x'^2> ), for all variables x ) <= F_w <= 1.
-    !
-    ! Additionally, the value of F_w should still increase with an increasing
-    ! magnitude of Skw.  The value of F_w can be 0 only when Skw = 0 (as well as
-    ! all <w'x'> = 0, as well).
-    !
-    ! Tunable parameter gamma.
-    ! When gamma goes to 0, the standard deviations of w in each PDF component
-    ! become small, and the spread between the two PDF component means of w
-    ! becomes large.  F_w goes to min_F_w.
-    ! When gamma goes to 1, the standard deviations of w in each PDF component
-    ! become large, and the spread between the two PDF component means of w
-    ! becomes small.  F_w goes to max_F_w.
+    Based purely on the PDF of w and not considering restrictions caused by
+    other variables in the multivariate PDF, the value of F_w is calculated
+    between 0 (min_F_w) and 1 (max_F_w).  However, other variables in the PDF
+    place restrictions on the minimum value of F_w.  The range of acceptible
+    values for F_w is given by:
+
+    max( <w'x'>^2 / ( <w'^2> * <x'^2> ), for all variables x ) <= F_w <= 1.
+
+    Additionally, the value of F_w should still increase with an increasing
+    magnitude of Skw.  The value of F_w can be 0 only when Skw = 0 (as well as
+    all <w'x'> = 0, as well).  The F_w skewness equation used is:
+
+    F_w = max_F_w + ( min_F_w - max_F_w )
+                    * exp{ -|Skw|^lambda / slope_coef_spread_DG_means_w };
+
+    where lambda > 0 and slope_coef_spread_DG_means_w > 0.  As |Skw| goes
+    toward 0, the value of F_w goes toward min_F_w, and as |Skw| becomes
+    large, the value of F_w goes toward max_F_w.  When the value of
+    slope_coef_spread_DG_means_w is small, the value of F_w tends toward
+    max_F_w, and when the value of slope_coef_spread_DG_means_w is large, the
+    value of F_w tends toward min_F_w.  When lambda is small, the value of F_w
+    is less dependent on Skw, and when lambda is large, the value of F_w is
+    more dependent on Skw.
+
+    Mathematically, this equation will always produce a value of F_w that
+    falls between min_F_w and max_F_w.  However, in order to prevent a value
+    of F_w from being calculated outside the bounds of min_F_w and max_F_w
+    owing to numerical underflow or loss of precision, this equation can be
+    rewritten as:
+
+    F_w
+    = min_F_w * exp{ -|Skw|^lambda / slope_coef_spread_DG_means_w }
+      + max_F_w * ( 1 - exp{ -|Skw|^lambda / slope_coef_spread_DG_means_w } ).
+
+    The value of zeta_w used to adjust the PDF component standard devations:
+
+    1 + zeta_w = ( mixt_frac * sigma_w_1^2 )
+                 / ( ( 1 - mixt_frac ) * sigma_w_2^2 );
+
+    where zeta_w > -1.  The sign of zeta_w is used to easily determine if
+    mixt_frac * sigma_w_1^2 is greater than ( 1 - mixt_frac ) * sigma_w_2^2
+    (when zeta_w is positive), mixt_frac * sigma_w_1^2 is less than
+    ( 1 - mixt_frac ) * sigma_w_2^2 (when zeta_w is negative), or
+    mixt_frac * sigma_w_1^2 is equal to ( 1 - mixt_frac ) * sigma_w_2^2 (when
+    zeta_w is 0).
+
+    In order to allow for a tunable parameter that is the pure ratio of
+    mixt_frac * sigma_w_1^2 to ( 1 - mixt_frac ) * sigma_w_2^2, zeta_w is
+    related to the parameter pdf_component_stdev_factor_w, where:
+
+    1 + zeta_w = pdf_component_stdev_factor_w.
+
+    Returns:
+        (F_w, zeta_w, min_F_w, max_F_w)
+
+    Fortran declarations (calc_F_w_zeta_w in src/CLUBB_core/new_hybrid_pdf_main.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          Skw,    & ! Skewness of w (overall)              [-]
+          wprtp,  & ! Covariance (overall) of w and rt     [m/s (kg/kg)]
+          wpthlp, & ! Covariance (overall) of w and thl    [m/s K]
+          upwp,   & ! Covariance (overall) of u and w      [m^2/s^2]
+          vpwp,   & ! Covariance (overall) of u and v      [m^2/s^2]
+          wp2,    & ! Variance (overall) of w              [m^2/s^2]
+          rtp2,   & ! Variance (overall) of rt             [(kg/kg)^2]
+          thlp2,  & ! Variance (overall) of thl            [K^2]
+          up2,    & ! Variance (overall) of u              [m^2/s^2]
+          vp2       ! Variance (overall) of v              [m^2/s^2]
+
+        ! Tunable parameter gamma.
+        ! When gamma goes to 0, the standard deviations of w in each PDF component
+        ! become small, and the spread between the two PDF component means of w
+        ! becomes large.  F_w goes to min_F_w.
+        ! When gamma goes to 1, the standard deviations of w in each PDF component
+        ! become large, and the spread between the two PDF component means of w
+        ! becomes small.  F_w goes to max_F_w.
+        real( kind = core_rknd ), intent(in) :: &
+          gamma_Skw_fnc    ! Value of parameter gamma from tunable Skw function  [-]
+
+        real( kind = core_rknd ), intent(in) :: &
+          ! Slope coefficient for the spread between the PDF component means of w.
+          slope_coef_spread_DG_means_w, &
+          ! Parameter to adjust the PDF component standard deviations of w.
+          pdf_component_stdev_factor_w
+
+        real( kind = core_rknd ), intent(in) :: &
+          max_corr_w_sclr_sqd    ! Max value of wpsclrp^2 / ( wp2 * sclrp2 )     [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), intent(out) :: &
+          F_w,     & ! Parameter for the spread of the PDF component means of w  [-]
+          zeta_w,  & ! Parameter for the PDF component variances of w            [-]
+          min_F_w, & ! Minimum allowable value of parameter F_w                  [-]
+          max_F_w    ! Maximum allowable value of parameter F_w                  [-]
     """
 
     def _corr_sqd(cov, va, vb):
@@ -132,6 +208,35 @@ def calc_responder_driver(xm, xp2, wpxp, wp2, mixt_frac, F_w, Skx):
     of values of Skx that the PDF is able to represent are calculated, and
     Skx is clipped when it exceeds the upper or lower limit.  Then, the PDF
     parameters for responder variable x are calculated.
+
+    Returns:
+        (Skx_c, mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd, c1, c2)
+
+    Fortran declarations (calc_responder_driver in src/CLUBB_core/new_hybrid_pdf_main.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          xm,        & ! Mean of x (overall)                          [units vary]
+          xp2,       & ! Variance of x (overall)                  [(units vary)^2]
+          wpxp,      & ! Covariance of w and x (overall)        [m/s (units vary)]
+          wp2,       & ! Variance of w (overall)                         [m^2/s^2]
+          mixt_frac, & ! Mixture fraction                                      [-]
+          F_w          ! Parameter for the spread of the PDF comp. means of w  [-]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        real( kind = core_rknd ), intent(inout) :: &
+          Skx    ! Skewness of x (overall)              [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), intent(out) :: &
+          mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
+          mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
+          sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
+          sigma_x_2_sqd    ! Variance of x (2nd PDF component)    [(units vary)^2]
+
+        real( kind = core_rknd ), intent(out) :: &
+          coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>    [-]
+          coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>    [-]
     """
     omf = 1.0 - mixt_frac
 
@@ -179,6 +284,96 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
                           sclrm=None, sclrp2=None, wpsclrp=None, Sksclr=None):
     """Calculate the PDF parameters for w (including mixture fraction), rt,
     theta-l, and optionally, u, v, and passive scalar variables.
+
+    Returns:
+        out
+
+    Fortran declarations (new_hybrid_pdf_driver in src/CLUBB_core/new_hybrid_pdf_main.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol, &
+          sclr_dim
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          wm,      & ! Mean of w (overall)                 [m/s]
+          rtm,     & ! Mean of rt (overall)                [kg/kg]
+          thlm,    & ! Mean of thl (overall)               [K]
+          um,      & ! Mean of u (overall)                 [m/s]
+          vm,      & ! Mean of v (overall)                 [m/s]
+          wp2,     & ! Variance of w (overall)             [m^2/s^2]
+          rtp2,    & ! Variance of rt (overall)            [kg^2/kg^2]
+          thlp2,   & ! Variance of thl (overall)           [K^2]
+          up2,     & ! Variance of u (overall)             [m^2/s^2]
+          vp2,     & ! Variance of v (overall)             [m^2/s^2]
+          Skw,     & ! Skewness of w (overall)             [-]
+          wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
+          wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
+          upwp,    & ! Covariance of u and w (overall)     [m^2/s^2]
+          vpwp       ! Covariance of v and w (overall)     [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
+          sclrm,   & ! Mean of sclr (overall)                [units vary]
+          sclrp2,  & ! Variance of sclr (overall)            [(units vary)^2]
+          wpsclrp    ! Covariance of w and sclr (overall)    [(m/s)(units vary)]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB tunable parameters [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          ! Slope coefficient for the spread between the PDF component means of w.
+          slope_coef_spread_DG_means_w, &
+          ! Parameter to adjust the PDF component standard deviations of w.
+          pdf_component_stdev_factor_w
+
+        !--------------------------- Input/Output Variables ---------------------------
+        ! These variables are input/output because their values may be clipped.
+        ! Otherwise, as long as it is not necessary to clip them, their values
+        ! will stay the same.
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+          Skrt,  & ! Skewness of rt (overall)            [-]
+          Skthl, & ! Skewness of thl (overall)           [-]
+          Sku,   & ! Skewness of u (overall)             [-]
+          Skv      ! Skewness of v (overall)             [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(inout) :: &
+          Sksclr    ! Skewness of sclr (overall)         [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+          mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
+          mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
+          mu_rt_1,         & ! Mean of rt (1st PDF component)       [kg/kg]
+          mu_rt_2,         & ! Mean of rt (2nd PDF component)       [kg/kg]
+          mu_thl_1,        & ! Mean of thl (1st PDF component)      [K]
+          mu_thl_2,        & ! Mean of thl (2nd PDF component)      [K]
+          mu_u_1,          & ! Mean of u (1st PDF component)        [m/s]
+          mu_u_2,          & ! Mean of u (2nd PDF component)        [m/s]
+          mu_v_1,          & ! Mean of v (1st PDF component)        [m/s]
+          mu_v_2,          & ! Mean of v (2nd PDF component)        [m/s]
+          sigma_w_1_sqd,   & ! Variance of w (1st PDF component)    [m^2/s^2]
+          sigma_w_2_sqd,   & ! Variance of w (2nd PDF component)    [m^2/s^2]
+          sigma_rt_1_sqd,  & ! Variance of rt (1st PDF component)   [kg^2/kg^2]
+          sigma_rt_2_sqd,  & ! Variance of rt (2nd PDF component)   [kg^2/kg^2]
+          sigma_thl_1_sqd, & ! Variance of thl (1st PDF component)  [K^2]
+          sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
+          sigma_u_1_sqd,   & ! Variance of u (1st PDF component)    [m^2/s^2]
+          sigma_u_2_sqd,   & ! Variance of u (2nd PDF component)    [m^2/s^2]
+          sigma_v_1_sqd,   & ! Variance of v (1st PDF component)    [m^2/s^2]
+          sigma_v_2_sqd,   & ! Variance of v (2nd PDF component)    [m^2/s^2]
+          mixt_frac,       &  ! Mixture fraction                     [-]
+          sigma_sqd_w
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(out) :: &
+          mu_sclr_1,        & ! Mean of sclr (1st PDF component)      [units vary]
+          mu_sclr_2,        & ! Mean of sclr (2nd PDF component)      [units vary]
+          sigma_sclr_1_sqd, & ! Variance of sclr (1st PDF component)  [(un. vary)^2]
+          sigma_sclr_2_sqd    ! Variance of sclr (2nd PDF component)  [(un. vary)^2]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(implicit_coefs_terms), intent(inout) :: &
+          pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
     """
     slope = jnp.asarray(slope_coef_spread_DG_means_w)
     pstdev = jnp.asarray(pdf_component_stdev_factor_w)

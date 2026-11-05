@@ -191,12 +191,12 @@ module pdf_parameter_module
 
     implicit none
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz,   & ! Number of vertical grid levels    [-]
       ngrdcol ! Number of grid columns            [-]
 
-    ! Output Variable(s)
+    !--------------------------- Output Variables ---------------------------
     type(pdf_parameter), intent(out) :: &
       pdf_params    ! PDF parameters            [units vary]
 
@@ -272,6 +272,7 @@ module pdf_parameter_module
 
     implicit none
 
+    !--------------------------- Input/Output Variables ---------------------------
     !----------------------------------- Inout Variable(s) -----------------------------------
     type(pdf_parameter), intent(inout) :: &
       pdf_params    ! PDF parameters            [units vary]
@@ -374,13 +375,13 @@ module pdf_parameter_module
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz,       & ! Number of vertical grid levels    [-]
       ngrdcol,  & ! Number of grid columns            [-]
       sclr_dim    ! Number of scalar variables        [-]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     type(implicit_coefs_terms), intent(out) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
@@ -444,6 +445,7 @@ module pdf_parameter_module
 
     implicit none
 
+    !--------------------------- Input/Output Variables ---------------------------
     !----------------------------------- Inout Variable(s) -----------------------------------
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -512,7 +514,7 @@ module pdf_parameter_module
 
     implicit none
 
-    ! Input Variable(s)
+    !--------------------------- Input Variables ---------------------------
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters            [units vary]
 
@@ -599,17 +601,21 @@ module pdf_parameter_module
                                  k_start_in, k_end_in )
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: nz ! Num Vert Model Levs
 
     ! Input a pdf_parameter array with nz instances of pdf_parameter
     type (pdf_parameter), intent(in) :: pdf_params
 
+    !--------------------------- Output Variables ---------------------------
     ! Output a two dimensional real array with all values
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(out) :: &
        r_param_array
 
+    !--------------------------- Optional Input Variables ---------------------------
     integer, optional, intent(in) :: k_start_in, k_end_in
 
+    !--------------------------- Local Variables ---------------------------
     integer :: k_start, k_end
 
     if( present( k_start_in ) .and. present( k_end_in ) ) then
@@ -675,17 +681,21 @@ module pdf_parameter_module
                                    k_start_in, k_end_in )
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: nz ! Num Vert Model Levs
 
     ! Input a two dimensional real array with pdf values
     real (kind = core_rknd), dimension(nz,num_pdf_params), intent(in) :: &
        r_param_array
 
+    !--------------------------- Input/Output Variables ---------------------------
     ! Output a pdf_parameter array with nz instances of pdf_parameter
     type (pdf_parameter), intent(inout) :: pdf_params
 
+    !--------------------------- Optional Input Variables ---------------------------
     integer, optional, intent(in) :: k_start_in, k_end_in
 
+    !--------------------------- Local Variables ---------------------------
     integer :: k_start, k_end
 
     if( present( k_start_in ) .and. present( k_end_in ) ) then

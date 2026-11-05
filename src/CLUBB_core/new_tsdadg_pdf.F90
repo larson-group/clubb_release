@@ -50,10 +50,10 @@ module new_tsdadg_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wm,     & ! Mean of w (overall)                [m/s]
       rtm,    & ! Mean of rt (overall)               [kg/kg]
@@ -67,7 +67,7 @@ module new_tsdadg_pdf
       wprtp,  & ! Covariance of w and rt (overall)   [(m/s)kg/kg]
       wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
@@ -539,7 +539,7 @@ module new_tsdadg_pdf
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       xm,        & ! Mean of x (overall)                            [units vary]
       xp2,       & ! Variance of x (overall)                    [(units vary)^2]
@@ -548,7 +548,7 @@ module new_tsdadg_pdf
       big_L_x_1, & ! Parameter for the spread of the 1st PDF comp. mean of x [-]
       big_L_x_2    ! Parameter for the spread of the 2nd PDF comp. mean of x [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
@@ -661,14 +661,14 @@ module new_tsdadg_pdf
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       Skx,         & ! Skewness of x (overall)                               [-]
       sgn_wpxp,    & ! Sign of the covariance of w and x (overall)           [-]
       small_l_x_1, & ! Param. for the spread of the 1st PDF comp. mean of x  [-]
       small_l_x_2    ! Param. for the spread of the 2nd PDF comp. mean of x  [-]
 
-    ! Output Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), intent(out) :: &
       big_L_x_1, & ! Parameter for the spread of the 1st PDF comp. mean of x [-]
       big_L_x_2    ! Parameter for the spread of the 2nd PDF comp. mean of x [-]
@@ -841,7 +841,7 @@ module new_tsdadg_pdf
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       xm,        & ! Mean of x (overall)                            [units vary]
       xp2,       & ! Variance of x (overall)                    [(units vary)^2]
@@ -850,7 +850,7 @@ module new_tsdadg_pdf
       mixt_frac, & ! Mixture fraction                                        [-]
       big_L_x_1    ! Parameter for the spread of the 1st PDF comp. mean of x [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]

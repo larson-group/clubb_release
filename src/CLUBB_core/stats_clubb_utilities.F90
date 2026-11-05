@@ -85,6 +85,7 @@ contains
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nzm, nzt, ngrdcol, sclr_dim, edsclr_dim
 
@@ -143,6 +144,7 @@ contains
     integer, intent(in) :: &
       saturation_formula
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(stats_type), intent(inout) :: &
       stats
 
@@ -544,7 +546,7 @@ contains
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     type(grid), intent(in) :: &
       gr
 
@@ -561,7 +563,7 @@ contains
     real(kind=core_rknd), dimension(ngrdcol,gr%nzt), intent(in) :: &
       rho_ds_zt            ! Dry, static density (thermo. levs.)      [kg/m^3]
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     type(stats_type), intent(inout) :: &
       stats
 

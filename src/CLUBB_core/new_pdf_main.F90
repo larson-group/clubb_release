@@ -83,11 +83,11 @@ module new_pdf_main
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,      & ! Mean of w (overall)                 [m/s]
       rtm,     & ! Mean of rt (overall)                [kg/kg]
@@ -103,7 +103,7 @@ module new_pdf_main
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     ! These variables are input/output because their values may be clipped.
     ! Otherwise, as long as it is not necessary to clip them, their values
     ! will stay the same.
@@ -111,7 +111,7 @@ module new_pdf_main
       Skrt,  & ! Skewness of rt (overall)            [-]
       Skthl    ! Skewness of thl (overall)           [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
@@ -127,6 +127,7 @@ module new_pdf_main
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
       mixt_frac          ! Mixture fraction                     [-]
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
@@ -449,10 +450,10 @@ module new_pdf_main
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       xm,           & ! Mean of x (overall)                       [units vary]
       xp2,          & ! Variance of x (overall)               [(units vary)^2]
@@ -467,11 +468,11 @@ module new_pdf_main
       max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
       max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
-    ! Input/Output Variable
+    !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(inout) :: &
       Skx    ! Skewness of x (overall)              [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
@@ -599,10 +600,10 @@ module new_pdf_main
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Skx    ! Skewness of x (overall)              [-]
 
@@ -611,7 +612,7 @@ module new_pdf_main
       pdf_component_stdev_factor_x, & ! Param.: PDF comp. standard devs.; x  [-]
       lambda                          ! Param. for Skx dependence            [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       F_x,     & ! Parameter for the spread of the PDF component means of x  [-]
       zeta_x,  & ! Parameter for the PDF component variances of x            [-]
@@ -745,10 +746,10 @@ module new_pdf_main
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       coef_spread_DG_means_x    ! Coef.: spread betw. PDF comp. means of x   [-]
 
@@ -757,7 +758,7 @@ module new_pdf_main
       min_F_x,      & ! Minimum allowable value of parameter F_x   [-]
       max_F_x         ! Maximum allowable value of parameter F_x   [-]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(nz) :: &
       F_x    ! Parameter for the spread between the PDF component means of x [-]
 

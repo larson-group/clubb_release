@@ -374,7 +374,24 @@ CORR_ARRAY_N_BELOW_DEF = corr_array_n_below_def
 
 def def_corr_idx(iiPDF_x, hm_metadata):
     """Map from a iiPDF index to the corresponding index in the default
-    correlation arrays."""
+    correlation arrays.
+
+    Returns:
+        ii_def_corr
+
+    Fortran declarations (def_corr_idx in src/CLUBB_core/corr_varnce_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+
+        integer, intent(in) :: iiPDF_x
+
+        !--------------------------- Output Variables ---------------------------
+
+        integer :: ii_def_corr
+
+        type (hm_metadata_type) :: &
+          hm_metadata
+    """
     # Constant Parameters
 
     # Indices that represent the order in the default corr arrays
@@ -430,7 +447,25 @@ def _def_corr_idx_from(iiPDF_x, hm_metadata):
 
 def set_corr_arrays_to_default(pdf_dim, hm_metadata):
     """If there are no corr_array.in files for the current case, default
-    correlations are used."""
+    correlations are used.
+
+    Returns:
+        (corr_array_n_cloud, corr_array_n_below)
+
+    Fortran declarations (set_corr_arrays_to_default in src/CLUBB_core/corr_varnce_module.F90):
+
+        !------------------------ Input Variables ------------------------
+        integer, intent(in) :: &
+          pdf_dim
+
+        type (hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        !------------------------ Output Variables ------------------------
+        real( kind = core_rknd ), intent(out), dimension(pdf_dim,pdf_dim) :: &
+          corr_array_n_cloud, &
+          corr_array_n_below
+    """
     corr_array_n_cloud = np.zeros((pdf_dim, pdf_dim), dtype=np.float64)
     corr_array_n_below = np.zeros((pdf_dim, pdf_dim), dtype=np.float64)
 
@@ -473,7 +508,23 @@ def kk_prescribed_correlations():
 
 
 def get_corr_var_index(var_name, hm_metadata):
-    """Returns the index for a variable based on its name."""
+    """Definition:
+      Returns the index for a variable based on its name.
+
+    Returns:
+        i
+
+    Fortran declarations (get_corr_var_index in src/CLUBB_core/corr_varnce_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        character(len=*), intent(in) :: var_name ! The name of the variable
+
+        type (hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        !--------------------------- Output Variables ---------------------------
+        integer :: i
+    """
     i = -1
 
     var_name = var_name.strip()
@@ -521,30 +572,56 @@ def init_pdf_hydromet_arrays_api(
     hmp2_ip_on_hmm2_ip_slope_in=None,
     hmp2_ip_on_hmm2_ip_intrcpt_in=None,
 ):
-    """Initialize hydrometeor metadata and return ``hm_metadata, pdf_dim``.
+    """Initialization for the hydromet arrays. How the arrays are initialized is
+    determined by how the hydromet indicies (iirr, iiNr, etc.) have been set,
+    which are determined by the microphysics scheme.
 
-    DESCRIPTION:
-        This subroutine intializes the hydromet arrays(iirr, iiNr, etc.) to the values specified by
-        the input arguements, this determines which hyrometeors are to be used by the microphysics
-        scheme. It also sets up the corresponding pdf and hydromet arrays, and calculates the
-        subgrid variance ratio for each hydrometeor.
+    The subgrid variance ratio for each hydrometeor is calculated from the grid
+    spacing defined by the host model, by a linear equation with a slope and an
+    intercept. When the slope or intercept is not passed in, the default value
+    from the corresponding type definition is used. For full control over the
+    hydrometeor variance ratios, pass in slopes of 0.0, so that the ratios no
+    longer depend on the grid spacing, and intercepts set to the desired ratios.
 
-    OPTIONAL FUNCTIONALITY:
-        The subgrid variance ratio for each hydrometeor is calculated based on the grid spacing
-        defined by the host model. The calculation is a linear equation defined by a slope and
-        intercept, each of which may or may not be passed in to this subroutine. If the slope
-        and/or intercept are not passed in through the arguement list the default values, which
-        are set in the corresponding type definitions, will be used. Otherwise the values
-        specified by the aruements will be used.
+    Returns:
+        (hm_metadata, pdf_dim)
 
-    NOTES:
-        'hmp2_ip_on_hmm2_ip_slope_in' is of type 'hmp2_ip_on_hmm2_ip_slope_type' and
-        'hmp2_ip_on_hmm2_ip_intrcpt_in' is of type 'hmp2_ip_on_hmm2_ip_intrcpt_in', both of which
-        are deinfed in corr_vrnce_module.F90, and made public through this API.
+    Fortran declarations (init_pdf_hydromet_arrays_api in src/CLUBB_core/corr_varnce_module.F90):
 
-        If full control over the hydrometeor variance ratios is desired, pass in slopes that are
-        initialized to 0.0, this causes the ratios to no longer depend on the grid spacing. Then
-        pass in the intercepts set to the values of the desired ratios.
+        !------------------------ Input Variables ------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          host_dx, host_dy  ! Horizontal grid spacing, defined by host model [m]
+
+        integer, intent(in) :: &
+          hydromet_dim, & ! Total number of hydrometeor species.
+          iirr,         & ! Index of rain water mixing ratio
+          iiNr,         & ! Index of rain drop concentration
+          iiri,         & ! Index of ice mixing ratio
+          iiNi,         & ! Index of ice crystal concentration
+          iirs,         & ! Index of snow mixing ratio
+          iiNs,         & ! Index of snow flake concentration
+          iirg,         & ! Index of graupel mixing ratio
+          iiNg            ! Index of graupel concentration
+
+        real( kind = core_rknd ), intent(in) :: &
+          Ncnp2_on_Ncnm2
+
+        !------------------------ InOut Variables ------------------------
+        type (hm_metadata_type), intent(out) :: &
+          hm_metadata
+
+        !------------------------ Output Variables ------------------------
+        integer, intent(out) :: &
+          pdf_dim
+
+        !------------------------ Optional Input Variables ------------------------
+
+        ! Used to overwrite default values of slope and intercept
+        type( hmp2_ip_on_hmm2_ip_slope_type ), optional, intent(in) :: &
+            hmp2_ip_on_hmm2_ip_slope_in    ! Custom slopes to overwrite defaults [1/m]
+
+        type( hmp2_ip_on_hmm2_ip_intrcpt_type ), optional, intent(in) :: &
+            hmp2_ip_on_hmm2_ip_intrcpt_in   ! Custom intercepts to overwrite defaults [-]
     """
     hm_metadata = hm_metadata_type(
         iirr=iirr,
@@ -780,7 +857,33 @@ def setup_corr_varnce_array_api(
     corr_array_n_cloud_default=None,
     corr_array_n_below_default=None,
 ):
-    """Set up full symmetric cloud and below-cloud normal-space correlations."""
+    """Setup an array with the x'^2/xm^2 variables on the diagonal and the other
+    elements to be correlations between various variables.
+
+    Returns:
+        (corr_array_n_cloud, corr_array_n_below)
+
+    Fortran declarations (setup_corr_varnce_array_api in src/CLUBB_core/corr_varnce_module.F90):
+
+        !------------------------ Input Variables ------------------------
+        integer, intent(in) :: &
+          pdf_dim
+
+        type (hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        logical, intent(in) :: &
+          l_fix_w_chi_eta_correlations ! Use a fixed correlation for s and t Mellor(chi/eta)
+
+        real( kind = core_rknd ), intent(in), optional, dimension(pdf_dim,pdf_dim) :: &
+          corr_array_n_cloud_default, &
+          corr_array_n_below_default
+
+        !------------------------ Output Variables ------------------------
+        real( kind = core_rknd ), intent(out), dimension(pdf_dim,pdf_dim) :: &
+          corr_array_n_cloud, &
+          corr_array_n_below
+    """
 
     if corr_array_n_cloud_default is not None and corr_array_n_below_default is not None:
         corr_array_n_cloud = np.array(corr_array_n_cloud_default, dtype=np.float64)
@@ -816,7 +919,22 @@ def setup_corr_varnce_array_api(
 
 
 def assert_corr_symmetric(corr_array_n):
-    """Return True when a normal-space correlation matrix is symmetric with unit diagonal."""
+    """Asserts that corr_matrix(i,j) == corr_matrix(j,i) for all indeces
+    in the correlation array. If this is not the case, stops the program.
+
+    Fortran declarations (assert_corr_symmetric in src/CLUBB_core/corr_varnce_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          pdf_dim   ! Number of variables in the correlation array
+
+        real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), &
+          intent(in) :: corr_array_n ! Normal space correlation array to be checked
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info        ! err_info struct containing err_code and err_header
+    """
     tol = 1.0e-6
     corr_array_n = np.asarray(corr_array_n, dtype=np.float64)
 
@@ -836,7 +954,17 @@ def assert_corr_symmetric(corr_array_n):
 
 
 def print_corr_matrix(pdf_dim, corr_array_n, stream=None):
-    """Print a correlation matrix in the same orientation as the Fortran debug routine."""
+    """Prints the correlation matrix to the console.
+
+    Fortran declarations (print_corr_matrix in src/CLUBB_core/corr_varnce_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          pdf_dim   ! Number of variables in the correlation array
+
+        real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), &
+          intent(in) :: corr_array_n ! Normal space correlation array to be printed
+    """
     output = []
 
     for n in range(pdf_dim):

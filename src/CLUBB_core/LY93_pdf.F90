@@ -45,10 +45,10 @@ module LY93_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd), dimension(nz), intent(in) :: &
       wm,    & ! Mean of w (overall)                      [m/s]
       wp2,   & ! Variance of w (overall)                  [m^2/s^2]
@@ -60,7 +60,7 @@ module LY93_pdf
       thlp2, & ! Variance of thl (overall)                [K^2]
       Skthl    ! Skewness of thl (overall)                [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd), dimension(nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)          [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)          [m/s]
@@ -130,14 +130,14 @@ module LY93_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variable
     real( kind = core_rknd), dimension(nz), intent(in) :: &
       Sk_max    ! Maximum of magnitudes of skewness        [-]
 
-    ! Return Variable
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd), dimension(nz) :: &
       mixt_frac    ! Mixture fraction                      [-]
 
@@ -221,17 +221,17 @@ module LY93_pdf
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz
 
-    ! Input Variables
     real( kind = core_rknd), dimension(nz), intent(in) :: &
       xm,        & ! Mean of x (overall)        [units vary]
       xp2,       & ! Variance of x (overall)    [(units vary)^2]
       Skx,       & ! Skewness of x (overall)    [-]
       mixt_frac    ! Mixture fraction           [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd), dimension(nz), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]

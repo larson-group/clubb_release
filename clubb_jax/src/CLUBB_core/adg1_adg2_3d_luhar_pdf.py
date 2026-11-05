@@ -56,25 +56,45 @@ def ADG1_w_closure(wm, wp2, Skw, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag):
     References:
     Golaz, J-C., V. E. Larson, and W. R. Cotton, 2002a: A PDF-based model for
     boundary layer clouds. Part I: Method and model description. J. Atmos.
-    Sci., 59, 3540-3551.
+    Sci., 59, 3540–3551.
 
     Vincent E. Larson and Jean-Christophe Golaz, 2005: Using Probability
     Density Functions to Derive Consistent Closure Relationships among
-    Higher-Order Moments. Mon. Wea. Rev., 133, 1023-1042.
-
-    Args:
-        wm:               (ngrdcol, nzt) — mean w [m/s]
-        wp2:              (ngrdcol, nzt) — w variance [m^2/s^2]
-        Skw:              (ngrdcol, nzt) — w skewness [-]
-        sigma_sqd_w:      (ngrdcol, nzt) — PDF width parameter [-]
-        sqrt_wp2:         (ngrdcol, nzt) — sqrt(wp2) [m/s]
-        mixt_frac_max_mag: (ncol,) — max |mixt_frac - 0.5| + 0.5
+    Higher-Order Moments. Mon. Wea. Rev., 133, 1023–1042.
 
     Returns:
-        w_1, w_2:           (ngrdcol, nzt) — w means of each PDF component
-        w_1_n, w_2_n:       (ngrdcol, nzt) — normalized w means
-        varnce_w_1, varnce_w_2: (ngrdcol, nzt) — w variances per component
-        mixt_frac:          (ngrdcol, nzt) — mixture fraction (weight of 1st)
+        (w_1, w_2, w_1_n, w_2_n, varnce_w_1, varnce_w_2, mixt_frac)
+
+    Fortran declarations (ADG1_w_closure in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          ngrdcol,  & ! Number of grid columns
+          nz          ! Number of vertical level
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz),  intent(in) :: &
+          wm,                & ! Mean of w (overall)                   [m/s]
+          wp2,               & ! Variance of w (overall)               [m^2/s^2]
+          Skw,               & ! Skewness of w                         [-]
+          sigma_sqd_w,       & ! Widths of each w Gaussian             [-]
+          sqrt_wp2             ! Square root of the variance of w      [m/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol),  intent(in) :: &
+          mixt_frac_max_mag ! Maximum allowable mag. of mixt_frac   [-]
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+          w_1,        & ! Mean of w (1st PDF component)                [m/s]
+          w_2,        & ! Mean of w (2nd PDF component)                [m/s]
+          w_1_n,      & ! Normalized mean of w (1st PDF component)     [-]
+          w_2_n,      & ! Normalized mean of w (2nd PDF component)     [-]
+          varnce_w_1, & ! Variance of w (1st PDF component)            [m^2/s^2]
+          varnce_w_2, & ! Variance of w (2nd PDF component)            [m^2/s^2]
+          mixt_frac     ! Mixture fraction                             [-]
     """
     # TODO: Fortran's debug tolerance error/header depends on err_info and its
     # fatal-return contract, absent from this pure closure; skipped in print-only work.
@@ -155,28 +175,44 @@ def ADG1_ADG2_responder_params(xm, xp2, wp2, sqrt_wp2, wpxp,
     depends on which variable "x" stands for.  It is multiplied by 1/2 and
     defined as alpha_x, where "x" stands for thl, rt, or sclr.
 
-    Vince Larson added a dimensionless factor so that the
-    width of plumes in theta_l, rt can vary.
-    beta is a constant defined in CLUBB's tunable parameters.
-      Set 0<beta<3.
-    beta=1.5_core_rknd recovers Chris Golaz' simplified formula.
-    3 Nov 2003
-
-    Args:
-        xm:         (ngrdcol, nzt) — mean of x
-        xp2:        (ngrdcol, nzt) — variance of x
-        wp2:        (ngrdcol, nzt) — variance of w
-        sqrt_wp2:   (ngrdcol, nzt) — sqrt(wp2)
-        wpxp:       (ngrdcol, nzt) — covariance w'x'
-        w_1_n, w_2_n: (ngrdcol, nzt) — normalized w component means
-        mixt_frac:  (ngrdcol, nzt) — mixture fraction
-        sigma_sqd_w: (ngrdcol, nzt) — PDF width parameter
-        beta:       (ngrdcol,) or scalar — CLUBB tunable parameter beta
-
     Returns:
-        x_1, x_2:           (ngrdcol, nzt) — component means
-        varnce_x_1, varnce_x_2: (ngrdcol, nzt) — component variances
-        alpha_x:            (ngrdcol, nzt) — normalized variance factor
+        (x_1, x_2, varnce_x_1, varnce_x_2, alpha_x)
+
+    Fortran declarations (ADG1_ADG2_responder_params in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        integer, intent(in) :: &
+          ngrdcol,  & ! Number of grid columns
+          nz          ! Number of vertical level
+
+        !-------------------------- Input Variables --------------------------
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          xm,          & ! Mean of x (overall)                    [units vary]
+          xp2,         & ! Variance of x (overall)                [(units vary)^2]
+          wp2,         & ! Variance of w (overall)                [m^2/s^2]
+          sqrt_wp2,    & ! Square root of the variance of w       [m/s]
+          wpxp,        & ! Covariance of w and x                  [m/s (units vary)]
+          w_1_n,       & ! Normalized mean of w (1st PDF comp.)   [-]
+          w_2_n,       & ! Normalized mean of w (2nd PDF comp.)   [-]
+          mixt_frac,   & ! Mixture fraction                       [-]
+          sigma_sqd_w    ! Width of individual w plumes           [-]
+
+        real ( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          beta           ! CLUBB tunable parameter beta           [-]
+
+        real ( kind = core_rknd ), intent(in) :: &
+          x_tol          ! Tolerance value for x                  [units vary]
+
+        !-------------------------- InOut Variables --------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info
+
+        !-------------------------- Output Variables --------------------------
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+          x_1,        & ! Mean of x (1st PDF component)             [units vary]
+          x_2,        & ! Mean of x (2nd PDF component)             [units vary]
+          varnce_x_1, & ! Variance of x (1st PDF component)         [(units vary)^2]
+          varnce_x_2, & ! Variance of x (2nd PDF component)         [(units vary)^2]
+          alpha_x       ! Factor relating to normalized variance for x           [-]
     """
     # TODO: Fortran's responder tolerance diagnostic requires x_tol and err_info,
     # neither carried by this reduced interface; restoring the guard is separate.
@@ -208,32 +244,97 @@ def ADG1_pdf_driver(wm, rtm, thlm, um, vm,
                         Skw, wprtp, wpthlp, upwp, vpwp,
                         sqrt_wp2, sigma_sqd_w,
                         beta, mixt_frac_max_mag):
-    """adg1_adg2_3d_luhar_pdf.F90:ADG1_pdf_driver — top-level ADG1 driver.
-
-    All inputs on zt grid (ngrdcol, nzt).
-
-    Args:
-        wm:     (ngrdcol, nzt) — mean w
-        rtm:    (ngrdcol, nzt) — mean total water
-        thlm:   (ngrdcol, nzt) — mean theta-l
-        um, vm: (ngrdcol, nzt) — mean winds
-        wp2:    (ngrdcol, nzt) — w variance
-        rtp2:   (ngrdcol, nzt) — rt variance
-        thlp2:  (ngrdcol, nzt) — thl variance
-        up2, vp2: (ngrdcol, nzt) — u,v variances
-        Skw:    (ngrdcol, nzt) — w skewness
-        wprtp, wpthlp, upwp, vpwp: (ngrdcol, nzt) — covariances
-        sqrt_wp2: (ngrdcol, nzt) — sqrt(wp2)
-        sigma_sqd_w: (ngrdcol, nzt) — PDF width parameter
-        beta:   (ngrdcol,) — tunable parameter
-        mixt_frac_max_mag: (ncol,)
+    """Calculates the PDF parameters using the Analytic Double Gaussian 1 (ADG1)
+    PDF closure.
 
     Returns:
-        dict with keys: w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac,
-                        rt_1, rt_2, varnce_rt_1, varnce_rt_2, alpha_rt,
-                        thl_1, thl_2, varnce_thl_1, varnce_thl_2, alpha_thl,
-                        u_1, u_2, varnce_u_1, varnce_u_2, alpha_u,
-                        v_1, v_2, varnce_v_1, varnce_v_2, alpha_v
+        dict with keys w_1, w_2, w_1_n, w_2_n, varnce_w_1, varnce_w_2,
+          mixt_frac, rt_1, rt_2, varnce_rt_1, varnce_rt_2, alpha_rt, thl_1,
+          thl_2, varnce_thl_1, varnce_thl_2, alpha_thl, u_1, u_2, varnce_u_1,
+          varnce_u_2, alpha_u, v_1, v_2, varnce_v_1, varnce_v_2, alpha_v
+
+    Fortran declarations (ADG1_pdf_driver in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz,           & ! Number of vertical levels
+          ngrdcol,      & ! Number of grid columns
+          sclr_dim        ! Number of passive scalars
+
+        real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+          sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          wm,          & ! Mean of w-wind comp. (vert. vel.)    [m/s]
+          rtm,         & ! Mean of total water mixing ratio     [kg/kg]
+          thlm,        & ! Mean of liquid water potential temp. [K]
+          um,          & ! Mean of eastward wind                [m/s]
+          vm,          & ! Mean of northward wind               [m/s]
+          wp2,         & ! Variance of w (overall)              [m^2/s^2]
+          rtp2,        & ! Variance of r_t (overall)            [(kg/kg)^2]
+          thlp2,       & ! Variance of th_l (overall)           [K^2]
+          up2,         & ! Variance of eastward wind (overall)  [m^2/s^2]
+          vp2,         & ! Variance of northward wind (overall) [m^2/s^2]
+          Skw,         & ! Skewness of w                        [-]
+          wprtp,       & ! Covariance of w and r_t              [(kg/kg)(m/s)]
+          wpthlp,      & ! Covariance of w and th_l             [K(m/s)]
+          upwp,        & ! Covariance of u and w                [m^2/s^2]
+          vpwp,        & ! Covariance of v and w                [m^2/s^2]
+          sqrt_wp2,    & ! Square root of variance of w         [m/s]
+          sigma_sqd_w    ! Width of individual w plumes         [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          beta                    ! CLUBB tunable parameter beta         [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          mixt_frac_max_mag ! Maximum allowable mag. of mixt_frac  [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol, nz, sclr_dim), intent(in) ::  &
+          sclrm,   & ! Mean of passive scalar (overall)           [units vary]
+          sclrp2,  & ! Variance of passive scalar (overall)       [(units vary)^2]
+          wpsclrp    ! Covariance of w and passive scalar         [m/s (units vary)]
+
+        logical, intent(in) :: &
+          l_scalar_calc    ! Flag to perform calculations for passive scalars
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+          w_1,          & ! Mean of w (1st PDF component)                      [m/s]
+          w_2,          & ! Mean of w (2nd PDF component)                      [m/s]
+          rt_1,         & ! Mean of r_t (1st PDF component)                  [kg/kg]
+          rt_2,         & ! Mean of r_t (2nd PDF component)                  [kg/kg]
+          thl_1,        & ! Mean of th_l (1st PDF component)                     [K]
+          thl_2,        & ! Mean of th_l (2nd PDF component)                     [K]
+          u_1,          & ! Mean of u (eastward wind) (1st PDF component)      [m/s]
+          u_2,          & ! Mean of u (eastward wind) (2nd PDF component)      [m/s]
+          v_1,          & ! Mean of v (northward wind) (1st PDF component)     [m/s]
+          v_2,          & ! Mean of v (northward wind) (2nd PDF component)     [m/s]
+          varnce_w_1,   & ! Variance of w (1st PDF component)              [m^2/s^2]
+          varnce_w_2,   & ! Variance of w (2nd PDF component)              [m^2/s^2]
+          varnce_rt_1,  & ! Variance of r_t (1st PDF component)          [kg^2/kg^2]
+          varnce_rt_2,  & ! Variance of r_t (2nd PDF component)          [kg^2/kg^2]
+          varnce_thl_1, & ! Variance of th_l (1st PDF component)               [K^2]
+          varnce_thl_2, & ! Variance of th_l (2nd PDF component)               [K^2]
+          varnce_u_1,   & ! Variance of u wind (1st PDF component)         [m^2/s^2]
+          varnce_u_2,   & ! Variance of u wind (2nd PDF component)         [m^2/s^2]
+          varnce_v_1,   & ! Variance of v wind (1st PDF component)         [m^2/s^2]
+          varnce_v_2,   & ! Variance of v wind (2nd PDF component)         [m^2/s^2]
+          mixt_frac,    & ! Mixture fraction (weight of 1st PDF component)       [-]
+          alpha_thl,    & ! Factor relating to normalized variance for th_l      [-]
+          alpha_rt,     & ! Factor relating to normalized variance for r_t       [-]
+          alpha_u,      & ! Factor relating to normalized variance for u wind    [-]
+          alpha_v         ! Factor relating to normalized variance for v wind    [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol, nz, sclr_dim), intent(out) ::  &
+          sclr_1,        & ! Mean of passive scalar (1st PDF component) [units vary]
+          sclr_2,        & ! Mean of passive scalar (2nd PDF component) [units vary]
+          varnce_sclr_1, & ! Variance of pass. sclr (1st PDF comp.) [(units vary)^2]
+          varnce_sclr_2, & ! Variance of pass. sclr (2nd PDF comp.) [(units vary)^2]
+          alpha_sclr       ! Factor relating to normalized variance for sclr     [-]
     """
     # w closure
     (w_1, w_2, w_1_n, w_2_n,
@@ -350,7 +451,30 @@ def calc_Luhar_params(Skx, wpxp, xp2, x_tol_sqd):
     References:
     Vincent E. Larson, Jean-Christophe Golaz, and William R. Cotton, 2002:
     Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
-    Probability Density Functions. J. Atmos. Sci., 59, 3519-3539.
+    Probability Density Functions. J. Atmos. Sci., 59, 3519–3539.
+
+    Returns:
+        (mixt_frac, big_m, small_m)
+
+    Fortran declarations (calc_Luhar_params in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz    ! Number of vertical levels
+
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          Skx,  & ! Skewness of x ( <x'^3> / <x'2>^(3/2) )      [-]
+          wpxp, & ! Covariance of w and x                       [m/s (x units)]
+          xp2     ! Variance of x                               [(x units)^2]
+
+        real( kind = core_rknd ), intent(in) :: &
+          x_tol_sqd    ! Tolerance value of x squared           [(x units)^2]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+          mixt_frac, & ! Mixture fraction                       [-]
+          big_m,     & ! Luhar's M                              [-]
+          small_m      ! Luhar's m                              [-]
     """
 
     # Width (standard deviation) parameters are non-zero
@@ -393,9 +517,40 @@ def close_Luhar_pdf(xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd):
     equations and nomenclature of Larson et al. (2002) Appendix section e.
 
     References:
-       Vincent E. Larson, Jean-Christophe Golaz, and William R. Cotton, 2002:
-       Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
-       Probability Density Functions. J. Atmos. Sci., 59, 3519-3539.
+    Vincent E. Larson, Jean-Christophe Golaz, and William R. Cotton, 2002:
+    Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
+    Probability Density Functions. J. Atmos. Sci., 59, 3519–3539.
+
+    Returns:
+        (sigma_sqd_x_1, sigma_sqd_x_2, varnce_x_1, varnce_x_2, x_1_n, x_2_n,
+          x_1, x_2)
+
+    Fortran declarations (close_Luhar_pdf in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz    ! Number of vertical levels
+
+        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+          xm,        & ! Mean (overall) of x, <x>                    [(x units)]
+          xp2,       & ! Variance (overall) of x, <x'^2>             [(x units)^2]
+          mixt_frac, & ! Mixture fraction                            [-]
+          small_m,   & ! Luhar's small m                             [-]
+          wpxp         ! Covariance of w and x, <w'x'>               [m/s (x units)]
+
+        real( kind = core_rknd ), intent(in) :: &
+          x_tol_sqd    ! Tolerance value of x squared                [(x units)^2]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+          sigma_sqd_x_1, & ! Normalized width parameter of x (1st PDF component) [-]
+          sigma_sqd_x_2, & ! Normalized width parameter of x (1st PDF component) [-]
+          varnce_x_1,    & ! Variance of x (1st PDF component)         [(x units)^2]
+          varnce_x_2,    & ! Variance of x (2nd PDF component)         [(x units)^2]
+          x_1_n,         & ! Normalized mean of x (1st PDF component)            [-]
+          x_2_n,         & ! Normalized mean of x (2nd PDF component)            [-]
+          x_1,           & ! Mean of x (1st PDF component)               [(x units)]
+          x_2              ! Mean of x (2nd PDF component)               [(x units)]
     """
     omf = 1.0 - mixt_frac
     msq = 1.0 + small_m ** 2
@@ -428,11 +583,28 @@ def close_Luhar_pdf(xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd):
 
 
 def max_cubic_root(a_coef, b_coef, c_coef, d_coef):
-    """Largest real root of a·x³ + b·x² + c·x + d = 0 (adg1_adg2_3d_luhar_pdf.F90:max_cubic_root). Falls back to
-    the quadratic solver when |a| is negligible vs the other coefficients, and to the linear solution when |a|
-    and |b| are both negligible. For a true cubic: if the 2nd/3rd roots are real (negligible imaginary part) the
-    max over all three real parts, else the always-real first root. Pure-jnp (uses the iter-71-corrected
-    cubic_solve) → differentiable away from the root-multiplicity branch points. Inputs broadcast elementwise."""
+    """Calculates the largest root that results from solving a cubic equation of
+    the form a*x^3 + b*x^2 + c*x + d = 0.
+
+    This is done to backsolve for m^2 for the 3-D Luhar closure, given the
+    values of mixt_frac and Skx.
+
+    Returns:
+        max_root
+
+    Fortran declarations (max_cubic_root in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), dimension(1), intent(in) :: &
+          a_coef, & ! Coefficient a (of x^3) in a*x^3 + b*x^2 + c^x + d = 0    [-]
+          b_coef, & ! Coefficient b (of x^2) in a*x^3 + b*x^2 + c^x + d = 0    [-]
+          c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
+          d_coef    ! Coefficient d in a*x^3 + b*x^2 + c^x + d = 0             [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ) :: &
+          max_root    ! Maximum root that solves the cubic equation            [-]
+    """
     from clubb_jax.src.CLUBB_core.calc_roots import cubic_solve, quadratic_solve
     from clubb_jax.src.CLUBB_core.constants_clubb import eps
 
@@ -456,12 +628,66 @@ def max_cubic_root(a_coef, b_coef, c_coef, d_coef):
 
 
 def backsolve_Luhar_params(Sk_max, Skx, big_m_max, mixt_frac):
-    """Backsolve Luhar's m (and M) for a responding variable given the setter's mixt_frac and the variable's
-    skewness (adg1_adg2_3d_luhar_pdf.F90:backsolve_Luhar_params, cubic branch — l_use_cubic_backsolve is
-    hardcoded true; Sk_max/big_m_max are then unused). When mixt_frac≈0.5 → m=0.05; when |Skx|<eps → m=0;
-    otherwise alpha = mf(1−mf)/(1−2mf)²·Skx², and m² is the largest real root of
-    (alpha−1)(m²)³ + (3alpha−6)(m²)² + (3alpha−9)(m²) + alpha = 0 (floored at 0.05²). Pure-jnp → differentiable.
-    Returns (big_m_x, small_m_x)."""
+    """This subroutine calculates Luhar's big_m and small_m for the variate 'x'
+    consistent with the mixture fraction of the variate with the largest
+    skewness.
+
+    The relationship between skewness of x (Skx), mixture fraction (a), and
+    Luhar's small m (m) is given by:
+
+    Skx^2 = ( m^2 * ( m^2 + 3 )^2 / ( m^2 + 1 )^3 )
+            * ( 1 - 2*a )^2 / ( a * ( 1 - a ) ).
+
+    Moving the factor involving mixture fraction to the right-hand side:
+
+    ( ( a * ( 1 - a ) ) / ( 1 - 2*a )^2 ) * Skx^2
+    = m^2 * ( m^2 + 3 )^2 / ( m^2 + 1 )^3.
+
+    This can be rewritten as:
+
+    ( ( a * ( 1 - a ) ) / ( 1 - 2*a )^2 ) * Skx^2
+    = ( m^6 + 6*m^4 + 9*m^2 ) / ( m^6 + 3*m^4 + 3*m^2 + 1 ).
+
+    Setting alpha = ( ( a * ( 1 - a ) ) / ( 1 - 2*a )^2 ) * Skx^2, the
+    equation can be rewritten as:
+
+    ( m^6 + 3*m^4 + 3*m^2 + 1 ) * alpha = m^6 + 6*m^4 + 9*m^2.
+
+    This can be rearranged and rewritten as:
+
+    ( alpha - 1 ) * m^6 + ( 3 * alpha - 6 ) * m^4
+    + ( 3 * alpha - 9 ) * m^2 + alpha = 0.
+
+    This can be rewritten again as:
+
+    ( alpha - 1 ) * (m^2)^3 + ( 3 * alpha - 6 ) * (m^2)^2
+    + ( 3 * alpha - 9 ) * (m^2) + alpha = 0.
+
+    The goal is to solve for m^2, and then take the square root of m^2 to
+    solve for m.  This can be accomplished by using the cubic formula (with
+    the l_use_cubic_backsolve option), or else by a quadratic approximation.
+
+    Only the cubic-formula branch is ported: in Fortran,
+    l_use_cubic_backsolve is a parameter set to .true., so the quadratic
+    approximation is never used.
+
+    Returns:
+        (big_m_x, small_m_x)
+
+    Fortran declarations (backsolve_Luhar_params in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), intent(in) :: &
+          Sk_max,    & ! Maximum skewness                                      [-]
+          Skx,       & ! Skewness of the variate solving small_m and big_m for [-]
+          big_m_max, & ! Luhar's big_m of the variate with maximum skewness    [-]
+          mixt_frac    ! Mixture fraction                                      [-]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), intent(out) :: &
+          big_m_x,   & ! Luhar's big_m for the variate being solved for    [-]
+          small_m_x    ! Luhar's small_m for the variate being solved for  [-]
+    """
     from clubb_jax.src.CLUBB_core.constants_clubb import eps
 
     near_half = jnp.abs(mixt_frac - 0.5) < 0.001
@@ -483,11 +709,47 @@ def backsolve_Luhar_params(Sk_max, Skx, big_m_max, mixt_frac):
 
 
 def Luhar_3D_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, wpthlp):
-    """3-D Luhar PDF driver (adg1_adg2_3d_luhar_pdf.F90:Luhar_3D_pdf_driver). The variable with the greatest
-    |skewness| sets the PDF (calc_Luhar_params → mixt_frac); the other two backsolve their m from the setter's
-    mixt_frac (backsolve_Luhar_params); each variable's PDF component means/variances follow from close_Luhar_pdf.
-    Pure-jnp (vectorized 3-way setter select) → differentiable. Returns (w_1, w_2, rt_1, rt_2, thl_1, thl_2,
-    varnce_w_1, varnce_w_2, varnce_rt_1, varnce_rt_2, varnce_thl_1, varnce_thl_2, mixt_frac)."""
+    """Calculates the PDF parameters using the 3D Luhar PDF closure.
+
+    Returns:
+        (w1, w2, rt1, rt2, thl1, thl2, vw1, vw2, vrt1, vrt2, vthl1, vthl2,
+          mixt_frac)
+
+    Fortran declarations (Luhar_3D_pdf_driver in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz
+
+        real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+          wm,     & ! Mean of w-wind component (vertical velocity)  [m/s]
+          rtm,    & ! Mean of total water mixing ratio              [kg/kg]
+          thlm,   & ! Mean of liquid water potential temperature    [K]
+          wp2,    & ! Variance of w (overall)                       [m^2/s^2]
+          rtp2,   & ! Variance of r_t (overall)                     [(kg/kg)^2]
+          thlp2,  & ! Variance of th_l (overall)                    [K^2]
+          Skw,    & ! Skewness of w                                 [-]
+          Skrt,   & ! Skewness of rt                                [-]
+          Skthl,  & ! Skewness of th_l                              [-]
+          wprtp,  & ! Covariance of w and r_t                       [(kg/kg)(m/s)]
+          wpthlp    ! Covariance of w and th_l                      [K(m/s)]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(nz), intent(out) ::  &
+          w_1,          & ! Mean of w (1st PDF component)                      [m/s]
+          w_2,          & ! Mean of w (2nd PDF component)                      [m/s]
+          rt_1,         & ! Mean of r_t (1st PDF component)                  [kg/kg]
+          rt_2,         & ! Mean of r_t (2nd PDF component)                  [kg/kg]
+          thl_1,        & ! Mean of th_l (1st PDF component)                     [K]
+          thl_2,        & ! Mean of th_l (2nd PDF component)                     [K]
+          varnce_w_1,   & ! Variance of w (1st PDF component)              [m^2/s^2]
+          varnce_w_2,   & ! Variance of w (2nd PDF component)              [m^2/s^2]
+          varnce_rt_1,  & ! Variance of r_t (1st PDF component)          [kg^2/kg^2]
+          varnce_rt_2,  & ! Variance of r_t (2nd PDF component)          [kg^2/kg^2]
+          varnce_thl_1, & ! Variance of th_l (1st PDF component)               [K^2]
+          varnce_thl_2, & ! Variance of th_l (2nd PDF component)               [K^2]
+          mixt_frac       ! Mixture fraction (weight of 1st PDF component)       [-]
+    """
     w_tsq, rt_tsq, thl_tsq = w_tol_sqd, rt_tol ** 2, thl_tol ** 2
 
     # calc_Luhar_params for each variable as a potential setter (w uses wp2 as the covariance -> sgn = +1).
@@ -523,13 +785,78 @@ def ADG2_pdf_driver(nz, ngrdcol, sclr_dim, sclr_tol,
                     wm, rtm, thlm, wp2, rtp2, thlp2,
                     Skw, wprtp, wpthlp, sqrt_wp2, beta,
                     sclrm, sclrp2, wpsclrp, l_scalar_calc):
-    """ADG2 PDF driver (adg1_adg2_3d_luhar_pdf.F90:ADG2_pdf_driver), PDF-parameter outputs for w/rt/thl
-    and passive scalars. w's PDF comes from the Luhar closure (calc_Luhar_params + close_Luhar_pdf, with
-    sigma_sqd_w overwritten to min(1/(1+m²), 0.99) for ADG1 consistency); rt, thl, and scalar variables are
-    responders via ADG1_ADG2_responder_params. Pure-jnp → differentiable.
-    Returns (w_1, w_2, rt_1, rt_2, thl_1, thl_2, varnce_w_1, varnce_w_2, varnce_rt_1, varnce_rt_2,
-    varnce_thl_1, varnce_thl_2, mixt_frac, alpha_rt, alpha_thl, sigma_sqd_w, sclr_1, sclr_2, varnce_sclr_1,
-    varnce_sclr_2, alpha_sclr)."""
+    """Calculates the PDF parameters using the Analytic Double Gaussian 2 (ADG2)
+    PDF closure.
+
+    Returns:
+        (w1, w2, rt1, rt2, thl1, thl2, vw1, vw2, vrt1, vrt2, vthl1, vthl2,
+          mixt_frac, alpha_rt, alpha_thl, sigma_sqd_w, sclr1, sclr2,
+          varnce_sclr1, varnce_sclr2, alpha_sclr)
+
+    Fortran declarations (ADG2_pdf_driver in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz,           & ! Number of vertical levels
+          ngrdcol,      & ! Number of grid columns
+          sclr_dim        ! Number of passive scalars
+
+        real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+          sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          wm,       & ! Mean of w-wind component (vertical velocity)  [m/s]
+          rtm,      & ! Mean of total water mixing ratio              [kg/kg]
+          thlm,     & ! Mean of liquid water potential temperature    [K]
+          wp2,      & ! Variance of w (overall)                       [m^2/s^2]
+          rtp2,     & ! Variance of r_t (overall)                     [(kg/kg)^2]
+          thlp2,    & ! Variance of th_l (overall)                    [K^2]
+          Skw,      & ! Skewness of w                                 [-]
+          wprtp,    & ! Covariance of w and r_t                       [(kg/kg)(m/s)]
+          wpthlp,   & ! Covariance of w and th_l                      [K(m/s)]
+          sqrt_wp2    ! Square root of variance of w                  [m/s]
+
+        real ( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          beta       ! CLUBB tunable parameter beta               [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz, sclr_dim), intent(in) ::  &
+          sclrm,   & ! Mean of passive scalar (overall)           [units vary]
+          sclrp2,  & ! Variance of passive scalar (overall)       [(units vary)^2]
+          wpsclrp    ! Covariance of w and passive scalar         [m/s (units vary)]
+
+        logical, intent(in) :: &
+          l_scalar_calc    ! Flag to perform calculations for passive scalars
+
+        !--------------------------- Input/Output Variables ---------------------------
+        type(err_info_type), intent(inout) :: &
+          err_info
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+          w_1,          & ! Mean of w (1st PDF component)                      [m/s]
+          w_2,          & ! Mean of w (2nd PDF component)                      [m/s]
+          rt_1,         & ! Mean of r_t (1st PDF component)                  [kg/kg]
+          rt_2,         & ! Mean of r_t (2nd PDF component)                  [kg/kg]
+          thl_1,        & ! Mean of th_l (1st PDF component)                     [K]
+          thl_2,        & ! Mean of th_l (2nd PDF component)                     [K]
+          varnce_w_1,   & ! Variance of w (1st PDF component)              [m^2/s^2]
+          varnce_w_2,   & ! Variance of w (2nd PDF component)              [m^2/s^2]
+          varnce_rt_1,  & ! Variance of r_t (1st PDF component)          [kg^2/kg^2]
+          varnce_rt_2,  & ! Variance of r_t (2nd PDF component)          [kg^2/kg^2]
+          varnce_thl_1, & ! Variance of th_l (1st PDF component)               [K^2]
+          varnce_thl_2, & ! Variance of th_l (2nd PDF component)               [K^2]
+          mixt_frac,    & ! Mixture fraction (weight of 1st PDF component)       [-]
+          alpha_thl,    & ! Factor relating to normalized variance for th_l      [-]
+          alpha_rt,     & ! Factor relating to normalized variance for r_t       [-]
+          sigma_sqd_w     ! Width of individual w plumes (ADG1 parameter)        [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz, sclr_dim), intent(out) ::  &
+          sclr_1,        & ! Mean of passive scalar (1st PDF component) [units vary]
+          sclr_2,        & ! Mean of passive scalar (2nd PDF component) [units vary]
+          varnce_sclr_1, & ! Variance of pass. sclr (1st PDF comp.) [(units vary)^2]
+          varnce_sclr_2, & ! Variance of pass. sclr (2nd PDF comp.) [(units vary)^2]
+          alpha_sclr       ! Factor relating to normalized variance for sclr     [-]
+    """
     del nz, ngrdcol
     w_tsq = w_tol_sqd
 

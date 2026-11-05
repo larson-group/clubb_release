@@ -28,13 +28,32 @@ from clubb_jax.src.CLUBB_core.parameter_indices import (
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol"))
 def Skx_func(nz: int, ngrdcol: int, xp2, xp3, x_tol: float, clubb_params):
-    """Calculate the skewness of x.
+    """Calculate the skewness of x
 
-    Description:
-    Calculate the skewness of x
+    Returns:
+        Skx
 
-    References:
-    None
+    Fortran declarations (Skx_func in src/CLUBB_core/Skx_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        !--------------------------- Input Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          xp2,   & ! <x'^2>               [(x units)^2]
+          xp3      ! <x'^3>               [(x units)^3]
+
+        real( kind = core_rknd ), intent(in) :: &
+          x_tol     ! x tolerance value                       [(x units)]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        !--------------------------- Output Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+          Skx      ! Skewness of x        [-]
     """
     del nz, ngrdcol
     # ---- Begin Code ----
@@ -50,11 +69,25 @@ def Skx_func(nz: int, ngrdcol: int, xp2, xp3, x_tol: float, clubb_params):
 def compute_gamma_Skw(nz: int, ngrdcol: int, Skw, clubb_params, l_gamma_Skw: bool):
     """Compute gamma as a function of Skw on a single vertical grid.
 
-    Description:
-      Compute gamma as a function of Skw on a single vertical grid.
+    Returns:
+        gamma_Skw_fnc
 
-    References:
-      None
+    Fortran declarations (compute_gamma_Skw in src/CLUBB_core/Skx_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nz,     & ! Number of vertical levels
+          ngrdcol   ! Number of grid columns
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          Skw   ! w skewness on the active grid [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params   ! Array of CLUBB's tunable parameters [units vary]
+
+        !--------------------------- Output Variables --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+          gamma_Skw_fnc   ! Gamma as a function of w skewness on the active grid [-]
     """
     del nz, ngrdcol
 
@@ -93,16 +126,40 @@ def LG_2005_ansatz(
     sigma_sqd_w,
     x_tol: float,
 ):
-    """Calculate the skewness of x using the diagnostic ansatz of Larson and Golaz (2005).
-
-    Description:
-    Calculate the skewness of x using the diagnostic ansatz of Larson and
+    """Calculate the skewness of x using the diagnostic ansatz of Larson and
     Golaz (2005).
 
     References:
     Vincent E. Larson and Jean-Christophe Golaz, 2005:  Using Probability
     Density Functions to Derive Consistent Closure Relationships among
     Higher-Order Moments.  Mon. Wea. Rev., 133, 1023–1042.
+
+    Returns:
+        Skx
+
+    Fortran declarations (LG_2005_ansatz in src/CLUBB_core/Skx_module.F90):
+
+        !-------------------------- Input Variables --------------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          Skw,         & ! Skewness of w                  [-]
+          wpxp,        & ! Turbulent flux of x            [m/s (x units)]
+          wp2,         & ! Variance of w                  [m^2/s^2]
+          xp2,         & ! Variance of x                  [(x units)^2]
+          sigma_sqd_w    ! Normalized variance of w       [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          beta           ! Tunable parameter              [-]
+
+        real( kind = core_rknd ), intent(in) :: &
+          x_tol          ! Minimum tolerance of x         [(x units)]
+
+        !-------------------------- Output Variable --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+          Skx            ! Skewness of x                  [-]
     """
     del nz, ngrdcol
 
@@ -140,13 +197,35 @@ def xp3_LG_2005_ansatz(
     clubb_params,
     x_tol: float,
 ):
-    """Calculate <x'^3> after calculating the skewness of x using the ansatz of Larson and Golaz (2005).
-
-    Description:
-    Calculate <x'^3> after calculating the skewness of x using the ansatz of
+    """Calculate <x'^3> after calculating the skewness of x using the ansatz of
     Larson and Golaz (2005).
 
-    References:
+    Returns:
+        xp3
+
+    Fortran declarations (xp3_LG_2005_ansatz in src/CLUBB_core/Skx_module.F90):
+
+        !-------------------------- Input Variables--------------------------
+        integer, intent(in) :: &
+          nzt, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          Skw_zt,         & ! Skewness of w on thermodynamic levels   [-]
+          wpxp_zt,        & ! Flux of x  (interp. to t-levs.)         [m/s(x units)]
+          wp2_zt,         & ! Variance of w (interp. to t-levs.)      [m^2/s^2]
+          xp2_zt,         & ! Variance of x (interp. to t-levs.)      [(x units)^2]
+          sigma_sqd_w_zt    ! Normalized variance of w (interp. to t-levs.)   [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        real( kind = core_rknd ), intent(in) :: &
+          x_tol             ! Minimum tolerance of x                  [(x units)]
+
+        !-------------------------- Return Variable --------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+          xp3    ! <x'^3> (thermodynamic levels)    [(x units)^3]
     """
     del ngrdcol
     Skx_denom_tol = clubb_params[:, iSkw_denom_coef, None] * x_tol ** 2

@@ -200,7 +200,150 @@ def advance_xp2_xpyp(
     rtp2, thlp2, rtpthlp, up2, vp2,
     sclrp2, sclrprtp, sclrpthlp, err_info: ErrInfo,
 ):
-    """Prognose scalar variances, scalar covariances, and horizontal turbulence components."""
+    """Prognose scalar variances, scalar covariances, and horizontal turbulence components.
+
+    References:
+    https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xpyp_eqns
+
+    https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_vp2_eqns
+
+      Eqn. 13, 14, 15  on p. 3545 of
+      ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+        Method and Model Description'' Golaz, et al. (2002)
+      JAS, Vol. 59, pp. 3540--3551.
+
+    Returns:
+        (rtp2, thlp2, rtpthlp, up2, vp2, sclrp2, sclrprtp, sclrpthlp, err_info,
+          stats)
+
+    Fortran declarations (advance_xp2_xpyp in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------------------ Input Variables ------------------------------
+        integer, intent(in) :: &
+          nzt,      & ! Number of thermodynamic vertical levels
+          nzm,      & ! Number of momentum vertical levels
+          ngrdcol,  & ! Number of grid columns
+          sclr_dim    ! Number of passive scalars
+
+        real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+          sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+        type (grid), intent(in) :: &
+          gr
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
+          invrs_tau_C4_zm,  & ! Inverse time-scale for C4 terms on mom. levels [1/s]
+          invrs_tau_C14_zm, & ! Inverse time-scale for C14 terms on mom. levels [1/s]
+          wm_zm,            & ! w-wind component on momentum levels   [m/s]
+          wprtp,            & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
+          wpthlp,           & ! <w'th_l'> (momentum levels)           [(m K)/s]
+          wpthvp,           & ! <w'th_v'> (momentum levels)           [(m K)/s]
+          wp2,              & ! <w'^2> (momentum levels)              [m^2/s^2]
+          upwp,             & ! <u'w'> (momentum levels)              [m^2/s^2]
+          vpwp,             & ! <v'w'> (momentum levels)              [m^2/s^2]
+          sigma_sqd_w,      & ! sigma_sqd_w (momentum levels)         [-]
+          rtp2_forcing,     & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+          thlp2_forcing,    & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+          rtpthlp_forcing,  & ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
+          rho_ds_zm,        & ! Dry, static density on momentum levs. [kg/m^3]
+          invrs_rho_ds_zm,  & ! Inv. dry, static density @ mom. levs. [m^3/kg]
+          thv_ds_zm           ! Dry, base-state theta_v on mom. levs. [K]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          rtm,              & ! Total water mixing ratio (t-levs)     [kg/kg]
+          thlm,             & ! Liquid potential temp. (t-levs)       [K]
+          um,               & ! u wind (thermodynamic levels)         [m/s]
+          vm,               & ! v wind (thermodynamic levels)         [m/s]
+          wp3,              & ! <w'^3> (thermodynamic levels)         [m^3/s^3]
+          wprtp2,           & ! <w'r_t'^2> (thermodynamic levels)     [m/s (kg/kg)^2]
+          wpthlp2,          & ! <w'th_l'^2> (thermodynamic levels)    [m/s K^2]
+          wprtpthlp,        & ! <w'r_t'th_l'> (thermodynamic levels)  [m/s (kg/kg) K]
+          Kh_zt,            & ! Eddy diffusivity on thermo. levels    [m^2/s]
+          rho_ds_zt,        & ! Dry, static density on thermo. levels [kg/m^3]
+          cloud_frac          ! Cloud fraction (thermodynamic levels) [-]
+
+        type(implicit_coefs_terms), intent(in) :: &
+          pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt             ! Model timestep                                [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+          fcor_y             ! Nontraditional Coriolis parameter         [s^-1]
+                             ! Meridional planetary vorticity. Proportional to cos(latitude)
+
+        ! Passive scalar input
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
+          sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
+          wpsclrp2,    & ! <w'sclr'^2> (thermodynamic levels) [m/s{sclr units}^2]
+          wpsclrprtp,  & ! <w'sclr'r_t'> (thermo. levels)     [m/s{sclr units)kg/kg]
+          wpsclrpthlp    ! <w'sclr'th_l'> (thermo. levels)    [m/s{sclr units}K]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
+          wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          lhs_splat_wp2  ! LHS coefficient of wp2 splatting term  [1/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+          clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+        type(nu_vertical_res_dep), intent(in) :: &
+          nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+        integer, intent(in) :: &
+          iiPDF_type,           & ! Selected option for the two-component normal (double
+                                  ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                                  ! w, chi, and eta) portion of CLUBB's multivariate,
+                                  ! two-component PDF.
+          tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
+          fill_holes_type         ! Specifier for which hole filling method to use
+
+        logical, intent(in) :: &
+          l_ho_nontrad_coriolis,  & ! Flag to implement the nontraditional Coriolis terms in the
+                                    ! prognostic equations of <w'w'>, <u'w'>, and <u'u'>.
+          l_min_xp2_from_corr_wx, & ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2)
+                                    ! on keeping the overall correlation of w and x within the limits
+                                    ! of -max_mag_correlation_flux to max_mag_correlation_flux.
+          l_C2_cloud_frac,        & ! Flag to use cloud fraction to adjust the value of the turbulent
+                                    ! dissipation coefficient, C2.
+          l_upwind_xpyp_ta,       & ! This flag determines whether we want to use an upwind
+                                    ! differencing approximation rather than a centered differencing
+                                    ! for turbulent or mean advection terms. It affects rtp2, thlp2,
+                                    ! up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp.
+          l_godunov_upwind_xpyp_ta,  & ! This flag determines whether we want to use a Godunov-like
+                                       ! upwind differencing approximation rather than a
+                                       ! centered differencing for turbulent or mean advection terms.
+                                       ! It affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp,
+                                       ! & sclrpthlp.
+          l_lmm_stepping, &            ! Apply Linear Multistep Method (LMM) Stepping
+          l_implemented                ! True if CLUBB is being implemented and run in a host model
+
+        !------------------- InOut Variables -------------------
+        type(stats_type), intent(inout) :: &
+          stats
+
+        !------------------------------ Input/Output Variables ------------------------------
+        ! An attribute of (inout) is also needed to import the value of the variances
+        ! at the surface.  Brian.  12/18/05.
+        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
+          rtp2,    & ! <r_t'^2>                      [(kg/kg)^2]
+          thlp2,   & ! <th_l'^2>                     [K^2]
+          rtpthlp, & ! <r_t'th_l'>                   [(kg K)/kg]
+          up2,     & ! <u'^2>                        [m^2/s^2]
+          vp2        ! <v'^2>                        [m^2/s^2]
+
+        ! Passive scalar output
+        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) ::  &
+          sclrp2, sclrprtp, sclrpthlp
+
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+    """
     l_sample = stats.l_sample
     l_scalar_calc = sclr_dim > 0
     initial_rtp2, initial_thlp2, initial_rtpthlp = rtp2, thlp2, rtpthlp
@@ -711,6 +854,99 @@ def solve_xp2_xpyp_with_single_lhs(
     tridiag_solve_method, stats,
     rtp2, thlp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp, err_info,
 ):
+    """This subroutine generates a single lhs matrix and multiple rhs matricies, then
+    solves the system. This should only be used when the lhs matrices for
+    <w'r_t'>, <w'th_l'>, <w'rt'thl'> ,<w'sclr'^2>, <w'sclr'rt'>,  and <w'sclr'thl'>
+    are identical. Otherwise multiple lhs matrices and multiple solves are required.
+
+    The ADG1 PDF must be in use for this subroutine to have the
+    potential to be called.
+
+    Returns:
+        (rtp2, thlp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp, err_info, stats)
+
+    Fortran declarations (solve_xp2_xpyp_with_single_lhs in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        ! -------- Input Variables --------
+        integer, intent(in) :: &
+          nzm,      & ! Number of momentum vertical levels
+          nzt,      & ! Number of thermodynamic vertical levels
+          ngrdcol,  & ! Number of grid columns
+          sclr_dim    ! Number of passive scalars
+
+        real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+          sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+        type (grid), intent(in) :: &
+          gr
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          C2x,              &
+          invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
+          wprtp,            & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
+          wpthlp,           & ! <w'th_l'> (momentum levels)           [(m K)/s]
+          rtp2_forcing,     & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+          thlp2_forcing,    & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+          rtpthlp_forcing     ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          rtm,              & ! Total water mixing ratio (t-levs)     [kg/kg]
+          thlm                ! Liquid potential temp. (t-levs)       [K]
+
+        logical, intent(in) :: &
+          l_scalar_calc, &
+          l_lmm_stepping, &
+          l_implemented  ! True if CLUBB is being implemented and run in a host model
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt             ! Model timestep                                [s]
+
+        ! Passive scalar input
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
+          sclrm          ! Mean value; pass. scalar (t-levs.) [{sclr units}]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
+          wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
+
+        real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: &
+          lhs_ta,       &
+          lhs_diff,     & ! Diffusion contributions to lhs, dissipation term 2
+          lhs_ma          ! Mean advection contributions to lhs
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          rhs_ta_wprtp2,    & ! For <w'rt'^2>
+          rhs_ta_wpthlp2,   & ! For <w'thl'^2>
+          rhs_ta_wprtpthlp    ! For <w'rt'thl'>
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
+          rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
+          rhs_ta_wprtpsclrp,    & ! For <w'sclr'rt'><w'sclr'^2><w'sclr'thl'>
+          rhs_ta_wpthlpsclrp      ! For <w'sclr'thl'>
+
+        integer, intent(in) :: &
+          tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
+        type(stats_type), intent(inout) :: &
+              stats
+
+        ! -------- In/Out Variables --------
+
+        ! An attribute of (inout) is also needed to import the value of the variances
+        ! at the surface.  Brian.  12/18/05.
+        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) :: &
+          rtp2,    & ! <r_t'^2>                      [(kg/kg)^2]
+          thlp2,   & ! <th_l'^2>                     [K^2]
+          rtpthlp    ! <r_t'th_l'>                   [(kg K)/kg]
+
+        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
+          sclrp2, sclrprtp, sclrpthlp
+
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+    """
     l_sample = stats.l_sample
     lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2x, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
@@ -876,6 +1112,107 @@ def solve_xp2_xpyp_with_multiple_lhs(
     l_implemented, tridiag_solve_method, stats,
     rtp2, thlp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp, err_info,
 ):
+    """This subroutine generates different lhs and rhs matrices to solve for.
+
+    Returns:
+        (rtp2, thlp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp, err_info, stats)
+
+    Fortran declarations (solve_xp2_xpyp_with_multiple_lhs in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------------ Input Variables ------------------------
+        integer, intent(in) :: &
+          nzm,      & ! Number of momentum vertical levels
+          nzt,      & ! Number of thermodynamic vertical levels
+          ngrdcol,  & ! Number of grid columns
+          sclr_dim    ! Number of passive scalars
+
+        real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
+          sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+        type (grid), intent(in) :: &
+          gr
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
+          C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
+          invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
+          wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
+          wpthlp,          & ! <w'th_l'> (momentum levels)           [(m K)/s]
+          rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+          thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+          rtpthlp_forcing    ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
+          rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
+          thlm               ! Liquid potential temp. (t-levs)       [K]
+
+        integer, intent(in) :: &
+          iiPDF_type    ! Selected option for the two-component normal (double
+                        ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                        ! w, chi, and eta) portion of CLUBB's multivariate,
+                        ! two-component PDF.
+
+        logical, intent(in) :: &
+          l_scalar_calc, &
+          l_lmm_stepping, &
+          l_implemented  ! True if CLUBB is being implemented and run in a host model
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt             ! Model timestep                                [s]
+
+        ! Passive scalar input
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) ::  &
+          sclrm          ! Mean value; pass. scalar (t-levs.) [{sclr units}]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) ::  &
+          wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
+
+        real( kind = core_rknd ), intent(in), dimension(ndiags3,ngrdcol,nzm) :: &
+          lhs_ta_wprtp2,    & ! Turbulent advection term for <w'rt'^2>
+          lhs_ta_wpthlp2,   & ! Turbulent advection term for <w'thl'^2>
+          lhs_ta_wprtpthlp, & ! Turbulent advection term for <w'rtp'thl'>
+          lhs_diff,         & ! Diffusion contributions to lhs, dissipation term 2
+          lhs_ma              ! Mean advection contributions to lhs
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+          rhs_ta_wprtp2,    & ! For <w'rt'^2>
+          rhs_ta_wpthlp2,   & ! For <w'thl'^2>
+          rhs_ta_wprtpthlp    ! For <w'rt'thl'>
+
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm,sclr_dim), intent(in) :: &
+          lhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
+          lhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
+          lhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
+          rhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
+          rhs_ta_wprtpsclrp,  & ! For <w'sclr'rt'>
+          rhs_ta_wpthlpsclrp    ! For <w'sclr'thl'>
+
+        integer, intent(in) :: &
+          tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        !------------------------ In/Out Variables ------------------------
+
+        ! Input/Output variables
+        ! An attribute of (inout) is also needed to import the value of the variances
+        ! at the surface.  Brian.  12/18/05.
+        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) :: &
+          rtp2,    & ! <r_t'^2>                      [(kg/kg)^2]
+          thlp2,   & ! <th_l'^2>                     [K^2]
+          rtpthlp    ! <r_t'th_l'>                   [(kg K)/kg]
+
+        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
+          sclrp2, sclrprtp, sclrpthlp
+
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+    """
     l_sample = stats.l_sample
     lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2rt_1d, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
@@ -1199,6 +1536,54 @@ def solve_xp2_xpyp_with_multiple_lhs(
 
 @partial(jax.jit, static_argnames=("nzm", "ngrdcol"))
 def xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta, lhs_ma, lhs_diff, lhs_dp1):
+    """Compute LHS tridiagonal matrix for a variance or covariance term
+
+    Notes:
+        For LHS turbulent advection terms:
+            An "over-implicit" weighted time step is applied to this term.
+            The weight of the implicit portion of this term is controlled by
+            the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+            expression below).  A factor is added to the right-hand side of
+            the equation in order to balance a weight that is not equal to 1,
+            such that:
+                 -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+            where X is the variable that is being solved for in a predictive
+            equation (<x'^2> or <x'y'> in this case), y(t) is the linearized
+            portion of the term that gets treated implicitly, and RHS is the
+            portion of the term that is always treated explicitly.  A weight
+            of greater than 1 can be applied to make the term more
+            numerically stable.
+
+    Returns:
+        lhs
+
+    Fortran declarations (xp2_xpyp_lhs in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------- Input Variables -------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        type( grid ), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(in) :: &
+         lhs_ta     ! Turbulent advection contributions to lhs
+
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(in) :: &
+          lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
+          lhs_ma      ! Mean advection contributions to lhs
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          lhs_dp1   ! LHS dissipation term 1
+
+        !------------------- Output Variables -------------------
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(out) :: &
+          lhs         ! Implicit contributions to the term
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt
+    """
     lhs = jnp.zeros((ndiags3, ngrdcol, nzm))
     interior = slice(1, nzm - 1)
     lhs = lhs.at[0, :, interior].set(
@@ -1242,6 +1627,51 @@ def xp2_xpyp_solve(
     nzm, ngrdcol, solve_type, l_implemented, gr, tridiag_solve_method,
     stats, rhs, lhs, err_info,
 ):
+    """Solve a tridiagonal system
+
+    Returns:
+        (solution, err_info, stats)
+
+    Fortran declarations (xp2_xpyp_solve in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        ! ---------------------- Input variables ----------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        integer, intent(in) :: &
+          nrhs  ! Number of right hand side vectors
+
+        logical, intent(in) :: &
+          l_implemented  ! True if CLUBB is being implemented and run in a host model
+
+        integer, intent(in) :: &
+          solve_type ! Variable(s) description
+
+        type( grid ), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        !------------------- Input/Output variables ------------------
+        ! ---------------------- Input/Ouput variables ----------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs), intent(inout) :: &
+          rhs  ! Explicit contributions to x variance/covariance term [units vary]
+
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(inout) :: &
+          lhs  ! Implicit contributions to x variance/covariance term [units vary]
+
+        type(err_info_type), intent(inout) :: &
+          err_info      ! err_info struct containing err_code and err_header
+
+        ! ---------------------- Output Variables ----------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs), intent(out) :: &
+          xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
+    """
     l_sample = stats.l_sample
     l_single_lhs_solve = False
     l_need_rcond = False
@@ -1339,6 +1769,32 @@ def stats_finalize_xp2_xpyp_terms(
     nzm, ngrdcol, solve_type, gr, xapxbp,
     lhs_dp1, lhs_dp1_pr1, lhs_diff, lhs_ta, lhs_ma, stats,
 ):
+    """
+    Fortran declarations (stats_finalize_xp2_xpyp_terms in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !----------------------- Input variables -----------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol, &
+          solve_type
+
+        type(grid), intent(in) :: &
+          gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          xapxbp, &
+          lhs_dp1, &
+          lhs_dp1_pr1
+
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(in) :: &
+          lhs_diff, &
+          lhs_ta, &
+          lhs_ma
+
+        !----------------------- InOut variables -----------------------
+        type(stats_type), intent(inout) :: &
+          stats
+    """
     l_sample = stats.l_sample
     if not l_sample:
         return stats
@@ -1411,6 +1867,86 @@ def xp2_xpyp_uv_rhs(
     lhs_ta, rhs_ta,
     lhs_dp1_C4, lhs_dp1_C14, stats,
 ):
+    """Explicit contributions to u'^2 or v'^2
+
+    Notes:
+       For LHS turbulent advection (ta) term:
+           An "over-implicit" weighted time step is applied to this term.
+           The weight of the implicit portion of this term is controlled by
+           the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+           expression below).  A factor is added to the right-hand side of
+           the equation in order to balance a weight that is not equal to 1,
+           such that:
+                -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+           where X is the variable that is being solved for in a predictive
+           equation (x'^2 or x'y' in this case), y(t) is the linearized
+           portion of the term that gets treated implicitly, and RHS is the
+           portion of the term that is always treated explicitly.  A weight
+           of greater than 1 can be applied to make the term more
+           numerically stable.
+
+    Returns:
+        (rhs, stats)
+
+    Fortran declarations (xp2_xpyp_uv_rhs in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------- Input Variables -------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        integer, intent(in) :: solve_type
+
+        ! For "over-implicit" weighted time step.
+        ! This vector holds output from the LHS (implicit) portion of a term at a
+        ! given vertical level.  This output is weighted and applied to the RHS.
+        ! This is used if the implicit portion of the term is "over-implicit", which
+        ! means that the LHS contribution is given extra weight (>1) in order to
+        ! increase numerical stability.  A weighted factor must then be applied to
+        ! the RHS in order to balance the weight.
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(in) :: &
+          lhs_ta     ! LHS turbulent advection term
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rhs_ta,           & ! RHS turbulent advection terms
+          wp2,              & ! w'^2 (momentum levels)                      [m^2/s^2]
+          wpthvp,           & ! w'th_v' (momentum levels)                     [K m/s]
+          invrs_tau_C4_zm,  & ! Inverse time-scale for C4 terms on mom. levels  [1/s]
+          invrs_tau_C14_zm, & ! Inverse time-scale for C14 terms on mom. levels [1/s]
+          wpxap,            & ! w'x_a' (momentum levels)                    [m^2/s^2]
+          wpxbp,            & ! w'x_b' (momentum levels)                    [m^2/s^2]
+          xap2,             & ! x_a'^2 (momentum levels)                    [m^2/s^2]
+          xbp2,             & ! x_b'^2 (momentum levels)                    [m^2/s^2]
+          thv_ds_zm,        & ! Dry, base-state theta_v on momentum levs.         [K]
+          lhs_splat_wp2       ! LHS coefficient of wp2 splatting term           [1/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xam,              & ! x_am (thermodynamic levels)                     [m/s]
+          xbm                 ! x_bm (thermodynamic levels)                     [m/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          lhs_dp1_C4,  & ! LHS dissipation term 1, for up2 vp2 using C14
+          lhs_dp1_C14    ! LHS dissipation term 1, for up2 vp2 using C4
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          C4,        & ! Model parameter C_4                         [-]
+          C_uu_shr,  & ! Model parameter C_uu_shr                    [-]
+          C_uu_buoy, & ! Model parameter C_uu_buoy                   [-]
+          C14          ! Model parameter C_{14}                      [-]
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        !------------------- Output Variables -------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          rhs    ! Explicit contributions to x variance/covariance terms
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt
+    """
     l_sample = stats.l_sample
     if solve_type == xp2_xpyp_vp2:
         name_ta, name_tp, name_dp1 = "vp2_ta", "vp2_tp", "vp2_dp1"
@@ -1531,6 +2067,77 @@ def xp2_xpyp_rhs(
     Cn, invrs_tau_zm, threshold,
     lhs_ta, rhs_ta, stats,
 ):
+    """Explicit contributions to r_t'^2, th_l'^2, r_t'th_l', sclr'r_t',
+    sclr'th_l', or sclr'^2.
+
+    Note:
+      For LHS turbulent advection term:
+         An "over-implicit" weighted time step is applied to this term.
+         The weight of the implicit portion of this term is controlled by
+         the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+         expression below).  A factor is added to the right-hand side of
+         the equation in order to balance a weight that is not equal to 1,
+         such that:
+              -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+         where X is the variable that is being solved for in a predictive
+         equation (x'^2 or x'y' in this case), y(t) is the linearized
+         portion of the term that gets treated implicitly, and RHS is the
+         portion of the term that is always treated explicitly.  A weight
+         of greater than 1 can be applied to make the term more
+         numerically stable.
+
+    Returns:
+        (rhs, stats)
+
+    Fortran declarations (xp2_xpyp_rhs in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------- Input Variables -------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        integer, intent(in) :: solve_type
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt                 ! Model timestep                              [s]
+
+        ! For "over-implicit" weighted time step.
+        ! This vector holds output from the LHS (implicit) portion of a term at a
+        ! given vertical level.  This output is weighted and applied to the RHS.
+        ! This is used if the implicit portion of the term is "over-implicit", which
+        ! means that the LHS contribution is given extra weight (>1) in order to
+        ! increase numerical stability.  A weighted factor must then be applied to
+        ! the RHS in order to balance the weight.
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(in) :: &
+          lhs_ta    ! LHS turbulent advection (ta) term
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rhs_ta,                  & ! RHS turbulent advection (ta) term
+          wpxap,                   & ! w'x_a' (momentum levels)     [m/s{x_a units}]
+          wpxbp,                   & ! w'x_b' (momentum levels)     [m/s{x_b units}]
+          xapxbp,                  & ! x_a'x_b' (m-levs)          [{x_a un}{x_b un}]
+          xpyp_forcing,            & ! <x'y'> forcing (m-levs)      [{x un}{x un}/s]
+          invrs_tau_zm,            & ! Time-scale tau on momentum levels       [1/s]
+          Cn                         ! Coefficient C_n                           [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xam,                     & ! x_am (thermodynamic levels)     [{x_a units}]
+          xbm                        ! x_bm (thermodynamic levels)     [{x_b units}]
+
+        real( kind = core_rknd ), intent(in) :: &
+          threshold    ! Smallest allowable mag. value for x_a'x_b'  [{x_am units}
+                       !                                              *{x_bm units}]
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        !------------------- Output Variables -------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          rhs     ! Explicit contributions to x variance/covariance terms
+    """
     l_sample = stats.l_sample
     if solve_type == xp2_xpyp_rtp2:
         name_ta, name_tp, name_tp1, name_tp2, name_dp1, name_f = (
@@ -1661,6 +2268,127 @@ def calc_xp2_xpyp_ta_terms(
     beta, iiPDF_type, l_upwind_xpyp_ta,
     l_godunov_upwind_xpyp_ta, stats,
 ):
+    """This procedure calculates all the turbulent advection terms needed by the
+    various LHS and RHS matrices. In general, first the implicit coeficients are
+    calculated and used to calculate the LHS turbulent advection terms, then the
+    explicit terms are calculated and used to calculate the RHS turbulent advection
+    terms.
+
+    Returns:
+        (lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp, lhs_ta_wpup2,
+          lhs_ta_wpvp2, lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,
+          rhs_ta_wprtp2, rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2,
+          rhs_ta_wpvp2, rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,
+          stats)
+
+    Fortran declarations (calc_xp2_xpyp_ta_terms in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------- Input Variables -------------------
+        integer, intent(in) :: &
+          nzm,      & ! Number of momentum vertical levels
+          nzt,      & ! Number of thermodynamic vertical levels
+          ngrdcol,  & ! Number of grid columns
+          sclr_dim    ! Number of passive scalars
+
+        type (grid), intent(in) :: &
+          gr
+
+        type(implicit_coefs_terms), intent(in) :: &
+          pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) :: &
+          wpsclrp         ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) :: &
+          wpsclrp2,     & ! <w'sclr'^2> (thermodynamic levels) [m/s{sclr units}^2]
+          wpsclrprtp,   & ! <w'sclr'r_t'> (thermo. levels)     [m/s{sclr units)kg/kg]
+          wpsclrpthlp     ! <w'sclr'th_l'> (thermo. levels)    [m/s{sclr units}K]
+
+        ! Passive scalar output
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) :: &
+          sclrp2,       &
+          sclrprtp,     &
+          sclrpthlp
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          wp2,              & ! <w'^2> (momentum levels)              [m^2/s^2]
+          wprtp,            & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
+          wpthlp,           & ! <w'th_l'> (momentum levels)           [(m K)/s]
+          rtp2,             & ! <r_t'^2>                              [(kg/kg)^2]
+          thlp2,            & ! <th_l'^2>                             [K^2]
+          rtpthlp,          & ! <r_t'th_l'>                           [(kg K)/kg]
+          upwp,             & ! <u'w'> (momentum levels)              [m^2/s^2]
+          vpwp,             & ! <v'w'> (momentum levels)              [m^2/s^2]
+          up2,              & ! <u'^2> (momentum levels)              [m^s/s^2]
+          vp2,              & ! <v'^2> (momentum levels)              [m^2/s^2]
+          invrs_rho_ds_zm,  & ! Inv. dry, static density @ mom. levs. [m^3/kg]
+          rho_ds_zm,        & ! Dry, static density on momentum levs. [kg/m^3]
+          wp3_on_wp2,       & ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
+          sigma_sqd_w         ! sigma_sqd_w (momentum levels)         [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          wp2_zt,           & ! <w'^2> interpolated to thermo. levels [m^2/s^2]
+          wprtp2,           & ! <w'r_t'^2> (thermodynamic levels)     [m/s (kg/kg)^2]
+          wpthlp2,          & ! <w'th_l'^2> (thermodynamic levels)    [m/s K^2]
+          wprtpthlp,        & ! <w'r_t'th_l'> (thermodynamic levels)  [m/s (kg/kg) K]
+          rho_ds_zt,        & ! Dry, static density on thermo. levels [kg/m^3]
+          wp3_on_wp2_zt       ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
+
+        logical, intent(in) :: &
+          l_scalar_calc
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          beta    ! CLUBB tunable parameter beta
+
+        integer, intent(in) :: &
+          iiPDF_type    ! Selected option for the two-component normal (double
+                        ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                        ! w, chi, and eta) portion of CLUBB's multivariate,
+                        ! two-component PDF.
+
+        logical, intent(in) :: &
+          l_upwind_xpyp_ta, & ! This flag determines whether we want to use an upwind differencing
+                              ! approximation rather than a centered differencing for turbulent or
+                              ! mean advection terms. It affects rtp2, thlp2, up2, vp2, sclrp2,
+                              ! rtpthlp, sclrprtp, & sclrpthlp.
+          l_godunov_upwind_xpyp_ta ! This flag determines whether we want to use a Godunov-like upwind
+                                   ! approximation rather than a centered differencing for  turbulent
+                                   ! or mean advection terms. It affects rtp2, thlp2, up2, vp2, sclrp2,
+                                   ! rtpthlp, sclrprtp, & sclrpthlp.
+
+        type(stats_type), intent(inout) :: &
+              stats
+
+        !------------------- Output Variables -------------------
+
+        ! Implicit (LHS) turbulent advection terms
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(out) :: &
+          lhs_ta_wprtp2,    & ! For <w'rt'^2>
+          lhs_ta_wpthlp2,   & ! For <w'thl'^2>
+          lhs_ta_wprtpthlp, & ! For <w'rt'thl'>
+          lhs_ta_wpup2,     & ! For <w'u'^2>
+          lhs_ta_wpvp2        ! For <w'v'^2>
+
+        ! Explicit (RHS) turbulent advection terms
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          rhs_ta_wprtp2,    & ! For <w'rt'^2>
+          rhs_ta_wpthlp2,   & ! For <w'thl'^2>
+          rhs_ta_wprtpthlp, & ! For <w'rt'thl'>
+          rhs_ta_wpup2,     & ! For <w'u'^2>
+          rhs_ta_wpvp2        ! For <w'v'^2>
+
+        ! Implicit (LHS) turbulent advection terms for scalars
+        real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm,sclr_dim), intent(out) :: &
+          lhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
+          lhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
+          lhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
+
+        ! Explicit (RHS) turbulent advection terms for scalars
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(out) :: &
+          rhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
+          rhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
+          rhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
+    """
     l_sample = stats.l_sample
     lhs_ta_wprtp2 = jnp.zeros((ndiags3, ngrdcol, nzm))
     lhs_ta_wpthlp2 = jnp.zeros((ndiags3, ngrdcol, nzm))
@@ -2353,9 +3081,46 @@ def term_tp_rhs(nzm, nzt, ngrdcol, xam, xbm, wpxbp, wpxap, invrs_dzm):
     follows:
 
     The values of w'x_a' and w'x_b' are found on the momentum levels, whereas
-    the values of x_am and x_bm are found on the thermodynamic levels.
+    the values of x_am and x_bm are found on the thermodynamic levels.  The
+    derivatives of both x_am and x_bm are taken over the intermediate
+    (central) momentum level.  All of the remaining mathematical operations
+    take place at the central momentum level, yielding the desired result.
+
+    ---------xam--------------xbm---------------------------- t(k)
+
+    ===wpxap======d(xam)/dz=========d(xbm)/dz===wpxbp======== m(k)
+
+    ---------xam--------------xbm---------------------------- t(k-1)
+
+    The vertical indices t(k), m(k), and t(k-1) correspond with altitudes
+    zt(k), zm(k), and zt(k-1), respectively.  The letter "t" is used for
+    thermodynamic levels and the letter "m" is used for momentum levels.
 
     invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
+
+    Returns:
+        rhs
+
+    Fortran declarations (term_tp_rhs in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------------ Input variables ------------------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xam,       & ! x_am(k)                     [{x_am units}]
+          xbm          ! x_bm(k)                     [{x_bm units}]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          wpxbp,     & ! w'x_b'(k)                   [m/s {x_bm units}]
+          wpxap,     & ! w'x_a'(k)                   [m/s {x_am units}]
+          invrs_dzm    ! Inverse of grid spacing (k) [1/m]
+
+        !------------------------ Return Variable ------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          rhs
     """
     del nzt
     rhs = jnp.zeros((ngrdcol, nzm))
@@ -2377,11 +3142,64 @@ def term_dp1_lhs(nzm, ngrdcol, gr, Cn, invrs_tau_zm):
 
     The d(x_a'x_b')/dt equation contains dissipation term 1:
 
-    - ( C_n / tau_zm ) * x_a'x_b'.
+    - ( C_n / tau_zm ) x_a'x_b'.
 
     For cases where x_a'x_b' is a variance (in other words, where x_a and x_b
     are the same variable), the term is damped to a certain positive
-    threshold.
+    threshold, such that:
+
+    - ( C_n / tau_zm ) * ( x_a'x_b' - threshold ).
+
+    However, if x_a'x_b' is u'^2 or v'^2, damping to a minimum threshold value
+    is part of pressure term 1 and is handled as part of function 'term_pr1'.
+    Thus, for u'^2 and v'^2, function 'term_dp1_lhs' is called, but function
+    'term_dp1_rhs' is not called, as function 'term_pr1' is called instead.
+
+    For cases where x_a'x_b' is a covariance (in other words, where x_a and
+    x_b are different variables), threshold is set to 0, and the expression
+    reverts to the form found in the first equation.
+
+    This term is broken into implicit and explicit portions.  The equations
+    for u'^2, v'^2, and any covariances only include the implicit portion.
+    The implicit portion of this term is:
+
+    - ( C_n / tau_zm ) x_a'x_b'(t+1).
+
+    Note:  When the implicit term is brought over to the left-hand side,
+           the sign is reversed and the leading "-" in front of the term
+           is changed to a "+".
+
+    The timestep index (t+1) means that the value of x_a'x_b' being used is
+    from the next timestep, which is being advanced to in solving the
+    d(x_a'x_b')/dt equation.
+
+    The values of x_a'x_b' are found on momentum levels.  The values of
+    time-scale tau_zm are also found on momentum levels.
+
+    Note:  For equations that use pressure term 1 (such as the equations for
+           u'^2 and v'^2), C_n = ( 2*C_4 + C_14 ) / 3; which combines the
+           implicit contributions for dissipation term 1 and pressure term 1
+           into one expression.  Otherwise, C_n = C_2.
+
+    Returns:
+        lhs
+
+    Fortran declarations (term_dp1_lhs in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          Cn,          & ! Coefficient C_n                       [-]
+          invrs_tau_zm   ! Inverse time-scale tau at momentum levels (k) [1/s]
+
+        !--------------------------- Return Variables ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+          lhs
     """
     lhs = jnp.zeros((ngrdcol, nzm))
     interior = slice(1, nzm - 1)
@@ -2398,12 +3216,58 @@ def term_dp1_lhs(nzm, ngrdcol, gr, Cn, invrs_tau_zm):
 def term_dp1_rhs(nzm, ngrdcol, Cn, invrs_tau_zm, threshold):
     """Dissipation term 1 for x_a'x_b':  explicit portion of the code.
 
+    The d(x_a'x_b')/dt equation contains dissipation term 1:
+
+    - ( C_n / tau_zm ) x_a'x_b'.
+
+    For cases where x_a'x_b' is a variance (in other words, where x_a and x_b
+    are the same variable), the term is damped to a certain positive
+    threshold, such that:
+
+    - ( C_n / tau_zm ) * ( x_a'x_b' - threshold ).
+
+    However, if x_a'x_b' is u'^2 or v'^2, damping to a minimum threshold value
+    is part of pressure term 1 and is handled as part of function 'term_pr1'.
+    Thus, for u'^2 and v'^2, function 'term_dp1_lhs' is called, but function
+    'term_dp1_rhs' is not called, as function 'term_pr1' is called instead.
+
+    For cases where x_a'x_b' is a covariance (in other words, where x_a and
+    x_b are different variables), threshold is set to 0, and the expression
+    reverts to the form found in the first equation.
+
+    This term is broken into implicit and explicit portions.  The equations
+    for u'^2, v'^2, and any covariances only include the implicit portion.
     The explicit portion of this term is:
 
     + ( C_n / tau_zm ) * threshold.
 
     The values of time-scale tau_zm and the threshold are found on the
     momentum levels.
+
+    Note:  The equations that use pressure term 1 (such as the equations for
+           u'^2 and v'^2) do not call this function.  Thus, within this
+           function, C_n = C_2.
+
+    Returns:
+        rhs
+
+    Fortran declarations (term_dp1_rhs in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          Cn,             & ! Coefficient C_n                               [-]
+          invrs_tau_zm      ! Time-scale tau at momentum levels (k)         [1/s]
+
+        real( kind = core_rknd ) :: &
+          threshold         ! Minimum allowable magnitude value of x_a'x_b' [units vary]
+
+        !--------------------------- Return Variable ---------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          rhs
     """
     del ngrdcol
     rhs = Cn[:, :nzm] * invrs_tau_zm[:, :nzm] * threshold
@@ -2415,11 +3279,101 @@ def term_pr1(nzm, ngrdcol, C4, C14, xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm
     """Pressure term 1 for x_a'x_b':  explicit portion of the code.
 
     Note:  Pressure term 1 is only used when x_a'x_b' is either u'^2 or v'^2.
+           For the following description, pressure term 2 for u'^2 is used as
+           the example.  Pressure term 2 for v'^2 is the same as pressure
+           term 2 for u'^2, except that the v'^2 and u'^2 variables are
+           switched.
+
+    The d(u'^2)/dt equation contains dissipation term 1:
+
+    - ( C_4 / tau_zm ) * ( u'^2 - (2/3)*em );
+
+    where em = (1/2) * ( u'^2 + v'^2 + w'^2 );
+
+    and with the substitution applied, dissipation term 1 becomes:
+
+    - ( C_4 / tau_zm ) * ( u'^2 - (1/3) * ( u'^2 + v'^2 + w'^2 ) ).
+
+    The d(u'^2)/dt equation also contains pressure term 1:
+
+    - (2/3) * epsilon;
+
+    where epsilon = C_14 * ( em / tau_zm ).
+
+    Additionally, since pressure term 1 is a damping term, em is damped only
+    to it's minimum threshold value, em_min, where:
+
+    em_min = (1/2) * ( u'^2|_min + v'^2|_min + w'^2|_min )
+         = (1/2) * ( w_tol^2 + w_tol^2 + w_tol^2 )
+         = (3/2) * w_tol^2.
+
+    With the damping threshold applied, epsilon becomes:
+
+    epsilon = C_14 * ( ( em - em_min ) / tau_zm );
+
+    and with all substitutions applied, pressure term 1 becomes:
+
+    - (2/3) * ( C_14 / tau_zm )
+            * [ (1/2) * ( u'^2 + v'^2 + w'^2 ) - (3/2) * w_tol^2 ].
+
+    Dissipation term 1 and pressure term 1 are combined and simplify to:
+
+    - [ ( 2*C_4 + C_14 ) / ( 3 * tau_zm ) ] * u'^2
+       + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2 + w'^2 )
+       + ( C_14 / tau_zm ) * w_tol^2.
 
     The combined term has both implicit and explicit components.
+    The implicit component is:
+
+    - [ ( 2*C_4 + C_14 ) / ( 3 * tau_zm ) ] * u'^2(t+1).
+
+    Note:  When the implicit term is brought over to the left-hand side,
+           the sign is reversed and the leading "-" in front of the term
+           is changed to a "+".
+
+    Timestep index (t) stands for the index of the current timestep, while
+    timestep index (t+1) stands for the index of the next timestep, which is
+    being advanced to in solving the d(x_a'x_b')/dt equation.
+
     The implicit component of the combined dp1 and pr1 term is solved in
     function "term_dp1_lhs" above, where "( 2*C_4 + C_14 ) / 3" is sent in
     as "C_n".
+
+    The explicit component of the combined dp1 and pr1 term is:
+
+    + [ ( C_4 - C_14 ) / ( 3 * tau_zm ) ] * ( v'^2(t) + w'^2(t) )
+    + ( C_14 / tau_zm ) * w_tol^2;
+
+    and is discretized as follows:
+
+    The values for v'^2 and w'^2, as well as for tau_zm, are found on the
+    momentum levels.  The mathematical operations all take place on the
+    momentum levels, yielding the desired result.
+
+    Returns:
+        rhs
+
+    Fortran declarations (term_pr1 in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------------- Input Variables -------------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          C4,              & ! Model parameter C_4                                 [-]
+          C14                ! Model parameter C_14                                [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          xbp2,            & ! v'^2(k) (if solving for u'^2) or vice versa         [m^2/s^2]
+          wp2,             & ! w'^2(k)                                             [m^2/s^2]
+          invrs_tau_C4_zm, & ! Time-scale tau for C4 terms at momentum levels (k)  [1/s]
+          invrs_tau_C14_zm   ! Time-scale tau for C14 terms at momentum levels (k) [1/s]
+
+        ! Return Variable
+        !------------------------- Return Variables -------------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+          rhs
     """
     rhs = jnp.zeros((ngrdcol, nzm))
     interior = slice(1, nzm - 1)
@@ -2445,6 +3399,9 @@ def term_pr2(
     """Pressure term 2 for x_a'x_b':  explicit portion of the code.
 
     Note:  Pressure term 2 is only used when x_a'x_b' is either u'^2 or v'^2.
+           For the following description, pressure term 2 for u'^2 is used as
+           the example.  Pressure term 2 for v'^2 is the exact same as
+           pressure term 2 for u'^2.
 
     The d(u'^2)/dt equation contains pressure term 2:
 
@@ -2452,6 +3409,62 @@ def term_pr2(
 
     Note that below we have broken up C5 into C_uu_shr for shear terms and
     C_uu_buoy for buoyancy terms.
+
+    This term is solved for completely explicitly and is discretized as
+    follows:
+
+    The values of w'th_v', u'w', and v'w' are found on the momentum levels,
+    whereas the values of um and vm are found on the thermodynamic levels.
+    Additionally, the values of thv_ds_zm are found on the momentum levels.
+    The derivatives of both um and vm are taken over the intermediate
+    (central) momentum level.  All the remaining mathematical operations take
+    place at the central momentum level, yielding the desired result.
+
+    -----um--------------vm---------------------------------------- t(k)
+
+    =upwp====d(um)/dz========d(vm)/dz==vpwp===thv_ds_zm==wpthvp==== m(k)
+
+    -----um--------------vm---------------------------------------- t(k-1)
+
+    The vertical indices t(k), m(k), and t(k-1) correspond with altitudes
+    zt(k), zm(k), and zt(k-1), respectively.  The letter "t" is used for
+    thermodynamic levels and the letter "m" is used for momentum levels.
+
+    invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
+
+    Returns:
+        rhs_pr2
+
+    Fortran declarations (term_pr2 in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        ! ------------ Input Variables ------------
+        integer, intent(in) :: &
+          nzm, &
+          nzt, &
+          ngrdcol
+
+        type (grid), intent(in) :: gr
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+          C_uu_shr,  & ! Model parameter C_uu_shr                       [-]
+          C_uu_buoy    ! Model parameter C_uu_buoy                      [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
+          wpthvp,    & ! w'th_v'(k)                                     [m/K/s]
+          upwp,      & ! u'w'(k)                                        [m^2/s^2]
+          vpwp         ! v'w'(k)                                        [m^2/s^2]
+
+        ! Note: Entire arrays of um and vm are now required rather than um and vm
+        ! only at levels k and k+1.  The entire array is necessary when a vertical
+        ! average calculation of d(um)/dz and d(vm)/dz is used. --ldgrant March 2010
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          um,  & ! mean zonal wind       [m/s]
+          vm     ! mean meridional wind  [m/s]
+
+        ! ------------ Output Variable ------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+          rhs_pr2
     """
     del nzt
     rhs_pr2 = jnp.zeros((ngrdcol, nzm))
@@ -2488,7 +3501,40 @@ def pos_definite_variances(
     nzm, ngrdcol, gr, solve_type, fill_holes_type, dt, tolerance, rho_ds_zm,
     stats, xp2_np1,
 ):
-    """Use the hole filling code to make a variance term positive definite."""
+    """Use the hole filling code to make a variance term positive definite
+
+    Returns:
+        (xp2_np1, stats)
+
+    Fortran declarations (pos_definite_variances in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        !------------------- Input variables ------------------
+        integer, intent(in) :: &
+          nzm, &
+          ngrdcol
+
+        type (grid), intent(in) :: &
+          gr
+
+        integer, intent(in) :: &
+          solve_type, &
+          fill_holes_type
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt        ! Model timestep              [s]
+
+        real( kind = core_rknd ), intent(in) :: &
+          tolerance ! Threshold for xp2_np1       [units vary]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          rho_ds_zm    ! Dry, static density on momentum levels         [kg/m^3]
+
+        type(stats_type), intent(inout) :: &
+          stats
+
+        real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
+          xp2_np1   ! Variance for <n+1>          [units vary]
+    """
     l_sample = stats.l_sample
     if solve_type == xp2_xpyp_rtp2:
         name_pd = "rtp2_pd"
@@ -2529,7 +3575,51 @@ def update_xp2_mc(
     wm, exner, rrm_evap, pdf_params: pdf_parameter,
     rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc, rtpthlp_mc,
 ):
-    """Python port of update_xp2_mc from advance_xp2_xpyp_module.F90."""
+    """This subroutine is for use when l_morr_xp2_mc = .true.
+    The effects of rain evaporation on rtp2 and thlp2 are included by
+    assuming rain falls through the moist (cold) portion of the pdf.
+    This is accomplished by defining a precip_fraction and assuming a double
+    delta shaped pdf, such that the evaporation makes the moist component
+    moister and the colder component colder. Calculations are done using
+    variables on the zt grid, and the outputs are on the zm grid --storer
+
+    Returns:
+        (rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc, rtpthlp_mc)
+
+    Fortran declarations (update_xp2_mc in src/CLUBB_core/advance_xp2_xpyp_module.F90):
+
+        ! -------------------- Input Variables --------------------
+        integer, intent(in) :: &
+          nzm,      & ! Momentum points in the Vertical        [-]
+          nzt,      & ! Thermodynamic points in the Vertical        [-]
+          ngrdcol
+
+        type(grid), intent(in) :: gr
+
+        real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          cloud_frac, &       !Cloud fraction                        [-]
+          rcm, &              !Cloud water mixing ratio              [kg/kg]
+          rvm, &              !Vapor water mixing ratio              [kg/kg]
+          thlm, &             !Liquid potential temperature          [K]
+          wm, &               !Mean vertical velocity                [m/s]
+          exner, &            !Exner function                        [-]
+          rrm_evap         !Evaporation of rain                   [kg/kg/s]
+                              !It is expected that this variable is negative, as
+                              !that is the convention in Morrison microphysics
+
+        type(pdf_parameter), intent(in) :: &
+          pdf_params ! PDF parameters
+
+        ! -------------------- Input/Output Variables --------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
+          rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
+          thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
+          wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
+          wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2]
+          rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
+    """
     cloud_frac = cloud_frac
     rcm = rcm
     rvm = rvm

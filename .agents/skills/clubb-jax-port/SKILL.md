@@ -60,6 +60,18 @@ their strict interface or waive numerical coverage.
   edit the test, including its allowlists. If your change makes an allowlist
   entry stale or needs a new exception, stop and report the test output to the
   user so a human can update the test or revise the change.
+- Generate the docstrings of ported routines with
+  [port_fortran_declarations_to_jax_docstrings.py](../../../utilities/port_fortran_declarations_to_jax_docstrings/README.md)
+  after adding or changing a JAX routine with a Fortran counterpart, or its
+  Fortran comments or arguments:
+  `python3 utilities/port_fortran_declarations_to_jax_docstrings/port_fortran_declarations_to_jax_docstrings.py -write_description -modules <module>`.
+  It writes the full Fortran description, references, returned values and
+  argument declarations. Do not edit that text in the JAX file; record
+  adaptations of Fortran text that does not apply to JAX (Fortran-only names
+  such as LAPACK, unported branches, other real JAX differences) in
+  `utilities/port_fortran_declarations_to_jax_docstrings/custom_ports_of_fortran_descriptions.jsonc`
+  and rerun. Fix wrong or nonstandard Fortran comments in the Fortran instead.
+  Its `-check` must pass; the clubb_jax Jenkins job runs it.
 - Use current JAX state/types/grid infrastructure and same-named source types.
   Reuse shared infrastructure rather than creating per-file conversion layers.
 - Keep physics array math in JAX. Use fixed shapes, functional updates, masks
@@ -194,7 +206,8 @@ Use [testing and reporting](../clubb-testing-and-reporting/SKILL.md) for final
 check selection and reporting Jenkins links, extra local coverage and failures.
 
 Finish with the faithful-port completion audit, including comments, spacing,
-argument grouping, every new helper and no new failures of the filename-parity test.
+argument grouping, every new helper, no new failures of the filename-parity test
+and a passing `port_fortran_declarations_to_jax_docstrings.py -check`.
 Check the code you added or changed against the "CLUBB coding standards in
 Python" section above. Report structural and numerical results separately, remaining support gates
 and untested configurations. Do not declare

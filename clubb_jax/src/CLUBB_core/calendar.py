@@ -23,9 +23,23 @@ def _itrunc_div(a, b):
 
 
 def gregorian2julian_date(day, month, year):
-    """Compute the Julian Date from a Gregorian date.
+    """Computes the Julian Date (gregorian2julian), or the number of days since
+    1 January 4713 BC, given a Gregorian Calender date (day, month, year).
 
-    Reference: Fliegel and van Flandern (1968).
+    References:
+    Fliegel, H. F. and van Flandern, T. C.,
+    Communications of the ACM, Vol. 11, No. 10 (October, 1968)
+
+    Returns:
+        gregorian2julian_date
+
+    Fortran declarations (gregorian2julian_date in src/CLUBB_core/calendar.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          day,        & ! Gregorian Calendar Day for given Month        [dd]
+          month,      & ! Gregorian Calendar Month for given Year       [mm]
+          year          ! Gregorian Calendar Year                       [yyyy]
     """
     # ---- Begin Code ----
     I = jnp.asarray(year, dtype=jnp.int32)
@@ -41,9 +55,27 @@ def gregorian2julian_date(day, month, year):
 
 
 def julian2gregorian_date(julian_date):
-    """Compute the Gregorian calendar date from a Julian date.
+    """Computes the Gregorina Calendar date (day, month, year)
+    given the Julian date (julian_date).
 
-    Returns Fortran outputs ``day, month, year`` in that order.
+    References:
+    Fliegel, H. F. and van Flandern, T. C.,
+    Communications of the ACM, Vol. 11, No. 10 (October, 1968)
+    http://portal.acm.org/citation.cfm?id=364097
+
+    Returns:
+        (K, J, I)
+
+    Fortran declarations (julian2gregorian_date in src/CLUBB_core/calendar.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: julian_date ! Julian date being converted from
+
+        !--------------------------- Output Variables ---------------------------
+        integer, intent(out)::  &
+          day,     & ! Gregorian calender day for given Month       [dd]
+          month,   & ! Gregorian calender month for given Year      [mm]
+          year       ! Gregorian calender year                      [yyyy]
     """
     # ---- Begin Code ----
     L = jnp.asarray(julian_date, dtype=jnp.int32) + 68569
@@ -60,7 +92,16 @@ def julian2gregorian_date(julian_date):
 
 
 def leap_year(year):
-    """Determine whether the given year is a leap year."""
+    """Determines if the given year is a leap year.
+
+    Returns:
+        leap_year
+
+    Fortran declarations (leap_year in src/CLUBB_core/calendar.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: year ! Gregorian Calendar Year [yyyy]
+    """
     # ---- Begin Code ----
     year = jnp.asarray(year, dtype=jnp.int32)
     leap_year = (year % 4 == 0) & ~((year % 100 == 0) & (year % 400 != 0))
@@ -71,10 +112,35 @@ def compute_current_date_api(
     previous_day, previous_month, previous_year,
     seconds_since_previous_date,
 ):
-    """Compute the current Gregorian date from a previous date and elapsed seconds.
+    """Computes the current Gregorian date from a previous date and
+    the seconds that have transpired since that date.
 
-    Returns Fortran outputs ``current_day, current_month, current_year,
-    seconds_since_current_date`` in that order.
+    Returns:
+        (current_day, current_month, current_year, seconds_since_current_date)
+
+    Fortran declarations (compute_current_date_api in src/CLUBB_core/calendar.F90):
+
+        !--------------------------- Input Variables ---------------------------
+
+        ! Previous date
+        integer, intent(in) :: &
+          previous_day,    & ! Day of the month      [dd]
+          previous_month,  & ! Month of the year     [mm]
+          previous_year      ! Year                  [yyyy]
+
+        real(kind=time_precision), intent(in) :: &
+          seconds_since_previous_date ! [s]
+
+        !--------------------------- Output Variables ---------------------------
+
+        ! Current date
+        integer, intent(out) :: &
+          current_day,     & ! Day of the month      [dd]
+          current_month,   & ! Month of the year     [mm]
+          current_year       ! Year                  [yyyy]
+
+        real(kind=time_precision), intent(out) :: &
+          seconds_since_current_date
     """
     # ---- Begin Code ----
 
@@ -94,7 +160,20 @@ def compute_current_date_api(
 
 
 def gregorian2julian_day(day, month, year):
-    """Determine the Julian day (1-366) for a given Gregorian calendar date."""
+    """This subroutine determines the Julian day (1-366)
+    for a given Gregorian calendar date(e.g. July 1, 2008).
+
+    Returns:
+        julian_day
+
+    Fortran declarations (gregorian2julian_day in src/CLUBB_core/calendar.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+         day,             & ! Day of the Month      [dd]
+         month,           & ! Month of the Year     [mm]
+         year               ! Year                  [yyyy]
+    """
     # ---- Begin Code ----
     month = jnp.asarray(month, dtype=jnp.int32)
     # Add the days from the preceding months.

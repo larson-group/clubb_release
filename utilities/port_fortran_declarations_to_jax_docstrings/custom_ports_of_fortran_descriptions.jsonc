@@ -1,0 +1,356 @@
+// Adaptations of the Fortran Description and References text written into
+// the JAX docstrings by port_fortran_declarations_to_jax_docstrings.py
+// -write_description. Functions without an entry get the Fortran text
+// unchanged. Keys are {JAX module: {function: edit}}; see README.md for the
+// edit keys. Comments are allowed.
+{
+  "adg1_adg2_3d_luhar_pdf": {
+    "backsolve_Luhar_params": {
+      "append": "Only the cubic-formula branch is ported: in Fortran,\nl_use_cubic_backsolve is a parameter set to .true., so the quadratic\napproximation is never used."
+    }
+  },
+  "advance_helper_module": {
+    "calc_xpwp": {
+      "append": "This single JAX function covers the Fortran calc_xpwp_1D and calc_xpwp_2D\nversions; the declarations below are those of calc_xpwp_2D."
+    },
+    "compute_Cx_fnc_Richardson": {
+      "append": "The Fortran routine also contains a disabled path that vertically averages\nCx_fnc_Richardson over a distance of Lscale. Its flag is a compile-time\n.false. parameter there, so only the active path is ported; Lscale_zm and\nrho_ds_zm, used only by that path, are accepted for parity with Fortran."
+    },
+    "set_boundary_conditions_lhs": {
+      "replace": [
+        [
+          "left-hand side LAPACK matrix",
+          "left-hand side matrix"
+        ]
+      ],
+      "append": "The Fortran level indices are 1-based; they are converted to 0-based\nindices before lhs is updated."
+    },
+    "set_boundary_conditions_rhs": {
+      "replace": [
+        [
+          "right-hand side LAPACK vector",
+          "right-hand side vector"
+        ]
+      ]
+    },
+    "smooth_max": {
+      "replace": [
+        [
+          "For more details, see the interface in this file.",
+          "This single JAX function covers all Fortran versions of the smooth_max\ninterface (array and scalar inputs broadcast); the declarations below\nare those of smooth_max_arrays."
+        ]
+      ]
+    },
+    "smooth_min": {
+      "replace": [
+        [
+          "For more details, see the interface in this file.",
+          "This single JAX function covers all Fortran versions of the smooth_min\ninterface (array and scalar inputs broadcast); the declarations below\nare those of smooth_min_arrays."
+        ]
+      ]
+    },
+    "vertical_integral": {
+      "append": "field[0], rho_ds[0] and dz[0] are the values at the lowest level of the\nintegral."
+    }
+  },
+  "advance_windm_edsclrm_module": {
+    "advance_windm_edsclrm": {
+      "replace": [
+        [
+          "check_clubb_settings_api verifies",
+          "check_clubb_settings verifies"
+        ],
+        [
+          "gr%k_lb_zm",
+          "gr.k_lb_zm"
+        ]
+      ]
+    },
+    "windm_edsclrm_lhs": {
+      "replace": [
+        [
+          "See the description in subroutine",
+          "See the description in function"
+        ]
+      ]
+    },
+    "windm_edsclrm_rhs": {
+      "replace": [
+        [
+          "See the description in subroutine",
+          "See the description in function"
+        ]
+      ]
+    }
+  },
+  "advance_wp2_wp3_module": {
+    "wp23_lhs": {
+      "drop": [
+        "WARNING: This subroutine has been optimized",
+        "noticeably  impact computational efficiency"
+      ]
+    },
+    "wp23_rhs": {
+      "drop": [
+        "WARNING: This subroutine has been optimized",
+        "noticeably  impact computational efficiency"
+      ]
+    },
+    "wp3_term_ta_explicit_rhs": {
+      "replace": [
+        [
+          "pdf_closure_module.F90.",
+          "pdf_closure_module.py."
+        ]
+      ]
+    },
+    "wp3_term_ta_new_pdf_lhs": {
+      "replace": [
+        [
+          "in module new_pdf in new_pdf.F90",
+          "in module new_pdf in new_pdf.py"
+        ]
+      ]
+    }
+  },
+  "advance_xm_wpxp_module": {
+    "error_prints_xm_wpxp": {
+      "append": "The JAX version only prints the \"Error in advance_xm_wpxp\" header; the\nfield dump is not ported (TODO), since it needs host-side I/O of argument\nstate that is not carried through the jitted path."
+    }
+  },
+  "clip_explicit": {
+    "clip_skewness": {
+      "replace": [
+        [
+          "_core_rknd",
+          ""
+        ]
+      ]
+    }
+  },
+  "code_timer_module": {
+    "timer_finalize": {
+      "append": "JAX adaptations: state supplies outstanding arrays for trace completion,\nand the function returns the exported capture directory, or None when no\ncapture was made. Basic timing does not wait for arrays, and neither\nbackend synchronizes individual timer regions. The caller owns\npresentation of the capture."
+    },
+    "timer_start": {
+      "append": "step_num is optional JAX profiling metadata identifying a model timestep.\nOrdinary timer calls keep the one-name interface of the Fortran routine."
+    }
+  },
+  "corr_varnce_module": {
+    "init_pdf_hydromet_arrays_api": {
+      "append": "The subgrid variance ratio for each hydrometeor is calculated from the grid\nspacing defined by the host model, by a linear equation with a slope and an\nintercept. When the slope or intercept is not passed in, the default value\nfrom the corresponding type definition is used. For full control over the\nhydrometeor variance ratios, pass in slopes of 0.0, so that the ratios no\nlonger depend on the grid spacing, and intercepts set to the desired ratios."
+    }
+  },
+  "diagnose_correlations_module": {
+    "corr_array_assertion_checks": {
+      "append": "The Fortran routine stops the program on failure; the JAX function returns\nFalse instead."
+    }
+  },
+  "diffusion": {
+    "diffusion_zm_lhs": {
+      "append": "The Fortran out-argument lhs is returned as an array with diagonal order\n[superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid indices\nare represented by 0-based Python slices."
+    },
+    "diffusion_zt_lhs": {
+      "append": "The Fortran out-argument lhs is returned as an array with diagonal order\n[superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid indices\nare represented by 0-based Python slices."
+    }
+  },
+  "matrix_operations": {
+    "Cholesky_factor": {
+      "drop": [
+        "dpotrf",
+        "dpoequ",
+        "dlaqsy"
+      ]
+    }
+  },
+  "mean_adv": {
+    "term_ma_zm_lhs": {
+      "append": "The Fortran out-argument lhs_ma is returned as an array with diagonal\norder [superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid\nindices are represented by 0-based Python slices."
+    },
+    "term_ma_zt_lhs": {
+      "replace": [
+        [
+          "gr%",
+          "gr."
+        ]
+      ],
+      "append": "The Fortran out-argument lhs_ma is returned as an array with diagonal\norder [superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid\nindices are represented by 0-based Python slices."
+    }
+  },
+  "mixing_length": {
+    "compute_coherent_mixing_length": {
+      "append": "JAX adaptation:\n  Fixed-length scans and masks include the first layer at mean coherence\n  <= 0.01, then freeze that launch, even within a partially active block.\n  Each carry holds parcel thl/rt, previous buoyancy/work/barrier, live masks,\n  raw travel distances, crossing/arrival sums, and a group-activity flag.\n  CPU batches of at least five columns default to eight-launch groups for\n  forward speed; smaller batches and GPUs evaluate all launches together.\n  The COHERENT_* module constants set this layout.\n\n  Grouped scans skip inactive layers and blocks. Ungrouped scans check only\n  block boundaries to avoid per-layer synchronization. Forward working state\n  is O(columns*levels); checkpoints trade recomputation for a smaller reverse\n  tape. CPU aggregation follows the source recurrence; GPU prefix sums and\n  launch grouping change floating-point addition order."
+    },
+    "compute_mixing_length": {
+      "drop": [
+        "IMPORTANT NOTE:",
+        "This subroutine has been optimized",
+        "equations to avoid divides",
+        "-Gunther Huebler",
+        "The algorithm previously used looped",
+        "a parcel up from its initial grid level",
+        "algorithm is an N^2"
+      ],
+      "append": "JAX adaptation:\n  Fixed-length scans advance independent column/launch pairs by a common\n  offset in grid levels. Masks retain the first energy-exhaustion result;\n  scalar conditionals skip inactive work without changing scan length.\n  Each carry holds parcel properties, remaining TKE, previous buoyancy,\n  live/exit masks, and the level/energy/buoyancy data for the stopping root.\n  Prefix extrema replace serial endpoint coupling. Forward working state is\n  O(columns*levels); no launch-by-target trajectory matrix is returned.\n  Checkpoints recompute layer intermediates during reverse differentiation.\n  Blocks of eight offsets skip inactive tails. CPU batches above four columns\n  use groups of four launches; accelerators evaluate all launches together."
+    },
+    "sat_mixrat_liq_flatau": {
+      "drop": [
+        "so the compiler can inline it into parcel trajectories.",
+        "It is also intentionally the serial method as opposed to the",
+        "complex pipeline / multi-fma unit friendlier version. This was",
+        "to minimize register usage in the complex loop it is used in."
+      ],
+      "replace": [
+        [
+          "This compact specialization is colocated with the mixing-length closure",
+          "This compact specialization is colocated with the mixing-length closure."
+        ],
+        [
+          "See saturation.F90 for more details.",
+          "See saturation.py for more details."
+        ],
+        [
+          "are scalar inputs;",
+          "broadcast as arrays;"
+        ],
+        [
+          "saturation.F90: shared saturation",
+          "saturation.py: shared saturation"
+        ]
+      ],
+      "append": "Inactive division operands are guarded so that reverse-mode derivatives\nstay finite."
+    }
+  },
+  "mono_flux_limiter": {
+    "calc_mean_w_up_down_component": {
+      "drop": [
+        "Notes: The calculation has been updated to optionally use intel's",
+        "mkl_vml functions to allow vectorized calculations. Not all",
+        "grid levels require expensive calculations though, so the",
+        "strategy is as follows",
+        "1. Keep track of which levels",
+        "2. Store those the relavent values",
+        "a contigous array",
+        "3. Perform vectorized calculation",
+        "using mkl_vml functions",
+        "4. Unpack results",
+        "Enabling this faster version requires",
+        "using -DMKL as a compiler flag"
+      ],
+      "append": "The Fortran routine has an optional MKL vectorized path; the JAX function\nuses array expressions directly and needs no MKL packing and unpacking."
+    },
+    "calc_turb_adv_range": {
+      "append": "Fortran keeps both grid-direction loops inside this routine; the JAX\nfunction delegates them to private helpers so that the lax.while_loop\ncarries stay small and static."
+    },
+    "monotonic_turbulent_flux_limit": {
+      "replace": [
+        [
+          "gr%nzm",
+          "gr.nzm"
+        ]
+      ],
+      "append": "The vertical scan over levels uses jax.lax.scan."
+    }
+  },
+  "new_hybrid_pdf": {
+    "calculate_coef_wp4_implicit": {
+      "append": "Fortran repeats the full calculate_coef_wp4_implicit body in this module;\nthe JAX function delegates to the shared formula in new_pdf.py instead of\nkeeping a second copy of the same algebra."
+    },
+    "calculate_mixture_fraction": {
+      "append": "Fortran keeps this as a separate elemental function; the JAX function\ncalls the shared new_pdf mixture-fraction function with sgn_wpxp = +1,\nbecause w is the setting variable."
+    }
+  },
+  "new_pdf": {
+    "sort_roots": {
+      "append": "The Fortran routine sorts the three roots with an explicit sorting\nnetwork; jnp.sort performs the same operation on the returned values."
+    }
+  },
+  "new_pdf_main": {
+    "new_pdf_driver": {
+      "append": "The JAX function returns the Fortran output and input/output values by\nname, including the packed implicit_coefs_terms fields used by the\nturbulent-advection solvers."
+    }
+  },
+  "new_tsdadg_pdf": {
+    "calc_respnder_parameters": {
+      "append": "The misspelled name matches the Fortran routine."
+    }
+  },
+  "numerical_check": {
+    "length_check": {
+      "append": "The JIT-compiled mixing-length kernel checks for finite values with JAX and\ncalls this diagnostic only inside its host error callback."
+    }
+  },
+  "parameters_tunable": {
+    "calc_derived_params": {
+      "append": "Immutable returned values replace the Fortran inout allocations;\ninitialization and reset perform the Fortran lmin fatal check on the host."
+    }
+  },
+  "pdf_closure_module": {
+    "calc_w_up_in_cloud": {
+      "append": "The caller only invokes this function for supported PDF types."
+    },
+    "compute_cloud_cover": {
+      "append": "The Fortran routine has an unreachable fatal-error branch for invalid\ncondition coverage; the JAX function expresses the same reachable cases\nwith masks and leaves values outside them unchanged."
+    },
+    "trapezoidal_rule_zt": {
+      "drop": [
+        "The argument variables in the last 5 lines of the subroutine",
+        "(wprtp2_zm through pdf_params_zm) are declared intent(inout) because",
+        "if l_call_pdf_closure_twice is true, these variables will already have",
+        "values from pdf_closure on momentum levels and will not be altered in",
+        "this subroutine.  However, if l_call_pdf_closure_twice is false, these",
+        "variables will not have values yet and will be interpolated to",
+        "momentum levels in this subroutine.",
+        "Note:"
+      ],
+      "append": "When l_call_pdf_closure_twice is true, the momentum-level arguments\n(wprtp2_zm through pdf_params_zm) already hold the values from pdf_closure\non momentum levels and are not altered; otherwise they are interpolated to\nmomentum levels here."
+    }
+  },
+  "saturation": {
+    "sat_vapor_press_liq_gfdl": {
+      "append": "This function is shared with sat_mixrat_liq; it keeps the lower\ntemperature bound used in the Fortran sat_mixrat_liq_* GFDL branch."
+    }
+  },
+  "setup_clubb_pdf_params": {
+    "denorm_transform_corr": {
+      "append": "As in Fortran, the component-2 transforms involving Ncn reuse the\ncomponent-1 Ncn variance ratio sigma2_on_mu2_ip_1[Ncn]; Ncn is inherently\nin-cloud, so its ratio is shared across components."
+    },
+    "norm_transform_mean_stdev": {
+      "append": "Where the in-precip. mean is below tolerance, Fortran sets the normal-space\nmean to -huge as an \"absent\" marker; the JAX function uses a finite floor\n(mean_L2N of |mu| floored to 1e-30), which keeps the vanishing weight in\nthe integrals that use it while leaving gradients finite."
+    },
+    "pack_hydromet_pdf_params": {
+      "append": "Fortran packs an (ngrdcol, nzt) array of derived types; the JAX object\nstores those per-cell fields as leading array dimensions on each field of\none HydrometPdfParameter pytree."
+    }
+  },
+  "sponge_layer_damping": {
+    "sponge_damp_xm": {
+      "append": "tau is inf outside the sponge layer, so dt/tau == 0 there and the damping\nformula leaves xm unchanged. z, zm_top and sponge_layer_depth are kept only\nfor signature compatibility."
+    }
+  },
+  "turbulent_adv_pdf": {
+    "xpyp_term_ta_pdf_lhs": {
+      "append": "The Fortran out-argument lhs_ta is returned as an array with diagonal\norder [superdiagonal, main diagonal, subdiagonal]; Fortran 1-based grid\nindices are represented by 0-based Python slices."
+    },
+    "xpyp_term_ta_pdf_lhs_godunov": {
+      "drop": [
+        "Optional Arguements:",
+        "The optional arguements can be used to override the default indices.",
+        "from_level - low index, default 2",
+        "to level   - high index, default gr%nzm-1"
+      ],
+      "append": "The Fortran optional arguments from_level and to_level, which override the\nlevel range, are not ported."
+    },
+    "xpyp_term_ta_pdf_rhs": {
+      "append": "The Fortran out-argument rhs_ta is returned; Fortran 1-based grid indices\nare represented by 0-based Python slices."
+    },
+    "xpyp_term_ta_pdf_rhs_godunov": {
+      "drop": [
+        "Optional Arguements:",
+        "The optional arguements can be used to override the default indices.",
+        "from_level - low index, default 2",
+        "to level - high index, default gr%nzm-1"
+      ],
+      "append": "The Fortran optional arguments from_level and to_level, which override the\nlevel range, are not ported."
+    }
+  }
+}

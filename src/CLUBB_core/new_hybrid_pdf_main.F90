@@ -86,12 +86,12 @@ module new_hybrid_pdf_main
 
     implicit none
 
+    !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol, &
       sclr_dim
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,      & ! Mean of w (overall)                 [m/s]
       rtm,     & ! Mean of rt (overall)                [kg/kg]
@@ -123,7 +123,7 @@ module new_hybrid_pdf_main
       ! Parameter to adjust the PDF component standard deviations of w.
       pdf_component_stdev_factor_w
 
-    ! Input/Output Variables
+    !--------------------------- Input/Output Variables ---------------------------
     ! These variables are input/output because their values may be clipped.
     ! Otherwise, as long as it is not necessary to clip them, their values
     ! will stay the same.
@@ -136,7 +136,7 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(inout) :: &
       Sksclr    ! Skewness of sclr (overall)         [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
@@ -167,6 +167,7 @@ module new_hybrid_pdf_main
       sigma_sclr_1_sqd, & ! Variance of sclr (1st PDF component)  [(un. vary)^2]
       sigma_sclr_2_sqd    ! Variance of sclr (2nd PDF component)  [(un. vary)^2]
 
+    !--------------------------- Input/Output Variables ---------------------------
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
@@ -722,7 +723,7 @@ module new_hybrid_pdf_main
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       xm,        & ! Mean of x (overall)                          [units vary]
       xp2,       & ! Variance of x (overall)                  [(units vary)^2]
@@ -731,11 +732,11 @@ module new_hybrid_pdf_main
       mixt_frac, & ! Mixture fraction                                      [-]
       F_w          ! Parameter for the spread of the PDF comp. means of w  [-]
 
-    ! Input/Output Variable
+    !--------------------------- Input/Output Variables ---------------------------
     real( kind = core_rknd ), intent(inout) :: &
       Skx    ! Skewness of x (overall)              [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
@@ -910,7 +911,7 @@ module new_hybrid_pdf_main
 
     implicit none
 
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       Skw,    & ! Skewness of w (overall)              [-]
       wprtp,  & ! Covariance (overall) of w and rt     [m/s (kg/kg)]
@@ -942,7 +943,7 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), intent(in) :: &
       max_corr_w_sclr_sqd    ! Max value of wpsclrp^2 / ( wp2 * sclrp2 )     [-]
 
-    ! Output Variables
+    !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), intent(out) :: &
       F_w,     & ! Parameter for the spread of the PDF component means of w  [-]
       zeta_w,  & ! Parameter for the PDF component variances of w            [-]
