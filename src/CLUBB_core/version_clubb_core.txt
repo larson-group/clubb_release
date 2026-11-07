@@ -1,0 +1,797 @@
+commit afaf554a23aac20c26dba5b959f908710c63db84
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Nov 6 22:16:21 2026 -0600
+
+    Remove redundant array conversions from JAX kernels (#1433)
+    
+    * Remove redundant array conversions from JAX kernels
+    
+    Require callers to supply JAX arrays for array-valued inputs, remove conversion-only aliases in the root solvers and hybrid PDF driver, and convert host fixtures at numerical-test call sites. Preserve the existing array dimensions and intentional precision casts.
+    
+    Local validation: 104 F2PY oracle checks passed; 970 independent checks passed, with the sandbox-blocked profile viewer passing separately with loopback access. Four-column BOMEX, ATEX and RICO comparisons matched Fortran for 360 steps at the default tolerances. Jenkins validation follows on the published branch.
+    
+    * Refresh the generated xm_wpxp_solve return description
+    
+    The return tuple is now visible to the docstring generator after removing the redundant rcond conversion. Regenerate its Returns section; executable code is unchanged.
+    
+    Validation: Fortran declaration check passed with zero functions needing updates.
+    
+    * Restore unchanged polynomial-root test callers
+    
+    These fixtures already construct JAX arrays, so their call-site conversion wrappers are unnecessary. Restore both test files exactly to master.
+    
+    Validation: all three polynomial-root checks and the F2PY polynomial-root oracle passed with the original callers.
+
+commit 3d1a672a78eaf519d349790ae0304e305102ac82
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Thu Nov 5 16:34:43 2026 -0600
+
+    Generate JAX CLUBB_core docstrings from the Fortran routine comments (#1431)
+    
+    * first draft of one function port
+    
+    * Add missing argument dividers to Fortran routines ported to JAX
+    
+    About 170 CLUBB_core routines that have a JAX counterpart marked their
+    argument sections only with short labels such as "! Input Variables" or
+    "! Return Variable", or with none. Others use dashed dividers, which lets
+    a script find each routine's Input, Input/Output and Output blocks and
+    copy them into the JAX docstrings.
+    
+    Add the standard dividers from the Fortran formatting guide, grouped by
+    the declared intent. Function results and arguments declared without an
+    intent go under Output Variables. Existing short labels are replaced in
+    place. Four labels that contradicted the declarations are corrected
+    (vertical_integral, init_hydromet_pdf_params, rad_check,
+    error_prints_xm_wpxp). A Local Variables divider is added only where
+    locals had no label. Routines that already had dividers are unchanged.
+    
+    Only comment lines change: with comments and blank lines removed, every
+    file is identical to its parent. A gfortran debug build succeeds and
+    CLUBBStandardsCheck.py passes on src/CLUBB_core.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Add a script that copies Fortran argument declarations into JAX docstrings
+    
+    The JAX ports in clubb_jax/src/CLUBB_core should document the arguments of
+    the Fortran routines they port, and that documentation should follow the
+    Fortran when its arguments change. Copying it by hand for about 350
+    functions is slow and drifts.
+    
+    utilities/fortran_docstring_sync/sync_jax_docstrings.py pairs each JAX
+    function with its Fortran routine (same module and name, or the best
+    matching specific of a generic interface), extracts the Input,
+    Input/Output and Output declarations verbatim, and checks (-check) or
+    rewrites (-write) a "Fortran declarations (...)" section at the end of the
+    docstring. -manifest exports each routine's Description and References
+    for writing the docstring prose, which the script does not touch. -write
+    refuses to save a file whose code, with docstrings removed, would change.
+    
+    On a copy of clubb_jax/src/CLUBB_core, -write updated 347 docstrings,
+    a following -check reported none outdated, a second -write changed
+    nothing, and all files compiled with code and existing prose unchanged.
+    No JAX file is changed in this commit.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Copy Fortran argument declarations into the JAX CLUBB_core docstrings
+    
+    Generated with utilities/fortran_docstring_sync/sync_jax_docstrings.py
+    -write. Each of the 347 JAX functions with a Fortran counterpart that has
+    arguments now ends its docstring with a "Fortran declarations (...)"
+    section holding the routine's Input, Input/Output and Output
+    declarations verbatim. The existing docstring text is kept; the
+    description prose is revised separately.
+    
+    Only docstrings change: the script compared each file's code with
+    docstrings removed before saving, -check reports no outdated sections,
+    and every file compiles with warnings treated as errors.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Keep complete Fortran descriptions in the docstring sync manifest
+    
+    The manifest cut long Fortran descriptions short in three places: a
+    "Note:" line was taken as the start of a new section, the dashed edge of
+    an ASCII matrix diagram was taken as the closing rule, and a heading
+    underline ("! ----" below "! The Turbulent Advection Term") ended the
+    block. windm_edsclrm_solve kept 13 of its 463 description lines.
+    
+    Only "Description:" and "References:" now start a new section. A closing
+    rule starts at most one space after "!", and a "! ----" line directly
+    below text of about its length is kept as an underline.
+    
+    Descriptions with "!k=1 |" matrix rows also kept a leading space on every
+    prose line, because those rows follow "!" directly. Paragraphs now lose
+    the first line's remaining indentation, up to their own smallest
+    indentation, so prose starts at column 0 and diagrams stay aligned.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Write JAX docstring prose from the Fortran comments
+    
+    The docstrings of the JAX ports should start with the description and
+    references of the Fortran routine, adapted where the Fortran text names
+    Fortran-only details such as LAPACK calls or gr%nz. Writing them by hand
+    for 347 functions would drift from the Fortran again.
+    
+    sync_jax_docstrings.py -write_prose writes that text from the Fortran
+    Description and References comments and per-function edits kept in
+    prose_edits.json (replace, drop, append, summary, prose, keep). A
+    "Returns:" block is read from each function's return statements, since
+    Python returns what Fortran passes as intent(out). Descriptions longer
+    than 100 lines need a summary, which is followed by a pointer to the
+    Fortran comments; edits that no longer match the Fortran text stop the
+    run. "Reference:" is now recognized as well as "References:".
+    
+    test_fortran_docstring_sync.py runs -check on the repository, so a
+    Fortran argument change without -write fails the -unit suite, and covers
+    the parsing cases that broke during development on a small synthetic
+    module. Both tests pass; on copies of both source trees, changing one
+    argument comment made -check report exactly the one affected function.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Base the JAX CLUBB_core docstrings on the Fortran routine descriptions
+    
+    Generated with sync_jax_docstrings.py -write_prose. The docstrings of
+    the 347 JAX functions with a Fortran counterpart now open with the
+    Fortran Description and References, with "!" removed, followed by the
+    returned values and the Fortran declarations. The 26 functions without
+    a Fortran description keep their existing text.
+    
+    prose_edits.json records adaptations for 61 functions: Fortran-only names (gr%nz,
+    _api routines, .F90 modules, _core_rknd literals, LAPACK references),
+    dropped notes about Fortran optimization and MKL, summaries in place of
+    the 14 descriptions longer than 100 lines, and notes on real JAX
+    differences that the old docstrings documented, such as returned out
+    arguments, 0-based indices, ported branches and merged overloads.
+    Argument lists and paraphrases in the old docstrings are replaced by the
+    Fortran declarations.
+    
+    Only docstrings change: with docstrings removed every module matches
+    its parent, all modules compile with warnings treated as errors, and
+    -check reports no outdated sections.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Fix "intent(in)" typos in two advance_wp2_wp3 comments
+    
+    The descriptions of wp3_term_ta_new_pdf_lhs and wp3_term_ta_explicit_rhs
+    read "expressed linearly intent(in) terms of" and "as detailed intent(in)
+    function", where "in" was meant. Correct both, and remove the two
+    prose_edits.json entries that worked around them in the JAX docstrings;
+    -write_prose produces the same docstrings from the corrected Fortran.
+    
+    Only comment lines change. CLUBBStandardsCheck.py passes and
+    sync_jax_docstrings.py -check reports no outdated sections.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Document the docstring sync script in the JAX porting guide
+    
+    Ported routines are expected to carry the Fortran description,
+    references, returned values and argument declarations in their
+    docstrings, generated by sync_jax_docstrings.py. The porting guide did
+    not mention the script, so new ports would be documented by hand and
+    drift.
+    
+    The guide now says to run -write_prose after adding or changing a ported
+    routine, to record adaptations in prose_edits.json instead of editing
+    the generated text, and to include a passing -check in the completion
+    audit. The README states that prose_edits.json holds only the exceptions
+    to the Fortran text.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Check the JAX docstrings in the clubb_jax Jenkins job
+    
+    The check that JAX docstrings carry the current Fortran argument
+    declarations ran as a pytest in the -unit suite, which the clubb_python
+    job runs. It concerns the JAX ports, so it belongs with the other JAX
+    checks.
+    
+    Add a "Python docstring match" stage to the clubb_jax Jenkinsfile that
+    runs sync_jax_docstrings.py -check, and remove the repository check
+    from test_fortran_docstring_sync.py, which keeps its synthetic test of
+    the script in the -unit suite. The porting guide and the sync README
+    point to the new stage.
+    
+    Locally, the stage command reports no outdated sections and the
+    remaining pytest passes. The stage has not run on Jenkins yet.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Regenerate Returns blocks after #1425 and fix the porting-guide merge
+    
+    #1425 assigned the returned values of several JAX functions to named
+    variables, for example "return corr_eta_hm_n_1, corr_eta_hm_n_2"
+    instead of a returned expression. The Returns blocks that
+    sync_jax_docstrings.py -write_prose reads from the return statements
+    were generated before that, so 33 were missing or named the Fortran
+    result. Rerunning -write_prose updates only those blocks.
+    
+    The rebase onto #1425 also merged the completion-audit sentence of the
+    JAX porting guide as "every new helper and ... and a passing -check" and
+    rewrapped the lines #1425 added. Restore #1425's lines and fix the list.
+    
+    Only docstrings and the guide change; -check and a second -write_prose
+    report nothing to update.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Keep locals with argument-sized bounds out of the copied declarations
+    
+    sync_jax_docstrings.py split the names after "::" at every comma, so in
+    "real(core_rknd) :: alfa(i1:i2,km)" it read km as a second declared
+    name. Since km is an argument, the local declaration counted as a mix of
+    arguments and locals and was copied into the docstring. This put the
+    locals of ppm2m, steepz and map1_ppm into their Fortran declaration
+    sections.
+    
+    Ignore array bounds and initializers when reading declared names, and
+    regenerate the three remapping docstrings. The synthetic pytest now
+    declares such a local; it fails without the fix and passes with it.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Copy full Fortran descriptions and rename the docstring script
+    
+    Review of #1431 asked for the whole Fortran comment in the JAX docstrings
+    and clearer names. The summary and hand-written prose edits are removed, so
+    the 15 affected functions now carry their full Fortran text; drop, replace
+    and append still adapt text that does not apply to JAX, such as LAPACK or
+    unported branches. Unknown edit keys now stop the run.
+    
+    The tool is now utilities/port_fortran_declarations_to_jax_docstrings/,
+    with -write_declaration and -write_description replacing -write and
+    -write_prose, and the clubb_jax stage is now "Fortran declaration match".
+    The edits file becomes prose_edits.jsonc and is read with
+    input/scripts/namelist.load_json.
+    
+    The rho_ds_zm comment in Lscale_width_vert_avg now says dry, static
+    density, replacing the JSON note that corrected it.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Rename prose_edits.jsonc to custom_ports_of_fortran_descriptions.jsonc
+    
+    The new name says what the file holds: the per-function adaptations of the
+    Fortran descriptions written into the JAX docstrings.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit 646a7421d11432e71e7509083ea27b59426cfce3
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Tue Nov 3 11:20:29 2026 -0600
+
+    Apply CLUBB coding standards to the JAX code and agent guidance (#1425)
+    
+    * clubb-jax-port skill now has python variants for clubb_coding_standards.md
+    
+    * remove __all__ since import * is not used anyway
+    
+    * Apply CLUBB coding standards to the JAX code
+    
+    The clubb-jax-port skill now lists the coding standards that matter in
+    Python, but the existing code did not follow them. Name bare boolean
+    arguments and unit conversions, add the l_ prefix to JAX-only flags, reuse
+    constants_clubb instead of local copies, send fatal messages to stderr, and
+    keep unselected jnp.where branches from producing NaN gradients.
+    
+    Case setup calculated radians_per_deg from math.pi while Fortran uses
+    pi = 3.141592654, so it now uses the shared constant.
+    
+    JAX output is byte-identical to the previous commit for bomex, rico and
+    dycoms2_rf02_do over 60 steps on CPU. The 19 curated JAX-vs-Fortran cases
+    match at 60 steps. Fortran source is unchanged.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Claude skills symlink (#1406)
+    
+    * Link .claude/skills to the shared .agents/skills
+    
+    Claude Code reads project skills from .claude/skills, while the CLUBB
+    skills live in .agents/skills. A relative symlink lets Claude Code load
+    the same skills without a second copy. Only the skills directory is
+    linked, so Claude Code's machine-local files, such as settings.local.json,
+    stay in .claude/ rather than appearing in .agents/.
+    
+    Not yet checked that a new Claude Code session lists the linked skills.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Add backlog skill for findings to fix later
+    
+    The backlog skill keeps a short list of real issues found during other
+    work, so they are not lost when they are out of scope for the current
+    task. Entries go in .agents/skills/backlog/BACKLOG.md, a local file in
+    each checkout, with a severity and a check for whether they still apply;
+    an entry is deleted once fixed. AGENTS.md lists the skill with the other
+    repo skills.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * added the BACKLOG.md for the backlog ai skill to the .gitignore
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Add opt-in OpenACC mode for exact output comparisons (#1430)
+    
+    Coherent mixing-length atomics can accumulate in different orders when launch levels run concurrently. Add -openacc_bfb to process launches in order within each column while preserving the existing fast default kernel. Keep the two build variants separate and use the ordered mode in the driver and async exact-comparison Jenkins jobs. Document the shared nightly GPU BFB config migration.
+    
+    RESOLVED:fe20df28ececcf8cf7975b59eaae3204c359081e
+    RESOLVED:d56d76087d68c6f41c7f2d1fd88cd69ec9d163da
+    RESOLVED:f933cf4808771e19121f3277b9abce0023de1231
+    
+    * Keep derived length and mixture limits local to each column (#1428)
+    
+    This makes lmin and mixt_frac_max_mag arrays with an ngrdcol dimension. Before these were scalars - which is an artifact from when clubb_standalone was single column only. They should've been converted to ngrdcol size a long time ago, but slipped through the cracks because we never change these.
+    
+    * Keep derived length and mixture limits local to each column
+    
+    The last runtime column previously supplied lmin and the mixture-fraction
+    cap for every candidate. Carry both as column vectors through Fortran,
+    JAX and the existing Python/F2PY interfaces, preserving their formulas
+    and the scalar single-column API.
+    
+    BIT_CHANGING only for heterogeneous lmin_coef or Skw_max_mag within a
+    runtime batch when the corresponding length floor or ADG1 mixture cap
+    is active. Earlier columns now use their own derived bounds.
+    
+    Local GCC -O0 double-precision BOMEX (1/4 uniform columns) and ATEX
+    (1 column) preserve all 633 output variables byte-for-byte versus
+    51da5171f. Heterogeneous BOMEX batches match independent columns.
+    Native/JAX loss and forward/reverse/finite-difference checks pass,
+    as do 252 compiled API tests and focused native/JAX checks.
+    GPU and external host builds are untested.
+    
+    * Remove dedicated derived-limit regression coverage
+    
+    Remove the parameter-specific integration, Jacobian, clipping and invalid-floor
+    cases, and remove the older lmin/Skw checks from general lifecycle tests.
+    Restore ordinary default inputs in the existing Fortran-parity checks, keeping
+    only the array-return adaptation required by the vector interface.
+    
+    Runtime implementation is unchanged. Remaining lifecycle, default parity and
+    reset/cache checks pass; prior Python73/Tuner27 CI paths are unchanged.
+    
+    * Fix the moved comparison script path in the clubb_jax Jenkinsfile (#1426)
+    
+    * Fix the moved comparison script path in the clubb_jax Jenkinsfile
+    
+    The test reorganization in #1409 moved run_jax_vs_fortran_cases.py to
+    human_reviewed_tests/ but missed the "./tests/" spelling, so the "Jax vs
+    Fortran: standard stats" stage names a script that no longer exists. Five
+    README and port-note commands had the same stale prefix.
+    
+    Add a generated unit test that fails when a Jenkinsfile names a script
+    missing from the repository; it reports this path before the fix.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Remove the Jenkinsfile script path test
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Let CLUBB_JAX_PRECISION set JAX precision and drop hard-coded float64 (#1414)
+    
+    * Set JAX precision once and stop casting routine inputs to float64
+    
+    CLUBB_JAX_PRECISION was applied by 61 modules that each called
+    configure_jax_precision() at import, and run_jax.py kept its own copy of
+    the alias list to report the precision. Many routines also re-cast every
+    input with jnp.asarray(x, dtype=jnp.float64). Those casts did nothing in
+    double precision, and in single precision JAX ignored them with a warning.
+    
+    The clubb_jax.src package now applies the setting once on import.
+    precision_name in backends/common.py (no JAX dependency) parses the value
+    for both clubb_precision and run_jax.runtime_configuration. 342 of the 344
+    input-cast lines are removed, and short aliases are renamed back to their
+    argument names. Two remain because they mirror deliberate Fortran precision
+    changes: Morrison DERF1 and SILHS ltqnorm (real(p_core_rknd, kind=dp)).
+    Where NumPy inputs need array methods, jnp.asarray(x) is kept without a dtype.
+    
+    BFB: JAX output for the 23 curated run_jax_vs_fortran_cases.py cases is
+    byte-identical to master in every NetCDF variable (CPU, double, default
+    flags). All 23 cases still match Fortran. A 20-step single-precision bomex
+    run is also identical to master.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Compute GABLS3-night surface fluxes in core_rknd
+    
+    The GABLS3-night surface scheme (landflx and its fm1/fh1 stability
+    functions, from SAM) evaluated its logarithms and the stable-branch max
+    through default-real alog/amax1 with default-real literals, so the double
+    build computed these terms in single precision. The JAX port had to emulate
+    that with explicit float32 casts. Use log/max with core_rknd literals in
+    Fortran and drop the float32 emulation in JAX.
+    
+    BIT_CHANGING for the standalone gabls3_night case (forcing only; host
+    models do not use it). Fortran debug double build, 360 steps vs the
+    parent: ustar and the surface fluxes change by up to 8e-8 relative from the
+    first step, thlm/rtm by up to 6e-9. bomex is unchanged. JAX still matches
+    Fortran on gabls3_night in tests/run_jax_vs_fortran_cases.py (360 steps).
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Store JAX model time settings as Python floats
+    
+    time_initial, time_final, dt_main and dt_rad were taken from the namelist
+    as parsed, so an integer literal such as dt_main = 60 made time_current a
+    Python int. Convert them to float when the state is built. Python floats
+    are double precision regardless of the JAX precision setting, matching
+    Fortran's real(time_precision). The case namelists already use float
+    literals, so their runs are unchanged.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Let the JAX precision setting choose array dtypes
+    
+    CLUBB-JAX selects its working precision with the global jax_enable_x64
+    switch (CLUBB_JAX_PRECISION), but about 430 array creations still asked
+    for jnp.float64 and 12 precision queries used jnp.finfo(jnp.float64). In
+    single precision JAX ignored the requested dtype with a warning, and the
+    finfo queries returned double-precision epsilon and tiny values.
+    
+    Array creation now uses the default float dtype: zeros/ones/full/one_hot/
+    uniform drop the dtype, and conversions of integers or booleans use
+    dtype=float. clubb_precision gains core_rknd, the NumPy dtype of the working
+    precision, for queries such as jnp.finfo(core_rknd).eps (Fortran
+    epsilon(1._core_rknd)); constants_clubb reuses it. The module docstring
+    describes the fixed-precision exceptions (Morrison and the cdfnorminv
+    coefficients stay float32) and what single precision does and does not
+    reproduce. The 101 pytest files that set jax_enable_x64 themselves now rely
+    on the clubb_jax.src package import, so CLUBB_JAX_PRECISION is the only
+    control.
+    
+    Double precision is unchanged: JAX output for the 23 curated
+    tests/run_jax_vs_fortran_cases.py cases is byte-identical to the parent
+    (19,516 variables, CPU), and all 23 still match Fortran. JAX pytests (882)
+    and JAX F2PY unit tests (104) pass. A 20-step single-precision bomex run
+    now prints no dtype warnings.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Document CLUBB-JAX single precision in the README
+    
+    Explain how to select single precision with CLUBB_JAX_PRECISION, what it is
+    for, and its limits: it does not reproduce a single-precision Fortran build,
+    and cases with KK microphysics such as dycoms2_rf02_do currently fail with
+    NaNs.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Convert to core_rknd instead of the default float type
+    
+    The previous commit replaced conversions to jnp.float64 with dtype=float,
+    JAX's default float type. That follows the precision setting but does not
+    say why the conversion is there. Use core_rknd, like Fortran real(x,
+    kind=core_rknd), where integer or boolean values become reals (SILHS
+    indicators, the stats buffer input, a solver test vector) and where the
+    BUGSrad driver converts CLUBB fields (Fortran real(x, kind=dp)). Drop the
+    dtype where the input is already a float array or parameter. Document
+    why core_rknd is a NumPy dtype chosen with USE_X64 rather than
+    jnp.float64.
+    
+    Double precision is unchanged: JAX output for the 23 curated
+    tests/run_jax_vs_fortran_cases.py cases is byte-identical to the parent
+    (19,516 variables, CPU) and matches Fortran. JAX pytests (882) and JAX F2PY
+    unit tests (104) pass. A 20-step single-precision bomex run prints no dtype
+    warnings. The BUGSrad port is covered only by its pytests, because the JAX
+    standalone does not enable rad_scheme = "bugsrad".
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Define core_rknd with JAX dtypes
+    
+    core_rknd was np.float64 or np.float32. Use jnp.float64 or jnp.float32,
+    still chosen from USE_X64, so the module names the JAX types the model
+    uses. Both behave the same as dtypes and in jnp.finfo/np.finfo. The module
+    now imports JAX at the top instead of inside configure_jax_precision();
+    importing jax.numpy creates no arrays, so the switch still applies before
+    any model array exists.
+    
+    Double precision is unchanged: bomex and rico_silhs JAX output is
+    byte-identical to the parent and matches Fortran, and the JAX pytests (882)
+    pass. In single precision core_rknd, jnp.finfo(core_rknd).eps and the
+    constants_clubb tolerances are float32, as before.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * clubb-jax-port skill now has python variants for clubb_coding_standards.md
+    
+    * Rule and cleanup in code that a JAX function should not output a mathematical expression; instead it should create an output variable and set it equal to the expression.
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+    Co-authored-by: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+
+commit cd7749d595dac9cfd61a34f606cdf2cf7126e100
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Tue Nov 3 10:08:55 2026 -0600
+
+    Simplify -cases parsing in run_scm_all.py (#1424)
+    
+    The case list was split, joined with commas, and then split again by
+    parse_cases. parse_cases now takes the list and calls split_values
+    directly, which makes the code easier to read.
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit 1a23df16eaa70d2b1ffe5c259f5850e1faa60b39
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Tue Nov 3 09:31:54 2026 -0600
+
+    List all init_minmax bounds in the native tuner controls (#1423)
+    
+    #1344 added three Lscale bounds to Fortran's init_minmax namelist, but no
+    input_misc/tuner/error_*.in file listed them, so the input bounds pytest
+    fails in clubb_python. Add them as fixed (0., 0.) in all 17 files.
+    
+    error_all.in and error_bomex_fire.in also omitted z_displace_minmax, and the
+    latter bv_efold_minmax and wpxp_Ri_exp_minmax. Fortran does not initialize
+    those before the read, so add them as fixed too.
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit e8c0204c940d733ffc05e7f29135c48cea927c90
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Mon Nov 2 16:16:55 2026 -0600
+
+    Let CLUBB_JAX_PRECISION set JAX precision and drop hard-coded float64 (#1414)
+    
+    * Set JAX precision once and stop casting routine inputs to float64
+    
+    CLUBB_JAX_PRECISION was applied by 61 modules that each called
+    configure_jax_precision() at import, and run_jax.py kept its own copy of
+    the alias list to report the precision. Many routines also re-cast every
+    input with jnp.asarray(x, dtype=jnp.float64). Those casts did nothing in
+    double precision, and in single precision JAX ignored them with a warning.
+    
+    The clubb_jax.src package now applies the setting once on import.
+    precision_name in backends/common.py (no JAX dependency) parses the value
+    for both clubb_precision and run_jax.runtime_configuration. 342 of the 344
+    input-cast lines are removed, and short aliases are renamed back to their
+    argument names. Two remain because they mirror deliberate Fortran precision
+    changes: Morrison DERF1 and SILHS ltqnorm (real(p_core_rknd, kind=dp)).
+    Where NumPy inputs need array methods, jnp.asarray(x) is kept without a dtype.
+    
+    BFB: JAX output for the 23 curated run_jax_vs_fortran_cases.py cases is
+    byte-identical to master in every NetCDF variable (CPU, double, default
+    flags). All 23 cases still match Fortran. A 20-step single-precision bomex
+    run is also identical to master.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Compute GABLS3-night surface fluxes in core_rknd
+    
+    The GABLS3-night surface scheme (landflx and its fm1/fh1 stability
+    functions, from SAM) evaluated its logarithms and the stable-branch max
+    through default-real alog/amax1 with default-real literals, so the double
+    build computed these terms in single precision. The JAX port had to emulate
+    that with explicit float32 casts. Use log/max with core_rknd literals in
+    Fortran and drop the float32 emulation in JAX.
+    
+    BIT_CHANGING for the standalone gabls3_night case (forcing only; host
+    models do not use it). Fortran debug double build, 360 steps vs the
+    parent: ustar and the surface fluxes change by up to 8e-8 relative from the
+    first step, thlm/rtm by up to 6e-9. bomex is unchanged. JAX still matches
+    Fortran on gabls3_night in tests/run_jax_vs_fortran_cases.py (360 steps).
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Store JAX model time settings as Python floats
+    
+    time_initial, time_final, dt_main and dt_rad were taken from the namelist
+    as parsed, so an integer literal such as dt_main = 60 made time_current a
+    Python int. Convert them to float when the state is built. Python floats
+    are double precision regardless of the JAX precision setting, matching
+    Fortran's real(time_precision). The case namelists already use float
+    literals, so their runs are unchanged.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Let the JAX precision setting choose array dtypes
+    
+    CLUBB-JAX selects its working precision with the global jax_enable_x64
+    switch (CLUBB_JAX_PRECISION), but about 430 array creations still asked
+    for jnp.float64 and 12 precision queries used jnp.finfo(jnp.float64). In
+    single precision JAX ignored the requested dtype with a warning, and the
+    finfo queries returned double-precision epsilon and tiny values.
+    
+    Array creation now uses the default float dtype: zeros/ones/full/one_hot/
+    uniform drop the dtype, and conversions of integers or booleans use
+    dtype=float. clubb_precision gains core_rknd, the NumPy dtype of the working
+    precision, for queries such as jnp.finfo(core_rknd).eps (Fortran
+    epsilon(1._core_rknd)); constants_clubb reuses it. The module docstring
+    describes the fixed-precision exceptions (Morrison and the cdfnorminv
+    coefficients stay float32) and what single precision does and does not
+    reproduce. The 101 pytest files that set jax_enable_x64 themselves now rely
+    on the clubb_jax.src package import, so CLUBB_JAX_PRECISION is the only
+    control.
+    
+    Double precision is unchanged: JAX output for the 23 curated
+    tests/run_jax_vs_fortran_cases.py cases is byte-identical to the parent
+    (19,516 variables, CPU), and all 23 still match Fortran. JAX pytests (882)
+    and JAX F2PY unit tests (104) pass. A 20-step single-precision bomex run
+    now prints no dtype warnings.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Document CLUBB-JAX single precision in the README
+    
+    Explain how to select single precision with CLUBB_JAX_PRECISION, what it is
+    for, and its limits: it does not reproduce a single-precision Fortran build,
+    and cases with KK microphysics such as dycoms2_rf02_do currently fail with
+    NaNs.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Convert to core_rknd instead of the default float type
+    
+    The previous commit replaced conversions to jnp.float64 with dtype=float,
+    JAX's default float type. That follows the precision setting but does not
+    say why the conversion is there. Use core_rknd, like Fortran real(x,
+    kind=core_rknd), where integer or boolean values become reals (SILHS
+    indicators, the stats buffer input, a solver test vector) and where the
+    BUGSrad driver converts CLUBB fields (Fortran real(x, kind=dp)). Drop the
+    dtype where the input is already a float array or parameter. Document
+    why core_rknd is a NumPy dtype chosen with USE_X64 rather than
+    jnp.float64.
+    
+    Double precision is unchanged: JAX output for the 23 curated
+    tests/run_jax_vs_fortran_cases.py cases is byte-identical to the parent
+    (19,516 variables, CPU) and matches Fortran. JAX pytests (882) and JAX F2PY
+    unit tests (104) pass. A 20-step single-precision bomex run prints no dtype
+    warnings. The BUGSrad port is covered only by its pytests, because the JAX
+    standalone does not enable rad_scheme = "bugsrad".
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Define core_rknd with JAX dtypes
+    
+    core_rknd was np.float64 or np.float32. Use jnp.float64 or jnp.float32,
+    still chosen from USE_X64, so the module names the JAX types the model
+    uses. Both behave the same as dtypes and in jnp.finfo/np.finfo. The module
+    now imports JAX at the top instead of inside configure_jax_precision();
+    importing jax.numpy creates no arrays, so the switch still applies before
+    any model array exists.
+    
+    Double precision is unchanged: bomex and rico_silhs JAX output is
+    byte-identical to the parent and matches Fortran, and the JAX pytests (882)
+    pass. In single precision core_rknd, jnp.finfo(core_rknd).eps and the
+    constants_clubb tolerances are float32, as before.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit 94962991ea88e17ee07acb00168cf250447c9ca9
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Mon Nov 2 14:30:30 2026 -0600
+
+    Fix the moved comparison script path in the clubb_jax Jenkinsfile (#1426)
+    
+    * Fix the moved comparison script path in the clubb_jax Jenkinsfile
+    
+    The test reorganization in #1409 moved run_jax_vs_fortran_cases.py to
+    human_reviewed_tests/ but missed the "./tests/" spelling, so the "Jax vs
+    Fortran: standard stats" stage names a script that no longer exists. Five
+    README and port-note commands had the same stale prefix.
+    
+    Add a generated unit test that fails when a Jenkinsfile names a script
+    missing from the repository; it reports this path before the fix.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Remove the Jenkinsfile script path test
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit 7023a7acde73ff6bdddcf8945ef87d4b9c5d7220
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Nov 2 14:17:09 2026 -0600
+
+    Keep derived length and mixture limits local to each column (#1428)
+    
+    This makes lmin and mixt_frac_max_mag arrays with an ngrdcol dimension. Before these were scalars - which is an artifact from when clubb_standalone was single column only. They should've been converted to ngrdcol size a long time ago, but slipped through the cracks because we never change these.
+    
+    * Keep derived length and mixture limits local to each column
+    
+    The last runtime column previously supplied lmin and the mixture-fraction
+    cap for every candidate. Carry both as column vectors through Fortran,
+    JAX and the existing Python/F2PY interfaces, preserving their formulas
+    and the scalar single-column API.
+    
+    BIT_CHANGING only for heterogeneous lmin_coef or Skw_max_mag within a
+    runtime batch when the corresponding length floor or ADG1 mixture cap
+    is active. Earlier columns now use their own derived bounds.
+    
+    Local GCC -O0 double-precision BOMEX (1/4 uniform columns) and ATEX
+    (1 column) preserve all 633 output variables byte-for-byte versus
+    51da5171f. Heterogeneous BOMEX batches match independent columns.
+    Native/JAX loss and forward/reverse/finite-difference checks pass,
+    as do 252 compiled API tests and focused native/JAX checks.
+    GPU and external host builds are untested.
+    
+    * Remove dedicated derived-limit regression coverage
+    
+    Remove the parameter-specific integration, Jacobian, clipping and invalid-floor
+    cases, and remove the older lmin/Skw checks from general lifecycle tests.
+    Restore ordinary default inputs in the existing Fortran-parity checks, keeping
+    only the array-return adaptation required by the vector interface.
+    
+    Runtime implementation is unchanged. Remaining lifecycle, default parity and
+    reset/cache checks pass; prior Python73/Tuner27 CI paths are unchanged.
+
+commit dcb75f0c670e74d001fa0b4d3a3d3356097f1682
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Nov 2 13:53:52 2026 -0600
+
+    Add opt-in OpenACC mode for exact output comparisons (#1430)
+    
+    Coherent mixing-length atomics can accumulate in different orders when launch levels run concurrently. Add -openacc_bfb to process launches in order within each column while preserving the existing fast default kernel. Keep the two build variants separate and use the ordered mode in the driver and async exact-comparison Jenkins jobs. Document the shared nightly GPU BFB config migration.
+    
+    RESOLVED:fe20df28ececcf8cf7975b59eaae3204c359081e
+    RESOLVED:d56d76087d68c6f41c7f2d1fd88cd69ec9d163da
+    RESOLVED:f933cf4808771e19121f3277b9abce0023de1231
+
+commit 17331558a59781a059bb9c1b6e260a790a0d855b
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Mon Nov 2 13:38:00 2026 -0600
+
+    Claude skills symlink (#1406)
+    
+    * Link .claude/skills to the shared .agents/skills
+    
+    Claude Code reads project skills from .claude/skills, while the CLUBB
+    skills live in .agents/skills. A relative symlink lets Claude Code load
+    the same skills without a second copy. Only the skills directory is
+    linked, so Claude Code's machine-local files, such as settings.local.json,
+    stay in .claude/ rather than appearing in .agents/.
+    
+    Not yet checked that a new Claude Code session lists the linked skills.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Add backlog skill for findings to fix later
+    
+    The backlog skill keeps a short list of real issues found during other
+    work, so they are not lost when they are out of scope for the current
+    task. Entries go in .agents/skills/backlog/BACKLOG.md, a local file in
+    each checkout, with a severity and a check for whether they still apply;
+    an entry is deleted once fixed. AGENTS.md lists the skill with the other
+    repo skills.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * added the BACKLOG.md for the backlog ai skill to the .gitignore
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
