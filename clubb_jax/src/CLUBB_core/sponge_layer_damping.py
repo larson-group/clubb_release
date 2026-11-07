@@ -255,7 +255,6 @@ def sponge_damp_xp3(dt, z, zm, xp3, tau, sponge_layer_depth):
         real( kind = core_rknd ), dimension(nzt) :: &
           xp3_damped    ! <x'^3> after damping   [units vary]
     """
-    tau = jnp.asarray(tau)
     zm_top = zm[:, -1:]
     in_sponge = (zm_top - z) < sponge_layer_depth
     # Calculate the damped value of <x'^3>.

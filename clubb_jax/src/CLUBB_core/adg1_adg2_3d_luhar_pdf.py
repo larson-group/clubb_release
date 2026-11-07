@@ -120,7 +120,7 @@ def ADG1_w_closure(wm, wp2, Skw, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag):
     # 1 - ( 1/2 * ( 1 - Skw_max
     #                   / sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) ),
     # where sigma_sqd_w is fixed at 0.4 for this calculation.
-    limit = jnp.asarray(mixt_frac_max_mag)[..., None]
+    limit = mixt_frac_max_mag[..., None]
     mixt_frac = jnp.clip(mixt_frac, 1.0 - limit, limit)
 
     # The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value

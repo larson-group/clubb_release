@@ -1,6 +1,8 @@
 """Check the JAX sponge_layer_damping.py ports (sponge_damp_xm/xp2/xp3)
 against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 from types import SimpleNamespace
 
 import jax.numpy as jnp
@@ -34,7 +36,7 @@ def test_f2py_oracle():
     g2 = sponge_damp_xp2(_DT, zm, xp2, np.full((ng, 1), _XTOLSQ), np.full((ng, nzm), _TAU), depth[:, None])
     f3 = fortran.sponge_damp_xp3(fgr, nzm, nzt, _DT, zt, zm, xp3,
                                  SimpleNamespace(tau_sponge_damp=np.full((ng, nzt), _TAU), sponge_layer_depth=depth))
-    g3 = sponge_damp_xp3(_DT, zt, zm, xp3, np.full((ng, nzt), _TAU), depth[:, None])
+    g3 = call_jax(sponge_damp_xp3, _DT, zt, zm, xp3, np.full((ng, nzt), _TAU), depth[:, None])
     w = max(max_abs_diff("sponge_damp_xp2", g2, f2), max_abs_diff("sponge_damp_xp3", g3, f3))
     assert w < 1e-12, f"sponge_damp xp2/xp3 Fortran mismatch {w:.2e}"
     assert np.any(np.asarray(g2) != xp2) and np.any(np.asarray(g3) != xp3), "sponge layer not exercised"

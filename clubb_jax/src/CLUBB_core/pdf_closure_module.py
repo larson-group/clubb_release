@@ -303,11 +303,11 @@ def pdf_closure(
         # PDF component means and both PDF component variances for each of w, rt,
         # theta-l, and passive scalar variables.
         adg1 = ADG1_pdf_driver(
-            wm=jnp.asarray(wm),
-            rtm=jnp.asarray(rtm),
-            thlm=jnp.asarray(thlm),
-            um=jnp.asarray(um),
-            vm=jnp.asarray(vm),
+            wm=wm,
+            rtm=rtm,
+            thlm=thlm,
+            um=um,
+            vm=vm,
             wp2=wp2,
             rtp2=rtp2,
             thlp2=thlp2,
@@ -320,7 +320,7 @@ def pdf_closure(
             vpwp=vpwp,
             sqrt_wp2=sqrt_wp2,
             sigma_sqd_w=sigma_sqd_w,
-            beta=jnp.asarray(clubb_params)[:, ibeta],
+            beta=clubb_params[:, ibeta],
             mixt_frac_max_mag=mixt_frac_max_mag,
         )
     elif iiPDF_type == iiPDF_ADG2:
@@ -337,7 +337,7 @@ def pdf_closure(
             nz, ngrdcol, sclr_dim, sclr_tol,
             wm, rtm, thlm, wp2, rtp2, thlp2,
             Skw, wprtp, wpthlp, sqrt_wp2,
-            jnp.asarray(clubb_params)[:, ibeta],
+            clubb_params[:, ibeta],
             sclrm, sclrp2, wpsclrp, sclr_dim > 0,
         )
         adg1 = {
@@ -531,8 +531,8 @@ def pdf_closure(
             wp2, rtp2, thlp2, up2, vp2,
             Skw, wprtp, wpthlp, upwp, vpwp,
             gamma_Skw_fnc,
-            jnp.asarray(clubb_params)[:, islope_coef_spread_DG_means_w],
-            jnp.asarray(clubb_params)[:, ipdf_component_stdev_factor_w],
+            clubb_params[:, islope_coef_spread_DG_means_w],
+            clubb_params[:, ipdf_component_stdev_factor_w],
             Skrt_in, Skthl_in, Sku_in, Skv_in,
             pdf_implicit_coefs_terms,
             sclrm=sclrm if sclr_dim > 0 else None,
@@ -582,7 +582,7 @@ def pdf_closure(
                     adg1["w_2_n"],
                     adg1["mixt_frac"],
                     sigma_sqd_w,
-                    jnp.asarray(clubb_params)[:, ibeta],
+                    clubb_params[:, ibeta],
                 ),
                 in_axes=(2, 2, 2),
                 out_axes=-1,
@@ -1270,9 +1270,9 @@ def calc_wp4_pdf(wm, w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac):
         real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
           wp4    ! <w'^4>                   [m^4/s^4]
     """
-    wm = jnp.asarray(wm); a = jnp.asarray(mixt_frac)
-    d1 = jnp.asarray(w_1) - wm; d2 = jnp.asarray(w_2) - wm
-    v1 = jnp.asarray(varnce_w_1); v2 = jnp.asarray(varnce_w_2)
+    a = mixt_frac
+    d1 = w_1 - wm; d2 = w_2 - wm
+    v1 = varnce_w_1; v2 = varnce_w_2
     # Calculate <w'^4> by integrating over the PDF.
     wp4 = (a * (3.0 * v1 ** 2 + 6.0 * d1 ** 2 * v1 + d1 ** 4)
            + (1.0 - a) * (3.0 * v2 ** 2 + 6.0 * d2 ** 2 * v2 + d2 ** 4))
@@ -1428,12 +1428,12 @@ def calc_wp2xp_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
         real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           wp2xp    ! <w'^2 x'>                   [m^2/s^2 (units vary)]
     """
-    wm = jnp.asarray(wm); xm = jnp.asarray(xm); a = jnp.asarray(mixt_frac)
-    dw1 = jnp.asarray(w_1) - wm; dw2 = jnp.asarray(w_2) - wm
-    dx1 = jnp.asarray(x_1) - xm; dx2 = jnp.asarray(x_2) - xm
-    vw1 = jnp.asarray(varnce_w_1); vw2 = jnp.asarray(varnce_w_2)
-    vx1 = jnp.asarray(varnce_x_1); vx2 = jnp.asarray(varnce_x_2)
-    c1 = jnp.asarray(corr_w_x_1); c2 = jnp.asarray(corr_w_x_2)
+    a = mixt_frac
+    dw1 = w_1 - wm; dw2 = w_2 - wm
+    dx1 = x_1 - xm; dx2 = x_2 - xm
+    vw1 = varnce_w_1; vw2 = varnce_w_2
+    vx1 = varnce_x_1; vx2 = varnce_x_2
+    c1 = corr_w_x_1; c2 = corr_w_x_2
     # Calculate <w'^2 x'> by integrating over the PDF.
     wp2xp = (a * ((dw1 ** 2 + vw1) * dx1 + 2.0 * c1 * sqrt_clipped(vw1 * vx1) * dw1)
              + (1.0 - a) * ((dw2 ** 2 + vw2) * dx2 + 2.0 * c2 * sqrt_clipped(vw2 * vx2) * dw2))
@@ -1501,12 +1501,12 @@ def calc_wpxp2_pdf(wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, varnce_w_2,
         real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           wpxp2    ! <w'x'^2>                   [m/s (units vary)^2]
     """
-    wm = jnp.asarray(wm); xm = jnp.asarray(xm); a = jnp.asarray(mixt_frac)
-    dw1 = jnp.asarray(w_1) - wm; dw2 = jnp.asarray(w_2) - wm
-    dx1 = jnp.asarray(x_1) - xm; dx2 = jnp.asarray(x_2) - xm
-    vw1 = jnp.asarray(varnce_w_1); vw2 = jnp.asarray(varnce_w_2)
-    vx1 = jnp.asarray(varnce_x_1); vx2 = jnp.asarray(varnce_x_2)
-    c1 = jnp.asarray(corr_w_x_1); c2 = jnp.asarray(corr_w_x_2)
+    a = mixt_frac
+    dw1 = w_1 - wm; dw2 = w_2 - wm
+    dx1 = x_1 - xm; dx2 = x_2 - xm
+    vw1 = varnce_w_1; vw2 = varnce_w_2
+    vx1 = varnce_x_1; vx2 = varnce_x_2
+    c1 = corr_w_x_1; c2 = corr_w_x_2
     # Calculate <w'x'^2> by integrating over the PDF.
     wpxp2 = (a * (dw1 * (dx1 ** 2 + vx1) + 2.0 * c1 * sqrt_clipped(vw1 * vx1) * dx1)
              + (1.0 - a) * (dw2 * (dx2 ** 2 + vx2) + 2.0 * c2 * sqrt_clipped(vw2 * vx2) * dx2))
@@ -1596,16 +1596,16 @@ def calc_wpxpyp_pdf(wm, xm, ym, w_1, w_2, x_1, x_2, y_1, y_2,
         real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
           wpxpyp    ! <w'x'y'>                   [m/s (units vary)]
     """
-    wm = jnp.asarray(wm); xm = jnp.asarray(xm); ym = jnp.asarray(ym); a = jnp.asarray(mixt_frac)
-    dw1 = jnp.asarray(w_1) - wm; dw2 = jnp.asarray(w_2) - wm
-    dx1 = jnp.asarray(x_1) - xm; dx2 = jnp.asarray(x_2) - xm
-    dy1 = jnp.asarray(y_1) - ym; dy2 = jnp.asarray(y_2) - ym
-    vw1 = jnp.asarray(varnce_w_1); vw2 = jnp.asarray(varnce_w_2)
-    vx1 = jnp.asarray(varnce_x_1); vx2 = jnp.asarray(varnce_x_2)
-    vy1 = jnp.asarray(varnce_y_1); vy2 = jnp.asarray(varnce_y_2)
-    cwx1 = jnp.asarray(corr_w_x_1); cwx2 = jnp.asarray(corr_w_x_2)
-    cwy1 = jnp.asarray(corr_w_y_1); cwy2 = jnp.asarray(corr_w_y_2)
-    cxy1 = jnp.asarray(corr_x_y_1); cxy2 = jnp.asarray(corr_x_y_2)
+    a = mixt_frac
+    dw1 = w_1 - wm; dw2 = w_2 - wm
+    dx1 = x_1 - xm; dx2 = x_2 - xm
+    dy1 = y_1 - ym; dy2 = y_2 - ym
+    vw1 = varnce_w_1; vw2 = varnce_w_2
+    vx1 = varnce_x_1; vx2 = varnce_x_2
+    vy1 = varnce_y_1; vy2 = varnce_y_2
+    cwx1 = corr_w_x_1; cwx2 = corr_w_x_2
+    cwy1 = corr_w_y_1; cwy2 = corr_w_y_2
+    cxy1 = corr_x_y_1; cxy2 = corr_x_y_2
     # Calculate <w'x'y'> by integrating over the PDF.
     comp1 = (dw1 * dx1 * dy1 + cxy1 * sqrt_clipped(vx1 * vy1) * dw1
              + cwy1 * sqrt_clipped(vw1 * vy1) * dx1 + cwx1 * sqrt_clipped(vw1 * vx1) * dy1)
@@ -2258,7 +2258,7 @@ def calc_w_up_in_cloud(mixt_frac, cloud_frac_1, cloud_frac_2,
           cloudy_downdraft_frac    ! cloudy downdraft fraction             [-]
     """
     def _component(w, varnce):
-        stdev = jnp.sqrt(jnp.asarray(varnce))
+        stdev = jnp.sqrt(varnce)
         all_up = w > max_num_stdevs * stdev
         all_down = w < -max_num_stdevs * stdev
         ratio = w / (sqrt_2 * jnp.maximum(eps, stdev))

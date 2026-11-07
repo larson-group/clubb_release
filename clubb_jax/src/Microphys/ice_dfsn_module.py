@@ -94,11 +94,6 @@ def ice_dfsn(
     #     midlevel, mixed-phase clouds", J. Atmos. Sci., Vol. 59,
     #     pp. 1779--1804.
     # -------------------------------------------------------------------------------
-    thlm = jnp.asarray(thlm)
-    rcm = jnp.asarray(rcm)
-    exner = jnp.asarray(exner)
-    p_in_Pa = jnp.asarray(p_in_Pa)
-    rho = jnp.asarray(rho)
     nzt = thlm.shape[-1]
 
     # --- Vectorized thermodynamic factors (mass-independent) ---

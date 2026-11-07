@@ -203,7 +203,7 @@ def ltqnorm(p_core_rknd):
             1.0,
         ]
     )
-    p = jnp.asarray(p_core_rknd)
+    p = p_core_rknd
 
     # JAX adaptation: mask the input before logarithms so invalid/end-point
     # values do not contaminate the inactive approximation branches.

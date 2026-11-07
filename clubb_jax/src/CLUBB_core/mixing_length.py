@@ -924,10 +924,10 @@ def compute_mixing_length(
     if l_implemented:
         # Within a host model, measure height above ground.
         lminh = jnp.maximum(zero_threshold, Lscale_sfclyr_depth - (zt - gr.zm[:, gr.k_lb_zm, None])) \
-            * jnp.asarray(lmin)[..., None] * invrs_Lscale_sfclyr_depth
+            * lmin[..., None] * invrs_Lscale_sfclyr_depth
     else:
         # In standalone mode, measure height above mean sea level.
-        lminh = jnp.maximum(zero_threshold, Lscale_sfclyr_depth - zt) * jnp.asarray(lmin)[..., None] * invrs_Lscale_sfclyr_depth
+        lminh = jnp.maximum(zero_threshold, Lscale_sfclyr_depth - zt) * lmin[..., None] * invrs_Lscale_sfclyr_depth
     Lscale_up = jnp.maximum(lminh, Lscale_up)
     Lscale_down = jnp.maximum(lminh, Lscale_down)
     # A geometric mean becomes small if either directional length is small.
@@ -2076,9 +2076,9 @@ def compute_coherent_mixing_length(
     # Apply surface constraints and combine the two directional lengths.
     # The minimum length decays linearly over the lowest 500 m.
     if l_implemented:
-        surface_floor = (surface_layer_depth - (zt[:, :-1] - gr.zm[:, gr.k_lb_zm, None])) * jnp.asarray(lmin)[..., None] * invs_sfclyr_depth
+        surface_floor = (surface_layer_depth - (zt[:, :-1] - gr.zm[:, gr.k_lb_zm, None])) * lmin[..., None] * invs_sfclyr_depth
     else:
-        surface_floor = (surface_layer_depth - zt[:, :-1]) * jnp.asarray(lmin)[..., None] * invs_sfclyr_depth
+        surface_floor = (surface_layer_depth - zt[:, :-1]) * lmin[..., None] * invs_sfclyr_depth
     # Apply the same surface floor before combining the directional lengths.
     Lscale_up = Lscale_up.at[:, :-1].set(jnp.maximum(surface_floor, Lscale_up[:, :-1]))
     Lscale_down = Lscale_down.at[:, :-1].set(jnp.maximum(surface_floor, Lscale_down[:, :-1]))

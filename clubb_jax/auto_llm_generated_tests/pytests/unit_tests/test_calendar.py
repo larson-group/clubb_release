@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """validate the calendar.F90 port (Fliegel & van Flandern Julian-Day-Number routines)."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 from clubb_jax.src.CLUBB_core.calendar import (
     compute_current_date_api, gregorian2julian_date, julian2gregorian_date,
@@ -31,12 +33,12 @@ def _old_compute(day, month, year, current_time_s):
 
 def test_jdn_anchors_and_roundtrip():
     # Published anchors (proleptic Gregorian JDN at noon).
-    assert gregorian2julian_date(1, 1, 2000) == 2451545, gregorian2julian_date(1, 1, 2000)
-    assert gregorian2julian_date(1, 1, 1970) == 2440588, gregorian2julian_date(1, 1, 1970)
+    assert call_jax(gregorian2julian_date, 1, 1, 2000) == 2451545, call_jax(gregorian2julian_date, 1, 1, 2000)
+    assert call_jax(gregorian2julian_date, 1, 1, 1970) == 2440588, call_jax(gregorian2julian_date, 1, 1, 1970)
     # Exact inverse over a range of dates.
     for d, m, y in _DATES:
-        jd = gregorian2julian_date(d, m, y)
-        assert julian2gregorian_date(jd) == (d, m, y), f"roundtrip {d}/{m}/{y} -> {jd} -> {julian2gregorian_date(jd)}"
+        jd = call_jax(gregorian2julian_date, d, m, y)
+        assert call_jax(julian2gregorian_date, jd) == (d, m, y), f"roundtrip {d}/{m}/{y} -> {jd} -> {call_jax(julian2gregorian_date, jd)}"
     print("  gregorian2julian_date/julian2gregorian_date: anchors + roundtrip  PASS")
 
 
@@ -47,7 +49,7 @@ def test_compute_current_date_api_matches_reference():
     for d, m, y in _DATES:
         for secs in times:
             n += 1
-            assert compute_current_date_api(d, m, y, secs) == _old_compute(d, m, y, secs), \
+            assert call_jax(compute_current_date_api, d, m, y, secs) == _old_compute(d, m, y, secs), \
                 f"compute_current_date_api mismatch at {(d, m, y, secs)}"
     print(f"  compute_current_date_api: matches month-walking reference over {n} cases  PASS")
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """validate the JAX mass-conserving remapping port (remapping_module.F90)."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 import numpy as np
 import jax
@@ -76,7 +78,7 @@ def test_remap_vals_to_target_two_grids():
     rng = np.random.default_rng(526)
     source_values = rng.uniform(1.0, 5.0, (ng, src.shape[1] - 1))      # arbitrary field on source cells
 
-    target_values = np.asarray(remap_vals_to_target(src, tgt, rho_vals, rho_levels, source_values, p_sfc))
+    target_values = np.asarray(call_jax(remap_vals_to_target, src, tgt, rho_vals, rho_levels, source_values, p_sfc))
     # Reconstruct the same internal pressure pipeline to form dp on each grid.
     p_src = np.asarray(_pressure_levels(calc_mass_over_grid_intervals(rho_vals, rho_levels, src), p_sfc))
     p_tgt = np.asarray(_pressure_levels(calc_mass_over_grid_intervals(rho_vals, rho_levels, tgt), p_sfc))
@@ -88,12 +90,12 @@ def test_remap_vals_to_target_two_grids():
     assert rel < 1e-10, f"two-grid remap not mass-conserving: rel {rel:.2e}"
 
     # Identity: target grid == source grid -> output == input.
-    ident = np.asarray(remap_vals_to_target(src, src, rho_vals, rho_levels, source_values, p_sfc))
+    ident = np.asarray(call_jax(remap_vals_to_target, src, src, rho_vals, rho_levels, source_values, p_sfc))
     iworst = np.max(np.abs(ident - source_values))
     assert iworst < 1e-9, f"same-grid remap_vals_to_target not identity: {iworst:.2e}"
 
     # Finite grad through the full two-grid pipeline.
     g = np.asarray(jax.grad(lambda v: jnp.sum(
-        remap_vals_to_target(src, tgt, rho_vals, rho_levels, v, p_sfc) ** 2))(jnp.asarray(source_values)))
+        call_jax(remap_vals_to_target, src, tgt, rho_vals, rho_levels, v, p_sfc) ** 2))(jnp.asarray(source_values)))
     assert np.isfinite(g).all(), "non-finite grad through remap_vals_to_target"
     print(f"  remap_vals_to_target (two grids): mass-conserving (rel {rel:.1e}) + identity + finite grad  PASS")

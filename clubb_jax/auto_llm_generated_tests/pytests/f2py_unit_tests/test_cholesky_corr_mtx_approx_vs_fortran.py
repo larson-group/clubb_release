@@ -1,5 +1,7 @@
 """Check the JAX calc_cholesky_corr_mtx_approx port against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff
@@ -20,7 +22,7 @@ def test_f2py_oracle():
     for n, iipdf_w, seed in ((6, 3, 11), (8, 1, 22), (5, 5, 33), (7, 4, 44)):
         corr = _corr_matrix(n, seed)
         f_chol, f_approx = clubb_f2py.f2py_calc_cholesky_corr_mtx_approx(iipdf_w, corr.copy())
-        j_chol, j_approx = calc_cholesky_corr_mtx_approx(n, iipdf_w, corr)
+        j_chol, j_approx = call_jax(calc_cholesky_corr_mtx_approx, n, iipdf_w, corr)
         r_chol = max_abs_diff("cholesky_corr_mtx_approx", np.asarray(j_chol), np.asarray(f_chol))
         r_approx = max_abs_diff("cholesky_corr_mtx_approx", np.asarray(j_approx), np.asarray(f_approx))
         worst = max(worst, r_chol, r_approx)

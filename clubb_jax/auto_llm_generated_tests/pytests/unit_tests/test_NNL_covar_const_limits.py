@@ -12,6 +12,8 @@ with the x3 mean passed as the deterministic value exp(μ_x3_n). This pins all t
 trivariate covariance const-variant coverage (const_x1/x2/x1x2 via MM, 576; const_x3/x1x3/x2x3 via this limit, 577).
 Oracle-independent; never SKIPs. (iter 577)
 """
+
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 import math
 
 
@@ -34,12 +36,12 @@ def test_const_x3_x1x3_x2x3_limits():
         x1m, Ym, al, be = rng.uniform(.3, .6), 0.0, rng.uniform(.5, 2.), rng.uniform(.3, 1.2)
         mu_x3 = math.exp(mu_x3_n)
         # const_x3 == general(σ_x3_n→0)
-        cx3 = float(trivar_NNL_covar_const_x3(mu_x1, mu_x2, mu_x3, s_x1, s_x2, r12, x1m, Ym, al, be))
-        gen = float(trivar_NNL_covar(mu_x1, mu_x2, mu_x3_n, s_x1, s_x2, _TINY, r12, r13n, r23n, x1m, Ym, al, be))
+        cx3 = float(call_jax(trivar_NNL_covar_const_x3, mu_x1, mu_x2, mu_x3, s_x1, s_x2, r12, x1m, Ym, al, be))
+        gen = float(call_jax(trivar_NNL_covar, mu_x1, mu_x2, mu_x3_n, s_x1, s_x2, _TINY, r12, r13n, r23n, x1m, Ym, al, be))
         w3 = max(w3, abs(cx3 - gen) / (abs(gen) + 1e-300))
         # const_x1x3 == const_x1(σ_x3_n→0)
-        cx13 = float(trivar_NNL_covar_const_x1x3(mu_x1, mu_x2, mu_x3, s_x2, x1m, Ym, al, be))
-        cx1 = float(trivar_NNL_covar_const_x1(mu_x1, mu_x2, mu_x3_n, s_x2, _TINY, r23n, x1m, Ym, al, be))
+        cx13 = float(call_jax(trivar_NNL_covar_const_x1x3, mu_x1, mu_x2, mu_x3, s_x2, x1m, Ym, al, be))
+        cx1 = float(call_jax(trivar_NNL_covar_const_x1, mu_x1, mu_x2, mu_x3_n, s_x2, _TINY, r23n, x1m, Ym, al, be))
         w13 = max(w13, abs(cx13 - cx1) / (abs(cx1) + 1e-300))
         # const_x2x3 == const_x2(σ_x3_n→0)
         cx23 = float(trivar_NNL_covar_const_x2x3(mu_x1, mu_x2, mu_x3, x1m, Ym, al, be))

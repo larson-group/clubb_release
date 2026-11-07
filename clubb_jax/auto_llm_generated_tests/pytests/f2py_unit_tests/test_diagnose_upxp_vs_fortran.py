@@ -1,5 +1,7 @@
 """Check advance_xm_wpxp_module.py:diagnose_upxp against the Fortran formula."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import jax.numpy as jnp
 import numpy as np
 
@@ -29,7 +31,7 @@ def test_f2py_oracle():
         C6x  = rng.uniform(2.0, 6.0, (ng, nzm))
         tau  = rng.uniform(100.0, 900.0, (ng, nzm))
         C7   = rng.uniform(0.3, 0.8, (ng, nzm))
-        j = diagnose_upxp(nzm, nzt, ng, jgr, jnp.asarray(ypwp), jnp.asarray(xm), jnp.asarray(wpxp),
+        j = call_jax(diagnose_upxp, nzm, nzt, ng, jgr, jnp.asarray(ypwp), jnp.asarray(xm), jnp.asarray(wpxp),
                           jnp.asarray(ym), jnp.asarray(C6x), jnp.asarray(tau), jnp.asarray(C7))
         ddzt_xm = np.asarray(fortran_grid.ddzt(nzm, nzt, ng, fgr, xm))
         ddzt_ym = np.asarray(fortran_grid.ddzt(nzm, nzt, ng, fgr, ym))

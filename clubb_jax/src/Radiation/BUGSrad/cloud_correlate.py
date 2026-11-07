@@ -51,7 +51,6 @@ def bugs_ctot(pl2, tl, acld, l_c):
     Returns:
         c_tot scalar.
     """
-    acld = jnp.asarray(acld)
     cloudy = np.asarray(acld > MIN_CF)
     Ncloud = int(cloudy.sum())
     if Ncloud == 0:
@@ -61,7 +60,7 @@ def bugs_ctot(pl2, tl, acld, l_c):
     if float(jnp.max(acld)) >= 1.0:
         return jnp.asarray(1.0)
 
-    z = _midlayer_heights(jnp.asarray(pl2), jnp.asarray(tl))
+    z = _midlayer_heights(pl2, tl)
     idx = np.nonzero(cloudy)[0]            # ascending cloudy-layer indices (DISCRETE selection)
     return ctot_from_cloudy_layers(acld[idx], z[idx], l_c)
 
@@ -73,7 +72,6 @@ def ctot_from_cloudy_layers(cloud, zc, l_c):
 
     cld_below[k] = (cloud[k]-olap[k-1]) * prod_{j<k-1} (1 - (cloud[j]-olap[j])/(1-cloud[j+1])); c_tot = sum.
     """
-    cloud = jnp.asarray(cloud)
     Ncloud = cloud.shape[0]
     dz = zc[:-1] - zc[1:]
     if float(l_c) < MIN_LC:

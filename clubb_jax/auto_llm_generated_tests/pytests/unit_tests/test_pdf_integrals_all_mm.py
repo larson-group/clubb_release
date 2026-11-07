@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Check mixed-moment PDF probability limits and normal central moments."""
+
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 import math
 import pytest
 from clubb_jax.src.Microphys.KK_microphys import parabolic_cylinder
@@ -22,7 +24,7 @@ def test_base_case_probability_mass(monkeypatch, high_accuracy, tolerance):
             context.setattr(parabolic_cylinder, 'l_high_accuracy_parab_cyl_fnc', high_accuracy)
             parabolic_cylinder.dv_parabolic_cylinder.clear_cache()
             for mu_x2, sigma_x2 in ((0.3, 0.5), (-0.2, 0.8), (1.0, 0.4), (0.0, 1.0)):
-                got = float(trivar_NNL_MM(
+                got = float(call_jax(trivar_NNL_MM,
                     mu_x1=0.5, mu_x2=mu_x2, mu_x3_n=-0.4, sigma_x1=0.6, sigma_x2=sigma_x2, sigma_x3_n=0.5,
                     rho_x1x2=0.3, rho_x1x3_n=0.2, rho_x2x3_n=-0.1, x1_mean=0.4, x2_alpha_x3_beta_mean=1.3,
                     alpha_exp=1.5, beta_exp=0.5, a_exp=0, b_exp=0))
@@ -48,7 +50,7 @@ def _Q():
 
 def _call_quad(q, a, b, **over):
     p = {**q, **over}
-    return float(quadrivar_NNLL_MM(
+    return float(call_jax(quadrivar_NNLL_MM,
         p['mu_x1'], p['mu_x2'], p['mu_x3_n'], p['mu_x4_n'], p['s_x1'], p['s_x2'], p['s_x3n'], p['s_x4n'],
         p['r12'], p['r13n'], p['r14n'], p['r23n'], p['r24n'], p['r34n'], p['x1_mean'], p['M'],
         p['alpha'], p['beta'], p['gamma'], a, b))

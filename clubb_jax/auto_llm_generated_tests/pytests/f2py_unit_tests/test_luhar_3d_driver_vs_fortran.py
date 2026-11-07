@@ -1,6 +1,8 @@
 """Check the JAX Luhar_3D_pdf_driver + backsolve_Luhar_params (adg1_adg2_3d_luhar_pdf.F90)
 against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 import clubb_python.CLUBB_core.adg1_adg2_3d_luhar_pdf as fortran
@@ -26,6 +28,6 @@ def test_f2py_oracle():
     for _ in range(4):
         a = _inputs(rng)
         f = fortran.luhar_3d_pdf_driver(NZ, *[a[k] for k in order])
-        g = Luhar_3D_pdf_driver(*[a[k] for k in order])
+        g = call_jax(Luhar_3D_pdf_driver, *[a[k] for k in order])
         worst = max(worst, max_abs_diff("Luhar_3D_pdf_driver", tuple(g), tuple(f)))
     assert worst < 1e-9, f"luhar_3d_pdf_driver Fortran mismatch {worst:.2e}"

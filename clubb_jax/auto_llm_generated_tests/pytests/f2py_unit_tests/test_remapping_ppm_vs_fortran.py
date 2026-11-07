@@ -1,6 +1,8 @@
 """Check the JAX PPM (method 2) remapping port (remapping_module.F90)
 against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 import clubb_python.CLUBB_core.remapping_module as fortran
@@ -29,7 +31,7 @@ def test_f2py_same_grid_identity():
         src = rng.uniform(0.2, 2.0, (ng, nzt))
         f = np.asarray(fortran.remap_vals_to_target(
             ng, fgr, fgr, nzt, src, nzt, rho_vals.shape[1], rho_vals, rho_levels, iv, p_sfc, 2, True))   # grid_remap_method=2 (PPM)
-        g = np.asarray(remap_vals_to_target_same_grid(
+        g = np.asarray(call_jax(remap_vals_to_target_same_grid,
             src, np.asarray(jgr.zm), np.asarray(jgr.zt), rho_vals, rho_levels, p_sfc,
             grid_remap_method=2, l_zt_variable=True, iv=iv))
         worst = max(worst, max_abs_diff("remapping_ppm", g, f))

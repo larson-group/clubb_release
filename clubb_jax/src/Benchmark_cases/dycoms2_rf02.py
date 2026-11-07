@@ -38,11 +38,6 @@ def dycoms2_rf02_tndcy(
     # --------------------- Begin Code ---------------------
     # Enter the final thlm and rtm tendency
 
-    # The driver initializes these inout arrays on the host; JAX functional
-    # updates require device arrays at this boundary.
-    wm_zt = jnp.asarray(wm_zt)
-    wm_zm = jnp.asarray(wm_zm)
-
     # Imposed large-scale subsidence at the uppermost level.
     # CLUBB used a "one-sided" derivative method to compute mean advection at
     # the uppermost thermodynamic level. In order to avoid bringing in large

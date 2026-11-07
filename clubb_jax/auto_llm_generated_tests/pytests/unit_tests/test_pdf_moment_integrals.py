@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """validate the JAX binormal/trinormal PDF moment integrals."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 import numpy as np
 
@@ -28,8 +30,8 @@ def test_monte_carlo():
     w_a, x_a = _comp(w1, x1, vw1, vx1, cwx1, m1)
     w_b, x_b = _comp(w2, x2, vw2, vx2, cwx2, n - m1)
     w = np.concatenate([w_a, w_b]); x = np.concatenate([x_a, x_b])
-    wp4 = float(calc_wp4_pdf(wm, w1, w2, vw1, vw2, a))
-    wp2xp = float(calc_wp2xp_pdf(wm, xm, w1, w2, x1, x2, vw1, vw2, vx1, vx2, cwx1, cwx2, a))
+    wp4 = float(call_jax(calc_wp4_pdf, wm, w1, w2, vw1, vw2, a))
+    wp2xp = float(call_jax(calc_wp2xp_pdf, wm, xm, w1, w2, x1, x2, vw1, vw2, vx1, vx2, cwx1, cwx2, a))
     assert abs(wp4 - np.mean((w - wm) ** 4)) < 5e-2, f"wp4 {wp4} vs MC {np.mean((w-wm)**4)}"
     assert abs(wp2xp - np.mean((w - wm) ** 2 * (x - xm))) < 5e-2, "wp2xp vs MC"
     print(f"  Monte-Carlo: wp4 & wp2xp match sample moments (wp4={wp4:.3f})  PASS")

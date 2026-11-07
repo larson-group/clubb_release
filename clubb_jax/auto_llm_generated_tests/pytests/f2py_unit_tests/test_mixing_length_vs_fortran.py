@@ -1,5 +1,7 @@
 """Check mixing_length.F90 ports against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 from input.scripts.create_case_namelist import create_case_namelist_file
 
 import os
@@ -64,7 +66,7 @@ def test_calc_Lscale_directly_f2py():
         tail = (em, thv_ds, Lmax, lmin, cp, SATURATION_FLATAU, False, Lscale_direct)
         fr = fortran.calc_lscale_directly(ng, nzm, nzt, fgr, *common, fortran_init_pdf_params(nzt, ng), *tail,
                                           FortranErrInfo(ngrdcol=ng))
-        jr = calc_Lscale_directly(ng, nzm, nzt, jgr, *common, init_pdf_params(nzt, ng), *tail,
+        jr = call_jax(calc_Lscale_directly, ng, nzm, nzt, jgr, *common, init_pdf_params(nzt, ng), *tail,
                                   no_stats(ng), ErrInfo(ngrdcol=ng))
         assert not fr[0].is_fatal() and not jr[0].is_fatal()
         for name, a, b in zip(("Lscale", "Lscale_up", "Lscale_down"), jr[1:4], fr[1:4]):

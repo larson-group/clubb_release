@@ -423,7 +423,6 @@ def rearrange_corr_array(pdf_dim, iiPDF_w, corr_array):
           corr_array_swapped   ! Swapped correlation matrix
     """
     w_idx = int(iiPDF_w) - 1
-    corr_array = jnp.asarray(corr_array)
     swap_array = corr_array[:, 0]
 
     corr_array_swapped = corr_array

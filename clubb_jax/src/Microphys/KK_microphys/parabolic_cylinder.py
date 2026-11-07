@@ -76,10 +76,10 @@ def _uv_elementary(a, x, eps):
         values = jnp.zeros((13,) + tau.shape, dtype=tau.dtype)
         def horner(values, coefficients):
             return values * tau + coefficients.reshape((13,) + (1,) * tau.ndim), None
-        return lax.scan(horner, values, jnp.asarray(coefficients).T[::-1])[0]
+        return lax.scan(horner, values, coefficients.T[::-1])[0]
     if l_high_accuracy_parab_cyl_fnc:
-        phi = polynomials(_PHI)
-        chi = polynomials(_CHI)
+        phi = polynomials(jnp.array(_PHI))
+        chi = polynomials(jnp.array(_CHI))
     else:
         # For KK orders a>=1.5 with x>=10, and the a>=21 recurrence
         # seeds, the source's eps=1e-4 test converges by k=2. Retain that
@@ -108,14 +108,14 @@ def _uv_elementary(a, x, eps):
     ffa=jnp.exp(a*jnp.log(x*0.5+jnp.sqrt(xargu))+x*0.5*jnp.sqrt(xargu)-a*0.5)
     u=sphip/(facu*jnp.sqrt(2.0))/ffa
     # Source coefficient series for the exponentially small U contribution to V.
-    gk=(1.0,.41666666666666666667e-1,0,            -.97463348765432098765e-2,0,.12318482904510826965e-1,            0,-.37822933917705539682e-1,0,.21514326767209896474,            0,-1.9630003732872175294,0,26.256830962378916652,0,            -484.19061617504532506,0,11773.948564802034554,0,            -365037.92569092371983,0,14054558.808383655048,0,            -657894020.31009296820,0,36795321248.737494263)
-    wk=(1.0,-.17361111111111111111e-2,.81219457304526748971e-3,            -.11215312855682914598e-2,.33920312789254653178e-2,            -.18817620620360951108e-1,.16870892343666095644,            -2.2330644165264046334,40.925670821571152909,            -991.44221631790969480,30664.092693023833555,            -1178670.6504836921080,55108658.068376820265)
+    gk=jnp.array((1.0,.41666666666666666667e-1,0,            -.97463348765432098765e-2,0,.12318482904510826965e-1,            0,-.37822933917705539682e-1,0,.21514326767209896474,            0,-1.9630003732872175294,0,26.256830962378916652,0,            -484.19061617504532506,0,11773.948564802034554,0,            -365037.92569092371983,0,14054558.808383655048,0,            -657894020.31009296820,0,36795321248.737494263))
+    wk=jnp.array((1.0,-.17361111111111111111e-2,.81219457304526748971e-3,            -.11215312855682914598e-2,.33920312789254653178e-2,            -.18817620620360951108e-1,.16870892343666095644,            -2.2330644165264046334,40.925670821571152909,            -991.44221631790969480,30664.092693023833555,            -1178670.6504836921080,55108658.068376820265))
     mu2=mu*mu; mu4=mu2*mu2
     def coefficient_series(coefficients, ratio):
         def accumulate(carry, coefficient):
             power, value = carry
             return (power*ratio, value+coefficient/power), None
-        return lax.scan(accumulate, (jnp.ones_like(x), jnp.zeros_like(x)), jnp.asarray(coefficients))[0][1]
+        return lax.scan(accumulate, (jnp.ones_like(x), jnp.zeros_like(x)), coefficients)[0][1]
     gmus = coefficient_series(gk, mu2)
     smus = coefficient_series(wk, mu4)
     dl=-2.0*a*(t*jnp.sqrt(t*t+1.0)+jnp.log(t+jnp.sqrt(t*t+1.0)))

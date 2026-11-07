@@ -13,6 +13,8 @@ against the MC-tested kernel); (2) the <Y> dependence: `covar(<Y>) − covar(0) 
 (iter 575)
 """
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 import numpy as np
 
@@ -33,11 +35,11 @@ def test_trivar_covar_kernel_and_Ymean_term():
     for _ in range(200):
         a = _tri_args(rng)
         # (1) <Y>=0 cross-check vs the MC-tested MM kernel
-        cov0 = float(trivar_NNL_covar(*a)); mm = float(trivar_NNL_MM(*a, 1, 1))
+        cov0 = float(call_jax(trivar_NNL_covar, *a)); mm = float(call_jax(trivar_NNL_MM, *a, 1, 1))
         worst_k = max(worst_k, abs(cov0 - mm) / (abs(mm) + 1e-300))
         # (2) the <Y> linear-subtraction term: covar(Y) − covar(0) == −Y·(mu_x1 − x1_mean)
         Y = rng.uniform(1e-4, 5e-4); aY = list(a); aY[10] = Y
-        dcov = float(trivar_NNL_covar(*aY)) - cov0
+        dcov = float(call_jax(trivar_NNL_covar, *aY)) - cov0
         worst_y = max(worst_y, abs(dcov - (-Y * (a[0] - a[9]))))
     assert worst_k < 1e-11, f"trivar covar kernel != MM(a=1,b=1) at <Y>=0: {worst_k:.2e}"
     assert worst_y < 1e-12, f"trivar covar <Y> term wrong: {worst_y:.2e}"
@@ -57,10 +59,10 @@ def test_quadrivar_covar_kernel_and_Ymean_term():
     worst_k = 0.0; worst_y = 0.0
     for _ in range(200):
         a = _quad_args(rng)
-        cov0 = float(quadrivar_NNLL_covar(*a)); mm = float(quadrivar_NNLL_MM(*a, 1, 1))
+        cov0 = float(call_jax(quadrivar_NNLL_covar, *a)); mm = float(call_jax(quadrivar_NNLL_MM, *a, 1, 1))
         worst_k = max(worst_k, abs(cov0 - mm) / (abs(mm) + 1e-300))
         Y = rng.uniform(1e-4, 5e-4); aY = list(a); aY[15] = Y
-        dcov = float(quadrivar_NNLL_covar(*aY)) - cov0
+        dcov = float(call_jax(quadrivar_NNLL_covar, *aY)) - cov0
         worst_y = max(worst_y, abs(dcov - (-Y * (a[0] - a[14]))))
     assert worst_k < 1e-11, f"quadrivar covar kernel != MM(a=1,b=1) at <Y>=0: {worst_k:.2e}"
     assert worst_y < 1e-12, f"quadrivar covar <Y> term wrong: {worst_y:.2e}"

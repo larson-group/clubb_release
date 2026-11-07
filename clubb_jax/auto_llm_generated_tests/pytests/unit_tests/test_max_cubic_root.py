@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """validate the JAX max_cubic_root port (adg1_adg2_3d_luhar_pdf.F90)."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 import numpy as np
 
@@ -15,7 +17,7 @@ def test_root_property_and_max():
         a, b, c, d = rng.uniform(-3, 3, 4)
         if abs(a) < 0.5:
             a = 0.5 * np.sign(a) if a != 0 else 0.5     # keep it a genuine cubic
-        r = float(np.asarray(max_cubic_root(np.array([a]), np.array([b]), np.array([c]), np.array([d])))[0])
+        r = float(np.asarray(call_jax(max_cubic_root, np.array([a]), np.array([b]), np.array([c]), np.array([d])))[0])
         worst_resid = max(worst_resid, abs(a * r ** 3 + b * r ** 2 + c * r + d))
         real_roots = np.real(np.roots([a, b, c, d]))[np.abs(np.imag(np.roots([a, b, c, d]))) < 1e-9]
         if real_roots.size:
@@ -27,9 +29,9 @@ def test_root_property_and_max():
 
 def test_fallbacks():
     # Quadratic fallback: a=0, b!=0 -> x^2 - 3x + 2 = 0 -> roots 1,2 -> max=2.
-    r = float(np.asarray(max_cubic_root(np.array([0.0]), np.array([1.0]), np.array([-3.0]), np.array([2.0])))[0])
+    r = float(np.asarray(call_jax(max_cubic_root, np.array([0.0]), np.array([1.0]), np.array([-3.0]), np.array([2.0])))[0])
     assert abs(r - 2.0) < 1e-12, f"quadratic fallback: {r}"
     # Linear fallback: a=0, b=0 -> 2x - 4 = 0 -> x=2.
-    rl = float(np.asarray(max_cubic_root(np.array([0.0]), np.array([0.0]), np.array([2.0]), np.array([-4.0])))[0])
+    rl = float(np.asarray(call_jax(max_cubic_root, np.array([0.0]), np.array([0.0]), np.array([2.0]), np.array([-4.0])))[0])
     assert abs(rl - 2.0) < 1e-12, f"linear fallback: {rl}"
     print("  quadratic + linear fallbacks  PASS")

@@ -1,6 +1,8 @@
 """Check the JAX mass-conserving remapping port (remapping_module.F90)
 against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 import clubb_python.CLUBB_core.remapping_module as fortran
@@ -32,7 +34,7 @@ def test_f2py_oracle():
         src = rng.uniform(-2, 2, (ng, ncell))
         f = np.asarray(fortran.remap_vals_to_target(
             ng, fgr, fgr, ncell, src, ncell, rho_vals.shape[1], rho_vals, rho_levels, 1, p_sfc, 1, l_zt))
-        g = np.asarray(remap_vals_to_target_same_grid(
+        g = np.asarray(call_jax(remap_vals_to_target_same_grid,
             src, np.asarray(jgr.zm), np.asarray(jgr.zt), rho_vals, rho_levels, p_sfc,
             grid_remap_method=1, l_zt_variable=l_zt))
         worst = max(worst, max_abs_diff("remapping_module", g, f))

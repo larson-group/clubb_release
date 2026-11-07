@@ -1,6 +1,8 @@
 """Check the JAX compute_sigma_sqd_w port (sigma_sqd_w_module.F90)
 against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 from input.scripts.create_case_namelist import create_case_namelist_file
 
 import os
@@ -45,6 +47,6 @@ def test_f2py_oracle():
         f = _fields(nzm, nzt, seed)
         for l_pred in (False, True):
             ref = fortran.compute_sigma_sqd_w(nzm, nzt, ng, fgr, *[f[k] for k in order], params, l_pred)
-            got = compute_sigma_sqd_w(nzm, nzt, ng, jgr, *[f[k] for k in order], params, l_pred)
+            got = call_jax(compute_sigma_sqd_w, nzm, nzt, ng, jgr, *[f[k] for k in order], params, l_pred)
             worst = max(worst, max_abs_diff(f"compute_sigma_sqd_w(l_predict_upwp_vpwp={l_pred})", got, ref))
     assert worst < 1e-11, f"compute_sigma_sqd_w Fortran mismatch {worst:.2e}"

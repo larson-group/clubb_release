@@ -809,7 +809,7 @@ def sort_roots(roots):
         real( kind = core_rknd ), dimension(nz,3) :: &
           roots_sorted    ! Roots sorted from smallest to largest    [-]
     """
-    roots_sorted = jnp.sort(jnp.asarray(roots), axis=-1)
+    roots_sorted = jnp.sort(roots, axis=-1)
     return roots_sorted
 
 

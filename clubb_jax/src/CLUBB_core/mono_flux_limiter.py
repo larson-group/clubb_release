@@ -875,14 +875,14 @@ def mfl_xm_rhs(
     del nzm, nzt, ngrdcol
     invrs_dt = one / dt
     rhs = (
-        jnp.asarray(xm_old) * invrs_dt
-        - jnp.asarray(invrs_rho_ds_zt)
-        * jnp.asarray(invrs_dzt)
+        xm_old * invrs_dt
+        - invrs_rho_ds_zt
+        * invrs_dzt
         * (
-            jnp.asarray(rho_ds_zm)[:, 1:] * jnp.asarray(wpxp)[:, 1:]
-            - jnp.asarray(rho_ds_zm)[:, :-1] * jnp.asarray(wpxp)[:, :-1]
+            rho_ds_zm[:, 1:] * wpxp[:, 1:]
+            - rho_ds_zm[:, :-1] * wpxp[:, :-1]
         )
-        + jnp.asarray(xm_forcing)
+        + xm_forcing
     )
     return rhs
 

@@ -1,5 +1,7 @@
 """Check the JAX new_pdf_driver port (new_pdf_main.F90) against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff
@@ -36,7 +38,7 @@ def test_driver_f2py():
                                    params, Skrt.copy(), Skthl.copy(),
                                    pdf_implicit_coefs_terms=init_pdf_implicit(nz, ng, 0))
         f_coefs = get_fortran_implicit_coefs()
-        g = new_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, wprtp, wpthlp, rtpthlp, params, Skrt, Skthl,
+        g = call_jax(new_pdf_driver, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, wprtp, wpthlp, rtpthlp, params, Skrt, Skthl,
                            init_pdf_implicit_coefs_terms_api(nz, ng, 0))
         pairs = list(zip(_DRIVER_OUTPUTS, f, (g[k] for k in _DRIVER_OUTPUTS)))
         for name in f_coefs._fields:

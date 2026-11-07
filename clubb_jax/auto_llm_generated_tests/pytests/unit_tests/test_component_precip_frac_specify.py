@@ -14,6 +14,8 @@ upsilon==1 branch (so that branch is now exercised — a crash/NaN there is caug
 [0,1] across a broad sweep including clip regimes) and a finite jax.grad. Oracle-independent; never SKIPs. (iter 548)
 """
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 import numpy as np
 import jax
@@ -26,7 +28,7 @@ _TOL = 1.0e-3
 
 
 def _call(pf, mf, upsilon):
-    return component_precip_frac_specify(2, jnp.array([1.e-10,1.]), float(upsilon),
+    return call_jax(component_precip_frac_specify, 2, jnp.array([1.e-10,1.]), float(upsilon),
         jnp.ones((_NG,_NZT,2)),jnp.asarray(pf),jnp.asarray(mf),jnp.full((_NG,),_TOL))
 
 
@@ -83,7 +85,7 @@ def test_minimum_precipitation_fraction_does_not_lose_pdf_component():
     a=jnp.array([[0.046238554297345934, 0.02989385943152091]])
     fp=jnp.full_like(a,tolerance)
     def split(a,fp):
-        return component_precip_frac_specify(2,jnp.array([1.e-10,1.]),.5,
+        return call_jax(component_precip_frac_specify, 2,jnp.array([1.e-10,1.]),.5,
             jnp.ones((1,2,2)),fp,a,jnp.array([tolerance]))
     for run in (split,jax.jit(split)):
         fp1,fp2=run(a,fp)

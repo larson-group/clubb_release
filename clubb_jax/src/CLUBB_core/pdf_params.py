@@ -378,7 +378,7 @@ def pack_pdf_params_api(params: pdf_parameter, nz: int):
     """
     slots = []
     for field in pdf_parameter._fields[2:]:
-        value = jnp.asarray(getattr(params, field))
+        value = getattr(params, field)
         if value.ndim == 1:
             slots.append(value[:nz])
         else:

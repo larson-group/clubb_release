@@ -248,9 +248,9 @@ def calc_F_x_responder(coef_spread_DG_means_x, exp_factor_x, min_F_x, max_F_x):
         real( kind = core_rknd ), dimension(nz) :: &
           F_x    ! Parameter for the spread between the PDF component means of x [-]
     """
-    cse = jnp.asarray(coef_spread_DG_means_x) * jnp.asarray(exp_factor_x)
+    cse = coef_spread_DG_means_x * exp_factor_x
     # F_x must have a value between min_F_x and max_F_x.
-    F_x = jnp.asarray(min_F_x) * (1.0 - cse) + jnp.asarray(max_F_x) * cse
+    F_x = min_F_x * (1.0 - cse) + max_F_x * cse
     return F_x
 
 

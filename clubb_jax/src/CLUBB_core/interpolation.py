@@ -235,7 +235,6 @@ def lin_interp_between_grids(interpolate_altitudes, current_altitudes, current_v
         real( kind = core_rknd ), dimension(size_interpolate) :: &
           lin_interp_between_grids ! interpolated values with the dimension of gr_interpolate
     """
-    current_values = jnp.asarray(current_values)
 
     # --------------------- Begin Code ---------------------
     tol = 1.0e-6

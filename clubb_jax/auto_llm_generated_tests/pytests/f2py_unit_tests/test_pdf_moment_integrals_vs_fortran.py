@@ -1,5 +1,7 @@
 """Check the JAX binormal/trinormal PDF moment integrals against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff
@@ -33,18 +35,18 @@ def test_f2py_oracle():
         xm = p['mixt_frac'] * p['x_1'] + (1 - p['mixt_frac']) * p['x_2']
         # wp4
         r = np.asarray(clubb_f2py.f2py_calc_wp4_pdf(wm, p['w_1'], p['w_2'], p['varnce_w_1'], p['varnce_w_2'], p['mixt_frac']))
-        g = np.asarray(calc_wp4_pdf(wm, p['w_1'], p['w_2'], p['varnce_w_1'], p['varnce_w_2'], p['mixt_frac']))
+        g = np.asarray(call_jax(calc_wp4_pdf, wm, p['w_1'], p['w_2'], p['varnce_w_1'], p['varnce_w_2'], p['mixt_frac']))
         worst = max(worst, max_abs_diff("pdf_moment_integrals", g, r))
         # wp2xp
         args = (wm, xm, p['w_1'], p['w_2'], p['x_1'], p['x_2'], p['varnce_w_1'], p['varnce_w_2'],
                 p['varnce_x_1'], p['varnce_x_2'], p['corr_w_x_1'], p['corr_w_x_2'], p['mixt_frac'])
-        worst = max(worst, max_abs_diff("pdf_moment_integrals", np.asarray(calc_wp2xp_pdf(*args)), np.asarray(clubb_f2py.f2py_calc_wp2xp_pdf(*args))))
-        worst = max(worst, max_abs_diff("pdf_moment_integrals", np.asarray(calc_wpxp2_pdf(*args)), np.asarray(clubb_f2py.f2py_calc_wpxp2_pdf(*args))))
+        worst = max(worst, max_abs_diff("pdf_moment_integrals", np.asarray(call_jax(calc_wp2xp_pdf, *args)), np.asarray(clubb_f2py.f2py_calc_wp2xp_pdf(*args))))
+        worst = max(worst, max_abs_diff("pdf_moment_integrals", np.asarray(call_jax(calc_wpxp2_pdf, *args)), np.asarray(clubb_f2py.f2py_calc_wpxp2_pdf(*args))))
         # wpxpyp (reuse x params as y for simplicity, distinct corrs)
         ym = xm
         wargs = (wm, xm, ym, p['w_1'], p['w_2'], p['x_1'], p['x_2'], p['x_1'], p['x_2'],
                  p['varnce_w_1'], p['varnce_w_2'], p['varnce_x_1'], p['varnce_x_2'], p['varnce_x_1'], p['varnce_x_2'],
                  p['corr_w_x_1'], p['corr_w_x_2'], p['corr_w_x_1'], p['corr_w_x_2'], p['corr_w_x_1'], p['corr_w_x_2'],
                  p['mixt_frac'])
-        worst = max(worst, max_abs_diff("pdf_moment_integrals", np.asarray(calc_wpxpyp_pdf(*wargs)), np.asarray(clubb_f2py.f2py_calc_wpxpyp_pdf(*wargs))))
+        worst = max(worst, max_abs_diff("pdf_moment_integrals", np.asarray(call_jax(calc_wpxpyp_pdf, *wargs)), np.asarray(clubb_f2py.f2py_calc_wpxpyp_pdf(*wargs))))
     assert worst < 1e-11, f"pdf-moment f2py mismatch {worst:.2e}"

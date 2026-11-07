@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Validate mixed-moment PDF integrals against large independent Monte Carlo samples."""
+
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 from pathlib import Path
 import argparse
 import sys
@@ -47,7 +49,7 @@ def check_general_monte_carlo():
                20_000_000, seed=1)
     M = float(pre.sum() / mass.sum())   # E[x2^a x3^b | x2>0]
     for a, b in ((1, 1), (2, 1), (1, 2), (2, 2)):
-        got = float(trivar_NNL_MM(
+        got = float(call_jax(trivar_NNL_MM,
             cfg['mu_x1'], cfg['mu_x2'], cfg['mu_x3_n'], cfg['s_x1'], cfg['s_x2'], cfg['s_x3n'],
             cfg['r12'], cfg['r13n'], cfg['r23n'], cfg['x1_mean'], M, cfg['alpha'], cfg['beta'], a, b))
         integ = _mc(cfg['mu_x1'], cfg['mu_x2'], cfg['mu_x3_n'], cfg['s_x1'], cfg['s_x2'], cfg['s_x3n'],
@@ -65,10 +67,10 @@ def check_const_x1_limit_and_mc():
     c = dict(mu_x1=0.5, mu_x2=0.35, mu_x3_n=-0.4, s_x2=0.5, s_x3n=0.45, r23n=-0.15,
              x1_mean=0.45, M=1.2, alpha=1.5, beta=0.5)
     for a, b in ((1, 1), (2, 1), (2, 2)):
-        const = float(trivar_NNL_MM_const_x1(c['mu_x1'], c['mu_x2'], c['mu_x3_n'], c['s_x2'], c['s_x3n'],
+        const = float(call_jax(trivar_NNL_MM_const_x1, c['mu_x1'], c['mu_x2'], c['mu_x3_n'], c['s_x2'], c['s_x3n'],
                                              c['r23n'], c['x1_mean'], c['M'], c['alpha'], c['beta'], a, b))
         # (a) limit consistency: general with tiny sigma_x1 (arbitrary x1 correlations vanish with it)
-        gen = float(trivar_NNL_MM(c['mu_x1'], c['mu_x2'], c['mu_x3_n'], 1e-8, c['s_x2'], c['s_x3n'],
+        gen = float(call_jax(trivar_NNL_MM, c['mu_x1'], c['mu_x2'], c['mu_x3_n'], 1e-8, c['s_x2'], c['s_x3n'],
                                   0.3, 0.2, c['r23n'], c['x1_mean'], c['M'], c['alpha'], c['beta'], a, b))
         assert abs(const - gen) / (abs(const) + 1e-30) < 1e-5, f"const_x1 limit a={a},b={b}"
         # (b) MC with x1 fixed (sigma_x1=0)
@@ -120,7 +122,7 @@ def _Q():
 
 def _call_quad(q, a, b, **over):
     p = {**q, **over}
-    return float(quadrivar_NNLL_MM(
+    return float(call_jax(quadrivar_NNLL_MM,
         p['mu_x1'], p['mu_x2'], p['mu_x3_n'], p['mu_x4_n'], p['s_x1'], p['s_x2'], p['s_x3n'], p['s_x4n'],
         p['r12'], p['r13n'], p['r14n'], p['r23n'], p['r24n'], p['r34n'], p['x1_mean'], p['M'],
         p['alpha'], p['beta'], p['gamma'], a, b))
@@ -178,7 +180,7 @@ def check_quadrivar_general_complex_mc():
 def check_quadrivar_const_x1():
     q = _Q()
     for a, b in ((1, 1), (2, 1), (2, 2)):
-        const = float(quadrivar_NNLL_MM_const_x1(
+        const = float(call_jax(quadrivar_NNLL_MM_const_x1,
             q['mu_x1'], q['mu_x2'], q['mu_x3_n'], q['mu_x4_n'], q['s_x2'], q['s_x3n'], q['s_x4n'],
             q['r23n'], q['r24n'], q['r34n'], q['x1_mean'], q['M'], q['alpha'], q['beta'], q['gamma'], a, b))
         # limit: general quadrivar with sigma_x1 -> 0 (x1 correlations vanish with it)

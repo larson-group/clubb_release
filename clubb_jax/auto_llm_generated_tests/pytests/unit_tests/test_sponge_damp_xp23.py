@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """validate the JAX sponge_layer_damping.py ports (sponge_damp_xm/xp2/xp3)."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 import numpy as np
 
@@ -17,7 +19,7 @@ def test_below_sponge_noop():
     xp2 = np.ones((1, nzm)) * 0.5; xp3 = np.ones((1, nzm - 1)) * 0.3
     tau2 = np.full((1, nzm), _TAU); tau3 = np.full((1, nzm - 1), _TAU)
     g2 = np.asarray(sponge_damp_xp2(_DT, zm, xp2, _XTOLSQ, tau2, _DEPTH))
-    g3 = np.asarray(sponge_damp_xp3(_DT, zt, zm, xp3, tau3, _DEPTH))
+    g3 = np.asarray(call_jax(sponge_damp_xp3, _DT, zt, zm, xp3, tau3, _DEPTH))
     far = (zm[0, -1] - zm[0]) >= _DEPTH
     assert np.allclose(g2[0, far], xp2[0, far]), "xp2 modified below sponge"
     fart = (zm[0, -1] - zt[0]) >= _DEPTH

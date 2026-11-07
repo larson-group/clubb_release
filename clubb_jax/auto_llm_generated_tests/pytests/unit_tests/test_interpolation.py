@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """validate the JAX interpolation.py port (lin_interpolate_two_points, mono_cubic_interp)."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 import numpy as np
 
@@ -119,7 +121,7 @@ def test_lin_interp_between_grids():
             continue
         cur_val = rng.standard_normal(len(cur_alt))
         tgt = np.concatenate([rng.uniform(-200.0, 5200.0, 30), cur_alt])  # in-range + clamp + exact-match
-        got = np.asarray(lin_interp_between_grids(tgt, cur_alt, cur_val))
+        got = np.asarray(call_jax(lin_interp_between_grids, tgt, cur_alt, cur_val))
         ref = _lin_interp_between_grids_ref(tgt, cur_alt, cur_val)
         worst = max(worst, float(np.max(np.abs(got - ref))))
     assert worst < 1e-12, f"lin_interp_between_grids mismatch {worst:.2e}"

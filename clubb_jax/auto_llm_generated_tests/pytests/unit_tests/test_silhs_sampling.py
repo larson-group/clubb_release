@@ -1,5 +1,7 @@
 """Native-random SILHS invariants and deterministic Fortran formula checks."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -178,7 +180,7 @@ def test_inverse_normal_and_cholesky_reference():
         ndtri(np.asarray(u).reshape(-1)),
         atol=3.0e-7,
     )
-    np.testing.assert_allclose(ltqnorm(u), ndtri(u), atol=2.0e-10)
+    np.testing.assert_allclose(call_jax(ltqnorm, u), ndtri(u), atol=2.0e-10)
     normals = jnp.array([[[[1.0, 2.0]]], [[[3.0, 4.0]]]])
     sigma = jnp.array([[[[2.0, 0.5]]], [[[0.0, 3.0]]]])
     mu = jnp.array([[[10.0, 20.0]]])

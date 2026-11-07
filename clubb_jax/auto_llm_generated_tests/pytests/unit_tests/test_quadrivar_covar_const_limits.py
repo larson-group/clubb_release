@@ -11,6 +11,8 @@ with x3/x4 means passed as exp(μ_x3_n)/exp(μ_x4_n). This pins those three over
 consts (const_x1/x2/x1x2 vs MM, iter 576; the swap-reused forms via the dispatch test, iter 554) are already covered.
 Oracle-independent; never SKIPs. (iter 578)
 """
+
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 import math
 
 
@@ -35,13 +37,13 @@ def test_const_x3_x3x4_and_all():
         x1m, Ym, a, b, g = rng.uniform(.3, .6), 0.0, rng.uniform(.5, 1.5), rng.uniform(.3, 1.), rng.uniform(.3, 1.)
         mx3, mx4 = math.exp(mx3n), math.exp(mx4n)
         # const_x3 == general(σ_x3_n→0)
-        cx3 = float(quadrivar_NNLL_covar_const_x3(mx1, mx2, mx3, mx4n, s1, s2, s4n, r12, r14n, r24n, x1m, Ym, a, b, g))
-        g3 = float(quadrivar_NNLL_covar(mx1, mx2, mx3n, mx4n, s1, s2, _T, s4n,
+        cx3 = float(call_jax(quadrivar_NNLL_covar_const_x3, mx1, mx2, mx3, mx4n, s1, s2, s4n, r12, r14n, r24n, x1m, Ym, a, b, g))
+        g3 = float(call_jax(quadrivar_NNLL_covar, mx1, mx2, mx3n, mx4n, s1, s2, _T, s4n,
                                         r12, r13n, r14n, r23n, r24n, r34n, x1m, Ym, a, b, g))
         w3 = max(w3, abs(cx3 - g3) / (abs(g3) + 1e-300))
         # const_x3x4 == general(σ_x3_n,σ_x4_n→0)
-        cx34 = float(quadrivar_NNLL_covar_const_x3x4(mx1, mx2, mx3, mx4, s1, s2, r12, x1m, Ym, a, b, g))
-        g34 = float(quadrivar_NNLL_covar(mx1, mx2, mx3n, mx4n, s1, s2, _T, _T,
+        cx34 = float(call_jax(quadrivar_NNLL_covar_const_x3x4, mx1, mx2, mx3, mx4, s1, s2, r12, x1m, Ym, a, b, g))
+        g34 = float(call_jax(quadrivar_NNLL_covar, mx1, mx2, mx3n, mx4n, s1, s2, _T, _T,
                                          r12, r13n, r14n, r23n, r24n, r34n, x1m, Ym, a, b, g))
         w34 = max(w34, abs(cx34 - g34) / (abs(g34) + 1e-300))
         # const_all: all deterministic ⇒ the kernel (covariation) is 0, leaving only the linear <Y> term

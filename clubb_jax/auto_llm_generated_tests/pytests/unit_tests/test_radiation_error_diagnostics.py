@@ -5,6 +5,8 @@ invalid-time stop in cos_solar_zen_module.F90. Cached calls check that messages
 depend on runtime values, without initializing or advancing an SCM case.
 """
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -38,7 +40,7 @@ def test_radiation_errors_print_on_each_failed_runtime_call(fixed_solar_angle, c
         else "cos_solar_zen received an invalid current_time."
     )
     for failed in (False, True, True, False):
-        result = radiation_driver(
+        result = call_jax(radiation_driver,
             gr, jnp.asarray(bad_time if failed else 5.), 0., 0,
             gr.ngrdcol, 1, 1, 2020, 0., 0.,
             values, jnp.ones((gr.ngrdcol, gr.nzm)), values, values, values, values,

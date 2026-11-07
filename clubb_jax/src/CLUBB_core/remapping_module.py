@@ -541,9 +541,9 @@ def remap_vals_ppm(levels_source, levels_target, source_values, iv, kord=4):
     """
     # the pressure levels and values are flipped, since map1_ppm takes in the grids
     # from top to surface instead of surface to top, like CLUBB does
-    pe1 = jnp.asarray(levels_source)[:, ::-1]                   # top→surface (increasing pressure)
-    pe2 = jnp.asarray(levels_target)[:, ::-1]
-    q1 = jnp.asarray(source_values)[:, ::-1]
+    pe1 = levels_source[:, ::-1]                   # top→surface (increasing pressure)
+    pe2 = levels_target[:, ::-1]
+    q1 = source_values[:, ::-1]
     # remap values using E3SM's PPM implementation
     q2 = map1_ppm(pe1, q1, pe2, iv, kord)
     # flip output values back so they correspond to the surface to top ordering in CLUBB's grid

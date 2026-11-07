@@ -28,6 +28,12 @@ and translated source lives under [`src/`](./src/):
 The detailed support boundary and conversion workflow are documented in
 [`JAX_CONVERSION_PLAN.md`](./JAX_CONVERSION_PLAN.md).
 
+Numerical kernels expect JAX arrays for array-valued arguments. Convert NumPy arrays
+or Python sequences with `jnp.asarray(value)` before calling a kernel. Array
+axes retain the Fortran order: ordinary profiles use `(column, level)`.
+Initialization, file readers, constant construction and intentional precision
+casts retain their conversions.
+
 ## Running
 
 CLUBB JAX uses the normal SCM runner and case names. A JAX-only run does not

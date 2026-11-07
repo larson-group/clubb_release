@@ -714,8 +714,7 @@ def component_precip_frac_specify(
     """
     del hydromet_dim
 
-    precip_frac_tol = jnp.asarray(precip_frac_tol)[:, None]
-    upsilon_precip_frac_rat = jnp.asarray(upsilon_precip_frac_rat)
+    precip_frac_tol = precip_frac_tol[:, None]
 
     has_hydromet = jnp.any(hydromet >= hydromet_tol[None, None, :], axis=2)
     one_minus_mixt_frac = 1.0 - mixt_frac

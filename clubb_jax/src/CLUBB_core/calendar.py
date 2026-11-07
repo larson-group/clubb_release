@@ -19,7 +19,7 @@ days_per_month = jnp.asarray((31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31))
 
 def _itrunc_div(a, b):
     """JAX expression for the source integer division, which truncates toward zero."""
-    return jnp.trunc(jnp.asarray(a) / jnp.asarray(b)).astype(jnp.int32)
+    return jnp.trunc(a / b).astype(jnp.int32)
 
 
 def gregorian2julian_date(day, month, year):

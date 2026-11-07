@@ -371,12 +371,12 @@ def check_negative(var, varname, operation, err_info: ErrInfo):
             err_info[...] = CLUBB_FATAL_ERROR
         return err_info
     jax.lax.cond(
-        jnp.any(jnp.asarray(var) < 0.0),
+        jnp.any(var < 0.0),
         lambda _: jax.debug.callback(print_negative, var, err_info, ordered=True),
         lambda _: None,
         operand=None,
     )
-    return err_info.set_fatal(mask=jnp.any(jnp.asarray(var) < 0.0))
+    return err_info.set_fatal(mask=jnp.any(var < 0.0))
 
 
 def check_nan(var, varname, operation, err_info: ErrInfo):
@@ -406,13 +406,13 @@ def check_nan(var, varname, operation, err_info: ErrInfo):
             err_info[...] = CLUBB_FATAL_ERROR
         return err_info
     jax.lax.cond(
-        jnp.any(~jnp.isfinite(jnp.asarray(var))),
+        jnp.any(~jnp.isfinite(var)),
         lambda _: jax.debug.callback(print_nan, err_info, ordered=True),
         lambda _: None,
         operand=None,
     )
     return err_info.set_fatal(
-        mask=jnp.any(jnp.logical_not(jnp.isfinite(jnp.asarray(var))))
+        mask=jnp.any(jnp.logical_not(jnp.isfinite(var)))
     )
 
 
@@ -446,11 +446,11 @@ def calculate_spurious_source(
         real( kind = core_rknd ) :: spurious_source ! [units vary]
     """
     spurious_source = (
-        (jnp.asarray(integral_after) - jnp.asarray(integral_before))
-        / jnp.asarray(dt)
-        + jnp.asarray(flux_top)
-        - jnp.asarray(flux_sfc)
-        - jnp.asarray(integral_forcing)
+        (integral_after - integral_before)
+        / dt
+        + flux_top
+        - flux_sfc
+        - integral_forcing
     )
     return spurious_source
 

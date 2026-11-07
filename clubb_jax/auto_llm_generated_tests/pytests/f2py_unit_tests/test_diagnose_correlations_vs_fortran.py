@@ -1,5 +1,7 @@
 """Check the JAX diagnose_correlations_module port against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_rel_diff
@@ -21,7 +23,7 @@ def test_f2py_oracle():
     for n, iipdf_w, seed in ((6, 3, 11), (8, 1, 22), (5, 5, 33), (7, 4, 44)):
         corr_pre = _corr_matrix(n, seed)
         ref = np.asarray(clubb_f2py.f2py_diagnose_correlations(iipdf_w, corr_pre.copy(), 0))
-        got = np.asarray(diagnose_correlations(n, iipdf_w, corr_pre, l_calc_w_corr=False))
+        got = np.asarray(call_jax(diagnose_correlations, n, iipdf_w, corr_pre, l_calc_w_corr=False))
         rel = max_rel_diff("diagnose_correlations", got, ref, 1e-30)
         worst = max(worst, rel)
         assert rel < 1e-12, f"f2py mismatch (n={n}, iipdf_w={iipdf_w}): rel {rel:.2e}"

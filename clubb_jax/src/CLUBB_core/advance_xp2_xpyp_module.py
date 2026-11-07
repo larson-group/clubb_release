@@ -3620,13 +3620,6 @@ def update_xp2_mc(
           wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2]
           rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
     """
-    cloud_frac = cloud_frac
-    rcm = rcm
-    rvm = rvm
-    thlm = thlm
-    wm = wm
-    exner = exner
-    rrm_evap = rrm_evap
 
     precip_frac_double_delta = jnp.zeros((ngrdcol, nzt))
     precip_frac_double_delta = precip_frac_double_delta.at[:, gr.k_ub_zt].set(zero)

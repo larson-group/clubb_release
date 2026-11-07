@@ -4,6 +4,8 @@ advance_xp3_simplified is private in the Fortran module, so it is checked
 through advance_xp3, which calls it for rtp3, thlp3 and each scalar.
 """
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 from input.scripts.create_case_namelist import create_case_namelist_file
 
 import os
@@ -77,7 +79,7 @@ def test_f2py_oracle():
             xp3_in = [rng.uniform(-1.0, 1.0, (ng, nzt)) for _ in range(2)] + [
                 rng.uniform(-1.0, 1.0, (ng, nzt, sclr_dim))] + [
                 rng.uniform(-1.0, 1.0, (ng, nzt)) for _ in range(2)]
-            *j_out, _stats = advance_xp3(
+            *j_out, _stats = call_jax(advance_xp3,
                 nzm, nzt, ng, sclr_dim, jnp.asarray(_SCLR_TOL), jgr, _DT,
                 *(jnp.asarray(x) for x in fields), jnp.asarray(clubb_params), l_lmm_stepping,
                 no_stats(ng), *(jnp.asarray(x) for x in xp3_in))

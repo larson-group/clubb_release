@@ -375,18 +375,16 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
         type(implicit_coefs_terms), intent(inout) :: &
           pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
     """
-    slope = jnp.asarray(slope_coef_spread_DG_means_w)
-    pstdev = jnp.asarray(pdf_component_stdev_factor_w)
-    if slope.ndim == 1:
-        slope = slope[:, None]
-    if pstdev.ndim == 1:
-        pstdev = pstdev[:, None]
+    if slope_coef_spread_DG_means_w.ndim == 1:
+        slope_coef_spread_DG_means_w = slope_coef_spread_DG_means_w[:, None]
+    if pdf_component_stdev_factor_w.ndim == 1:
+        pdf_component_stdev_factor_w = pdf_component_stdev_factor_w[:, None]
 
     # Calculate the maximum value of the square of the correlation of w and a
     # scalar when scalars are used.
     # Initialize max_corr_w_sclr_sqd to 0.  It needs to retain this value even
     # when sclr_dim = 0.
-    if sclrm is not None and jnp.asarray(sclrm).shape[-1] > 0:
+    if sclrm is not None and sclrm.shape[-1] > 0:
         d = wp2[..., None] * sclrp2
         ratio = jnp.where(d > 0.0, wpsclrp ** 2 / jnp.where(d > 0.0, d, 1.0), 0.0)
         max_corr_w_sclr_sqd = jnp.max(ratio, axis=-1)
@@ -397,7 +395,7 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
     # Vertical velocity, w, will always be the setter variable.
     F_w, zeta_w, _min_F_w, _max_F_w = calc_F_w_zeta_w(
         Skw, wprtp, wpthlp, upwp, vpwp, wp2, rtp2, thlp2, up2, vp2,
-        gamma_Skw_fnc, slope, pstdev, max_corr_w_sclr_sqd)
+        gamma_Skw_fnc, slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, max_corr_w_sclr_sqd)
 
     # Calculate the PDF parameters, including mixture fraction, for the
     # setter variable, w.
@@ -433,7 +431,7 @@ def new_hybrid_pdf_driver(wm, rtm, thlm, um, vm, wp2, rtp2, thlp2, up2, vp2,
         coef_sigma_2_sqd[name] = c2
 
     zero = jnp.zeros_like(wp2)
-    if sclrm is not None and jnp.asarray(sclrm).shape[-1] > 0:
+    if sclrm is not None and sclrm.shape[-1] > 0:
         # Calculate the PDF parameters for responder variable sclr.
         (
             out['Sksclr'],

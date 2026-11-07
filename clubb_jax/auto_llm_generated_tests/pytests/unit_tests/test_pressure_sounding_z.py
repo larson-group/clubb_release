@@ -10,6 +10,8 @@ thermodynamics, so CGILS/cloud_feedback cases can interpolate onto the height gr
   3. The derived z is the hydrostatic inverse: round-tripping z → exner via the forward log-mean integral
      recovers the input pressures.
 """
+
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
 
@@ -31,7 +33,7 @@ def test_real_cgils_sounding():
         raise AssertionError("  real cgils_s11 sounding: required input missing (file absent)")
     snd = read_sounding(_CGILS)
     assert str(snd['altitude_type']).strip().lower() == 'press[pa]', "cgils sounding is not pressure-coordinate"
-    out = convert_pressure_sounding_to_z(snd, _P_SFC, _ZM_INIT, _SAT)
+    out = call_jax(convert_pressure_sounding_to_z, snd, _P_SFC, _ZM_INIT, _SAT)
     z = np.asarray(out['z'])
     assert np.isfinite(z).all(), "non-finite altitudes"
     assert np.all(np.diff(z) > 0.0), "altitudes not strictly increasing"
@@ -54,7 +56,7 @@ def test_temperature_branch_independent():
         temperature_type='T[K]',
         subs_type='omega[Pa/s]',
     )
-    out = convert_pressure_sounding_to_z(snd, 1.0e5, 0.0, _SAT)
+    out = call_jax(convert_pressure_sounding_to_z, snd, 1.0e5, 0.0, _SAT)
     z_got = np.asarray(out['z'])
 
     exner = (p / p0) ** kappa
@@ -66,7 +68,7 @@ def test_temperature_branch_independent():
     from clubb_jax.src.CLUBB_core.constants_clubb import ep1
     thlm = theta
     thvm = thlm + ep1 * thv_ds * rt
-    z_ref = np.asarray(inverse_hydrostatic(1.0e5, 0.0, thvm, exner))
+    z_ref = np.asarray(call_jax(inverse_hydrostatic, 1.0e5, 0.0, thvm, exner))
     w = np.max(np.abs(z_got - z_ref))
     assert w < 1e-9, f"temperature-branch z mismatch vs independent thvm: {w:.2e}"
     print(f"  temperature branch vs independent thvm re-derivation: worst {w:.2e} m  PASS")
@@ -85,7 +87,7 @@ def test_hydrostatic_roundtrip():
         temperature_type='T[K]',
         subs_type='omega[Pa/s]',
     )
-    out = convert_pressure_sounding_to_z(snd, 1.0e5, 0.0, _SAT)
+    out = call_jax(convert_pressure_sounding_to_z, snd, 1.0e5, 0.0, _SAT)
     z = np.asarray(out['z'])
     exner = (p / p0) ** kappa
     # Forward check: the relative altitudes from calc_ref_z_linear_thvm(thvm,exner) must match (z - z[0]) within
@@ -93,7 +95,7 @@ def test_hydrostatic_roundtrip():
     from clubb_jax.src.CLUBB_core.constants_clubb import ep1
     theta = T / exner
     thvm = theta + ep1 * (theta * (1.0 + ep2 * rt) ** kappa) * rt
-    ref_z = np.asarray(calc_ref_z_linear_thvm(jnp.asarray(thvm), jnp.asarray(exner)))
+    ref_z = np.asarray(call_jax(calc_ref_z_linear_thvm, jnp.asarray(thvm), jnp.asarray(exner)))
     # z and ref_z differ only by a constant surface offset → their level-to-level increments must match.
     w = np.max(np.abs(np.diff(z) - np.diff(ref_z)))
     assert w < 1e-9, f"z increments inconsistent with the forward log-mean integral: {w:.2e}"

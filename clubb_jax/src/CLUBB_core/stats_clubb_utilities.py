@@ -481,7 +481,7 @@ def stats_accumulate(
             dt,
         )
 
-        l_compute_spurious_source = jnp.asarray(l_implemented) | (
+        l_compute_spurious_source = l_implemented | (
             jnp.all(jnp.abs(wm_zt[i, :]) < eps) & jnp.all(jnp.abs(wm_zm[i, :]) < eps)
         )
         # Spurious source will only be calculated if rtm_ma and thlm_ma are zero.

@@ -70,7 +70,7 @@ def _assemble_zt(model_rev, ext_col, setup):
     (rad idx range_size), per the Fortran z-loop weights."""
     ncol = model_rev.shape[0]
     rsize, linbuf, buf = setup["range_size"], setup["lin_int_buffer"], setup["buffer"]
-    ext_part = jnp.broadcast_to(jnp.asarray(ext_col)[None, :], (ncol, rsize))      # rad idx 1..range_size
+    ext_part = jnp.broadcast_to(ext_col[None, :], (ncol, rsize))      # rad idx 1..range_size
     col_top = model_rev[:, 0]                                                      # rad idx buffer+1 (model top)
     col_ext = ext_part[:, rsize - 1]                                              # rad idx range_size (ext bottom)
     z1, z2 = buf + 1, rsize                                                        # Fortran indices of the endpoints

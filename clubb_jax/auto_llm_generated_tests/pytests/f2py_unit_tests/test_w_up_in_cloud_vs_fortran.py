@@ -1,5 +1,7 @@
 """Check the JAX calc_w_up_in_cloud port against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff
@@ -23,7 +25,7 @@ def test_f2py_oracle():
     for seed in (11, 22, 33):
         a, cf1, cf2, w1, w2, v1, v2 = _fields(seed)
         f = clubb_f2py.f2py_calc_w_up_in_cloud(a, cf1, cf2, w1, w2, v1, v2)
-        g = calc_w_up_in_cloud(a, cf1, cf2, w1, w2, v1, v2)
+        g = call_jax(calc_w_up_in_cloud, a, cf1, cf2, w1, w2, v1, v2)
         for fi, gi in zip(f, g):
             worst = max(worst, max_abs_diff("w_up_in_cloud", np.asarray(gi), np.asarray(fi)))
     # ~1e-11 residual is the jax.scipy.special.erf vs Fortran intrinsic erf implementation difference

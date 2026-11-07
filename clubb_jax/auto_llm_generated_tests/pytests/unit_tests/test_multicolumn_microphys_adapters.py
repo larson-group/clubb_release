@@ -7,6 +7,8 @@ Both checks cover eager/JIT execution and derivatives across these boundaries.
 References: pdf_hydromet_microphys_wrapper.F90 and fill_holes.F90.
 """
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 from types import SimpleNamespace
 
 import jax
@@ -81,7 +83,7 @@ def test_hydrometeor_fill_uses_each_columns_metric(compiled, fill_type):
         ncol = hm.shape[0]
         zero = jnp.zeros((ncol, nzt))
         stats = JaxStats.empty(l_sample=False, names=(), ncol=ncol, max_nlev=nzt)
-        return fill_holes_driver_api(
+        return call_jax(fill_holes_driver_api,
             SimpleNamespace(dzt=metrics), ncol, nzt, 10.0, 2,
             metadata, False, density, jnp.ones_like(zero), fill_type,
             stats, zero, zero, hm,

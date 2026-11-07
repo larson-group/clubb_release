@@ -1423,19 +1423,19 @@ def set_sfc_value_of_flux_profiles(
     # elsewhere in the code (e.g. WRF).  In other cases the _sfc variables will
     # only be used to compute the variance at the surface. -dschanen 8 Sept 2009
     if not l_host_applies_sfc_fluxes:
-        wpthlp = jnp.asarray(wpthlp).at[:, k_lb].set(wpthlp_sfc)
-        wprtp = jnp.asarray(wprtp).at[:, k_lb].set(wprtp_sfc)
-        upwp = jnp.asarray(upwp).at[:, k_lb].set(upwp_sfc)
-        vpwp = jnp.asarray(vpwp).at[:, k_lb].set(vpwp_sfc)
+        wpthlp = wpthlp.at[:, k_lb].set(wpthlp_sfc)
+        wprtp = wprtp.at[:, k_lb].set(wprtp_sfc)
+        upwp = upwp.at[:, k_lb].set(upwp_sfc)
+        vpwp = vpwp.at[:, k_lb].set(vpwp_sfc)
 
         if l_linearize_pbl_winds:
-            upwp_pert = jnp.asarray(upwp_pert).at[:, k_lb].set(upwp_sfc_pert)
-            vpwp_pert = jnp.asarray(vpwp_pert).at[:, k_lb].set(vpwp_sfc_pert)
+            upwp_pert = upwp_pert.at[:, k_lb].set(upwp_sfc_pert)
+            vpwp_pert = vpwp_pert.at[:, k_lb].set(vpwp_sfc_pert)
 
         # Set fluxes for passive scalars (if enabled)
         if sclr_dim > 0:
             for sclr in range(sclr_dim):
-                wpsclrp = jnp.asarray(wpsclrp).at[:, k_lb, sclr].set(
+                wpsclrp = wpsclrp.at[:, k_lb, sclr].set(
                     wpsclrp_sfc[:, sclr]
                 )
 
@@ -1444,26 +1444,26 @@ def set_sfc_value_of_flux_profiles(
             # timestep to timestep. Set it to 0 and overwrite the surface.
             wpedsclrp = jnp.zeros_like(wpedsclrp)
             for edsclr in range(edsclr_dim):
-                wpedsclrp = jnp.asarray(wpedsclrp).at[:, k_lb, edsclr].set(
+                wpedsclrp = wpedsclrp.at[:, k_lb, edsclr].set(
                     wpedsclrp_sfc[:, edsclr]
                 )
 
     else:
-        wpthlp = jnp.asarray(wpthlp).at[:, k_lb].set(zero)
-        wprtp = jnp.asarray(wprtp).at[:, k_lb].set(zero)
-        upwp = jnp.asarray(upwp).at[:, k_lb].set(zero)
-        vpwp = jnp.asarray(vpwp).at[:, k_lb].set(zero)
+        wpthlp = wpthlp.at[:, k_lb].set(zero)
+        wprtp = wprtp.at[:, k_lb].set(zero)
+        upwp = upwp.at[:, k_lb].set(zero)
+        vpwp = vpwp.at[:, k_lb].set(zero)
 
         # Set fluxes for passive scalars (if enabled)
         if sclr_dim > 0:
             for sclr in range(sclr_dim):
-                wpsclrp = jnp.asarray(wpsclrp).at[:, k_lb, sclr].set(zero)
+                wpsclrp = wpsclrp.at[:, k_lb, sclr].set(zero)
 
         if edsclr_dim > 0:
             # wpedsclrp is a local variable that is not saved from
             # timestep to timestep. Set it to 0 and overwrite the surface.
             wpedsclrp = jnp.zeros_like(wpedsclrp)
             for edsclr in range(edsclr_dim):
-                wpedsclrp = jnp.asarray(wpedsclrp).at[:, k_lb, edsclr].set(zero)
+                wpedsclrp = wpedsclrp.at[:, k_lb, edsclr].set(zero)
 
     return wpthlp, wprtp, upwp, vpwp, upwp_pert, vpwp_pert, wpsclrp, wpedsclrp

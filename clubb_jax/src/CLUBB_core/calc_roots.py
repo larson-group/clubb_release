@@ -96,12 +96,10 @@ def cubic_solve(a_coef, b_coef, c_coef, d_coef):
         complex( kind = core_rknd ), dimension(nz,3) :: &
           roots    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0       [-]
     """
-    a = jnp.asarray(a_coef); b = jnp.asarray(b_coef)
-    c = jnp.asarray(c_coef); d = jnp.asarray(d_coef)
 
-    ba = b / a
-    ca = c / a
-    da = d / a
+    ba = b_coef / a_coef
+    ca = c_coef / a_coef
+    da = d_coef / a_coef
 
     # Find the value of the coefficient Q; where
     # Q = ( 3*(c/a) - (b/a)^2 ) / 9.
@@ -198,17 +196,16 @@ def quadratic_solve(a_coef, b_coef, c_coef):
         complex( kind = core_rknd ), dimension(nz,2) :: &
           roots    ! Roots of x that satisfy a*x^2 + b*x + c = 0       [-]
     """
-    a = jnp.asarray(a_coef); b = jnp.asarray(b_coef); c = jnp.asarray(c_coef)
 
     # Find the value of the determinant D; where
     # D = b^2 - 4*a*c.
-    determinant = b ** 2 - 4.0 * a * c
+    determinant = b_coef ** 2 - 4.0 * a_coef * c_coef
 
     # Calculate the square root of the determinant.  This will be a complex
     # number.
     sqrt_det = jnp.sqrt(determinant.astype(_C))
-    b_c = b.astype(_C)
-    two_a = (2.0 * a).astype(_C)
+    b_c = b_coef.astype(_C)
+    two_a = (2.0 * a_coef).astype(_C)
 
     # Find the values of the roots.
     # This root is real-valued when D > 0, as well as when D = 0 (when it is
@@ -246,7 +243,6 @@ def cube_root(x):
         real( kind = core_rknd ) :: &
           cube_root  ! Cube root of x
     """
-    x = jnp.asarray(x)
     abs_cbrt = jnp.abs(x) ** _ONE_THIRD
     cube_root = jnp.where(x >= 0.0, abs_cbrt, -abs_cbrt)
     return cube_root

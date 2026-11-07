@@ -425,13 +425,6 @@ def advance_xm_wpxp(
         type(err_info_type), intent(inout) :: &
           err_info      ! err_info struct containing err_code and err_header
     """
-    # The Python API owns scalar storage as NumPy arrays.  Keep the Fortran
-    # inout-array behavior while normalizing those arrays at the JAX boundary
-    # so scalar cases can use functional indexed updates in eager or jitted
-    # execution alike.
-    sclrm = jnp.asarray(sclrm)
-    wpsclrp = jnp.asarray(wpsclrp)
-
     l_iter = True
     l_sample = stats.l_sample
     l_perturbed_wind = l_predict_upwp_vpwp and l_linearize_pbl_winds
@@ -487,7 +480,7 @@ def advance_xm_wpxp(
         C6rt_computed = (
             C6rtb[:, None]
             + (C6rt - C6rtb)[:, None]
-            * jnp.exp(-one_half * (jnp.asarray(Skw_zm) / C6rtc_safe[:, None]) ** 2)
+            * jnp.exp(-one_half * (Skw_zm / C6rtc_safe[:, None]) ** 2)
         )
         C6rt_Skw_fnc = jnp.where(C6rt_varying[:, None], C6rt_computed, C6rtb[:, None])
 
@@ -499,7 +492,7 @@ def advance_xm_wpxp(
         C6thl_computed = (
             C6thlb[:, None]
             + (C6thl - C6thlb)[:, None]
-            * jnp.exp(-one_half * (jnp.asarray(Skw_zm) / C6thlc_safe[:, None]) ** 2)
+            * jnp.exp(-one_half * (Skw_zm / C6thlc_safe[:, None]) ** 2)
         )
         C6thl_Skw_fnc = jnp.where(C6thl_varying[:, None], C6thl_computed, C6thlb[:, None])
         C6rt_Skw_fnc = damp_coefficient(
@@ -529,7 +522,7 @@ def advance_xm_wpxp(
         C7_computed = (
             C7b[:, None]
             + (C7 - C7b)[:, None]
-            * jnp.exp(-one_half * (jnp.asarray(Skw_zm) / C7c_safe[:, None]) ** 2)
+            * jnp.exp(-one_half * (Skw_zm / C7c_safe[:, None]) ** 2)
         )
         C7_Skw_fnc = jnp.where(C7_varying[:, None], C7_computed, C7b[:, None])
         C7_Skw_fnc = damp_coefficient(
@@ -546,7 +539,7 @@ def advance_xm_wpxp(
 
     if clubb_at_least_debug_level(0):
         c7_bad = jnp.any(
-            (jnp.asarray(C7_Skw_fnc) > one) | (jnp.asarray(C7_Skw_fnc) < zero),
+            (C7_Skw_fnc > one) | (C7_Skw_fnc < zero),
             axis=1,
         )
         def print_c7_errors(values, info):
@@ -854,29 +847,29 @@ def xm_wpxp_lhs(
 
     # Combine xm and w'x' terms into LHS
     k_xm = slice(1, 2 * nzt + 1, 2)
-    lhs = lhs.at[1, :, k_xm].set(jnp.asarray(lhs_ta_xm[0, :, :]))
+    lhs = lhs.at[1, :, k_xm].set(lhs_ta_xm[0, :, :])
     lhs = lhs.at[2, :, k_xm].set(invrs_dt)
-    lhs = lhs.at[3, :, k_xm].set(jnp.asarray(lhs_ta_xm[1, :, :]))
+    lhs = lhs.at[3, :, k_xm].set(lhs_ta_xm[1, :, :])
 
     k_wpxp = slice(2, 2 * nzm - 2, 2)
     lhs = lhs.at[0, :, k_wpxp].set(
-        jnp.asarray(lhs_ma_zm[0, :, 1:nzm - 1])
-        + jnp.asarray(lhs_diff_zm[0, :, 1:nzm - 1])
-        + gamma_over_implicit_ts * jnp.asarray(lhs_ta_wpxp[0, :, 1:nzm - 1])
+        lhs_ma_zm[0, :, 1:nzm - 1]
+        + lhs_diff_zm[0, :, 1:nzm - 1]
+        + gamma_over_implicit_ts * lhs_ta_wpxp[0, :, 1:nzm - 1]
     )
-    lhs = lhs.at[1, :, k_wpxp].set(jnp.asarray(lhs_tp[0, :, 1:nzm - 1]))
+    lhs = lhs.at[1, :, k_wpxp].set(lhs_tp[0, :, 1:nzm - 1])
     lhs = lhs.at[2, :, k_wpxp].set(
-        jnp.asarray(lhs_ma_zm[1, :, 1:nzm - 1])
-        + jnp.asarray(lhs_diff_zm[1, :, 1:nzm - 1])
-        + jnp.asarray(lhs_ac_pr2[:, 1:nzm - 1])
+        lhs_ma_zm[1, :, 1:nzm - 1]
+        + lhs_diff_zm[1, :, 1:nzm - 1]
+        + lhs_ac_pr2[:, 1:nzm - 1]
         + gamma_over_implicit_ts
-        * (jnp.asarray(lhs_ta_wpxp[1, :, 1:nzm - 1]) + jnp.asarray(lhs_pr1[:, 1:nzm - 1]))
+        * (lhs_ta_wpxp[1, :, 1:nzm - 1] + lhs_pr1[:, 1:nzm - 1])
     )
-    lhs = lhs.at[3, :, k_wpxp].set(jnp.asarray(lhs_tp[1, :, 1:nzm - 1]))
+    lhs = lhs.at[3, :, k_wpxp].set(lhs_tp[1, :, 1:nzm - 1])
     lhs = lhs.at[4, :, k_wpxp].set(
-        jnp.asarray(lhs_ma_zm[2, :, 1:nzm - 1])
-        + jnp.asarray(lhs_diff_zm[2, :, 1:nzm - 1])
-        + gamma_over_implicit_ts * jnp.asarray(lhs_ta_wpxp[2, :, 1:nzm - 1])
+        lhs_ma_zm[2, :, 1:nzm - 1]
+        + lhs_diff_zm[2, :, 1:nzm - 1]
+        + gamma_over_implicit_ts * lhs_ta_wpxp[2, :, 1:nzm - 1]
     )
 
     # Upper (lower) boundary for w'x' on ascending (descending) grid.
@@ -888,15 +881,15 @@ def xm_wpxp_lhs(
 
     # Calculate diffusion terms for all thermodynamic grid level
     if l_diffuse_rtm_and_thlm:
-        lhs = lhs.at[0, :, k_xm].add(jnp.asarray(lhs_diff_zt[0, :, :]))
-        lhs = lhs.at[2, :, k_xm].add(jnp.asarray(lhs_diff_zt[1, :, :]))
-        lhs = lhs.at[4, :, k_xm].add(jnp.asarray(lhs_diff_zt[2, :, :]))
+        lhs = lhs.at[0, :, k_xm].add(lhs_diff_zt[0, :, :])
+        lhs = lhs.at[2, :, k_xm].add(lhs_diff_zt[1, :, :])
+        lhs = lhs.at[4, :, k_xm].add(lhs_diff_zt[2, :, :])
 
     # Calculate mean advection terms for all momentum grid level
     if not l_implemented:
-        lhs = lhs.at[0, :, k_xm].add(jnp.asarray(lhs_ma_zt[0, :, :]))
-        lhs = lhs.at[2, :, k_xm].add(jnp.asarray(lhs_ma_zt[1, :, :]))
-        lhs = lhs.at[4, :, k_xm].add(jnp.asarray(lhs_ma_zt[2, :, :]))
+        lhs = lhs.at[0, :, k_xm].add(lhs_ma_zt[0, :, :])
+        lhs = lhs.at[2, :, k_xm].add(lhs_ma_zt[1, :, :])
+        lhs = lhs.at[4, :, k_xm].add(lhs_ma_zt[2, :, :])
 
     return lhs
 
@@ -1017,9 +1010,9 @@ def calc_xm_wpxp_lhs_terms(
     # Calculate diffusion terms for all thermodynamic grid level
     if l_diffuse_rtm_and_thlm:
         if l_stability_correct_Kh_N2_zm:
-            Kh_N2_zm = jnp.asarray(Kh_zm) / jnp.asarray(stability_correction)
+            Kh_N2_zm = Kh_zm / stability_correction
         else:
-            Kh_N2_zm = jnp.asarray(Kh_zm)
+            Kh_N2_zm = Kh_zm
 
         K_zm = Kh_N2_zm + constant_nu
         K_zt = jnp.maximum(
@@ -1210,7 +1203,7 @@ def xm_wpxp_rhs(
             name_wpxp_pr1 = ""
 
         C7_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzm))
-        C7_Skw_fnc_plus_one = jnp.asarray(C7_Skw_fnc) + one
+        C7_Skw_fnc_plus_one = C7_Skw_fnc + one
 
         # Statistics: explicit contributions for wpxp.
         rhs_bp = wpxp_terms_bp_pr3_rhs(
@@ -1394,8 +1387,8 @@ def calc_xm_wpxp_ta_terms(
     if l_explicit_turbulent_adv_wpxp:
 
         # The turbulent advection of <w'x'> is handled explicitly
-        term_wp2rtp_explicit = jnp.asarray(wp2rtp)
-        term_wp2thlp_explicit = jnp.asarray(wp2thlp)
+        term_wp2rtp_explicit = wp2rtp
+        term_wp2thlp_explicit = wp2thlp
 
         # Calculate the RHS turbulent advection term for <w'r_t'>
         rhs_ta_wprtp = xpyp_term_ta_pdf_rhs(
@@ -1418,7 +1411,7 @@ def calc_xm_wpxp_ta_terms(
         )
 
         for sclr in range(sclr_dim):
-            term_wp2sclrp_explicit = jnp.asarray(wp2sclrp)[:, :, sclr]
+            term_wp2sclrp_explicit = wp2sclrp[:, :, sclr]
             rhs_ta_wpsclrp = rhs_ta_wpsclrp.at[:, :, sclr].set(xpyp_term_ta_pdf_rhs(
                 nzm, nzt, ngrdcol, gr, term_wp2sclrp_explicit,
                 rho_ds_zt, rho_ds_zm,
@@ -1435,12 +1428,12 @@ def calc_xm_wpxp_ta_terms(
         if iiPDF_type == iiPDF_ADG1:
 
             # The ADG1 PDF is used.
-            a1_coef = one / (one - jnp.asarray(sigma_sqd_w))
+            a1_coef = one / (one - sigma_sqd_w)
             a1_coef_zt = jnp.maximum(
                 zm2zt(nzm, nzt, ngrdcol, gr, a1_coef),
                 zero_threshold,
             )
-            coef_wp2rtp_implicit = a1_coef_zt * jnp.asarray(wp3_on_wp2_zt)
+            coef_wp2rtp_implicit = a1_coef_zt * wp3_on_wp2_zt
             coef_wp2thlp_implicit = coef_wp2rtp_implicit
 
             if not l_godunov_upwind_wpxp_ta:
@@ -1455,7 +1448,7 @@ def calc_xm_wpxp_ta_terms(
                 )
             else:
                 # Godunov-like method for the vertical discretization of ta term
-                coef_wp2rtp_implicit = a1_coef_zt * jnp.asarray(wp3_on_wp2_zt)
+                coef_wp2rtp_implicit = a1_coef_zt * wp3_on_wp2_zt
                 coef_wp2thlp_implicit = coef_wp2rtp_implicit
                 lhs_ta_wprtp = xpyp_term_ta_pdf_lhs_godunov(
                     nzm, nzt, ngrdcol, gr,
@@ -1465,7 +1458,7 @@ def calc_xm_wpxp_ta_terms(
 
             # For ADG1, the LHS turbulent advection terms for
             # <w'r_t'>, <w'thl'>, <w'sclr'> are all equal
-            lhs_ta_wpthlp = jnp.asarray(lhs_ta_wprtp)
+            lhs_ta_wpthlp = lhs_ta_wprtp
 
             if l_scalar_calc:
                 for sclr in range(sclr_dim):
@@ -1476,16 +1469,16 @@ def calc_xm_wpxp_ta_terms(
 
                 # Predict <u> and <u'w'>, as well as <v> and <v'w'>.
                 # These terms are equal to the <w'r_t'> terms as well in this case
-                lhs_ta_wpup = jnp.asarray(lhs_ta_wprtp)
-                lhs_ta_wpvp = jnp.asarray(lhs_ta_wprtp)
+                lhs_ta_wpup = lhs_ta_wprtp
+                lhs_ta_wpvp = lhs_ta_wprtp
 
         elif iiPDF_type == iiPDF_new:
 
             # The new PDF is used.
-            coef_wp2rtp_implicit = jnp.asarray(pdf_implicit_coefs_terms.coef_wp2rtp_implicit)
-            coef_wp2thlp_implicit = jnp.asarray(pdf_implicit_coefs_terms.coef_wp2thlp_implicit)
-            term_wp2rtp_explicit = jnp.asarray(pdf_implicit_coefs_terms.term_wp2rtp_explicit)
-            term_wp2thlp_explicit = jnp.asarray(pdf_implicit_coefs_terms.term_wp2thlp_explicit)
+            coef_wp2rtp_implicit = pdf_implicit_coefs_terms.coef_wp2rtp_implicit
+            coef_wp2thlp_implicit = pdf_implicit_coefs_terms.coef_wp2thlp_implicit
+            term_wp2rtp_explicit = pdf_implicit_coefs_terms.term_wp2rtp_explicit
+            term_wp2thlp_explicit = pdf_implicit_coefs_terms.term_wp2thlp_explicit
 
             # Calculate the LHS turbulent advection term for <w'rt'>
             lhs_ta_wprtp = xpyp_term_ta_pdf_lhs(
@@ -1530,7 +1523,7 @@ def calc_xm_wpxp_ta_terms(
         elif iiPDF_type == iiPDF_new_hybrid:
 
             # The new hybrid PDF is used.
-            coef_wp2rtp_implicit = jnp.asarray(pdf_implicit_coefs_terms.coef_wp2rtp_implicit)
+            coef_wp2rtp_implicit = pdf_implicit_coefs_terms.coef_wp2rtp_implicit
             coef_wp2thlp_implicit = coef_wp2rtp_implicit
 
             # Calculate the LHS turbulent advection term for <w'rt'>
@@ -1545,7 +1538,7 @@ def calc_xm_wpxp_ta_terms(
 
             # For the new hybrid PDF, the LHS turbulent advection terms for
             # <w'r_t'>, <w'thl'>, and <w'sclr'> are all the same.
-            lhs_ta_wpthlp = jnp.asarray(lhs_ta_wprtp)
+            lhs_ta_wpthlp = lhs_ta_wprtp
 
             if l_scalar_calc:
                 for sclr in range(sclr_dim):
@@ -1555,8 +1548,8 @@ def calc_xm_wpxp_ta_terms(
 
                 # Predict <u> and <u'w'>, as well as <v> and <v'w'>.
                 # These terms are equal to the <w'r_t'> terms as well in this case
-                lhs_ta_wpup = jnp.asarray(lhs_ta_wprtp)
-                lhs_ta_wpvp = jnp.asarray(lhs_ta_wprtp)
+                lhs_ta_wpup = lhs_ta_wprtp
+                lhs_ta_wpvp = lhs_ta_wprtp
 
     if l_sample:
         stats = stats.update("coef_wp2rtp_implicit", coef_wp2rtp_implicit)
@@ -1869,53 +1862,53 @@ def solve_xm_wpxp_with_single_lhs(
     vm_tndcy = jnp.zeros((ngrdcol, nzt))
 
     if l_predict_upwp_vpwp:
-        fcor_col = jnp.asarray(fcor)[:, None]
-        fcor_y_col = jnp.asarray(fcor_y)[:, None]
+        fcor_col = fcor[:, None]
+        fcor_y_col = fcor_y[:, None]
 
         if not l_implemented:
-            um_tndcy = jnp.asarray(um_forcing) - fcor_col * (jnp.asarray(vg) - jnp.asarray(vm))
-            vm_tndcy = jnp.asarray(vm_forcing) + fcor_col * (jnp.asarray(ug) - jnp.asarray(um))
+            um_tndcy = um_forcing - fcor_col * (vg - vm)
+            vm_tndcy = vm_forcing + fcor_col * (ug - um)
 
             if l_sample:
-                stats = stats.update("um_gf", -fcor_col * jnp.asarray(vg))
-                stats = stats.update("vm_gf", fcor_col * jnp.asarray(ug))
-                stats = stats.update("um_cf", fcor_col * jnp.asarray(vm))
-                stats = stats.update("vm_cf", -fcor_col * jnp.asarray(um))
+                stats = stats.update("um_gf", -fcor_col * vg)
+                stats = stats.update("vm_gf", fcor_col * ug)
+                stats = stats.update("um_cf", fcor_col * vm)
+                stats = stats.update("vm_cf", -fcor_col * um)
                 stats = stats.update("um_f", um_forcing)
                 stats = stats.update("vm_f", vm_forcing)
 
         ddzt_um = ddzt(nzm, nzt, ngrdcol, gr, um)
         ddzt_vm = ddzt(nzm, nzt, ngrdcol, gr, vm)
 
-        C_uu_shr_col = jnp.asarray(C_uu_shr)[:, None]
-        upwp_forcing = C_uu_shr_col * jnp.asarray(wp2) * ddzt_um
-        vpwp_forcing = C_uu_shr_col * jnp.asarray(wp2) * ddzt_vm
+        C_uu_shr_col = C_uu_shr[:, None]
+        upwp_forcing = C_uu_shr_col * wp2 * ddzt_um
+        vpwp_forcing = C_uu_shr_col * wp2 * ddzt_vm
 
         if l_ho_trad_coriolis:
-            upwp_forcing = upwp_forcing + fcor_col * jnp.asarray(vpwp)
-            vpwp_forcing = vpwp_forcing - fcor_col * jnp.asarray(upwp)
+            upwp_forcing = upwp_forcing + fcor_col * vpwp
+            vpwp_forcing = vpwp_forcing - fcor_col * upwp
 
         if l_ho_nontrad_coriolis:
-            upwp_forcing = upwp_forcing + fcor_y_col * (jnp.asarray(up2) - jnp.asarray(wp2))
+            upwp_forcing = upwp_forcing + fcor_y_col * (up2 - wp2)
 
         upwp_forcing_pert = jnp.zeros((ngrdcol, nzm))
         vpwp_forcing_pert = jnp.zeros((ngrdcol, nzm))
         if l_perturbed_wind:
             ddzt_um_pert = ddzt(nzm, nzt, ngrdcol, gr, um_pert)
             ddzt_vm_pert = ddzt(nzm, nzt, ngrdcol, gr, vm_pert)
-            upwp_forcing_pert = C_uu_shr_col * jnp.asarray(wp2) * ddzt_um_pert
-            vpwp_forcing_pert = C_uu_shr_col * jnp.asarray(wp2) * ddzt_vm_pert
+            upwp_forcing_pert = C_uu_shr_col * wp2 * ddzt_um_pert
+            vpwp_forcing_pert = C_uu_shr_col * wp2 * ddzt_vm_pert
 
         if l_sample:
-            stats = stats.update("upwp_pr4", C_uu_shr_col * jnp.asarray(wp2) * ddzt_um)
-            stats = stats.update("vpwp_pr4", C_uu_shr_col * jnp.asarray(wp2) * ddzt_vm)
+            stats = stats.update("upwp_pr4", C_uu_shr_col * wp2 * ddzt_um)
+            stats = stats.update("vpwp_pr4", C_uu_shr_col * wp2 * ddzt_vm)
             if l_ho_trad_coriolis:
-                stats = stats.update("upwp_tct", fcor_col * jnp.asarray(vpwp))
-                stats = stats.update("vpwp_tct", -fcor_col * jnp.asarray(upwp))
+                stats = stats.update("upwp_tct", fcor_col * vpwp)
+                stats = stats.update("vpwp_tct", -fcor_col * upwp)
             if l_ho_nontrad_coriolis:
-                stats = stats.update("upwp_nct", fcor_y_col * (jnp.asarray(up2) - jnp.asarray(wp2)))
+                stats = stats.update("upwp_nct", fcor_y_col * (up2 - wp2))
 
-        tau_C6_zm = jnp.minimum(one / jnp.asarray(invrs_tau_C6_zm), jnp.asarray(tau_max_zm))
+        tau_C6_zm = jnp.minimum(one / invrs_tau_C6_zm, tau_max_zm)
         um_smth = zt2zm2zt(nzm, nzt, ngrdcol, gr, um, zt_min=-jnp.inf)
         vm_smth = zt2zm2zt(nzm, nzt, ngrdcol, gr, vm, zt_min=-jnp.inf)
 
@@ -1956,21 +1949,21 @@ def solve_xm_wpxp_with_single_lhs(
         else:
             upthlp_pert = uprtp_pert = vpthlp_pert = vprtp_pert = None
 
-        upthvp_tmp = upthlp + ep1 * jnp.asarray(thv_ds_zm) * uprtp + jnp.asarray(rc_coef_zm) * jnp.asarray(uprcp)
-        vpthvp_tmp = vpthlp + ep1 * jnp.asarray(thv_ds_zm) * vprtp + jnp.asarray(rc_coef_zm) * jnp.asarray(vprcp)
+        upthvp_tmp = upthlp + ep1 * thv_ds_zm * uprtp + rc_coef_zm * uprcp
+        vpthvp_tmp = vpthlp + ep1 * thv_ds_zm * vprtp + rc_coef_zm * vprcp
         upthvp = zm2zt2zm(nzm, nzt, ngrdcol, gr, upthvp_tmp, zm_min=-jnp.inf)
         vpthvp = zm2zt2zm(nzm, nzt, ngrdcol, gr, vpthvp_tmp, zm_min=-jnp.inf)
 
         if l_perturbed_wind:
             upthvp_pert = (
                 upthlp_pert
-                + ep1 * jnp.asarray(thv_ds_zm) * uprtp_pert
-                + jnp.asarray(rc_coef_zm) * jnp.asarray(uprcp)
+                + ep1 * thv_ds_zm * uprtp_pert
+                + rc_coef_zm * uprcp
             )
             vpthvp_pert = (
                 vpthlp_pert
-                + ep1 * jnp.asarray(thv_ds_zm) * vprtp_pert
-                + jnp.asarray(rc_coef_zm) * jnp.asarray(vprcp)
+                + ep1 * thv_ds_zm * vprtp_pert
+                + rc_coef_zm * vprcp
             )
 
         if l_sample:
@@ -2024,10 +2017,10 @@ def solve_xm_wpxp_with_single_lhs(
     if penta_solve_method == penta_bicgstab:
         for irhs, (xm_field, wpxp_field) in enumerate(field_pairs):
             old_solution = old_solution.at[:, 1:2 * (nzm - 1) + 1:2, irhs].set(
-                jnp.asarray(xm_field)
+                xm_field
             )
             old_solution = old_solution.at[:, 0:2 * nzm - 1:2, irhs].set(
-                jnp.asarray(wpxp_field)
+                wpxp_field
             )
 
     l_use_rcond = bool(
@@ -2436,6 +2429,9 @@ def xm_wpxp_solve(
 ):
     """Solve for xm / w'x' using the band diagonal solver.
 
+    Returns:
+        (solution, rcond, err_info)
+
     Fortran declarations (xm_wpxp_solve in src/CLUBB_core/advance_xm_wpxp_module.F90):
 
         !------------------------- Input Variables -------------------------
@@ -2491,7 +2487,7 @@ def xm_wpxp_solve(
     )
 
     if l_force_descending_solves and gr.grid_dir_indx > 0:
-        solution = jnp.asarray(solution)[:, ::-1, :]
+        solution = solution[:, ::-1, :]
 
     if clubb_at_least_debug_level(0):
         jax.lax.cond(
@@ -2509,7 +2505,7 @@ def xm_wpxp_solve(
         )
     # TODO: Source field-specific matrix/RHS dumps need the caller's solve and
     # scalar labels, absent from this shared solver interface; skipped here.
-    return solution, jnp.asarray(rcond), err_info
+    return solution, rcond, err_info
 
 
 def xm_wpxp_clipping_and_stats(
@@ -2725,7 +2721,7 @@ def xm_wpxp_clipping_and_stats(
 
     if l_sample:
         C7_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzm))
-        C7_Skw_fnc_plus_one = jnp.asarray(C7_Skw_fnc) + one
+        C7_Skw_fnc_plus_one = C7_Skw_fnc + one
         wpxp_ac = wpxp_terms_ac_pr2_lhs(
             nzm, nzt, ngrdcol, gr, C7_Skw_fnc_zeros, wm_zt, gr.invrs_dzm,
         )
@@ -2737,7 +2733,7 @@ def xm_wpxp_clipping_and_stats(
             name_xm_matrix_condt_num.strip()
             and stats.var_on_stats_list(name_xm_matrix_condt_num)
         ):
-            stats = stats.update(name_xm_matrix_condt_num, one / jnp.asarray(rcond))
+            stats = stats.update(name_xm_matrix_condt_num, one / rcond)
 
         if not l_implemented:
             k_zt = jnp.arange(nzt)
@@ -2789,7 +2785,6 @@ def xm_wpxp_clipping_and_stats(
             stats = stats.update(name_wpxp_tp, tmp_zm_stats)
 
         tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
-        wpxp_ac = jnp.asarray(wpxp_ac)
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -wpxp_ac[:, k_int] * wpxp[:, k_int]
         )
@@ -2804,7 +2799,6 @@ def xm_wpxp_clipping_and_stats(
             stats = stats.finalize_budget(name_wpxp_pr1, tmp_zm_stats)
 
         tmp_zm_stats = jnp.zeros((ngrdcol, nzm))
-        wpxp_pr2 = jnp.asarray(wpxp_pr2)
         tmp_zm_stats = tmp_zm_stats.at[:, 1:nzm - 1].set(
             -wpxp_pr2[:, k_int] * wpxp[:, k_int]
         )
@@ -2898,9 +2892,9 @@ def xm_wpxp_clipping_and_stats(
 
     if l_enable_relaxed_clipping:
         if solve_type == xm_wpxp_thlm:
-            xp2_relaxed = jnp.maximum(0.01, jnp.asarray(xp2))
+            xp2_relaxed = jnp.maximum(0.01, xp2)
         else:
-            xp2_relaxed = jnp.maximum(1.0e-7, jnp.asarray(xp2))
+            xp2_relaxed = jnp.maximum(1.0e-7, xp2)
     else:
         xp2_relaxed = xp2
 
@@ -3032,11 +3026,11 @@ def xm_term_ta_lhs(nzm, nzt, ngrdcol, gr, rho_ds_zm, invrs_rho_ds_zt):
     lhs_ta_xm = jnp.zeros((ndiags2, ngrdcol, nzt))
     # Momentum superdiagonal [ x wpxp(k+1,<t+1>) ]
     lhs_ta_xm = lhs_ta_xm.at[0, :, :].set(
-        jnp.asarray(invrs_rho_ds_zt) * jnp.asarray(gr.invrs_dzt) * jnp.asarray(rho_ds_zm[:, 1:nzm])
+        invrs_rho_ds_zt * gr.invrs_dzt * rho_ds_zm[:, 1:nzm]
     )
     # Momentum subdiagonal [ x wpxp(k,<t+1>) ]
     lhs_ta_xm = lhs_ta_xm.at[1, :, :].set(
-        -jnp.asarray(invrs_rho_ds_zt) * jnp.asarray(gr.invrs_dzt) * jnp.asarray(rho_ds_zm[:, :nzt])
+        -invrs_rho_ds_zt * gr.invrs_dzt * rho_ds_zm[:, :nzt]
     )
     return lhs_ta_xm
 
@@ -3102,11 +3096,11 @@ def wpxp_term_tp_lhs(nzm, ngrdcol, gr, wp2):
     lhs_tp = jnp.zeros((ndiags2, ngrdcol, nzm))
     # Thermodynamic superdiagonal [ x xm(k,<t+1>) ]
     lhs_tp = lhs_tp.at[0, :, 1:nzm - 1].set(
-        jnp.asarray(wp2[:, 1:nzm - 1]) * jnp.asarray(gr.invrs_dzm[:, 1:nzm - 1])
+        wp2[:, 1:nzm - 1] * gr.invrs_dzm[:, 1:nzm - 1]
     )
     # Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
     lhs_tp = lhs_tp.at[1, :, 1:nzm - 1].set(
-        -jnp.asarray(wp2[:, 1:nzm - 1]) * jnp.asarray(gr.invrs_dzm[:, 1:nzm - 1])
+        -wp2[:, 1:nzm - 1] * gr.invrs_dzm[:, 1:nzm - 1]
     )
     return lhs_tp
 
@@ -3186,9 +3180,9 @@ def wpxp_terms_ac_pr2_lhs(nzm, nzt, ngrdcol, gr, C7_Skw_fnc, wm_zt, invrs_dzm):
     lhs_ac_pr2 = jnp.zeros((ngrdcol, nzm))
     # Momentum main diagonal: [ x wpxp(k,<t+1>) ]
     lhs_ac_pr2 = lhs_ac_pr2.at[:, 1:nzm - 1].set(
-        (one - jnp.asarray(C7_Skw_fnc[:, 1:nzm - 1]))
-        * jnp.asarray(invrs_dzm[:, 1:nzm - 1])
-        * (jnp.asarray(wm_zt[:, 1:nzt]) - jnp.asarray(wm_zt[:, :nzt - 1]))
+        (one - C7_Skw_fnc[:, 1:nzm - 1])
+        * invrs_dzm[:, 1:nzm - 1]
+        * (wm_zt[:, 1:nzt] - wm_zt[:, :nzt - 1])
     )
     return lhs_ac_pr2
 
@@ -3255,17 +3249,17 @@ def wpxp_term_pr1_lhs(
 
     # Momentum main diagonals: [ x wpxp(k,<t+1>) ]
     lhs_pr1_wprtp = lhs_pr1_wprtp.at[:, 1:nzm - 1].set(
-        jnp.asarray(C6rt_Skw_fnc[:, 1:nzm - 1]) * jnp.asarray(invrs_tau_C6_zm[:, 1:nzm - 1])
+        C6rt_Skw_fnc[:, 1:nzm - 1] * invrs_tau_C6_zm[:, 1:nzm - 1]
     )
     # Momentum main diagonals: [ x wpxp(k,<t+1>) ]
     lhs_pr1_wpthlp = lhs_pr1_wpthlp.at[:, 1:nzm - 1].set(
-        jnp.asarray(C6thl_Skw_fnc[:, 1:nzm - 1]) * jnp.asarray(invrs_tau_C6_zm[:, 1:nzm - 1])
+        C6thl_Skw_fnc[:, 1:nzm - 1] * invrs_tau_C6_zm[:, 1:nzm - 1]
     )
 
     if l_scalar_calc:
         # Momentum main diagonals: [ x wpxp(k,<t+1>) ]
         lhs_pr1_wpsclrp = lhs_pr1_wpsclrp.at[:, 1:nzm - 1].set(
-            jnp.asarray(C7_Skw_fnc[:, 1:nzm - 1]) * jnp.asarray(invrs_tau_C6_zm[:, 1:nzm - 1])
+            C7_Skw_fnc[:, 1:nzm - 1] * invrs_tau_C6_zm[:, 1:nzm - 1]
         )
 
     return lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp
@@ -3314,9 +3308,9 @@ def wpxp_terms_bp_pr3_rhs(nzm, ngrdcol, gr, C7_Skw_fnc, thv_ds_zm, xpthvp):
     rhs_bp_pr3 = jnp.zeros((ngrdcol, nzm))
     # Calculate term at all interior grid levels.
     rhs_bp_pr3 = rhs_bp_pr3.at[:, 1:nzm - 1].set(
-        (grav / jnp.asarray(thv_ds_zm[:, 1:nzm - 1]))
-        * (one - jnp.asarray(C7_Skw_fnc[:, 1:nzm - 1]))
-        * jnp.asarray(xpthvp[:, 1:nzm - 1])
+        (grav / thv_ds_zm[:, 1:nzm - 1])
+        * (one - C7_Skw_fnc[:, 1:nzm - 1])
+        * xpthvp[:, 1:nzm - 1]
     )
     return rhs_bp_pr3
 
@@ -3455,7 +3449,6 @@ def xm_correction_wpxp_cl(
           xm            ! xm (thermodynamic levels)                 [{xm units}]
     """
     l_sample = stats.l_sample
-    wpxp_chnge = jnp.asarray(wpxp_chnge)
     l_clipping_needed = jnp.any(jnp.abs(wpxp_chnge) > eps, axis=1)
 
     if solve_type == xm_wpxp_rtm:
@@ -3465,7 +3458,6 @@ def xm_correction_wpxp_cl(
     else:
         name_xm_tacl = ""
 
-    invrs_dzt = jnp.asarray(invrs_dzt)
     # The adjustment to xm due to turbulent advection term clipping
     xm_tndcy_wpxp_cl = -invrs_dzt * (wpxp_chnge[:, 1:] - wpxp_chnge[:, :-1])
     xm_tndcy_wpxp_cl = jnp.where(l_clipping_needed[:, None], xm_tndcy_wpxp_cl, zero)
@@ -3507,14 +3499,8 @@ def damp_coefficient(
         !--------------------------- Output Variables ---------------------------
         real( kind = core_rknd ), dimension(ngrdcol,nzm) :: damped_value
     """
-    coefficient = jnp.asarray(coefficient)
-    max_coeff_value = jnp.asarray(max_coeff_value)
-    altitude_threshold = jnp.asarray(altitude_threshold)
-    threshold = jnp.asarray(threshold)
-    Cx_Skw_fnc = jnp.asarray(Cx_Skw_fnc)
-    Lscale_zm = jnp.asarray(Lscale_zm)
 
-    mask = (Lscale_zm < threshold[:, None]) & (jnp.asarray(gr.zm) > altitude_threshold[:, None])
+    mask = (Lscale_zm < threshold[:, None]) & (gr.zm > altitude_threshold[:, None])
     threshold_safe = jnp.where(jnp.abs(threshold) > zero, threshold, one)
     damped = (
         max_coeff_value[:, None]
@@ -3568,11 +3554,11 @@ def diagnose_upxp(
     # The value of ypxp is irrelevant to the calculations at the upper and
     # lower boundaries
     ypxp_interior = (
-        (jnp.asarray(tau_C6_zm)[:, 1:nzm - 1] / jnp.asarray(C6x_Skw_fnc)[:, 1:nzm - 1])
+        (tau_C6_zm[:, 1:nzm - 1] / C6x_Skw_fnc[:, 1:nzm - 1])
         * (
-            -jnp.asarray(ypwp)[:, 1:nzm - 1] * ddzt_xm[:, 1:nzm - 1]
-            - (one - jnp.asarray(C7_Skw_fnc)[:, 1:nzm - 1])
-            * (jnp.asarray(wpxp)[:, 1:nzm - 1] * ddzt_ym[:, 1:nzm - 1])
+            -ypwp[:, 1:nzm - 1] * ddzt_xm[:, 1:nzm - 1]
+            - (one - C7_Skw_fnc[:, 1:nzm - 1])
+            * (wpxp[:, 1:nzm - 1] * ddzt_ym[:, 1:nzm - 1])
         )
     )
     ypxp = ypxp.at[:, 1:nzm - 1].set(ypxp_interior)
@@ -3784,10 +3770,10 @@ def _solve_one_xm_wpxp(
     old_solution = jnp.zeros((ngrdcol, 2 * nzm - 1, 1))
     if penta_solve_method == penta_bicgstab:
         old_solution = old_solution.at[:, 1:2 * (nzm - 1) + 1:2, 0].set(
-            jnp.asarray(xm)
+            xm
         )
         old_solution = old_solution.at[:, 0:2 * nzm - 1:2, 0].set(
-            jnp.asarray(wpxp)
+            wpxp
         )
 
     if solve_type == xm_wpxp_rtm:

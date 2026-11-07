@@ -1,5 +1,7 @@
 """Check the JAX monotonic flux limiter ports (mono_flux_limiter.F90) against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import jax.numpy as jnp
 import numpy as np
 
@@ -29,7 +31,7 @@ def _empty_stats(gr):
 
 def _mfl_call(a):
     gr = a["gr"]
-    xm, wpxp, _err, _stats = monotonic_turbulent_flux_limit(
+    xm, wpxp, _err, _stats = call_jax(monotonic_turbulent_flux_limit,
         gr.nzm,
         gr.nzt,
         gr.ngrdcol,

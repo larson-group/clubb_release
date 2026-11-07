@@ -4,6 +4,8 @@ Synthetic failures verify host callbacks, source index order, full dumps and
 unchanged failure status without needing a full atmospheric case.
 """
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import io
 
 import jax
@@ -41,7 +43,7 @@ def _ready(result, capsys):
 
 def test_negative_runtime_prints_preserve_level_then_column_order(capsys):
     info = ErrInfo.initialized(2, mpi_rank=5, chunk_idx=3)
-    run = jax.jit(lambda values: check_negative(values, "rtm", "advance_clubb_core", info))
+    run = jax.jit(lambda values: call_jax(check_negative, values, "rtm", "advance_clubb_core", info))
     healthy = run(jnp.ones((2, 3)))
     assert _ready(healthy, capsys).err == ""
     values = jnp.array([[1.0, -2.0, 1.0], [-3.0, 1.0, -4.0]])
@@ -77,7 +79,7 @@ def test_solver_nan_locations_and_existing_column_status(rank, capsys):
 
 def test_nonfinite_check_keeps_source_message_and_fatal_status(capsys):
     info = ErrInfo.initialized(2)
-    result = jax.jit(lambda v: check_nan(v, "rho", "input", info))(jnp.array([1.0, jnp.inf]))
+    result = jax.jit(lambda v: call_jax(check_nan, v, "rho", "input", info))(jnp.array([1.0, jnp.inf]))
     text = _ready(result, capsys).err
     assert "rho  is NaN in  input" in text
     np.testing.assert_array_equal(result.err_code, [99, 99])

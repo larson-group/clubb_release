@@ -10,6 +10,8 @@ affects all 12 CGILS/cloud_feedback cases and previously had only end-to-end val
      o3l = the ozone column; all lengths equal; physical sanity).
   2. The thm[K] / thlm[K] branch: T_in_K = θ·exner with the level-1 exner from p_sfc (the Fortran quirk).
 """
+
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
 
@@ -30,7 +32,7 @@ def test_real_cgils_extended_atmosphere():
     if not (os.path.exists(snd_f) and os.path.exists(oz_f)):
         raise AssertionError("  real cgils extended atmosphere: required input missing (files absent)")
     snd = read_sounding(snd_f)
-    snd = convert_pressure_sounding_to_z(snd, _P_SFC, 0.0, _SAT)
+    snd = call_jax(convert_pressure_sounding_to_z, snd, _P_SFC, 0.0, _SAT)
     o3l = read_ozone_sounding(oz_f)
     n = len(snd['z'])
     assert len(o3l) == n, f"ozone levels {len(o3l)} != sounding levels {n}"

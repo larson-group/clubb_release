@@ -1,5 +1,7 @@
 """Check advance_xp3_module.py:diagnose_xp3 against Fortran diagnose_xp3."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 from input.scripts.create_case_namelist import create_case_namelist_file
 
 import os
@@ -59,7 +61,7 @@ def test_f2py_oracle():
             moments = [a[k] for k in ("wp2", "wp3", "thvm", "wprtp", "wpthlp", "rtp2", "thlp2",
                                       "upwp", "vpwp", "up2", "vp2", "sigma_sqd_w", "wpsclrp", "sclrp2")]
             xp3_in = [np.zeros((ng, nzt))] * 4 + [np.zeros((ng, nzt, sclr_dim))]
-            *j_out, _stats = diagnose_xp3(
+            *j_out, _stats = call_jax(diagnose_xp3,
                 nzm, nzt, ng, sclr_dim, jnp.asarray(_SCLR_TOL), jgr, iipdf_type, jnp.asarray(clubb_params),
                 *(jnp.asarray(x) for x in moments), no_stats(ng), *(jnp.asarray(x) for x in xp3_in))
             f_out = fortran.diagnose_xp3(

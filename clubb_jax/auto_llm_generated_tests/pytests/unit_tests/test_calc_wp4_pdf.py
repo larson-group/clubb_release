@@ -10,6 +10,8 @@ Monte-Carlo: draw w from the actual 2-component Gaussian mixture and compare the
 validates the analytic moment formula itself (not a tautology). + finite grad. (iter 559)
 """
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 import numpy as np
 
@@ -27,7 +29,7 @@ def test_closed_form():
     worst = 0.0
     for w1, w2, v1, v2, a in _CASES:
         wm = a * w1 + (1.0 - a) * w2          # consistent mixture mean
-        got = float(calc_wp4_pdf(wm, w1, w2, v1, v2, a))
+        got = float(call_jax(calc_wp4_pdf, wm, w1, w2, v1, v2, a))
         d1, d2 = w1 - wm, w2 - wm
         ref = a * (3 * v1 ** 2 + 6 * d1 ** 2 * v1 + d1 ** 4) + (1 - a) * (3 * v2 ** 2 + 6 * d2 ** 2 * v2 + d2 ** 4)
         worst = max(worst, abs(got - ref) / (abs(ref) + 1e-300))
@@ -41,7 +43,7 @@ def test_monte_carlo_central_moment():
     worst = 0.0
     for w1, w2, v1, v2, a in _CASES:
         wm = a * w1 + (1.0 - a) * w2
-        got = float(calc_wp4_pdf(wm, w1, w2, v1, v2, a))
+        got = float(call_jax(calc_wp4_pdf, wm, w1, w2, v1, v2, a))
         # draw from the 2-component normal mixture: each sample from comp1 w.p. a, else comp2
         pick = rng.random(N) < a
         s = np.where(pick, rng.normal(w1, np.sqrt(v1), N), rng.normal(w2, np.sqrt(v2), N))

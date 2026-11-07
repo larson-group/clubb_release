@@ -30,7 +30,7 @@ def _exner_step(exner_1, z_1, z_2, thvm_1, thvm_2):
     """One hydrostatic Exner integration step from the formulas in init_pressure."""
     g_ov_cp = grav / Cp
     diff = thvm_2 - thvm_1
-    tol = jnp.finfo(jnp.asarray(thvm_2).dtype).eps * thvm_2
+    tol = jnp.finfo(thvm_2.dtype).eps * thvm_2
     use_log = jnp.abs(diff) > tol
     safe_diff = jnp.where(use_log, diff, 1.0)
     safe_ratio = jnp.where(use_log, thvm_2 / thvm_1, 1.0)
@@ -120,8 +120,6 @@ def init_pressure(thvm, p_sfc, gr):
           p_in_Pa_zm, & ! Pressure on momentum levels            [Pa]
           exner_zm      ! Exner function on momentum levels      [-]
     """
-    thvm = jnp.asarray(thvm)
-    p_sfc = jnp.asarray(p_sfc)
 
     # Interpolate theta_v to momentum levels.
     thvm_zm = zt2zm(

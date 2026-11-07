@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """validate the cos_solar_zen_module.F90 port (cosine of the solar zenith angle)."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 
 from clubb_jax.src.Radiation.cos_solar_zen_module import cos_solar_zen
 
@@ -14,7 +16,7 @@ def test_bounds():
     for d, m, y in _DATES:
         for t in (0.0, 6 * 3600.0, 12 * 3600.0, 18 * 3600.0):
             for lat in (-60.0, 0.0, 45.0, 80.0):
-                cz = float(cos_solar_zen(d, m, y, t, lat, 0.0))
+                cz = float(call_jax(cos_solar_zen, d, m, y, t, lat, 0.0))
                 lo, hi = min(lo, cz), max(hi, cz)
     assert -1.0 - 1e-12 <= lo and hi <= 1.0 + 1e-12, f"cos_zen out of [-1,1]: [{lo}, {hi}]"
     print(f"  cos_solar_zen physical bounds: cos(zenith) in [{lo:.3f}, {hi:.3f}] subset of [-1, 1]  PASS")

@@ -57,11 +57,11 @@ def Skx_func(nz: int, ngrdcol: int, xp2, xp3, x_tol: float, clubb_params):
     """
     del nz, ngrdcol
     # ---- Begin Code ----
-    Skx_denom_tol = jnp.asarray(clubb_params)[:, iSkw_denom_coef, None] * x_tol ** 2
+    Skx_denom_tol = clubb_params[:, iSkw_denom_coef, None] * x_tol ** 2
 
     # Calculation of skewness to help reduce the sensitivity of this value to
     # small values of xp2.
-    Skx = jnp.asarray(xp3) * jnp.sqrt(jnp.asarray(xp2) + Skx_denom_tol) ** (-3)
+    Skx = xp3 * jnp.sqrt(xp2 + Skx_denom_tol) ** (-3)
     return Skx
 
 
@@ -248,7 +248,7 @@ def xp3_LG_2005_ansatz(
 
     # Calculate <x'^3> using the reverse of the special sensitivity reduction
     # formula in function Skx_func above.
-    xp3 = Skx_zt * (jnp.asarray(xp2_zt) + Skx_denom_tol) * jnp.sqrt(
-        jnp.asarray(xp2_zt) + Skx_denom_tol
+    xp3 = Skx_zt * (xp2_zt + Skx_denom_tol) * jnp.sqrt(
+        xp2_zt + Skx_denom_tol
     )
     return xp3

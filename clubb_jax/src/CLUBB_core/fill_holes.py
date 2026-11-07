@@ -647,7 +647,7 @@ def fill_holes_hydromet_api(
 
     # Restrict same-level redistribution to frozen mixing ratios. Liquid
     # rain and all number concentrations bypass this phase-conserving step.
-    frozen = jnp.asarray(l_frozen_hm) & jnp.asarray(l_mix_rat_hm)
+    frozen = l_frozen_hm & l_mix_rat_hm
     hydromet_frozen = jnp.where(frozen, hydromet, 0.0)
     hydromet_frozen_filled = hole_filling_hm_one_lev(hydromet_dim, hydromet_frozen)
     return jnp.where(frozen, hydromet_frozen_filled, hydromet)

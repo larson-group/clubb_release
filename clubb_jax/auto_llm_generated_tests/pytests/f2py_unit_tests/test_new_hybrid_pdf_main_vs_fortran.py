@@ -1,6 +1,8 @@
 """Check the new-hybrid PDF driver port (new_hybrid_pdf_main.F90)
 against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 from input.scripts.create_case_namelist import create_case_namelist_file
 
 import os
@@ -68,7 +70,7 @@ def test_f2py_oracle():
             a['Skrt'], a['Skthl'], a['Sku'], a['Skv'], s['Sksclr'],
             pdf_implicit_coefs_terms=init_pdf_implicit(NZ, NG, SD))
         f_coefs = get_fortran_implicit_coefs()
-        g = new_hybrid_pdf_driver(
+        g = call_jax(new_hybrid_pdf_driver,
             a['wm'], a['rtm'], a['thlm'], a['um'], a['vm'], a['wp2'], a['rtp2'], a['thlp2'],
             a['up2'], a['vp2'], a['Skw'], a['wprtp'], a['wpthlp'], a['upwp'], a['vpwp'],
             compute_gamma_Skw(NZ, NG, a['Skw'], cp, True),

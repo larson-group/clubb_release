@@ -1,5 +1,7 @@
 """Check the JAX Skx_func port (Skx_module.F90:Skx_func) against Fortran."""
 
+from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
+
 import numpy as np
 
 import clubb_python.CLUBB_core.skx_module as fortran
@@ -29,7 +31,7 @@ def test_f2py_oracle():
         xp2 = rng.uniform(0.0, 2.0, (NG, NZ))
         xp3 = rng.uniform(-1.0, 1.0, (NG, NZ))
         args = (NZ, NG, xp2, xp3, _X_TOL, params)
-        worst = max(worst, max_abs_diff("Skx_func", Skx_func(*args), fortran.skx_func(*args)))
+        worst = max(worst, max_abs_diff("Skx_func", call_jax(Skx_func, *args), fortran.skx_func(*args)))
     assert worst < 1e-11, f"Skx_func Fortran mismatch {worst:.2e}"
 
 
@@ -49,7 +51,7 @@ def test_LG_2005_ansatz_f2py():
         args = (NZ, NG, Skw, wpxp, wp2, xp2, beta, ssw, _X_TOL)
         w_lg = max(w_lg, max_rel_diff("LG_2005_ansatz", LG_2005_ansatz(*args), fortran.lg_2005_ansatz(*args), 1.0))
         args = (NZ, NG, Skw, wpxp, wp2, xp2, ssw, params, _X_TOL)
-        w_xp3 = max(w_xp3, max_rel_diff("xp3_LG_2005_ansatz", xp3_LG_2005_ansatz(*args),
+        w_xp3 = max(w_xp3, max_rel_diff("xp3_LG_2005_ansatz", call_jax(xp3_LG_2005_ansatz, *args),
                                         fortran.xp3_lg_2005_ansatz(*args), 1.0))
     assert w_lg < 1e-9, f"LG_2005_ansatz Fortran rel mismatch {w_lg:.2e}"
     assert w_xp3 < 1e-9, f"xp3_LG_2005_ansatz Fortran rel mismatch {w_xp3:.2e}"
