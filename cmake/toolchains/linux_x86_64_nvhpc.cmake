@@ -50,20 +50,8 @@ else()
     # NVHPC GPU links can report temporary /tmp/pgcuda*.o files in linker depfiles.
     set(CMAKE_LINK_DEPENDS_USE_LINKER FALSE)
 
-    # Older versions of nvhpc use -Mcuda to link, but newer versions use -cuda
-    # This bit extracts the version number and chooses between -Mcuda or -cuda
-    execute_process(
-        COMMAND ${CMAKE_Fortran_COMPILER} --version
-        OUTPUT_VARIABLE NVHPC_VERSION_RAW
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    string(REGEX MATCH "[0-9]+\\.[0-9]+" NVHPC_VERSION "${NVHPC_VERSION_RAW}")
-
-    if (NVHPC_VERSION VERSION_LESS 24.11)
-        set(GPU_LINK_FLAGS  "${GPU_LINK_FLAGS}" "-Mcuda")
-    else()
-        set(GPU_LINK_FLAGS  "${GPU_LINK_FLAGS}" "-cuda")
-    endif()
+    # Both supported NVHPC stacks accept -cuda with the SILHS cuRAND link option.
+    set(GPU_LINK_FLAGS "${GPU_LINK_FLAGS}" "-cuda")
 
 endif()
 
