@@ -7,18 +7,17 @@ import plotly.graph_objects as go
 
 from dash_app.misc_tab.gradient_response.callbacks import METRICS, profile_figure, progress_text, response_figure
 from dash_app.services.gradient_matrix import validate_matrix_request
-from dash_app.services.gradient_response import validate_request
 from dash_app.shared.broker_client import perform_action
 from dash_app.shared.plot_theme import figure_theme
 from tuner.case_defaults import read_case_defaults
 from utilities.loss_metrics import normalize_loss_weights
 from utilities.clubb_settings_validation import parse_finite_number
-from utilities.clubb_loss_runner import validate_gradient_mode
+from utilities.clubb_loss_runner import validate_gradient_mode, validate_gradient_target
 from .multi_layout import parameter_range_rows
 
 
 def matrix_figure(data, metric, theme="dark"):
-    """Display gradients scaled by 10% of each entered parameter interval."""
+    """Display field values or gradients scaled by 10% of parameter intervals."""
     figure = go.Figure()
     label = next(label for name, label, _ in METRICS if name == metric)
     figure.update_layout(**figure_theme(theme), margin=dict(l=105, r=35, t=55, b=100),
@@ -27,6 +26,17 @@ def matrix_figure(data, metric, theme="dark"):
     if not data or metric not in data['metrics']:
         figure.add_annotation(text='Calculate a map to compare gradients.', showarrow=False,
                               x=.5, y=.5, xref='paper', yref='paper')
+        return figure
+    if data.get('gradient_target') == 'loss':
+        values = data['metrics'][metric]['values']
+        figure.add_trace(go.Heatmap(
+            x=data['parameters'], y=data['fields'], z=[[value] * len(data['parameters']) for value in values],
+            colorscale='Viridis', hoverongaps=False,
+            hovertemplate='Field: %{y}<br>Parameter to sweep: %{x}<br>Metric value: %{z:.5g}<extra></extra>',
+        ))
+        figure.update_layout(title=dict(text=f'{label} value at midpoint', x=0),
+                             xaxis_title='Parameter to sweep', yaxis_title='Field')
+        figure.update_yaxes(autorange='reversed')
         return figure
     ranges = {item['name']: item for item in data['parameter_ranges']}
     steps = [(ranges[p]['max'] - ranges[p]['min']) * 0.1 for p in data['parameters']]
@@ -62,12 +72,41 @@ def matrix_figure(data, metric, theme="dark"):
     return figure
 
 
+def combined_loss_figure(data, theme="dark"):
+    """Plot the one combined-loss derivative for each selected parameter."""
+    figure = go.Figure()
+    figure.update_layout(**figure_theme(theme), margin=dict(l=105, r=35, t=55, b=100),
+                         title=dict(text='Combined RMSE loss gradient', x=0, y=0.99, yanchor='top'),
+                         xaxis_title='Parameter', yaxis_title='Combined loss')
+    if not data or data.get('gradient_target') != 'loss':
+        return figure
+    ranges = {item['name']: item for item in data['parameter_ranges']}
+    steps = [(ranges[p]['max'] - ranges[p]['min']) * .1 for p in data['parameters']]
+    gradients = data['loss_gradients']
+    changes = [None if gradient is None else gradient * step
+               for gradient, step in zip(gradients, steps)]
+    limit = max((abs(value) for value in changes if value is not None and math.isfinite(value)), default=0) or 1
+    custom = [[gradient, step, data['baseline'][index], data['loss']]
+              for index, (gradient, step) in enumerate(zip(gradients, steps))]
+    figure.add_trace(go.Heatmap(
+        x=data['parameters'], y=['Combined loss'], z=[changes], customdata=[custom],
+        colorscale='RdBu_r', zmin=-limit, zmax=limit, zmid=0, hoverongaps=False,
+        colorbar=dict(title='Δ loss'),
+        hovertemplate=('Parameter: %{x}<br>Baseline: %{customdata[2]:.5g}'
+                       '<br>Combined loss: %{customdata[3]:.5g}<br>Raw gradient: %{customdata[0]:.5g}'
+                       '<br>Positive step: %{customdata[1]:.5g}<br>Predicted change: %{z:.5g}<extra></extra>'),
+    ))
+    return figure
+
+
 def matrix_progress(progress, finished=False):
     """Format the active map stage and elapsed time."""
     progress = progress or {}
     if finished:
-        return (f"Complete in {(progress.get('timings') or {}).get('total', 0):.1f} s"
-                f" · {progress['gradient_mode']} mode. Click a cell to explore it.")
+        timings = progress.get('timings') or {}
+        return (f"Gradient evaluation: {timings.get('evaluation', timings.get('total', 0)):.1f} s"
+                f" · {progress['gradient_mode']} mode · session {'reused' if progress.get('runtime', {}).get('reused') else 'prepared'}."
+                " Select a field and parameter to explore its response.")
     step = progress.get('step')
     label = {'runtime': 'Preparing JAX', 'preparing': 'Preparing benchmark and case',
              'gradient': 'Calculating gradients', 'finalizing': 'Finishing', 'complete': 'Writing results'}.get(step, 'Starting')
@@ -115,16 +154,17 @@ def register_callbacks(app):
         """Show invalid parameter endpoints before a map is submitted."""
         mins = {item['index']: value for item, value in zip(min_ids or [], min_values or [])}
         maxs = {item['index']: value for item, value in zip(max_ids or [], max_values or [])}
-        for name in parameters or []:
-            if name not in mins or name not in maxs:
-                continue
+        ranges = [{'name': name, 'min': mins[name], 'max': maxs[name]}
+                  for name in parameters or [] if name in mins and name in maxs]
+        if ranges:
             try:
-                validate_request(name, mins[name], maxs[name], 'wp2', 'bomex', 0, 600)
+                validate_matrix_request('bomex', 0, 600, ['wp2'], ranges)
             except ValueError as exc:
                 return str(exc)
         return ''
 
     @app.callback(Output('gradient-multi-result', 'data'), Output('gradient-multi-status', 'children'),
+                  Output('gradient-multi-error', 'children'),
                   Output('gradient-multi-go', 'disabled'), Output('gradient-multi-poll', 'disabled'),
                   Output('gradient-multi-request', 'data'),
                   Input('gradient-multi-go', 'n_clicks'), Input('gradient-multi-poll', 'n_intervals'),
@@ -134,11 +174,12 @@ def register_callbacks(app):
                   Input({'type': 'gradient-range-min', 'index': ALL}, 'value'),
                   Input({'type': 'gradient-range-max', 'index': ALL}, 'value'),
                   Input('gradient-multi-mode', 'value'),
+                  Input('gradient-multi-target', 'value'),
                   *[Input(f'gradient-multi-weight-{name}', 'value') for name in ('mean', 'std', 'corr')],
                   State({'type': 'gradient-range-min', 'index': ALL}, 'id'),
                   State({'type': 'gradient-range-max', 'index': ALL}, 'id'),
                   State('gradient-multi-scope', 'data'), State('gradient-multi-request', 'data'))
-    def update_map(clicks, _ticks, case, start, end, fields, parameters, min_values, max_values, gradient_mode, mean_weight, std_weight, corr_weight, min_ids, max_ids, scope, previous):
+    def update_map(clicks, _ticks, case, start, end, fields, parameters, min_values, max_values, gradient_mode, gradient_target, mean_weight, std_weight, corr_weight, min_ids, max_ids, scope, previous):
         """Submit and poll the map, clearing results when its inputs change."""
         previous = previous or {}
         trigger = ctx.triggered_id
@@ -151,44 +192,51 @@ def register_callbacks(app):
                 args = list(validate_matrix_request(case, start, end, fields, parameter_ranges))
                 loss_weights = normalize_loss_weights({'mean': mean_weight, 'std': std_weight, 'corr': corr_weight})
                 validate_gradient_mode(gradient_mode)
+                validate_gradient_target(gradient_target)
                 request = {'scope': f'{scope}:map', 'revision': int(previous.get('revision', 0)) + 1,
                            'selection': 0, 'task': 'gradient_matrix', 'args': args, 'gradient_mode': gradient_mode,
+                           'gradient_target': gradient_target,
                            'loss_weights': loss_weights}
                 perform_action('plot_task_submit', request)
-                return None, 'Queued. The first run may take a few minutes.', True, False, request
+                return None, 'Queued. The first run may take a few minutes.', '', True, False, request
             except (ValueError, RuntimeError) as exc:
-                return None, str(exc), False, True, previous
+                return None, str(exc), str(exc), False, True, previous
         if trigger == 'gradient-multi-poll' and previous.get('scope'):
             try:
                 current_ranges = [{'name': item['name'], 'min': parse_finite_number(item['min']),
                                    'max': parse_finite_number(item['max'])} for item in parameter_ranges]
                 current_args = [case, parse_finite_number(start), parse_finite_number(end), fields, current_ranges]
                 if (current_args != previous['args'] or gradient_mode != previous['gradient_mode']
+                        or gradient_target != previous.get('gradient_target', 'metrics')
                         or normalize_loss_weights({'mean': mean_weight, 'std': std_weight, 'corr': corr_weight}) != previous['loss_weights']):
-                    return None, 'Inputs changed; calculate a new map.', False, True, previous
+                    return None, 'Inputs changed; calculate a new map.', '', False, True, previous
                 result = perform_action('plot_task_poll', {'scope': previous['scope'], 'revision': previous['revision']}, ensure_running=False)
             except (ValueError, RuntimeError) as exc:
-                return no_update, str(exc), False, True, previous
+                return no_update, str(exc), str(exc), False, True, previous
             state = result.get('state')
             if state == 'queued':
-                return no_update, 'Queued behind another multi-field calculation.', True, False, previous
+                return no_update, 'Queued behind another multi-field calculation.', '', True, False, previous
             if state == 'running':
-                return no_update, matrix_progress(result.get('progress')), True, False, previous
+                return no_update, matrix_progress(result.get('progress')), '', True, False, previous
             if state == 'ready':
                 data = result['result']
                 data['map_revision'] = previous['revision']
-                return data, matrix_progress(data, finished=True), False, True, previous
-            return None, str(result.get('error') or 'The request is no longer available.'), False, True, previous
-        return None, '', False, True, previous
+                return data, matrix_progress(data, finished=True), '', False, True, previous
+            error = str(result.get('error') or 'The request is no longer available.')
+            return None, error, error, False, True, previous
+        return None, '', '', False, True, previous
 
     @app.callback(*[Output(f'gradient-multi-map-{element}', 'figure') for _, _, element in METRICS],
                   *[Output(f'gradient-multi-map-{element}-container', 'style') for _, _, element in METRICS],
+                  Output('gradient-multi-combined', 'figure'), Output('gradient-multi-combined-container', 'style'),
                   Input('gradient-multi-result', 'data'), Input('theme-store', 'data'))
     def show_map(data, theme):
         """Show all four metric maps for the current baseline."""
         height = max(388, 150 + 32 * len(data['fields'])) if data else 388
         return (*[matrix_figure(data, metric, theme) for metric, _, _ in METRICS],
-                *[{'height': f'{height}px'} for _ in METRICS])
+                *[{'height': f'{height}px'} for _ in METRICS],
+                combined_loss_figure(data, theme),
+                {'display': 'block' if data and data.get('gradient_target') == 'loss' else 'none'})
 
     @app.callback(Output('gradient-multi-detail-result', 'data'), Output('gradient-multi-detail-status', 'children'),
                   Output('gradient-multi-detail-poll', 'disabled'), Output('gradient-multi-detail-request', 'data'),
@@ -248,7 +296,7 @@ def register_callbacks(app):
                   Input('gradient-multi-points-poll', 'disabled'))
     def show_point_controls(mapping, detail, polling_disabled):
         """Offer the all-sample calculation only after the current sweep completes."""
-        available = current_sweep(mapping, detail)
+        available = current_sweep(mapping, detail) and mapping.get('gradient_target', 'metrics') == 'metrics'
         return not available or not polling_disabled, {'display': 'flex' if available else 'none'}
 
     @app.callback(Output('gradient-multi-points-result', 'data'),
@@ -264,7 +312,9 @@ def register_callbacks(app):
         """Request a multicolumn derivative pass and discard results from older sweeps."""
         previous = previous or {}
         trigger = ctx.triggered_id
-        if trigger in {'gradient-multi-result', 'gradient-multi-detail-result'} or not current_sweep(mapping, detail):
+        if (trigger in {'gradient-multi-result', 'gradient-multi-detail-result'}
+                or not current_sweep(mapping, detail)
+                or mapping.get('gradient_target', 'metrics') != 'metrics'):
             return None, '', True, previous
         if trigger == 'gradient-multi-points-go' and clicks:
             request = {'scope': f'{scope}:points', 'revision': int(previous.get('revision', 0)) + 1,
@@ -313,9 +363,11 @@ def register_callbacks(app):
         if data and mapping and data.get('map_revision') == mapping.get('map_revision'):
             field_index = mapping['fields'].index(data['field'])
             param_index = mapping['parameters'].index(data['parameter'])
-            result = dict(data, baseline=mapping['baseline'][param_index], metrics={
+            result = dict(data, baseline=mapping['baseline'][param_index],
+                          gradient_target=mapping.get('gradient_target', 'metrics'), metrics={
                 metric: dict(data['metrics'][metric], baseline=mapping['metrics'][metric]['values'][field_index],
-                             gradient=mapping['metrics'][metric]['gradients'][field_index][param_index])
+                             gradient=(mapping['metrics'][metric]['gradients'][field_index][param_index]
+                                       if mapping.get('gradient_target', 'metrics') == 'metrics' else None))
                 for metric, _, _ in METRICS
             })
             if (points and current_sweep(mapping, data) and points.get('map_revision') == data['map_revision']

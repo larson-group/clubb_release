@@ -51,6 +51,8 @@ def response_figure(metric, label, result=None, theme="dark"):
         title = f'{label}  ·  slope {gradient:.5g}'
     elif not baseline_defined:
         title = f'{label}  ·  undefined at midpoint'
+    elif result.get('gradient_target') == 'loss':
+        title = f'{label}  ·  value only'
     elif metric == 'std_ratio' and value == 0.0:
         title = f'{label}  ·  gradient undefined at flat model'
     else:

@@ -7,7 +7,9 @@ for the selected field; derivative requests return one slope per sample.
 
 All model work goes through evaluate_experiment(), which retains a shared loss
 runner for a fixed case, averaging interval, field set, batch width and loss
-weights. close_session() releases it when the configuration changes, an
+weights. Map requests can differentiate either the combined RMSE loss or all
+four field metrics while retaining their metric values. close_session() releases
+the runner when the configuration changes, an
 initialization/evaluation fails or the worker exits. The loss runner owns model
 initialization, statistics and benchmark data. Imports here stay independent of
 Dash UI packages and defer model dependencies until evaluation.
@@ -29,7 +31,7 @@ def validate_request(parameter, minimum, maximum, field, case, start, end):
     from tuner.loss_backend import available_loss_fields
     from tuner.parameter_ranges import tunable_parameter_defaults
     from tuner.case_defaults import available_case_names
-    from utilities.clubb_settings_validation import parameter_hard_bounds, parse_finite_number
+    from utilities.clubb_settings_validation import parameter_hard_bounds
 
     if not isinstance(parameter, str) or parameter not in tunable_parameter_defaults():
         raise ValueError('Select a valid tuning parameter.')
@@ -45,15 +47,23 @@ def validate_request(parameter, minimum, maximum, field, case, start, end):
             or not start_seconds.is_integer() or not end_seconds.is_integer()
             or start_seconds < 0 or start_seconds >= end_seconds):
         raise ValueError('Averaging times must be whole seconds with 0 ≤ start < end.')
+    low, high = validate_parameter_range(parameter, minimum, maximum, parameter_hard_bounds())
+    return str(parameter), low, high, str(field), case, int(start_seconds), int(end_seconds)
+
+
+def validate_parameter_range(parameter, minimum, maximum, hard_bounds):
+    """Check one selected interval against finite endpoints and model bounds."""
+    from utilities.clubb_settings_validation import parse_finite_number
+
     low, high = parse_finite_number(minimum), parse_finite_number(maximum)
     if low is None or high is None or low >= high:
         raise ValueError(f'{parameter} needs finite numbers with minimum less than maximum.')
-    bounds = parameter_hard_bounds().get(parameter, {})
+    bounds = hard_bounds.get(parameter, {})
     if (bounds.get('min') is not None and low < bounds['min']) or (
         bounds.get('max') is not None and high > bounds['max']
     ):
         raise ValueError(f'The {parameter} range exceeds its model bounds.')
-    return str(parameter), low, high, str(field), case, int(start_seconds), int(end_seconds)
+    return low, high
 
 
 _session = None
@@ -77,16 +87,18 @@ atexit.register(close_session)
 
 
 def evaluate_experiment(case, start, end, fields, batch_size, parameters, *,
-                        grad=False, gradient_parameters=None, gradient_mode='auto', profiles=False, loss_weights=None, progress_file=None):
+                        grad=False, gradient_parameters=None, gradient_mode='auto', gradient_target='metrics',
+                        profiles=False, loss_weights=None, progress_file=None):
     """Evaluate a request directly in the persistent JAX worker's loss session."""
     global _session, _directory, _configuration
     from tuner.case_defaults import read_case_defaults
     from tuner.status import atomic_write_json
-    from utilities.clubb_loss_runner import clubb_loss_runner, resolve_gradient_mode, validate_gradient_mode
+    from utilities.clubb_loss_runner import clubb_loss_runner, resolve_gradient_mode, validate_gradient_mode, validate_gradient_target
 
     from utilities.loss_metrics import normalize_loss_weights
     loss_weights = normalize_loss_weights(loss_weights)
     validate_gradient_mode(gradient_mode)
+    validate_gradient_target(gradient_target)
     started = time.monotonic()
     configuration = (case, start, end, tuple(fields), batch_size, tuple(loss_weights.items()))
     reused = _session is not None and configuration == _configuration
@@ -109,7 +121,8 @@ def evaluate_experiment(case, start, end, fields, batch_size, parameters, *,
     for name, values in parameters.items():
         params[:, _session.param_names.index(name)] = values
     evaluation_started = time.monotonic()
-    mode = resolve_gradient_mode(gradient_mode, len(gradient_parameters or _session.param_names), len(fields))
+    mode = resolve_gradient_mode(gradient_mode, len(gradient_parameters or _session.param_names),
+                                 1 if gradient_target == 'loss' else len(fields))
 
     def progress(completed, total):
         """Publish completed derivative directions through the broker's progress file."""
@@ -124,13 +137,14 @@ def evaluate_experiment(case, start, end, fields, batch_size, parameters, *,
                                           'durations': {'runtime': runtime}})
     try:
         result = _session.evaluate(params, grad=grad, gradient_parameters=gradient_parameters,
-                                   gradient_mode=gradient_mode, gradient_target='metrics',
+                                   gradient_mode=gradient_mode, gradient_target=gradient_target,
                                    profiles=profiles, progress=progress)
     except BaseException:
         close_session()
         raise
     result['field_names'] = _session.field_names
-    result['timings'] = {'runtime': runtime, 'total': time.monotonic() - started}
+    result['timings'] = {'runtime': runtime, 'evaluation': time.monotonic() - evaluation_started,
+                         'total': time.monotonic() - started}
     result['runtime'] = {'worker_pid': os.getpid(), 'reused': reused}
     return result
 
@@ -182,6 +196,7 @@ def execute_gradient_request(request):
     if request['task'] == 'gradient_matrix':
         from .gradient_matrix import calculate_matrix
         result = calculate_matrix(*request['args'], gradient_mode=request.get('gradient_mode', 'auto'),
+                                  gradient_target=request.get('gradient_target', 'metrics'),
                                   loss_weights=request.get('loss_weights'), progress_file=request['_progress_file'])
     elif request['task'] in {'gradient_matrix_response', 'gradient_matrix_response_gradients'}:
         result = calculate_response(*request['args'], grad=request['task'] == 'gradient_matrix_response_gradients',
