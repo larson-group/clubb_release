@@ -429,6 +429,13 @@ def init_clubb_case(namelist_path: str) -> dict:
         d.update(flag_overrides)
         flags = ConfigFlags(**d)
 
+    if flags.l_vert_avg_closure:
+        flags = flags._replace(
+            l_trapezoidal_rule_zt=True,
+            l_trapezoidal_rule_zm=True,
+            l_call_pdf_closure_twice=True,
+        )
+
     saturation_formula = flags.saturation_formula
     microphys_scheme = str(cfg.get('microphys_scheme', 'none')).strip().strip("'\"").lower()
     l_cloud_sed = bool(cfg.get('l_cloud_sed', False))

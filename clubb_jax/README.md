@@ -366,6 +366,18 @@ python3 clubb_jax/run_jax.py -profile=cpu -init_env
 .venv-jax/bin/python -m pytest -v clubb_jax/human_reviewed_tests/test_file_name_parity.py
 ```
 
+The human-reviewed
+[`f2py_unit_tests/test_fill_holes_vs_fortran.py`](human_reviewed_tests/f2py_unit_tests/test_fill_holes_vs_fortran.py)
+compares `fill_holes_vertical` with the Fortran routine for every
+`fill_holes_type`, on constructed hole scenarios and random fields, and
+checks `fill_holes_wp2_from_horz_tke` the same way. It needs
+the Python API build and has its own "JAX vs Fortran hole filling" stage:
+
+```bash
+./compile.py -debug -python
+bash human_reviewed_tests/run_pytests.sh -jax_f2py_human_reviewed
+```
+
 Generated focused checks live in `auto_llm_generated_tests/pytests/unit_tests/`.
 The `clubb_jax` Jenkins stage "Auto-LLM-generated JAX pytests" runs them in the
 JAX environment, without Python API or F2PY bindings. Independent analytic/NumPy references and focused runtime,

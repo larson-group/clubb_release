@@ -551,7 +551,13 @@ def parse_args(argv=None) -> argparse.Namespace:
         "-flag_config_file", type=str, default=None,
         help="JSON file describing alternate flag settings.",
     )
+    parser.add_argument(
+        "-skip_default_flags", action="store_true",
+        help="Do not run the default flag configuration; requires -flag_config_file.",
+    )
     args, forwarded = parse_forwarded_args(parser, argv)
+    if args.skip_default_flags and args.flag_config_file is None:
+        parser.error("-skip_default_flags requires -flag_config_file")
     args.cases = split_values(args.cases) if args.cases is not None else None
     if args.cases == []:
         parser.error("-cases must contain at least one case name")
@@ -647,12 +653,12 @@ def _run_comparisons(args, supervisor) -> int:
         print("ERROR: could not locate run_scripts/run_scm.py or run_bindiff_all.py")
         return 2
 
-    # get_flag_sets injects the unmodified "default" run and rejects a JSON flag set
-    # that would collide with that name. Validate before the previous results are
+    # get_flag_sets adds the unmodified "default" run unless it is skipped and rejects
+    # a JSON flag set that would collide with that name. Validate before the previous results are
     # deleted, so a bad config file doesn't cost the last run's output.
     try:
         flag_config = read_flag_settings(args.flag_config_file) if args.flag_config_file else {}
-        flag_sets = get_flag_sets(False, flag_config)
+        flag_sets = get_flag_sets(args.skip_default_flags, flag_config)
     except (OSError, ValueError) as exc:
         print(f"ERROR: could not load flag sets: {exc}")
         return 2

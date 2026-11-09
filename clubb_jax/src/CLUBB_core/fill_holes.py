@@ -5,12 +5,8 @@ Porting deviations:
     returns updated arrays.
   * Python callers pass zero-based ``lower_hf_level`` and ``upper_hf_level``,
     matching ``clubb_python.CLUBB_core.fill_holes``.
-  * Only ``global_fill`` and ``sliding_window`` are implemented for
-    ``fill_holes_vertical``.  The Fortran ``widening_windows``,
-    ``smart_window``, ``smart_window_smooth``, and ``parallel_fill`` methods
-    remain unported and deliberately raise ``NotImplementedError``.
-  * Method dispatch rejects unsupported methods even when there are no holes;
-    Fortran only dispatches after finding a below-threshold value.
+  * Method dispatch rejects an unknown ``fill_holes_type`` even when there are
+    no holes; Fortran only dispatches after finding a below-threshold value.
 """
 
 from __future__ import annotations
@@ -30,7 +26,14 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
     zero,
 )
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
-from clubb_jax.src.CLUBB_core.model_flags import global_fill, sliding_window
+from clubb_jax.src.CLUBB_core.model_flags import (
+    global_fill,
+    parallel_fill,
+    sliding_window,
+    smart_window,
+    smart_window_smooth,
+    widening_windows,
+)
 
 _CORE_EPS = jnp.finfo(core_rknd).eps
 
@@ -283,6 +286,772 @@ def fill_holes_sliding_window(
 
 @partial(
     jax.jit,
+    static_argnames=("nz", "ngrdcol", "lower_hf_level", "upper_hf_level"),
+)
+def fill_holes_widening_windows(
+    nz: int,
+    ngrdcol: int,
+    threshold: float,
+    lower_hf_level: int,
+    upper_hf_level: int,
+    dz,
+    rho_ds,
+    field,
+):
+    """This performs a multi-window technique, splitting the vertical levels into a
+    series of ranges that can be filled in parallel. This is much cheaper
+    (computationally) than the sliding window and still results in a high degree of
+    locality, but is even less effective. If the windowing technique fails, we
+    repeat the algorithm with increasingly larger window sizes rather than fallback
+    to a global fill. This increases our chances of being able to fill locally, but
+    if filling continuously fails, the window size grows to the entire range,
+    effectively performing a global fill.
+    """
+    del nz
+    # --------------------- Begin Code ---------------------
+
+    rho_ds_dz = rho_ds * dz
+
+    # Fortran repeats the pass in a do while loop until no holes
+    # remain or one window covers the whole fill range. Each window size sets the
+    # window shapes, so JAX unrolls the passes over these static window sizes.
+    num_levels = upper_hf_level - lower_hf_level + 1
+    window_sizes = [10]
+    while window_sizes[-1] < num_levels:
+        window_sizes.append(2 * window_sizes[-1])
+
+    l_field_below_threshold = jnp.asarray(True)
+
+    for window_size in window_sizes:
+
+        # Group the range [lower_hf_level:upper_hf_level] into windows of window_size
+        # levels, starting at lower_hf_level. The last window may be shorter, so pad
+        # it with levels that have no mass and no holes.
+        num_windows = -(-num_levels // window_size)
+        num_pad = num_windows * window_size - num_levels
+        field_windows = jnp.pad(
+            field[:, lower_hf_level:upper_hf_level + 1],
+            ((0, 0), (0, num_pad)),
+            constant_values=threshold,
+        ).reshape(ngrdcol, num_windows, window_size)
+        rho_ds_dz_windows = jnp.pad(
+            rho_ds_dz[:, lower_hf_level:upper_hf_level + 1],
+            ((0, 0), (0, num_pad)),
+        ).reshape(ngrdcol, num_windows, window_size)
+
+        l_window_below_threshold = jnp.any(field_windows < threshold, axis=2, keepdims=True)
+
+        invrs_denom = one / jnp.sum(rho_ds_dz_windows, axis=2, keepdims=True)
+
+        field_avg = jnp.sum(rho_ds_dz_windows * field_windows, axis=2, keepdims=True) * invrs_denom
+
+        # field_avg < threshold
+        field_clipped_avg_min = (
+            jnp.sum(rho_ds_dz_windows * jnp.minimum(threshold, field_windows), axis=2, keepdims=True)
+            * invrs_denom
+        )
+
+        # Both branches are evaluated, so guard the division of the unselected branch:
+        # there, a window without holes has field_clipped_avg_min - threshold = 0.
+        mass_fraction_min = (field_avg - threshold) / jnp.where(
+            field_avg < threshold, field_clipped_avg_min - threshold, one
+        )
+
+        field_filled_min = threshold + mass_fraction_min * (
+            jnp.minimum(threshold, field_windows) - threshold
+        )
+
+        # field_avg >= threshold
+        field_clipped_avg_max = (
+            jnp.sum(rho_ds_dz_windows * jnp.maximum(threshold, field_windows), axis=2, keepdims=True)
+            * invrs_denom
+        )
+
+        l_fill_max = jnp.abs(field_clipped_avg_max - threshold) > zero
+
+        mass_fraction_max = (field_avg - threshold) / jnp.where(
+            l_fill_max, field_clipped_avg_max - threshold, one
+        )
+
+        # Calculate normalized, filled field
+        field_filled_max = threshold + mass_fraction_max * (
+            jnp.maximum(threshold, field_windows) - threshold
+        )
+
+        field_windows_filled = jnp.where(
+            field_avg < threshold,
+            field_filled_min,
+            jnp.where(l_fill_max, field_filled_max, field_windows),
+        )
+
+        # Only windows with holes are filled, and only while a previous pass
+        # left holes.
+        field_windows = jnp.where(
+            l_field_below_threshold & l_window_below_threshold,
+            field_windows_filled,
+            field_windows,
+        )
+
+        field = field.at[:, lower_hf_level:upper_hf_level + 1].set(
+            field_windows.reshape(ngrdcol, num_windows * window_size)[:, :num_levels]
+        )
+
+        l_field_below_threshold = jnp.any(field_windows < threshold)
+
+    return field
+
+
+@partial(
+    jax.jit,
+    static_argnames=("nz", "ngrdcol", "lower_hf_level", "upper_hf_level"),
+)
+def fill_holes_smart_window(
+    nz: int,
+    ngrdcol: int,
+    threshold: float,
+    lower_hf_level: int,
+    upper_hf_level: int,
+    dz,
+    rho_ds,
+    field,
+):
+    """This performs filling by first scanning the vertical levels to determine a
+    range to fill. This is done by looping over the vertical, and tracking the start
+    and end of a range of holes, then expanding that range until the field average
+    is above threshold before attempting to fill. Once a range is filled, it continues
+    scanning the vertical levels for more hole ranges. This is highly local when
+    possible, and is kept computationally cheap by avoiding fill attempts on ranges
+    whose average is below threshold. Because the range is expanded until either the
+    field average of the range is above threshold, or is the whole range, this
+    will effectively perform a global fill if neccesary.
+    """
+    del ngrdcol
+    # --------------------- Begin Code ---------------------
+
+    # Fortran marks "no level found" with 0, which is not a
+    # 1-based level. JAX levels are 0-based, so it uses -1.
+    no_level = -1
+
+    # Fortran scans with do while loops and jumps k to k_end after
+    # a fill. k increases by at least one per iteration, so JAX scans with a fixed
+    # number of iterations (one per level in the range) and skips iterations once k
+    # passes upper_hf_level. The range expansion is limited the same way: after
+    # num_expansions doublings, n_steal_points covers the whole range. Fixed trip
+    # counts keep the loops reverse-mode differentiable.
+    num_levels = upper_hf_level - lower_hf_level + 1
+    num_expansions = num_levels.bit_length() + 1
+
+    k_levels = jnp.arange(nz)
+
+    # Calculate the threshold normalized mass, a useful precalculation
+    normalized_mass = (field - threshold) * rho_ds * jnp.abs(dz)
+
+    def fill_holes_smart_window_column(field, normalized_mass):
+        # The nested loop bodies get field and normalized_mass from their carry,
+        # which holds the values updated by earlier fills.
+
+        def expand_range(_, carry):
+            (k_start, k_end, n_steal_points, stealable_mass, hole_mass,
+             k_first_lte_thresh, k_last_lte_thresh, normalized_mass) = carry
+
+            # If there isn't enough stealable mass to fill the holes, then try to repeatedly
+            # expand the range until we find enough
+            l_expand = (stealable_mass < jnp.abs(hole_mass)) & (
+                (k_start != lower_hf_level) | (k_end != upper_hf_level)
+            )
+
+            # Double the points we search for on either side of the range
+            n_steal_points_new = 2 * n_steal_points
+
+            # Recalcualte our fill range
+            k_start_new = jnp.maximum(lower_hf_level, k_first_lte_thresh - n_steal_points_new)
+            k_end_new = jnp.minimum(upper_hf_level, k_last_lte_thresh + n_steal_points_new)
+
+            # Only add to the sum what we haven't so far, this handles stuff added below
+            # and above
+            l_added = ((k_levels >= k_start_new) & (k_levels < k_start)) | (
+                (k_levels > k_end) & (k_levels <= k_end_new)
+            )
+            stealable_mass_new = stealable_mass + jnp.sum(
+                jnp.where(l_added & (normalized_mass >= zero), normalized_mass, zero)
+            )
+            hole_mass_new = hole_mass + jnp.sum(
+                jnp.where(l_added & (normalized_mass < zero), normalized_mass, zero)
+            )
+
+            # Set new range
+            return (
+                jnp.where(l_expand, k_start_new, k_start),
+                jnp.where(l_expand, k_end_new, k_end),
+                jnp.where(l_expand, n_steal_points_new, n_steal_points),
+                jnp.where(l_expand, stealable_mass_new, stealable_mass),
+                jnp.where(l_expand, hole_mass_new, hole_mass),
+                k_first_lte_thresh,
+                k_last_lte_thresh,
+                normalized_mass,
+            )
+
+        def scan_level(_, carry):
+            k, k_first_lte_thresh, k_last_lte_thresh, n_holes, n_steal_points, field, normalized_mass = carry
+
+            l_active = k <= upper_hf_level
+            normalized_mass_k = normalized_mass[jnp.minimum(k, upper_hf_level)]
+
+            # If normalized_mass(i,k) > 0, then field(i,k) > threshold
+            # If we found field value at or below tolerance, but no holes yet, we want to
+            # ignore it by reseting the k tracker for the first <= thresh
+            l_above = normalized_mass_k > zero
+            k_first_lte_thresh = jnp.where(l_above & (n_holes == 0), no_level, k_first_lte_thresh)
+
+            # If normalized_mass(i,k) <= 0, then field(i,k) <= threshold
+
+            # This is only a true hole if it's less than zero, otherwise no need to fill it
+            l_hole = normalized_mass_k < zero
+            n_holes = jnp.where(l_hole, n_holes + 1, n_holes)
+            n_steal_points = jnp.where(l_hole, 2 * n_holes, n_steal_points)
+
+            # Keep track of the k we found this potential hole
+            k_last_lte_thresh = jnp.where(l_above, k_last_lte_thresh, k)
+
+            # If this is our first time seeing a <= threshold value, save it
+            k_first_lte_thresh = jnp.where(
+                ~l_above & (k_first_lte_thresh == no_level), k, k_first_lte_thresh
+            )
+
+            # If we have holes, and we are either out of levels or k is >= n_steal_points away from
+            # the first <= threshold level, then we attempt to fill the holes we've found
+            l_fill = l_active & (n_holes > 0) & (
+                (k == upper_hf_level) | (jnp.abs(k - k_last_lte_thresh) >= n_steal_points)
+            )
+
+            # Calcualte our fill range
+            k_start = jnp.maximum(lower_hf_level, k_first_lte_thresh - n_steal_points)
+            k_end = jnp.minimum(upper_hf_level, k_last_lte_thresh + n_steal_points)
+
+            # Calculate the excess mass we can steal, and the hole mass that needs filling
+            # Fortran uses max( normalized_mass, zero ) and min( normalized_mass, zero ).
+            # The JAX selections give the same values, but levels exactly at threshold
+            # get the derivative of the field >= threshold branch used in the fill
+            # below, rather than half of it from jnp.maximum.
+            l_in_range = (k_levels >= k_start) & (k_levels <= k_end)
+            stealable_mass = jnp.sum(jnp.where(l_in_range & (normalized_mass >= zero), normalized_mass, zero))
+            hole_mass = jnp.sum(jnp.where(l_in_range & (normalized_mass < zero), normalized_mass, zero))
+
+            k_start, k_end, n_steal_points_fill, stealable_mass, hole_mass, _, _, _ = jax.lax.fori_loop(
+                0,
+                num_expansions,
+                expand_range,
+                (k_start, k_end, n_steal_points, stealable_mass, hole_mass,
+                 k_first_lte_thresh, k_last_lte_thresh, normalized_mass),
+            )
+
+            # We can only move mass if there is some above threshold
+            l_move_mass = l_fill & (stealable_mass > zero)
+
+            # Calcualte our mass fractions
+            # Both divisions are evaluated, so guard them when no mass is moved.
+            mass_fraction_above = jnp.maximum(
+                (stealable_mass + hole_mass) / jnp.where(l_move_mass, stealable_mass, one), zero
+            )
+            mass_fraction_below = jnp.maximum(
+                (stealable_mass + hole_mass) / jnp.where(l_move_mass, hole_mass, one), zero
+            )
+
+            # Compute new field and update normalized mass in case we need to touch
+            # these levels again in another pass
+            l_in_range = (k_levels >= k_start) & (k_levels <= k_end)
+            mass_fraction = jnp.where(field >= threshold, mass_fraction_above, mass_fraction_below)
+            l_update = l_move_mass & l_in_range
+            field = jnp.where(l_update, mass_fraction * (field - threshold) + threshold, field)
+            normalized_mass = jnp.where(l_update, mass_fraction * normalized_mass, normalized_mass)
+
+            # Filling complete, reset in case there are more holes to find
+            k_first_lte_thresh = jnp.where(l_fill, no_level, k_first_lte_thresh)
+            k_last_lte_thresh = jnp.where(l_fill, no_level, k_last_lte_thresh)
+            n_holes = jnp.where(l_fill, 0, n_holes)
+            n_steal_points = jnp.where(l_fill, n_steal_points_fill, n_steal_points)
+
+            # set k to whatever we used for k_end, since all holes up to k_end should be filled
+            k = jnp.where(l_fill, k_end, k)
+
+            k = jnp.where(l_active, k + 1, k)
+
+            return k, k_first_lte_thresh, k_last_lte_thresh, n_holes, n_steal_points, field, normalized_mass
+
+        # Initialize counters
+        k_first_lte_thresh = jnp.asarray(no_level)
+        k_last_lte_thresh = jnp.asarray(no_level)
+        n_holes = jnp.asarray(0)
+        n_steal_points = jnp.asarray(0)
+
+        # Loop from lower_hf_level to upper_hf_level
+        k = jnp.asarray(lower_hf_level)
+        _, _, _, _, _, field, _ = jax.lax.fori_loop(
+            0,
+            num_levels,
+            scan_level,
+            (k, k_first_lte_thresh, k_last_lte_thresh, n_holes, n_steal_points, field, normalized_mass),
+        )
+
+        return field
+
+    # All columns are independent
+    field = jax.vmap(fill_holes_smart_window_column)(field, normalized_mass)
+
+    return field
+
+
+@partial(
+    jax.jit,
+    static_argnames=("nz", "ngrdcol", "lower_hf_level", "upper_hf_level"),
+)
+def fill_holes_smart_window_smooth(
+    nz: int,
+    ngrdcol: int,
+    threshold: float,
+    lower_hf_level: int,
+    upper_hf_level: int,
+    dz,
+    rho_ds,
+    field,
+):
+    """This is a modification of the smart_window technique, but includes two "smoothing"
+    features. The first feature is psuedo-threshold, larger than the input threshold.
+    This is used to maintain the "shape" of the below threshold part of the field,
+    by squishing the field with values in the range [minval(field),threshold] to
+    [threshold, psuedo-threshold]. As a result, this will increase field entries
+    whose values are between [threshold, psuedo-threshold], even though they are
+    above threshold already. The second smoothing feature is a minimum mass_fraction,
+    mf_min, which prevents the above threshold field values from decreasing by
+    more than a factor of mf_min. This increased smoothness requires more mass
+    in general, making it slightly less local than the non-smooth smart_window
+    version, and the increased complexity makes it slightly more expensive.
+    Additionally if the whole field average is between [threshold, psuedo-threshold],
+    then filling can fail the same way that the a global fill can fail if the average
+    is below threshold, even though the field average is above threshold - this
+    only occurs in situations where the hole mass is almost as large as the total excess
+    (above threshold) mass.
+    """
+    del ngrdcol
+    # --------------------- Begin Code ---------------------
+
+    # Fortran marks "no level found" with 0, which is not a
+    # 1-based level. JAX levels are 0-based, so it uses -1.
+    no_level = -1
+
+    # Fortran scans with do while loops and jumps k to k_end after
+    # a fill. k increases by at least one per iteration, so JAX scans with a fixed
+    # number of iterations (one per level in the range) and skips iterations once k
+    # passes upper_hf_level. The range expansion is limited the same way: after
+    # num_expansions doublings, n_steal_points covers the whole range. Fixed trip
+    # counts keep the loops reverse-mode differentiable.
+    num_levels = upper_hf_level - lower_hf_level + 1
+    num_expansions = num_levels.bit_length() + 1
+
+    k_levels = jnp.arange(nz)
+
+    threshold_2 = 1.05 * threshold  # known magic number
+    # Fortran assigns the default-real (single precision) literal 0.05, which is
+    # this value in double precision.
+    mf_min = 0.05000000074505806  # known magic number
+
+    # Calculate the threshold normalized mass, a useful precalculation
+    normalized_mass = (field - threshold_2) * rho_ds * jnp.abs(dz)
+
+    def fill_holes_smart_window_smooth_column(field, normalized_mass):
+        # The nested loop bodies get field and normalized_mass from their carry,
+        # which holds the values updated by earlier fills.
+
+        def expand_range(_, carry):
+            (k_start, k_end, n_steal_points, stealable_mass, hole_mass, field_min,
+             k_first_lte_thresh, k_last_lte_thresh, field, normalized_mass) = carry
+
+            # If there isn't enough stealable mass to fill the holes, then try to repeatedly
+            # expand the range until we find enough
+            l_expand = (stealable_mass < jnp.abs(hole_mass)) & (
+                (k_start != lower_hf_level) | (k_end != upper_hf_level)
+            )
+
+            # Double the points we search for on either side of the range
+            n_steal_points_new = 2 * n_steal_points
+
+            # Recalcualte our fill range
+            k_start_new = jnp.maximum(lower_hf_level, k_first_lte_thresh - n_steal_points_new)
+            k_end_new = jnp.minimum(upper_hf_level, k_last_lte_thresh + n_steal_points_new)
+
+            # Only add to the sum what we haven't so far, this handles stuff added below
+            # and above
+            l_added = ((k_levels >= k_start_new) & (k_levels < k_start)) | (
+                (k_levels > k_end) & (k_levels <= k_end_new)
+            )
+            stealable_mass_new = stealable_mass + jnp.sum(
+                jnp.where(l_added & (normalized_mass >= zero), normalized_mass, zero)
+            )
+            hole_mass_new = hole_mass + jnp.sum(
+                jnp.where(l_added & (normalized_mass < zero), normalized_mass, zero)
+            )
+            field_min_new = jnp.minimum(field_min, jnp.min(jnp.where(l_added, field, jnp.inf)))
+
+            # Set new range
+            return (
+                jnp.where(l_expand, k_start_new, k_start),
+                jnp.where(l_expand, k_end_new, k_end),
+                jnp.where(l_expand, n_steal_points_new, n_steal_points),
+                jnp.where(l_expand, stealable_mass_new, stealable_mass),
+                jnp.where(l_expand, hole_mass_new, hole_mass),
+                jnp.where(l_expand, field_min_new, field_min),
+                k_first_lte_thresh,
+                k_last_lte_thresh,
+                field,
+                normalized_mass,
+            )
+
+        def scan_level(_, carry):
+            k, k_first_lte_thresh, k_last_lte_thresh, n_holes, n_steal_points, field, normalized_mass = carry
+
+            l_active = k <= upper_hf_level
+            normalized_mass_k = normalized_mass[jnp.minimum(k, upper_hf_level)]
+
+            # If normalized_mass(i,k) > 0, then field(i,k) > threshold
+            # If we found field value at or below tolerance, but no holes yet, we want to
+            # ignore it by reseting the k tracker for the first <= thresh
+            l_above = normalized_mass_k > zero
+            k_first_lte_thresh = jnp.where(l_above & (n_holes == 0), no_level, k_first_lte_thresh)
+
+            # If normalized_mass(i,k) <= 0, then field(i,k) <= threshold
+
+            # This is only a true hole if it's less than zero, otherwise no need to fill it
+            l_hole = normalized_mass_k < zero
+            n_holes = jnp.where(l_hole, n_holes + 1, n_holes)
+            n_steal_points = jnp.where(l_hole, 2 * n_holes, n_steal_points)
+
+            # Keep track of the k we found this potential hole
+            k_last_lte_thresh = jnp.where(l_above, k_last_lte_thresh, k)
+
+            # If this is our first time seeing a <= threshold value, save it
+            k_first_lte_thresh = jnp.where(
+                ~l_above & (k_first_lte_thresh == no_level), k, k_first_lte_thresh
+            )
+
+            # If we have holes, and we are either out of levels or k is >= n_steal_points away from
+            # the first <= threshold level, then we attempt to fill the holes we've found
+            l_fill = l_active & (n_holes > 0) & (
+                (k == upper_hf_level) | (jnp.abs(k - k_last_lte_thresh) >= n_steal_points)
+            )
+
+            # Calcualte our fill range
+            k_start = jnp.maximum(lower_hf_level, k_first_lte_thresh - n_steal_points)
+            k_end = jnp.minimum(upper_hf_level, k_last_lte_thresh + n_steal_points)
+
+            # Calculate the excess mass we can steal, and the hole mass that needs filling
+            # Fortran uses max( normalized_mass, zero ) and min( normalized_mass, zero ).
+            # The JAX selections give the same values, but levels exactly at threshold
+            # get the derivative of the field >= threshold_2 branch used in the fill
+            # below, rather than half of it from jnp.maximum.
+            l_in_range = (k_levels >= k_start) & (k_levels <= k_end)
+            stealable_mass = jnp.sum(jnp.where(l_in_range & (normalized_mass >= zero), normalized_mass, zero))
+            hole_mass = jnp.sum(jnp.where(l_in_range & (normalized_mass < zero), normalized_mass, zero))
+            field_min = jnp.min(jnp.where(l_in_range, field, jnp.inf))
+
+            (k_start, k_end, n_steal_points_fill, stealable_mass, hole_mass, field_min,
+             _, _, _, _) = jax.lax.fori_loop(
+                0,
+                num_expansions,
+                expand_range,
+                (k_start, k_end, n_steal_points, stealable_mass, hole_mass, field_min,
+                 k_first_lte_thresh, k_last_lte_thresh, field, normalized_mass),
+            )
+
+            # We can only move mass if there is some above threshold
+            l_move_mass = l_fill & (stealable_mass > zero)
+
+            # Both divisions are evaluated, so guard them when no mass is moved.
+            T = (threshold_2 - threshold) / jnp.where(l_move_mass, threshold_2 - field_min, one)
+
+            # Calcualte our mass fractions
+            mass_fraction_above = jnp.maximum(
+                (stealable_mass + (one - T) * hole_mass)
+                / jnp.where(l_move_mass, stealable_mass, one), mf_min
+            )
+            mass_fraction_below = jnp.maximum(
+                ((one - mf_min) * stealable_mass + hole_mass)
+                / jnp.where(l_move_mass, hole_mass, one), T
+            )
+
+            # Compute new field and update normalized mass in case we need to touch
+            # these levels again in another pass
+            l_in_range = (k_levels >= k_start) & (k_levels <= k_end)
+            mass_fraction = jnp.where(field >= threshold_2, mass_fraction_above, mass_fraction_below)
+            l_update = l_move_mass & l_in_range
+            field = jnp.where(l_update, mass_fraction * (field - threshold_2) + threshold_2, field)
+            normalized_mass = jnp.where(l_update, mass_fraction * normalized_mass, normalized_mass)
+
+            # Filling complete, reset in case there are more holes to find
+            k_first_lte_thresh = jnp.where(l_fill, no_level, k_first_lte_thresh)
+            k_last_lte_thresh = jnp.where(l_fill, no_level, k_last_lte_thresh)
+            n_holes = jnp.where(l_fill, 0, n_holes)
+            n_steal_points = jnp.where(l_fill, n_steal_points_fill, n_steal_points)
+
+            # set k to whatever we used for k_end, since all holes up to k_end should be filled
+            k = jnp.where(l_fill, k_end, k)
+
+            k = jnp.where(l_active, k + 1, k)
+
+            return k, k_first_lte_thresh, k_last_lte_thresh, n_holes, n_steal_points, field, normalized_mass
+
+        # Initialize counters
+        k_first_lte_thresh = jnp.asarray(no_level)
+        k_last_lte_thresh = jnp.asarray(no_level)
+        n_holes = jnp.asarray(0)
+        n_steal_points = jnp.asarray(0)
+
+        # Loop from lower_hf_level to upper_hf_level
+        k = jnp.asarray(lower_hf_level)
+        _, _, _, _, _, field, _ = jax.lax.fori_loop(
+            0,
+            num_levels,
+            scan_level,
+            (k, k_first_lte_thresh, k_last_lte_thresh, n_holes, n_steal_points, field, normalized_mass),
+        )
+
+        return field
+
+    # All columns are independent
+    field = jax.vmap(fill_holes_smart_window_smooth_column)(field, normalized_mass)
+
+    return field
+
+
+@partial(
+    jax.jit,
+    static_argnames=("nz", "ngrdcol", "lower_hf_level", "upper_hf_level"),
+)
+def fill_holes_parallel(
+    nz: int,
+    ngrdcol: int,
+    threshold: float,
+    lower_hf_level: int,
+    upper_hf_level: int,
+    dz,
+    rho_ds,
+    field,
+):
+    """This fills holes by considering each hole independently. It first calculates the
+    number of holes (n_holes), then only allows each hole to steal at most 1/n_holes mass
+    from the above threshold levels. This maximizes parallelism because each hole can
+    be handled simultaneously, and maintains a high degree of locality. However,
+    handling each hole by itself can require many more large passes than is required
+    in theory, making this very computationally expensive if the increaseD parallelism
+    cannot be exploited (e.g bad for CPUs, this is designed for GPUs).
+    Note: this seems to be slower than other methods on GPUs too, perhaps worth
+    a revisit. Maybe faster for a small number of holes? Was mostly tested with
+    fields with a large range of holes.
+    """
+    # --------------------- Begin Code ---------------------
+
+    # Fortran fills the holes of a column in parallel on GPUs, with
+    # atomic updates, so the order of holes is not fixed there. JAX follows the CPU
+    # Fortran, which fills the holes of a column one at a time from lower_hf_level
+    # to upper_hf_level, each hole seeing the field left by the previous ones.
+    # The scan over levels and the range expansion use fixed trip counts, as in
+    # fill_holes_smart_window, to keep the loops reverse-mode differentiable.
+    num_levels = upper_hf_level - lower_hf_level + 1
+    num_expansions = num_levels.bit_length() + 1
+
+    k_levels = jnp.arange(nz)
+    l_in_hf_range = (k_levels >= lower_hf_level) & (k_levels <= upper_hf_level)
+
+    # Precalculate rho_ds_dz and invrs_rho_ds_dz
+    rho_ds_dz = rho_ds * jnp.abs(dz)
+    invrs_rho_ds_dz = one / rho_ds_dz
+
+    # Calculate the number of holes in each column
+    n_holes = jnp.sum(l_in_hf_range & (field < threshold), axis=1)
+
+    # Fortran repeats the pass in a do while loop, halving mf_min
+    # after each failed pass until mf_min <= 0.02. The mf_min values are fixed, so
+    # JAX writes the passes out for each value and skips a pass once an earlier
+    # pass has filled all holes.
+    # Set mf_min, this is tunable. If filling fails on first pass, this is increased
+    # and the filling is attempted again, so this is merely a starting value
+    mf_min_values = [0.5]
+    while mf_min_values[-1] > 0.02:
+        # Allowing mf_min = 0.0 is fine in theory, but the way we decompose the stealable mass
+        # can result in the sum of that being slightly greater than what we actually have.
+        # So if we need to steal all of the mass from a level, it's likely that we're going to
+        # steal slightly too much, and drive the above threshold value below. This is a quirk of
+        # floating point calculations, and is quite unfortunate, since it forces us to rely on
+        # a global fill rather than just setting it to 0. Limiting this to 0.01 is arbirary,
+        # you can probably set it lower and be fine
+        mf_min_values.append(max(0.01, mf_min_values[-1] / 2.0))
+
+    def fill_holes_parallel_column(field, n_holes, stealable_mass, rho_ds_dz, invrs_rho_ds_dz):
+        # The nested loop bodies get field and n_holes from their carry, which holds
+        # the values updated by earlier holes.
+
+        def expand_range(_, carry):
+            k, k_start, k_end, n_steal_points, stealable_mass_total, hole_mass = carry
+
+            # If we didn't find enough mass to fill the hole (and our bounds aren't exhausted),
+            # then expand the range until we have found enough
+            l_expand = (stealable_mass_total < jnp.abs(hole_mass)) & (
+                (k_start != lower_hf_level) | (k_end != upper_hf_level)
+            )
+
+            # Double the number of levels to try stealing from
+            n_steal_points_new = 2 * n_steal_points
+
+            # Recalculate bounds of fill range
+            k_start_new = jnp.maximum(lower_hf_level, k - n_steal_points_new)
+            k_end_new = jnp.minimum(upper_hf_level, k + n_steal_points_new)
+
+            # Sum up new mass in [k_start_new:k_start-1] and [k_end+1:k_end_new]
+            l_added = ((k_levels >= k_start_new) & (k_levels < k_start)) | (
+                (k_levels > k_end) & (k_levels <= k_end_new)
+            )
+            stealable_mass_total_new = stealable_mass_total + jnp.sum(
+                jnp.where(l_added, stealable_mass, zero)
+            )
+
+            # Set new fill range
+            return (
+                k,
+                jnp.where(l_expand, k_start_new, k_start),
+                jnp.where(l_expand, k_end_new, k_end),
+                jnp.where(l_expand, n_steal_points_new, n_steal_points),
+                jnp.where(l_expand, stealable_mass_total_new, stealable_mass_total),
+                hole_mass,
+            )
+
+        def fill_hole(k_offset, carry):
+            field, n_holes, l_field_below_threshold = carry
+
+            k = lower_hf_level + k_offset
+
+            # Only do something if the field value were considering is below threshold
+            l_hole = field[k] < threshold
+
+            # Hole detected, calculate the mass needed to fill it
+            hole_mass = (field[k] - threshold) * rho_ds_dz[k]
+
+            # We need to steal from other levels, but how far out to reach initially?
+            # 2*n_holes seems like a good guess, more holes means more "reach" needed, and
+            # this scales with holes is the important part
+            n_steal_points = n_holes * 2
+
+            # Caclulate our fill range
+            k_start = jnp.maximum(lower_hf_level, k - n_steal_points)
+            k_end = jnp.minimum(upper_hf_level, k + n_steal_points)
+
+            # Caclulate the total amount of stealable mass in that range
+            l_in_range = (k_levels >= k_start) & (k_levels <= k_end)
+            stealable_mass_total = jnp.sum(jnp.where(l_in_range, stealable_mass, zero))
+
+            _, k_start, k_end, _, stealable_mass_total, _ = jax.lax.fori_loop(
+                0,
+                num_expansions,
+                expand_range,
+                (k, k_start, k_end, n_steal_points, stealable_mass_total, hole_mass),
+            )
+
+            # We can only fill if stealable_mass_total > 0, this is mostly to prevent divide by 0
+            l_move_mass = l_hole & (stealable_mass_total > zero)
+
+            # Calculate mass fraction
+            # The division is evaluated even when no mass is moved, so guard it.
+            mass_fraction_above = one - jnp.maximum(
+                (stealable_mass_total + hole_mass)
+                / jnp.where(l_move_mass, stealable_mass_total, one), zero
+            )
+
+            # Update field values for levels we're stealing from in the fill range
+            l_in_range = (k_levels >= k_start) & (k_levels <= k_end)
+            field_adj = mass_fraction_above * stealable_mass * invrs_rho_ds_dz
+            field = jnp.where(l_move_mass & l_in_range & (field > threshold), field - field_adj, field)
+
+            # Update the field value for the hole were considering
+            l_not_filled = stealable_mass_total < jnp.abs(hole_mass)
+
+            # Hole cannot be completely filled, give it all the mass we have available
+            # and set the flag indicated there is still a hole
+            l_field_below_threshold = l_field_below_threshold | (l_hole & l_not_filled)
+
+            # Hole can be completely filled, which means it should be set to threshold,
+            # also decrement the hole count since now there is one less
+            n_holes = jnp.where(l_hole & ~l_not_filled, n_holes - 1, n_holes)
+            field_k = jnp.where(
+                l_not_filled,
+                field[k] + stealable_mass_total * invrs_rho_ds_dz[k],
+                threshold,
+            )
+            field = field.at[k].set(jnp.where(l_hole, field_k, field[k]))
+
+            return field, n_holes, l_field_below_threshold
+
+        l_field_below_threshold = jnp.asarray(False)
+        field, n_holes, l_field_below_threshold = jax.lax.fori_loop(
+            0,
+            num_levels,
+            fill_hole,
+            (field, n_holes, l_field_below_threshold),
+        )
+
+        return field, n_holes, l_field_below_threshold
+
+    l_field_below_threshold = jnp.asarray(True)
+
+    # Loop until all holes are filled
+    for mf_min in mf_min_values:
+
+        # Calculate the steablable mass. We take stealable_scale = mf_min / n_holes(i) to
+        # ensure that each hole doesn't steal too much mass from above threshold levels.
+        # In theory, each hole could take up to 1 / n_holes mass, but we have mf_min as a smoothing
+        # term, otherwise mass is stolen quite agressively with this approach, since holes
+        # have no knowledge of how far out other holes have to search
+        # A column whose holes are all filled has n_holes(i) = 0 here. It has nothing
+        # to fill, so give it no stealable mass instead of dividing by zero.
+        stealable_scale = jnp.where(
+            n_holes > 0, (one - mf_min) / jnp.maximum(n_holes, 1), zero
+        )[:, None]
+        # Fortran uses max( field - threshold, 0 ); the selection gives the same value
+        # and, at field == threshold, the derivative of the field > threshold branch
+        # that decides below whether mass is stolen.
+        stealable_mass = jnp.where(
+            l_in_hf_range & (field > threshold), field - threshold, zero
+        ) * rho_ds_dz * stealable_scale
+
+        # Fill the holes
+        field_pass, n_holes_pass, l_field_below_threshold_col = jax.vmap(fill_holes_parallel_column)(
+            field, n_holes, stealable_mass, rho_ds_dz, invrs_rho_ds_dz
+        )
+
+        # Skip this pass if an earlier pass filled all holes
+        field = jnp.where(l_field_below_threshold, field_pass, field)
+        n_holes = jnp.where(l_field_below_threshold, n_holes_pass, n_holes)
+        l_field_below_threshold = l_field_below_threshold & jnp.any(l_field_below_threshold_col)
+
+    # If we still have below threshold values, just call the global fill at this point
+    field = jax.lax.cond(
+        l_field_below_threshold,
+        lambda f: fill_holes_global(
+            nz,
+            ngrdcol,
+            threshold,
+            lower_hf_level,
+            upper_hf_level,
+            dz,
+            rho_ds,
+            f,
+        ),
+        lambda f: f,
+        field,
+    )
+
+    return field
+
+
+@partial(
+    jax.jit,
     static_argnames=(
         "nz",
         "ngrdcol",
@@ -367,14 +1136,68 @@ def fill_holes_vertical(
             rho_ds,
             field,
         )
-    else:
-        # TODO(JAX port): port the remaining Fortran fill_holes_type options
-        # rather than routing them through a Python/API fallback.
-        print("ERROR: unknown fill_holes_type: ", fill_holes_type, file=sys.stderr)
-        raise NotImplementedError(
-            "JAX fill_holes_vertical currently supports global_fill and "
-            f"sliding_window; got fill_holes_type={fill_holes_type}."
+    elif fill_holes_type == widening_windows:
+        # This performs a multi-window technique, splitting the vertical levels into a
+        # series of ranges that can be filled in parallel. This can often fail to fill
+        # and continually widens the range as neccesary, and if the window range
+        # gets wide enough, it is equivalent to a global fill
+        filled = fill_holes_widening_windows(
+            nz,
+            ngrdcol,
+            threshold,
+            lower_hf_level,
+            upper_hf_level,
+            dz,
+            rho_ds,
+            field,
         )
+    elif fill_holes_type == smart_window:
+        # This performs filling by first scanning the vertical levels to determine a
+        # range to fill before actually doing the fill calculations. The window can
+        # increase to the whole range, which is effectively a global fallback
+        filled = fill_holes_smart_window(
+            nz,
+            ngrdcol,
+            threshold,
+            lower_hf_level,
+            upper_hf_level,
+            dz,
+            rho_ds,
+            field,
+        )
+    elif fill_holes_type == smart_window_smooth:
+        # This is a modification of the smart_window technique, which includes two "smoothing"
+        # features to preserve the field derivative a bit. The efficacy of this over the basic
+        # smart_window technique is unclear, and should be investigated more.
+        # WARNING: This also potentially fail to fill even if the field average is above
+        # threshold (no global fallack), see the subroutine description for more detail
+        filled = fill_holes_smart_window_smooth(
+            nz,
+            ngrdcol,
+            threshold,
+            lower_hf_level,
+            upper_hf_level,
+            dz,
+            rho_ds,
+            field,
+        )
+    elif fill_holes_type == parallel_fill:
+        # This fills holes by considering each hole independently, Making this method the most
+        # parallelizable one, but also the most traditionally computationally expensive.
+        # This will fall back to a global fill if the locality preserving passes fail
+        filled = fill_holes_parallel(
+            nz,
+            ngrdcol,
+            threshold,
+            lower_hf_level,
+            upper_hf_level,
+            dz,
+            rho_ds,
+            field,
+        )
+    else:
+        print("ERROR: unknown fill_holes_type: ", fill_holes_type, file=sys.stderr)
+        raise ValueError(f"unknown fill_holes_type: {fill_holes_type}")
 
     field = jnp.where(jnp.any(field < threshold), filled, field)
     return field

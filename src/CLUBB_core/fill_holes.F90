@@ -847,6 +847,9 @@ module fill_holes
       end do
       !$acc end parallel loop
 
+      ! Once one window covers the whole fill range, wider windows cannot fill more holes
+      if ( window_size > abs( upper_hf_level - lower_hf_level ) ) exit
+
       window_size = 2 * window_size
 
     end do
@@ -1520,7 +1523,13 @@ module fill_holes
       !$acc loop gang vector collapse(2) 
       do k = lower_hf_level, upper_hf_level, grid_dir_indx
         do i = 1, ngrdcol
-          stealable_scale = ( one - mf_min ) / n_holes(i)
+          ! A column whose holes are all filled has n_holes(i) = 0 here. It has nothing
+          ! to fill, so give it no stealable mass instead of dividing by zero.
+          if ( n_holes(i) > 0 ) then
+            stealable_scale = ( one - mf_min ) / n_holes(i)
+          else
+            stealable_scale = zero
+          end if
           stealable_mass(k,i) =  max( field(i,k) - threshold, 0.0_core_rknd ) &
                                  * rho_ds_dz(k,i) * stealable_scale
         end do  

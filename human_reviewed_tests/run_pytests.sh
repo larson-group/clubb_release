@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Run the auto-LLM-generated pytest suites in their owned environments.
-# Usage: human_reviewed_tests/run_pytests.sh [-unit|-dash|-api|-jax|-jax_f2py_unit_tests|-all] [pytest options]
-# Each mode runs one component's auto_llm_generated_tests/pytests folder.
+# Run the component pytest suites in their owned environments.
+# Usage: human_reviewed_tests/run_pytests.sh [-unit|-dash|-api|-jax|-jax_f2py_unit_tests|-jax_f2py_human_reviewed|-all] [pytest options]
+# Each mode runs one component's auto_llm_generated_tests/pytests folder, except
+# -jax_f2py_human_reviewed, which runs clubb_jax/human_reviewed_tests/f2py_unit_tests.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MODE=-unit
 case "${1:-}" in
-    -unit|-dash|-api|-jax|-jax_f2py_unit_tests|-all) MODE="$1"; shift ;;
-    -h|-help) sed -n '2,4p' "$0"; exit 0 ;;
+    -unit|-dash|-api|-jax|-jax_f2py_unit_tests|-jax_f2py_human_reviewed|-all) MODE="$1"; shift ;;
+    -h|-help) sed -n '2,5p' "$0"; exit 0 ;;
 esac
 PYTEST_ARGS=("$@")
 cd "$REPO_ROOT"
@@ -63,7 +64,8 @@ run_jax() {
 }
 
 # JAX checks against the same Fortran routines called through the Python API build.
-run_jax_f2py_unit_tests() {
+# The argument is the test folder to run.
+run_jax_f2py() {
     local f2py_dir="${CLUBB_F2PY_DIR:-$REPO_ROOT/install/latest/python}"
     [[ "$f2py_dir" == /* ]] || f2py_dir="$REPO_ROOT/$f2py_dir"
     if ! compgen -G "$f2py_dir/clubb_f2py*.so" > /dev/null || [[ ! -d "$f2py_dir/clubb_python" ]]; then
@@ -72,7 +74,7 @@ run_jax_f2py_unit_tests() {
         return 1
     fi
     prepare_jax
-    PYTHONPATH="$f2py_dir:$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" run_pytest "$JAX_PYTHON" clubb_jax/auto_llm_generated_tests/pytests/f2py_unit_tests
+    PYTHONPATH="$f2py_dir:$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" run_pytest "$JAX_PYTHON" "$1"
 }
 
 case "$MODE" in
@@ -80,6 +82,8 @@ case "$MODE" in
     -dash) run_dash ;;
     -api) run_api ;;
     -jax) run_jax ;;
-    -jax_f2py_unit_tests) run_jax_f2py_unit_tests ;;
-    -all) run_unit; run_dash; run_api; run_jax; run_jax_f2py_unit_tests ;;
+    -jax_f2py_unit_tests) run_jax_f2py clubb_jax/auto_llm_generated_tests/pytests/f2py_unit_tests ;;
+    -jax_f2py_human_reviewed) run_jax_f2py clubb_jax/human_reviewed_tests/f2py_unit_tests ;;
+    -all) run_unit; run_dash; run_api; run_jax; run_jax_f2py clubb_jax/auto_llm_generated_tests/pytests/f2py_unit_tests
+        run_jax_f2py clubb_jax/human_reviewed_tests/f2py_unit_tests ;;
 esac

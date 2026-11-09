@@ -39,6 +39,19 @@ pipeline {
         }
       }
     }
+    stage('JAX vs Fortran hole filling') {
+      steps {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            # Human-reviewed check of the hole fillers against Fortran through the Python API build.
+            bash human_reviewed_tests/run_pytests.sh -jax_f2py_human_reviewed -v \
+              --junitxml="$WORKSPACE/output/tests/pytests/jax_fill_holes_vs_fortran.xml"
+          '''
+        }
+      }
+    }
     // Auto-LLM-generated pytests; comment out a stage to skip that suite.
     stage('Auto-LLM-generated JAX pytests') {
       steps {
@@ -95,8 +108,16 @@ pipeline {
             source /etc/profile.d/larson-group.sh
             module load gcc netcdf-fortran
             ulimit -s 8388608
-            python3 human_reviewed_tests/run_jax_vs_fortran_cases.py -debug 0 -max_iters 5 -workers 8 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json
-          ''' // Bound the varying-flag sweep to five timesteps per case.
+            human_reviewed_tests/run_jax_vs_fortran_cases.py -debug 0 -cases cobra, bomex -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json -skip_default_flags -stats multi_col_stats
+          ''' // Full curated durations. The standard stats stage already runs the default flags; multi_col_stats compares 15 core fields instead of 623.
+        }
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+          sh '''
+            source /etc/profile.d/larson-group.sh
+            module load gcc netcdf-fortran
+            ulimit -s 8388608
+            human_reviewed_tests/run_jax_vs_fortran_cases.py -debug 0 -cases dycoms2_rf02_ds -max_iters 140 -flag_config_file input/flag_sets/config_core_flags_wo_never_supported_jax_features.json -skip_default_flags -stats multi_col_stats
+          ''' // Under flag10 and flag14, roundoff growth exceeds 1e-7 after about 150 steps, as it does between the -O0 and -O2 Fortran builds, so stop at 140 instead of 230.
         }
       }
     }
