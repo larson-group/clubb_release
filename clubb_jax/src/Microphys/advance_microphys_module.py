@@ -721,39 +721,41 @@ def microphys_solve(
         # corresponding to Fortran 1/2/3. Clamp the neighboring boundary levels.
         km1 = jnp.maximum(jnp.arange(gr.nzt) - 1, 0)
         kp1 = jnp.minimum(jnp.arange(gr.nzt) + 1, gr.nzt - 1)
-        if not stats.l_sample:
+        def accumulate_stats(stats):
+            """Collect diagnostics only on sampled timesteps."""
+
+            # In-cloud transport terms must be scaled by cloud fraction to balance
+            # the grid-mean cloud-number budget.
+            if solve_type == "Ncm" and parameters_microphys.l_in_cloud_Nc_diff:
+                ma_term = (
+                    -lhs_ma[2] * hmm[:, km1] * jnp.maximum(cloud_frac, cloud_frac_min)
+                    - lhs_ma[1] * hmm * jnp.maximum(cloud_frac, cloud_frac_min)
+                    - lhs_ma[0] * hmm[:, kp1] * jnp.maximum(cloud_frac, cloud_frac_min)
+                )
+                ta_term = (
+                    -lhs_ta[2] * hmm[:, km1] * jnp.maximum(cloud_frac, cloud_frac_min)
+                    - lhs_ta[1] * hmm * jnp.maximum(cloud_frac, cloud_frac_min)
+                    - lhs_ta[0] * hmm[:, kp1] * jnp.maximum(cloud_frac, cloud_frac_min)
+                )
+            else:
+                ma_term = -lhs_ma[2] * hmm[:, km1] - lhs_ma[1] * hmm - lhs_ma[0] * hmm[:, kp1]
+                ta_term = -lhs_ta[2] * hmm[:, km1] - lhs_ta[1] * hmm - lhs_ta[0] * hmm[:, kp1]
+            sd_term = (
+                -sed_diff_lhs[2] * hmm[:, km1] - sed_diff_lhs[1] * hmm - sed_diff_lhs[0] * hmm[:, kp1]
+            )
+            ts_term = (
+                -sed_turb_lhs[2] * hmm[:, km1] - sed_turb_lhs[1] * hmm - sed_turb_lhs[0] * hmm[:, kp1]
+            )
+            if solve_type in ("rrm", "Nrm", "rim", "rsm", "rgm", "Ncm", "Nim", "Nsm", "Ngm"):
+                stats = stats.update(solve_type + "_ma", ma_term)
+                if l_sed and solve_type != "Ncm":
+                    stats = stats.update(solve_type + "_sd", sd_term)
+                if l_sed and solve_type in ("rrm", "Nrm"):
+                    stats = stats.finalize_budget(solve_type + "_ts", ts_term)
+                stats = stats.finalize_budget(solve_type + "_ta", ta_term)
             return stats
 
-        # In-cloud transport terms must be scaled by cloud fraction to balance
-        # the grid-mean cloud-number budget.
-        if solve_type == "Ncm" and parameters_microphys.l_in_cloud_Nc_diff:
-            ma_term = (
-                -lhs_ma[2] * hmm[:, km1] * jnp.maximum(cloud_frac, cloud_frac_min)
-                - lhs_ma[1] * hmm * jnp.maximum(cloud_frac, cloud_frac_min)
-                - lhs_ma[0] * hmm[:, kp1] * jnp.maximum(cloud_frac, cloud_frac_min)
-            )
-            ta_term = (
-                -lhs_ta[2] * hmm[:, km1] * jnp.maximum(cloud_frac, cloud_frac_min)
-                - lhs_ta[1] * hmm * jnp.maximum(cloud_frac, cloud_frac_min)
-                - lhs_ta[0] * hmm[:, kp1] * jnp.maximum(cloud_frac, cloud_frac_min)
-            )
-        else:
-            ma_term = -lhs_ma[2] * hmm[:, km1] - lhs_ma[1] * hmm - lhs_ma[0] * hmm[:, kp1]
-            ta_term = -lhs_ta[2] * hmm[:, km1] - lhs_ta[1] * hmm - lhs_ta[0] * hmm[:, kp1]
-        sd_term = (
-            -sed_diff_lhs[2] * hmm[:, km1] - sed_diff_lhs[1] * hmm - sed_diff_lhs[0] * hmm[:, kp1]
-        )
-        ts_term = (
-            -sed_turb_lhs[2] * hmm[:, km1] - sed_turb_lhs[1] * hmm - sed_turb_lhs[0] * hmm[:, kp1]
-        )
-        if solve_type in ("rrm", "Nrm", "rim", "rsm", "rgm", "Ncm", "Nim", "Nsm", "Ngm"):
-            stats = stats.update(solve_type + "_ma", ma_term)
-            if l_sed and solve_type != "Ncm":
-                stats = stats.update(solve_type + "_sd", sd_term)
-            if l_sed and solve_type in ("rrm", "Nrm"):
-                stats = stats.finalize_budget(solve_type + "_ts", ts_term)
-            stats = stats.finalize_budget(solve_type + "_ta", ta_term)
-        return stats
+        return stats.sampled(accumulate_stats)
 
     if clubb_at_least_debug_level(0):
         stats = jax.lax.cond(

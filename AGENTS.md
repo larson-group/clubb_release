@@ -66,8 +66,13 @@ requirements; selecting a child does not automatically load its parent.
   change human-reviewed tests only when the user asks. Keep Jenkins additions
   within the requested scope.
 - Reuse the existing utility/parser/state owner. Keep UI/runner adapters thin;
-  justify a new abstraction by actual shared behavior. Remove obsolete paths
-  in the authorized change instead of adding silent fallback/retry machinery.
+  justify a new abstraction by actual shared behavior.
+- A requested replacement should remove the old implementation, interface and
+  format adapters where possible. Add or retain backward compatibility only
+  when the user explicitly requests it. Clearly report concrete consequences
+  such as old saved files no longer loading; a warning does not imply permission
+  to preserve the old path. Update current callers and remove obsolete tests
+  instead of adding silent fallback/retry machinery.
 - Write user-facing documentation around purpose, a usable quick start, then
   needed detail. Update relevant sections of the existing document; keep implementation detail
   in its owner and define scientific symbols/units when they matter.

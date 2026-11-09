@@ -40,8 +40,10 @@ than applying a blind path-name replacement.
 Use the existing parser and `-help` to verify the actual accepted surface before
 changing examples/callers. Preserve intentional positional arguments and
 third-party command options such as `nvidia-smi --format`. Do not mechanically
-replace every `--` in a shell command. New compatibility aliases need a concrete
-consumer/migration reason; do not reintroduce obsolete spellings as a precaution.
+replace every `--` in a shell command. Follow AGENTS.md's replacement policy:
+compatibility aliases or old-format adapters require an explicit user request. Update current callers and remove
+obsolete spellings; report which saved inputs or external callers will break
+without silently retaining support for them.
 
 CPU worker defaults apply to comparable worker controls, not every integer
 called jobs/batch size. GPU run stages use one case/process worker to avoid

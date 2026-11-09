@@ -256,6 +256,16 @@ Examples:
   Runs the tuner, then runs standalone CLUBB output for the top three complete
   parameter sets.
 
+- `python3 run_scripts/run_tuner_job.py -list_algorithms`
+  Lists the [algorithm catalog](../tuner/algorithms/algorithms.json)'s typed
+  options, defaults and backend requirements as JSON without launching a job.
+
+- `python3 run_scripts/run_tuner_job.py -jax -cases bomex:0:600:300 -fields wp2 -param_ranges C8:0.2:0.8 -strategy adam_gradient:max_updates=2:learning_rate=0.01 -batch_size 1 -workers 1 -run_top never`
+  Applies two bounded Adam updates using JAX gradients. This method enables
+  gradients automatically and requires `-jax`. The existing `adam` method uses
+  SPSA estimates. See the [tuner workflow](../tuner/README.md) for multiple cases,
+  linked parameters and extending the algorithm registry.
+
 ## `convergence_run/` Scripts
 
 The `convergence_run/` directory contains an older convergence-test workflow.

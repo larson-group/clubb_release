@@ -16,14 +16,12 @@ from tuner.taylor_metrics import (
     AGGREGATION_MODE_NAMES,
     DEFAULT_AGGREGATION_WEIGHTS,
     DEFAULT_AGGREGATION_MODE,
-    DEFAULT_NUM_TIME_WINDOWS,
     LOSS_POLICY_CONSTANTS,
     LOSS_POLICY_VERSION,
     WORST_QUANTILE_FRACTION,
     normalize_aggregation_weights,
 )
 from utilities.loss_metrics import normalize_loss_weights, normalize_named_weights
-from tuner.tuning_strategy import normalize_strategy_config
 from input.scripts.create_case_namelist import normalize_override_string, parse_override_pairs
 from utilities.clubb_settings_validation import (
     build_settings_schema,
@@ -107,7 +105,6 @@ def load_request(request_path: Path) -> dict:
             raise RuntimeError(f"{name} requires min <= max")
         parameter_ranges.append({"name": name, "targets": targets, "min": min_value, "max": max_value})
 
-    request["case_name"] = cases[0]
     request["cases"] = cases
     request["case_configs"] = case_configs
     request["case_defaults"] = case_defaults
@@ -153,8 +150,6 @@ def load_request(request_path: Path) -> dict:
     except ValueError as exc:
         raise RuntimeError(str(exc)) from exc
 
-    request.pop("time_window_mode", None)
-    request.pop("num_time_windows", None)
     requested_loss_policy_version = request.get("loss_policy_version", LOSS_POLICY_VERSION)
     if requested_loss_policy_version != LOSS_POLICY_VERSION:
         raise RuntimeError(
@@ -167,42 +162,11 @@ def load_request(request_path: Path) -> dict:
         "quantile_weights": list(request["aggregation_weights"]),
     }
 
+    from tuner.algorithm_registry import prepare_strategy
     try:
-        request["strategy"] = normalize_strategy_config(request)
+        prepare_strategy(request)
     except ValueError as exc:
         raise RuntimeError(str(exc)) from exc
-    if request["strategy"]["name"] == "random":
-        request["max_samples"] = request["strategy"]["options"].get("max_samples")
-    else:
-        request.pop("max_samples", None)
-    if request["strategy"]["name"] == "simann":
-        options = request["strategy"]["options"]
-        if options.get("chain_count") is None:
-            options["chain_count"] = max(1, request["max_workers"] * request["batch_size"])
-        request["total_samples"] = options.get("max_iters") * options.get("chain_count")
-    elif request["strategy"]["name"] == "adam":
-        options = request["strategy"]["options"]
-        columns_per_chain = 2 * int(options["spsa_pairs"])
-        if request["batch_size"] % columns_per_chain != 0:
-            raise RuntimeError(
-                "Adam requires batch_size to be divisible by 2 * spsa_pairs "
-                f"({request['batch_size']} is not divisible by {columns_per_chain})"
-            )
-        chains_per_batch = request["batch_size"] // columns_per_chain
-        concurrent_batches = math.ceil(request["max_workers"] / len(cases))
-        chain_count = chains_per_batch * concurrent_batches
-        options.update(
-            {
-                "chains_per_batch": chains_per_batch,
-                "concurrent_batches": concurrent_batches,
-                "chain_count": chain_count,
-            }
-        )
-        request["total_samples"] = chain_count * (
-            2 + columns_per_chain * int(options["max_updates"])
-        )
-    else:
-        request["total_samples"] = request["strategy"]["options"].get("max_samples")
 
     if request.get("seed") is not None:
         try:
@@ -308,51 +272,24 @@ def apply_required_parameter_links(parameter_ranges: list[dict], resolution: dic
     return updated
 
 
-def read_case_tuner_defaults(case_name: str, overrides: dict | None = None) -> dict:
-    """Compatibility wrapper for callers that still use the old function name."""
-    return read_case_defaults(case_name, overrides=overrides)
-
-
 def _normalize_case_configs(request: dict) -> tuple[list[str], list[dict], dict[str, dict]]:
     """Return canonical per-case tuning configs and full JSON-backed defaults."""
     raw_case_configs = request.get("case_configs")
-    raw_case_overrides = request.get("case_overrides", {}) or {}
-    if not isinstance(raw_case_overrides, dict):
-        raise RuntimeError("Tuning request case_overrides must be an object")
-
-    legacy_window_count = _legacy_window_count(request)
-    raw_entries = []
     if raw_case_configs is not None:
         if not isinstance(raw_case_configs, list):
             raise RuntimeError("Tuning request case_configs must be a list")
-        raw_entries = list(raw_case_configs)
+        raw_entries = raw_case_configs
     else:
         raw_cases = request.get("cases")
-        if raw_cases is None:
-            case_name = request.get("case_name")
-            if not case_name:
-                raise RuntimeError("Tuning request is missing case_name, cases, or case_configs")
-            raw_cases = [case_name]
-        elif isinstance(raw_cases, str):
-            raw_cases = [raw_cases]
-        for raw_case in raw_cases or []:
-            case_name = str(raw_case).strip()
-            if not case_name:
-                continue
-            raw_entry = {"case_name": case_name}
-            if case_name in raw_case_overrides:
-                raw_entry.update(raw_case_overrides[case_name] or {})
-            if "num_time_windows" not in raw_entry:
-                raw_entry["num_time_windows"] = legacy_window_count
-            raw_entries.append(raw_entry)
+        if not isinstance(raw_cases, list):
+            raise RuntimeError("Tuning request requires a cases list or case_configs list")
+        raw_entries = [{"case_name": case_name} for case_name in raw_cases]
 
     cases = []
     case_configs = []
     case_defaults = {}
     seen_cases = set()
     for raw_entry in raw_entries:
-        if isinstance(raw_entry, str):
-            raw_entry = {"case_name": raw_entry}
         if not isinstance(raw_entry, dict):
             raise RuntimeError("Each case config must be an object")
         case_name = str(raw_entry.get("case_name", "")).strip()
@@ -377,7 +314,7 @@ def _normalize_case_configs(request: dict) -> tuple[list[str], list[dict], dict[
                 f"Unsupported case config key(s) for {case_name}: " + ", ".join(unsupported_keys)
             )
 
-        defaults = read_case_tuner_defaults(case_name, overrides=override)
+        defaults = read_case_defaults(case_name, overrides=override)
         case_defaults[case_name] = defaults
         normalized_config = {
             "case_name": case_name,
@@ -394,16 +331,6 @@ def _normalize_case_configs(request: dict) -> tuple[list[str], list[dict], dict[
     if not cases:
         raise RuntimeError("Tuning request must contain at least one case")
     return cases, case_configs, case_defaults
-
-
-def _legacy_window_count(request: dict) -> int:
-    raw_count = request.get("num_time_windows", DEFAULT_NUM_TIME_WINDOWS)
-    raw_mode = str(request.get("time_window_mode", "") or "").strip()
-    if raw_mode == "single_average":
-        return 1
-    if raw_mode and raw_mode != "split_average":
-        raise RuntimeError(f"Unknown time_window_mode: {raw_mode}")
-    return _positive_int(raw_count, "Tuning request num_time_windows")
 
 
 def _positive_int(raw_value, label: str) -> int:

@@ -431,7 +431,7 @@ def advance_windm_edsclrm(
         # Decompose and back substitute for um and vm
         nrhs = 2
         l_need_rcond = bool(
-            stats.l_sample and stats.var_on_stats_list("windm_matrix_condt_num")
+            stats.var_on_stats_list("windm_matrix_condt_num")
         )
         solution_wind, err_info, stats = windm_edsclrm_solve(
             nzt, ngrdcol, gr, nrhs,
@@ -466,7 +466,8 @@ def advance_windm_edsclrm(
         # ----------------------------------------------------------------
         vm = solution[:, :, windm_edsclrm_vm - 1]
 
-        if stats.l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = windm_edsclrm_implicit_stats(
                 nzm, nzt, ngrdcol, windm_edsclrm_um, gr,
                 um, gr.invrs_dzt,
@@ -487,6 +488,10 @@ def advance_windm_edsclrm(
                 stats,
             )
 
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
+
         if l_lmm_stepping:
             um = one_half * (um_old + um)
             vm = one_half * (vm_old + vm)
@@ -504,20 +509,35 @@ def advance_windm_edsclrm(
         # Adjust um and vm if nudging is turned on.
         if l_uv_nudge:
             # Reflect nudging in budget
-            if stats.l_sample:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
                 stats = stats.begin_budget("um_ndg", um / dt)
                 stats = stats.begin_budget("vm_ndg", vm / dt)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
 
             um = um - ((um - um_ref) * (dt / ts_nudge))
             vm = vm - ((vm - vm_ref) * (dt / ts_nudge))
 
-            if stats.l_sample:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
                 stats = stats.finalize_budget("um_ndg", um / dt)
                 stats = stats.finalize_budget("vm_ndg", vm / dt)
 
-        if stats.l_sample:
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
+
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = stats.update("um_ref", um_ref)
             stats = stats.update("vm_ref", vm_ref)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
         # Clipping for u'w'
         #
@@ -532,20 +552,32 @@ def advance_windm_edsclrm(
         # variable has been updated).
         # This clip can be the first, middle, or last budget contribution,
         # depending on the relative advancement order in this timestep.
-        if stats.l_sample and l_predict_upwp_vpwp:
-            if upwp_cl_num == 0:
-                stats = stats.begin_budget("upwp_cl", upwp / dt)
-            else:
-                stats = stats.update_budget("upwp_cl", -upwp / dt)
+        if l_predict_upwp_vpwp:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
+                if upwp_cl_num == 0:
+                    stats = stats.begin_budget("upwp_cl", upwp / dt)
+                else:
+                    stats = stats.update_budget("upwp_cl", -upwp / dt)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
         upwp_cl_num = upwp_cl_num + 1
         upwp, upwp_chnge = clip_covar(
             nzm, ngrdcol, clip_upwp, wp2, up2, upwp,
         )
-        if stats.l_sample and l_predict_upwp_vpwp:
-            if upwp_cl_num == upwp_cl_max:
-                stats = stats.finalize_budget("upwp_cl", upwp / dt)
-            else:
-                stats = stats.update_budget("upwp_cl", upwp / dt)
+        if l_predict_upwp_vpwp:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
+                if upwp_cl_num == upwp_cl_max:
+                    stats = stats.finalize_budget("upwp_cl", upwp / dt)
+                else:
+                    stats = stats.update_budget("upwp_cl", upwp / dt)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
 
         # Clipping for v'w'
         #
@@ -560,20 +592,32 @@ def advance_windm_edsclrm(
         # variable has been updated).
         # This clip can be the first, middle, or last budget contribution,
         # depending on the relative advancement order in this timestep.
-        if stats.l_sample and l_predict_upwp_vpwp:
-            if vpwp_cl_num == 0:
-                stats = stats.begin_budget("vpwp_cl", vpwp / dt)
-            else:
-                stats = stats.update_budget("vpwp_cl", -vpwp / dt)
+        if l_predict_upwp_vpwp:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
+                if vpwp_cl_num == 0:
+                    stats = stats.begin_budget("vpwp_cl", vpwp / dt)
+                else:
+                    stats = stats.update_budget("vpwp_cl", -vpwp / dt)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
         vpwp_cl_num = vpwp_cl_num + 1
         vpwp, vpwp_chnge = clip_covar(
             nzm, ngrdcol, clip_vpwp, wp2, vp2, vpwp,
         )
-        if stats.l_sample and l_predict_upwp_vpwp:
-            if vpwp_cl_num == vpwp_cl_max:
-                stats = stats.finalize_budget("vpwp_cl", vpwp / dt)
-            else:
-                stats = stats.update_budget("vpwp_cl", vpwp / dt)
+        if l_predict_upwp_vpwp:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
+                if vpwp_cl_num == vpwp_cl_max:
+                    stats = stats.finalize_budget("vpwp_cl", vpwp / dt)
+                else:
+                    stats = stats.update_budget("vpwp_cl", vpwp / dt)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
 
     if l_perturbed_wind:
         l_imp_sfc_momentum_flux = True
@@ -636,7 +680,7 @@ def advance_windm_edsclrm(
         # Decompose and back substitute for um and vm
         nrhs = 2
         l_need_rcond = bool(
-            stats.l_sample and stats.var_on_stats_list("windm_matrix_condt_num")
+            stats.var_on_stats_list("windm_matrix_condt_num")
         )
         solution_wind, err_info, stats = windm_edsclrm_solve(
             nzt, ngrdcol, gr, nrhs,
@@ -840,7 +884,8 @@ def advance_windm_edsclrm(
         thlm1000 = pvertinterp(nzt, ngrdcol, gr, p_in_Pa, 100000.0, thlm)
         apply_explicit_diffusion = (thlm700 - thlm1000) < 20.0
 
-        if stats.l_sample:
+        def explicit_diffusion_stats(previous):
+            """Compute the explicit-diffusion tendencies on sampled timesteps."""
             thlm_ed = jnp.where(
                 apply_explicit_diffusion[:, None],
                 (edsclrm[:, :, sclr_idx.iiedsclr_thl - 1] - thlm) / dt,
@@ -851,9 +896,13 @@ def advance_windm_edsclrm(
                 (edsclrm[:, :, sclr_idx.iiedsclr_rt - 1] - rtm) / dt,
                 zero,
             )
-        else:
-            thlm_ed = jnp.zeros((ngrdcol, nzt))
-            rtm_ed = jnp.zeros((ngrdcol, nzt))
+
+            return thlm_ed, rtm_ed
+
+        thlm_ed, rtm_ed = stats.sampled_value(
+            explicit_diffusion_stats,
+            (jnp.zeros((ngrdcol, nzt)), jnp.zeros((ngrdcol, nzt))),
+        )
 
         thlm = jnp.where(
             apply_explicit_diffusion[:, None],
@@ -869,9 +918,14 @@ def advance_windm_edsclrm(
         thlm_ed = jnp.zeros((ngrdcol, nzt))
         rtm_ed = jnp.zeros((ngrdcol, nzt))
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("thlm_ed", thlm_ed)
         stats = stats.update("rtm_ed", rtm_ed)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if edsclr_dim > 0 and fill_holes_type != 0:
         for edsclr in range(edsclr_dim):
@@ -1431,7 +1485,7 @@ def windm_edsclrm_solve(
     err_info, solution, rcond = tridiag_solve(
         "windm_edsclrm", tridiag_solve_method, ngrdcol, nzt,
         lhs_solve, rhs_solve, err_info,
-        l_use_rcond=l_need_rcond,
+        l_use_rcond=stats.l_sample if l_need_rcond else False,
         l_implemented=l_implemented,
     )
 
@@ -1450,8 +1504,14 @@ def windm_edsclrm_solve(
             lambda _: None, operand=None,
         )
 
-    if l_need_rcond and stats.l_sample:
-        stats = stats.update("windm_matrix_condt_num", one / rcond)
+    if l_need_rcond:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            stats = stats.update("windm_matrix_condt_num", one / rcond)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     # Flip the back to the ascending direction if we forced the solve
     # to be in descending mode
@@ -1522,116 +1582,118 @@ def windm_edsclrm_implicit_stats(
           stats
     """
     del nzm
-    if not stats.l_sample:
-        return stats
+    def accumulate_stats(stats):
+        """Collect diagnostics only on sampled timesteps."""
 
-    if solve_type == windm_edsclrm_um:
-        name_ma = "um_ma"
-        name_ta = "um_ta"
-    elif solve_type == windm_edsclrm_vm:
-        name_ma = "vm_ma"
-        name_ta = "vm_ta"
-    else:
-        return stats
+        if solve_type == windm_edsclrm_um:
+            name_ma = "um_ma"
+            name_ta = "um_ta"
+        elif solve_type == windm_edsclrm_vm:
+            name_ma = "vm_ma"
+            name_ta = "vm_ta"
+        else:
+            return stats
 
-    imp_sfc_flux = jnp.zeros((ngrdcol, nzt))
+        imp_sfc_flux = jnp.zeros((ngrdcol, nzt))
 
-    if l_imp_sfc_momentum_flux and stats.var_on_stats_list(name_ta):
-        # Statistics:  implicit contributions for um or vm.
-        # xm term ta is modified at level 2 to include the effects of the
-        # surface flux.  In this case, this affects the implicit portion of
-        # the term, which handles the main diagonal for the turbulent advection term.
-        imp_sfc_flux = imp_sfc_flux.at[:, gr.k_lb_zt].set(
-            -gr.grid_dir
-            * invrs_rho_ds_zt[:, gr.k_lb_zt]
-            * invrs_dzt[:, gr.k_lb_zt]
-            * rho_ds_zm[:, gr.k_lb_zm]
-            * (u_star_sqd / wind_speed[:, gr.k_lb_zt])
-        )
+        if l_imp_sfc_momentum_flux and stats.var_on_stats_list(name_ta):
+            # Statistics:  implicit contributions for um or vm.
+            # xm term ta is modified at level 2 to include the effects of the
+            # surface flux.  In this case, this affects the implicit portion of
+            # the term, which handles the main diagonal for the turbulent advection term.
+            imp_sfc_flux = imp_sfc_flux.at[:, gr.k_lb_zt].set(
+                -gr.grid_dir
+                * invrs_rho_ds_zt[:, gr.k_lb_zt]
+                * invrs_dzt[:, gr.k_lb_zt]
+                * rho_ds_zm[:, gr.k_lb_zm]
+                * (u_star_sqd / wind_speed[:, gr.k_lb_zt])
+            )
 
-    stats_tmp = jnp.zeros((ngrdcol, nzt))
-    if gr.grid_dir_indx > 0:
-        # Lower boundary conditions
-        # xm mean advection
-        # xm term ma is completely implicit; record with stats_update.
-        stats_tmp = stats_tmp.at[:, 0].set(
-            -lhs_ma_zt[1, :, 0] * xm[:, 0]
-            -lhs_ma_zt[0, :, 0] * xm[:, 1]
-        )
-        # Interior domain
-        # xm mean advection
-        # xm term ma is completely implicit; record with stats_update.
-        stats_tmp = stats_tmp.at[:, 1:-1].set(
-            -lhs_ma_zt[2, :, 1:-1] * xm[:, :-2]
-            -lhs_ma_zt[1, :, 1:-1] * xm[:, 1:-1]
-            -lhs_ma_zt[0, :, 1:-1] * xm[:, 2:]
-        )
-        # Upper boundary conditions
-        # xm mean advection
-        # xm term ma is completely implicit; record with stats_update.
-        stats_tmp = stats_tmp.at[:, -1].set(
-            -lhs_ma_zt[2, :, -1] * xm[:, -2]
-            -lhs_ma_zt[1, :, -1] * xm[:, -1]
-        )
-    else:
-        stats_tmp = stats_tmp.at[:, -1].set(
-            -lhs_ma_zt[1, :, -1] * xm[:, -1]
-            -lhs_ma_zt[2, :, -1] * xm[:, -2]
-        )
-        stats_tmp = stats_tmp.at[:, 1:-1].set(
-            -lhs_ma_zt[0, :, 1:-1] * xm[:, 2:]
-            -lhs_ma_zt[1, :, 1:-1] * xm[:, 1:-1]
-            -lhs_ma_zt[2, :, 1:-1] * xm[:, :-2]
-        )
-        stats_tmp = stats_tmp.at[:, 0].set(
-            -lhs_ma_zt[0, :, 0] * xm[:, 1]
-            -lhs_ma_zt[1, :, 0] * xm[:, 0]
-        )
-    stats = stats.update(name_ma, stats_tmp)
+        stats_tmp = jnp.zeros((ngrdcol, nzt))
+        if gr.grid_dir_indx > 0:
+            # Lower boundary conditions
+            # xm mean advection
+            # xm term ma is completely implicit; record with stats_update.
+            stats_tmp = stats_tmp.at[:, 0].set(
+                -lhs_ma_zt[1, :, 0] * xm[:, 0]
+                -lhs_ma_zt[0, :, 0] * xm[:, 1]
+            )
+            # Interior domain
+            # xm mean advection
+            # xm term ma is completely implicit; record with stats_update.
+            stats_tmp = stats_tmp.at[:, 1:-1].set(
+                -lhs_ma_zt[2, :, 1:-1] * xm[:, :-2]
+                -lhs_ma_zt[1, :, 1:-1] * xm[:, 1:-1]
+                -lhs_ma_zt[0, :, 1:-1] * xm[:, 2:]
+            )
+            # Upper boundary conditions
+            # xm mean advection
+            # xm term ma is completely implicit; record with stats_update.
+            stats_tmp = stats_tmp.at[:, -1].set(
+                -lhs_ma_zt[2, :, -1] * xm[:, -2]
+                -lhs_ma_zt[1, :, -1] * xm[:, -1]
+            )
+        else:
+            stats_tmp = stats_tmp.at[:, -1].set(
+                -lhs_ma_zt[1, :, -1] * xm[:, -1]
+                -lhs_ma_zt[2, :, -1] * xm[:, -2]
+            )
+            stats_tmp = stats_tmp.at[:, 1:-1].set(
+                -lhs_ma_zt[0, :, 1:-1] * xm[:, 2:]
+                -lhs_ma_zt[1, :, 1:-1] * xm[:, 1:-1]
+                -lhs_ma_zt[2, :, 1:-1] * xm[:, :-2]
+            )
+            stats_tmp = stats_tmp.at[:, 0].set(
+                -lhs_ma_zt[0, :, 0] * xm[:, 1]
+                -lhs_ma_zt[1, :, 0] * xm[:, 0]
+            )
+        stats = stats.update(name_ma, stats_tmp)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzt))
-    if gr.grid_dir_indx > 0:
-        # Lower boundary conditions
-        # xm turbulent transport (implicit component)
-        # xm term ta has both implicit and explicit components;
-        # finalize the implicit part with stats_finalize_budget.
-        stats_tmp = stats_tmp.at[:, 0].set(
-            (-one_half * lhs_diff[1, :, 0] + imp_sfc_flux[:, 0]) * xm[:, 0]
-            -one_half * lhs_diff[0, :, 0] * xm[:, 1]
-        )
-        # Interior domain
-        # xm turbulent transport (implicit component)
-        # xm term ta has both implicit and explicit components;
-        # finalize the implicit part with stats_finalize_budget.
-        stats_tmp = stats_tmp.at[:, 1:-1].set(
-            -one_half * lhs_diff[2, :, 1:-1] * xm[:, :-2]
-            + (-one_half * lhs_diff[1, :, 1:-1] + imp_sfc_flux[:, 1:-1]) * xm[:, 1:-1]
-            -one_half * lhs_diff[0, :, 1:-1] * xm[:, 2:]
-        )
-        # Upper boundary conditions
-        # xm turbulent transport (implicit component)
-        # xm term ta has both implicit and explicit components;
-        # finalize the implicit part with stats_finalize_budget.
-        stats_tmp = stats_tmp.at[:, -1].set(
-            -one_half * lhs_diff[2, :, -1] * xm[:, -2]
-            + (-one_half * lhs_diff[1, :, -1] + imp_sfc_flux[:, -1]) * xm[:, -1]
-        )
-    else:
-        stats_tmp = stats_tmp.at[:, -1].set(
-            (-one_half * lhs_diff[1, :, -1] + imp_sfc_flux[:, -1]) * xm[:, -1]
-            -one_half * lhs_diff[2, :, -1] * xm[:, -2]
-        )
-        stats_tmp = stats_tmp.at[:, 1:-1].set(
-            -one_half * lhs_diff[0, :, 1:-1] * xm[:, 2:]
-            + (-one_half * lhs_diff[1, :, 1:-1] + imp_sfc_flux[:, 1:-1]) * xm[:, 1:-1]
-            -one_half * lhs_diff[2, :, 1:-1] * xm[:, :-2]
-        )
-        stats_tmp = stats_tmp.at[:, 0].set(
-            -one_half * lhs_diff[0, :, 0] * xm[:, 1]
-            + (-one_half * lhs_diff[1, :, 0] + imp_sfc_flux[:, 0]) * xm[:, 0]
-        )
-    # Finalize implicit contributions for xm
-    return stats.finalize_budget(name_ta, stats_tmp)
+        stats_tmp = jnp.zeros((ngrdcol, nzt))
+        if gr.grid_dir_indx > 0:
+            # Lower boundary conditions
+            # xm turbulent transport (implicit component)
+            # xm term ta has both implicit and explicit components;
+            # finalize the implicit part with stats_finalize_budget.
+            stats_tmp = stats_tmp.at[:, 0].set(
+                (-one_half * lhs_diff[1, :, 0] + imp_sfc_flux[:, 0]) * xm[:, 0]
+                -one_half * lhs_diff[0, :, 0] * xm[:, 1]
+            )
+            # Interior domain
+            # xm turbulent transport (implicit component)
+            # xm term ta has both implicit and explicit components;
+            # finalize the implicit part with stats_finalize_budget.
+            stats_tmp = stats_tmp.at[:, 1:-1].set(
+                -one_half * lhs_diff[2, :, 1:-1] * xm[:, :-2]
+                + (-one_half * lhs_diff[1, :, 1:-1] + imp_sfc_flux[:, 1:-1]) * xm[:, 1:-1]
+                -one_half * lhs_diff[0, :, 1:-1] * xm[:, 2:]
+            )
+            # Upper boundary conditions
+            # xm turbulent transport (implicit component)
+            # xm term ta has both implicit and explicit components;
+            # finalize the implicit part with stats_finalize_budget.
+            stats_tmp = stats_tmp.at[:, -1].set(
+                -one_half * lhs_diff[2, :, -1] * xm[:, -2]
+                + (-one_half * lhs_diff[1, :, -1] + imp_sfc_flux[:, -1]) * xm[:, -1]
+            )
+        else:
+            stats_tmp = stats_tmp.at[:, -1].set(
+                (-one_half * lhs_diff[1, :, -1] + imp_sfc_flux[:, -1]) * xm[:, -1]
+                -one_half * lhs_diff[2, :, -1] * xm[:, -2]
+            )
+            stats_tmp = stats_tmp.at[:, 1:-1].set(
+                -one_half * lhs_diff[0, :, 1:-1] * xm[:, 2:]
+                + (-one_half * lhs_diff[1, :, 1:-1] + imp_sfc_flux[:, 1:-1]) * xm[:, 1:-1]
+                -one_half * lhs_diff[2, :, 1:-1] * xm[:, :-2]
+            )
+            stats_tmp = stats_tmp.at[:, 0].set(
+                -one_half * lhs_diff[0, :, 0] * xm[:, 1]
+                + (-one_half * lhs_diff[1, :, 0] + imp_sfc_flux[:, 0]) * xm[:, 0]
+            )
+        # Finalize implicit contributions for xm
+        return stats.finalize_budget(name_ta, stats_tmp)
+
+    return stats.sampled(accumulate_stats)
 
 
 @partial(
@@ -1722,7 +1784,8 @@ def compute_uv_tndcy(
 
         xm_tndcy = xm_gf + xm_cf + xm_forcing
 
-        if stats.l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             # Statistics:  explicit contributions for um or vm.
             # xm term gf is completely explicit; record with stats_update.
             stats = stats.update(name_gf, xm_gf)
@@ -1730,6 +1793,10 @@ def compute_uv_tndcy(
             stats = stats.update(name_cf, xm_cf)
             # xm term F
             stats = stats.update(name_f, xm_forcing)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
     else:
         xm_tndcy = jnp.zeros((ngrdcol, nzt))
 
@@ -1955,42 +2022,48 @@ def windm_edsclrm_rhs(
         + invrs_dt * xm[:, -1]
     )
 
-    if stats.l_sample and stats.var_on_stats_list(name_ta):
-        stats_tmp = jnp.zeros((ngrdcol, nzt))
-        # Lower boundary
-        stats_tmp = stats_tmp.at[:, 0].set(
-            one_half
-            * (lhs_diff[1, :, 0] * xm[:, 0] + lhs_diff[0, :, 0] * xm[:, 1])
-        )
-
-        if gr.grid_dir_indx > 0:
-            stats_tmp = stats_tmp.at[:, 1:-1].set(
+    if stats.var_on_stats_list(name_ta):
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            stats_tmp = jnp.zeros((ngrdcol, nzt))
+            # Lower boundary
+            stats_tmp = stats_tmp.at[:, 0].set(
                 one_half
-                * (
-                    lhs_diff[2, :, 1:-1] * xm[:, :-2]
-                    + lhs_diff[1, :, 1:-1] * xm[:, 1:-1]
-                    + lhs_diff[0, :, 1:-1] * xm[:, 2:]
-                )
-            )
-        else:
-            stats_tmp = stats_tmp.at[:, 1:-1].set(
-                one_half
-                * (
-                    lhs_diff[0, :, 1:-1] * xm[:, 2:]
-                    + lhs_diff[1, :, 1:-1] * xm[:, 1:-1]
-                    + lhs_diff[2, :, 1:-1] * xm[:, :-2]
-                )
+                * (lhs_diff[1, :, 0] * xm[:, 0] + lhs_diff[0, :, 0] * xm[:, 1])
             )
 
-        # Upper boundary
-        stats_tmp = stats_tmp.at[:, -1].set(
-            one_half
-            * (lhs_diff[2, :, -1] * xm[:, -2] + lhs_diff[1, :, -1] * xm[:, -1])
-        )
-        # Statistics:  explicit contributions for um or vm.
-        # xm term ta has both implicit and explicit components; call
-        # stats_begin_budget for the explicit part of turbulent advection.
-        stats = stats.begin_budget(name_ta, stats_tmp)
+            if gr.grid_dir_indx > 0:
+                stats_tmp = stats_tmp.at[:, 1:-1].set(
+                    one_half
+                    * (
+                        lhs_diff[2, :, 1:-1] * xm[:, :-2]
+                        + lhs_diff[1, :, 1:-1] * xm[:, 1:-1]
+                        + lhs_diff[0, :, 1:-1] * xm[:, 2:]
+                    )
+                )
+            else:
+                stats_tmp = stats_tmp.at[:, 1:-1].set(
+                    one_half
+                    * (
+                        lhs_diff[0, :, 1:-1] * xm[:, 2:]
+                        + lhs_diff[1, :, 1:-1] * xm[:, 1:-1]
+                        + lhs_diff[2, :, 1:-1] * xm[:, :-2]
+                    )
+                )
+
+            # Upper boundary
+            stats_tmp = stats_tmp.at[:, -1].set(
+                one_half
+                * (lhs_diff[2, :, -1] * xm[:, -2] + lhs_diff[1, :, -1] * xm[:, -1])
+            )
+            # Statistics:  explicit contributions for um or vm.
+            # xm term ta has both implicit and explicit components; call
+            # stats_begin_budget for the explicit part of turbulent advection.
+            stats = stats.begin_budget(name_ta, stats_tmp)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     if not l_imp_sfc_momentum_flux:
         # RHS generalized surface flux.
@@ -2003,9 +2076,15 @@ def windm_edsclrm_rhs(
         )
         rhs = rhs.at[:, gr.k_lb_zt].add(sfc_term)
 
-        if stats.l_sample and stats.var_on_stats_list(name_ta):
-            stats_tmp = jnp.zeros((ngrdcol, nzt))
-            stats_tmp = stats_tmp.at[:, gr.k_lb_zt].set(sfc_term)
-            stats = stats.update_budget(name_ta, stats_tmp)
+        if stats.var_on_stats_list(name_ta):
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
+                stats_tmp = jnp.zeros((ngrdcol, nzt))
+                stats_tmp = stats_tmp.at[:, gr.k_lb_zt].set(sfc_term)
+                stats = stats.update_budget(name_ta, stats_tmp)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
 
     return rhs, stats

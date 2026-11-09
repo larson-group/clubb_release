@@ -15,6 +15,7 @@ from dash import no_update
 from dash_app.shared import actions, activity, broker_client
 from dash_app.services import TuneRequest
 from dash_app.tune_tab import callbacks_runs, runtime
+from dash_app.tune_tab.algorithm_controls import option_values
 
 
 class CallbackRegistry:
@@ -37,10 +38,7 @@ def input_values():
         aggregation_mode="quantile_weighted",
         aggregation_weight_1=0.1, aggregation_weight_2=0.4,
         aggregation_weight_3=0.4, aggregation_weight_4=0.1,
-        random_max_samples=4, resolve_spacing=0.1,
-        simann_max_iters=2, simann_initial_temp=1.0, simann_final_temp=1e-12,
-        adam_max_updates=2, adam_learning_rate_percent=1.0,
-        adam_perturbation_percent=5.0, adam_spsa_pairs=2,
+        strategy_option_values=option_values("random", {"max_samples": 4}),
         selected_config="default", scm_override="",
     )
 
@@ -65,7 +63,7 @@ def test_start_callback_sends_the_selected_backend(monkeypatch, implementation):
         member_values=["C8"], range_row_order=[0], case_data={}, tunable_configs=["default"],
         tunable_names=["C8"], active_job={}, workspace_selection={"mode": "new"},
         displayed_status={}, run_implementation=implementation,
-        jax_profile="cpu", jax_gpu="", jax_xla_prealloc=False, grad_values=[], gradient_mode="auto",
+        jax_profile="cpu", jax_gpu="", jax_xla_prealloc=False, gradient_mode="auto",
     )
     response = registry.functions["start_tuning"](**values)
     assert response[0] is not no_update
@@ -227,7 +225,7 @@ def test_result_poll_uses_broker_terminal_state(monkeypatch):
 
 
 def test_workspace_hydration_keeps_output_count_on_empty_and_error_paths(monkeypatch):
-    """Removing the window-policy control must also shorten early-return tuples."""
+    """Workspace hydration preserves scalar/wildcard output shapes, including errors."""
     from dash import Dash
     app = Dash(__name__)
     callbacks_runs.register_run_callbacks(app)
@@ -242,4 +240,10 @@ def test_workspace_hydration_keeps_output_count_on_empty_and_error_paths(monkeyp
     monkeypatch.setattr(broker_client, 'perform_action', unavailable)
     result = load({'workspace_id': 'test', 'revision_id': 'original'}, {}, {})
     assert len(result) == expected
-    assert 'Unavailable test workspace' in result[37]
+    message_index = next(index for index, output in enumerate(entry['output'])
+                         if output.component_id == 'tune-validation-message')
+    assert 'Unavailable test workspace' in result[message_index]
+    option_index = next(index for index, output in enumerate(entry['output'])
+                        if isinstance(output.component_id, dict) and output.component_id.get('type') == 'tune-algorithm-option')
+    from dash_app.tune_tab.algorithm_controls import option_ids
+    assert result[option_index] == [no_update] * len(option_ids())

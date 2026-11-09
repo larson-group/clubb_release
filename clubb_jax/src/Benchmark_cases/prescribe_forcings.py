@@ -536,7 +536,8 @@ def prescribe_forcings(
 
 
     # Store values of surface fluxes for statistics
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         rho_zm_sfc = rho_zm[:, 0]
         stats = stats.update("sh", wpthlp_sfc * rho_zm_sfc * Cp)
         stats = stats.update("lh", wprtp_sfc * rho_zm_sfc * Lv)
@@ -546,6 +547,10 @@ def prescribe_forcings(
         stats = stats.update("vpwp_sfc", vpwp_sfc)
         stats = stats.update("ustar", ustar)
         stats = stats.update("T_sfc", T_sfc)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return (
         stats,

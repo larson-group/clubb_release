@@ -158,7 +158,8 @@ def _checkpoint_timestep(state, itime, time_current, l_sample, l_rad_itime, cach
     """Replay one pure numerical step while leaving host work in the normal loop.
 
     JAX adaptation: split array-valued state from host resources and cache a
-    checkpointed callable per case, sampling/radiation flags and pytree layout.
+    checkpointed callable per case, radiation flag and pytree layout. Sampling
+    remains a runtime boolean so window boundaries reuse the same callable.
     The callable reuses existing jitted physics kernels; the host loop is not
     globally jitted, so no compiler CSE barrier is needed here.
     """
@@ -166,7 +167,7 @@ def _checkpoint_timestep(state, itime, time_current, l_sample, l_rad_itime, cach
         """Select numerical pytrees, keeping host resources and lookup tables outside AD."""
         result = {}
         for name, value in values.items():
-            if name in {'_initial_state', '_loss_stats_snapshots'}:
+            if name in {'_initial_state', '_loss_stats_snapshots', 'l_sample'}:
                 continue
             leaves = jax.tree.leaves(value)
             if (any(isinstance(leaf, (jax.Array, jax.core.Tracer, np.ndarray)) for leaf in leaves)
@@ -176,19 +177,21 @@ def _checkpoint_timestep(state, itime, time_current, l_sample, l_rad_itime, cach
         return result
 
     dynamic = numerical_state(state)
-    key = (l_sample, l_rad_itime, jax.tree.structure(dynamic))
+    key = (l_rad_itime, jax.tree.structure(dynamic))
     if key not in cache:
         static = {name: value for name, value in state.items()
-                  if name not in dynamic and name not in {'_initial_state', '_loss_stats_snapshots'}}
+                  if name not in dynamic
+                  and name not in {'_initial_state', '_loss_stats_snapshots', 'l_sample'}}
 
-        def advance_step(dynamic, step, time):
+        def advance_step(dynamic, step, time, l_sample):
             """Return numerical state after one timestep, without host reporting."""
             local = dict(static, **dynamic)
             _advance_timestep(local, step, time, l_sample, l_rad_itime)
             return numerical_state(local)
 
         cache[key] = jax.checkpoint(advance_step, prevent_cse=False)
-    state.update(cache[key](dynamic, jnp.asarray(itime, dtype=jnp.int32), jnp.asarray(time_current)))
+    state.update(cache[key](dynamic, jnp.asarray(itime, dtype=jnp.int32),
+                           jnp.asarray(time_current), jnp.asarray(l_sample)))
     state['l_sample'] = l_sample
 
 
@@ -196,9 +199,9 @@ def _advance_timestep(state, itime, time_current, l_sample, l_rad_itime):
     """Update physical fields and sampled statistics for one prepared timestep.
 
     Inputs: driver state, absolute one-based step, its start time [s], and the
-    static sampling/radiation flags. Update state in place. Host scheduling and
-    completed-window reporting belong to the calling time loop. This extraction
-    lets checkpoint replay use the same forcing/core/microphysics/radiation order
+    runtime sampling and static radiation flags. Update state in place. Host
+    scheduling and completed-window reporting belong to the calling time loop.
+    This extraction lets checkpoint replay use the same forcing/core/microphysics/radiation order
     as advance_clubb_to_end, without replaying host output.
     """
     # ── Compute thvm ────────────────────────────────────────────────
@@ -529,6 +532,11 @@ def _advance_clubb_core(state: dict):
         state['_wpsclrpthlp'],
         state['_jax_stats'],
     ) = result
+    # Preserve the scheduler's host boolean outside tracing; checkpoint replay
+    # carries the same value as a runtime leaf. This avoids host scalar reads.
+    state['_jax_stats'] = state['_jax_stats'].begin_timestep(
+        l_sample=state['l_sample'], l_reset_accumulators=False,
+    )
     # Host inspection/raising is disabled at debug=-1, as in core routines.
     if clubb_at_least_debug_level(0) and state['err_info'].is_fatal():
         nonfinite = []

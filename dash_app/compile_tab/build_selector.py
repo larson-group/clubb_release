@@ -19,7 +19,7 @@ BUILD_SELECTOR_TRIGGER_IDS = (
     "tune-selected-build-badge",
     "profile-selected-build-badge",
 )
-RUN_IMPLEMENTATIONS = ("fortran", "python", "jax")
+RUN_IMPLEMENTATIONS = ("fortran", "jax")
 JAX_PROFILES = ("cpu", "gpu")
 
 
@@ -151,6 +151,7 @@ def selected_build_info(repo_root: Path = REPO_ROOT) -> dict[str, Any]:
 
 
 def normalize_run_implementation(value: Any) -> str:
+    """Normalize native chooser values, including retired saved choices, to Fortran or JAX."""
     implementation = str(value or "fortran").strip().lower()
     return implementation if implementation in RUN_IMPLEMENTATIONS else "fortran"
 
@@ -189,25 +190,8 @@ def build_implementation_capability(
             return False, "JAX requirements file is missing"
         return True, ""
 
-    install = Path(install_dir)
-    if implementation == "fortran":
-        available = (install / "clubb_standalone").is_file()
-        return available, "" if available else "Installed clubb_standalone is missing"
-
-    runtime = install / "python"
-    extension = any(runtime.glob("clubb_f2py*.so"))
-    backend = any(
-        (runtime / name).is_file()
-        for name in (
-            "libclubb_f2py_backend.so",
-            "libclubb_f2py_backend.dylib",
-            "clubb_f2py_backend.dll",
-        )
-    )
-    python_package = (runtime / "clubb_python").is_dir()
-    if not (runtime.is_dir() and extension and backend and python_package):
-        return False, "Python runtime is incomplete; rebuild with Python API enabled"
-    return True, ""
+    available = (Path(install_dir) / "clubb_standalone").is_file()
+    return available, "" if available else "Installed clubb_standalone is missing"
 
 
 def selected_launch_target(

@@ -346,9 +346,14 @@ def advance_wp2_wp3(
     a3_coef = jnp.maximum(a3_coef, clubb_params[:, ia3_coef_min][:, None])
     a3_coef_zt = zm2zt(nzm, nzt, ngrdcol, gr, a3_coef)
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("a3_coef_zt", a3_coef_zt)
         stats = stats.update("a3_coef", a3_coef)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if l_crank_nich_diff and l_use_tke_in_wp2_wp3_K_dfsn:
         jax.debug.callback(
@@ -428,9 +433,14 @@ def advance_wp2_wp3(
         )
         err_info = err_info.set_fatal(mask=C11_bad | C16_bad)
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("C11_Skw_fnc", C11_Skw_fnc)
         stats = stats.update("C1_Skw_fnc", C1_Skw_fnc)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     # Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
     # Kw1 is used for wp2, which is located on momentum levels.
@@ -467,8 +477,13 @@ def advance_wp2_wp3(
             # and upper boundaries.
             coef_wp4_implicit = coef_wp4_implicit.at[:, gr.k_lb_zm].set(zero)
             coef_wp4_implicit = coef_wp4_implicit.at[:, gr.k_ub_zm].set(zero)
-            if stats.l_sample:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
                 stats = stats.update("coef_wp4_implicit", coef_wp4_implicit)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
         elif iiPDF_type == iiPDF_ADG1:
             # Define a_1 and a_3 (both are located on momentum levels).
             # They are variables that are both functions of sigma_sqd_w (where
@@ -895,9 +910,14 @@ def advance_wp2_wp3(
             lambda _: None, operand=None,
         )
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("wp2_zt", wp2_zt)
         stats = stats.update("wp3_zm", wp3_zm)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return up2, vp2, wp2, wp3, err_info, stats
 
@@ -1054,7 +1074,7 @@ def wp23_solve(
         old_solut_solve = old_solut_solve[:, ::-1]
 
     l_need_rcond = bool(
-        stats.l_sample and stats.var_on_stats_list("wp23_matrix_condt_num")
+        stats.var_on_stats_list("wp23_matrix_condt_num")
     )
 
     # Solve the system with LAPACK
@@ -1066,12 +1086,18 @@ def wp23_solve(
         l_implemented,
         lhs_solve, rhs_solve, err_info,
         old_soln=old_solut_solve,
-        l_use_rcond=l_need_rcond,
+        l_use_rcond=stats.l_sample if l_need_rcond else False,
     )
 
-    if l_need_rcond and stats.l_sample:
-        # Est. of the condition number of the w'^2/w^3 LHS matrix
-        stats = stats.update("wp23_matrix_condt_num", one / rcond)
+    if l_need_rcond:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            # Est. of the condition number of the w'^2/w^3 LHS matrix
+            stats = stats.update("wp23_matrix_condt_num", one / rcond)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     if l_force_descending_solves and gr.grid_dir_indx > 0:
         # Flip the back to the ascending direction if we forced the solve
@@ -1125,7 +1151,8 @@ def wp23_solve(
     wp2 = solut[:, 0::2]
     wp3 = solut[:, 1::2]
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         C_uu_shr_zeros = jnp.zeros((ngrdcol,))
         C_uu_shr_plus_one = clubb_params[:, iC_uu_shr] + one
         C11_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzt))
@@ -1319,7 +1346,12 @@ def wp23_solve(
         # w'^3 term pr2 has both implicit and explicit components.
         stats = stats.finalize_budget("wp3_pr2", stats_tmp_zt)
 
-    if stats.l_sample:
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
+
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         # Store previous value for effect of the positive definite scheme
         # Bracket the positive-definite/hole-filling adjustments so the pd
         # budget terms report only the limiter-induced change.
@@ -1328,6 +1360,10 @@ def wp23_solve(
         # in advance_xp2_xpyp, so we need to use stat_modify here instead of stat_begin_update
         stats = stats.begin_budget("up2_pd", up2 / dt)
         stats = stats.begin_budget("vp2_pd", vp2 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if fill_holes_type != 0:
         if clubb_at_least_debug_level(3):
@@ -1365,11 +1401,16 @@ def wp23_solve(
                 wp2, up2, vp2,
             )
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         # Store updated value for effect of the positive definite scheme
         stats = stats.finalize_budget("wp2_pd", wp2 / dt)
         stats = stats.finalize_budget("up2_pd", up2 / dt, l_count_sample=False)
         stats = stats.finalize_budget("vp2_pd", vp2 / dt, l_count_sample=False)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     # Clip <w'^2> at a minimum and maximum threshold.
     # We attempt to clip extreme values of wp2 to prevent a crash of the
@@ -1984,7 +2025,8 @@ def wp23_rhs(
         rhs = rhs.at[:, 0].set(w_tol_sqd)
 
     # --------- Statistics output ---------
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         C_uu_buoy_zeros = jnp.zeros((ngrdcol,))
         C_uu_buoy_plus_one = clubb_params[:, iC_uu_buoy] + one
         C11_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzt))
@@ -2192,6 +2234,10 @@ def wp23_rhs(
                         + lhs_diff_zt[2, :, 1:-1] * (wpup2[:, :-2] + wpvp2[:, :-2])
                     )
             stats = stats.begin_budget("wp3_dp1", stats_tmp_zt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return rhs, stats
 

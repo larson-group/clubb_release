@@ -251,8 +251,13 @@ def calc_Lscale(
     # Interpolate rtpthlp here so the diagnostic stats value is generated at
     # the same point as the Lscale calculation that consumes it.
     rtpthlp_zt = zm2zt(nzm, nzt, ngrdcol, gr, rtpthlp)
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("rtpthlp_zt", rtpthlp_zt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     # Calculate Richardson number Ri_zm.
     if l_modify_limiters_for_cnvg_test:
@@ -283,8 +288,13 @@ def calc_Lscale(
                 1.0e-7, 1.0e-7,
             )
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("Ri_zm", Ri_zm)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if Lscale_method != Lscale_tau:
         # Compute Lscale first using the buoyant parcel calculation.
@@ -380,7 +390,8 @@ def calc_Lscale(
     else:
         invrs_tau_C4_zm = invrs_tau_N2_iso
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("Lscale", Lscale)
         stats = stats.update("Lscale_up", Lscale_up)
         stats = stats.update("Lscale_down", Lscale_down)
@@ -397,6 +408,10 @@ def calc_Lscale(
             stats = stats.update("invrs_tau_bkgnd", invrs_tau_bkgnd)
             stats = stats.update("invrs_tau_sfc", invrs_tau_sfc)
             stats = stats.update("invrs_tau_shear", invrs_tau_shear)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return (
         err_info,
@@ -1140,9 +1155,14 @@ def calc_Lscale_directly(
         Lscale_pert_1 = jnp.full((ngrdcol, nzt), unused_var)  # Undefined
         Lscale_pert_2 = jnp.full((ngrdcol, nzt), unused_var)  # Undefined
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("Lscale_pert_1", Lscale_pert_1)
         stats = stats.update("Lscale_pert_2", Lscale_pert_2)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     # ********** NOTE: **********
     # The mean call must be last, so directional stats describe the mean length.
@@ -1404,9 +1424,14 @@ def diagnose_Lscale_from_tau(
     )
 
     # Write both bv extra terms to invrs_taus to disk
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("bv_freq_pos", brunt_freq_pos)
         stats = stats.update("bv_freq_out_cloud", brunt_freq_out_cloud)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     # This time scale is used optionally for the return-to-isotropy term. It
     # omits invrs_tau_sfc based on the rationale that the isotropization

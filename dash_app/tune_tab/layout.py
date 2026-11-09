@@ -2,15 +2,23 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+import re
+from urllib.parse import urljoin
+
 from dash import dcc, html
 
-from dash_app.shared import styled_dropdown
+from dash_app.shared import styled_dropdown, information_body, notecard
+from dash_app.shared.provenance import source_provenance
 from dash_app.compile_tab.build_selector import build_selector_trigger
 from tuner.taylor_metrics import (
     DEFAULT_AGGREGATION_WEIGHTS,
     DEFAULT_LOSS_WEIGHTS,
 )
 from tuner.presets import list_presets
+from tuner.algorithm_registry import ALGORITHMS, get_algorithm
+from .algorithm_controls import build_algorithm_controls
+from .state import REPO_ROOT
 
 DEFAULT_AVERAGE_TIME_SECONDS = 3600
 
@@ -33,13 +41,16 @@ def action_button_style(color, disabled=False):
     return style
 
 
-def mode_button_style(selected=False, disabled=False):
-    """Return the style for tuning-mode selector buttons."""
+def mode_button_style(selected=False, disabled=False, incompatible=False):
+    """Style tuning selectors and highlight methods incompatible with the runtime."""
     style = action_button_style("#2563eb" if selected else "#374151", disabled=disabled)
     style.update({
         "border": "2px solid #f59e0b" if selected else "1px solid transparent",
         "minWidth": "96px",
     })
+    if incompatible:
+        style.update({"backgroundColor": "#991b1b" if selected else "#7f1d1d",
+                      "border": "2px solid #f87171"})
     return style
 
 
@@ -50,9 +61,98 @@ def config_button_style(selected=False, disabled=False):
     return style
 
 
-def mode_options_block_style(visible: bool) -> dict:
-    """Return show/hide style for a mode-options block."""
-    return {"display": "block" if visible else "none"}
+
+def settings_heading(title, section):
+    """Pair a settings title with an accessible explanatory notecard button."""
+    return html.Div([
+        html.Div(title, className="tune-section-title"),
+        html.Button("?", id={"type": "tune-settings-help-open", "section": section},
+                    type="button", n_clicks=0, className="tune-settings-help-button",
+                    title=f"About {title}", **{"aria-label": f"About {title}"}),
+    ], className="tune-settings-heading-row")
+
+
+def setting_row(label, control, *, wide=False):
+    """Align one labelled control with the other entries in its settings panel."""
+    return html.Div([html.Label(label, htmlFor=control.id), control],
+                    className="tune-setting-row" + (" tune-setting-row--wide" if wide else ""))
+
+
+def settings_help_notecard(section):
+    """Explain the selected setting using the shared themed notecard component."""
+    if section == "algorithms":
+        guide = Path(REPO_ROOT) / "tuner" / "algorithms" / "README.md"
+        markdown = guide.read_text(encoding="utf-8")
+        revision = source_provenance(REPO_ROOT)["commit"]
+        base_url = f"https://github.com/larson-group/clubb/blob/{revision}/tuner/algorithms/README.md"
+        # Resolve repository links against the committed guide instead of the Dash URL.
+        markdown = re.sub(r"(\[[^\]]+\]\()([^)]+)(\))",
+                          lambda match: match[1] + urljoin(base_url, match[2]) + match[3], markdown)
+        return notecard(
+            "Tuning methods",
+            dcc.Markdown(markdown, link_target="_blank", className="tune-methods-guide"),
+            {"type": "tune-settings-help-close", "section": section}, size="large",
+        )
+    specs = {
+        "gradient": (
+            "Gradients",
+            "Gradient-based algorithms use JAX derivatives of the same combined scalar loss used to rank each parameter set. Other algorithms use loss values only.",
+            [
+                {"heading": "Differentiation mode", "bullets": [
+                    "Auto selects the differentiation mode for the requested parameters.",
+                    "Forward propagates parameter directions through the model; it is useful for a small number of parameters.",
+                    "Backward (reverse) propagates the scalar loss back to the requested parameters, using timestep checkpoints.",
+                ]},
+                {"heading": "What is differentiated", "paragraphs": [
+                    "Field, time-window and across-case aggregation are included. Linked physical parameter derivatives are combined into their shared tuning coordinate.",
+                    "The selected algorithm enables gradients automatically. Adam (grad) requires the JAX backend; value-only algorithms do not compute optional gradients from this form.",
+                ]},
+            ],
+        ),
+        "loss": (
+            "Taylor RMSE weights",
+            "These weights control three contributions to each model-versus-reference profile error before fields and time windows are combined into a case loss.",
+            [
+                {"heading": "The three contributions", "bullets": [
+                    "Mean bias: difference between the model and reference profile means, normalized by the reference standard deviation.",
+                    "Standard deviation: departure of the model-to-reference standard deviation ratio from 1.",
+                    "Correlation: departure of the centered profiles' correlation from 1, scaled by twice the standard deviation ratio.",
+                ]},
+                {"heading": "Weighted profile RMSE", "paragraphs": [
+                    html.Span([
+                        "RMSE = √[w", html.Sub("mean"), " b", html.Sup("2"),
+                        " + w", html.Sub("std"), " (s − 1)", html.Sup("2"),
+                        " + w", html.Sub("corr"), " 2s(1 − r)]",
+                    ], style={"display": "block", "fontFamily": "serif", "fontSize": "18px"}),
+                    "Here b = (μ_model − μ_ref) / σ_ref is bias_norm, s = σ_model / σ_ref is std_ratio, and r is correlation. μ and σ are the mean and population standard deviation over the compared heights, after time averaging.",
+                    "The weights w_mean, w_std and w_corr are the Mean bias, Standard deviation and Correlation entries, respectively. Each multiplies its squared-error contribution inside the square root; the weights are not normalized by their sum.",
+                    "This form uses the reported Taylor metrics when both profiles have nonzero variance. For flat profiles, correlation or std_ratio can be undefined; the loss uses the equivalent moment-based calculation so the error remains defined.",
+                ]},
+                {"heading": "Choosing weights", "paragraphs": [
+                    "Weights multiply squared-error contributions before the square root. All weights must be strictly positive and remain fixed during the run.",
+                    "Weights of 1, 1 and 1 recover RMSE normalized by the reference profile's standard deviation. Flat reference profiles use the existing unit normalization scale.",
+                    "Increasing a weight makes that type of error more important. Increasing all three by the same factor rescales the loss rather than changing their relative importance.",
+                ]},
+            ],
+        ),
+        "aggregation": (
+            "Across-case aggregation",
+            "For each parameter set, the tuner sorts the active case losses from best (smallest) to worst and groups them into four approximately equal parts.",
+            [
+                {"heading": "Best-to-worst weights", "paragraphs": [
+                    "The four entries weight the mean loss of each group. They are relative weights and are normalized automatically; they do not change how many cases belong to a group.",
+                    "A larger worst-group weight puts more pressure on difficult cases. A larger best-group weight favors the already well-performing cases. Group membership can change as parameters change.",
+                    "Weights must be nonnegative, with a positive weight on at least one nonempty group. Empty groups are omitted and the remaining weights are renormalized. With one case, give the best group a positive weight; the score remains that case loss.",
+                ]},
+                {"heading": "Case weights and saved revisions", "paragraphs": [
+                    "Individual case weights are applied within each group; zero-weight cases are excluded. These four controls apply to quantile-weighted aggregation. Older saved revisions keep their stored aggregation policy.",
+                ]},
+            ],
+        ),
+    }
+    title, overview, sections = specs[section]
+    return notecard(title, information_body(overview, sections),
+                    {"type": "tune-settings-help-close", "section": section}, size="medium")
 
 
 def build_top_controls(initial_data):
@@ -73,7 +173,7 @@ def build_top_controls(initial_data):
                         className="clubb-input tune-workspace-name-input",
                         style={
                             "width": "100%",
-                            "minWidth": "260px",
+                            "minWidth": 0,
                             "fontSize": "20px",
                             "fontWeight": "650",
                             "padding": "10px 12px",
@@ -118,198 +218,65 @@ def build_top_controls(initial_data):
                     ),
                 ],
                 className="tune-workspace-controls",
-                style={"padding": "12px", "display": "flex", "flexDirection": "column", "alignItems": "stretch"},
+                style={"display": "flex", "flexDirection": "column", "alignItems": "stretch"},
             ),
-            html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch"}),
             html.Div(
                 [
-                    html.Div("Mode", className="tune-section-title"),
-                    html.Div(
-                        [
-                            html.Button(
-                                "Random",
-                                id="tune-mode-random",
-                                n_clicks=0,
-                                style=mode_button_style(selected=selected_mode == "random"),
-                            ),
-                            html.Button(
-                                "Resolve",
-                                id="tune-mode-resolve",
-                                n_clicks=0,
-                                style=mode_button_style(selected=selected_mode == "resolve"),
-                            ),
-                            html.Button(
-                                "SimAnn",
-                                id="tune-mode-simann",
-                                n_clicks=0,
-                                style=mode_button_style(selected=selected_mode == "simann"),
-                            ),
-                            html.Button(
-                                "Adam (SPSA)",
-                                id="tune-mode-adam",
-                                n_clicks=0,
-                                style=mode_button_style(selected=selected_mode == "adam"),
-                            ),
-                        ],
-                        style={"display": "flex", "gap": "8px", "flexWrap": "wrap"},
-                    ),
-                    html.Div(
-                        "Select a mode.",
-                        id="tune-no-mode-options",
-                        style={**mode_options_block_style(selected_mode is None), "marginTop": "10px"},
-                    ),
-                    html.Div(
-                        [
-                            html.Label("Max Samples", htmlFor="tune-random-max-samples"),
-                            dcc.Input(
-                                id="tune-random-max-samples",
-                                type="text",
-                                value=initial_data["random_max_samples"],
-                                debounce=True,
-                                className="clubb-input",
-                                style={"width": "140px", "marginLeft": "8px"},
-                            ),
-                        ],
-                        id="tune-random-options",
-                        style={**mode_options_block_style(selected_mode == "random"), "marginTop": "10px"},
-                    ),
-                    html.Div(
-                        [
-                            html.Label("Spacing", htmlFor="tune-resolve-spacing"),
-                            dcc.Input(
-                                id="tune-resolve-spacing",
-                                type="text",
-                                value=initial_data["resolve_spacing"],
-                                debounce=True,
-                                className="clubb-input",
-                                style={"width": "140px", "marginLeft": "8px"},
-                            ),
-                            html.Div(
-                                id="tune-resolve-total-samples",
-                                style={"marginTop": "8px", "opacity": "0.85"},
-                            ),
-                        ],
-                        id="tune-resolve-options",
-                        style={**mode_options_block_style(selected_mode == "resolve"), "marginTop": "10px"},
-                    ),
-                    html.Div(
-                        [
-                            html.Label("Max Iterations", htmlFor="tune-simann-max-iters"),
-                            dcc.Input(
-                                id="tune-simann-max-iters",
-                                type="number",
-                                min=1,
-                                step=1,
-                                value=initial_data["simann_max_iters"],
-                                debounce=True,
-                                style={"width": "120px", "marginLeft": "8px", "marginRight": "12px"},
-                            ),
-                            html.Label("Initial Temp", htmlFor="tune-simann-initial-temp"),
-                            dcc.Input(
-                                id="tune-simann-initial-temp",
-                                type="number",
-                                min=0,
-                                step="any",
-                                value=initial_data["simann_initial_temp"],
-                                debounce=True,
-                                style={"width": "100px", "marginLeft": "8px", "marginRight": "12px"},
-                            ),
-                            html.Label("Final Temp", htmlFor="tune-simann-final-temp"),
-                            dcc.Input(
-                                id="tune-simann-final-temp",
-                                type="number",
-                                min=0,
-                                step="any",
-                                value=initial_data["simann_final_temp"],
-                                debounce=True,
-                                style={"width": "110px", "marginLeft": "8px"},
-                            ),
-                        ],
-                        id="tune-simann-options",
-                        style={**mode_options_block_style(selected_mode == "simann"), "marginTop": "10px"},
-                    ),
-                    html.Div(
-                        [
-                            html.Label("Updates per chain", htmlFor="tune-adam-max-updates"),
-                            dcc.Input(
-                                id="tune-adam-max-updates", type="number", min=1, step=1,
-                                value=initial_data.get("adam_max_updates", 100), debounce=True,
-                                style={"width": "90px", "marginLeft": "8px", "marginRight": "12px"},
-                            ),
-                            html.Label("Learning step (%)", htmlFor="tune-adam-learning-rate-percent"),
-                            dcc.Input(
-                                id="tune-adam-learning-rate-percent", type="number", min=0, step="any",
-                                value=initial_data.get("adam_learning_rate_percent", 1.0), debounce=True,
-                                style={"width": "82px", "marginLeft": "8px", "marginRight": "12px"},
-                            ),
-                            html.Label("Perturbation (%)", htmlFor="tune-adam-perturbation-percent"),
-                            dcc.Input(
-                                id="tune-adam-perturbation-percent", type="number", min=0, max=50, step="any",
-                                value=initial_data.get("adam_perturbation_percent", 5.0), debounce=True,
-                                style={"width": "82px", "marginLeft": "8px", "marginRight": "12px"},
-                            ),
-                            html.Label("SPSA pairs", htmlFor="tune-adam-spsa-pairs"),
-                            dcc.Input(
-                                id="tune-adam-spsa-pairs", type="number", min=1, step=1,
-                                value=initial_data.get("adam_spsa_pairs", 2), debounce=True,
-                                style={"width": "72px", "marginLeft": "8px"},
-                            ),
-                            html.Div(id="tune-adam-layout-summary", style={"marginTop": "8px", "opacity": "0.85"}),
-                        ],
-                        id="tune-adam-options",
-                        style={**mode_options_block_style(selected_mode == "adam"), "marginTop": "10px"},
-                    ),
-                ],
-                style={"padding": "12px"},
-            ),
-            html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch"}),
-            html.Div(
-                [
-                    dcc.Checklist(id='tune-grad', options=[{'label': 'Compute and store gradients (JAX)', 'value': 'grad'}],
-                                  value=['grad'] if initial_data.get('grad', False) else []),
-                    html.Label('Gradient mode', htmlFor='tune-gradient-mode'),
-                    styled_dropdown(id='tune-gradient-mode', options=[
-                        {'label': 'Auto', 'value': 'auto'}, {'label': 'Forward', 'value': 'forward'},
-                        {'label': 'Backward (reverse)', 'value': 'reverse'},
-                    ], value=initial_data.get('gradient_mode', 'auto'), clearable=False),
-                    html.Div("Taylor RMSE weights", className="tune-section-title"),
+                    settings_heading("Algorithm", "algorithms"),
                     html.Div([
-                        html.Label([label, dcc.Input(
-                            id=f"tune-loss-weight-{name}", type="number", min=0,
-                            step="any", value=selected_loss_weights[name], debounce=True,
-                            style={"width": "80px", "marginLeft": "6px"},
-                        )]) for name, label in (("mean", "Mean"), ("std", "Std"), ("corr", "Pattern"))
-                    ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"}),
-                    html.Small("Positive weights, fixed for this run. Unit weights recover normalized RMSE."),
+                        html.Button(get_algorithm(name).label,
+                                    id={"type": "tune-algorithm-button", "name": name},
+                                    n_clicks=0, style=mode_button_style(selected=selected_mode == name))
+                        for name in ALGORITHMS
+                    ], style={"display": "flex", "gap": "8px", "flexWrap": "wrap"}),
+                    *build_algorithm_controls(selected_mode, initial_data.get("strategy_options")),
+                    html.Div(id="tune-algorithm-summary", style={"marginTop": "8px", "opacity": "0.85"}),
                 ],
-                style={"padding": "12px"},
+                className="tune-algorithm-controls",
             ),
-            html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch"}),
             html.Div(
                 [
-                    html.Div("Across-case aggregation", className="tune-section-title"),
-                    html.Div(
-                        [
-                            html.Span("Best → worst weights", style={"fontSize": "12px", "fontWeight": "600"}),
-                            *[
-                                dcc.Input(
-                                    id=f"tune-aggregation-weight-{index + 1}",
-                                    type="number",
-                                    min=0,
-                                    step="any",
-                                    value=aggregation_weights[index] if index < len(aggregation_weights) else DEFAULT_AGGREGATION_WEIGHTS[index],
-                                    debounce=True,
-                                    style={"width": "68px"},
-                                )
-                                for index, label in enumerate(("Best 25%", "Lower-middle 25%", "Upper-middle 25%", "Worst 25%"))
-                            ],
-                        ],
-                        style={"display": "flex", "alignItems": "center", "gap": "6px", "marginTop": "10px", "flexWrap": "wrap"},
-                    ),
-                ],
-                style={"padding": "12px"},
+                    html.Section([
+                        settings_heading("Gradients", "gradient"),
+                        setting_row("Mode", styled_dropdown(
+                            id="tune-gradient-mode", options=[
+                                {"label": "Auto", "value": "auto"},
+                                {"label": "Forward", "value": "forward"},
+                                {"label": "Backward (reverse)", "value": "reverse"},
+                            ], value=initial_data.get("gradient_mode", "auto"), clearable=False,
+                            disabled=not get_algorithm(selected_mode or "random").requires_gradients,
+                        ), wide=True),
+                        html.Small("Enabled automatically by gradient-based algorithms.",
+                                   className="tune-setting-caption"),
+                    ], className="tune-settings-block"),
+                    html.Section([
+                        settings_heading("Taylor RMSE weights", "loss"),
+                        html.Div([
+                            setting_row(label, dcc.Input(
+                                id=f"tune-loss-weight-{name}", type="number", min=0,
+                                step="any", value=selected_loss_weights[name], debounce=True,
+                                className="clubb-input tune-setting-input",
+                            )) for name, label in (("mean", "Mean bias"), ("std", "Standard deviation"), ("corr", "Correlation"))
+                        ], className="tune-settings-fields"),
+                        html.Small("Positive weights; 1 / 1 / 1 gives normalized RMSE.",
+                                   className="tune-setting-caption"),
+                    ], className="tune-settings-block"),
+                ], className="tune-gradient-controls",
             ),
-            html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch"}),
+            html.Div(
+                [
+                    settings_heading("Across-case aggregation", "aggregation"),
+                    html.Small("Relative importance, best to worst.", className="tune-setting-caption"),
+                    html.Div([
+                        setting_row(label, dcc.Input(
+                            id=f"tune-aggregation-weight-{index + 1}", type="number", min=0,
+                            step="any", debounce=True,
+                            value=aggregation_weights[index] if index < len(aggregation_weights) else DEFAULT_AGGREGATION_WEIGHTS[index],
+                            className="clubb-input tune-setting-input",
+                        )) for index, label in enumerate(("Best 25%", "Lower-middle 25%", "Upper-middle 25%", "Worst 25%"))
+                    ], className="tune-settings-fields"),
+                ], className="tune-aggregation-controls",
+            ),
             html.Div(
                 [
                     html.Div("Run Tuner", className="tune-section-title"),
@@ -376,9 +343,9 @@ def build_top_controls(initial_data):
                         style={"display": "flex", "gap": "8px", "flexWrap": "wrap"},
                     ),
                 ],
-                style={"padding": "12px", "display": "flex", "flexDirection": "column", "alignItems": "flex-start"},
+                className="tune-run-controls",
+                style={"display": "flex", "flexDirection": "column", "alignItems": "flex-start"},
             ),
-            html.Div(style={"width": "1px", "backgroundColor": "#d0d0d0", "alignSelf": "stretch"}),
             html.Div(
                 [
                     html.Div("Run best results", className="tune-section-title"),
@@ -411,23 +378,11 @@ def build_top_controls(initial_data):
                         className="tune-info-message tune-config-save-status",
                     ),
                 ],
-                style={"padding": "12px", "display": "flex", "flexDirection": "column", "alignItems": "flex-start"},
+                className="tune-result-controls",
+                style={"display": "flex", "flexDirection": "column", "alignItems": "flex-start"},
             ),
         ],
         className="tune-header-controls",
-        style={
-            "display": "grid",
-            "gridTemplateColumns": (
-                "minmax(300px, 1.35fr) 1px minmax(250px, 1fr) 1px "
-                "minmax(310px, 1.25fr) 1px minmax(205px, 0.8fr) 1px "
-                "minmax(190px, 0.75fr) 1px minmax(190px, 0.75fr)"
-            ),
-            "gap": "16px",
-            "alignItems": "stretch",
-            "padding": "12px",
-            "border": "1px solid #d0d0d0",
-            "borderRadius": "6px",
-        },
     )
 
 
@@ -827,6 +782,7 @@ def build_layout(initial_data):
             dcc.Store(id="tune-best-results-by-case", data={}),
             dcc.Store(id="tune-diagnostics-signature", data=""),
             dcc.Store(id="tune-landscape-signature", data=""),
+            html.Div(id="tune-settings-help-modal"),
             dcc.Store(id="tune-runtime-loss-signature", data=""),
             dcc.Store(id="tune-loss-runs", data={}),
             dcc.Store(id="tune-workspace-list", data=[]),

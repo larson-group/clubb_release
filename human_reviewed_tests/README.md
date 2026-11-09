@@ -78,6 +78,7 @@ own discovery and does not apply the wrappers' environment setup.
 | Tests | Jenkins job | Stage |
 | --- | --- | --- |
 | `input/`, `utilities/`, `tuner/` and root `auto_llm_generated_tests/pytests` | `clubb_python` | Auto-LLM-generated Python unit tests |
+| `tuner/auto_llm_generated_tests/pytests` | `clubb_tuner` | Tuner unit tests (first, before compilation) |
 | `clubb_python_api/auto_llm_generated_tests/pytests` | `clubb_python` | Auto-LLM-generated F2PY pytests |
 | `clubb_jax/auto_llm_generated_tests/pytests` (except `f2py_unit_tests`) | `clubb_jax` | Auto-LLM-generated JAX pytests |
 | `clubb_jax/auto_llm_generated_tests/pytests/f2py_unit_tests` | `clubb_jax` | Auto-LLM-generated JAX F2PY unit tests |

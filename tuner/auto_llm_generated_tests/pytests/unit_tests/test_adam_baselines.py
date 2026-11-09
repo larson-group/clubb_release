@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from run_scripts.run_tuner_job import estimate_total_samples, parse_strategy_spec
-from tuner.adam_spsa_strategy import AdamSPSAStrategy
+from tuner.algorithms.adam_spsa import AdamSPSAStrategy
 from tuner.request import load_request
 from tuner.tuning_scheduler import TuningScheduler
 from tuner.tuning_strategy import normalize_strategy_config
@@ -47,7 +47,7 @@ def _adam_request(tmp_path, monkeypatch, *, batch_size=8, max_workers=5, pairs=2
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr("tuner.request.read_case_tuner_defaults", _case_defaults)
+    monkeypatch.setattr("tuner.request.read_case_defaults", _case_defaults)
     monkeypatch.setattr("tuner.request.supported_fields", lambda: ["cloud_frac"])
     return request_path
 

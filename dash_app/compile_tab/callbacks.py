@@ -568,7 +568,6 @@ def render_build_selector_help(runtime_info):
         [
             {"heading": "Choose a version", "bullets": [
                 "Fortran: use one of your compiled CLUBB builds.",
-                "Python: run through Python using a Python-enabled Fortran build.",
                 "JAX: choose CPU or GPU below. Required software is set up automatically.",
             ]},
             {"heading": "CPU or GPU?", "paragraphs": [

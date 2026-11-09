@@ -426,7 +426,6 @@ def advance_xm_wpxp(
           err_info      ! err_info struct containing err_code and err_header
     """
     l_iter = True
-    l_sample = stats.l_sample
     l_perturbed_wind = l_predict_upwp_vpwp and l_linearize_pbl_winds
 
     wp3_zm = zt2zm(nzm, nzt, ngrdcol, gr, wp3)
@@ -532,10 +531,15 @@ def advance_xm_wpxp(
             clubb_params[:, iwpxp_L_thresh], lscale_zm,
         )
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("C7_Skw_fnc", C7_Skw_fnc)
         stats = stats.update("C6rt_Skw_fnc", C6rt_Skw_fnc)
         stats = stats.update("C6thl_Skw_fnc", C6thl_Skw_fnc)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if clubb_at_least_debug_level(0):
         c7_bad = jnp.any(
@@ -567,8 +571,13 @@ def advance_xm_wpxp(
     )
 
     C6_term = C6rt_Skw_fnc * invrs_tau_c6_zm
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("C6_term", C6_term)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     (
         lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup,
@@ -707,18 +716,33 @@ def advance_xm_wpxp(
 
     if l_predict_upwp_vpwp:
         if l_uv_nudge:
-            if l_sample:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
                 stats = stats.begin_budget("um_ndg", um / dt)
                 stats = stats.begin_budget("vm_ndg", vm / dt)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
             um = um - ((um - um_ref) * (dt / ts_nudge))
             vm = vm - ((vm - vm_ref) * (dt / ts_nudge))
-            if l_sample:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
                 stats = stats.finalize_budget("um_ndg", um / dt)
                 stats = stats.finalize_budget("vm_ndg", vm / dt)
 
-        if l_sample:
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
+
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = stats.update("um_ref", um_ref)
             stats = stats.update("vm_ref", vm_ref)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     return (
         wprtp_cl_num, wpthlp_cl_num, upwp_cl_num, vpwp_cl_num,
@@ -1115,7 +1139,6 @@ def xm_wpxp_rhs(
         real( kind = core_rknd ), intent(out), dimension(ngrdcol,2*nzm-1) ::  &
           rhs  ! Right-hand side of band diag. matrix. (LAPACK)
     """
-    l_sample = stats.l_sample
 
     invrs_dt = one / dt
     rhs_bp_pr3 = wpxp_terms_bp_pr3_rhs(
@@ -1165,7 +1188,8 @@ def xm_wpxp_rhs(
     # Upper boundary for w'x'
     rhs = rhs.at[:, rhs_ub_idx_zm].set(zero)
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         if solve_type == xm_wpxp_rtm:
             name_xm_f = "rtm_forcing"
             name_wpxp_bp = "wprtp_bp"
@@ -1255,6 +1279,10 @@ def xm_wpxp_rhs(
         #             (including microphysics/radiation).
         if len(name_xm_f.strip()) > 0:
             stats = stats.update(name_xm_f, xm_forcing)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return rhs, stats
 
@@ -1350,7 +1378,6 @@ def calc_xm_wpxp_ta_terms(
         real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(out) :: &
           rhs_ta_wpsclrp
     """
-    l_sample = stats.l_sample
     l_dummy_false = False
 
     coef_wp2rtp_implicit = jnp.zeros((ngrdcol, nzt))
@@ -1551,11 +1578,16 @@ def calc_xm_wpxp_ta_terms(
                 lhs_ta_wpup = lhs_ta_wprtp
                 lhs_ta_wpvp = lhs_ta_wprtp
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("coef_wp2rtp_implicit", coef_wp2rtp_implicit)
         stats = stats.update("term_wp2rtp_explicit", term_wp2rtp_explicit)
         stats = stats.update("coef_wp2thlp_implicit", coef_wp2thlp_implicit)
         stats = stats.update("term_wp2thlp_explicit", term_wp2thlp_explicit)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return (
         lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup,
@@ -1822,7 +1854,6 @@ def solve_xm_wpxp_with_single_lhs(
         type(err_info_type), intent(inout) :: &
           err_info      ! err_info struct containing err_code and err_header
     """
-    l_sample = stats.l_sample
     lhs = xm_wpxp_lhs(
         nzm, nzt, ngrdcol, l_iter, dt,
         l_implemented, lhs_diff_zm, lhs_diff_zt,
@@ -1869,13 +1900,18 @@ def solve_xm_wpxp_with_single_lhs(
             um_tndcy = um_forcing - fcor_col * (vg - vm)
             vm_tndcy = vm_forcing + fcor_col * (ug - um)
 
-            if l_sample:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
                 stats = stats.update("um_gf", -fcor_col * vg)
                 stats = stats.update("vm_gf", fcor_col * ug)
                 stats = stats.update("um_cf", fcor_col * vm)
                 stats = stats.update("vm_cf", -fcor_col * um)
                 stats = stats.update("um_f", um_forcing)
                 stats = stats.update("vm_f", vm_forcing)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
 
         ddzt_um = ddzt(nzm, nzt, ngrdcol, gr, um)
         ddzt_vm = ddzt(nzm, nzt, ngrdcol, gr, vm)
@@ -1899,7 +1935,8 @@ def solve_xm_wpxp_with_single_lhs(
             upwp_forcing_pert = C_uu_shr_col * wp2 * ddzt_um_pert
             vpwp_forcing_pert = C_uu_shr_col * wp2 * ddzt_vm_pert
 
-        if l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = stats.update("upwp_pr4", C_uu_shr_col * wp2 * ddzt_um)
             stats = stats.update("vpwp_pr4", C_uu_shr_col * wp2 * ddzt_vm)
             if l_ho_trad_coriolis:
@@ -1907,6 +1944,10 @@ def solve_xm_wpxp_with_single_lhs(
                 stats = stats.update("vpwp_tct", -fcor_col * upwp)
             if l_ho_nontrad_coriolis:
                 stats = stats.update("upwp_nct", fcor_y_col * (up2 - wp2))
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
         tau_C6_zm = jnp.minimum(one / invrs_tau_C6_zm, tau_max_zm)
         um_smth = zt2zm2zt(nzm, nzt, ngrdcol, gr, um, zt_min=-jnp.inf)
@@ -1966,13 +2007,18 @@ def solve_xm_wpxp_with_single_lhs(
                 + rc_coef_zm * vprcp
             )
 
-        if l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = stats.update("upthlp", upthlp)
             stats = stats.update("uprtp", uprtp)
             stats = stats.update("vpthlp", vpthlp)
             stats = stats.update("vprtp", vprtp)
             stats = stats.update("upthvp", upthvp)
             stats = stats.update("vpthvp", vpthvp)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
         rhs_field, stats = xm_wpxp_rhs(
             nzm, nzt, ngrdcol, gr, xm_wpxp_um, l_iter, dt,
@@ -2023,12 +2069,11 @@ def solve_xm_wpxp_with_single_lhs(
                 wpxp_field
             )
 
-    l_use_rcond = bool(
-        l_sample
-        and (
-            stats.var_on_stats_list("thlm_matrix_condt_num")
-            or stats.var_on_stats_list("rtm_matrix_condt_num")
-        )
+    l_use_rcond = (
+        stats.l_sample
+        if (stats.var_on_stats_list("thlm_matrix_condt_num")
+            or stats.var_on_stats_list("rtm_matrix_condt_num"))
+        else False
     )
     solution, rcond, err_info = xm_wpxp_solve(
         nzm, ngrdcol, nrhs, gr, penta_solve_method, l_implemented,
@@ -2369,7 +2414,6 @@ def solve_xm_wpxp_with_multiple_lhs(
           err_info      ! err_info struct containing err_code and err_header
     """
     del nrhs
-    l_sample = stats.l_sample
     rtm, wprtp, err_info, wprtp_cl_num, stats = _solve_one_xm_wpxp(
         nzm, nzt, ngrdcol, gr, xm_wpxp_rtm, dt, l_iter, wm_zt, wp2, rtp2,
         rtm_forcing, wprtp_forcing, C7_Skw_fnc, rtpthvp, rhs_ta_wprtp,
@@ -2642,7 +2686,6 @@ def xm_wpxp_clipping_and_stats(
         type(err_info_type), intent(inout) :: &
           err_info      ! err_info struct containing err_code and err_header
     """
-    l_sample = stats.l_sample
     if solve_type == xm_wpxp_rtm:
         name_xm_ta = "rtm_ta"
         name_xm_ma = "rtm_ma"
@@ -2719,7 +2762,8 @@ def xm_wpxp_clipping_and_stats(
     xm = solution[:, 1:2 * nzt + 1:2]
     wpxp = solution[:, 0:2 * nzm - 1:2]
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         C7_Skw_fnc_zeros = jnp.zeros((ngrdcol, nzm))
         C7_Skw_fnc_plus_one = C7_Skw_fnc + one
         wpxp_ac = wpxp_terms_ac_pr2_lhs(
@@ -2814,6 +2858,10 @@ def xm_wpxp_clipping_and_stats(
         if name_wpxp_dp1.strip():
             stats = stats.update(name_wpxp_dp1, tmp_zm_stats)
 
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
+
     if (
         (l_mono_flux_lim_thlm and solve_type == xm_wpxp_thlm)
         or (l_mono_flux_lim_rtm and solve_type == xm_wpxp_rtm)
@@ -2870,14 +2918,25 @@ def xm_wpxp_clipping_and_stats(
             (xm, wpxp),
         )
 
-        if l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             if name_wpxp_pd.strip():
                 stats = stats.update(name_wpxp_pd, wpxp_pd)
             if name_xm_pd.strip():
                 stats = stats.update(name_xm_pd, xm_pd)
 
-    if l_sample and name_xm_cl.strip():
-        stats = stats.begin_budget(name_xm_cl, xm / dt)
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
+
+    if name_xm_cl.strip():
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            stats = stats.begin_budget(name_xm_cl, xm / dt)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     if fill_holes_type != 0 and solve_type not in (xm_wpxp_um, xm_wpxp_vm):
         xm = fill_holes_vertical(
@@ -2887,8 +2946,14 @@ def xm_wpxp_clipping_and_stats(
             fill_holes_type, xm,
         )
 
-    if l_sample and name_xm_cl.strip():
-        stats = stats.finalize_budget(name_xm_cl, xm / dt)
+    if name_xm_cl.strip():
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            stats = stats.finalize_budget(name_xm_cl, xm / dt)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     if l_enable_relaxed_clipping:
         if solve_type == xm_wpxp_thlm:
@@ -2919,11 +2984,17 @@ def xm_wpxp_clipping_and_stats(
         wpxp_cl_max = 0
         clip_name = ""
 
-    if wpxp_cl_num is not None and l_sample and clip_name.strip():
-        if wpxp_cl_num == 0:
-            stats = stats.begin_budget(clip_name, wpxp / dt)
-        else:
-            stats = stats.update_budget(clip_name, -wpxp / dt)
+    if wpxp_cl_num is not None and clip_name.strip():
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            if wpxp_cl_num == 0:
+                stats = stats.begin_budget(clip_name, wpxp / dt)
+            else:
+                stats = stats.update_budget(clip_name, -wpxp / dt)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     if solve_type not in (xm_wpxp_um, xm_wpxp_vm):
         if wpxp_cl_num is not None:
@@ -2931,22 +3002,34 @@ def xm_wpxp_clipping_and_stats(
         wpxp, wpxp_chnge = clip_covar(
             nzm, ngrdcol, solve_type_cl, wp2, xp2_relaxed, wpxp,
         )
-        if wpxp_cl_num is not None and l_sample and clip_name.strip():
-            if wpxp_cl_num == wpxp_cl_max:
-                stats = stats.finalize_budget(clip_name, wpxp / dt)
-            else:
-                stats = stats.update_budget(clip_name, wpxp / dt)
+        if wpxp_cl_num is not None and clip_name.strip():
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
+                if wpxp_cl_num == wpxp_cl_max:
+                    stats = stats.finalize_budget(clip_name, wpxp / dt)
+                else:
+                    stats = stats.update_budget(clip_name, wpxp / dt)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
     else:
         if wpxp_cl_num is not None:
             wpxp_cl_num += 1
         wpxp, wpxp_chnge = clip_covar(
             nzm, ngrdcol, solve_type_cl, wp2, xp2, wpxp,
         )
-        if wpxp_cl_num is not None and l_sample and clip_name.strip():
-            if wpxp_cl_num == wpxp_cl_max:
-                stats = stats.finalize_budget(clip_name, wpxp / dt)
-            else:
-                stats = stats.update_budget(clip_name, wpxp / dt)
+        if wpxp_cl_num is not None and clip_name.strip():
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
+                if wpxp_cl_num == wpxp_cl_max:
+                    stats = stats.finalize_budget(clip_name, wpxp / dt)
+                else:
+                    stats = stats.update_budget(clip_name, wpxp / dt)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
 
     if l_clip_turb_adv:
         xm, stats = xm_correction_wpxp_cl(
@@ -3448,7 +3531,6 @@ def xm_correction_wpxp_cl(
         real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
           xm            ! xm (thermodynamic levels)                 [{xm units}]
     """
-    l_sample = stats.l_sample
     l_clipping_needed = jnp.any(jnp.abs(wpxp_chnge) > eps, axis=1)
 
     if solve_type == xm_wpxp_rtm:
@@ -3463,8 +3545,14 @@ def xm_correction_wpxp_cl(
     xm_tndcy_wpxp_cl = jnp.where(l_clipping_needed[:, None], xm_tndcy_wpxp_cl, zero)
     xm = jnp.where(l_clipping_needed[:, None], xm + xm_tndcy_wpxp_cl * dt, xm)
 
-    if l_sample and name_xm_tacl.strip():
-        stats = stats.update(name_xm_tacl, xm_tndcy_wpxp_cl)
+    if name_xm_tacl.strip():
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            stats = stats.update(name_xm_tacl, xm_tndcy_wpxp_cl)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     return xm, stats
 
@@ -3752,7 +3840,6 @@ def _solve_one_xm_wpxp(
     l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix,
     stats, xm, wpxp, err_info, wpxp_cl_num=None,
 ):
-    l_sample = stats.l_sample
     lhs = xm_wpxp_lhs(
         nzm, nzt, ngrdcol, l_iter, dt,
         l_implemented, lhs_diff_zm, lhs_diff_zt,
@@ -3786,11 +3873,7 @@ def _solve_one_xm_wpxp(
     solution, rcond, err_info = xm_wpxp_solve(
         nzm, ngrdcol, 1, gr, penta_solve_method, l_implemented,
         old_solution, lhs, rhs, err_info,
-        l_use_rcond=bool(
-            l_sample
-            and cond_name.strip()
-            and stats.var_on_stats_list(cond_name)
-        ),
+        l_use_rcond=(stats.l_sample if stats.var_on_stats_list(cond_name) else False),
     )
 
     return xm_wpxp_clipping_and_stats(

@@ -7,8 +7,7 @@ import threading
 
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-# New Tune lineages are stored under output/tuner.  ``output_tuner`` remains a
-# read-only legacy location for old jobs; no new worker writes there.
+# Tune lineages are stored under output/tuner.
 OUTPUT_TUNER_DIR = os.path.join(REPO_ROOT, "output", "tuner")
 TUNE_STATUS_TEMPLATE = {
     "state": "idle",

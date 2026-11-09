@@ -21,7 +21,7 @@ def test_agent_tuning_launches_a_canonical_visible_request(tmp_path, monkeypatch
     monkeypatch.setattr(actions, "available_fields_for_cases", lambda _cases, _data: ["wp3", "wprcp"])
     monkeypatch.setattr(
         actions,
-        "read_case_tuner_defaults",
+        "read_case_defaults",
         lambda _case, overrides=None: {
             "time_average_range": [41400, 45000],
             "altitude_comparison_range": [0.0, 3000.0],
@@ -47,7 +47,7 @@ def test_agent_tuning_launches_a_canonical_visible_request(tmp_path, monkeypatch
         [{"case_name": "arm", "time_average_range": [41400, 45000], "average_time_seconds": 3600}],
         [{"name": "C4", "min": 1.0, "max": 1.2}],
         ["wp3"],
-        max_samples=2,
+        strategy_options={"max_samples": 2},
         overrides="-override iiPDF_type=1",
     )
 
@@ -215,7 +215,7 @@ def test_native_tune_request_is_relaunched_by_the_broker_without_agent_cap(monke
 
     assert result["job"]["pid"] == 42
     assert captured["cases"][0]["case_name"] == "arm"
-    assert captured["max_samples"] == 10000
+    assert captured["strategy_options"]["max_samples"] == 10000
     assert captured["_max_samples_limit"] is None
 
 
@@ -247,27 +247,18 @@ def test_native_adam_request_keeps_only_its_own_strategy_options(monkeypatch):
     )
 
     assert captured["strategy"] == "adam"
-    assert captured["adam_max_updates"] == 17
-    assert captured["adam_learning_rate"] == 0.025
-    assert captured["adam_perturbation"] == 0.08
-    assert captured["adam_spsa_pairs"] == 3
+    assert captured["strategy_options"]["max_updates"] == 17
+    assert captured["strategy_options"]["learning_rate"] == 0.025
+    assert captured["strategy_options"]["perturbation"] == 0.08
+    assert captured["strategy_options"]["spsa_pairs"] == 3
 
 
 def test_shared_tune_strategy_normalizer_builds_adam_options():
     strategy = actions._normalize_tune_strategy(
         "adam",
         [{"name": "C4", "min": 1.0, "max": 1.2}],
-        max_samples=12,
-        resolve_spacing=0.1,
-        simann_max_iters=200,
-        simann_initial_temp=1.0,
-        simann_final_temp=1.0e-12,
-        adam_max_updates=17,
-        adam_learning_rate=0.025,
-        adam_perturbation=0.08,
-        adam_spsa_pairs=3,
-        batch_size=12,
-        max_workers=4,
+        strategy_options={"max_updates": 17, "learning_rate": 0.025,
+                          "perturbation": 0.08, "spsa_pairs": 3},
     )
 
     assert strategy == {
@@ -304,7 +295,7 @@ def test_broker_recovers_latest_running_tuning_job_from_disk(tmp_path, monkeypat
     monkeypatch.setattr(activity, "ACTIVITY_PATH", Path(tmp_path) / "activity.json")
     monkeypatch.setattr(activity, "LOCK_PATH", Path(tmp_path) / "activity.lock")
     activity.reset_activity()
-    output_root = Path(tmp_path) / "output_tuner"
+    output_root = Path(tmp_path) / "output" / "tuner"
     job_dir = output_root / "arm_live"
     job_dir.mkdir(parents=True)
     (job_dir / "request.json").write_text('{"cases": ["arm"], "strategy": {"name": "random"}}')

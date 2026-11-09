@@ -1,0 +1,232 @@
+{
+  "random": {
+    "category": "sampler",
+    "implementation": "tuner.algorithms.random:RandomUniformStrategy",
+    "label": "Random",
+    "description": "Sample uniformly within the parameter bounds.",
+    "requires_gradients": false,
+    "options": {
+      "max_samples": {
+        "type": "int",
+        "label": "Max samples",
+        "description": "Number of candidates; defaults to 200.",
+        "default": 200,
+        "minimum": 1,
+        "ui_default": 200
+      }
+    },
+    "cli_order": [
+      "max_samples"
+    ]
+  },
+  "latin_hypercube": {
+    "category": "sampler",
+    "implementation": "tuner.algorithms.latin_hypercube:LatinHypercubeStrategy",
+    "label": "Latin hypercube",
+    "description": "Sample a stratified ensemble covering every parameter range without adaptive updates.",
+    "requires_gradients": false,
+    "options": {
+      "num_points": {
+        "type": "int",
+        "label": "Number of points",
+        "description": "Total ensemble size; each parameter range is divided into this many equal strata.",
+        "default": 200,
+        "minimum": 1
+      }
+    },
+    "cli_order": [
+      "num_points"
+    ]
+  },
+  "resolve": {
+    "category": "sampler",
+    "implementation": "tuner.algorithms.resolve:ResolveGridStrategy",
+    "label": "Resolve",
+    "description": "Evaluate an evenly spaced grid including both bounds.",
+    "requires_gradients": false,
+    "options": {
+      "spacing": {
+        "type": "float",
+        "label": "Spacing",
+        "description": "Maximum grid spacing in physical parameter units. Leave blank for half the smallest nonzero parameter range width.",
+        "default": null,
+        "minimum": 0,
+        "exclusive_minimum": true
+      }
+    },
+    "cli_order": [
+      "spacing"
+    ]
+  },
+  "simann": {
+    "category": "optimizer",
+    "implementation": "tuner.algorithms.simann:EnhancedSimulatedAnnealingStrategy",
+    "label": "SimAnn",
+    "description": "Adapt bounded simulated-annealing chains using loss values.",
+    "requires_gradients": false,
+    "options": {
+      "max_iters": {
+        "type": "int",
+        "label": "Max iterations",
+        "description": "Maximum evaluations per chain.",
+        "default": 200,
+        "minimum": 1
+      },
+      "initial_temp": {
+        "type": "float",
+        "label": "Initial temperature",
+        "description": "Starting annealing temperature.",
+        "default": 1.0,
+        "minimum": 0,
+        "exclusive_minimum": true
+      },
+      "max_final_temp": {
+        "type": "float",
+        "label": "Final temperature",
+        "description": "Temperature stopping threshold.",
+        "default": 1e-12,
+        "minimum": 0,
+        "exclusive_minimum": true
+      },
+      "stp_adjst_shift": {
+        "type": "float",
+        "label": "Step adjustment shift",
+        "description": "Shift used when adapting proposal steps.",
+        "default": 0.7
+      },
+      "stp_adjst_factor": {
+        "type": "float",
+        "label": "Step adjustment factor",
+        "description": "Factor used when adapting proposal steps.",
+        "default": 1.0
+      },
+      "f_tol": {
+        "type": "float",
+        "label": "Loss tolerance",
+        "description": "Annealing improvement tolerance.",
+        "default": 0.0001,
+        "minimum": 0
+      },
+      "chain_count": {
+        "type": "int",
+        "label": "Chains",
+        "description": "Independent chains; blank derives count from workers and batch size.",
+        "default": null,
+        "minimum": 1
+      }
+    },
+    "cli_order": [
+      "max_iters",
+      "initial_temp",
+      "max_final_temp"
+    ]
+  },
+  "adam": {
+    "category": "optimizer",
+    "implementation": "tuner.algorithms.adam_spsa:AdamSPSAStrategy",
+    "label": "Adam (SPSA)",
+    "description": "Estimate gradients with paired loss probes and apply bounded Adam updates.",
+    "requires_gradients": false,
+    "options": {
+      "max_updates": {
+        "type": "int",
+        "label": "Updates per chain",
+        "description": "Number of Adam updates.",
+        "default": 30,
+        "minimum": 1
+      },
+      "learning_rate": {
+        "type": "float",
+        "label": "Learning rate",
+        "description": "Step size in coordinates scaled to [0, 1].",
+        "default": 0.01,
+        "minimum": 0,
+        "exclusive_minimum": true
+      },
+      "perturbation": {
+        "type": "float",
+        "label": "Perturbation",
+        "description": "SPSA probe distance in coordinates scaled to [0, 1].",
+        "default": 0.05,
+        "minimum": 0,
+        "maximum": 0.5,
+        "exclusive_minimum": true
+      },
+      "spsa_pairs": {
+        "type": "int",
+        "label": "SPSA pairs",
+        "description": "Paired probes used for each gradient estimate.",
+        "default": 2,
+        "minimum": 1
+      }
+    },
+    "cli_order": [
+      "max_updates",
+      "learning_rate",
+      "perturbation",
+      "spsa_pairs"
+    ],
+    "internal_options": [
+      "chains_per_batch",
+      "concurrent_batches",
+      "chain_count"
+    ]
+  },
+  "adam_gradient": {
+    "category": "optimizer",
+    "implementation": "tuner.algorithms.adam_gradient:AdamGradientStrategy",
+    "label": "Adam (grad)",
+    "description": "Apply bounded Adam updates using derivatives of the complete tuning objective.",
+    "requires_gradients": true,
+    "options": {
+      "max_updates": {
+        "type": "int",
+        "label": "Updates per chain",
+        "description": "Number of Adam updates; the final center is evaluated too.",
+        "default": 30,
+        "minimum": 1
+      },
+      "learning_rate": {
+        "type": "float",
+        "label": "Learning rate",
+        "description": "Step size in coordinates scaled to [0, 1].",
+        "default": 0.01,
+        "minimum": 0,
+        "exclusive_minimum": true
+      },
+      "beta1": {
+        "type": "float",
+        "label": "First moment decay",
+        "description": "Exponential decay for the gradient mean.",
+        "default": 0.8,
+        "minimum": 0,
+        "maximum": 1,
+        "exclusive_maximum": true
+      },
+      "beta2": {
+        "type": "float",
+        "label": "Second moment decay",
+        "description": "Exponential decay for the squared gradient mean.",
+        "default": 0.999,
+        "minimum": 0,
+        "maximum": 1,
+        "exclusive_maximum": true
+      },
+      "epsilon": {
+        "type": "float",
+        "label": "Epsilon",
+        "description": "Positive denominator stabilizer in normalized coordinates.",
+        "default": 1e-08,
+        "minimum": 0,
+        "exclusive_minimum": true
+      }
+    },
+    "cli_order": [
+      "max_updates",
+      "learning_rate"
+    ],
+    "internal_options": [
+      "chain_count"
+    ]
+  }
+}

@@ -36,8 +36,10 @@ to understand it. Select applicable standards through [AGENTS.md](../../../AGENT
 including faithful porting, coding/formatting, CLI and host compatibility where
 relevant. Audit logic, boundary/error behavior, implementation choices, coverage
 and integration. Look for dead code, unused imports, obsolete paths and temporary
-workarounds introduced or made unnecessary by this branch. Passing tests do not
-replace a porting or implementation audit.
+workarounds introduced or made unnecessary by this branch. Check replacements
+against AGENTS.md's backward-compatibility policy: old paths require an explicit
+user request, and concrete saved-format or caller breakage must be reported.
+Passing tests do not replace a porting or implementation audit.
 
 Use [documentation guidance](../clubb-documentation/SKILL.md) for comments,
 headers, READMEs and change messages. Check factual claims against implementation

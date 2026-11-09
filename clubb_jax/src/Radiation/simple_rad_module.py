@@ -247,9 +247,14 @@ def simple_rad(
                + z_i[:, None] * dz_positive ** (1.0 / 3.0))
         )
 
-        if stats.l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             # Update inversion-height statistics used by surface-radiation diagnostics.
             stats = stats.update("z_inversion", z_i)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     # Compute the radiative heating rate.
     # The radiative heating rate is defined on thermodynamic levels.

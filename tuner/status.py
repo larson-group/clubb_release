@@ -274,7 +274,6 @@ def write_results(
     payload = {
         "state": state,
         "job_dir": str(job_dir),
-        "case_name": None if request is None else request.get("case_name"),
         "cases": [] if request is None else list(request.get("cases", [])),
         "selected_fields": [] if request is None else list(request.get("selected_fields", [])),
         "config": None if request is None else request.get("config"),
@@ -334,6 +333,7 @@ def write_results(
                 **({"gradient": result["gradient"],
                     "gradient_parameters": list(result["gradient_parameters"]),
                     "gradient_target": "loss"} if "gradient" in result else {}),
+                **({"total_gradient": list(result["total_gradient"])} if "total_gradient" in result else {}),
                 **{
                     key: result[key]
                     for key in (

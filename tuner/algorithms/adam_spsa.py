@@ -1,4 +1,65 @@
-"""Parallel multi-start Adam using black-box SPSA gradients."""
+"""Minimize a scalar objective with Adam using paired loss probes instead of derivatives.
+
+AdamSPSAStrategy implements simultaneous perturbation stochastic approximation
+(SPSA): each gradient estimate perturbs every active normalized coordinate at
+once. It needs only total_loss, so it works with Fortran or JAX value evaluation
+and with synthetic objectives. No model gradient is requested or consumed.
+
+Coordinates, probes and update equations
+---------------------------------------
+Physical values satisfy p_j = lower_j + span_j*x_j with x_j in [0,1]. For each
+chain and update, draw K=spsa_pairs independent directions Delta_k whose active
+entries are equally likely -1 or +1 (fixed entries are zero). At perturbation
+c, evaluate F at x_k^- = clip(x-c*Delta_k) and x_k^+ = clip(x+c*Delta_k).
+Average the usable paired estimates:
+
+    ghat = mean_k [(F(x_k^+) - F(x_k^-))/(2*c) * Delta_k].
+
+Here F is the already combined scalar loss. The denominator remains 2*c even
+when bounds clip a probe; estimates near bounds can therefore be biased.
+A pair with a nonfinite loss is omitted. If no pairs are usable, ghat is zero;
+the update still advances and existing momentum can still move the center.
+
+With t starting at one, update m=0.9*m+0.1*ghat and
+v=0.999*v+0.001*ghat**2, divide each by its bias correction (1-beta**t), then
+x = clip(x-learning_rate*mhat/(sqrt(vhat)+1e-8), 0, 1). Fixed coordinates remain
+zero in normalized storage. Bounds projection does not clear moments.
+learning_rate and perturbation both use fractions of each parameter's range;
+linked physical targets share one perturbed logical coordinate.
+
+Scheduling and starts
+---------------------
+Each chain follows initial center -> K probe pairs -> update -> ... -> final
+center. Intermediate updated centers are not separately scored; their nearby
+probe losses and the initial/final centers remain candidates for ranking.
+T updates cost 2 + 2*K*T evaluations per chain, compared with T+1 for gradient
+Adam. The initial center is scored even though SPSA needs only the probe pairs.
+The first chain uses clipped defaults; additional starts use the shared Latin
+hypercube sampler. Separate child random streams control starts and directions.
+
+prepare_options requires batch_size divisible by 2*K. A batch holds
+chains_per_batch=batch_size/(2*K), and concurrent_batches=ceil(workers/cases)
+cohorts produce chain_count=chains_per_batch*concurrent_batches. A cohort waits
+for every member to be ready before enqueueing its complete probe block.
+This scheduling differs from gradient Adam's workers*batch_size chain count.
+Sample-ID context keeps asynchronous probe results attached to their chain,
+pair and sign. All-fixed ranges collapse to one evaluation and one chain.
+
+Usage
+-----
+Construct with names, defaults, ranges, seed, user options and the derived
+scheduling values from prepare_options. fill queues centers/probes; tell
+records paired total_loss values and advances ready chains. is_exhausted,
+estimated_sample_count and pending_batch_limit expose progress/budgets; static
+sample_count gives a pre-construction estimate. Private helpers implement
+starts, proposal expansion, loss validation and moment updates. _AdamChain
+stores each phase, moments and unfinished probe block for pickle continuation.
+The scheduler retains the best scored candidate independently of the chain;
+individual steps need not improve and no global-minimum guarantee is implied.
+
+References: Spall (1992), IEEE Transactions on Automatic Control 37(3), 332–341
+(SPSA); Kingma and Ba (2014), arXiv:1412.6980 (Adam).
+"""
 
 from __future__ import annotations
 
@@ -9,7 +70,7 @@ from typing import Iterable
 
 import numpy as np
 
-from tuner.tuning_strategy import BaseTuningStrategy
+from tuner.algorithms.base import BaseTuningStrategy, latin_hypercube_points
 
 
 @dataclass
@@ -47,6 +108,11 @@ class AdamSPSAStrategy(BaseTuningStrategy):
         chain_count: int,
         seed: int | None = None,
     ):
+        """Initialize projected Adam chains, independent random streams and complete probe cohorts.
+
+        Ranges are logical search coordinates; defaults and full proposal rows use
+        physical parameter units. Derived cohort sizes must come from prepare_options.
+        """
         super().__init__(
             param_names=param_names,
             default_params_row=default_params_row,
@@ -89,6 +155,11 @@ class AdamSPSAStrategy(BaseTuningStrategy):
         self._pending_context: dict[int, dict] = {}
 
     def fill(self, pending_samples: deque, capacity: int) -> None:
+        """Queue initial centers, complete ready probe cohorts, then final centers.
+
+        A probe block is emitted only when queue capacity can hold its full batch
+        width. Outstanding context prevents duplicate proposals while feedback waits.
+        """
         capacity = int(capacity)
         for chain in self.chains:
             if chain.phase == "initial_ready" and len(pending_samples) < capacity:
@@ -108,6 +179,11 @@ class AdamSPSAStrategy(BaseTuningStrategy):
                 self._append_center(pending_samples, chain, "final")
 
     def tell(self, completed_samples: list[dict]) -> None:
+        """Attach losses to their chain/pair/sign and update only after its whole probe block arrives.
+
+        Initial/final center feedback changes phase without supplying an SPSA
+        gradient. Sorting IDs makes processing deterministic within a delivered group.
+        """
         for completed in sorted(completed_samples, key=lambda item: int(item["sample_id"])):
             context = self._pending_context.pop(int(completed["sample_id"]), None)
             if context is None:
@@ -126,17 +202,25 @@ class AdamSPSAStrategy(BaseTuningStrategy):
                     self._update_chain(chain)
 
     def is_exhausted(self) -> bool:
+        """Return whether every chain has completed its final scored center.
+        """
         return all(chain.phase == "done" for chain in self.chains)
 
     def estimated_sample_count(self) -> int | None:
+        """Count initial/final centers and 2*spsa_pairs probes per update; fixed ranges cost one.
+        """
         if not self.active.any():
             return 1
         return self.chain_count * (2 + 2 * self.spsa_pairs * self.max_updates)
 
     def pending_batch_limit(self, _batch_size: int) -> int | None:
+        """Return the derived number of independently active probe cohorts.
+        """
         return self.concurrent_batches
 
     def _starting_points(self, seed_sequence: np.random.SeedSequence) -> list[np.ndarray]:
+        """Build clipped-default and Latin hypercube centers using only the initialization stream.
+        """
         default = np.zeros(self.dimension, dtype=float)
         for index, spec in enumerate(self.parameter_ranges):
             if self.active[index]:
@@ -147,11 +231,7 @@ class AdamSPSAStrategy(BaseTuningStrategy):
             active_count = int(np.count_nonzero(self.active))
             sample_count = self.chain_count - 1
             rng = np.random.default_rng(seed_sequence)
-            strata = np.column_stack([
-                rng.permutation(sample_count)
-                for _ in range(active_count)
-            ])
-            samples = (strata + rng.random((sample_count, active_count))) / sample_count
+            samples = latin_hypercube_points(rng, sample_count, active_count)
             for sample in samples:
                 point = np.zeros(self.dimension, dtype=float)
                 point[self.active] = sample
@@ -159,6 +239,8 @@ class AdamSPSAStrategy(BaseTuningStrategy):
         return starts
 
     def _append_center(self, pending_samples: deque, chain: _AdamChain, kind: str) -> None:
+        """Emit a physical initial/final center and register its phase and pending sample ID.
+        """
         sample = self._sample_from_x(chain.x)
         sample_id = int(sample["sample_id"])
         self._pending_context[sample_id] = {"kind": kind, "chain_id": chain.chain_id}
@@ -167,6 +249,11 @@ class AdamSPSAStrategy(BaseTuningStrategy):
         pending_samples.append(sample)
 
     def _append_probes(self, pending_samples: deque, chain: _AdamChain) -> None:
+        """Draw independent sign directions and emit both clipped probes for each pair.
+
+        Reset per-update probe state, attach sample IDs to pair/sign context, and
+        wait for all returned losses before changing the chain center.
+        """
         chain.directions = []
         chain.probe_losses = {}
         chain.pending_sample_ids = set()
@@ -191,6 +278,11 @@ class AdamSPSAStrategy(BaseTuningStrategy):
         chain.phase = "probe_waiting"
 
     def _update_chain(self, chain: _AdamChain) -> None:
+        """Average finite paired differences and advance bias-corrected Adam moments.
+
+        The module equations define the normalized estimate, clipped-probe bias and
+        zero-valid-pair behavior. Finish by selecting final_ready or probe_ready.
+        """
         gradient = np.zeros(self.dimension, dtype=float)
         valid_pairs = 0
         for pair, direction in enumerate(chain.directions):
@@ -217,6 +309,8 @@ class AdamSPSAStrategy(BaseTuningStrategy):
         chain.phase = "final_ready" if chain.update_count >= self.max_updates else "probe_ready"
 
     def _sample_from_x(self, point: np.ndarray) -> dict:
+        """Expand normalized logical coordinates into full physical rows with linked targets.
+        """
         physical = self.minimum + self.span * point
         return self._sample_from_selected_params(
             {
@@ -227,8 +321,31 @@ class AdamSPSAStrategy(BaseTuningStrategy):
 
     @staticmethod
     def _loss(completed: dict) -> float:
+        """Read a finite scalar total_loss; unusable values become infinity and invalidate that pair.
+        """
         try:
             loss = float(completed["total_loss"])
         except (KeyError, TypeError, ValueError):
             return math.inf
         return loss if math.isfinite(loss) else math.inf
+
+    @staticmethod
+    def prepare_options(options, request):
+        """Derive probe cohorts from batch columns, workers and case count; reject partial-pair widths.
+        """
+        columns_per_chain = 2 * options["spsa_pairs"]
+        if request["batch_size"] % columns_per_chain:
+            raise ValueError(
+                "Adam requires batch_size to be divisible by 2 * spsa_pairs "
+                f"({request['batch_size']} is not divisible by {columns_per_chain})"
+            )
+        chains_per_batch = request["batch_size"] // columns_per_chain
+        concurrent_batches = math.ceil(request["max_workers"] / len(request["cases"]))
+        options.update(chains_per_batch=chains_per_batch, concurrent_batches=concurrent_batches,
+                       chain_count=chains_per_batch * concurrent_batches)
+
+    @staticmethod
+    def sample_count(options, _ranges):
+        """Count 2+2*spsa_pairs*max_updates candidates per derived chain before construction.
+        """
+        return options["chain_count"] * (2 + 2 * options["spsa_pairs"] * options["max_updates"])

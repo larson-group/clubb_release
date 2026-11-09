@@ -443,7 +443,6 @@ def advance_clubb_core(
     w_up_in_cloud = jnp.zeros((ngrdcol, nzt))
     wprcp_out = jnp.zeros((ngrdcol, nzm))
     rsat = jnp.zeros((ngrdcol, nzt))
-    l_sample = stats.l_sample
 
     dt_advance = two * dt if clubb_config_flags.l_lmm_stepping else dt
 
@@ -513,10 +512,12 @@ def advance_clubb_core(
                 lambda _: None, operand=None,
             )
 
-    if l_sample:
-        rtm_before = rtm.copy()
-        thlm_before = thlm.copy()
+    # Immutable aliases preserve the pre-step fields for sampled budgets.
+    rtm_before = rtm
+    thlm_before = thlm
 
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("rfrzm", rfrzm)
 
         # Set up budget stats variables.
@@ -536,6 +537,10 @@ def advance_clubb_core(
         stats = stats.begin_budget("um_bt", um / dt)
         stats = stats.begin_budget("vm_bt", vm / dt)
         stats = stats.begin_budget("wp3_bt", wp3 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     wprtp_cl_num = 0
     wpthlp_cl_num = 0
@@ -637,13 +642,18 @@ def advance_clubb_core(
 
     # This feels like an awkward place to have this, but this keeps things BFB
     # with where it was before
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         if clubb_config_flags.iiPDF_type == iiPDF_ADG1:
             sigma_sqd_w_zt = zm2zt(nzm, nzt, ngrdcol, gr, sigma_sqd_w)
             sigma_sqd_w_zt = jnp.maximum(sigma_sqd_w_zt, zero_threshold)
         else:
             sigma_sqd_w_zt = jnp.zeros((ngrdcol, nzt))
         stats = stats.update("sigma_sqd_w_zt", sigma_sqd_w_zt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     thvm = calculate_thvm(
         nzt, ngrdcol,
@@ -666,22 +676,34 @@ def advance_clubb_core(
         varnce_w_2_zm = zt2zm(nzm, nzt, ngrdcol, gr, pdf_params.varnce_w_2)
         mixt_frac_zm = zt2zm(nzm, nzt, ngrdcol, gr, pdf_params.mixt_frac)
 
-    if l_sample:
-        stats = stats.update("rvm", rtm - rcm)
-        # Output relative humidity (q/q* where q* is the saturation mixing ratio
-        # over liquid).
-        # Added an extra check for rel_humidity or rsat output; otherwise,
-        # if both are omitted, rsat may not be computed, leading to a
-        # floating-point exception when rel_humidity is written.
-        if stats.var_on_stats_list("rel_humidity") or stats.var_on_stats_list("rsat"):
+    # Output relative humidity (q/q* where q* is the saturation mixing ratio
+    # over liquid).
+    # Added an extra check for rel_humidity or rsat output; otherwise,
+    # if both are omitted, rsat may not be computed, leading to a
+    # floating-point exception when rel_humidity is written.
+    if stats.var_on_stats_list("rel_humidity") or stats.var_on_stats_list("rsat"):
+        def saturation_mixing_ratio(previous):
+            """Recompute the sampled saturation field before physics advances."""
             T_in_K = thlm2T_in_K(thlm, exner, rcm)
             rsat = sat_mixrat_liq(
                 p_in_Pa, T_in_K, clubb_config_flags.saturation_formula,
             )
+            return rsat
+
+        rsat = stats.sampled_value(saturation_mixing_ratio, rsat)
+
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
+        stats = stats.update("rvm", rtm - rcm)
+        if stats.var_on_stats_list("rel_humidity") or stats.var_on_stats_list("rsat"):
             # Recompute rsat and rel_humidity. They might have changed.
             rel_humidity = (rtm - rcm) / rsat
             # Write the var to stats
             stats = stats.update("rel_humidity", rel_humidity)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     bv_result = calc_brunt_vaisala_freq_sqd(
         nzm, nzt, ngrdcol, gr, thlm,
@@ -696,12 +718,17 @@ def advance_clubb_core(
     (brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,
      brunt_vaisala_freq_sqd_smth, brunt_vaisala_freq_sqd_dry,
      brunt_vaisala_freq_sqd_moist) = bv_result
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("bv_freq_sqd", brunt_vaisala_freq_sqd)
         stats = stats.update("bv_freq_sqd_mixed", brunt_vaisala_freq_sqd_mixed)
         stats = stats.update("bv_freq_sqd_moist", brunt_vaisala_freq_sqd_moist)
         stats = stats.update("bv_freq_sqd_dry", brunt_vaisala_freq_sqd_dry)
         stats = stats.update("bv_freq_sqd_smth", brunt_vaisala_freq_sqd_smth)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     #----------------------------------------------------------------
     # Compute mixing length and dissipation time
@@ -780,8 +807,13 @@ def advance_clubb_core(
         nzm, nzt, ngrdcol, gr, clubb_params[:, iC_wp2_splat],
         brunt_vaisala_freq_sqd_mixed, Lscale_zm, rho_ds_zm,
     )
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("bv_freq_sqd_splat", brunt_vaisala_freq_sqd_splat)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     #----------------------------------------------------------------
     # Set Surface variances
@@ -1261,7 +1293,8 @@ def advance_clubb_core(
     ########################################################################
     #############            ACCUMULATE STATISTICS            #############
     ########################################################################
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats_accumulate(
             nzm, nzt, ngrdcol, sclr_dim, edsclr_dim, gr, dt,
             l_implemented, clubb_config_flags.l_host_applies_sfc_fluxes,
@@ -1306,6 +1339,10 @@ def advance_clubb_core(
         if clubb_config_flags.l_predict_upwp_vpwp:
             stats = stats.finalize_budget("upwp_bt", upwp / dt)
             stats = stats.finalize_budget("vpwp_bt", vpwp / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if clubb_at_least_debug_level(2):
 

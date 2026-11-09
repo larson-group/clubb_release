@@ -49,6 +49,19 @@ from clubb_jax.src.CLUBB_core.tridiag_lu_solver import (
 # JAX port note: unsupported Fortran solver choices below intentionally fail
 # fatal rather than silently falling back to a different linear solver.
 
+
+def _optional_rcond(l_use_rcond, estimate, disabled):
+    """Evaluate a requested reciprocal-condition estimate only when enabled.
+
+    A Python false flag removes an unrequested diagnostic during tracing. A
+    runtime flag retains a scalar conditional around the expensive estimate.
+    ``disabled`` supplies the existing zero output with the required shape.
+    """
+    if isinstance(l_use_rcond, bool):
+        return estimate() if l_use_rcond else disabled
+    return jax.lax.cond(l_use_rcond, lambda _: estimate(), lambda _: disabled, None)
+
+
 def _reciprocal_condition_number(a):
     norm_a = jnp.max(jnp.sum(jnp.abs(a), axis=-2), axis=-1)
     inv_a = jnp.linalg.inv(a)
@@ -267,10 +280,10 @@ def band_solve_single_rhs_multiple_lhs(
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = (
-        _band_rcond(ndim, lhs)
-        if l_use_rcond
-        else jnp.zeros((ngrdcol,))
+    rcond = _optional_rcond(
+        l_use_rcond,
+        lambda: _band_rcond(ndim, lhs),
+        jnp.zeros((ngrdcol,)),
     )
 
     if nsup != 2 or nsub != 2:
@@ -388,10 +401,10 @@ def band_solve_multiple_rhs_lhs(
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = (
-        _band_rcond(ndim, lhs)
-        if l_use_rcond
-        else jnp.zeros((ngrdcol,))
+    rcond = _optional_rcond(
+        l_use_rcond,
+        lambda: _band_rcond(ndim, lhs),
+        jnp.zeros((ngrdcol,)),
     )
 
     if nsup != 2 or nsub != 2:
@@ -590,10 +603,10 @@ def tridiag_solve_single_rhs_lhs(
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = (
-        _tridiag_rcond_single_lhs(ndim, lhs)
-        if l_use_rcond
-        else jnp.zeros((1,))
+    rcond = _optional_rcond(
+        l_use_rcond,
+        lambda: _tridiag_rcond_single_lhs(ndim, lhs),
+        jnp.zeros((1,)),
     )
 
     if tridiag_solve_method == lapack:
@@ -679,10 +692,10 @@ def tridiag_solve_single_rhs_multiple_lhs(
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = (
-        _tridiag_rcond_multiple_lhs(ndim, lhs)
-        if l_use_rcond
-        else jnp.zeros((ngrdcol,))
+    rcond = _optional_rcond(
+        l_use_rcond,
+        lambda: _tridiag_rcond_multiple_lhs(ndim, lhs),
+        jnp.zeros((ngrdcol,)),
     )
 
     if tridiag_solve_method == lapack:
@@ -772,10 +785,10 @@ def tridiag_solve_multiple_rhs_lhs(
 
     # The estimate of the reciprocal condition number of matrix
     # after equilibration (if done).
-    rcond = (
-        _tridiag_rcond_multiple_lhs(ndim, lhs)
-        if l_use_rcond
-        else jnp.zeros((ngrdcol,))
+    rcond = _optional_rcond(
+        l_use_rcond,
+        lambda: _tridiag_rcond_multiple_lhs(ndim, lhs),
+        jnp.zeros((ngrdcol,)),
     )
 
     if tridiag_solve_method == lapack:

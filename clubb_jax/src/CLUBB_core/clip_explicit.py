@@ -214,9 +214,14 @@ def clip_variance(
         name_xp2_cl = "up2_cl"
     elif solve_type == clip_vp2:
         name_xp2_cl = "vp2_cl"
-    l_sample = stats.l_sample
-    if l_sample and name_xp2_cl.strip():
-        stats = stats.begin_budget(name_xp2_cl, xp2 / dt)
+    if name_xp2_cl.strip():
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            stats = stats.begin_budget(name_xp2_cl, xp2 / dt)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     # Limit the value of x'^2 at threshold. The original code did not need to
     # invoke clipping at the surface, because the surface value is set
@@ -251,8 +256,14 @@ def clip_variance(
     if threshold_hi is not None:
         xp2_out = jnp.where(active_mask, jnp.minimum(threshold_hi, xp2_out), xp2_out)
 
-    if l_sample and name_xp2_cl.strip():
-        stats = stats.finalize_budget(name_xp2_cl, xp2_out / dt)
+    if name_xp2_cl.strip():
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            stats = stats.finalize_budget(name_xp2_cl, xp2_out / dt)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     return xp2_out, stats
 
@@ -350,9 +361,9 @@ def clip_covars_denom(
           upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
           vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
     """
-    l_sample = stats.l_sample
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         if wprtp_cl_num == 0:
             stats = stats.begin_budget("wprtp_cl", wprtp / dt)
         else:
@@ -373,6 +384,10 @@ def clip_covars_denom(
                 stats = stats.begin_budget("vpwp_cl", vpwp / dt)
             else:
                 stats = stats.update_budget("vpwp_cl", -vpwp / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     wprtp_cl_num += 1
     wpthlp_cl_num += 1
@@ -415,7 +430,8 @@ def clip_covars_denom(
     if l_linearize_pbl_winds:
         vpwp_pert, _ = clip_covar(nzm, ngrdcol, clip_vpwp, wp2, vp2, vpwp_pert)
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         if wprtp_cl_num == wprtp_cl_max:
             stats = stats.finalize_budget("wprtp_cl", wprtp / dt)
         else:
@@ -436,6 +452,10 @@ def clip_covars_denom(
                 stats = stats.finalize_budget("vpwp_cl", vpwp / dt)
             else:
                 stats = stats.update_budget("vpwp_cl", vpwp / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return (
         wprtp_cl_num,
@@ -534,9 +554,13 @@ def clip_skewness(
         real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
           wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
     """
-    l_sample = stats.l_sample
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.begin_budget("wp3_cl", wp3 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     wp3 = clip_skewness_core(
         nzt,
@@ -549,8 +573,13 @@ def clip_skewness(
         wp3,
     )
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.finalize_budget("wp3_cl", wp3 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return wp3, stats
 

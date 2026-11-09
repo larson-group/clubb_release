@@ -490,8 +490,10 @@ def evaluate_loss(clubb_params_all, *, grad=False, gradient_parameters=None, gra
     Gradients add a final selected-parameter axis. Independent candidate columns
     share output seeds without introducing cross-column blocks.
 
-    Forward directions use vmap; reverse mode checkpoints the full trajectory
-    one timestep at a time. progress receives (completed_parameters,total_parameters)
+    Forward directions use vmap; reverse mode differentiates only the selected
+    parameter columns, holding the remaining values fixed, and checkpoints the
+    full trajectory one timestep at a time. Omitting gradient_parameters selects
+    all parameters. progress receives (completed_parameters,total_parameters)
     at launch and completion. Primal
     diagnostics and statistics are returned as auxiliary data, without extra
     backward sweeps in scalar-loss mode.
@@ -534,7 +536,11 @@ def evaluate_loss(clubb_params_all, *, grad=False, gradient_parameters=None, gra
 
         values, derivatives, auxiliary = jax.vmap(differentiate, out_axes=(None, -1, None))(directions)
     else:
-        values, pullback, auxiliary = jax.vjp(score, params, has_aux=True)
+        def score_selected(selected_params):
+            """Score selected parameter columns with the other model inputs fixed."""
+            return score(params.at[:, indices].set(selected_params))
+
+        values, pullback, auxiliary = jax.vjp(score_selected, params[:, indices], has_aux=True)
         derivatives = []
         for output_idx, value in enumerate(values):
             gradients = []
@@ -543,7 +549,7 @@ def evaluate_loss(clubb_params_all, *, grad=False, gradient_parameters=None, gra
                 seed = [jnp.zeros_like(array) for array in values]
                 seed[output_idx] = seed[output_idx].at[prefix].set(1.)
                 gradient, = pullback(tuple(seed))
-                gradients.append(jax.block_until_ready(gradient[:, indices]))
+                gradients.append(jax.block_until_ready(gradient))
             derivatives.append(jnp.stack(gradients).reshape((*value.shape, len(parameters))))
         derivatives = tuple(derivatives)
     if gradient_target == 'metrics':

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+import time
 
 import numpy as np
 
 
 SCHEMA_VERSION = "sample_history_case_loss_v3"
-DEFAULT_CHUNK_SIZE = 1000
+DEFAULT_CHUNK_SIZE = 500
+FLUSH_INTERVAL_SECONDS = 20.0
 SAMPLE_HISTORY_DIR = "sample_history"
 CHUNK_PREFIX = "sample_history_"
 
@@ -56,6 +58,7 @@ class SampleHistoryWriter:
         self.observations = self._build_observations()
         self.metadata = self._build_metadata()
         self.buffer: list[dict] = []
+        self.last_flush_monotonic = None
         # A stopped Tune revision may later continue in the same immutable
         # execution directory.  Continue chunk numbering rather than
         # overwriting the earlier raw observations.
@@ -63,18 +66,29 @@ class SampleHistoryWriter:
         self.chunk_index = len(existing_chunks) + 1
 
     def append(self, entries: list[dict]) -> None:
-        """Buffer completed sample entries and flush full chunks."""
-        for entry in entries:
-            self.buffer.append(entry)
-            if len(self.buffer) >= self.chunk_size:
-                self._flush_entries(self.buffer[: self.chunk_size])
-                del self.buffer[: self.chunk_size]
+        """Publish the first completed set, then use sample-count or time limits."""
+        first_set = self.last_flush_monotonic is None
+        self.buffer.extend(entries)
+        while len(self.buffer) >= self.chunk_size:
+            self._flush_entries(self.buffer[: self.chunk_size])
+            del self.buffer[: self.chunk_size]
+        self.flush_if_due(force=first_set)
+
+    def flush_if_due(self, *, force: bool = False) -> None:
+        """Publish pending rows after 20 seconds, or immediately when forced.
+
+        The scheduler calls this even while workers are busy, so a partial
+        chunk cannot remain hidden behind a slow subsequent evaluation.
+        No clock starts until the first nonempty publication.
+        """
+        if self.buffer and (force or self.last_flush_monotonic is None
+                            or time.monotonic() - self.last_flush_monotonic >= FLUSH_INTERVAL_SECONDS):
+            self._flush_entries(self.buffer)
+            self.buffer = []
 
     def close(self) -> None:
         """Flush any buffered samples."""
-        if self.buffer:
-            self._flush_entries(self.buffer)
-            self.buffer = []
+        self.flush_if_due(force=True)
 
     def _build_observations(self) -> list[dict]:
         observations = []
@@ -158,6 +172,7 @@ class SampleHistoryWriter:
             np.savez_compressed(handle, **arrays)
         tmp_path.replace(path)
         self.chunk_index += 1
+        self.last_flush_monotonic = time.monotonic()
 
     def _entries_to_arrays(self, entries: list[dict]) -> dict[str, np.ndarray]:
         sample_count = len(entries)
@@ -169,6 +184,7 @@ class SampleHistoryWriter:
             dtype=np.float64,
         )
 
+        total_gradients = np.full((sample_count, len(self.gradient_parameters)), np.nan)
         gradients = np.full((sample_count, len(self.case_names), len(self.gradient_parameters)), np.nan)
         case_loss = np.empty((sample_count, len(self.case_names)), dtype=np.float64)
         for sample_idx, entry in enumerate(entries):
@@ -177,6 +193,8 @@ class SampleHistoryWriter:
                 float(all_param_values[name])
                 for name in self.param_names
             ]
+            if self.gradient_parameters:
+                total_gradients[sample_idx] = entry["total_gradient"]
             sample_id[sample_idx] = int(entry["sample_id"])
             batch_id[sample_idx] = int(entry["batch_id"])
 
@@ -200,20 +218,12 @@ class SampleHistoryWriter:
             "batch_id": batch_id,
             "loss_metrics": loss_metrics,
             "case_loss": case_loss,
-            **({"gradient": gradients} if self.gradient_parameters else {}),
+            **({"gradient": gradients, "total_gradient": total_gradients} if self.gradient_parameters else {}),
         }
 
 
 def sample_history_paths(job_dir: Path) -> list[Path]:
-    """Return sorted sample-history chunk paths in a job directory.
-
-    New tuner runs store chunks under sample_history/.  The job-root lookup is
-    kept as a compatibility fallback for runs created before that directory
-    existed.
-    """
+    """Return sorted chunks from the job's sample_history directory."""
     root = Path(job_dir)
     pattern = f"{CHUNK_PREFIX}[0-9][0-9][0-9][0-9][0-9][0-9].npz"
-    chunks = sorted((root / SAMPLE_HISTORY_DIR).glob(pattern))
-    if chunks:
-        return chunks
-    return sorted(root.glob(pattern))
+    return sorted((root / SAMPLE_HISTORY_DIR).glob(pattern))

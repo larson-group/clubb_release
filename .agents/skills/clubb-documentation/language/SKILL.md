@@ -43,3 +43,17 @@ Put the main point first and keep each sentence focused. Replace unclear â€œit,â
 conditions, units, and qualifications while simplifying. If someone cannot
 follow the purpose without more context, supply the missing definition or
 connection rather than assuming they followed the implementation work.
+
+Describe the code's current purpose rather than the event that prompted it.
+For example, explain that a routine restores saved optimizer state so a stopped
+run can continue; listing a module move does not explain that job. Established
+terms such as "backward compatibility" are useful when they accurately name the
+purpose. Define unfamiliar terms briefly, rather than replacing them with vague
+wording. Development history belongs in a change message when relevant.
+
+Before finishing, read each changed description as someone unfamiliar with the
+implementation: does its opening explain the problem the code solves, what it
+acts on and the useful result? Add a concrete example when an abstract phrase
+such as "case derivatives" obscures the meaning (for example, combining the
+BOMEX and ATEX loss gradients into one tuning direction). Verify the example
+against the code; avoid adding history or unexplained terminology as context.

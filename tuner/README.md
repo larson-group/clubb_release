@@ -1,329 +1,336 @@
-# CLUBB tuner: from model runs to parameter updates
+# Tune CLUBB parameters
 
-The tuner proposes parameter sets, runs selected cases, compares time-averaged
-CLUBB profiles with LES reference profiles, and ranks the results. [CLUBB core](../src/CLUBB_core/)
-supplies the fields; the loss drivers and Python tuner supply the comparison,
-aggregation, scheduling and result history.
-
-The diagrams distinguish **the case loss calculated by the loss driver** from
-**the cross-case score used by the tuner**. CLUBB core is treated as a black box.
+The tuner runs candidate parameter sets in selected cloud cases, compares model
+profiles with LES reference profiles, and retains the candidates with the lowest
+loss. Use the CLI below or [Dash’s Tune tab](../dash_app/tune_tab/tab.py) to select
+cases, parameters, a search algorithm and the Fortran or JAX backend.
+See [algorithm choices](algorithms/README.md) for their differences and requirements.
 
 ## Quick start
 
-From the repository root, evaluate eight C8 candidates with the JAX backend:
+Run these commands from the repository root. This evaluates 16 Latin hypercube
+points for C8 using CPU JAX, two model columns at a time:
 
 ```bash
-python run_scripts/run_tuner_job.py -jax -cases bomex \
-  -fields wp2 -param_ranges C8:0.2:0.8 \
-  -strategy random:8 -batch_size 4 -workers 1 -run_top never
+python run_scripts/run_tuner_job.py -jax=cpu -cases bomex -fields wp2 \
+  -param_ranges C8:0.2:0.8 -strategy latin_hypercube:num_points=16 \
+  -batch_size 2 -workers 1 -seed 7 -run_top never
 ```
 
 The [tuner CLI](../run_scripts/run_tuner_job.py) prepares its managed Python/JAX
-runtime and launches the job. A Fortran build is unnecessary for JAX.
-Omit `-jax` to use the Fortran loss API through F2PY; that backend requires a
-Python-enabled [Fortran build](../compile.py) (`python compile.py -python`).
-[Dash's Tune tab](../dash_app/tune_tab/tab.py)
-creates the same kind of request and uses the same scheduler and workers.
-
-## 1. The tuning loop
-
-![Tuning information flow: case workers evaluate the same candidates; the tuner combines case losses and sends completed candidates to the strategy and history.](diagrams/tuning_loop.svg)
-
-An **experiment request** fixes the following before evaluating candidates:
-
-| Input | What it controls |
-| --- | --- |
-| Cases and model configuration | Initial conditions, forcing, physics options and untuned parameter defaults. |
-| Fields and height range | Which vertical profiles enter the comparison. Fields are shared across cases; each case can have its own height range. |
-| Time range and windows, per case | Which part of each simulation is scored and how it is split into equal averaging windows. |
-| Parameter ranges and strategy | Which parameters can change, their bounds, and how candidates are proposed. Linked targets can share one sampled coordinate. |
-| Contribution weights and field weights | How mean, amplitude and pattern errors form a profile loss, then how fields contribute to a case loss. |
-| Case weights and cross-case policy | How case losses form the final ranking score. |
-| Backend and gradient controls | Fortran or JAX; whether to request JAX gradients and which differentiation mode to use. |
-
-The [scheduler](tuning_scheduler.py) sends the **same candidate parameter sets
-to every requested case**. All of a candidate's case results must arrive before
-it can receive its final score. The [strategy interface](tuning_strategy.py)
-proposes candidates with `fill()` and receives completed candidates with `tell()`.
-
-`batch_size` is the number of candidate model columns evaluated together;
-`max_workers` (`-workers` in the CLI) limits concurrent candidate-case evaluations.
-A column represents a parameter set, not a case or an averaging window.
-Cases have separate initial conditions, reference profiles and loss sessions.
-Initialization and baseline setup start one worker per case, so the number of
-resident worker processes can exceed the candidate-evaluation limit.
-
-The [case worker](tuning_worker.py) retains a
-[`clubb_loss_runner`](../utilities/clubb_loss_runner.py) session across batches.
-Initialization prepares the case and benchmark once; each evaluation resets
-the model to its initial state. JAX kernels can be reused when parameter values
-change. A different grid, physics flags, stats layout or batch width can require
-compilation. Persistence reuses setup and compiled work; it does not continue
-one candidate's trajectory into the next candidate.
-
-### Where the reference data enters
-
-[`case_defaults.json`](case_defaults.json) owns each case's LES file and default
-comparison ranges. The shared
-[loss-namelist builder](../input/scripts/create_case_namelist.py) uses the
-[benchmark converter](../input/scripts/benchmark_converter.py) to normalize LES
-names and units. The loss driver reads that file, interpolates the reference
-profiles onto the relevant CLUBB grid and prepares their averaging windows.
-The tuner does not implement its own LES comparison math.
-
-Model statistics used for tuning stay in memory: model-output NetCDF is not
-needed for losses or JAX gradients. The LES reference still comes from a
-NetCDF input file.
-
-## 2. Inside one case: trajectory, windows and losses
-
-![One-case calculation: parameters pass through the full trajectory, time averages, profile comparisons and case RMS; JAX can differentiate back to the parameters.](diagrams/case_loss.svg)
-
-The [JAX loss driver](../clubb_jax/src/clubb_loss_driver.py) and
-[Fortran loss driver](../src/clubb_loss_driver.F90) own this per-case calculation.
-The case driver handles initialization, forcing, timestep advancement,
-radiation and microphysics around CLUBB core. Statistics collect the requested
-fields during the scoring windows.
-
-For example, `bomex:10800:21600:3600` means:
-
-| Part of the trajectory | Treatment |
-| --- | --- |
-| Case initialization through 10,800 s | Advance normally; this spinup affects later fields but is not scored. |
-| 10,800–14,400 s | Average model and reference profiles for window 1. |
-| 14,400–18,000 s | Continue the same trajectory; average window 2. |
-| 18,000–21,600 s | Continue the same trajectory; average window 3. |
-
-Times are absolute model seconds. Each field produces one mean vertical profile
-per window and candidate. **The driver compares averaged profiles; it does not
-average instantaneous RMSE values.** Windows are contiguous equal subintervals,
-not separate model restarts. Sampling/window boundaries must align with the
-case's timestep and radiation schedule. An explicit `num_time_windows` in a
-saved request chooses the count instead of an averaging interval.
-
-### What the four profile metrics mean
-
-Let `m` and `o` be the model and LES profiles **after time averaging**, restricted
-to the compared height levels. Means and standard deviations here are across
-those levels, not across time. The implementation uses population moments and
-equal weighting of the compared levels.
-
-| Returned metric | Definition for a nonflat reference | Ideal match | Interpretation |
-| --- | --- | --- | --- |
-| `bias_norm` (`b`) | `(mean(m) - mean(o)) / std(o)` | 0 | Signed mean offset; positive means the model profile is larger on average. |
-| `std_ratio` (`s`) | `std(m) / std(o)` | 1 | Vertical variability/amplitude; below 1 is too weak, above 1 too strong. |
-| `correlation` (`r`) | Correlation of the centered profiles | 1 | Similarity of vertical shape after removing means and overall amplitudes. |
-| `rmse` | Weighted normalized total profile error, below | 0 | Combines the three error contributions into the profile score. |
-
-The Taylor-style decomposition in the
-[shared profile-comparison kernel](../utilities/loss_metrics.py) is:
-
-```math
-\mathrm{rmse}^2
-= w_{\mathrm{mean}} b^2
-+ w_{\mathrm{std}}(s-1)^2
-+ w_{\mathrm{corr}}\,2s(1-r).
-```
-
-These are **mean error**, **amplitude error** and **pattern error**. The three
-contribution weights are fixed, finite and strictly positive. They default to
-one; then `rmse` is ordinary profile RMSE divided by the reference standard
-deviation. Changing the weights changes `rmse`; the raw `r`, `s` and `b`
-diagnostics keep their definitions. A Taylor diagram's centered distance omits
-the mean-bias term; our total error includes it.
-
-A flat reference uses normalization scale one and has undefined correlation
-and std ratio. A flat model against a varying reference has std ratio zero but
-undefined correlation. The objective uses actual moments, so it remains
-computable without fake diagnostic values. Undefined diagnostics use numeric
-NaN (JSON `null`); unavailable diagnostic derivatives are marked the same way.
-The std-ratio derivative at a flat model is also unavailable despite its valid
-value of zero.
-Exactly zero norms use the loss kernel's zero-derivative convention.
-
-### From profile scores to one case loss
-
-For each candidate, the loss driver combines profile `rmse` values by a
-field-weighted root mean square (RMS) over fields and windows:
-
-```math
-L_c = \sqrt{
-\frac{\sum_f a_f \sum_{w=1}^{W_c}\mathrm{rmse}_{c,w,f}^{\,2}}
-     {W_c\sum_f a_f}}.
-```
-
-Here `c` is a case, `f` a field, `w` a window, `W_c` that case's window count,
-and `a_f` the fixed field weight. Field weights default to one; zero excludes
-a field from this RMS, and at least one must be positive. Windows within a case have equal
-weight. The driver returns **one `L_c` per candidate**, alongside all four
-metrics for every field/window. It does not construct this scalar by separately
-averaging correlation, std ratio and signed bias.
-
-## 3. From case losses to the ranking score
-
-The scheduler passes only the prepared case-loss scalars to the
-[cross-case aggregation policy](taylor_metrics.py). It retains the original
-metrics and gradients separately. For example, two fields over three BOMEX
-windows give six profile comparisons; two fields over one ARM window give two.
-These reduce to **one BOMEX loss and one ARM loss**, then the tuner combines
-those two numbers. Extra windows do not automatically give BOMEX three times
-the weight of ARM.
-
-| `aggregation_mode` | How it combines active case losses |
-| --- | --- |
-| `quantile_weighted` (default) | Sort case losses best to worst, distribute them into up to four bins, and combine the case-weighted bin means. Default best-to-worst bin weights: `0.1, 0.4, 0.4, 0.1`. Empty bins are omitted and remaining bin weights renormalized. |
-| `mean_max` | `0.6 × case-weighted mean + 0.4 × largest case loss`. |
-| `mean_worst_quantile` | `0.7 × case-weighted mean + 0.3 × case-weighted mean of the worst quarter of cases` (at least one case). |
-
-Case weights default to one; zero excludes a case from this score. The result
-is `total_loss`: the scalar used for ranking and passed with each completed
-candidate to the strategy. A one-case request retains that case's loss.
-Default and optional config-plus-override baselines are evaluated separately
-and scored by the same rules; they do not count toward candidate samples.
-
-## 4. Where gradients are supported
-
-**JAX automatic differentiation (AD) covers the model-to-case-loss path inside
-its loss driver.**
-This includes the full trajectory from initialization, unscored spinup,
-in-memory time averages, profile comparisons and field/window reduction.
-LES data, window definitions and configured weights are held constant.
-Forward and reverse mode calculate derivatives of the requested outputs with
-respect to the selected physical parameters.
-
-| Caller / gradient target | Differentiated output | What comes back |
-| --- | --- | --- |
-| Tuner with `grad: true` (`-grad`), runner default `gradient_target="loss"` | One combined `L_c` per candidate, for the current case | One derivative per candidate and selected physical parameter. All four metric values also return without separate backward sweeps for them. |
-| Gradient explorer, runner `gradient_target="metrics"` | Each of the four metrics for each field/window/candidate | Metric Jacobians for maps and tangent checks. This requires more output derivatives in reverse mode. |
-| Fortran backend | Value-only evaluation | Four metrics and case losses; gradient requests are rejected. |
-
-The [gradient explorer](../dash_app/services/gradient_matrix.py) uses the same loss runner
-through the dashboard's persistent workers. It can also request actual
-model/reference profiles for plotting. Ordinary tuner histories retain metrics
-rather than all profile levels.
-
-`gradient_mode="forward"` batches selected parameter directions with
-Jacobian–vector products (JVPs).
-`"reverse"` (backward mode) records a trajectory and applies pullbacks; the scalar
-case-loss target needs one pullback for all selected parameters. Reverse mode
-checkpoints each numerical timestep and replays it during backpropagation.
-This trades retained intermediates for recomputation while differentiating
-through the complete trajectory.
-
-`"auto"` is a count heuristic: for the scalar case loss it selects reverse
-when there is more than one selected physical parameter, otherwise forward.
-For the diagnostic metric target it compares parameters with fields. It is
-not a guarantee of the fastest mode; either mode can be selected explicitly.
-
-**The tuner does not automatically differentiate its cross-case aggregation
-or use JAX gradients to update parameters.** It stores per-case gradients and
-includes them in `tell(completed)`. Existing strategies use loss values; the
-current `adam` strategy uses simultaneous perturbation stochastic approximation
-(SPSA), estimating gradients from perturbed loss values rather than JAX AD.
-A future analytic-gradient strategy must combine case derivatives according to its
-cross-case objective and apply the chain rule for linked or rescaled sampling
-coordinates.
-
-
-## 5. Outputs and where to find them
-
-| Output | Granularity | Owner / destination |
-| --- | --- | --- |
-| Four profile metrics | Case × window × field × candidate | Loss driver → worker → scheduler; retained as labeled observations in sample history. |
-| `loss` / `case_loss` | One scalar per case and candidate | Loss driver → scheduler; stored with the candidate. |
-| `field_loss` | RMS over windows, per case/field/candidate | Shared runner; retained for per-field summaries. |
-| `total_loss` | One scalar per candidate across its cases | Tuner aggregation; rankings, strategy feedback and best-result tables. |
-| Optional JAX `gradient["loss"]` | Candidate × physical parameter, for one case | Runner → worker → scheduler/strategy; history stores sample × case × physical parameter. |
-
-[`SampleHistoryWriter`](sample_history.py) saves compressed NumPy archives
-(NPZ chunks) under `sample_history/`: full parameter rows, case losses, all window/field metrics
-and optional case gradients. Observation labels identify the case, field and
-window times; `gradient_parameters` labels derivative coordinates. Numeric
-NaNs remain in history; JSON boundaries use `null`.
-
-The scheduler's per-field summary uses window-RMS `rmse`; its other three
-diagnostics come from the window with the largest profile RMSE. Complete
-per-window values remain in `subwindows` and history.
-
-The [job wrapper](job_runtime.py) and [status writers](status.py) communicate
-through a job directory under `output/tuner/`:
-
-- `request.json`: saved experiment configuration; validated by [request.py](request.py).
-- `control.json`: graceful stop and controller keepalive.
-- `status.json`: live progress, worker counts and a short best-results summary.
-- `results.json`: retained ranked candidates, diagnostics, baselines, improvement percentages and optional case gradients.
-- `sample_history/`: all completed candidates, not just the retained best rows.
-- `worker.log` and `workers/`: controller log and per-worker setup/log files.
-
-Controllers renew a keepalive lease; after 300 seconds without renewal the
-scheduler requests a graceful stop. Direct job-directory runs are not leased
-unless their control file enables it. Continuation checkpoints save scheduling
-and strategy state; these differ from JAX reverse-mode timestep checkpoints.
-
-## Running a multi-case gradient experiment
-
-This example uses three BOMEX windows and one ARM window, two fields, fixed
-Taylor contribution weights, and explicit reverse mode:
+environment. For the Fortran backend, first build its Python loss API, then omit
+`-jax`:
 
 ```bash
-python run_scripts/run_tuner_job.py -jax -grad -gradient_mode reverse \
-  -cases bomex:10800:21600:3600 arm:68400:72000 \
-  -fields wp2 thlm -param_ranges C8:0.2:0.8 \
-  -loss_weights '{"mean":2,"std":0.5,"corr":1}' \
-  -strategy random:4 -batch_size 2 -workers 1 -run_top never
+python compile.py -debug -python
+python run_scripts/run_tuner_job.py -cases bomex -fields wp2 \
+  -param_ranges C8:0.2:0.8 -strategy random:max_samples=16 \
+  -batch_size 2 -workers 1 -run_top never
 ```
 
-This gathers analytic case gradients; `random` still proposes candidates
-randomly. Reverse is forced to exercise that path, not as a speed recommendation
-for one parameter. Add `-dry_run` to prepare a job without launching it.
-`-jax=gpu` selects the GPU runtime. The CLI's `-help` describes runtime, override
-and output options; `-list_presets` lists [presets.json](presets.json) experiments.
+Both commands print progress and paths to the saved request, results and logs.
+`-run_top never` ends after tuning; `complete`, `window` or `both` rerun selected
+best candidates for model output. `-top_n` controls how many to rerun, and
+`-output_run_dir` chooses their output directory. The default `-run_top ask`
+prompts after tuning. Do not interpret a short example as calibrated convergence
+or a scientifically validated parameter choice.
 
-Ranges use `PARAM:MIN:MAX`; `PARAM=PARAM:MIN:MAX` links equal physical targets
-(for example, `C6rt=C6thl:0:4`). Current strategies are random sampling,
-deterministic grid resolution (`resolve`), simulated annealing (`simann`) and
-Adam with SPSA (`adam`).
+## Choose cases, fields and parameter ranges
 
-The lower-level [job-directory entry point](tune_clubb.py) runs an already
-prepared request. Use the Python environment prepared by the CLI; the request
-selects the loss backend:
+| Setting | Meaning and example |
+| --- | --- |
+| `-cases` | One or more `CASE`, `CASE:START:END` or `CASE:START:END:INTERVAL` specifications. Times are absolute model seconds. For example, `bomex:10800:21600:3600` scores three consecutive one-hour averaging windows after spinup. |
+| `-fields` | Model field names, separated by spaces or commas; the same selection applies to every case. Each case can have its own height/time comparison ranges through its saved case config. |
+| `-param_ranges` | `PARAM:MIN:MAX` in physical units. Use `C6rt=C6thl:0:4` to drive equal physical parameters with one search coordinate. Untuned parameters keep configured defaults. Fixed ranges use equal endpoints. |
+| `-config` | Shared input preset name, default `default`. |
+| `-override` | CLUBB parameter/flag overrides such as `C11=0.41`. Required parameter links and inactive parameters are validated against these settings. |
+| `-preset` | Named experiment from [presets.json](presets.json). Explicit cases, fields, ranges and config replace the corresponding preset pieces. |
+| `-strategy` | Algorithm name and colon-separated options, for example `adam_gradient:max_updates=30:learning_rate=0.01`. Compact positional spelling such as `random:200` is also supported. |
+| `-seed` | Reproducible randomized starts/proposals. |
+
+Discover presets, algorithms and the complete option reference without launching
+model work:
 
 ```bash
+python run_scripts/run_tuner_job.py -list_presets
+python run_scripts/run_tuner_job.py -list_algorithms
+python run_scripts/run_tuner_job.py -help
+```
+
+[case_defaults.json](case_defaults.json) supplies each case’s LES file, height
+range and default time settings. A raw request uses a `cases` list or
+`case_configs` objects with `case_name`, `altitude_comparison_range`,
+`time_average_range`, and either `average_time_seconds` or `num_time_windows`.
+Window boundaries must align with model sampling and radiation timesteps.
+The model advances through spinup before scoring; it compares time-averaged
+profiles, rather than averaging instantaneous RMSE values.
+
+## Run gradient Adam
+
+`adam_gradient` automatically requests loss gradients and requires JAX. For
+example, run two independent chains over two cases and two fields:
+
+```bash
+python run_scripts/run_tuner_job.py -jax=cpu \
+  -cases bomex:0:600:300 atex:0:600:300 -fields wp2 thlm \
+  -param_ranges C8:0.2:0.8 C11:0.1:1.0 -override C11=0.41 \
+  -strategy adam_gradient:max_updates=2:learning_rate=0.01 \
+  -gradient_mode forward -batch_size 2 -workers 1 -run_top never
+```
+
+Here each case runs ten 60-second steps and supplies two averaging windows.
+The first chain starts at clipped defaults, with C11 set to 0.41; additional
+chains use Latin hypercube starts. Gradient Adam’s chain count is always
+`workers × batch_size`. Both Adam methods default to 30 updates, but SPSA uses
+a different probe layout and evaluation budget; see the algorithm guide.
+
+C11=0.41 avoids the existing `C11 == C11b` shortcut at the default equality,
+whose executed branch has zero derivative with respect to C11. Automatic
+differentiation follows executed model branches. A finite or zero derivative
+therefore needs interpretation before treating it as a useful search direction.
+
+`-gradient_mode forward` differentiates selected parameter directions; `reverse`
+uses a backward pass with timestep recomputation. `auto` chooses reverse when
+more than one physical parameter targets the case loss, otherwise forward.
+This heuristic does not predict runtime or memory. Reverse mode can use much
+more memory, especially with multiple cases/chains. Start with small batches
+and worker counts. `-jax=gpu` selects the managed GPU runtime; GPU-gradient
+convergence/performance is not established by the CPU tests.
+
+Value-only methods work with Fortran or JAX. An explicit `-grad` also records
+JAX gradients for those methods without changing how they choose candidates.
+Dash enables gradients from the algorithm requirement; Fortran with a gradient
+method shows an incompatibility message and disables Start.
+
+## Control the loss being minimized
+
+![Candidate proposals, case evaluation, score aggregation and feedback.](diagrams/tuning_loop.svg)
+
+Every candidate runs in every selected case. The [loss driver](../utilities/clubb_loss_runner.py)
+compares each field/window’s mean vertical profile with the LES reference,
+then returns one scalar loss per case. The tuner combines those case losses
+into the final `total_loss` used for ranking and algorithm feedback.
+
+`-loss_weights` changes the positive mean-offset, standard-deviation and
+correlation error contributions, defaulting to one each. With normalized bias
+b, model/reference standard-deviation ratio s and correlation r:
+
+```math
+\mathrm{rmse}^2 = w_{\mathrm{mean}}b^2 + w_{\mathrm{std}}(s-1)^2
+                 + w_{\mathrm{corr}}2s(1-r).
+```
+
+These moments are across compared height levels after time averaging. Weights
+do not alter the raw bias, ratio or correlation diagnostics. With unit weights,
+the result is profile RMSE divided by reference standard deviation. Flat
+profiles use the loss kernel’s defined moment-based objective; undefined
+diagnostics remain NaN (JSON `null`) rather than invented correlation values.
+The [shared kernel](../utilities/loss_metrics.py) defines those edge cases.
+
+Fields combine by weighted RMS, with equal weight per window inside a case.
+Raw requests can specify nonnegative `field_weights`; zero excludes a field.
+Cases receive one scalar each regardless of their window count. Nonnegative
+`case_weights` in a raw request control case contributions; zero excludes a case.
+At least one field/case contribution must remain positive.
+
+| `-aggregation_mode` | Across-case score |
+| --- | --- |
+| `quantile_weighted` (default) | Sort cases by loss and combine up to four case-weighted bin means; `-aggregation_weights` gives best-to-worst weights, default `0.1 0.4 0.4 0.1`. Empty bins are omitted and weights renormalized. |
+| `mean_max` | 60% case-weighted mean and 40% worst case loss. |
+| `mean_worst_quantile` | 70% case-weighted mean and 30% case-weighted mean of the worst quarter (at least one case). |
+
+For example, change the Taylor weights and across-case policy with:
+
+```bash
+python run_scripts/run_tuner_job.py -jax=cpu \
+  -cases bomex:10800:21600:3600 arm:68400:72000 -fields wp2 thlm \
+  -param_ranges C8:0.2:0.8 -strategy random:8 \
+  -loss_weights '{"mean":2,"std":0.5,"corr":1}' -aggregation_mode mean_max \
+  -batch_size 2 -workers 1 -run_top never
+```
+
+JAX computes each case’s scalar-loss derivative through the model trajectory,
+spinup, statistics and profile comparison. [Gradient helpers](gradients.py)
+combine those case derivatives using the actual ranking policy, then sum linked
+partials and scale parameter ranges for Adam. Sorting/ties can make the objective
+nonsmooth; rank changes with unequal weights can be discontinuous. No smoothing
+is applied. Nonfinite contributing derivatives stop gradient tuning.
+The [case-loss diagram](diagrams/case_loss.svg) shows the differentiated path.
+
+## Concurrency, outputs and continuation
+
+`-batch_size` is the number of candidate model columns per evaluation (default 8).
+`-workers` limits concurrent candidate-case evaluations (default half the available
+logical CPUs). Cases have separate warm processes; initialization can keep more
+resident processes than the active-evaluation limit. Worker count, batch width,
+case count and JAX differentiation all affect memory consumption.
+
+Jobs normally live under `output/tuner/`. `-output_root` changes that root;
+`-output_job_dir` selects an exact new job directory. `-dry_run` writes the prepared
+job without running it. Inspect the saved request before launching expensive work:
+
+```bash
+python run_scripts/run_tuner_job.py -jax=cpu -cases bomex -fields wp2 \
+  -param_ranges C8:0.2:0.8 -strategy latin_hypercube:200 \
+  -batch_size 2 -workers 1 -output_job_dir output/tuner/my_prepared_job -dry_run
 .venv-python/bin/python -m tuner.tune_clubb -job_dir output/tuner/my_prepared_job
-.venv-python/bin/python -m tuner.tune_clubb -help
 ```
 
-For loss evaluation without tuning, the [standalone loss CLI](../run_scripts/run_scm_loss.py)
-uses the same loss definitions:
+The [job-directory entry point](tune_clubb.py) also supports `-help`. It runs an
+existing request using its recorded backend; the high-level CLI owns creation
+and post-tuning reruns.
+
+| File/directory | Contents |
+| --- | --- |
+| `request.json` | Experiment settings, algorithm options, cases and ranges. |
+| `status.json` | Live progress, worker counts and a bounded best-results summary. |
+| `results.json` | Up to 16 best candidates overall/per case, diagnostics, baselines and optional gradients. |
+| `sample_history/` | All completed candidates in compressed NPZ chunks, including full parameters, case losses, window/field metrics and optional gradients. |
+| `control.json` | Graceful-stop request and controller keepalive. |
+| `resume_checkpoint.pkl` | Saved algorithm/pending-work state after a graceful stop, used by Continue. |
+| `worker.log`, `workers/` | Controller and per-worker setup/log files. |
+
+Histories label physical gradient columns with `gradient_parameters`. Per-case
+loss gradients have candidate × physical-parameter axes; the combined gradient
+has the same order without a case axis. Profile metrics retain case/window/field
+labels. Public JSON uses `null` for numeric NaNs. The first completed history set
+publishes immediately; pending rows then publish every 500 samples or 20 seconds,
+whichever comes first. Stopping flushes remaining rows. Dash’s landscape updates
+from these published chunks. Its per-field summary uses window-RMS error and
+other diagnostics from the worst-RMSE window; full windows stay in history.
+
+Dash workspace Continue restores a gracefully stopped search’s saved state.
+This is distinct from JAX timestep checkpoints, which control differentiation
+memory. Controllers renew a keepalive lease; a 300-second lapse requests a
+graceful stop. Direct job-directory runs are not leased unless enabled in their
+control file. Current requests/checkpoints/history paths are the supported format:
+**old strategy import paths, scalar algorithm options, global window settings,
+job-root history chunks and `output_tuner/` discovery are no longer supported.**
+No backward-compatibility adapters are provided.
+
+## Use the loss runner without tuning
+
+The [standalone loss CLI](../run_scripts/run_scm_loss.py) evaluates the same case
+loss without an optimizer:
 
 ```bash
-python run_scripts/run_scm_loss.py -jax -cases bomex -fields wp2
-python run_scripts/run_scm_loss.py -jax -cases bomex -fields wp2,thlm \
+python run_scripts/run_scm_loss.py -jax=cpu -cases bomex -fields wp2
+python run_scripts/run_scm_loss.py -jax=cpu -cases bomex -fields wp2,thlm \
   -multicol C8/0.2:0.8/8 -batch_size 4 -disable_stats_storage
 ```
 
-For reusable programmatic calls, initialize `clubb_loss_runner`, call
-`evaluate(params, grad=..., gradient_mode=..., gradient_target=...)` repeatedly,
-then close it. Each row of `params` is one complete parameter set in
-`runner.param_names` order. Its four `metrics` arrays have axes
-`(window, field, candidate)`; `loss` has axes `(candidate,)`.
-Case-loss gradients have axes `(candidate, parameter)`; explicit metric
-Jacobians have axes `(window, field, candidate, parameter)`. The lower-level
-tuple API returns four metric arrays followed by the case-loss vector.
+Programmatic callers initialize `clubb_loss_runner`, repeatedly call
+`evaluate(params, grad=..., gradient_mode=..., gradient_target=...)`, then close
+it. Each parameter row follows `runner.param_names`. The normal loss target
+returns one loss per candidate and one gradient per candidate/selected physical
+parameter. Explicit `gradient_target="metrics"` returns separate field/window
+metric derivatives for diagnostics and costs more backward work.
 
-<details>
-<summary>Diagram sources and rendering</summary>
+## Adding an algorithm
 
-The editable Graphviz sources are [tuning_loop.dot](diagrams/tuning_loop.dot)
-and [case_loss.dot](diagrams/case_loss.dot). Rebuild the shareable SVGs from the
-repository root with Graphviz:
+The [JSON catalog](algorithms/algorithms.json) lists available algorithms, their
+categories, options and requirements. The [registry loader](algorithm_registry.py)
+uses it for request validation, strategy construction, CLI parsing and Dash
+controls. Inspect the catalog without launching a job:
+
+```bash
+python run_scripts/run_tuner_job.py -list_algorithms
+```
+
+To add a method:
+
+1. Add its Python file under [algorithms/](algorithms/), subclassing
+   [BaseTuningStrategy](algorithms/base.py). Its constructor accepts
+   `param_names`, `default_params_row`, `parameter_ranges`, `seed` and its
+   declared options. Implement `fill()`, `tell()` and `is_exhausted()`; use
+   `_sample_from_selected_params()` to expand linked coordinates and assign
+   sample IDs. Feedback can arrive partially or out of order. Keep adaptive
+   context by sample ID and make its state pickleable for continuation.
+2. Add its entry to `algorithms.json`. This minimal example describes the
+   existing gradient Adam class; the real entry also supplies labels, bounds
+   and its additional optional controls:
+
+   ```json
+   {
+     "adam_gradient": {
+       "implementation": "tuner.algorithms.adam_gradient:AdamGradientStrategy",
+       "category": "optimizer",
+       "requires_gradients": true,
+       "options": {
+         "learning_rate": {"type": "float", "default": 0.01},
+         "max_updates": {"type": "int", "default": 30}
+       },
+       "internal_options": ["chain_count"]
+     }
+   }
+   ```
+
+Every algorithm entry requires `category`: use `optimizer` when losses or
+gradients guide subsequent proposals, or `sampler` for loss-independent point
+selection. The curated-function benchmark runs every method and uses this
+category to require loss improvement only from optimizers.
+
+An option's type is `int`, `float`, `string` or `bool`. Optional fields include
+`label`, `description`, `minimum`, `maximum`, `exclusive_minimum`,
+`exclusive_maximum`, `choices`, `required` and `ui_default`. Labels default to
+the option name with spaces. `default: null` leaves an option unspecified.
+Values use the request's units; learning rate `0.01` is a 1% normalized step.
+
+Execution logic stays in Python. Override `prepare_options(options, request)`
+to derive scheduling values, and `sample_count(options, ranges)` to report a
+budget before construction. Their inherited defaults need no extra hookup.
+Declare any derived, non-public option names in the JSON `internal_options`
+list, as [Adam with SPSA](algorithms/adam_spsa.py) does.
+
+CLI and Dash discover catalog entries on their next start. Dash generates
+numeric/text entries and boolean/choice menus from the JSON types; no extra
+frontend registration or callbacks are needed. Entries sit beside their labels;
+numeric entries use manual input without spinner arrows. The gradient, RMSE
+weight and across-case aggregation sections have question-mark help notecards.
+Saved requests use the same
+`strategy.options` mapping, including the typed agent API's `strategy_options`.
+Requests use a strategy object (`{"name": "random", "options": {"max_samples": 200}}`)
+and a `cases` list or per-case `case_configs`. Window settings belong inside each
+case config. Checkpoints and sample history use the current module paths and
+`sample_history/` directory; older formats are not migrated.
+
+Use `-strategy method_name:option=value:other=value` for any registered method.
+`cli_order` optionally defines a compact positional spelling.
+The scheduler returns derivatives of the executed numerical program; optimizers
+should not assume that every active parameter has a nonzero derivative.
+`tell()` receives `sample_id`, `selected_params`, `all_params`, `total_loss`,
+`case_loss` and diagnostics. With gradients enabled it also receives
+`gradient_parameters`, `gradient[case]["loss"]` and `total_gradient`.
+Gradients are physical partial derivatives; use `range_gradient()` when an
+optimizer works in linked or normalized coordinates. Algorithms may cap
+in-flight batches through `pending_batch_limit(batch_size)`; workers and model
+batch width remain scheduler concerns.
+
+## Validation
+
+The [algorithm guide](algorithms/README.md#assessing-the-methods) describes the
+fast objective benchmarks and their limits. The Jenkins tuner job runs all tuner
+unit tests first, before compilation, and publishes their JUnit results. It also
+runs [the gradient integration check](auto_llm_generated_tests/integration_tests/run_adam_gradient_test.py):
+
+```bash
+python tuner/auto_llm_generated_tests/integration_tests/run_adam_gradient_test.py \
+  -output_dir output/tests/adam_gradient -gradient_mode forward -batch_size 2
+python tuner/auto_llm_generated_tests/integration_tests/run_adam_gradient_test.py \
+  -output_dir output/tests/adam_reverse -gradient_mode reverse
+```
+
+Each output directory must be new. The bounded BOMEX/ATEX check verifies first
+updates and transported gradients against independent finite differences, and
+requires the retained best loss to be no worse than the first chain’s starting
+loss. Jenkins runs CPU forward mode with two chains to keep memory bounded;
+reverse remains an explicit manual option. These short runs establish mechanics,
+not long-duration scientific convergence or GPU performance.
+
+Diagram sources are [tuning_loop.dot](diagrams/tuning_loop.dot) and
+[case_loss.dot](diagrams/case_loss.dot). Render them with Graphviz:
 
 ```bash
 dot -Tsvg tuner/diagrams/tuning_loop.dot -o tuner/diagrams/tuning_loop.svg
 dot -Tsvg tuner/diagrams/case_loss.dot -o tuner/diagrams/case_loss.svg
 ```
-
-Solid arrows show forward information flow. The purple dashed arrow in the
-case diagram shows reverse differentiation, not a second physical model run.
-
-</details>

@@ -3,7 +3,6 @@
 Per-profile error construction and field/window RMS live below the tuner in the
 loss driver. aggregate_losses() retains the existing case-ranking choices;
 normalize_aggregation_weights() validates their four best-to-worst bin weights.
-blended_mean_max_loss() forwards to the mean/max cross-case policy.
 This module does not reconstruct a case objective from profile diagnostics.
 """
 
@@ -111,7 +110,14 @@ def aggregate_losses(
     aggregation_mode: str = DEFAULT_AGGREGATION_MODE,
     aggregation_weights=None,
 ) -> dict:
-    """Aggregate active prepared case losses and return diagnostics.
+    """Aggregate prepared case losses and return diagnostics plus loss coefficients.
+
+    loss_coefficients contains d(total loss)/d(case loss) in input order.
+    Excluded cases get zero. Max ties share the maximum contribution equally.
+    Sorted policies use stable input order at ties and return the selected
+    branch's derivative; rank boundaries need not have a unique derivative.
+    Unequal case weights can also make sorted-bin objectives discontinuous at
+    a membership change. These coefficients do not smooth or alter the score.
 
     `quantile_weighted` sorts active losses best-to-worst, partitions them into
     four equally populated bins, and combines their weighted means using the
@@ -131,7 +137,13 @@ def aggregate_losses(
     if aggregation_mode not in AGGREGATION_MODE_NAMES:
         raise ValueError(f"Unknown aggregation mode: {aggregation_mode}")
 
+    # Keep coefficients in the caller's original case order, including excluded cases.
+    original_weights = [1.0] * len(losses) if weights is None else weights
+    active_indices = [index for index, (_loss, weight) in enumerate(zip(losses, original_weights))
+                      if _finite_or_zero(weight) > 0.0]
+    coefficients = [0.0] * len(losses)
     base = {
+        "loss_coefficients": coefficients,
         "aggregation_mode": aggregation_mode,
         "active_item_count": len(active_pairs),
         "excluded_item_count": excluded_count,
@@ -152,17 +164,21 @@ def aggregate_losses(
     weighted_sum = sum(loss * weight for loss, weight in active_pairs)
     weight_sum = sum(weight for _loss, weight in active_pairs)
     weighted_mean = weighted_sum / weight_sum
+    mean_coefficients = [weight / weight_sum for _loss, weight in active_pairs]
 
     if aggregation_mode == "quantile_weighted":
         quantile_weights = normalize_aggregation_weights(aggregation_weights)
-        sorted_pairs = sorted(active_pairs, key=lambda pair: pair[0])
+        sorted_positions = sorted(range(len(active_pairs)), key=lambda index: active_pairs[index][0])
+        sorted_pairs = [active_pairs[index] for index in sorted_positions]
         bins = [[] for _ in range(AGGREGATION_WEIGHT_COUNT)]
+        bin_positions = [[] for _ in range(AGGREGATION_WEIGHT_COUNT)]
         item_count = len(sorted_pairs)
         for item_idx, pair in enumerate(sorted_pairs):
             # Integer boundaries keep the bins contiguous and differ by at
             # most one item, even when the number of time windows is not four.
             bin_idx = min(AGGREGATION_WEIGHT_COUNT - 1, item_idx * AGGREGATION_WEIGHT_COUNT // item_count)
             bins[bin_idx].append(pair)
+            bin_positions[bin_idx].append(sorted_positions[item_idx])
         bin_diagnostics = []
         for bin_idx, bin_pairs in enumerate(bins):
             if not bin_pairs:
@@ -180,6 +196,13 @@ def aggregate_losses(
             )
         active_quantile_weight = sum(item["requested_weight"] for item in bin_diagnostics)
         loss = sum(item["mean"] * item["requested_weight"] for item in bin_diagnostics) / active_quantile_weight
+        for bin_idx, positions in enumerate(bin_positions):
+            bin_weight_sum = sum(active_pairs[position][1] for position in positions)
+            for position in positions:
+                coefficients[active_indices[position]] = (
+                    quantile_weights[bin_idx] / active_quantile_weight
+                    * active_pairs[position][1] / bin_weight_sum
+                )
         return {
             **base,
             "weighted_mean": float(weighted_mean),
@@ -191,11 +214,18 @@ def aggregate_losses(
 
     if aggregation_mode == "mean_worst_quantile":
         worst_count = max(1, math.ceil(len(active_pairs) * WORST_QUANTILE_FRACTION))
-        worst_pairs = sorted(active_pairs, key=lambda pair: pair[0], reverse=True)[:worst_count]
+        worst_positions = sorted(range(len(active_pairs)), key=lambda index: active_pairs[index][0], reverse=True)[:worst_count]
+        worst_pairs = [active_pairs[index] for index in worst_positions]
         worst_weighted_sum = sum(loss * weight for loss, weight in worst_pairs)
         worst_weight_sum = sum(weight for _loss, weight in worst_pairs)
         worst_quantile_mean = worst_weighted_sum / worst_weight_sum
         loss = WORST_QUANTILE_MEAN_WEIGHT * weighted_mean + WORST_QUANTILE_WEIGHT * worst_quantile_mean
+        for position, mean_coefficient in enumerate(mean_coefficients):
+            coefficients[active_indices[position]] = (
+                WORST_QUANTILE_MEAN_WEIGHT * mean_coefficient
+                + (WORST_QUANTILE_WEIGHT * active_pairs[position][1] / worst_weight_sum
+                   if position in worst_positions else 0.0)
+            )
         return {
             **base,
             "weighted_mean": float(weighted_mean),
@@ -207,14 +237,15 @@ def aggregate_losses(
 
     max_loss = max(loss for loss, _weight in active_pairs)
     loss = MEAN_MAX_MEAN_WEIGHT * weighted_mean + MEAN_MAX_MAX_WEIGHT * max_loss
+    tied_count = sum(value == max_loss for value, _weight in active_pairs)
+    for position, (value, _weight) in enumerate(active_pairs):
+        coefficients[active_indices[position]] = (
+            MEAN_MAX_MEAN_WEIGHT * mean_coefficients[position]
+            + (MEAN_MAX_MAX_WEIGHT / tied_count if value == max_loss else 0.0)
+        )
     return {
         **base,
         "weighted_mean": float(weighted_mean),
         "max_loss": float(max_loss),
         "loss": float(loss),
     }
-
-
-def blended_mean_max_loss(losses: list[float], weights: list[float] | None = None) -> float:
-    """Backward-compatible wrapper for the historical mean/max aggregation."""
-    return float(aggregate_losses(losses, weights, "mean_max")["loss"])

@@ -14,12 +14,14 @@ from plotly.colors import get_colorscale
 from dash_app.shared.plot_theme import figure_theme
 
 from .callbacks_settings import parameter_group_specs
+from .algorithm_controls import algorithm_backend_error, algorithm_summary, option_ids, options_ready
+from dash_app.compile_tab.build_selector import normalize_run_implementation
+from tuner.algorithm_registry import ALGORITHMS, get_algorithm
 from .layout import (
     action_button_style,
     build_results_placeholder,
     config_button_style,
     mode_button_style,
-    mode_options_block_style,
 )
 from tuner.sample_history import sample_history_paths
 from tuner.taylor_metrics import (
@@ -621,14 +623,7 @@ def _parameter_group_specs(best_results, best_results_by_case=None, selected_gro
     by_case = best_results_by_case if isinstance(best_results_by_case, dict) else {}
     # The UI intentionally has only two clear views: the global retained top
     # results, or that aggregate alongside every per-case retained list.
-    # Accept the old list form too so previously persisted browser state stays
-    # harmless during the control migration.
-    if isinstance(selected_groups, str):
-        mode = selected_groups
-    elif "all" in (selected_groups or []):
-        mode = "all"
-    else:
-        mode = "aggregate"
+    mode = selected_groups or "aggregate"
     specs = []
     specs.append(("aggregate", "Aggregate", list(best_results or []), "total_loss"))
     if mode == "all":
@@ -2096,98 +2091,6 @@ def build_results_table(top_results, selected_param_names):
     )
 
 
-def mode_options_ready(
-    strategy_mode,
-    random_max_samples,
-    resolve_spacing,
-    simann_max_iters,
-    simann_initial_temp,
-    simann_final_temp,
-    adam_max_updates=None,
-    adam_learning_rate_percent=None,
-    adam_perturbation_percent=None,
-    adam_spsa_pairs=None,
-    batch_size=None,
-):
-    """Return whether the selected mode has the required options."""
-    if strategy_mode == "random":
-        if random_max_samples in (None, ""):
-            return False
-        try:
-            value = float(random_max_samples)
-        except (TypeError, ValueError):
-            return False
-        return int(value) == value and int(value) >= 1
-    if strategy_mode == "resolve":
-        if resolve_spacing in (None, ""):
-            return False
-        try:
-            return float(resolve_spacing) > 0.0
-        except (TypeError, ValueError):
-            return False
-    if strategy_mode == "simann":
-        if simann_max_iters in (None, ""):
-            return False
-        try:
-            max_iters_value = float(simann_max_iters)
-        except (TypeError, ValueError):
-            return False
-        if int(max_iters_value) != max_iters_value or int(max_iters_value) < 1:
-            return False
-        try:
-            return float(simann_initial_temp) > 0.0 and float(simann_final_temp) > 0.0
-        except (TypeError, ValueError):
-            return False
-    if strategy_mode == "adam":
-        try:
-            updates = float(adam_max_updates)
-            pairs = float(adam_spsa_pairs)
-            batch = float(batch_size)
-            learning = float(adam_learning_rate_percent)
-            perturbation = float(adam_perturbation_percent)
-        except (TypeError, ValueError):
-            return False
-        return (
-            int(updates) == updates
-            and updates >= 1
-            and int(pairs) == pairs
-            and pairs >= 1
-            and int(batch) == batch
-            and batch >= 1
-            and int(batch) % (2 * int(pairs)) == 0
-            and learning > 0.0
-            and 0.0 < perturbation <= 50.0
-        )
-    return False
-
-
-def adam_layout_summary(batch_size, max_workers, case_names, max_updates, spsa_pairs, override=""):
-    """Describe the derived multi-chain layout and search cost."""
-    try:
-        batch_size = int(float(batch_size))
-        max_workers = int(float(max_workers))
-        max_updates = int(float(max_updates))
-        spsa_pairs = int(float(spsa_pairs))
-    except (TypeError, ValueError):
-        return "Enter valid Adam and scheduling values."
-    case_count = len([name for name in (case_names or []) if str(name or "").strip()])
-    columns_per_chain = 2 * spsa_pairs
-    if min(batch_size, max_workers, max_updates, spsa_pairs, case_count) < 1:
-        return "Enter valid Adam and scheduling values."
-    if batch_size % columns_per_chain:
-        return f"Batch size must be divisible by {columns_per_chain} (2 × SPSA pairs)."
-    chains_per_batch = batch_size // columns_per_chain
-    concurrent_batches = math.ceil(max_workers / case_count)
-    chains = chains_per_batch * concurrent_batches
-    evaluations = chains * (2 + columns_per_chain * max_updates)
-    baseline_evaluations = case_count * (2 if str(override or "").strip() else 1)
-    return (
-        f"{spsa_pairs} pair(s)/chain · {chains_per_batch} chain(s)/batch · "
-        f"{concurrent_batches} concurrent batch(es) · {chains} total chain(s) · "
-        f"{evaluations:,} candidate evaluations · {baseline_evaluations} baseline evaluation(s) separately"
-    )
-
-
 def case_window_setup_ready(
     case_names,
     time_start_values,
@@ -2235,42 +2138,6 @@ def case_window_setup_ready(
             return False
         valid_rows += 1
     return valid_rows == len(selected_cases)
-
-
-def resolve_total_samples_text(resolve_spacing, param_names, min_values, max_values):
-    """Estimate resolve grid size from current ranges without materializing points."""
-    if resolve_spacing in (None, ""):
-        return ""
-    try:
-        spacing = float(resolve_spacing)
-    except (TypeError, ValueError):
-        return ""
-    if spacing <= 0.0:
-        return ""
-
-    total = 1
-    complete_ranges = 0
-    for param_name, min_text, max_text in zip(param_names or [], min_values or [], max_values or []):
-        param_name = "" if param_name is None else str(param_name).strip()
-        min_text = "" if min_text is None else str(min_text).strip()
-        max_text = "" if max_text is None else str(max_text).strip()
-        if not all((param_name, min_text, max_text)):
-            continue
-        try:
-            min_value = float(min_text.replace("D", "E").replace("d", "e"))
-            max_value = float(max_text.replace("D", "E").replace("d", "e"))
-        except ValueError:
-            return ""
-        if min_value > max_value:
-            return ""
-        span = max_value - min_value
-        count = 1 if span == 0.0 else int(math.ceil(span / spacing)) + 1
-        total *= count
-        complete_ranges += 1
-
-    if complete_ranges == 0:
-        return ""
-    return f"Total samples: {total:,}"
 
 
 def register_display_callbacks(app):
@@ -2613,14 +2480,9 @@ def register_display_callbacks(app):
         Output({"type": "tune-loss-run-button", "action": "complete"}, "children"),
         Output({"type": "tune-loss-run-button", "action": "complete"}, "style"),
         Output({"type": "tune-loss-run-button", "action": "complete"}, "disabled"),
-        Output("tune-mode-random", "disabled"),
-        Output("tune-mode-resolve", "disabled"),
-        Output("tune-mode-simann", "disabled"),
-        Output("tune-mode-adam", "disabled"),
-        Output("tune-mode-random", "style"),
-        Output("tune-mode-resolve", "style"),
-        Output("tune-mode-simann", "style"),
-        Output("tune-mode-adam", "style"),
+        Output({"type": "tune-algorithm-button", "name": ALL}, "disabled"),
+        Output({"type": "tune-algorithm-button", "name": ALL}, "style"),
+        Output({"type": "tune-algorithm-button", "name": ALL}, "title"),
         Output('tune-loss-weight-mean', "disabled"),
         Output('tune-loss-weight-std', "disabled"),
         Output('tune-loss-weight-corr', "disabled"),
@@ -2628,22 +2490,10 @@ def register_display_callbacks(app):
         Output("tune-aggregation-weight-2", "disabled"),
         Output("tune-aggregation-weight-3", "disabled"),
         Output("tune-aggregation-weight-4", "disabled"),
-        Output("tune-random-options", "style"),
-        Output("tune-resolve-options", "style"),
-        Output("tune-simann-options", "style"),
-        Output("tune-adam-options", "style"),
-        Output("tune-no-mode-options", "style"),
-        Output("tune-resolve-total-samples", "children"),
-        Output("tune-adam-layout-summary", "children"),
-        Output("tune-random-max-samples", "disabled"),
-        Output("tune-resolve-spacing", "disabled"),
-        Output("tune-simann-max-iters", "disabled"),
-        Output("tune-simann-initial-temp", "disabled"),
-        Output("tune-simann-final-temp", "disabled"),
-        Output("tune-adam-max-updates", "disabled"),
-        Output("tune-adam-learning-rate-percent", "disabled"),
-        Output("tune-adam-perturbation-percent", "disabled"),
-        Output("tune-adam-spsa-pairs", "disabled"),
+        Output("tune-gradient-mode", "disabled"),
+        Output({"type": "tune-algorithm-panel", "name": ALL}, "style"),
+        Output("tune-algorithm-summary", "children"),
+        Output({"type": "tune-algorithm-option", "algorithm": ALL, "name": ALL}, "disabled"),
         Output("tune-case-add", "disabled"),
         Output({"type": "tune-case-name", "index": ALL}, "disabled"),
         Output({"type": "tune-case-time-start", "index": ALL}, "disabled"),
@@ -2680,15 +2530,7 @@ def register_display_callbacks(app):
         Input("tune-aggregation-weight-4", "value"),
         Input("tune-selected-config", "data"),
         Input("tune-tunable-configs", "data"),
-        Input("tune-random-max-samples", "value"),
-        Input("tune-resolve-spacing", "value"),
-        Input("tune-simann-max-iters", "value"),
-        Input("tune-simann-initial-temp", "value"),
-        Input("tune-simann-final-temp", "value"),
-        Input("tune-adam-max-updates", "value"),
-        Input("tune-adam-learning-rate-percent", "value"),
-        Input("tune-adam-perturbation-percent", "value"),
-        Input("tune-adam-spsa-pairs", "value"),
+        Input({"type": "tune-algorithm-option", "algorithm": ALL, "name": ALL}, "value"),
         Input("tune-tunable-names", "data"),
         Input("tune-batch-size", "value"),
         Input("tune-max-workers", "value"),
@@ -2704,6 +2546,7 @@ def register_display_callbacks(app):
         Input("tune-range-row-order", "data"),
         Input({"type": "tune-range-min", "index": ALL}, "value"),
         Input({"type": "tune-range-max", "index": ALL}, "value"),
+        Input("compile-run-implementation", "data"),
         State({"type": "tune-config-button", "name": ALL}, "id"),
     )
     def render_tuning_state(
@@ -2722,15 +2565,7 @@ def register_display_callbacks(app):
         _aggregation_weight_4,
         selected_config,
         _tunable_configs,
-        random_max_samples,
-        resolve_spacing,
-        simann_max_iters,
-        simann_initial_temp,
-        simann_final_temp,
-        adam_max_updates,
-        adam_learning_rate_percent,
-        adam_perturbation_percent,
-        adam_spsa_pairs,
+        strategy_option_values,
         tunable_names,
         _batch_size,
         _max_workers,
@@ -2746,6 +2581,7 @@ def register_display_callbacks(app):
         range_row_order,
         min_values,
         max_values,
+        run_implementation,
         config_button_ids,
     ):
         """Render the current tuning status and best-results table."""
@@ -2758,6 +2594,13 @@ def register_display_callbacks(app):
         workspace_selection = dict(workspace_selection or {})
         workspace_readonly = str(workspace_selection.get("mode") or "") == "readonly"
         controls_locked = running or workspace_readonly
+        backend = normalize_run_implementation(run_implementation)
+        if controls_locked:
+            # Continue and running jobs keep their immutable request even if
+            # another execution tab changes the shared runtime chooser.
+            job_dir = _job_dir_from_status(status) or (active_job or {}).get("job_dir")
+            backend = _read_job_request(job_dir).get("backend", backend)
+        backend_errors = {name: algorithm_backend_error(name, backend) for name in ALGORITHMS}
         case_ready = case_window_setup_ready(
             selected_case_names,
             time_start_values,
@@ -2771,23 +2614,13 @@ def register_display_callbacks(app):
             # revision.  It does not need the browser's dynamically rebuilt
             # form controls to be valid first; requiring them created a race
             # in which a valid stopped run could not be resumed.
-            start_disabled = running or str((status or {}).get("state") or "") != "stopped"
+            start_disabled = (running or str((status or {}).get("state") or "") != "stopped"
+                              or bool(backend_errors.get(strategy_mode)))
         else:
             start_disabled = (
                 running
-                or not mode_options_ready(
-                    strategy_mode,
-                    random_max_samples,
-                    resolve_spacing,
-                    simann_max_iters,
-                    simann_initial_temp,
-                    simann_final_temp,
-                    adam_max_updates,
-                    adam_learning_rate_percent,
-                    adam_perturbation_percent,
-                    adam_spsa_pairs,
-                    _batch_size,
-                )
+                or not options_ready(strategy_mode, strategy_option_values, _batch_size,
+                                     _max_workers, selected_case_names, backend=backend)
                 or not case_ready
             )
         has_results = bool(scoreboard_results)
@@ -2834,20 +2667,12 @@ def register_display_callbacks(app):
             config_button_style(selected=value == selected_config, disabled=controls_locked)
             for value in config_values
         ]
-        resolve_total_text = resolve_total_samples_text(
-            resolve_spacing,
-            param_names,
-            min_values,
-            max_values,
-        )
-        adam_summary = adam_layout_summary(
-            _batch_size,
-            _max_workers,
-            selected_case_names,
-            adam_max_updates,
-            adam_spsa_pairs,
-            _scm_override,
-        )
+        try:
+            ranges = [{"min": float(low), "max": float(high)} for low, high in zip(min_values, max_values)]
+        except (TypeError, ValueError):
+            ranges = []
+        summary = algorithm_summary(strategy_mode, strategy_option_values, _batch_size,
+                                    _max_workers, selected_case_names, ranges, backend=backend)
         return (
             status_text,
             results_table,
@@ -2861,28 +2686,11 @@ def register_display_callbacks(app):
             complete_label,
             complete_style,
             complete_disabled,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            mode_button_style(selected=strategy_mode == "random", disabled=controls_locked),
-            mode_button_style(selected=strategy_mode == "resolve", disabled=controls_locked),
-            mode_button_style(selected=strategy_mode == "simann", disabled=controls_locked),
-            mode_button_style(selected=strategy_mode == "adam", disabled=controls_locked),
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            controls_locked,
-            mode_options_block_style(strategy_mode == "random"),
-            mode_options_block_style(strategy_mode == "resolve"),
-            mode_options_block_style(strategy_mode == "simann"),
-            mode_options_block_style(strategy_mode == "adam"),
-            mode_options_block_style(strategy_mode not in {"random", "resolve", "simann", "adam"}),
-            resolve_total_text,
-            adam_summary,
+            [controls_locked] * len(ALGORITHMS),
+            [mode_button_style(selected=strategy_mode == name, disabled=controls_locked,
+                               incompatible=bool(backend_errors[name]))
+             for name in ALGORITHMS],
+            [backend_errors[name] or get_algorithm(name).description for name in ALGORITHMS],
             controls_locked,
             controls_locked,
             controls_locked,
@@ -2890,8 +2698,11 @@ def register_display_callbacks(app):
             controls_locked,
             controls_locked,
             controls_locked,
-            controls_locked,
-            controls_locked,
+            controls_locked or strategy_mode not in ALGORITHMS or not get_algorithm(strategy_mode).requires_gradients,
+            [{"display": "block" if strategy_mode == name else "none", "marginTop": "10px"}
+             for name in ALGORITHMS],
+            summary,
+            [controls_locked] * len(option_ids()),
             controls_locked,
             case_disabled,
             case_disabled,

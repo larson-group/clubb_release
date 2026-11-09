@@ -344,7 +344,6 @@ def advance_xp2_xpyp(
         type(err_info_type), intent(inout) :: &
           err_info      ! err_info struct containing err_code and err_header
     """
-    l_sample = stats.l_sample
     l_scalar_calc = sclr_dim > 0
     initial_rtp2, initial_thlp2, initial_rtpthlp = rtp2, thlp2, rtpthlp
     initial_up2, initial_vp2 = up2, vp2
@@ -487,8 +486,13 @@ def advance_xp2_xpyp(
         )
         if l_ho_nontrad_coriolis:
             rhs = rhs - two * fcor_y[:, None] * upwp
-            if l_sample:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
                 stats = stats.update("up2_nct", -two * fcor_y[:, None] * upwp)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
         up2_solution, err_info, stats = xp2_xpyp_solve(
             nzm, ngrdcol, xp2_xpyp_up2_vp2, l_implemented, gr,
             tridiag_solve_method, stats, rhs, lhs, err_info,
@@ -496,13 +500,18 @@ def advance_xp2_xpyp(
         up2 = up2_solution
         if l_lmm_stepping:
             up2 = one_half * (up2_old + up2)
-        if l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = stats_finalize_xp2_xpyp_terms(
                 nzm, ngrdcol, xp2_xpyp_up2, gr, up2,
                 gamma_over_implicit_ts * lhs_dp1_C14,
                 gamma_over_implicit_ts * lhs_dp1_C4,
                 lhs_diff_uv, lhs_ta_wpup2, lhs_ma, stats,
             )
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
         lhs = xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta_wpvp2, lhs_ma, lhs_diff_uv, lhs_dp1)
         rhs, stats = xp2_xpyp_uv_rhs(
@@ -520,13 +529,18 @@ def advance_xp2_xpyp(
         vp2 = vp2_solution
         if l_lmm_stepping:
             vp2 = one_half * (vp2_old + vp2)
-        if l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = stats_finalize_xp2_xpyp_terms(
                 nzm, ngrdcol, xp2_xpyp_vp2, gr, vp2,
                 gamma_over_implicit_ts * lhs_dp1_C14,
                 gamma_over_implicit_ts * lhs_dp1_C4,
                 lhs_diff_uv, lhs_ta_wpvp2, lhs_ma, stats,
             )
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
     else:
         lhs = xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta_wpup2, lhs_ma, lhs_diff_uv, lhs_dp1)
         rhs_up2, stats = xp2_xpyp_uv_rhs(
@@ -539,8 +553,13 @@ def advance_xp2_xpyp(
         )
         if l_ho_nontrad_coriolis:
             rhs_up2 = rhs_up2 - two * fcor_y[:, None] * upwp
-            if l_sample:
+            def accumulate_stats(stats):
+                """Collect this diagnostic block only on sampled timesteps."""
                 stats = stats.update("up2_nct", -two * fcor_y[:, None] * upwp)
+
+                return stats
+
+            stats = stats.sampled(accumulate_stats)
         rhs_vp2, stats = xp2_xpyp_uv_rhs(
             nzm, nzt, ngrdcol, gr, xp2_xpyp_vp2, dt,
             wp2, wpthvp, invrs_tau_C4_zm, invrs_tau_C14_zm,
@@ -559,7 +578,8 @@ def advance_xp2_xpyp(
         if l_lmm_stepping:
             up2 = one_half * (up2_old + up2)
             vp2 = one_half * (vp2_old + vp2)
-        if l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = stats_finalize_xp2_xpyp_terms(
                 nzm, ngrdcol, xp2_xpyp_up2, gr, up2,
                 gamma_over_implicit_ts * lhs_dp1_C14,
@@ -572,6 +592,10 @@ def advance_xp2_xpyp(
                 gamma_over_implicit_ts * lhs_dp1_C4,
                 lhs_diff_uv, lhs_ta_wpup2, lhs_ma, stats,
             )
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     if fill_holes_type != 0:
         rtp2, stats = pos_definite_variances(
@@ -602,13 +626,23 @@ def advance_xp2_xpyp(
         nzm, ngrdcol, gr, xp2_xpyp_rtp2, dt, threshold_array, stats, rtp2,
     )
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.begin_budget("rtp2_cl", rtp2 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
     rtm_zm = jnp.maximum(zt2zm(nzm, nzt, ngrdcol, gr, rtm), zero_threshold)
     threshold_array = jnp.maximum(rt_tol ** 2, clubb_params[:, irtp2_clip_coef][:, None] * rtm_zm ** 2)
     rtp2 = jnp.minimum(rtp2, threshold_array)
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.finalize_budget("rtp2_cl", rtp2 / dt, l_count_sample=False)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if l_min_xp2_from_corr_wx:
         threshold_array = jnp.maximum(
@@ -625,26 +659,56 @@ def advance_xp2_xpyp(
     up2, stats = clip_variance(
         nzm, ngrdcol, gr, xp2_xpyp_up2, dt, threshold_array, stats, up2,
     )
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.begin_budget("up2_cl", up2 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
     up2 = jnp.minimum(up2, 1000.0)
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.finalize_budget("up2_cl", up2 / dt, l_count_sample=False)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     vp2, stats = clip_variance(
         nzm, ngrdcol, gr, xp2_xpyp_vp2, dt, threshold_array, stats, vp2,
     )
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.begin_budget("vp2_cl", vp2 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
     vp2 = jnp.minimum(vp2, 1000.0)
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.finalize_budget("vp2_cl", vp2 / dt, l_count_sample=False)
 
-    if l_sample:
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
+
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.begin_budget("rtpthlp_cl", rtpthlp / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
     rtpthlp, _ = clip_covar(nzm, ngrdcol, xp2_xpyp_rtpthlp, rtp2, thlp2, rtpthlp)
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.finalize_budget("rtpthlp_cl", rtpthlp / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if l_scalar_calc:
         if fill_holes_type != 0:
@@ -947,7 +1011,6 @@ def solve_xp2_xpyp_with_single_lhs(
         type(err_info_type), intent(inout) :: &
           err_info      ! err_info struct containing err_code and err_header
     """
-    l_sample = stats.l_sample
     lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2x, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
     lhs = xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta, lhs_ma, lhs_diff, lhs_dp1)
@@ -1064,7 +1127,8 @@ def solve_xp2_xpyp_with_single_lhs(
                 sclrprtp = sclrprtp.at[:, :, sclr].set(solution[:, :, 3 + sclr_dim + sclr])
                 sclrpthlp = sclrpthlp.at[:, :, sclr].set(solution[:, :, 3 + 2 * sclr_dim + sclr])
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats_finalize_xp2_xpyp_terms(
             nzm, ngrdcol, xp2_xpyp_rtp2, gr, rtp2,
             lhs_dp1, lhs_dp1, lhs_diff, lhs_ta, lhs_ma, stats,
@@ -1077,6 +1141,10 @@ def solve_xp2_xpyp_with_single_lhs(
             nzm, ngrdcol, xp2_xpyp_rtpthlp, gr, rtpthlp,
             lhs_dp1, lhs_dp1, lhs_diff, lhs_ta, lhs_ma, stats,
         )
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return rtp2, thlp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp, err_info, stats
 
@@ -1213,7 +1281,6 @@ def solve_xp2_xpyp_with_multiple_lhs(
         type(err_info_type), intent(inout) :: &
           err_info      ! err_info struct containing err_code and err_header
     """
-    l_sample = stats.l_sample
     lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2rt_1d, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
     lhs = xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta_wprtp2, lhs_ma, lhs_diff, lhs_dp1)
@@ -1242,11 +1309,16 @@ def solve_xp2_xpyp_with_multiple_lhs(
         )
 
     rtp2 = one_half * (rtp2 + rtp2_solution) if l_lmm_stepping else rtp2_solution
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats_finalize_xp2_xpyp_terms(
             nzm, ngrdcol, xp2_xpyp_rtp2, gr, rtp2,
             lhs_dp1, lhs_dp1, lhs_diff, lhs_ta_wprtp2, lhs_ma, stats,
         )
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2thl_1d, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
@@ -1276,11 +1348,16 @@ def solve_xp2_xpyp_with_multiple_lhs(
         )
 
     thlp2 = one_half * (thlp2 + thlp2_solution) if l_lmm_stepping else thlp2_solution
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats_finalize_xp2_xpyp_terms(
             nzm, ngrdcol, xp2_xpyp_thlp2, gr, thlp2,
             lhs_dp1, lhs_dp1, lhs_diff, lhs_ta_wpthlp2, lhs_ma, stats,
         )
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2rtthl_1d, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
@@ -1311,11 +1388,16 @@ def solve_xp2_xpyp_with_multiple_lhs(
         )
 
     rtpthlp = one_half * (rtpthlp + rtpthlp_solution) if l_lmm_stepping else rtpthlp_solution
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats_finalize_xp2_xpyp_terms(
             nzm, ngrdcol, xp2_xpyp_rtpthlp, gr, rtpthlp,
             lhs_dp1, lhs_dp1, lhs_diff, lhs_ta_wprtpthlp, lhs_ma, stats,
         )
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if l_scalar_calc:
         lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2sclr_1d, invrs_tau_xp2_zm)
@@ -1672,29 +1754,28 @@ def xp2_xpyp_solve(
         real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs), intent(out) :: &
           xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
     """
-    l_sample = stats.l_sample
     l_single_lhs_solve = False
     l_need_rcond = False
 
     if solve_type == xp2_xpyp_rtp2:
         solve_type_str = "rtp2"
-        l_need_rcond = bool(l_sample and stats.var_on_stats_list("rtp2_matrix_condt_num"))
+        l_need_rcond = bool(stats.var_on_stats_list("rtp2_matrix_condt_num"))
     elif solve_type == xp2_xpyp_thlp2:
         solve_type_str = "thlp2"
-        l_need_rcond = bool(l_sample and stats.var_on_stats_list("thlp2_matrix_condt_num"))
+        l_need_rcond = bool(stats.var_on_stats_list("thlp2_matrix_condt_num"))
     elif solve_type == xp2_xpyp_rtpthlp:
         solve_type_str = "rtpthlp"
-        l_need_rcond = bool(l_sample and stats.var_on_stats_list("rtpthlp_matrix_condt_num"))
+        l_need_rcond = bool(stats.var_on_stats_list("rtpthlp_matrix_condt_num"))
     elif solve_type == xp2_xpyp_up2_vp2:
         solve_type_str = "up2_vp2"
-        l_need_rcond = bool(l_sample and stats.var_on_stats_list("up2_vp2_matrix_condt_num"))
+        l_need_rcond = bool(stats.var_on_stats_list("up2_vp2_matrix_condt_num"))
     elif solve_type == xp2_xpyp_single_lhs:
         l_single_lhs_solve = True
         solve_type_str = "xp2_xpyp_single_lhs"
         l_need_rcond = (
-            bool(l_sample and stats.var_on_stats_list("rtp2_matrix_condt_num"))
-            or bool(l_sample and stats.var_on_stats_list("thlp2_matrix_condt_num"))
-            or bool(l_sample and stats.var_on_stats_list("rtpthlp_matrix_condt_num"))
+            bool(stats.var_on_stats_list("rtp2_matrix_condt_num"))
+            or bool(stats.var_on_stats_list("thlp2_matrix_condt_num"))
+            or bool(stats.var_on_stats_list("rtpthlp_matrix_condt_num"))
         )
     else:
         solve_type_str = "scalar"
@@ -1711,7 +1792,7 @@ def xp2_xpyp_solve(
     err_info, solution, rcond = tridiag_solve(
         solve_type_str, tridiag_solve_method, ngrdcol, nzm,
         lhs_solve, rhs_solve, err_info,
-        l_use_rcond=l_need_rcond,
+        l_use_rcond=stats.l_sample if l_need_rcond else False,
         l_implemented=l_implemented,
     )
     if clubb_at_least_debug_level(0):
@@ -1730,30 +1811,36 @@ def xp2_xpyp_solve(
         )
 
 
-    if l_need_rcond and l_sample:
-        cond = one / rcond
+    if l_need_rcond:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            cond = one / rcond
 
-        def record_rcond(stats_in):
-            if l_single_lhs_solve:
-                stats_out = stats_in.update("rtp2_matrix_condt_num", cond)
-                stats_out = stats_out.update("thlp2_matrix_condt_num", cond)
-                return stats_out.update("rtpthlp_matrix_condt_num", cond)
-            if solve_type == xp2_xpyp_rtp2:
-                return stats_in.update("rtp2_matrix_condt_num", cond)
-            if solve_type == xp2_xpyp_thlp2:
-                return stats_in.update("thlp2_matrix_condt_num", cond)
-            if solve_type == xp2_xpyp_rtpthlp:
-                return stats_in.update("rtpthlp_matrix_condt_num", cond)
-            if solve_type == xp2_xpyp_up2_vp2:
-                return stats_in.update("up2_vp2_matrix_condt_num", cond)
-            return stats_in
+            def record_rcond(stats_in):
+                if l_single_lhs_solve:
+                    stats_out = stats_in.update("rtp2_matrix_condt_num", cond)
+                    stats_out = stats_out.update("thlp2_matrix_condt_num", cond)
+                    return stats_out.update("rtpthlp_matrix_condt_num", cond)
+                if solve_type == xp2_xpyp_rtp2:
+                    return stats_in.update("rtp2_matrix_condt_num", cond)
+                if solve_type == xp2_xpyp_thlp2:
+                    return stats_in.update("thlp2_matrix_condt_num", cond)
+                if solve_type == xp2_xpyp_rtpthlp:
+                    return stats_in.update("rtpthlp_matrix_condt_num", cond)
+                if solve_type == xp2_xpyp_up2_vp2:
+                    return stats_in.update("up2_vp2_matrix_condt_num", cond)
+                return stats_in
 
-        stats = jax.lax.cond(
-            err_info.has_fatal(),
-            lambda stats_in: stats_in,
-            record_rcond,
-            stats,
-        )
+            stats = jax.lax.cond(
+                err_info.has_fatal(),
+                lambda stats_in: stats_in,
+                record_rcond,
+                stats,
+            )
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     if l_force_descending_solves and gr.grid_dir_indx > 0:
         if solution.ndim == 2:
@@ -1795,66 +1882,67 @@ def stats_finalize_xp2_xpyp_terms(
         type(stats_type), intent(inout) :: &
           stats
     """
-    l_sample = stats.l_sample
-    if not l_sample:
-        return stats
+    def accumulate_stats(stats):
+        """Collect diagnostics only on sampled timesteps."""
 
-    if solve_type == xp2_xpyp_rtp2:
-        name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "rtp2_dp1", "rtp2_dp2", "rtp2_ta", "rtp2_ma", ""
-    elif solve_type == xp2_xpyp_thlp2:
-        name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "thlp2_dp1", "thlp2_dp2", "thlp2_ta", "thlp2_ma", ""
-    elif solve_type == xp2_xpyp_rtpthlp:
-        name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "rtpthlp_dp1", "rtpthlp_dp2", "rtpthlp_ta", "rtpthlp_ma", ""
-    elif solve_type == xp2_xpyp_up2:
-        name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "up2_dp1", "up2_dp2", "up2_ta", "up2_ma", "up2_pr1"
-    elif solve_type == xp2_xpyp_vp2:
-        name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "vp2_dp1", "vp2_dp2", "vp2_ta", "vp2_ma", "vp2_pr1"
-    else:
-        return stats
+        if solve_type == xp2_xpyp_rtp2:
+            name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "rtp2_dp1", "rtp2_dp2", "rtp2_ta", "rtp2_ma", ""
+        elif solve_type == xp2_xpyp_thlp2:
+            name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "thlp2_dp1", "thlp2_dp2", "thlp2_ta", "thlp2_ma", ""
+        elif solve_type == xp2_xpyp_rtpthlp:
+            name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "rtpthlp_dp1", "rtpthlp_dp2", "rtpthlp_ta", "rtpthlp_ma", ""
+        elif solve_type == xp2_xpyp_up2:
+            name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "up2_dp1", "up2_dp2", "up2_ta", "up2_ma", "up2_pr1"
+        elif solve_type == xp2_xpyp_vp2:
+            name_dp1, name_dp2, name_ta, name_ma, name_pr1 = "vp2_dp1", "vp2_dp2", "vp2_ta", "vp2_ma", "vp2_pr1"
+        else:
+            return stats
 
-    grid_dir = int(gr.grid_dir_indx)
-    interior = slice(1, nzm - 1)
-    km1 = slice(1 - grid_dir, nzm - 1 - grid_dir)
-    kp1 = slice(1 + grid_dir, nzm - 1 + grid_dir)
+        grid_dir = int(gr.grid_dir_indx)
+        interior = slice(1, nzm - 1)
+        km1 = slice(1 - grid_dir, nzm - 1 - grid_dir)
+        kp1 = slice(1 + grid_dir, nzm - 1 + grid_dir)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzm))
-    stats_tmp = stats_tmp.at[:, interior].set(
-        -lhs_dp1[:, interior] * xapxbp[:, interior]
-    )
-    stats = stats.finalize_budget(name_dp1, stats_tmp)
-
-    if solve_type in (xp2_xpyp_up2, xp2_xpyp_vp2):
         stats_tmp = jnp.zeros((ngrdcol, nzm))
         stats_tmp = stats_tmp.at[:, interior].set(
-            -lhs_dp1_pr1[:, interior] * xapxbp[:, interior]
+            -lhs_dp1[:, interior] * xapxbp[:, interior]
         )
-        stats = stats.finalize_budget(name_pr1, stats_tmp)
+        stats = stats.finalize_budget(name_dp1, stats_tmp)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzm))
-    stats_tmp = stats_tmp.at[:, interior].set(
-        (-gamma_over_implicit_ts * lhs_ta[1 + grid_dir, :, interior]) * xapxbp[:, km1]
-        + (-gamma_over_implicit_ts * lhs_ta[1, :, interior]) * xapxbp[:, interior]
-        + (-gamma_over_implicit_ts * lhs_ta[1 - grid_dir, :, interior]) * xapxbp[:, kp1]
-    )
-    stats = stats.finalize_budget(name_ta, stats_tmp)
+        if solve_type in (xp2_xpyp_up2, xp2_xpyp_vp2):
+            stats_tmp = jnp.zeros((ngrdcol, nzm))
+            stats_tmp = stats_tmp.at[:, interior].set(
+                -lhs_dp1_pr1[:, interior] * xapxbp[:, interior]
+            )
+            stats = stats.finalize_budget(name_pr1, stats_tmp)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzm))
-    stats_tmp = stats_tmp.at[:, interior].set(
-        (-lhs_diff[1 + grid_dir, :, interior]) * xapxbp[:, km1]
-        + (-lhs_diff[1, :, interior]) * xapxbp[:, interior]
-        + (-lhs_diff[1 - grid_dir, :, interior]) * xapxbp[:, kp1]
-    )
-    stats = stats.update(name_dp2, stats_tmp)
+        stats_tmp = jnp.zeros((ngrdcol, nzm))
+        stats_tmp = stats_tmp.at[:, interior].set(
+            (-gamma_over_implicit_ts * lhs_ta[1 + grid_dir, :, interior]) * xapxbp[:, km1]
+            + (-gamma_over_implicit_ts * lhs_ta[1, :, interior]) * xapxbp[:, interior]
+            + (-gamma_over_implicit_ts * lhs_ta[1 - grid_dir, :, interior]) * xapxbp[:, kp1]
+        )
+        stats = stats.finalize_budget(name_ta, stats_tmp)
 
-    stats_tmp = jnp.zeros((ngrdcol, nzm))
-    stats_tmp = stats_tmp.at[:, interior].set(
-        (-lhs_ma[1 + grid_dir, :, interior]) * xapxbp[:, km1]
-        + (-lhs_ma[1, :, interior]) * xapxbp[:, interior]
-        + (-lhs_ma[1 - grid_dir, :, interior]) * xapxbp[:, kp1]
-    )
-    stats = stats.update(name_ma, stats_tmp)
+        stats_tmp = jnp.zeros((ngrdcol, nzm))
+        stats_tmp = stats_tmp.at[:, interior].set(
+            (-lhs_diff[1 + grid_dir, :, interior]) * xapxbp[:, km1]
+            + (-lhs_diff[1, :, interior]) * xapxbp[:, interior]
+            + (-lhs_diff[1 - grid_dir, :, interior]) * xapxbp[:, kp1]
+        )
+        stats = stats.update(name_dp2, stats_tmp)
 
-    return stats
+        stats_tmp = jnp.zeros((ngrdcol, nzm))
+        stats_tmp = stats_tmp.at[:, interior].set(
+            (-lhs_ma[1 + grid_dir, :, interior]) * xapxbp[:, km1]
+            + (-lhs_ma[1, :, interior]) * xapxbp[:, interior]
+            + (-lhs_ma[1 - grid_dir, :, interior]) * xapxbp[:, kp1]
+        )
+        stats = stats.update(name_ma, stats_tmp)
+
+        return stats
+
+    return stats.sampled(accumulate_stats)
 
 
 @partial(jax.jit, static_argnames=("nzm", "nzt", "ngrdcol", "solve_type"))
@@ -1947,7 +2035,6 @@ def xp2_xpyp_uv_rhs(
         real( kind = core_rknd ), intent(in) :: &
           dt
     """
-    l_sample = stats.l_sample
     if solve_type == xp2_xpyp_vp2:
         name_ta, name_tp, name_dp1 = "vp2_ta", "vp2_tp", "vp2_dp1"
         name_pr1, name_pr2, name_splat = "vp2_pr1", "vp2_pr2", "vp2_splat"
@@ -1991,7 +2078,9 @@ def xp2_xpyp_uv_rhs(
         )
     )
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
+        l_sample = stats.l_sample
         stats_pr1 = term_pr1(
             nzm, ngrdcol, C4, jnp.zeros((ngrdcol,)), xbp2, wp2,
             invrs_tau_C4_zm, invrs_tau_C14_zm,
@@ -2053,6 +2142,10 @@ def xp2_xpyp_uv_rhs(
             one_half * lhs_splat_wp2[:, 1:nzm - 1] * wp2[:, 1:nzm - 1]
         )
         stats = stats.update(name_splat, stats_tmp)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     rhs = rhs.at[:, gr.k_lb_zm].set(xap2[:, gr.k_lb_zm])
     rhs = rhs.at[:, gr.k_ub_zm].set(w_tol_sqd)
@@ -2138,7 +2231,6 @@ def xp2_xpyp_rhs(
         real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
           rhs     ! Explicit contributions to x variance/covariance terms
     """
-    l_sample = stats.l_sample
     if solve_type == xp2_xpyp_rtp2:
         name_ta, name_tp, name_tp1, name_tp2, name_dp1, name_f = (
             "rtp2_ta", "rtp2_tp", "", "", "rtp2_dp1", "rtp2_forcing"
@@ -2180,7 +2272,9 @@ def xp2_xpyp_rhs(
         + one / dt * xapxbp[:, interior]
     )
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
+        l_sample = stats.l_sample
         xm_zeros = jnp.zeros((ngrdcol, nzt))
         wpxp_zeros = jnp.zeros((ngrdcol, nzm))
         stats_tp1 = term_tp_rhs(nzm, nzt, ngrdcol, xm_zeros, xbm, wpxp_zeros, wpxap, gr.invrs_dzm)
@@ -2237,6 +2331,10 @@ def xp2_xpyp_rhs(
             stats_tmp = jnp.zeros((ngrdcol, nzm))
             stats_tmp = stats_tmp.at[:, 1:nzm - 1].set(xpyp_forcing[:, 1:nzm - 1])
             stats = stats.update(name_f, stats_tmp)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     rhs = rhs.at[:, gr.k_lb_zm].set(xapxbp[:, gr.k_lb_zm])
     rhs = rhs.at[:, gr.k_ub_zm].set(threshold)
@@ -2389,7 +2487,6 @@ def calc_xp2_xpyp_ta_terms(
           rhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
           rhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
     """
-    l_sample = stats.l_sample
     lhs_ta_wprtp2 = jnp.zeros((ndiags3, ngrdcol, nzm))
     lhs_ta_wpthlp2 = jnp.zeros((ndiags3, ngrdcol, nzm))
     lhs_ta_wprtpthlp = jnp.zeros((ndiags3, ngrdcol, nzm))
@@ -2448,15 +2545,25 @@ def calc_xp2_xpyp_ta_terms(
     )
 
     if l_explicit_turbulent_adv_xpyp:
-        if l_sample:
-            coef_wprtp2_implicit = jnp.zeros_like(coef_wprtp2_implicit)
-            coef_wpthlp2_implicit = jnp.zeros_like(coef_wpthlp2_implicit)
-            coef_wprtpthlp_implicit = jnp.zeros_like(coef_wprtpthlp_implicit)
+        # Diagnostic coefficients are already zero-initialized above.
 
-        if (not l_upwind_xpyp_ta) or l_sample:
+        def centered_diagnostics(previous):
+            """Compute centered coefficients used by physics or sampled diagnostics."""
+            (term_wprtp2_explicit, term_wprtpthlp_explicit, term_wpthlp2_explicit) = previous
             term_wprtp2_explicit = wprtp2
             term_wpthlp2_explicit = wpthlp2
             term_wprtpthlp_explicit = wprtpthlp
+
+            return term_wprtp2_explicit, term_wprtpthlp_explicit, term_wpthlp2_explicit
+
+        (
+            term_wprtp2_explicit,
+            term_wprtpthlp_explicit,
+            term_wpthlp2_explicit,
+        ) = stats.sampled_value(
+            centered_diagnostics, (term_wprtp2_explicit, term_wprtpthlp_explicit, term_wpthlp2_explicit),
+            l_required=not l_upwind_xpyp_ta,
+        )
 
         if l_upwind_xpyp_ta:
             term_wprtp2_explicit_zm = zt2zm(nzm, nzt, ngrdcol, gr, wprtp2)
@@ -2531,10 +2638,23 @@ def calc_xp2_xpyp_ta_terms(
                 rhs_ta_wpthlpsclrp = rhs_ta_wpthlpsclrp.at[:, :, sclr].set(rhs_s)
     else:
         if iiPDF_type == iiPDF_ADG1:
-            if (not l_upwind_xpyp_ta) or l_sample:
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (coef_wprtp2_implicit, coef_wprtpthlp_implicit, coef_wpthlp2_implicit) = previous
                 coef_wprtp2_implicit = one_third * beta[:, None] * a1_coef_zt * wp3_on_wp2_zt
                 coef_wpthlp2_implicit = coef_wprtp2_implicit
                 coef_wprtpthlp_implicit = coef_wprtp2_implicit
+
+                return coef_wprtp2_implicit, coef_wprtpthlp_implicit, coef_wpthlp2_implicit
+
+            (
+                coef_wprtp2_implicit,
+                coef_wprtpthlp_implicit,
+                coef_wpthlp2_implicit,
+            ) = stats.sampled_value(
+                centered_diagnostics, (coef_wprtp2_implicit, coef_wprtpthlp_implicit, coef_wpthlp2_implicit),
+                l_required=not l_upwind_xpyp_ta,
+            )
             if l_upwind_xpyp_ta:
                 coef_wprtp2_implicit_zm = one_third * beta[:, None] * a1_coef * wp3_on_wp2
                 sgn_t_vel_rtp2 = jnp.where(wp3_on_wp2 < zero, -one, one)
@@ -2563,15 +2683,41 @@ def calc_xp2_xpyp_ta_terms(
                 lhs_ta_wprtpsclrp = lhs_ta_wpsclrp2
                 lhs_ta_wpthlpsclrp = lhs_ta_wpsclrp2
 
-            if (not l_upwind_xpyp_ta) or l_sample:
+            wprtp_zt = jnp.zeros((ngrdcol, nzt))
+            wpthlp_zt = jnp.zeros((ngrdcol, nzt))
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (
+                    term_wprtp2_explicit,
+                    term_wprtpthlp_explicit,
+                    term_wpthlp2_explicit,
+                    wprtp_zt,
+                    wpthlp_zt,
+                ) = previous
                 wprtp_zt = zm2zt(nzm, nzt, ngrdcol, gr, wprtp)
                 wpthlp_zt = zm2zt(nzm, nzt, ngrdcol, gr, wpthlp)
                 term_wprtp2_explicit = wp_coef_zt * wprtp_zt ** 2
                 term_wpthlp2_explicit = wp_coef_zt * wpthlp_zt ** 2
                 term_wprtpthlp_explicit = wp_coef_zt * wprtp_zt * wpthlp_zt
-            else:
-                wprtp_zt = jnp.zeros((ngrdcol, nzt))
-                wpthlp_zt = jnp.zeros((ngrdcol, nzt))
+
+                return term_wprtp2_explicit, term_wprtpthlp_explicit, term_wpthlp2_explicit, wprtp_zt, wpthlp_zt
+
+            (
+                term_wprtp2_explicit,
+                term_wprtpthlp_explicit,
+                term_wpthlp2_explicit,
+                wprtp_zt,
+                wpthlp_zt,
+            ) = stats.sampled_value(
+                centered_diagnostics, (
+                    term_wprtp2_explicit,
+                    term_wprtpthlp_explicit,
+                    term_wpthlp2_explicit,
+                    wprtp_zt,
+                    wpthlp_zt,
+                ),
+                l_required=not l_upwind_xpyp_ta,
+            )
 
             if l_upwind_xpyp_ta:
                 term_wprtp2_explicit_zm = wp_coef * wprtp ** 2
@@ -2708,10 +2854,23 @@ def calc_xp2_xpyp_ta_terms(
                         )
                         rhs_ta_wpthlpsclrp = rhs_ta_wpthlpsclrp.at[:, :, sclr].set(rhs_s)
         elif iiPDF_type == iiPDF_new:
-            if (not l_upwind_xpyp_ta) or l_sample:
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (coef_wprtp2_implicit, coef_wprtpthlp_implicit, coef_wpthlp2_implicit) = previous
                 coef_wprtp2_implicit = pdf_implicit_coefs_terms.coef_wprtp2_implicit
                 coef_wpthlp2_implicit = pdf_implicit_coefs_terms.coef_wpthlp2_implicit
                 coef_wprtpthlp_implicit = pdf_implicit_coefs_terms.coef_wprtpthlp_implicit
+
+                return coef_wprtp2_implicit, coef_wprtpthlp_implicit, coef_wpthlp2_implicit
+
+            (
+                coef_wprtp2_implicit,
+                coef_wprtpthlp_implicit,
+                coef_wpthlp2_implicit,
+            ) = stats.sampled_value(
+                centered_diagnostics, (coef_wprtp2_implicit, coef_wprtpthlp_implicit, coef_wpthlp2_implicit),
+                l_required=not l_upwind_xpyp_ta,
+            )
             if l_upwind_xpyp_ta:
                 coef_wprtp2_implicit_zm = zt2zm(
                     nzm, nzt, ngrdcol, gr, pdf_implicit_coefs_terms.coef_wprtp2_implicit,
@@ -2752,10 +2911,23 @@ def calc_xp2_xpyp_ta_terms(
                 rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm,
                 l_upwind_xpyp_ta, sgn_t_vel_rtpthlp, coef_wprtpthlp_implicit_zm,
             )
-            if (not l_upwind_xpyp_ta) or l_sample:
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (term_wprtp2_explicit, term_wprtpthlp_explicit, term_wpthlp2_explicit) = previous
                 term_wprtp2_explicit = jnp.zeros_like(term_wprtp2_explicit)
                 term_wpthlp2_explicit = jnp.zeros_like(term_wpthlp2_explicit)
                 term_wprtpthlp_explicit = pdf_implicit_coefs_terms.term_wprtpthlp_explicit
+
+                return term_wprtp2_explicit, term_wprtpthlp_explicit, term_wpthlp2_explicit
+
+            (
+                term_wprtp2_explicit,
+                term_wprtpthlp_explicit,
+                term_wpthlp2_explicit,
+            ) = stats.sampled_value(
+                centered_diagnostics, (term_wprtp2_explicit, term_wprtpthlp_explicit, term_wpthlp2_explicit),
+                l_required=not l_upwind_xpyp_ta,
+            )
 
             rhs_ta_wprtpthlp = xpyp_term_ta_pdf_rhs(
                 nzm, nzt, ngrdcol, gr, term_wprtpthlp_explicit,
@@ -2765,9 +2937,18 @@ def calc_xp2_xpyp_ta_terms(
             rhs_ta_wprtp2 = jnp.zeros_like(rhs_ta_wprtp2)
             rhs_ta_wpthlp2 = jnp.zeros_like(rhs_ta_wpthlp2)
         elif iiPDF_type == iiPDF_new_hybrid:
-            if (not l_upwind_xpyp_ta) or l_sample:
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (coef_wprtp2_implicit, term_wprtp2_explicit) = previous
                 coef_wprtp2_implicit = pdf_implicit_coefs_terms.coef_wprtp2_implicit
                 term_wprtp2_explicit = pdf_implicit_coefs_terms.term_wprtp2_explicit
+
+                return coef_wprtp2_implicit, term_wprtp2_explicit
+
+            (coef_wprtp2_implicit, term_wprtp2_explicit) = stats.sampled_value(
+                centered_diagnostics, (coef_wprtp2_implicit, term_wprtp2_explicit),
+                l_required=not l_upwind_xpyp_ta,
+            )
 
             if l_upwind_xpyp_ta:
                 coef_wprtp2_implicit_zm = zt2zm(
@@ -2792,9 +2973,18 @@ def calc_xp2_xpyp_ta_terms(
                 l_upwind_xpyp_ta, sgn_t_vel_rtp2, term_wprtp2_explicit_zm,
             )
 
-            if (not l_upwind_xpyp_ta) or l_sample:
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (coef_wpthlp2_implicit, term_wpthlp2_explicit) = previous
                 coef_wpthlp2_implicit = pdf_implicit_coefs_terms.coef_wpthlp2_implicit
                 term_wpthlp2_explicit = pdf_implicit_coefs_terms.term_wpthlp2_explicit
+
+                return coef_wpthlp2_implicit, term_wpthlp2_explicit
+
+            (coef_wpthlp2_implicit, term_wpthlp2_explicit) = stats.sampled_value(
+                centered_diagnostics, (coef_wpthlp2_implicit, term_wpthlp2_explicit),
+                l_required=not l_upwind_xpyp_ta,
+            )
 
             if l_upwind_xpyp_ta:
                 coef_wpthlp2_implicit_zm = zt2zm(
@@ -2820,9 +3010,18 @@ def calc_xp2_xpyp_ta_terms(
                 l_upwind_xpyp_ta, sgn_t_vel_thlp2, term_wpthlp2_explicit_zm,
             )
 
-            if (not l_upwind_xpyp_ta) or l_sample:
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (coef_wprtpthlp_implicit, term_wprtpthlp_explicit) = previous
                 coef_wprtpthlp_implicit = pdf_implicit_coefs_terms.coef_wprtpthlp_implicit
                 term_wprtpthlp_explicit = pdf_implicit_coefs_terms.term_wprtpthlp_explicit
+
+                return coef_wprtpthlp_implicit, term_wprtpthlp_explicit
+
+            (coef_wprtpthlp_implicit, term_wprtpthlp_explicit) = stats.sampled_value(
+                centered_diagnostics, (coef_wprtpthlp_implicit, term_wprtpthlp_explicit),
+                l_required=not l_upwind_xpyp_ta,
+            )
 
             if l_upwind_xpyp_ta:
                 coef_wprtpthlp_implicit_zm = zt2zm(
@@ -2850,9 +3049,18 @@ def calc_xp2_xpyp_ta_terms(
                 l_upwind_xpyp_ta, sgn_t_vel_rtpthlp, term_wprtpthlp_explicit_zm,
             )
 
-            if (not l_upwind_xpyp_ta) or l_sample:
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (coef_wpup2_implicit, term_wpup2_explicit) = previous
                 coef_wpup2_implicit = pdf_implicit_coefs_terms.coef_wpup2_implicit
                 term_wpup2_explicit = pdf_implicit_coefs_terms.term_wpup2_explicit
+
+                return coef_wpup2_implicit, term_wpup2_explicit
+
+            (coef_wpup2_implicit, term_wpup2_explicit) = stats.sampled_value(
+                centered_diagnostics, (coef_wpup2_implicit, term_wpup2_explicit),
+                l_required=not l_upwind_xpyp_ta,
+            )
 
             if l_upwind_xpyp_ta:
                 coef_wpup2_implicit_zm = zt2zm(
@@ -2877,9 +3085,18 @@ def calc_xp2_xpyp_ta_terms(
                 l_upwind_xpyp_ta, sgn_t_vel_up2, term_wpup2_explicit_zm,
             )
 
-            if (not l_upwind_xpyp_ta) or l_sample:
+            def centered_diagnostics(previous):
+                """Compute centered coefficients used by physics or sampled diagnostics."""
+                (coef_wpvp2_implicit, term_wpvp2_explicit) = previous
                 coef_wpvp2_implicit = pdf_implicit_coefs_terms.coef_wpvp2_implicit
                 term_wpvp2_explicit = pdf_implicit_coefs_terms.term_wpvp2_explicit
+
+                return coef_wpvp2_implicit, term_wpvp2_explicit
+
+            (coef_wpvp2_implicit, term_wpvp2_explicit) = stats.sampled_value(
+                centered_diagnostics, (coef_wpvp2_implicit, term_wpvp2_explicit),
+                l_required=not l_upwind_xpyp_ta,
+            )
 
             if l_upwind_xpyp_ta:
                 coef_wpvp2_implicit_zm = zt2zm(
@@ -2911,9 +3128,18 @@ def calc_xp2_xpyp_ta_terms(
                     coef_s_zm = jnp.zeros((ngrdcol, nzm))
                     term_s_zm = jnp.zeros((ngrdcol, nzm))
                     sgn = jnp.zeros((ngrdcol, nzm))
-                    if (not l_upwind_xpyp_ta) or l_sample:
+                    def centered_diagnostics(previous):
+                        """Compute centered coefficients used by physics or sampled diagnostics."""
+                        (coef_s, term_s) = previous
                         coef_s = pdf_implicit_coefs_terms.coef_wpsclrp2_implicit[:, :, sclr]
                         term_s = pdf_implicit_coefs_terms.term_wpsclrp2_explicit[:, :, sclr]
+
+                        return coef_s, term_s
+
+                    (coef_s, term_s) = stats.sampled_value(
+                        centered_diagnostics, (coef_s, term_s),
+                        l_required=not l_upwind_xpyp_ta,
+                    )
 
                     if l_upwind_xpyp_ta:
                         coef_s_zm = zt2zm(
@@ -2948,9 +3174,18 @@ def calc_xp2_xpyp_ta_terms(
                     coef_s_zm = jnp.zeros((ngrdcol, nzm))
                     term_s_zm = jnp.zeros((ngrdcol, nzm))
                     sgn = jnp.zeros((ngrdcol, nzm))
-                    if (not l_upwind_xpyp_ta) or l_sample:
+                    def centered_diagnostics(previous):
+                        """Compute centered coefficients used by physics or sampled diagnostics."""
+                        (coef_s, term_s) = previous
                         coef_s = pdf_implicit_coefs_terms.coef_wprtpsclrp_implicit[:, :, sclr]
                         term_s = pdf_implicit_coefs_terms.term_wprtpsclrp_explicit[:, :, sclr]
+
+                        return coef_s, term_s
+
+                    (coef_s, term_s) = stats.sampled_value(
+                        centered_diagnostics, (coef_s, term_s),
+                        l_required=not l_upwind_xpyp_ta,
+                    )
 
                     if l_upwind_xpyp_ta:
                         coef_s_zm = zt2zm(
@@ -2985,9 +3220,18 @@ def calc_xp2_xpyp_ta_terms(
                     coef_s_zm = jnp.zeros((ngrdcol, nzm))
                     term_s_zm = jnp.zeros((ngrdcol, nzm))
                     sgn = jnp.zeros((ngrdcol, nzm))
-                    if (not l_upwind_xpyp_ta) or l_sample:
+                    def centered_diagnostics(previous):
+                        """Compute centered coefficients used by physics or sampled diagnostics."""
+                        (coef_s, term_s) = previous
                         coef_s = pdf_implicit_coefs_terms.coef_wpthlpsclrp_implicit[:, :, sclr]
                         term_s = pdf_implicit_coefs_terms.term_wpthlpsclrp_explicit[:, :, sclr]
+
+                        return coef_s, term_s
+
+                    (coef_s, term_s) = stats.sampled_value(
+                        centered_diagnostics, (coef_s, term_s),
+                        l_required=not l_upwind_xpyp_ta,
+                    )
 
                     if l_upwind_xpyp_ta:
                         coef_s_zm = zt2zm(
@@ -3050,13 +3294,18 @@ def calc_xp2_xpyp_ta_terms(
             l_upwind_xpyp_ta, sgn_t_vel_vp2, term_wpvp2_explicit_zm,
         )
 
-    if l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("coef_wprtp2_implicit", coef_wprtp2_implicit)
         stats = stats.update("term_wprtp2_explicit", term_wprtp2_explicit)
         stats = stats.update("coef_wpthlp2_implicit", coef_wpthlp2_implicit)
         stats = stats.update("term_wpthlp2_explicit", term_wpthlp2_explicit)
         stats = stats.update("coef_wprtpthlp_implicit", coef_wprtpthlp_implicit)
         stats = stats.update("term_wprtpthlp_explicit", term_wprtpthlp_explicit)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return (
         lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp,
@@ -3535,7 +3784,6 @@ def pos_definite_variances(
         real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
           xp2_np1   ! Variance for <n+1>          [units vary]
     """
-    l_sample = stats.l_sample
     if solve_type == xp2_xpyp_rtp2:
         name_pd = "rtp2_pd"
     elif solve_type == xp2_xpyp_thlp2:
@@ -3547,9 +3795,15 @@ def pos_definite_variances(
     else:
         name_pd = ""
 
-    if l_sample and name_pd:
-        # Store previous value for effect of the positive definite scheme
-        stats = stats.begin_budget(name_pd, xp2_np1 / dt)
+    if name_pd:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            # Store previous value for effect of the positive definite scheme
+            stats = stats.begin_budget(name_pd, xp2_np1 / dt)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     if fill_holes_type != 0:
         # Call the hole-filling scheme.
@@ -3564,8 +3818,14 @@ def pos_definite_variances(
             fill_holes_type, xp2_np1,
         )
 
-    if l_sample and name_pd:
-        stats = stats.finalize_budget(name_pd, xp2_np1 / dt)
+    if name_pd:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
+            stats = stats.finalize_budget(name_pd, xp2_np1 / dt)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     return xp2_np1, stats
 

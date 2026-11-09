@@ -2,7 +2,7 @@
 
 The public methods intentionally mirror ``stats_netcdf.F90`` call sites. Names
 and grid slots are static trace-time metadata; dynamic pytree leaves contain
-only compact grid-grouped accumulation banks and budget diagnostics. NetCDF I/O
+the sampling flag, compact grid-grouped banks and budget diagnostics. NetCDF I/O
 is handled by the host ``StatsWriter`` at output boundaries.
 
 Observed Fortran differences retained in this diagnostic pass:
@@ -70,7 +70,7 @@ class JaxStats:
         l_in_budget,
         issues,
     ):
-        self.l_sample = bool(l_sample)
+        self.l_sample = l_sample
         self.names = tuple(names)
         self.grids = tuple(grids)
         self.ncol = int(ncol)
@@ -153,6 +153,7 @@ class JaxStats:
 
     def tree_flatten(self):
         children = (
+            self.l_sample,
             self.buffers,
             self.nsamples,
             self.l_budget,
@@ -160,7 +161,6 @@ class JaxStats:
             self.issues,
         )
         aux_data = (
-            self.l_sample,
             self.names,
             self.grids,
             self.ncol,
@@ -171,8 +171,8 @@ class JaxStats:
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        l_sample, names, grids, ncol, grid_nlev, samples_per_write = aux_data
-        buffers, nsamples, l_budget, l_in_budget, issues = children
+        names, grids, ncol, grid_nlev, samples_per_write = aux_data
+        l_sample, buffers, nsamples, l_budget, l_in_budget, issues = children
         return cls(
             l_sample=l_sample,
             names=names,
@@ -198,7 +198,7 @@ class JaxStats:
         issues=None,
     ):
         return type(self)(
-            l_sample=self.l_sample if l_sample is None else bool(l_sample),
+            l_sample=self.l_sample if l_sample is None else l_sample,
             names=self.names,
             grids=self.grids,
             ncol=self.ncol,
@@ -212,7 +212,7 @@ class JaxStats:
         )
 
     def begin_timestep(self, *, l_sample: bool, l_reset_accumulators: bool):
-        """Set static sampling state and optionally clear the output-window banks."""
+        """Set runtime sampling state and optionally clear the output-window banks."""
         if not l_reset_accumulators:
             return self._new(l_sample=l_sample)
         buffers = tuple(jnp.zeros_like(value) for value in self.buffers)
@@ -228,6 +228,42 @@ class JaxStats:
     def var_on_stats_list(self, name: str) -> bool:
         var_on_stats_list = bool(name) and name.strip() in self.name_to_id
         return var_on_stats_list
+
+    def sampled(self, accumulate):
+        """Apply a stats-only callback on sampled timesteps, returning new stats.
+
+        The registry remains static. Within the callback sampling is known to
+        be enabled, so nested stats updates need no additional runtime guards.
+        Host calls with a Python flag keep their ordinary conditional behavior;
+        traced calls use one scalar JAX conditional, including the calculations
+        of diagnostic values. Both paths preserve the caller's sampling leaf.
+        """
+        if not self.names:
+            return self
+        if isinstance(self.l_sample, bool):
+            return accumulate(self) if self.l_sample else self
+
+        def accumulate_sample(stats):
+            """Trace the sampled branch with nested sampling checks resolved."""
+            updated = accumulate(stats._new(l_sample=True))
+            return updated._new(l_sample=stats.l_sample)
+
+        return self.sampled_value(accumulate_sample, self)
+
+    def sampled_value(self, compute, previous, *, l_required: bool = False):
+        """Compute a sampled or required field, otherwise return its prior value.
+
+        ``previous`` supplies the shape and dtype of the unchanged branch. Use
+        this for diagnostic arrays needed by a later stats block; stats-only
+        updates should use ``sampled`` to resolve nested sampling checks. Set the
+        static ``l_required`` flag when physics needs the same field even on
+        unsampled steps.
+        """
+        if l_required:
+            return compute(previous)
+        if isinstance(self.l_sample, bool):
+            return compute(previous) if self.l_sample else previous
+        return jax.lax.cond(self.l_sample, compute, lambda value: value, previous)
 
     def _record_issue(self, issues, var_id: int, condition, bit: int):
         old_value = issues[var_id]
@@ -310,26 +346,31 @@ class JaxStats:
     def update(self, name: str, values, *, icol: int | None = None, level: int | None = None):
         """Mirror ``stats_update`` with direct JAX-bank accumulation."""
         clean_name = name.strip()
-        if not self.l_sample or not clean_name or clean_name not in self.name_to_id:
+        if not clean_name or clean_name not in self.name_to_id:
             return self
-        var_id = self.name_to_id[clean_name]
-        allowed = jnp.logical_not(self.l_budget[var_id])
-        issues = self._record_issue(
-            self.issues, var_id, jnp.logical_not(allowed), ISSUE_UPDATE_AFTER_BUDGET
-        )
-        buffers, nsamples, issues = self._apply_payload(
-            name=clean_name,
-            values=values,
-            sign=1,
-            l_count_sample=True,
-            allowed=allowed,
-            icol=icol,
-            level=level,
-            buffers=self.buffers,
-            nsamples=self.nsamples,
-            issues=issues,
-        )
-        return self._new(buffers=buffers, nsamples=nsamples, issues=issues)
+
+        def accumulate(stats):
+            """Accumulate the requested variable on a sampled timestep."""
+            var_id = stats.name_to_id[clean_name]
+            allowed = jnp.logical_not(stats.l_budget[var_id])
+            issues = stats._record_issue(
+                stats.issues, var_id, jnp.logical_not(allowed), ISSUE_UPDATE_AFTER_BUDGET
+            )
+            buffers, nsamples, issues = stats._apply_payload(
+                name=clean_name,
+                values=values,
+                sign=1,
+                l_count_sample=True,
+                allowed=allowed,
+                icol=icol,
+                level=level,
+                buffers=stats.buffers,
+                nsamples=stats.nsamples,
+                issues=issues,
+            )
+            return stats._new(buffers=buffers, nsamples=nsamples, issues=issues)
+
+        return self.sampled(accumulate)
 
     def average_subtimesteps(self, previous, num_subtimesteps):
         """Finish source stats_update(sub_timestep_average=.true.) calls.
@@ -348,36 +389,41 @@ class JaxStats:
     def begin_budget(self, name: str, values, *, icol: int | None = None):
         """Mirror ``stats_begin_budget``."""
         clean_name = name.strip()
-        if not self.l_sample or not clean_name or clean_name not in self.name_to_id:
+        if not clean_name or clean_name not in self.name_to_id:
             return self
-        var_id = self.name_to_id[clean_name]
-        allowed = jnp.logical_not(self.l_in_budget[var_id])
-        issues = self._record_issue(
-            self.issues, var_id, jnp.logical_not(allowed), ISSUE_BEGIN_TWICE
-        )
-        buffers, nsamples, issues = self._apply_payload(
-            name=clean_name,
-            values=values,
-            sign=-1,
-            l_count_sample=False,
-            allowed=allowed,
-            icol=icol,
-            level=None,
-            buffers=self.buffers,
-            nsamples=self.nsamples,
-            issues=issues,
-        )
-        l_budget = self.l_budget.at[var_id].set(jnp.where(allowed, True, self.l_budget[var_id]))
-        l_in_budget = self.l_in_budget.at[var_id].set(
-            jnp.where(allowed, True, self.l_in_budget[var_id])
-        )
-        return self._new(
-            buffers=buffers,
-            nsamples=nsamples,
-            l_budget=l_budget,
-            l_in_budget=l_in_budget,
-            issues=issues,
-        )
+
+        def accumulate(stats):
+            """Accumulate the requested variable on a sampled timestep."""
+            var_id = stats.name_to_id[clean_name]
+            allowed = jnp.logical_not(stats.l_in_budget[var_id])
+            issues = stats._record_issue(
+                stats.issues, var_id, jnp.logical_not(allowed), ISSUE_BEGIN_TWICE
+            )
+            buffers, nsamples, issues = stats._apply_payload(
+                name=clean_name,
+                values=values,
+                sign=-1,
+                l_count_sample=False,
+                allowed=allowed,
+                icol=icol,
+                level=None,
+                buffers=stats.buffers,
+                nsamples=stats.nsamples,
+                issues=issues,
+            )
+            l_budget = stats.l_budget.at[var_id].set(jnp.where(allowed, True, stats.l_budget[var_id]))
+            l_in_budget = stats.l_in_budget.at[var_id].set(
+                jnp.where(allowed, True, stats.l_in_budget[var_id])
+            )
+            return stats._new(
+                buffers=buffers,
+                nsamples=nsamples,
+                l_budget=l_budget,
+                l_in_budget=l_in_budget,
+                issues=issues,
+            )
+
+        return self.sampled(accumulate)
 
     def update_budget(
         self,
@@ -389,26 +435,31 @@ class JaxStats:
     ):
         """Mirror ``stats_update_budget``."""
         clean_name = name.strip()
-        if not self.l_sample or not clean_name or clean_name not in self.name_to_id:
+        if not clean_name or clean_name not in self.name_to_id:
             return self
-        var_id = self.name_to_id[clean_name]
-        allowed = self.l_in_budget[var_id]
-        issues = self._record_issue(
-            self.issues, var_id, jnp.logical_not(allowed), ISSUE_UPDATE_WITHOUT_BEGIN
-        )
-        buffers, nsamples, issues = self._apply_payload(
-            name=clean_name,
-            values=values,
-            sign=1,
-            l_count_sample=False,
-            allowed=allowed,
-            icol=icol,
-            level=level,
-            buffers=self.buffers,
-            nsamples=self.nsamples,
-            issues=issues,
-        )
-        return self._new(buffers=buffers, nsamples=nsamples, issues=issues)
+
+        def accumulate(stats):
+            """Accumulate the requested variable on a sampled timestep."""
+            var_id = stats.name_to_id[clean_name]
+            allowed = stats.l_in_budget[var_id]
+            issues = stats._record_issue(
+                stats.issues, var_id, jnp.logical_not(allowed), ISSUE_UPDATE_WITHOUT_BEGIN
+            )
+            buffers, nsamples, issues = stats._apply_payload(
+                name=clean_name,
+                values=values,
+                sign=1,
+                l_count_sample=False,
+                allowed=allowed,
+                icol=icol,
+                level=level,
+                buffers=stats.buffers,
+                nsamples=stats.nsamples,
+                issues=issues,
+            )
+            return stats._new(buffers=buffers, nsamples=nsamples, issues=issues)
+
+        return self.sampled(accumulate)
 
     def finalize_budget(
         self,
@@ -420,34 +471,39 @@ class JaxStats:
     ):
         """Mirror ``stats_finalize_budget``."""
         clean_name = name.strip()
-        if not self.l_sample or not clean_name or clean_name not in self.name_to_id:
+        if not clean_name or clean_name not in self.name_to_id:
             return self
-        var_id = self.name_to_id[clean_name]
-        allowed = self.l_in_budget[var_id]
-        issues = self._record_issue(
-            self.issues, var_id, jnp.logical_not(allowed), ISSUE_FINALIZE_WITHOUT_BEGIN
-        )
-        buffers, nsamples, issues = self._apply_payload(
-            name=clean_name,
-            values=values,
-            sign=1,
-            l_count_sample=bool(l_count_sample),
-            allowed=allowed,
-            icol=icol,
-            level=None,
-            buffers=self.buffers,
-            nsamples=self.nsamples,
-            issues=issues,
-        )
-        l_in_budget = self.l_in_budget.at[var_id].set(
-            jnp.where(allowed, False, self.l_in_budget[var_id])
-        )
-        return self._new(
-            buffers=buffers,
-            nsamples=nsamples,
-            l_in_budget=l_in_budget,
-            issues=issues,
-        )
+
+        def accumulate(stats):
+            """Accumulate the requested variable on a sampled timestep."""
+            var_id = stats.name_to_id[clean_name]
+            allowed = stats.l_in_budget[var_id]
+            issues = stats._record_issue(
+                stats.issues, var_id, jnp.logical_not(allowed), ISSUE_FINALIZE_WITHOUT_BEGIN
+            )
+            buffers, nsamples, issues = stats._apply_payload(
+                name=clean_name,
+                values=values,
+                sign=1,
+                l_count_sample=bool(l_count_sample),
+                allowed=allowed,
+                icol=icol,
+                level=None,
+                buffers=stats.buffers,
+                nsamples=stats.nsamples,
+                issues=issues,
+            )
+            l_in_budget = stats.l_in_budget.at[var_id].set(
+                jnp.where(allowed, False, stats.l_in_budget[var_id])
+            )
+            return stats._new(
+                buffers=buffers,
+                nsamples=nsamples,
+                l_in_budget=l_in_budget,
+                issues=issues,
+            )
+
+        return self.sampled(accumulate)
 
     def to_host_banks(self):
         """Transfer all output banks and compact diagnostics in one device operation."""

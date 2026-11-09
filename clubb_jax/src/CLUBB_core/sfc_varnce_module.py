@@ -191,13 +191,18 @@ def calc_sfc_varnce(
     #-------------------------- Begin Code --------------------------
 
     # Reflect surface varnce changes in budget
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.begin_budget("thlp2_sf", thlp2 / dt)
         stats = stats.begin_budget("rtp2_sf", rtp2 / dt)
         stats = stats.begin_budget("rtpthlp_sf", rtpthlp / dt)
         stats = stats.begin_budget("up2_sf", up2 / dt)
         stats = stats.begin_budget("vp2_sf", vp2 / dt)
         stats = stats.begin_budget("wp2_sf", wp2 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     level_idx = jnp.asarray(
         tuple(
@@ -450,13 +455,18 @@ def calc_sfc_varnce(
             jnp.where(not_at_surface, zero, sclrpthlp[:, gr.k_lb_zm, sclr])
         )
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.finalize_budget("thlp2_sf", thlp2 / dt)
         stats = stats.finalize_budget("rtp2_sf", rtp2 / dt)
         stats = stats.finalize_budget("rtpthlp_sf", rtpthlp / dt)
         stats = stats.finalize_budget("up2_sf", up2 / dt)
         stats = stats.finalize_budget("vp2_sf", vp2 / dt)
         stats = stats.finalize_budget("wp2_sf", wp2 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     if clubb_at_least_debug_level(2):
         nan_mask = (

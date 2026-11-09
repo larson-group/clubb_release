@@ -74,7 +74,7 @@ def test_failed_column_does_not_change_healthy_rmse_gradient():
 
 
 @pytest.mark.parametrize('target', ['loss', 'metrics'])
-@pytest.mark.parametrize('selected', [['C8'], ['C7', 'C8'], None])
+@pytest.mark.parametrize('selected', [['C8'], ['C7', 'C8'], ['C8', 'C7'], None])
 @pytest.mark.parametrize('mode', ['auto', 'forward', 'reverse'])
 @pytest.mark.parametrize('field_count', [1, 2])
 def test_loss_driver_batches_parameter_directions_and_retains_primal_stats(monkeypatch, selected, mode, field_count, target):
@@ -82,6 +82,8 @@ def test_loss_driver_batches_parameter_directions_and_retains_primal_stats(monke
 
     Substitute a polynomial scoring kernel for model advancement so the public
     driver batching contract has an independent, inexpensive numerical oracle.
+    Reverse AD must receive and return only the requested parameter columns;
+    the nonzero fixed C7 values still contribute when only C8 is selected.
     """
     from types import SimpleNamespace
     from clubb_jax.src import clubb_loss_driver as driver
@@ -107,6 +109,22 @@ def test_loss_driver_batches_parameter_directions_and_retains_primal_stats(monke
         return (*metrics, case_rmse(metrics[0], array_module=jnp))
 
     monkeypatch.setattr(driver, 'clubb_get_loss_for_params', score)
+    original_vjp = jax.vjp
+    reverse_shapes = []
+
+    def selected_vjp(function, primal, **kwargs):
+        """Observe the real reverse input and pullback shapes without replacing AD."""
+        values, pullback, auxiliary = original_vjp(function, primal, **kwargs)
+
+        def selected_pullback(seed):
+            """Record the parameter gradient returned by the real pullback."""
+            gradient, = pullback(seed)
+            reverse_shapes.append((primal.shape, gradient.shape))
+            return (gradient,)
+
+        return values, selected_pullback, auxiliary
+
+    monkeypatch.setattr(jax, 'vjp', selected_vjp)
     progress = []
     result = driver.evaluate_loss(params, grad=True, gradient_parameters=selected,
                                   gradient_mode=mode, gradient_target=target,
@@ -115,6 +133,12 @@ def test_loss_driver_batches_parameter_directions_and_retains_primal_stats(monke
     assert result['gradient_parameters'] == list(parameters)
     assert result['gradient_mode'] == (('reverse' if len(parameters) > (1 if target == 'loss' else field_count) else 'forward') if mode == 'auto' else mode)
     assert calls == [result['gradient_mode'] == 'reverse']
+    if result['gradient_mode'] == 'reverse':
+        assert reverse_shapes
+        assert all(primal == gradient == (2, len(parameters))
+                   for primal, gradient in reverse_shapes)
+    else:
+        assert not reverse_shapes
     assert progress == [(0, len(parameters)), (len(parameters), len(parameters))]
     x, y = np.array([.4, .9]), np.array([.2, .7])
     expected = np.stack([2 * x + 3 * y if name == 'C8' else 3 * x + 1 if name == 'C7'

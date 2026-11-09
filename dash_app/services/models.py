@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from clubb_jax.run_jax import runtime_selection
@@ -128,16 +128,8 @@ class TuneRequest(JaxDeviceOptions):
     parameter_ranges: list[ParameterRange] = Field(min_length=1, max_length=24)
     fields: list[str] = Field(default_factory=list, max_length=128)
     config: str = Field(default="default", pattern=r"^[A-Za-z0-9_.-]+$")
-    strategy: Literal["random", "resolve", "simann", "adam"] = "random"
-    max_samples: int = Field(default=12, ge=1, le=1000)
-    resolve_spacing: float = Field(default=0.1, gt=0.0)
-    simann_max_iters: int = Field(default=200, ge=1, le=5000)
-    simann_initial_temp: float = Field(default=1.0, gt=0.0)
-    simann_final_temp: float = Field(default=1.0e-12, gt=0.0)
-    adam_max_updates: int = Field(default=100, ge=1, le=5000)
-    adam_learning_rate: float = Field(default=0.01, gt=0.0)
-    adam_perturbation: float = Field(default=0.05, gt=0.0, le=0.5)
-    adam_spsa_pairs: int = Field(default=2, ge=1)
+    strategy: str = Field(default="random", pattern=r"^[a-z][a-z0-9_]*$")
+    strategy_options: dict[str, Any] = Field(default_factory=dict)
     batch_size: int = Field(default=1, ge=1, le=64)
     max_workers: int = Field(default=1, ge=1)
     loss_weights: dict[str, float] = Field(default_factory=lambda: {"mean": 1.0, "std": 1.0, "corr": 1.0})
@@ -159,7 +151,14 @@ class TuneRequest(JaxDeviceOptions):
 
     @model_validator(mode='after')
     def _gradient_backend(self):
+        """Validate declared options and mandatory gradient/backend requirements."""
+        from tuner.algorithm_registry import apply_requirements, normalize_options
         from utilities.clubb_loss_runner import validate_gradient_backend
+        self.strategy_options = normalize_options(self.strategy, self.strategy_options)
+        request = {"strategy": {"name": self.strategy, "options": self.strategy_options},
+                   "backend": self.backend, "grad": self.grad}
+        apply_requirements(request)
+        self.grad = request["grad"]
         validate_gradient_backend(self.backend, self.grad)
         return self
 

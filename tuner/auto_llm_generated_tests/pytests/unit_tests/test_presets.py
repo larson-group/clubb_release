@@ -6,10 +6,11 @@ import json
 import pytest
 
 from run_scripts.run_tuner_job import parse_param_spec
-from tuner.enhanced_simann_strategy import EnhancedSimulatedAnnealingStrategy
+from tuner.algorithms.simann import EnhancedSimulatedAnnealingStrategy
 from tuner.presets import apply_preset, get_preset, list_presets
 from tuner.request import load_request
-from tuner.tuning_strategy import RandomUniformStrategy, ResolveGridStrategy
+from tuner.algorithms.random import RandomUniformStrategy
+from tuner.algorithms.resolve import ResolveGridStrategy
 
 
 def _linked_spec():
@@ -124,7 +125,7 @@ def test_request_expands_preset_then_normalizes_linked_range(tmp_path, monkeypat
         },
     )
     monkeypatch.setattr(
-        "tuner.request.read_case_tuner_defaults",
+        "tuner.request.read_case_defaults",
         lambda _case, overrides=None: {
             "les_stats_file": "benchmark.nc", "altitude_comparison_range": [0.0, 1000.0],
             "time_average_range": [0, 3600], "num_time_windows": 1,
@@ -141,7 +142,7 @@ def test_request_rejects_overlapping_linked_targets(tmp_path, monkeypatch):
     path = tmp_path / "request.json"
     path.write_text(
         json.dumps({
-            "case_name": "arm", "selected_fields": ["cloud_frac"], "batch_size": 1, "max_workers": 1,
+            "cases": ["arm"], "selected_fields": ["cloud_frac"], "batch_size": 1, "max_workers": 1,
             "strategy": {"name": "random", "options": {"max_samples": 1}},
             "parameter_ranges": [
                 {"name": "C6rt", "targets": ["C6rt", "C6thl"], "min": 0, "max": 1},
@@ -157,7 +158,7 @@ def test_request_rejects_unknown_linked_target(tmp_path, monkeypatch):
     path = tmp_path / "request.json"
     path.write_text(
         json.dumps({
-            "case_name": "arm", "selected_fields": ["cloud_frac"], "batch_size": 1, "max_workers": 1,
+            "cases": ["arm"], "selected_fields": ["cloud_frac"], "batch_size": 1, "max_workers": 1,
             "strategy": {"name": "random", "options": {"max_samples": 1}},
             "parameter_ranges": [{"name": "C6rt", "targets": ["C6rt", "not_a_param"], "min": 0, "max": 1}],
         }), encoding="utf-8")

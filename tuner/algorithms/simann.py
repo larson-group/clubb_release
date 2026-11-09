@@ -1,4 +1,64 @@
-"""Enhanced simulated annealing strategy for the CLUBB tuner."""
+"""Search a bounded scalar objective with adaptive simulated-annealing chains.
+
+EnhancedSimulatedAnnealingStrategy proposes points and accepts total_loss through
+the same fill/tell interface as the other tuners. It follows the movement,
+acceptance and stage adaptation of enhanced_simann::esa_driver. This Python
+implementation manages independent asynchronous chains; the Fortran source is
+the algorithm reference, not a claim of bitwise parity with its RNG sequence.
+
+Coordinates and acceptance
+--------------------------
+Chain coordinates are physical logical-range values, not normalized Adam
+coordinates. Initial locations form a seeded Latin hypercube across the ranges.
+Each coordinate starts with step size 0.35*(upper-lower). A proposal changes a
+selected subset of coordinates by a random signed fraction of their step and
+clips each moved value to its bounds. A coordinate with no previous movement
+attempt is forced into the selection; an empty selection becomes all coordinates.
+The normal selection probability is 0.2 + 0.6*improvement_ratio[j].
+
+Given old loss E and proposal E_try, delta=E_try-E. A non-increasing proposal
+is accepted. An uphill proposal is accepted with probability exp(-delta/T),
+where T is the chain temperature. This permits temporary increases to escape
+local minima. xopt/nrgy_opt retain the best accepted point separately from the
+current xstart/old_nrgy. The scheduler ranks all scored candidates separately.
+Temperature therefore depends on the scale and offset of the objective;
+there is no promise that a setting suited to one loss works for another.
+
+Stage adaptation and stopping
+------------------------------
+A stage ends once total improvements reach 12*d or total attempts reach 50*d,
+where d is the number of logical ranges. If accumulated stage loss is positive
+and finite, the cooling factor is clamp(min_loss*attempts/sum_loss, 0.3, 0.7);
+otherwise it is 0.7. The temperature is multiplied by that factor. For each
+coordinate, ratio=improvements/attempts (zero when unattempted), and
+step *= 1 + stp_adjst_factor*(ratio-stp_adjst_shift). With default shift=0.7
+and factor=1, a ratio of 0.5 contracts a coordinate's step by 20%, while a
+ratio of zero contracts it by 70%. This improves local resolution as successful
+moves become less frequent; it can also limit exploration of other minima.
+Stage counters clear and
+search restarts from that chain's best point. f_tol is the relative improvement
+threshold used to reset the count of stages without significant improvement.
+The stopping check uses T<=max_final_temp and more than three such stages, or
+the per-chain max_iters evaluation cap. The initial evaluation counts as one.
+
+Usage
+-----
+Construct with names, defaults, physical ranges, seed and catalog options.
+fill queues one ready proposal per chain; tell pairs returned total_loss with
+its sample-ID context and accepts/rejects it. Feedback may be partial/reordered.
+is_exhausted reports all chains done; estimated_sample_count and sample_count
+report the maximum evaluation budget. prepare_options defaults chains to
+workers*batch_size; an explicit SimAnn chain_count is supported.
+pending_batch_limit bounds useful in-flight batches. Private helpers implement
+starts, coordinate selection/movement, acceptance, stage cooling and summaries.
+_SimAnnChain retains each temperature, counters and best/current positions for
+current-format checkpoints. Unlike Adam, this method does not reserve a clipped
+default start; the scheduler evaluates configured baselines separately.
+
+Reference: src/Numerical_recipes/enhanced_simann.F90, esa_driver and its cited
+simulated-annealing method. See the source path in this checkout for exact
+acceptance and adaptation policy.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +68,7 @@ import math
 import random
 from typing import Iterable
 
-from tuner.tuning_strategy import BaseTuningStrategy
+from tuner.algorithms.base import BaseTuningStrategy
 
 
 @dataclass
@@ -57,11 +117,16 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         max_final_temp: float = 1.0e-12,
         max_iters: int = 200,
         chain_count: int = 1,
-        stp_adjst_shift: float = 0.5,
+        stp_adjst_shift: float = 0.7,
         stp_adjst_factor: float = 1.0,
         f_tol: float = 1.0e-4,
         seed: int | None = None,
     ):
+        """Initialize independent physical-coordinate chains and annealing controls.
+
+        Each chain starts at a Latin hypercube point with a 35%-of-range proposal
+        step. The RNG is shared by this strategy and preserved by checkpoints.
+        """
         super().__init__(
             param_names=param_names,
             default_params_row=default_params_row,
@@ -99,6 +164,11 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         self._sync_public_state()
 
     def fill(self, pending_samples: deque, capacity: int) -> None:
+        """Queue one proposal for each ready chain until capacity or exhaustion.
+
+        First score a chain's initial point, then draw movement proposals. Store
+        chain ID, proposal kind and selected coordinates under each sample ID.
+        """
         capacity = int(capacity)
         while len(pending_samples) < capacity and not self.is_exhausted():
             chain = self._next_available_chain()
@@ -126,6 +196,11 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
             pending_samples.append(sample)
 
     def tell(self, completed_samples: list[dict]) -> None:
+        """Accept returned losses into the matching chain and refresh public best-state summaries.
+
+        Only complete feedback for the pending sample advances that chain; other
+        chains may remain outstanding. Missing/nonfinite losses are treated as infinity.
+        """
         for completed in sorted(completed_samples, key=lambda item: int(item["sample_id"])):
             context = self._pending_context.pop(int(completed["sample_id"]), None)
             if context is None:
@@ -140,15 +215,23 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
             self._sync_public_state()
 
     def is_exhausted(self) -> bool:
+        """Return whether every annealing chain has reached its stop condition.
+        """
         return all(chain.exhausted for chain in self.chains)
 
     def estimated_sample_count(self) -> int | None:
+        """Return the maximum candidate count; temperature stopping may finish sooner.
+        """
         return self.chain_count * self.max_iters
 
     def pending_batch_limit(self, batch_size: int) -> int | None:
+        """Return enough batches to hold one outstanding candidate per annealing chain.
+        """
         return max(1, math.ceil(self.chain_count / max(1, int(batch_size))))
 
     def _new_chain(self, chain_id: int, xinit: list[float]) -> _SimAnnChain:
+        """Create unscored initial/best/current positions and empty movement counters.
+        """
         return _SimAnnChain(
             chain_id=chain_id,
             xinit=list(xinit),
@@ -163,6 +246,11 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         )
 
     def _latin_hypercube_points(self, count: int) -> list[list[float]]:
+        """Draw one start per chain with one sample per equal interval in each physical range.
+
+        Each coordinate uses shuffled stratified fractions. This standard-library
+        RNG sequence is retained independently of the NumPy helper used by Adam/LHS.
+        """
         if self.vars == 0:
             return [[] for _ in range(count)]
 
@@ -179,6 +267,8 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         return points
 
     def _next_available_chain(self) -> _SimAnnChain | None:
+        """Select a nonexhausted chain without outstanding work, rotating fairly through chains.
+        """
         if not self.chains:
             return None
         for offset in range(len(self.chains)):
@@ -190,6 +280,8 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         return None
 
     def _sample_from_x(self, x_values: Iterable[float], chain_id: int) -> dict:
+        """Expand a chain's physical logical coordinates into a full linked-parameter sample.
+        """
         sample = self._sample_from_selected_params(
             {
                 name: float(value)
@@ -200,6 +292,8 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         return sample
 
     def _initialize_energy(self, chain: _SimAnnChain, einit: float) -> None:
+        """Record the first scored loss as initial/current/best and enforce the evaluation cap.
+        """
         chain.einit = einit
         chain.nrgy_opt = einit
         chain.old_nrgy = einit
@@ -209,6 +303,8 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
             chain.exhausted = True
 
     def _select_partition(self, chain: _SimAnnChain) -> list[bool]:
+        """Choose movement coordinates using improvement ratios, forcing unattempted ones.
+        """
         xpartition = []
         for k in range(self.vars):
             rand = self.rng.random()
@@ -224,6 +320,8 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         return xpartition
 
     def _exec_movement(self, xpartition: list[bool], x: list[float], step: list[float]) -> list[float]:
+        """Move selected coordinates by random signed fractions of their steps and clip to bounds.
+        """
         xtry = list(x)
         for k, selected in enumerate(xpartition):
             if selected:
@@ -241,6 +339,13 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         return xtry
 
     def _accept_or_reject_movement(self, chain: _SimAnnChain, context: dict, new_nrgy: float) -> None:
+        """Process a scored move, then cool/adapt a completed stage if needed.
+
+        Downhill moves always replace the current point; uphill moves use the
+        Boltzmann acceptance probability. Track per-coordinate attempts/improvements,
+        update best accepted state, enforce max_iters, then apply the stage equations
+        described above. The next stage restarts from the best accepted point.
+        """
         if chain.old_nrgy is None or chain.nrgy_opt is None or chain.min_nrgy is None:
             raise RuntimeError("Enhanced simulated annealing received a movement before initial energy")
 
@@ -310,6 +415,8 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
         chain.min_nrgy = chain.nrgy_opt
 
     def _sync_public_state(self) -> None:
+        """Expose the best initialized chain plus aggregate iteration/temperature summaries.
+        """
         initialized = [chain for chain in self.chains if chain.nrgy_opt is not None]
         if initialized:
             best_chain = min(initialized, key=lambda chain: float(chain.nrgy_opt))
@@ -320,8 +427,22 @@ class EnhancedSimulatedAnnealingStrategy(BaseTuningStrategy):
 
     @staticmethod
     def _loss_from_completed(completed: dict) -> float:
+        """Read total_loss as a finite scalar, treating unusable feedback as infinity.
+        """
         try:
             value = float(completed["total_loss"])
         except (KeyError, TypeError, ValueError):
             return math.inf
         return value if math.isfinite(value) else math.inf
+
+    @staticmethod
+    def prepare_options(options, request):
+        """Default the chain count to worker*batch capacity, preserving explicit SimAnn counts.
+        """
+        options.setdefault("chain_count", max(1, request["max_workers"] * request["batch_size"]))
+
+    @staticmethod
+    def sample_count(options, _ranges):
+        """Return the maximum chain_count*max_iters candidate budget.
+        """
+        return options["max_iters"] * options["chain_count"]

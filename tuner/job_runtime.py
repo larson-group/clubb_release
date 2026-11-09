@@ -58,6 +58,8 @@ def tuner_runtime_settings(request: dict) -> dict:
     backend = str(request.get("backend", "fortran")).strip().lower()
     if backend not in {"jax", "fortran"}:
         raise ValueError(f"Unknown tuner backend: {backend}")
+    from tuner.algorithm_registry import apply_requirements
+    apply_requirements(request)
     from utilities.clubb_loss_runner import validate_gradient_backend, validate_gradient_mode
     validate_gradient_backend(backend, request.get("grad", False))
     validate_gradient_mode(request.get('gradient_mode', 'auto'))
@@ -87,7 +89,7 @@ def tuner_worker_env() -> dict:
 
 
 def _case_text_from_request(request: dict) -> str:
-    cases = request.get("cases") or [request.get("case_name", "tune")]
+    cases = request.get("cases", [])
     case_text = "_".join(str(case).strip() for case in cases if str(case).strip())
     return case_text or "tune"
 

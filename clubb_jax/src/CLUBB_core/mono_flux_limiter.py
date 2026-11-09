@@ -461,12 +461,17 @@ def monotonic_turbulent_flux_limit(
     else:
         max_xp2 = 5.0
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.begin_budget(name_wpxp_mfl, wpxp / dt)
         stats = stats.begin_budget(name_xm_mfl, xm / dt)
         stats = stats.update(name_xm_enter_mfl, xm)
         stats = stats.update(name_xm_old, xm_old)
         stats = stats.update(name_wpxp_enter_mfl, wpxp)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     invrs_dt = one / dt
 
@@ -718,7 +723,8 @@ def monotonic_turbulent_flux_limit(
         (xm, err_info),
     )
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update(name_xm_without_ta, xm_without_ta)
         stats = stats.update(name_xm_mfl_min, min_x_allowable)
         stats = stats.update(name_xm_mfl_max, max_x_allowable)
@@ -728,6 +734,10 @@ def monotonic_turbulent_flux_limit(
         stats = stats.finalize_budget(name_xm_mfl, xm / dt)
         stats = stats.update(name_xm_exit_mfl, xm)
         stats = stats.update(name_wpxp_exit_mfl, wpxp)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return xm, wpxp, err_info, stats
 
@@ -1602,9 +1612,14 @@ def mean_vert_vel_up_down(
         + (one - mixt_frac_zm) * mean_w_up_2nd
     )
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("mean_w_up", mean_w_up)
         stats = stats.update("mean_w_down", mean_w_down)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return mean_w_down, mean_w_up, stats
 

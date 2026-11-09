@@ -12,8 +12,15 @@
     const componentId = id => typeof id === "string" ? id : JSON.stringify(id, Object.keys(id).sort());
     const set = (id, property, value) => window.dash_clientside.set_props(id, {[property]: value});
     const isNoUpdate = value => value && value._dash_no_update !== undefined;
-    function status(task, graph, text) {
-        if (graph) set({type: "plots-load-message", index: graph.index}, "children", text);
+    function status(task, graph, text, error = false) {
+        // Loading and errors share an overlay; neither changes the figure's size.
+        if (graph) window.dash_clientside.set_props({type: "plots-load-message", index: graph.index}, {
+            children: text,
+            className: "plots-load-message" + (text ? (error ? " plots-load-message--error" : " plots-load-message--busy") : ""),
+            role: error ? "alert" : "status",
+            "aria-live": error ? "assertive" : "polite",
+            "aria-label": text,
+        });
         else if (task === "case") set("plots-load-status", "children", text);
         else if (task === "catalog") set("plots-catalog-status", "children", text);
         else if (task === "params") {
@@ -122,11 +129,11 @@
             }
         } catch (error) {
             if (current()) {
-                status(entry.task, entry.graph, "Could not load: " + error.message);
+                status(entry.task, entry.graph, "Could not load: " + error.message, true);
                 if (entry.task === "case") {
                     status("params", null, "Could not update selection.");
                     for (const old of scopes.values()) {
-                        if (old.graph) status(old.task, old.graph, "Could not update selection.");
+                        if (old.graph) status(old.task, old.graph, "Could not update selection.", true);
                     }
                 }
                 entry.done = true;

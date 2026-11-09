@@ -234,7 +234,8 @@ def advance_xp3(
         clubb_params, w_tol,
     )
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("thlp2_zt", thlp2_zt)
         stats = stats.update("wpthlp_zt", wpthlp_zt)
         stats = stats.update("wprtp_zt", wprtp_zt)
@@ -243,6 +244,10 @@ def advance_xp3(
         stats = stats.update("vp2_zt", vp2_zt)
         stats = stats.update("upwp_zt", upwp_zt)
         stats = stats.update("vpwp_zt", vpwp_zt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return rtp3, thlp3, sclrp3, up3, vp3, stats
 
@@ -470,7 +475,8 @@ def diagnose_xp3(
             )
             sclrp3 = sclrp3.at[:, :, sclr].set(sclrp3_sclr)
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update("thlp2_zt", thlp2_zt)
         stats = stats.update("wpthlp_zt", wpthlp_zt)
         stats = stats.update("wprtp_zt", wprtp_zt)
@@ -479,6 +485,10 @@ def diagnose_xp3(
         stats = stats.update("vp2_zt", vp2_zt)
         stats = stats.update("upwp_zt", upwp_zt)
         stats = stats.update("vpwp_zt", vpwp_zt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return rtp3, thlp3, up3, vp3, sclrp3, stats
 
@@ -670,8 +680,13 @@ def advance_xp3_simplified(
         name_dp = ""
 
     if l_predict_xp3:
-        if stats.l_sample:
+        def accumulate_stats(stats):
+            """Collect this diagnostic block only on sampled timesteps."""
             stats = stats.begin_budget(name_bt, xp3 / dt)
+
+            return stats
+
+        stats = stats.sampled(accumulate_stats)
 
     # Initialize variables
     term_tp = jnp.zeros((ngrdcol, nzt), dtype=xp3.dtype)
@@ -736,7 +751,8 @@ def advance_xp3_simplified(
     # Set Upper Boundary Condition
     xp3 = xp3.at[:, nzt - 1].set(zero)
 
-    if stats.l_sample:
+    def accumulate_stats(stats):
+        """Collect this diagnostic block only on sampled timesteps."""
         stats = stats.update(name_tp, term_tp)
         stats = stats.update(name_ac, term_ac)
         stats = stats.update(
@@ -745,6 +761,10 @@ def advance_xp3_simplified(
         )
         if l_predict_xp3:
             stats = stats.finalize_budget(name_bt, xp3 / dt)
+
+        return stats
+
+    stats = stats.sampled(accumulate_stats)
 
     return xp3, stats
 
