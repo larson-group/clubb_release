@@ -9,8 +9,8 @@ import clubb_python.CLUBB_core.mono_flux_limiter as fortran
 from clubb_python.derived_types.err_info import ErrInfo as FortranErrInfo
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff, setup_matching_grids
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.mono_flux_limiter import (
     monotonic_turbulent_flux_limit,
     calc_turb_adv_range,

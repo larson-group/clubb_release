@@ -270,7 +270,7 @@ def test_export_failure_does_not_replace_model_error(monkeypatch):
 
 def test_initialization_failure_does_not_leave_a_live_profiler(capture):
     """Close a trace after a missing input file and permit a subsequent capture."""
-    from clubb_jax.src.clubb_case_initalization import init_clubb_case
+    from clubb_jax.src.clubb_case_initialization import init_clubb_case
 
     with pytest.raises(FileNotFoundError):
         init_clubb_case(str(capture / "missing.in"))

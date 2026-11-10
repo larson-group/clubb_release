@@ -9,10 +9,10 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from clubb_jax.src.CLUBB_core.error_code import set_debug_level
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
 from clubb_jax.src.CLUBB_core.sfc_varnce_module import calc_sfc_varnce
 

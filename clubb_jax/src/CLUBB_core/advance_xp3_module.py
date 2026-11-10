@@ -34,7 +34,7 @@ from clubb_jax.src.CLUBB_core.constants_clubb import (
 from clubb_jax.src.CLUBB_core.model_flags import iiPDF_ADG1
 from clubb_jax.src.CLUBB_core.parameter_indices import ixp3_coef_base, ixp3_coef_slope
 from clubb_jax.src.CLUBB_core.grid_class import ddzm, zm2zt, zt2zm
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core import Grid
 
 

@@ -11,10 +11,10 @@ import numpy as np
 from clubb_jax.src.CLUBB_core import ErrInfo, NuVertResDep, SclrIdx
 from clubb_jax.src.CLUBB_core.advance_xp2_xpyp_module import advance_xp2_xpyp
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.model_flags import iiPDF_ADG1
 from clubb_jax.src.CLUBB_core.parameter_indices import iC2thl, nparams
-from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_implicit_coefs_terms_api
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_implicit_coefs_terms_api
 
 
 def test_multiple_lhs_diagnostic_uses_runtime_parameters(capsys):

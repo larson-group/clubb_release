@@ -19,7 +19,7 @@ import jax.numpy as jnp
 import numpy as np
 from netCDF4 import Dataset
 from input.scripts.create_case_namelist import create_case_namelist_file
-from clubb_jax.src.clubb_case_initalization import init_clubb_case, clean_up_clubb
+from clubb_jax.src.clubb_case_initialization import init_clubb_case, clean_up_clubb
 from clubb_jax.src.advance_clubb_to_end import advance_clubb_to_end
 
 

@@ -17,7 +17,7 @@ def test_f2py_oracle():
     """calc_sfc_varnce surface second moments (incl. one scalar tracking rt) match Fortran."""
     from clubb_python.derived_types.sclr_idx import SclrIdx as FortranSclrIdx
     from clubb_python.derived_types.err_info import ErrInfo as FortranErrInfo
-    from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+    from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
     from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
     jgr, fgr = setup_matching_grids(_NG, _DZ, _ZTOP)
     ng, nzm = jgr.zm.shape

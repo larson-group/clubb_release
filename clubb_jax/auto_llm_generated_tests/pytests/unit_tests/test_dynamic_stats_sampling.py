@@ -7,7 +7,7 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import tridiag_solve
 from clubb_jax.src.CLUBB_core.model_flags import iiPDF_ADG1, iiPDF_new, iiPDF_new_hybrid, tridiag_lu
 from clubb_jax.src.CLUBB_core import ErrInfo
@@ -184,7 +184,7 @@ def test_sampling_preserves_physical_advection_terms(monkeypatch, pdf_type, l_up
     """
     module = importlib.import_module('clubb_jax.src.CLUBB_core.advance_xp2_xpyp_module')
     from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-    from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_implicit_coefs_terms_api
+    from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_implicit_coefs_terms_api
 
     monkeypatch.setattr(module, 'l_explicit_turbulent_adv_xpyp', l_explicit)
     grid = setup_grid(ngrdcol=2, deltaz=100., zm_init=0., zm_top=500., grid_type=1)

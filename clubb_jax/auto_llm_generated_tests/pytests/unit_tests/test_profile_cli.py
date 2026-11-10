@@ -169,7 +169,7 @@ def test_frontend_prints_cleanup_capture_after_success(monkeypatch, tmp_path, ca
 
 def test_cleanup_returns_capture_without_viewer_presentation(monkeypatch, tmp_path, capsys):
     """Driver cleanup passes the timer's result back without printing viewer commands."""
-    from clubb_jax.src import clubb_case_initalization as initialization
+    from clubb_jax.src import clubb_case_initialization as initialization
     from clubb_jax.src.Microphys import microphys_init_cleanup
 
     capture = tmp_path / "trace_case"

@@ -147,7 +147,7 @@ uses the F2PY stats API.
   windows, optional batching/remapping/SILHS output, and the
   NetCDF schema mirrored from
   [`stats_netcdf.F90`](../src/CLUBB_core/stats_netcdf.F90).
-- `src/CLUBB_core/jax_stats.py::JaxStats` is an immutable pytree whose public
+- `src/CLUBB_core/stats_netcdf.py::JaxStats` is an immutable pytree whose public
   `update`, `begin_budget`, `update_budget`, `finalize_budget`,
   `var_on_stats_list`, and `l_sample` surface preserves existing core call
   sites. Diagnostic payloads use `stop_gradient`.

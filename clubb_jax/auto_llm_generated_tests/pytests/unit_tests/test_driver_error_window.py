@@ -13,7 +13,7 @@ import pytest
 def test_driver_error_checks_follow_debug_level(monkeypatch, debug_level, iinit):
     import importlib
     from clubb_jax.src.CLUBB_core import error_code
-    from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+    from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
     driver = importlib.import_module('clubb_jax.src.advance_clubb_to_end')
     monkeypatch.setattr(error_code, '_debug_level', debug_level)
     state = dict(dt_main=60., dt_rad=120., time_initial=0., iinit=iinit, ifinal=3, time_final=180.,

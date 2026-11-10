@@ -22,14 +22,14 @@ import pytest
 
 from clubb_jax.src.CLUBB_core import error_code
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, Rd, ep, ep1, ep2, grav, zero_threshold
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid, zm2zt
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.mixing_length import (
     calc_Lscale, compute_mixing_length, compute_coherent_mixing_length, sat_mixrat_liq_flatau,
 )
 from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params, PNAME_IDX
-from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_params
 
 
 @pytest.fixture(autouse=True)

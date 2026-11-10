@@ -17,14 +17,14 @@ import numpy as np
 import pytest
 
 from clubb_jax.src import advance_clubb_to_end as driver
-from clubb_jax.src import clubb_case_initalization as initialization
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src import clubb_case_initialization as initialization
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from clubb_jax.src.CLUBB_core import SclrIdx, error_code
 from clubb_jax.src.CLUBB_core.parameters_tunable import (
     PNAME_IDX, calc_derived_params, init_clubb_params,
 )
 from clubb_jax.src.CLUBB_core.stats_netcdf import StatsWriter
-from clubb_jax.src.Input_fields import namelist
+from clubb_jax.src.CLUBB_core import file_functions
 from input.scripts.create_case_namelist import (
     create_case_settings, write_case_namelist, prune_clubb_stats_namelist, set_stats_string,
 )
@@ -84,7 +84,7 @@ def lifecycle_state(tmp_path, monkeypatch):
 ])
 def test_parameter_namelist_assigns_source_selected_elements(tmp_path, monkeypatch, assignment, expected):
     # Exercise the parser used in the provisioned runtime without f90nml.
-    monkeypatch.setattr(namelist, 'f90nml', None)
+    monkeypatch.setattr(file_functions, 'f90nml', None)
     path = tmp_path / 'parameters.in'
     path.write_text(f'&clubb_params_nl\n {assignment}\n/\n')
     params = init_clubb_params(4, str(path))
@@ -107,7 +107,7 @@ def test_parameter_defaults_and_assignment_bounds(tmp_path):
     ('0:3', 'exceeds ngrdcol'),
 ])
 def test_parameter_sections_reject_invalid_or_unhandled_syntax(tmp_path, monkeypatch, section, message):
-    monkeypatch.setattr(namelist, 'f90nml', None)
+    monkeypatch.setattr(file_functions, 'f90nml', None)
     path = tmp_path / 'parameters.in'
     path.write_text(f'&clubb_params_nl\n C8({section})=.2\n/\n')
     with pytest.raises(ValueError, match=message):

@@ -6,7 +6,7 @@ import numpy as np
 import jax
 import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.config_flags import ConfigFlags
+from clubb_jax.src.CLUBB_core.model_flags import ConfigFlags
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     Cp,
     Lv,
@@ -35,14 +35,13 @@ from clubb_jax.src.CLUBB_core.code_timer_module import (
 )
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid as py_setup_grid
 from clubb_jax.src.CLUBB_core.sclr_idx import SclrIdx
-from clubb_jax.src.CLUBB_core.pdf_params import (
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import (
     init_pdf_implicit_coefs_terms_api,
     init_pdf_params as init_pdf_params_py,
 )
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from clubb_jax.src.CLUBB_core.calc_pressure import calculate_thvm
 from clubb_jax.src.CLUBB_core.error_code import (
-    clubb_at_least_debug_level,
     clubb_at_least_debug_level,
     set_debug_level as set_jax_debug_level,
 )
@@ -59,16 +58,10 @@ from clubb_jax.src.Input_fields.hydrostatic_module import hydrostatic
 from clubb_jax.src.Microphys.parameters_microphys import Nc0_in_cloud
 
 # I/O
-from clubb_jax.src.Input_fields.grid_file import read_grid_file
+from clubb_jax.src.CLUBB_core.grid_class import read_grid_file
 from clubb_jax.src.CLUBB_core.stats_netcdf import StatsWriter
-from clubb_jax.src.Input_fields.namelist import read_namelist
-from clubb_jax.src.Input_fields.sounding import (
-    read_sounding,
-    interpolate_sounding,
-    read_scalar_sounding,
-    interpolate_scalar_sounding,
-)
-from clubb_jax.src.Input_fields.surface import read_surface
+from clubb_jax.src.CLUBB_core.file_functions import read_namelist
+from clubb_jax.src.Input_fields.sounding import read_sounding
 from clubb_jax.src.Benchmark_cases import time_dependent_input
 from clubb_jax.src.Benchmark_cases.mpace_a import mpace_a_init
 from clubb_jax.src.Radiation.soil_vegetation import initialize_soil_veg
@@ -218,35 +211,9 @@ def _resolve_stats_registry_path(namelist_path: str, cfg: dict) -> Path:
     return Path(namelist_path).resolve()
 
 
-def _resolve_case_input_path(namelist_dir: Path, runtype: str, suffix: str) -> Path:
-    """Resolve case input files for either model.in or aggregated CASE.in runs."""
-    candidate = namelist_dir / f"{runtype}{suffix}"
-    if candidate.exists():
-        return candidate
-
-    fallback = _repo_root() / "input" / "case_data" / f"{runtype}{suffix}"
-    if fallback.exists():
-        return fallback
-
-    raise FileNotFoundError(
-        f"Required case input file not found: {candidate} (also checked {fallback})"
-    )
-
-
 def _clean_namelist_path(path_value) -> str:
     """Normalize namelist path strings (strip quotes and whitespace)."""
     return str(path_value).strip().strip("'\"")
-
-
-def _validate_scalar_column_names(names, idx_rt: int, idx_thl: int, idx_co2: int, label: str):
-    """Validate scalar column order against namelist scalar-index mapping."""
-    for col_idx, name in enumerate(names, start=1):
-        if name == 'CO2[ppmv]' and idx_co2 > 0 and col_idx != idx_co2:
-            raise ValueError(f"{label}: iisclr/iiedsclr_CO2 index does not match column order.")
-        if name == 'rt[kg/kg]' and idx_rt > 0 and col_idx != idx_rt:
-            raise ValueError(f"{label}: iisclr/iiedsclr_rt index does not match column order.")
-        if name in {'thm[K]', 'thlm[K]', 'T[K]'} and idx_thl > 0 and col_idx != idx_thl:
-            raise ValueError(f"{label}: iisclr/iiedsclr_thl index does not match column order.")
 
 
 def _resolve_grid_file_path(namelist_dir: Path, grid_path_value) -> Path:
@@ -441,13 +408,7 @@ def init_clubb_case(namelist_path: str) -> dict:
 
     _check_unsupported_features(cfg, flags, microphys_scheme, rad_scheme, l_calc_thlp2_rad)
 
-    # ── 3. Read sounding ────────────────────────────────────────────────
-    snd_path = _resolve_case_input_path(namelist_dir, runtype, "_sounding.in")
-    snd = read_sounding(str(snd_path))
-    temperature_type = snd['temperature_type']
-    subs_type = snd['subs_type']
-
-    # ── 4. Set up grid ──────────────────────────────────────────────────
+    # ── 3. Set up grid ──────────────────────────────────────────────────
     deltaz = np.full(ngrdcol, cfg['deltaz_nl'])
     zm_init = np.full(ngrdcol, cfg['zm_init_nl'])
     zm_top = np.full(ngrdcol, cfg['zm_top_nl'])
@@ -517,21 +478,35 @@ def init_clubb_case(namelist_path: str) -> dict:
     if clubb_at_least_debug_level(1):
         print(f"nzm = {nzm} -- nzt = {nzt}")
 
-    # ── 5. Interpolate sounding onto grid ───────────────────────────────
-    # Use first column's zt for interpolation
-    zt_1d = gr.zt[0, :]  # (nzt,)
-    use_cubic_ic = bool(cfg.get('l_modify_ic_with_cubic_int', False))
-    snd_interp = interpolate_sounding(snd, zt_1d, l_use_cubic=use_cubic_ic)
+    # ── 4. Read sounding and interpolate it onto the grid ───────────────
+    # Scalar indices (mirror initialize_clubb defaults/namelist overrides).
+    iisclr_rt = int(cfg.get('iisclr_rt', -1))
+    iisclr_thl = int(cfg.get('iisclr_thl', -1))
+    iisclr_co2 = int(cfg.get('iisclr_co2', -1))
+    iiedsclr_rt = int(cfg.get('iiedsclr_rt', -1))
+    iiedsclr_thl = int(cfg.get('iiedsclr_thl', -1))
+    iiedsclr_co2 = int(cfg.get('iiedsclr_co2', -1))
+    sclr_idx = SclrIdx(
+        iisclr_rt=iisclr_rt,
+        iisclr_thl=iisclr_thl,
+        iisclr_CO2=iisclr_co2,
+        iiedsclr_rt=iiedsclr_rt,
+        iiedsclr_thl=iiedsclr_thl,
+        iiedsclr_CO2=iiedsclr_co2,
+    )
 
-    # Build 2D arrays (ngrdcol, nzt) by broadcasting 1D profile
-    thlm = np.tile(snd_interp['theta'], (ngrdcol, 1))
-    rtm = np.tile(snd_interp['rt'], (ngrdcol, 1))
-    um = np.tile(snd_interp['u'], (ngrdcol, 1))
-    vm = np.tile(snd_interp['v'], (ngrdcol, 1))
-    ug = np.tile(snd_interp['ug'], (ngrdcol, 1))
-    vg = np.tile(snd_interp['vg'], (ngrdcol, 1))
-    wm_zt = np.tile(snd_interp['w'], (ngrdcol, 1))
-    p_in_Pa = np.zeros((ngrdcol, nzt))  # will be computed
+    iunit = 10  # Fortran file unit, which the Python readers do not use
+
+    # The scalar soundings are copied into sclrm and edsclrm once those are allocated.
+    (thlm, temperature_type, rtm, um, vm, ug, vg,
+     altitude_type, p_in_Pa, subs_type, wm_zt,
+     rtm_sfc, thlm_sfc, sclrm_snd, edsclrm_snd) = read_sounding(
+        ngrdcol, sclr_dim, edsclr_dim, sclr_idx,
+        gr, iunit, runtype, namelist_dir, cfg['zm_init_nl'],
+        saturation_formula,
+        bool(cfg.get('l_readiopdata', False)), bool(cfg.get('l_modify_ic_with_cubic_int', False)),
+        cfg['p_sfc_nl'],
+    )
 
     # ── 6. Initialize pressure / thermodynamic variables ────────────────
     p_sfc = np.full(ngrdcol, cfg['p_sfc_nl'])
@@ -541,6 +516,36 @@ def init_clubb_case(namelist_path: str) -> dict:
 
     fcor = np.full(ngrdcol, fcor_nl)
     fcor_y = np.full(ngrdcol, 2.0 * omega_planet * math.cos(lat_vals * radians_per_deg))
+
+    if temperature_type == 'T[K]':
+
+        if altitude_type == 'z[m]':
+
+            raise ValueError(
+                "Interpetation of sounding files with z as the "
+                "independent variable and absolute temperature "
+                "as the temperature variable has not been "
+                "implemented.  Either specify pressure as the "
+                "independent variable or thm/thlm as the "
+                "temperature variable."
+            )
+
+        elif altitude_type == 'Press[Pa]':
+
+            # The variable "thlm" actually contains temperature (in Kelvin) at
+            # this point.
+
+            # Calculate initial potential temperature from temperature and exner.
+            # Again, the variable "thlm" actually contains temperature before this
+            # calculation.  After this calculation, the variable "thlm" will
+            # actually contain potential temperature.
+            thlm = thlm / (p_in_Pa / p0)**kappa
+
+        else:
+
+            raise ValueError("Invalid sounding vertical-coordinate variable")
+
+    # At this point, thlm may actually contain either theta or theta-l.
 
     # Compute initial thvm (approximation: thvm = thlm * (1 + ep1 * rv))
     # where rv = rtm / (1 + rtm)
@@ -611,17 +616,11 @@ def init_clubb_case(namelist_path: str) -> dict:
     rv_zm = np.maximum(rv_zm, 0.0)
     thm_zm = np.array(zt2zm(nzm=nzm, nzt=nzt, ngrdcol=ngrdcol, gr=gr, azt=thm), copy=True)
 
-    # rtm_sfc: linearly interpolate sounding rt to the zm surface level,
-    # matching Fortran read_sounding which interpolates to gr%zm(1).
-    zm_sfc = gr.zm[0, 0]  # surface momentum level (z=0 typically)
-    z_snd = snd['z']
-    rt_snd = snd['rt']
-    valid_rt = rt_snd > -998.0
-    if np.sum(valid_rt) >= 2 and zm_sfc >= z_snd[valid_rt][0]:
-        rtm_sfc = float(np.interp(zm_sfc, z_snd[valid_rt], rt_snd[valid_rt]))
-    else:
-        rtm_sfc = float(rtm[0, 0])  # fallback: use lowest zt level
-    pd_sfc = p_sfc / (1.0 + ep2 * rtm_sfc)
+    # The value of rtm at the surface is output from the sounding, as long as
+    # the initial sounding extends to the model surface. Otherwise rtm_sfc is
+    # negative, so use rtm at the lowest level.
+    rv_sfc = np.where(rtm_sfc < 0.0, rtm[:, 0], rtm_sfc)
+    pd_sfc = p_sfc / (1.0 + ep2 * rv_sfc)
 
     p_dry_zm = p_in_Pa_zm / (1.0 + ep2 * rv_zm)
     p_dry_zm[:, 0] = pd_sfc
@@ -649,21 +648,6 @@ def init_clubb_case(namelist_path: str) -> dict:
     pdf_params_zm = init_pdf_params_py(nzm, ngrdcol)   # NB: Fortran uses nzm for pdf_params_zm
     pdf_implicit_coefs_terms = init_pdf_implicit_coefs_terms_api(nzt, ngrdcol, sclr_dim)
 
-    # Scalar indices (mirror initialize_clubb defaults/namelist overrides).
-    iisclr_rt = int(cfg.get('iisclr_rt', -1))
-    iisclr_thl = int(cfg.get('iisclr_thl', -1))
-    iisclr_co2 = int(cfg.get('iisclr_co2', -1))
-    iiedsclr_rt = int(cfg.get('iiedsclr_rt', -1))
-    iiedsclr_thl = int(cfg.get('iiedsclr_thl', -1))
-    iiedsclr_co2 = int(cfg.get('iiedsclr_co2', -1))
-    sclr_idx = SclrIdx(
-        iisclr_rt=iisclr_rt,
-        iisclr_thl=iisclr_thl,
-        iisclr_CO2=iisclr_co2,
-        iiedsclr_rt=iiedsclr_rt,
-        iiedsclr_thl=iiedsclr_thl,
-        iiedsclr_CO2=iiedsclr_co2,
-    )
     nu_vert_res_dep, lmin, mixt_frac_max_mag = calc_derived_params(
         gr, ngrdcol, grid_type, deltaz,               # In
         clubb_params, flags.l_prescribed_avg_deltaz,  # In
@@ -684,7 +668,7 @@ def init_clubb_case(namelist_path: str) -> dict:
         )
 
         if err_info.is_fatal():
-            raise RuntimeError("Fatal error calling check_clubb_settings in clubb_case_initalization")
+            raise RuntimeError("Fatal error calling check_clubb_settings in init_clubb_case")
 
     # ── 9. Initialize TKE / variances (case-specific, Fortran-like) ────
     em, wp2, up2, vp2, upwp, um = _initialize_turbulence_state(
@@ -795,26 +779,10 @@ def init_clubb_case(namelist_path: str) -> dict:
 
     # Initialize scalar means from dedicated scalar sounding files.
     if sclr_dim > 0:
-        sclr_path = _resolve_case_input_path(namelist_dir, runtype, "_sclr_sounding.in")
-        sclr_raw = read_scalar_sounding(str(sclr_path), sclr_dim)
-        _validate_scalar_column_names(
-            sclr_raw['names'], iisclr_rt, iisclr_thl, iisclr_co2, label='sclr_sounding'
-        )
-        sclr_zt = interpolate_scalar_sounding(
-            snd['z'], sclr_raw['data'], zt_1d, l_use_cubic=use_cubic_ic
-        )
-        sclrm[:, :, :sclr_dim] = np.tile(sclr_zt[None, :, :], (ngrdcol, 1, 1))
+        sclrm[:, :, :sclr_dim] = sclrm_snd
 
     if edsclr_dim > 0:
-        edsclr_path = _resolve_case_input_path(namelist_dir, runtype, "_edsclr_sounding.in")
-        edsclr_raw = read_scalar_sounding(str(edsclr_path), edsclr_dim)
-        _validate_scalar_column_names(
-            edsclr_raw['names'], iiedsclr_rt, iiedsclr_thl, iiedsclr_co2, label='edsclr_sounding'
-        )
-        edsclr_zt = interpolate_scalar_sounding(
-            snd['z'], edsclr_raw['data'], zt_1d, l_use_cubic=use_cubic_ic
-        )
-        edsclrm[:, :, :edsclr_dim] = np.tile(edsclr_zt[None, :, :], (ngrdcol, 1, 1))
+        edsclrm[:, :, :edsclr_dim] = edsclrm_snd
 
     # Testing of passive scalars (initialize_clubb_variables).
     if iisclr_thl > 0:
@@ -822,17 +790,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     if iiedsclr_thl > 0:
         edsclrm[:, :, iiedsclr_thl - 1] = thlm
 
-    # ── 11. Read surface file ───────────────────────────────────────────
-    sfc_path = None
-    try:
-        sfc_path = _resolve_case_input_path(namelist_dir, runtype, "_sfc.in")
-    except FileNotFoundError:
-        sfc_path = None
-    sfc_data = None
-    if sfc_path is not None and sfc_path.exists():
-        sfc_data = read_surface(str(sfc_path))
-
-    # ── 12. Time controls ───────────────────────────────────────────────
+    # ── 11. Time controls ───────────────────────────────────────────────
     time_initial = float(cfg['time_initial'])
     time_final = float(cfg['time_final'])
     ifinal = int(math.floor((time_final - time_initial) / dt_main))
@@ -853,7 +811,7 @@ def init_clubb_case(namelist_path: str) -> dict:
     stats_nsamp = int(round(cfg['stats_tsamp'] / dt_main))
     stats_nout = int(round(cfg['stats_tout'] / dt_main))
 
-    # ── 13. Initialize stats ────────────────────────────────────────────
+    # ── 12. Initialize stats ────────────────────────────────────────────
     l_stats = bool(cfg['l_stats'])
     stats_registry_path = _resolve_stats_registry_path(namelist_path, cfg)
     stats_output_path = output_dir_path / f"{stats_prefix}_stats.nc"
@@ -929,11 +887,11 @@ def init_clubb_case(namelist_path: str) -> dict:
         if err_info.is_fatal():
             raise RuntimeError("Fatal error calling latin_hypercube_output_init_api in init_clubb_case")
 
-    # ── 14. Zero PDF params ─────────────────────────────────────────────
+    # ── 13. Zero PDF params ─────────────────────────────────────────────
     pdf_params = init_pdf_params_py(nzt, ngrdcol)
     pdf_params_zm = init_pdf_params_py(nzm, ngrdcol)
 
-    # ── 15. Clear any accumulated error codes from init ──────────────
+    # ── 14. Clear any accumulated error codes from init ──────────────
     err_info = err_info.reset_code()
 
     # The Fortran driver initializes these fields for every case before the
@@ -983,7 +941,6 @@ def init_clubb_case(namelist_path: str) -> dict:
         pdf_implicit_coefs_terms=pdf_implicit_coefs_terms,
         err_info=err_info,
         l_modify_bc_for_cnvg_test=bool(cfg.get('l_modify_bc_for_cnvg_test', False)),
-        sfc_data=sfc_data,
         # 1D arrays
         fcor=fcor, fcor_y=fcor_y, sfc_elevation=sfc_elevation,
         p_sfc=p_sfc,
@@ -1127,11 +1084,11 @@ def init_clubb_case(namelist_path: str) -> dict:
         # reads. Execute it first; the restart overwrites the initial sounding.
         # The source reader omits scalar state and some frozen hydrometeors;
         # see RESTART_PORT_NOTES.md for exact-continuation limits.
-        from clubb_jax.src.Input_fields import input_fields
+        from clubb_jax.src.Input_fields import input_fields, input_netcdf
 
-        input_fields.clubb_day = state['day']
-        input_fields.clubb_month = state['month']
-        input_fields.clubb_year = state['year']
+        input_netcdf.clubb_day = state['day']
+        input_netcdf.clubb_month = state['month']
+        input_netcdf.clubb_year = state['year']
         input_fields.l_soil_veg = radiation_parameters.l_soil_veg
         for name in ('em', 'tau_zm', 'Kh_zm', 'sigma_sqd_w'):
             state[name] = jnp.zeros((ngrdcol, nzm))

@@ -12,17 +12,16 @@ from pathlib import Path
 import sys
 import numpy as np
 import jax.numpy as jnp
-from netCDF4 import Dataset, num2date
+from netCDF4 import num2date
 
-from clubb_jax.src.CLUBB_core.constants_clubb import eps, g_per_kg, sec_per_day, w_tol_sqd
-from clubb_jax.src.CLUBB_core.interpolation import lin_interpolate_two_points
+from clubb_jax.src.CLUBB_core.constants_clubb import w_tol_sqd
+from clubb_jax.src.Input_fields import input_netcdf
+from clubb_jax.src.Input_fields.input_netcdf import close_netcdf_read, open_netcdf_read
+from clubb_jax.src.Input_fields.stat_file_utils import l_netcdf_file, stat_file_average
 
 
 # Source inputfields module state, used only during host initialization.
 stat_files = ()
-clubb_day = 1
-clubb_month = 1
-clubb_year = 2000
 # JAX radiation configuration is case-owned; initialization supplies the source
 # soil/vegetation flag at this host-only inputfields boundary.
 l_soil_veg = False
@@ -1176,20 +1175,29 @@ def stat_fields_reader(
 def compute_timestep(filename, l_restart, time):
     """Determine the nearest saved output time; return a one-based record.
 
-    Host adaptation of compute_timestep/open_netcdf_read: inspect actual time
-    coordinates, including files whose output window starts after model start.
-    Restart times must identify a saved record, rather than silently rounding.
+    Host adaptation of compute_timestep: inspect actual time coordinates,
+    including files whose output window starts after model start, rather than
+    counting output intervals from the file's start time. Restart times must
+    identify a saved record, rather than silently rounding.
     """
-    with Dataset(filename) as ds:
-        if "thlm" not in ds.variables:
-            raise ValueError(f"Restart reference file has no thlm: {filename}")
-        time_var = ds.variables["time"]
+    l_netcdf_file(filename)
+
+    fread_var, l_error = open_netcdf_read('thlm', filename)
+
+    if l_error:
+        if fread_var.iounit is not None:
+            close_netcdf_read(fread_var)
+        raise ValueError(f"Error reading file {filename}")
+
+    try:
+        time_var = fread_var.iounit.variables[fread_var.TimeVarId]
         dates = num2date(time_var[:], time_var.units,
                          calendar=getattr(time_var, "calendar", "standard"))
         # Model time is seconds since midnight on the configured start date.
         # Match open_netcdf_read's offset between file and model dates.
         model_midnight = dates[0].replace(
-            year=clubb_year, month=clubb_month, day=clubb_day,
+            year=input_netcdf.clubb_year, month=input_netcdf.clubb_month,
+            day=input_netcdf.clubb_day,
             hour=0, minute=0, second=0, microsecond=0,
         ) if len(dates) else None
         times = np.array([
@@ -1202,7 +1210,9 @@ def compute_timestep(filename, l_restart, time):
         if l_restart and abs(times[nearest_timestep] - time) > 1.0e-8:
             raise ValueError(f"time_restart={time} is not a saved output time in {filename}")
         nearest_timestep = nearest_timestep + 1
-        return nearest_timestep
+    finally:
+        close_netcdf_read(fread_var)
+    return nearest_timestep
 
 
 # -----------------------------------------------------------------------------
@@ -1214,8 +1224,9 @@ def get_clubb_variable_interpolated(
     """Obtain a CLUBB profile and interpolate if needed (host I/O only).
 
     The source l_read_error output is returned with the restored array.
-    NetCDF dimensions are normalized here, at the I/O boundary. Exact grids
-    are copied directly to preserve restart bits.
+    JAX adaptation: the file may hold one column, which initializes every
+    column, or one column per CLUBB column. A level that the file does not
+    cover is a read error, and variable_interpolated is returned unchanged.
 
     Fortran declarations (get_clubb_variable_interpolated in src/Input_fields/input_fields.F90):
 
@@ -1243,94 +1254,31 @@ def get_clubb_variable_interpolated(
         logical, intent(out) :: &
           l_read_error ! Whether there was a read error
     """
-    if not l_input_var:
-        return variable_interpolated, False
+    npower = 1  # Power to raise the profile to (not applied)
 
-    try:
-        with Dataset(filename) as ds:
-            var = ds.variables[varname]
-            # Preserve input_netcdf.get_var's source precision/read errors.
-            if (
-                np.dtype(var.dtype).kind != "f"
-                or np.dtype(var.dtype).itemsize not in (4, 8)
-            ):
-                raise ValueError("Restart fields must use single or double precision")
-            if "units" not in var.ncattrs() or not isinstance(var.units, str):
-                raise ValueError(f"Restart field {varname} requires a units attribute")
-            # CLUBB stats uses zero as _FillValue, including valid zero-valued
-            # fields. Fortran reads raw values; disable netCDF4's masking too.
-            var.set_auto_mask(False)
-            var.set_auto_scale(False)
-            selection = []
-            grid_dim = None
-            remaining_dims = []
-            for dim in var.dimensions:
-                if dim in ("time", "t", "T"):
-                    if not 1 <= timestep <= len(ds.dimensions[dim]):
-                        raise ValueError(f"Restart record {timestep} is outside {filename}")
-                    selection.append(timestep - 1)
-                elif dim in ("x", "X", "y", "Y", "lat", "lon", "latitude", "longitude"):
-                    if len(ds.dimensions[dim]) != 1:
-                        raise ValueError(f"Non-column horizontal dimension: {dim}")
-                    selection.append(0)
-                else:
-                    selection.append(slice(None))
-                    remaining_dims.append(dim)
-                    if dim not in ("col", "column"):
-                        grid_dim = dim
-            data = var[tuple(selection)]
-            data = np.asarray(data, dtype=np.float64)
-            if grid_dim is None:
-                data = data.reshape(-1, 1)
-                heights = np.array([0.0])
-            else:
-                file_nz = data.shape[remaining_dims.index(grid_dim)]
-                data = np.moveaxis(data, remaining_dims.index(grid_dim), -1)
-                data = data.reshape(-1, file_nz)
-                heights = (np.array([0.0]) if grid_dim == "sfc"
-                           else np.asarray(ds.variables[grid_dim][:]))
-            units = var.units.strip()
-            if units == "g/kg":
-                data = data / g_per_kg
-            elif units == "K/day":
-                data = data / sec_per_day
-            elif units == "W/m2":
-                raise ValueError("Cannot convert W/m2 restart field to MKS")
+    if l_input_var:
+        clubb_heights = np.asarray(clubb_heights, dtype=np.float64)
+        l_spec_bound_cond = clubb_heights[:, 0] < 0.0
 
-            if data.shape[0] not in (1, variable_interpolated.shape[0]):
-                raise ValueError(f"Restart column count differs for {varname}")
-            if heights.shape != (vardim,) or np.any(
-                np.abs(heights - clubb_heights) > np.abs(heights + clubb_heights) * eps / 2
-            ):
-                # Interpolate each target column on its own grid, retaining its ghost policy.
-                order = np.argsort(heights)
-                file_variable = data
-                column_idx = np.minimum(np.arange(ngrdcol), data.shape[0] - 1)[:, None]
-                upper_lev_idx = np.searchsorted(heights[order], clubb_heights)
-                upper_lev_idx = np.clip(upper_lev_idx, 1, max(len(heights) - 1, 1))
-                lower_lev_idx = upper_lev_idx - 1
-                if len(heights) > 1:
-                    data = lin_interpolate_two_points(
-                        clubb_heights, heights[order[upper_lev_idx]], heights[order[lower_lev_idx]],  # In
-                        file_variable[column_idx, order[upper_lev_idx]],  # In
-                        file_variable[column_idx, order[lower_lev_idx]],  # In
-                    )
-                else:
-                    data = np.broadcast_to(file_variable, (ngrdcol, vardim)).copy()
-                # Exact levels retain their stored bits, as in the source.
-                exact_lev_idx = np.clip(np.searchsorted(heights[order], clubb_heights), 0, len(heights) - 1)
-                data = np.where(
-                    clubb_heights == heights[order[exact_lev_idx]],
-                    file_variable[column_idx, order[exact_lev_idx]], data,
-                )
-                in_domain = (clubb_heights >= heights[order][0]) & (clubb_heights <= heights[order][-1])
-                data = np.where(in_domain, data, np.inf)
-                l_spec_bound_cond = (clubb_heights[:, 0] < 0.0) & (clubb_heights[:, 0] < heights[order][0])
-                data[:, 0] = np.where(l_spec_bound_cond, file_variable[column_idx[:, 0], order[0]], data[:, 0])
-            data = np.broadcast_to(data, variable_interpolated.shape)
-            if not np.isfinite(data).all():
-                raise ValueError(f"Restart grid does not cover {varname}")
-            return jnp.asarray(data), False
-    except (OSError, KeyError, ValueError, IndexError) as exc:
-        print(f"Error reading {varname} from {filename}: {exc}", file=sys.stderr)
-        return variable_interpolated, True
+        file_variable, l_read_error = stat_file_average(
+            filename, vardim, ngrdcol,
+            timestep, timestep, clubb_heights,
+            varname,
+            npower, l_spec_bound_cond,
+        )
+        if l_read_error:
+            return variable_interpolated, l_read_error
+
+        if not np.isfinite(file_variable).all():
+            print(f"Error reading {varname} from {filename}: "
+                  f"Restart grid does not cover {varname}", file=sys.stderr)
+            return variable_interpolated, True
+
+        variable_interpolated = jnp.asarray(
+            np.broadcast_to(file_variable, variable_interpolated.shape)
+        )
+        l_read_error = False
+    else:
+        l_read_error = False
+
+    return variable_interpolated, l_read_error

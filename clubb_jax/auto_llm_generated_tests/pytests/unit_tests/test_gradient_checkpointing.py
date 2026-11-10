@@ -117,7 +117,7 @@ def test_delayed_stats_output_cannot_reset_a_later_timestep_schedule(tmp_path, m
     registry.write_text('&clubb_stats_nl\n entry(1) = "profile | zt | 1 | State"\n/\n')
     writer = StatsWriter(str(registry), '', 3, 4, 2, np.array([1., 2., 3.]), np.arange(4.),
                          1., 4., 1., 1, 1, 2000, 0., stats_tstart=0., stats_tend=8.)
-    from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+    from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
     stats = JaxStats.from_layout(writer.get_jax_layout(), ncol=2).begin_timestep(
         l_sample=True, l_reset_accumulators=True)
     pending = []

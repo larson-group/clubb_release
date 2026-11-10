@@ -134,8 +134,9 @@ def read_one_dim_file(iunit, nCol, filename):
     if not lines:
         raise ValueError(f"{filename}: empty one-dimensional input file")
 
+    # As in Fortran, only the first nCol columns are read.
     names = [name.strip("'\"") for name in lines.pop(0).split()]
-    if len(names) != nCol:
+    if len(names) < nCol:
         raise ValueError(f"{filename}: expected {nCol} columns, found {len(names)}")
 
     # Count and read the rows into the newly allocated arrays.
@@ -144,11 +145,11 @@ def read_one_dim_file(iunit, nCol, filename):
         if not line.strip():
             continue
         row = line.split()
-        if len(row) != nCol:
+        if len(row) < nCol:
             raise ValueError(
                 f"{filename}:{line_number}: expected {nCol} columns, found {len(row)}"
             )
-        rows.append([float(value) for value in row])
+        rows.append([float(value) for value in row[:nCol]])
     if not rows:
         raise ValueError(f"{filename}: no one-dimensional data rows found")
 

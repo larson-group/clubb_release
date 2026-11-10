@@ -54,7 +54,7 @@ def test_f2py_oracle():
     from clubb_python.CLUBB_core.new_hybrid_pdf_main import new_hybrid_pdf_driver as fortran_driver
     from clubb_python.CLUBB_core.pdf_parameter_module import init_pdf_implicit
     from clubb_python.derived_types.pdf_params_converter import get_fortran_implicit_coefs
-    from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_implicit_coefs_terms_api
+    from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_implicit_coefs_terms_api
     from clubb_jax.src.CLUBB_core.Skx_module import compute_gamma_Skw
     from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
     rng = np.random.default_rng(17)

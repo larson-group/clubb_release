@@ -4,7 +4,7 @@ from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 import os
 _ROOT = str(_REPO_ROOT)
 
-from clubb_jax.src.CLUBB_core.pdf_params import pdf_parameter, implicit_coefs_terms
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import pdf_parameter, implicit_coefs_terms
 
 
 _PDF_MODULE_F90 = os.path.join(_ROOT, "src", "CLUBB_core", "pdf_parameter_module.F90")

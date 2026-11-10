@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 from netCDF4 import Dataset
 
-from clubb_jax.src.Input_fields import input_fields
-from clubb_jax.src.clubb_case_initalization import init_clubb_case
+from clubb_jax.src.Input_fields import input_fields, input_netcdf
+from clubb_jax.src.clubb_case_initialization import init_clubb_case
 from input.scripts.create_case_namelist import create_case_namelist_file, create_case_settings, write_case_namelist, set_stats_string
 
 
@@ -50,12 +50,12 @@ def test_exact_record_selection_date_offset_and_rejection(tmp_path, monkeypatch)
     path = tmp_path / "case_stats.nc"
     _write_profile(path, np.ones((2, 2, 1)))
     for key, value in (("clubb_year", 2000), ("clubb_month", 1), ("clubb_day", 1)):
-        monkeypatch.setattr(input_fields, key, value)
+        monkeypatch.setattr(input_netcdf, key, value)
     assert input_fields.compute_timestep(path, True, 60.0) == 1
     assert input_fields.compute_timestep(path, True, 120.0) == 2
     with pytest.raises(ValueError, match="not a saved output time"):
         input_fields.compute_timestep(path, True, 90.0)
-    monkeypatch.setattr(input_fields, "clubb_day", 2)
+    monkeypatch.setattr(input_netcdf, "clubb_day", 2)
     assert input_fields.compute_timestep(path, True, 120.0 - 86400.0) == 2
 
 

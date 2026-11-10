@@ -13,14 +13,14 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from clubb_jax.src.CLUBB_core import error_code
 from clubb_jax.src.CLUBB_core.numerical_check import check_nan, check_negative
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import (
     check_nan_soln_2d, check_nan_soln_3d,
 )
 from clubb_jax.src.CLUBB_core.model_flags import get_default_config_flags, print_clubb_config_flags_api
-from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params, print_pdf_params
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_params, print_pdf_params
 from clubb_jax.src.CLUBB_core.clip_explicit import clip_rcm
 
 

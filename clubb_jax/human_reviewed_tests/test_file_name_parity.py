@@ -24,8 +24,9 @@ under a second. The JAX environment is used only because it provides pytest.
 Understanding the lists
 -----------------------
 Every difference between the trees must be fixed or listed in one of the tables below with its reason.
-Renames, folds and splits are never listed: the failure output names each one, so it doubles as a work list,
-and the test keeps failing until they are fixed by renaming, splitting or merging the JAX files.
+Renames, folds and splits are normally not listed: the failure output names each one, so it doubles as a work list,
+and the test keeps failing until they are fixed by renaming, splitting or merging the JAX files. The few
+exceptions a reviewer approved are listed with a link to the PR that approved them.
 
   * FORTRAN_ONLY_ALLOWED_DIRS -- whole Fortran subtrees outside the port; their files are not compared.
   * FORTRAN_ONLY_ALLOWED -- Fortran files whose code is genuinely NOT in JAX (out-of-scope subsystems,
@@ -61,20 +62,25 @@ FORTRAN_ONLY_ALLOWED_DIRS = {
                         "ported -- see that entry.",
     "Microphys/COAMPS_microphys": "COAMPS microphysics scheme (fixed-form .F). JAX keeps only disabled "
                                   "interfaces in Microphys/coamps_microphys_driver_module.py.",
-    "Microphys/SCM_Activation": "GFDL aerosol-activation code. Initialization rejects this feature; "
-                                "Microphys/gfdl_activation.py holds only disabled signature dummies.",
 }
 
 # Fortran files (path relative to src/, without extension) whose code is genuinely NOT ported.
-# NOT for renames/folds/splits -- see this file's docstring.
+# NOT for renames/folds/splits -- see this file's docstring -- except the approved ones marked below.
 FORTRAN_ONLY_ALLOWED_FILES = {
     # ---- src/ root: Fortran test programs, the legacy tuner and host machinery ----
     "clubb_loss_driver_test": "Fortran test program for the loss driver. JAX loss coverage is "
                               "clubb_jax/auto_llm_generated_tests/integration_tests/test_loss_driver.py.",
+    # Approved renames and splits (https://github.com/larson-group/clubb/pull/1442).
+    "clubb_driver": "Approved exception (https://github.com/larson-group/clubb/pull/1442): ported as clubb_case_initialization.py and "
+                    "advance_clubb_to_end.py.",
+    "CLUBB_core/array_index": "Approved exception (https://github.com/larson-group/clubb/pull/1442): ported as CLUBB_core/sclr_idx.py.",
+    "Radiation/radiation_variables_module": "Only creates and zeroes the radiation flux and heating-rate "
+                                            "arrays; clubb_case_initialization.py does this inline in the "
+                                            "case state (https://github.com/larson-group/clubb/pull/1442).",
     "clubb_thread_test":"Fortran test program (thread-safety); JAX has no OpenMP equivalent to test.",
     "G_unit_tests": "Fortran unit-test driver program; JAX's equivalent is the pytest suite.",
     "generalized_grid_test": "Grid-generalization self-test invoked from clubb_driver.F90. The JAX driver "
-                             "rejects it (clubb_case_initalization.py: l_test_grid_generalization).",
+                             "rejects it (clubb_case_initialization.py: l_test_grid_generalization).",
     "clubb_tuner": "Legacy Fortran tuner program. JAX takes part in tuning through the Python tuner "
                    "(tuner/, loss through clubb_loss_driver.py), not through a port of this program.",
     "error": "Despite the name, this module is the legacy Fortran tuner (tuner_init, min_les_clubb_diff, "
@@ -95,7 +101,7 @@ FORTRAN_ONLY_ALLOWED_FILES = {
                                    "Revisit if clubb_driver.F90, which uses this module, is mirrored.",
     "CLUBB_core/endian": "Byte-order detection for Fortran binary I/O. No callers anywhere in src/.",
     "CLUBB_core/grid_adaptation_module": "Adaptive grid remapping. The JAX driver rejects it "
-                                         "(clubb_case_initalization.py: grid_adapt_in_time_method > 0).",
+                                         "(clubb_case_initialization.py: grid_adapt_in_time_method > 0).",
     "CLUBB_core/penta_bicgstab_solver": "Experimental iterative pentadiagonal solver; its own header says it "
                                         "is slower than the direct LU solver even on GPU, and is not "
                                         "GPU-ized. Only penta_lu_solver is ported.",
@@ -117,7 +123,11 @@ FORTRAN_ONLY_ALLOWED_FILES = {
                                      "needs no interface declaration.",
     "Microphys/KK_microphys/AiryFunction": "Airy-function routines that the KK parabolic cylinder orders do "
                                            "not need. Parabolic.f90 uses only xpowy (x**y), which "
-                                           "parabolic_cylinder.py writes as `**`.",
+                                           "Parabolic.py writes as `**`.",
+    "Microphys/KK_microphys/Parabolic_constants": "Mathematical constants (pi, sqrt(pi), ...) and the "
+                                                  "epss tolerance for Parabolic.f90 and AiryFunction.f90. "
+                                                  "Parabolic.py uses jnp.pi/jnp.sqrt inline and fixes epss "
+                                                  "at the source default 1e-4.",
     "Microphys/Morrison_microphys/microphysics": "M2005 host driver, commented out of the Fortran build "
                                                  "itself (Morrison_microphys/CMakeLists.txt: 'current "
                                                  "unused').",
@@ -144,8 +154,14 @@ FORTRAN_ONLY_ALLOWED_FILES = {
 }
 
 # JAX files (path relative to clubb_jax/src/, without extension) with no Fortran source to mirror.
-# NOT for renames/folds/splits -- see this file's docstring.
+# NOT for renames/folds/splits -- see this file's docstring -- except the approved ones marked below.
 JAX_ONLY_ALLOWED_FILES = {
+    # ---- Approved renames and splits (https://github.com/larson-group/clubb/pull/1442) ----
+    "clubb_case_initialization": "Approved split of clubb_driver.F90 (https://github.com/larson-group/clubb/pull/1442): case initialization, "
+                                 "batch reset, cleanup and restart.",
+    "advance_clubb_to_end": "Approved split of clubb_driver.F90 (https://github.com/larson-group/clubb/pull/1442): the JAX time loop, whose structure "
+                            "differs substantially from the Fortran driver.",
+    "CLUBB_core/sclr_idx": "Approved rename of array_index.F90 (https://github.com/larson-group/clubb/pull/1442): holds the SclrIdx scalar-index type.",
 }
 
 def _twin(path, old_exts, new_root, new_ext):

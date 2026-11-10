@@ -22,7 +22,7 @@ import jax.numpy as jnp
 from clubb_jax.src.Radiation.simple_rad_module import simple_rad, simple_rad_bomex
 from clubb_jax.src.Radiation.parameters_radiation import RadiationParameters
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp as _CP
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
 _NG, _DZ, _ZTOP = 2, 40.0, 1200.0

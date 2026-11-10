@@ -9,7 +9,7 @@ from clubb_jax.src.CLUBB_core.advance_xp2_xpyp_module import update_xp2_mc as _u
 from clubb_jax.src.CLUBB_core.grid_class import zt2zm
 from clubb_jax.src.CLUBB_core.constants_clubb import cloud_frac_min, Cp, Lv
 from clubb_jax.src.CLUBB_core.grid_class import setup_grid
-from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_params
 
 _NG, _DZ, _ZTOP = 2, 50.0, 1500.0
 

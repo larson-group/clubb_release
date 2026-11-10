@@ -12,7 +12,7 @@ the Fortran `if (sclr_dim>0)` alloc). Pure-Python, never SKIPs. (iter 522)
 
 import numpy as np
 
-from clubb_jax.src.CLUBB_core.pdf_params import (
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import (
     init_pdf_params, zero_pdf_params_api,
     init_pdf_implicit_coefs_terms_api, zero_pdf_implicit_coefs_terms_api,
 )

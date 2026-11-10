@@ -9,7 +9,7 @@ from clubb_jax.src.CLUBB_core.corr_varnce_module import assert_corr_symmetric
 from clubb_jax.src.CLUBB_core.numerical_check import (
     sfc_varnce_check, length_check, pdf_closure_check, rad_check, invalid_model_arrays,
 )
-from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_params
 
 
 def test_assert_corr_symmetric_behavior():

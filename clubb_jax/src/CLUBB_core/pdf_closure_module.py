@@ -70,7 +70,7 @@ from clubb_jax.src.CLUBB_core.LY93_pdf import LY93_driver
 from clubb_jax.src.CLUBB_core.Skx_module import Skx_func, compute_gamma_Skw
 from clubb_jax.src.CLUBB_core.grid_class import zt2zm, zm2zt
 from clubb_jax.src.CLUBB_core.pdf_utilities import calc_corr_chi_x, calc_corr_eta_x
-from clubb_jax.src.CLUBB_core.pdf_params import (
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import (
     init_pdf_implicit_coefs_terms_api,
 )
 

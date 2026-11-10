@@ -5,7 +5,7 @@ evaporation coefficient (KK_evap_coef = 3 C_evap G_T_p). From Rogers & Yau (1989
 Eqs. 7.17-7.18 / Khairoutdinov & Kogan (2000) Eq. 22. Oracle: KK_utilities.F90:169.
 
 (The parabolic cylinder function Dv_fnc, also in KK_utilities.F90, lives in
-parabolic_cylinder.py.)
+Parabolic.py.)
 """
 from clubb_jax.src.CLUBB_core.saturation import (
     sat_vapor_press_liq, SATURATION_FLATAU,

@@ -20,7 +20,7 @@ Porting deviations:
 - This JAX entry point preserves the Fortran argument and return contract while
   using JAX-side stats, limiter, positive-definite, skewness, and matrix-solver
   helpers inside the jitted region.
-- Sponge damping blocks are unsupported here because clubb_case_initalization
+- Sponge damping blocks are unsupported here because clubb_case_initialization
   rejects sponge-enabled Python/JAX driver cases before this routine is called.
 - error_prints_xm_wpxp is intentionally reduced until full JAX diagnostic state
   is available.
@@ -57,7 +57,7 @@ from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical
 from clubb_jax.src.CLUBB_core.mean_adv import term_ma_zt_lhs, term_ma_zm_lhs
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import band_solve
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.mono_flux_limiter import (
     calc_turb_adv_range,
     monotonic_turbulent_flux_limit,
@@ -711,7 +711,7 @@ def advance_xm_wpxp(
             vpwp = one_half * (vpwp_old + vpwp)
 
     # Fortran applies rtm/thlm/uv sponge damping here. The Python/JAX driver
-    # rejects sponge-enabled cases in clubb_case_initalization, so these blocks
+    # rejects sponge-enabled cases in clubb_case_initialization, so these blocks
     # remain unsupported until sponge-layer state is owned by the JAX path.
 
     if l_predict_upwp_vpwp:

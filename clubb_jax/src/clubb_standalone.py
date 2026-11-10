@@ -33,7 +33,7 @@ import time
 
 import jax
 from clubb_jax.view_profile import print_profile_commands
-from clubb_jax.src.clubb_case_initalization import (
+from clubb_jax.src.clubb_case_initialization import (
     clean_up_clubb,
     init_clubb_case,
     set_case_initial_conditions,

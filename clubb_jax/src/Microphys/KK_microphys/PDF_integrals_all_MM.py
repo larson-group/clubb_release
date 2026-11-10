@@ -8,7 +8,7 @@ over the ith PDF component, where x1 and x2 are NORMAL marginals (x2 integrated 
 parabolic-cylinder D_v) and x3 is LOGNORMAL (ln x3 normal). `quadrivar_NNLL_MM` adds a second lognormal x4.
 
 Reference: Griffin (2016), PhD thesis, Eq. (I22). The transcendental pieces — the parabolic-cylinder function
-D_v and the Gamma function — are reused from `parabolic_cylinder` (the same accurate float64 implementations the
+D_v and the Gamma function — are reused from `Parabolic` (the same accurate float64 implementations the
 already-ported means/covariance integrals use). Integer orders a_exp/b_exp are static → the finite p/r/q sums
 unroll at trace time; alpha_exp/beta_exp are float exponents. Pure jnp → differentiable.
 
@@ -23,7 +23,7 @@ import math
 
 import jax.numpy as jnp
 
-from clubb_jax.src.Microphys.KK_microphys.parabolic_cylinder import (
+from clubb_jax.src.Microphys.KK_microphys.Parabolic import (
     _gamma_real,
     _dvc,          # clamped parabolic-cylinder D_v (its home, next to dv_parabolic_cylinder)
 )

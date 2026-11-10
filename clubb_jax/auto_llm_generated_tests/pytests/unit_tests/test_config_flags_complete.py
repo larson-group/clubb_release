@@ -49,5 +49,5 @@ def test_config_flags_cover_all_fortran_configurable_flags():
     missing = sorted(f for f in fort_flags if f not in jax_fields)
     assert not missing, (
         "JAX ConfigFlags is MISSING these case-settable flags (a model.in setting one would be silently "
-        f"ignored): {missing}. Add them to CLUBB_core/config_flags.py + model_flags.py defaults.")
+        f"ignored): {missing}. Add them to ConfigFlags and the defaults in CLUBB_core/model_flags.py.")
     print(f"  ConfigFlags covers all {len(fort_flags)} case-settable namelist flags  PASS")

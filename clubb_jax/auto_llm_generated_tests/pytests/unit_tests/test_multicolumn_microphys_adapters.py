@@ -17,9 +17,9 @@ import numpy as np
 import pytest
 
 from clubb_jax.auto_llm_generated_tests.pytests.microphysics_test_inputs import initialize
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_driver_api
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.Microphys import pdf_hydromet_microphys_wrapper as wrapper
 
 

@@ -8,7 +8,7 @@ import pytest
 
 from clubb_jax.src.CLUBB_core.model_flags import get_default_config_flags
 from clubb_jax.src.Radiation.parameters_radiation import initialize_radiation_parameters
-from clubb_jax.src.clubb_case_initalization import _check_unsupported_features
+from clubb_jax.src.clubb_case_initialization import _check_unsupported_features
 
 
 _BASE = {

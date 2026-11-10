@@ -156,7 +156,7 @@ def matrix_vector_mult(ngrdcol, dim_input, dim_output, x_vectors, A_matrices):
     The result y is calculated for every ngrdcol
 
     Returns:
-        matrix_vector_mult
+        y_vectors
 
     Fortran declarations (matrix_vector_mult in src/CLUBB_core/remapping_module.F90):
 
@@ -171,6 +171,10 @@ def matrix_vector_mult(ngrdcol, dim_input, dim_output, x_vectors, A_matrices):
 
         real( kind = core_rknd ), dimension(ngrdcol,dim_output,dim_input), intent(in) :: &
           A_matrices ! values of the matrices (ngrdcol many matrices)
+
+        !--------------------- Output Variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,dim_output) :: &
+          y_vectors ! values of the y vectors (ngrdcol many vectors)
     """
     #--------------------- Begin Code ---------------------
     # matrix vector multiplication

@@ -18,7 +18,7 @@ import numpy as np
 from clubb_jax.src.CLUBB_core.advance_clubb_core_module import advance_clubb_core
 from clubb_jax.src.CLUBB_core.advance_helper_module import calculate_thlp2_rad
 from clubb_jax.src.CLUBB_core.calc_pressure import calculate_thvm
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.code_timer_module import timer_start, timer_stop, timer_guard
 from clubb_jax.src.Benchmark_cases.prescribe_forcings import prescribe_forcings

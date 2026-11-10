@@ -40,8 +40,9 @@ determining the restart time. Both runs retain user physics overrides.
   96 source field-read calls, in order. Thermodynamic/momentum fields,
   selected hydrometeors, PDF fields and optional soil temperatures follow
   the existing Fortran selection. Variances retain the source lower bounds.
-- The host NetCDF boundary includes the relevant `input_netcdf.F90` and
-  `stat_file_utils.F90` reads, unit conversion and linear interpolation.
+- `src/Input_fields/input_netcdf.F90` and `stat_file_utils.F90`, mirrored by
+  `input_netcdf.py` and `stat_file_utils.py`: opening the file, reading one
+  record, unit conversion and linear interpolation onto the CLUBB grid.
 
 `advance_clubb_to_end` only changes its starting iteration, remaining step
 count and statistics iteration. Forcings, radiation cadence and SILHS seeds
@@ -58,6 +59,11 @@ use the resulting absolute iteration without changing their formulas.
   remapped grids use the source linear interpolation formula. Valid zeros
   are read raw because CLUBB uses `_FillValue=0`. File/model date offsets and
   one-based record indices are retained.
+- Surface fields without a vertical dimension, such as the soil and
+  vegetation temperatures `(time, col)` that CLUBB stats files hold, are read
+  as one level at height 0. The Fortran `open_netcdf_read` and
+  `get_netcdf_var` accept only 3- or 4-dimensional fields, so a Fortran
+  restart that reads these temperatures (`l_soil_veg`) stops with a read error.
 - Restart time must align with the model timestep and identify a saved
   record. Actual time coordinates select the record, including files with
   delayed output windows; the source instead infers an index from the date

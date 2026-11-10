@@ -43,7 +43,7 @@ from clubb_jax.src.CLUBB_core.error_code import (
     CLUBB_FATAL_ERROR,
     clubb_at_least_debug_level,
 )
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core import ErrInfo, Grid, SclrIdx
 
 

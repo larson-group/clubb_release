@@ -10,7 +10,7 @@ import jax.numpy as jnp
 import pytest
 from netCDF4 import Dataset
 
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.stats_netcdf import StatsWriter, _parse_registry
 
 

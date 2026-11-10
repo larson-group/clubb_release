@@ -18,7 +18,7 @@ def test_driver_f2py():
     from clubb_python.CLUBB_core.new_pdf_main import new_pdf_driver as fortran_new_pdf_driver
     from clubb_python.CLUBB_core.pdf_parameter_module import init_pdf_implicit
     from clubb_python.derived_types.pdf_params_converter import get_fortran_implicit_coefs
-    from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_implicit_coefs_terms_api
+    from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_implicit_coefs_terms_api
     nparams, ng, nz = 102, 2, 8
     rng = np.random.default_rng(11)
     # Plausible tunable params: slope>0, stdev_factor>0, coef_spread in (0,1].

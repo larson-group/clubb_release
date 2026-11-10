@@ -16,7 +16,7 @@ See also
   /Implict solution for the vertical velocity moments/
 
 Porting deviations:
-- Sponge damping blocks are unsupported here because clubb_case_initalization
+- Sponge damping blocks are unsupported here because clubb_case_initialization
   rejects sponge-enabled Python/JAX driver cases before this routine is called.
 - Diagnostic-only early returns remain reduced; fatal conditions mark err_info
   and the host driver owns stopping after the compiled call.
@@ -55,7 +55,7 @@ from clubb_jax.src.CLUBB_core.grid_class import (
     zm2zt2zm,
     zt2zm,
 )
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.mean_adv import term_ma_zt_lhs, term_ma_zm_lhs
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import band_solve
 from clubb_jax.src.CLUBB_core.constants_clubb import (

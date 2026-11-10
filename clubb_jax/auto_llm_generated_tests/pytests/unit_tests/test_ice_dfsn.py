@@ -23,7 +23,7 @@ _N_I, _MASS_INIT, _RCM_THR = 2000.0, 1.0e-11, 1.0e-5
 _A, _B, _KU, _Q, _N = 2.05e-3, 1.8, 55.0, 0.17, 0.70
 
 
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.Microphys.ice_dfsn_module import ice_dfsn as source_ice_dfsn
 
 

@@ -13,7 +13,10 @@ The main entry point is [`src/clubb_standalone.py`](./src/clubb_standalone.py),
 and translated source lives under [`src/`](./src/):
 
 - `src/CLUBB_core/` contains the supported CLUBB core and JAX statistics code.
-- `src/Input_fields/` contains namelist, sounding, surface, and grid readers.
+- `src/Input_fields/` contains the sounding, forcing-input and netCDF
+  statistics-file readers. The namelist reader is in
+  `src/CLUBB_core/file_functions.py` and the grid-file reader in
+  `src/CLUBB_core/grid_class.py`.
 - `src/Radiation/` contains the supported radiation code.
 - `src/Microphys/` contains KK and Morrison microphysics, including cloud
   sedimentation and feedback to CLUBB. The strict comparison suite covers KK
@@ -219,7 +222,7 @@ compilation. Recording can also substantially slow CPU execution; leave it off
 for baseline speed measurements. Use an existing iteration limit for initial
 exploration. Named regions mirror the timers in `clubb_driver.F90`, with an
 additional region identifying each timestep; the corresponding JAX driver
-is split between `clubb_case_initalization.py` and `advance_clubb_to_end.py`.
+is split between `clubb_case_initialization.py` and `advance_clubb_to_end.py`.
 The timer module owns timing, capture and error cleanup. Deep trace finalization
 waits for outstanding case work rather than synchronizing every region.
 Instrumentation is outside compiled physics functions and does not change model

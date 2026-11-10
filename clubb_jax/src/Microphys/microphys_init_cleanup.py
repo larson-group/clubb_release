@@ -35,7 +35,7 @@ from clubb_jax.src.SILHS import parameters_silhs
 from clubb_jax.src.Microphys import parameters_microphys as parameters
 from clubb_jax.src.Microphys.KK_microphys import parameters_KK
 from clubb_jax.src.Microphys.Morrison_microphys import module_mp_graupel
-from clubb_jax.src.Input_fields.namelist import read_namelist
+from clubb_jax.src.CLUBB_core.file_functions import read_namelist
 from clubb_jax.src.Input_fields.corr_varnce_input_reader import read_correlation_matrix
 from clubb_jax.src.CLUBB_core.corr_varnce_module import (
     init_pdf_hydromet_arrays_api,
@@ -147,9 +147,9 @@ def init_microphys(
     )
     parameters_KK.C_evap = float(cfg.get("c_evap", parameters_KK.C_evap))
     parameters_KK.r_0 = float(cfg.get("r_0", parameters_KK.r_0))
-    from clubb_jax.src.Microphys.KK_microphys import parabolic_cylinder
+    from clubb_jax.src.Microphys.KK_microphys import Parabolic
 
-    parabolic_cylinder.l_high_accuracy_parab_cyl_fnc = bool(
+    Parabolic.l_high_accuracy_parab_cyl_fnc = bool(
         cfg.get("l_high_accuracy_parab_cyl_fnc", False)
     )
     if cfg.get("l_morr_xp2_mc", False):

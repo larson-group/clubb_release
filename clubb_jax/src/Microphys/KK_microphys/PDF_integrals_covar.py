@@ -14,8 +14,8 @@ import math
 import jax.numpy as jnp
 
 from clubb_jax.src.Microphys.KK_microphys.PDF_integrals_means import _signed_pow
-from clubb_jax.src.Microphys.KK_microphys.parabolic_cylinder import _dvc
-from clubb_jax.src.Microphys.KK_microphys.parabolic_cylinder import _gamma_real
+from clubb_jax.src.Microphys.KK_microphys.Parabolic import _dvc
+from clubb_jax.src.Microphys.KK_microphys.Parabolic import _gamma_real
 
 # Imports may occur inside JIT tracing; module constants must remain host scalars.
 _SQRT_2PI = math.sqrt(2.0 * math.pi)

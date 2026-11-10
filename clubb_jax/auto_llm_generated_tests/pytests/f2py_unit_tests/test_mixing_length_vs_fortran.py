@@ -15,7 +15,7 @@ from clubb_python.derived_types.err_info import ErrInfo as FortranErrInfo
 from utilities.output_paths import REPO_ROOT as _REPO_ROOT
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff, max_rel_diff, no_stats, setup_matching_grids
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from clubb_jax.src.CLUBB_core.mixing_length import (
     set_Lscale_max,
     calc_Lscale_directly,
@@ -24,7 +24,7 @@ from clubb_jax.src.CLUBB_core.mixing_length import (
 from clubb_jax.src.CLUBB_core.model_flags import Lscale_direct
 from clubb_jax.src.CLUBB_core.parameter_indices import iLscale_mu_entrain
 from clubb_jax.src.CLUBB_core.parameters_tunable import init_clubb_params
-from clubb_jax.src.CLUBB_core.pdf_params import init_pdf_params
+from clubb_jax.src.CLUBB_core.pdf_parameter_module import init_pdf_params
 from clubb_jax.src.CLUBB_core.saturation import SATURATION_FLATAU
 
 _ROOT = str(_REPO_ROOT)

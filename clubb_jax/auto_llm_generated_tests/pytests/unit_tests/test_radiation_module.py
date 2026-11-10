@@ -7,8 +7,8 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from clubb_jax.src import clubb_case_initalization
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src import clubb_case_initialization
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.Radiation.simple_rad_module import simple_rad_lba
 from clubb_jax.src.Radiation.soil_vegetation import advance_soil_veg
 from clubb_jax.src.advance_clubb_to_end import _advance_radiation
@@ -23,12 +23,12 @@ SOIL_FIELDS = ("deep_soil_T_in_K", "sfc_soil_T_in_K", "veg_T_in_K")
 
 @pytest.fixture(scope="module", params=["arm", "bomex", "lba", "dycoms2_rf01"])
 def radiation_state(request):
-    read_namelist = clubb_case_initalization.read_namelist
+    read_namelist = clubb_case_initialization.read_namelist
     # Exercise radiation independently of unsupported microphysics/SILHS and
     # avoid opening case output files. Keep the real case's radiation settings.
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(
-            clubb_case_initalization, "read_namelist",
+            clubb_case_initialization, "read_namelist",
             lambda path: dict(
                 read_namelist(path), l_stats=False,
                 microphys_scheme="none", lh_microphys_type="disabled",
@@ -36,7 +36,7 @@ def radiation_state(request):
         )
         from input.scripts.create_case_namelist import create_case_namelist_file
         model_path = create_case_namelist_file(request.param, "output/radiation_pytests")
-        state = clubb_case_initalization.init_clubb_case(str(model_path))
+        state = clubb_case_initialization.init_clubb_case(str(model_path))
     state["_jax_stats"] = JaxStats.empty(
         l_sample=True,
         names=("radht", "Frad"),

@@ -15,7 +15,7 @@ References:
     JAS, Vol. 59, pp. 3540--3551.
 
 Porting deviations:
-- Sponge damping blocks are unsupported here because clubb_case_initalization
+- Sponge damping blocks are unsupported here because clubb_case_initialization
   rejects sponge-enabled Python/JAX driver cases before this routine is called.
 - Diagnostic-only early returns remain reduced; fatal conditions mark err_info
   and the host driver owns stopping after the compiled call.
@@ -54,7 +54,7 @@ from clubb_jax.src.CLUBB_core.parameter_indices import ic_K10, ic_K10h
 from clubb_jax.src.CLUBB_core.diffusion import diffusion_zt_lhs
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import tridiag_solve
 from clubb_jax.src.CLUBB_core.mean_adv import term_ma_zt_lhs
 from clubb_jax.src.CLUBB_core import ErrInfo, Grid, NuVertResDep

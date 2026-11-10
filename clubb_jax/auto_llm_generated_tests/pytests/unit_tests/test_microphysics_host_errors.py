@@ -9,7 +9,7 @@ import pytest
 
 from clubb_jax.src import advance_clubb_to_end as driver
 from clubb_jax.src.CLUBB_core import error_code
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from clubb_jax.src.Microphys import advance_microphys_module
 
 

@@ -36,7 +36,7 @@ from clubb_jax.src.CLUBB_core.advance_clubb_core_module import advance_clubb_cor
 from clubb_jax.src.CLUBB_core.parameters_tunable import PNAME_IDX, init_clubb_params
 from clubb_jax.src.CLUBB_core.parameter_indices import nparams
 from clubb_jax.src.CLUBB_core.stats_netcdf import StatsWriter
-from clubb_jax.src.CLUBB_core.err_info import ErrInfo
+from clubb_jax.src.CLUBB_core.err_info_type_module import ErrInfo
 from input.scripts.create_case_namelist import (
     create_case_settings, write_case_namelist, build_loss_settings, prune_clubb_stats_namelist, set_stats_string, set_stats_value,
 )

@@ -40,7 +40,7 @@ from clubb_jax.src.CLUBB_core.diffusion import diffusion_zm_lhs
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
 from clubb_jax.src.CLUBB_core.fill_holes import fill_holes_vertical
 from clubb_jax.src.CLUBB_core.grid_class import zm2zt, zt2zm
-from clubb_jax.src.CLUBB_core.jax_stats import JaxStats
+from clubb_jax.src.CLUBB_core.stats_netcdf import JaxStats
 from clubb_jax.src.CLUBB_core.mean_adv import term_ma_zm_lhs
 from clubb_jax.src.CLUBB_core.matrix_solver_wrapper import tridiag_solve
 from clubb_jax.src.CLUBB_core.turbulent_adv_pdf import (

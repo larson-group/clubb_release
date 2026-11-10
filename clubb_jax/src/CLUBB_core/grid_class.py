@@ -114,6 +114,7 @@ import jax.numpy as jnp
 import numpy as np
 import sys
 from clubb_jax.src.CLUBB_core.error_code import clubb_at_least_debug_level
+from pathlib import Path
 
 core_rknd = np.float64
 
@@ -471,6 +472,29 @@ def _calc_zm2zt_weights(nzt: int, ngrdcol: int, zm, zt, dzt):
         weights[:, k, M_ABOVE] = (zt[:, k] - zm[:, k]) / total_dist
         weights[:, k, M_BELOW] = (zm[:, k + 1] - zt[:, k]) / total_dist
     return weights
+
+
+def read_grid_file(path: str) -> np.ndarray:
+    """Read a grid file and return altitude array.
+
+    A grid file (*.grd) lists one altitude [m] per line. Stretched grids
+    (grid_type 2 or 3) read their thermodynamic or momentum levels from one;
+    the Fortran reads it in read_grid_heights.
+
+    Args:
+        path: Path to the .grd file
+
+    Returns:
+        1D numpy array of altitude values [m]
+    """
+    lines = Path(path).read_text().splitlines()
+    values = []
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('!') or line.startswith('#'):
+            continue
+        values.append(float(line))
+    return np.array(values)
 
 
 def zt2zm(nzm: int, nzt: int, ngrdcol: int, gr, azt, zm_min=None):
