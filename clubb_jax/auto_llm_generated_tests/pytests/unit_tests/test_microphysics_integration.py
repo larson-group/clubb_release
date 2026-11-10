@@ -34,7 +34,6 @@ def test_species_lifecycle(scheme, ice, graupel, dimension):
         ({"lh_microphys_type": "interactive", "microphys_scheme": "none"}, "SILHS"),
         ({"microphys_scheme": "coamps"}, "Unsupported"),
         ({"microphys_scheme": "simplified_ice"}, "Unsupported"),
-        ({"l_gfdl_activation": True}, "GFDL"),
         ({"microphys_scheme": "morrison", "l_cloud_sed": True}, "sedimentation"),
         ({"microphys_scheme": "khairoutdinov_kogan", "l_predict_Nc": True}, "l_predict_Nc"),
         ({"l_morr_xp2_mc": True}, "l_morr_xp2_mc"),

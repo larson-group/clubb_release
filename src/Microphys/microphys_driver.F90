@@ -84,9 +84,7 @@ module microphys_driver
         one,            & ! Constant(s)
         zero,           &
         w_tol,          &
-        w_tol_sqd,      &
-        cm3_per_m3,     &
-        cloud_frac_min
+        w_tol_sqd
 
     use Skx_module, only: &
         Skx_func  ! Procedure(s)
@@ -115,13 +113,6 @@ module microphys_driver
     use ice_dfsn_module, only: &
         ice_dfsn  ! Procedure(s)
 
-    use T_in_K_module, only: &
-        thlm2T_in_K_api  ! Procedure(s)
-
-    use gfdl_activation, only: &
-        aer_act_clubb_quadrature_Gauss, & ! Procedure(s)
-        aeromass_value                    ! Variable(s)
-
     use clubb_api_module, only: &
       update_xp2_mc_api
 
@@ -130,11 +121,9 @@ module microphys_driver
 
     use parameters_microphys, only: &
         l_cloud_sed,          & ! Cloud water sedimentation (K&K or no microphysics)
-        l_predict_Nc,         & ! Predict cloud droplet number conc (Morrison)
         lh_num_samples,   & ! # of SILHS samples for which call the microphysics
         l_local_kk,           & ! Use local formula for K&K
         microphys_scheme,     & ! The microphysical scheme in use
-        l_gfdl_activation,    & ! Flag to use GFDL activation scheme
         microphys_start_time, & ! When to start the microphysics [s]
         sigma_g,              & ! Parameter used in the cloud droplet sedimentation code
         l_silhs_KK_convergence_adj_mean ! Flag used to adjust a run of KK upscaled or SILHS
@@ -163,9 +152,7 @@ module microphys_driver
 
     use stats_netcdf, only: &
         stats_type, &
-        stats_update, &
-        stats_begin_budget, &
-        stats_finalize_budget
+        stats_update
 
     implicit none
 
@@ -311,7 +298,6 @@ module microphys_driver
       Skw_zm    ! Skewness of w on momentum levels  [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
-      T_in_K,        & ! Temperature                                [K]
       rvm,           & ! Vapor water mixing ratio                   [kg/kg]
       thlm_morr,     & ! Thlm fed into morrison microphysics        [K]
       Ncm_microphys    ! Mean cloud droplet concentration, <N_c>    [num/kg]
@@ -331,16 +317,6 @@ module microphys_driver
     integer :: &
       i, & ! Column index
       k    ! Loop index
-
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
-      Ndrop_max  ! GFDL droplet activation concentration [#/kg]
-
-    !Input aerosol mass concentration: the unit is 10^12 ug/m3.
-    !For example, aeromass=2.25e-12 means that the aerosol mass
-    !concentration is 2.25 ug/m3.
-    !This value of aeromass was recommended by Huan Guo
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,4) :: &
-      aeromass ! ug/m^3
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
@@ -448,11 +424,6 @@ module microphys_driver
         delta_zt(i,k-1) = gr%dzm(i,k)
       enddo
     enddo
-
-    ! Calculate T_in_K
-    !$acc data copyin( thlm, exner, rcm ) copyout( T_in_K )
-    T_in_K = thlm2T_in_K_api( gr%nzt, ngrdcol, thlm, exner, rcm )
-    !$acc end data
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
@@ -713,59 +684,6 @@ module microphys_driver
     ! Sample microphysics variables if necessary
     if ( stats%l_sample ) then
       call stats_update( "Nccnm", Nccnm, stats )
-    endif
-
-    ! Call GFDL activation code
-    if ( l_gfdl_activation ) then
-      ! Ensure a microphysics that has Ncm is being used
-      if ( .not. l_predict_Nc ) then
-        error stop "Unsupported microphysics scheme for GFDL activation."
-      endif
-
-      ! Save the initial Ncm_mc value for the Ncm_act term.
-      call stats_begin_budget( "Ncm_act", Ncm_mc, stats )
-
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          Ndrop_max(i,k) = zero
-          ! Set the value of the aerosol mass array to a constant
-          aeromass(i,k,:) = aeromass_value
-        enddo
-      enddo
-
-      call aer_act_clubb_quadrature_Gauss( &
-             gr, ngrdcol, pdf_params, p_in_Pa, aeromass, T_in_K, Ndrop_max )
-
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          ! Convert to #/kg
-          Ndrop_max(i,k) = Ndrop_max(i,k) * cm3_per_m3 / rho(i,k)
-        enddo
-      enddo
-
-      if ( stats%l_sample ) then
-        call stats_update( "Nc_activated", Ndrop_max, stats )
-      endif
-
-      do k = 1, gr%nzt
-        do i = 1, ngrdcol
-          ! ---> h1g, 2011-04-20,   no liquid drop nucleation if T < -40 C
-          if ( T_in_K(i,k) <= 233.15_core_rknd ) Ndrop_max(i,k) = zero
-          ! <--- h1g, 2011-04-20
-          ! Clip Ncm values that are outside of cloud by CLUBB standards
-          ! Apply "clipped" Ncm to the Ncm tendency, Ncm_mc.
-          if ( cloud_frac(i,k) > cloud_frac_min ) then
-            Ncm_mc(i,k) = Ncm_mc(i,k) &
-              + ( max( Ndrop_max(i,k), Ncm_microphys(i,k) ) &
-                  - Ncm_microphys(i,k) ) / dt
-          else
-            Ncm_mc(i,k) = Ncm_mc(i,k) - Ncm_microphys(i,k) / dt
-          endif
-        enddo
-      enddo
-
-      ! Update the Ncm_act term.
-      call stats_finalize_budget( "Ncm_act", Ncm_mc, stats )
     endif
 
     ! Cloud water sedimentation.

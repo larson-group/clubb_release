@@ -44,10 +44,9 @@ lh_seed = 5489  # Seed for native JAX randomness
 # Select disabled, interactive, or diagnostic-only sampled microphysics.
 lh_microphys_type = 3
 
-# Scheme selection, species sedimentation flags, and activation option.
+# Scheme selection and species sedimentation flags.
 microphys_scheme = "none"  # khairoutdinov_kogan, simplified_ice, coamps, etc.
 l_hydromet_sed = ()  # Flag to sediment each mean hydrometeor field
-l_gfdl_activation = False  # GFDL activation (currently gated during initialization)
 
 # Timing and initial cloud-droplet properties.
 microphys_start_time = 0.0  # When to start the microphysics      [s]

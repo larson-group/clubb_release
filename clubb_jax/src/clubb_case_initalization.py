@@ -302,10 +302,6 @@ def _check_unsupported_features(cfg: dict, flags, microphys_scheme: str,
             "(supported: none, khairoutdinov_kogan, morrison)."
         )
 
-    for name in ('l_gfdl_activation',):
-        if bool(cfg.get(name, False)):
-            errors.append(f"{name} is not yet supported by the microphysics interface")
-
     # --- Radiation ---
     supported_rad = {"none", "simplified", "simplified_bomex", "lba"}
     if rad_scheme not in supported_rad:

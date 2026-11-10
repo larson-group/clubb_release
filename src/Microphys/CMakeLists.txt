@@ -1,6 +1,5 @@
 add_subdirectory(KK_microphys)          # provides:  KK_microphys_lib
 add_subdirectory(COAMPS_microphys)      # provides:  coamps_lib
-add_subdirectory(SCM_Activation)        # provides:  scm_activation_lib
 add_subdirectory(Morrison_microphys)       # provides:  morrison_microphys_lib
 
 set(MICROPHYS_SOURCES advance_microphys_module.F90
@@ -13,7 +12,6 @@ set(MICROPHYS_SOURCES advance_microphys_module.F90
                       estimate_scm_microphys_module.F90
                       lh_microphys_driver_module.F90
                       parameters_microphys.F90
-                      gfdl_activation.F90
                       ice_dfsn_module.F90
                       silhs_category_variance_module.F90
                       pdf_hydromet_microphys_wrapper.F90
@@ -31,7 +29,6 @@ target_link_libraries(microphys_lib PRIVATE clubb_core_lib
                                             KK_microphys_lib
                                             coamps_lib
                                             silhs_lib
-                                            scm_activation_lib
                                             morrison_microphys_lib
                                           )
 

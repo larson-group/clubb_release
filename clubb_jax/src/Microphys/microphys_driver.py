@@ -178,7 +178,6 @@ def calc_microphys_scheme_tendcies(
     # Morrison delta_zt(k) is zt(k+1)-zt(k), which is CLUBB dzm(k+1).
     delta_zt = gr.dzm[:, 1:]
 
-    # COAMPS and GFDL activation retain their existing initialization gates.
     # The Morrison/KK source sampling call blocks are identical; their common
     # block is kept visible here, with scheme-specific statistics below.
     if parameters.lh_microphys_type != parameters.lh_microphys_disabled:
@@ -348,8 +347,6 @@ def calc_microphys_scheme_tendcies(
                 "VNr", zt2zm(gr.nzm, gr.nzt, ngrdcol, gr, hydromet_vel_zt[..., hm_metadata.iiNr])
             )
     stats = stats.update("Nccnm", Nccnm)
-    if parameters.l_gfdl_activation:
-        raise NotImplementedError("GFDL activation core is disabled")
     # Cloud water sedimentation.
     if parameters.l_cloud_sed:
         stats, rcm_mc, thlm_mc = cloud_drop_sed(

@@ -37,7 +37,6 @@ def test_baseline_and_supported_radiation_schemes_pass():
     ("cfg", "overrides", "message"),
     [
         ({}, {"microphys_scheme": "coamps"}, "microphys_scheme"),
-        ({"l_gfdl_activation": True}, {}, "l_gfdl_activation"),
         ({}, {"rad_scheme": "bugsrad"}, "rad_scheme"),
         ({}, {"l_calc_thlp2_rad": True}, "l_calc_thlp2_rad"),
         ({"wp2_sponge_damp_settings%l_sponge_damping": True}, {}, "Sponge damping"),

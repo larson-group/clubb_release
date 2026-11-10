@@ -141,8 +141,6 @@ def init_microphys(
     ):
         if name.lower() in cfg:
             setattr(parameters, name, cfg[name.lower()])
-    # l_gfdl_activation belongs to /gfdl_activation_setting/.
-    parameters.l_gfdl_activation = bool(cfg.get("l_gfdl_activation", False))
 
     parameters.lh_microphys_type = {"disabled": 3, "interactive": 1, "non-interactive": 2}.get(
         parameters.lh_microphys_type, parameters.lh_microphys_type
@@ -185,8 +183,6 @@ def init_microphys(
         and parameters.microphys_scheme != "khairoutdinov_kogan"
     ):
         raise ValueError("l_silhs_KK_convergence_adj_mean requires KK microphysics")
-    if parameters.l_gfdl_activation:
-        raise ValueError("GFDL activation core is not supported")
     if parameters.microphys_scheme not in ("none", "khairoutdinov_kogan", "morrison"):
         raise ValueError(f"Unsupported microphys_scheme: {parameters.microphys_scheme}")
 
