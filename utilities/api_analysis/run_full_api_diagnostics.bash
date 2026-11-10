@@ -65,16 +65,16 @@ tableOut="log/apiCommitmentTable.txt"
 clubbStandalone="$clubbDir/src/clubb_standalone.F90"
 
 echo "###Checking out CLUBB###"
-git clone git@github.com:larson-group/clubb.git $clubbDir
+git clone https://github.com/larson-group/clubb.git $clubbDir
 echo ""
 echo "###Checking out SAM###"
-git clone git@github.com:larson-group/sam_clubb.git $samDir
+git clone https://github.com/larson-group/sam_clubb.git $samDir
 echo ""
 echo "###Checking out WRF###"
-git clone git@github.com:larson-group/wrf.git $wrfDir
+git clone https://github.com/larson-group/wrf.git $wrfDir
 echo ""
 echo "###Checking out CAM###"
-git clone git@github.com:larson-group/cam.git $camDir
+git clone https://github.com/larson-group/cam.git $camDir
 echo ""
 #fi
 
