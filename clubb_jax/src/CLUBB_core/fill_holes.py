@@ -306,6 +306,36 @@ def fill_holes_widening_windows(
     to a global fill. This increases our chances of being able to fill locally, but
     if filling continuously fails, the window size grows to the entire range,
     effectively performing a global fill.
+
+    Fortran declarations (fill_holes_widening_windows in src/CLUBB_core/fill_holes.F90):
+
+        ! --------------------- Input variables ---------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          dz      ! Spacing between thermodynamic grid levels; centered over
+                  ! momentum grid levels
+                  ! OR
+                  ! Spcaing between momentum grid levels; centered over
+                  ! thermodynamic grid levels
+
+        integer, intent(in) :: &
+          lower_hf_level, & ! Lower grid level of global hole-filling range      []
+          upper_hf_level, & ! Upper grid level of global hole-filling range      []
+          grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+        real( kind = core_rknd ), intent(in) :: &
+          threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                     ! fall                           [Units vary; same as field]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+        ! --------------------- Input/Output variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+          field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
     """
     del nz
     # --------------------- Begin Code ---------------------
@@ -424,6 +454,36 @@ def fill_holes_smart_window(
     whose average is below threshold. Because the range is expanded until either the
     field average of the range is above threshold, or is the whole range, this
     will effectively perform a global fill if neccesary.
+
+    Fortran declarations (fill_holes_smart_window in src/CLUBB_core/fill_holes.F90):
+
+        ! --------------------- Input variables ---------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          dz      ! Spacing between thermodynamic grid levels; centered over
+                  ! momentum grid levels
+                  ! OR
+                  ! Spcaing between momentum grid levels; centered over
+                  ! thermodynamic grid levels
+
+        integer, intent(in) :: &
+          lower_hf_level, & ! Lower grid level of global hole-filling range      []
+          upper_hf_level, & ! Upper grid level of global hole-filling range      []
+          grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+        real( kind = core_rknd ), intent(in) :: &
+          threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                     ! fall                           [Units vary; same as field]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+        ! --------------------- Input/Output variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+          field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
     """
     del ngrdcol
     # --------------------- Begin Code ---------------------
@@ -631,6 +691,36 @@ def fill_holes_smart_window_smooth(
     is below threshold, even though the field average is above threshold - this
     only occurs in situations where the hole mass is almost as large as the total excess
     (above threshold) mass.
+
+    Fortran declarations (fill_holes_smart_window_smooth in src/CLUBB_core/fill_holes.F90):
+
+        ! --------------------- Input variables ---------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          dz      ! Spacing between thermodynamic grid levels; centered over
+                  ! momentum grid levels
+                  ! OR
+                  ! Spcaing between momentum grid levels; centered over
+                  ! thermodynamic grid levels
+
+        integer, intent(in) :: &
+          lower_hf_level, & ! Lower grid level of global hole-filling range      []
+          upper_hf_level, & ! Upper grid level of global hole-filling range      []
+          grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+        real( kind = core_rknd ), intent(in) :: &
+          threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                      ! fall                           [Units vary; same as field]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+        ! --------------------- Input/Output variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+          field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
     """
     del ngrdcol
     # --------------------- Begin Code ---------------------
@@ -846,6 +936,36 @@ def fill_holes_parallel(
     Note: this seems to be slower than other methods on GPUs too, perhaps worth
     a revisit. Maybe faster for a small number of holes? Was mostly tested with
     fields with a large range of holes.
+
+    Fortran declarations (fill_holes_parallel in src/CLUBB_core/fill_holes.F90):
+
+        ! --------------------- Input variables ---------------------
+        integer, intent(in) :: &
+          nz, &
+          ngrdcol
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          dz      ! Spacing between thermodynamic grid levels; centered over
+                  ! momentum grid levels
+                  ! OR
+                  ! Spcaing between momentum grid levels; centered over
+                  ! thermodynamic grid levels
+
+        integer, intent(in) :: &
+          lower_hf_level, & ! Lower grid level of global hole-filling range      []
+          upper_hf_level, & ! Upper grid level of global hole-filling range      []
+          grid_dir_indx     ! Grid direction index (+1 ascending; -1 descending)
+
+        real( kind = core_rknd ), intent(in) :: &
+          threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
+                     ! fall                           [Units vary; same as field]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+          rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
+
+        ! --------------------- Input/Output variable ---------------------
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+          field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
     """
     # --------------------- Begin Code ---------------------
 
@@ -1440,10 +1560,10 @@ def hole_filling_hm_one_lev(num_hm_fill, hm_one_lev):
 
 
 def fill_holes_hydromet_api(
-    nzt, hydromet_dim, hydromet,  # In
+    ngrdcol, nzt, hydromet_dim, hydromet,  # In
     l_frozen_hm, l_mix_rat_hm,    # In
 ):
-    """Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
+    """Fills holes independently in each column between same-phase hydrometeors(i.e. for frozen hydrometeors).
     The hole filling conserves water substance between all same-phase (frozen or liquid)
     hydrometeors at each height level.
 
@@ -1454,18 +1574,18 @@ def fill_holes_hydromet_api(
     Fortran declarations (fill_holes_hydromet_api in src/CLUBB_core/fill_holes.F90):
 
         !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: hydromet_dim, nzt
+        integer, intent(in) :: ngrdcol, nzt, hydromet_dim ! Columns, levels and species [-]
 
-        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
-          hydromet
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
+          hydromet ! Hydrometeor fields for all columns [units vary]
 
         logical, dimension(hydromet_dim), intent(in) :: &
           l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
           l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
-          hydromet_filled
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(out) :: &
+          hydromet_filled ! Filled hydrometeor fields [units vary]
     """
 
     # Restrict same-level redistribution to frozen mixing ratios. Liquid
@@ -1477,10 +1597,11 @@ def fill_holes_hydromet_api(
 
 
 def fill_holes_wv(
-    nzt, dt, exner, hydromet_name,  # In
+    ngrdcol, nzt, dt, exner, hydromet_name,  # In
     rvm_mc, thlm_mc, hydromet,      # InOut
 ):
-    """Fills holes using the cloud water mixing ratio from the current height level.
+    """Fills remaining hydrometeor holes from vapor in each column and adjusts
+    the vapor and liquid-water potential-temperature tendencies.
 
     Returns:
         (rvm_mc, thlm_mc, hydromet)
@@ -1488,21 +1609,21 @@ def fill_holes_wv(
     Fortran declarations (fill_holes_wv in src/CLUBB_core/fill_holes.F90):
 
         !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: nzt
+        integer, intent(in) :: ngrdcol, nzt ! Number of columns and levels [-]
 
         real( kind = core_rknd ), intent(in) ::  &
           dt           ! Timestep         [s]
 
-        character(len=10), intent(in) :: hydromet_name
-
-        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
           exner        ! Exner function                            [-]
 
+        character(len=10), intent(in) :: hydromet_name ! Species name [-]
+
         !--------------------------- Input/Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nzt), intent(inout) :: &
-          hydromet, &  ! Hydrometeor array                         [units vary]
-          rvm_mc, &
-          thlm_mc
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+          rvm_mc,  & ! Vapor tendency [kg/kg/s]
+          thlm_mc, & ! Liquid-water potential-temperature tendency [K/s]
+          hydromet   ! Hydrometeor mixing ratio [kg/kg]
     """
 
     from clubb_jax.src.CLUBB_core.constants_clubb import zero_threshold, Lv, Ls, Cp
@@ -1586,7 +1707,7 @@ def fill_holes_driver_api(
         stats = stats.begin_budget(name_hf, hydromet[..., i] / dt)
     if l_fill_holes_hm:
         hydromet = fill_holes_hydromet_api(
-            nzt, hydromet_dim, hydromet,                        # In
+            ngrdcol, nzt, hydromet_dim, hydromet,                        # In
             hm_metadata.l_frozen_hm, hm_metadata.l_mix_rat_hm,  # In
         )
     for i in range(hydromet_dim):
@@ -1612,26 +1733,16 @@ def fill_holes_driver_api(
             )
         hydromet_name = hm_metadata.hydromet_list[i]
         if hydromet_name.startswith("r"):
-            hydromet_filled = jax.vmap(
-                lambda dz_col, rho_col, hm_col: fill_holes_vertical(
-                    nzt,
-                    1,
-                    zero_threshold,
-                    0,
-                    nzt - 1,
-                    dz_col[None, :],
-                    rho_col[None, :],
-                    1,
-                    fill_holes_type,
-                    hm_col[None, :],
-                )[0]
-            )(gr.dzt, rho_ds_zt, hydromet[..., i])
+            hydromet_filled = fill_holes_vertical(
+                nzt, ngrdcol, zero_threshold, 0, nzt - 1,
+                gr.dzt, rho_ds_zt, 1, fill_holes_type, hydromet[..., i],
+            )
             hydromet = hydromet.at[..., i].set(hydromet_filled)
         stats = stats.finalize_budget(name_hf, hydromet[..., i] / dt)
         stats = stats.begin_budget(name_wvhf, hydromet[..., i] / dt)
         if hydromet_name.startswith("r"):
             rvm_mc, thlm_mc, hydromet_filled = fill_holes_wv(
-                nzt, dt, exner, hydromet_name,      # In
+                ngrdcol, nzt, dt, exner, hydromet_name,      # In
                 rvm_mc, thlm_mc, hydromet[..., i],  # InOut
             )
             hydromet = hydromet.at[..., i].set(hydromet_filled)
@@ -1653,7 +1764,7 @@ def fill_holes_driver_api(
 
     # Enforce maximum particle radii through concentration minima. Mass fields
     # remain unchanged; only number concentrations contribute to these budgets.
-    hydromet_clipped = clip_hydromet_conc_mvr(nzt, hydromet_dim, hm_metadata, hydromet)
+    hydromet_clipped = clip_hydromet_conc_mvr(ngrdcol, nzt, hydromet_dim, hm_metadata, hydromet)
     for i in range(hydromet_dim):
         if hm_metadata.hydromet_list[i].startswith("N"):
             _, name_bt, name_hf, name_wvhf, name_cl, name_mc = setup_stats_names(
@@ -1666,7 +1777,7 @@ def fill_holes_driver_api(
 
 
 def clip_hydromet_conc_mvr(
-    nzt, hydromet_dim, hm_metadata,  # In
+    ngrdcol, nzt, hydromet_dim, hm_metadata,  # In
     hydromet,                        # In
 ):
     """Increases the value of a hydrometeor concentration when it is too small,
@@ -1681,7 +1792,8 @@ def clip_hydromet_conc_mvr(
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nzt
+          ngrdcol, & ! Number of columns [-]
+          nzt        ! Number of levels [-]
 
         integer, intent(in) :: &
           hydromet_dim    ! Number of hydrometeor fields
@@ -1689,11 +1801,11 @@ def clip_hydromet_conc_mvr(
         type (hm_metadata_type), intent(in) :: &
               hm_metadata
 
-        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
           hydromet    ! Mean of hydrometeor fields    [units vary]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(out) :: &
           hydromet_clipped    ! Clipped mean of hydrometeor fields    [units vary]
     """
     from clubb_jax.src.CLUBB_core.constants_clubb import pi, rho_lw, rho_ice

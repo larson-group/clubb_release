@@ -10,12 +10,12 @@ module latin_hypercube_driver_module
 
   ! Constant Parameters
   logical, parameter, private :: &
-    l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
-    l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
+    l_output_lognormal_samples = .false., & ! Output lognormal SILHS samples to netCDF
+    l_output_uniform_samples   = .false.    ! Output uniform SILHS samples to netCDF
 
   private ! Default scope
 
-  public :: latin_hypercube_2D_output_api, &
+  public :: latin_hypercube_output_init_api, &
     stats_accumulate_lh_api, generate_silhs_sample, &
     copy_X_nl_into_hydromet_all_pts, clip_transform_silhs_output
 
@@ -415,15 +415,15 @@ module latin_hypercube_driver_module
     end if
 
     if ( present(stats) .and. stats%l_last_sample ) then
-      if ( l_output_2D_lognormal_dist ) then
+      if ( l_output_lognormal_samples ) then
         ! Note: lh_rt and lh_thl are not written here; only lognormal-space
         ! variates from X_nl_all_levs are output in this file.
         !$acc update host(X_nl_all_levs)
         call stats_lh_samples_write_lognormal( X_nl_all_levs, stats, err_info )
       end if
 
-      if ( l_output_2D_uniform_dist ) then
-        ! Write a 2D sample file of the uniform SILHS variates.
+      if ( l_output_uniform_samples ) then
+        ! Write the uniform SILHS samples to the statistics file.
         !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights)
         call stats_lh_samples_write_uniform( X_u_all_levs, X_mixt_comp_all_levs, &
                                              lh_sample_point_weights, stats, err_info )
@@ -432,7 +432,7 @@ module latin_hypercube_driver_module
       if ( clubb_at_least_debug_level_api( 0 ) ) then
         if ( any(err_info%err_code == clubb_fatal_error) ) then
           write(fstderr, *) err_info%err_header_global
-          write(fstderr, *) "Fatal error writing SILHS 2D samples with stats", &
+          write(fstderr, *) "Fatal error writing SILHS samples with stats", &
                             " in CLUBB SILHS procedure generate_silhs_sample"
           return
         end if
@@ -1260,9 +1260,9 @@ module latin_hypercube_driver_module
 
     ! ------------------- Local Variables -------------------
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim) :: &
-      hydromet_pts,         & ! Sample point column of hydrometeors    [un vary]
-      hydromet_pts_clipped    ! Clipped sample point column of hydromet   [un v]
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim) :: &
+      hydromet_pts,         & ! Hydrometeors for one sample across model columns    [un vary]
+      hydromet_pts_clipped    ! Clipped hydrometeors for one sample across columns   [un v]
 
     integer :: &
       sample, k, hm_idx, i
@@ -1329,34 +1329,31 @@ module latin_hypercube_driver_module
        error stop "CLUBB ERROR: Running SILHS on the GPUs requires l_clip_hydromet_samples=false"
 #endif
        ! Loop over all sample columns.
-       do sample = 1, num_samples, 1
-         do i = 1, ngrdcol
+       do sample = 1, num_samples
 
-           ! Pack the SILHS hydrometeor sample points, which are stored in arrays
-           ! with the size pdf_dim, into arrays with the size hydromet_dim.
-           do hm_idx = 1, hydromet_dim, 1
-              hydromet_pts(:,hm_idx) &
-              = X_nl_all_levs(i,sample,:,hydromet2pdf_idx(hm_idx,hm_metadata))
-           enddo ! hm_idx = 1, hydromet_dim, 1
+         do hm_idx = 1, hydromet_dim
+           do k = 1, nzt
+             do i = 1, ngrdcol
+               hydromet_pts(i,k,hm_idx) = &
+                 X_nl_all_levs(i,sample,k,hydromet2pdf_idx(hm_idx,hm_metadata))
+             enddo
+           enddo
+         enddo
 
-           ! Clip the hydrometeor concentration sample points based on
-           ! maintaining the value of the hydrometeor mixing ratio sample points
-           ! and satisfying the maximum allowable mean volume radius for that
-           ! hydrometeor species.
-           call clip_hydromet_conc_mvr( nzt, hydromet_dim, hm_metadata, & ! In
-                                        hydromet_pts,                     & ! In
-                                        hydromet_pts_clipped )              ! Out
+         call clip_hydromet_conc_mvr( ngrdcol, nzt, hydromet_dim, hm_metadata, & ! In
+                                     hydromet_pts, & ! In
+                                     hydromet_pts_clipped ) ! Out
 
-           ! Unpack the clipped SILHS hydrometeor sample points, which are stored
-           ! in arrays with the size hydromet_dim, back into arrays with the size
-           ! pdf_dim.
-           do hm_idx = 1, hydromet_dim, 1
-             X_nl_all_levs(i,sample,:,hydromet2pdf_idx(hm_idx,hm_metadata)) &
-              = hydromet_pts_clipped(:,hm_idx)
-           enddo ! hm_idx = 1, hydromet_dim, 1
+         do hm_idx = 1, hydromet_dim
+           do k = 1, nzt
+             do i = 1, ngrdcol
+               X_nl_all_levs(i,sample,k,hydromet2pdf_idx(hm_idx,hm_metadata)) = &
+                 hydromet_pts_clipped(i,k,hm_idx)
+             enddo
+           enddo
+         enddo
 
-         end do ! i = 1, ngrdcol
-       enddo ! isample = 1, num_samples, 1
+       enddo ! sample
 
     endif ! l_clip_hydromet_samples
 
@@ -1675,8 +1672,13 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine latin_hypercube_2D_output_api( nzt, zt, pdf_dim, num_samples, hm_metadata, &
-                                            stats, err_info )
+  subroutine latin_hypercube_output_init_api( nzt, zt, pdf_dim, num_samples, & ! In
+                                              hm_metadata, & ! In
+                                              stats, & ! Optional InOut
+                                              err_info ) ! InOut
+  ! Description:
+  !   Register optional lognormal and uniform SILHS sample fields with the
+  !   statistics writer. Samples are indexed by column, sample and level.
 !-------------------------------------------------------------------------------
 
     use corr_varnce_module, only: &
@@ -1753,8 +1755,8 @@ module latin_hypercube_driver_module
     if ( .not. present(stats) ) return
     if ( .not. stats%enabled ) return
 
-    if ( l_output_2D_lognormal_dist ) then
-      ! Set all variable names for the lognormal 2D sample output.
+    if ( l_output_lognormal_samples ) then
+      ! Set all variable names for the lognormal sample output.
       allocate( nl_variable_names(pdf_dim) )
       nl_variable_names(:) = ''
 
@@ -1774,8 +1776,8 @@ module latin_hypercube_driver_module
       allocate( nl_variable_names(0) )
     end if
 
-    if ( l_output_2D_uniform_dist ) then
-      ! Set all variable names for the uniform-space 2D sample output.
+    if ( l_output_uniform_samples ) then
+      ! Set all variable names for the uniform-space sample output.
       allocate( u_variable_names(pdf_dim+4) )
       u_variable_names(:) = ''
 
@@ -1815,12 +1817,12 @@ module latin_hypercube_driver_module
 
     if ( any(err_info%err_code == clubb_fatal_error) ) then
       write(fstderr, *) err_info%err_header_global
-      write(fstderr, *) "Fatal error configuring SILHS 2D output in latin_hypercube_2D_output_api"
+      write(fstderr, *) "Fatal error configuring SILHS output in latin_hypercube_output_init_api"
       return
     end if
 
     return
-  end subroutine latin_hypercube_2D_output_api
+  end subroutine latin_hypercube_output_init_api
 
 !-------------------------------------------------------------------------------
   subroutine compute_arb_overlap( nzt, ngrdcol, num_samples, pdf_dim, d_uniform_extra, &
@@ -1961,8 +1963,8 @@ module latin_hypercube_driver_module
                stats )
 
 ! Description:
-!   Clip subcolumns from latin hypercube and create stats for diagnostic
-!   purposes.
+!   Accumulate diagnostic statistics from clipped SILHS samples, including
+!   water paths integrated independently over each model column.
 
 ! References:
 !   None
@@ -2101,9 +2103,7 @@ module latin_hypercube_driver_module
                                   lh_sample_point_weights, lh_rc_clipped )
     call stats_update( "lh_rcm", lh_rcm, stats )
 
-    do i = 1, ngrdcol
-      xtmp(i) = vertical_integral( nzt, rho_ds_zt(i,:), lh_rcm(i,:), gr%dzt(i,:) )
-    enddo
+    xtmp = vertical_integral( ngrdcol, nzt, rho_ds_zt, lh_rcm, gr%dzt )
     call stats_update( "lh_lwp", xtmp, stats )
 
     do i = 1, ngrdcol
@@ -2122,9 +2122,7 @@ module latin_hypercube_driver_module
                                   lh_sample_point_weights, lh_rv_clipped )
     call stats_update( "lh_rvm", lh_rvm, stats )
 
-    do i = 1, ngrdcol
-      xtmp(i) = vertical_integral( nzt, rho_ds_zt(i,:), lh_rvm(i,:), gr%dzt(i,:) )
-    enddo
+    xtmp = vertical_integral( ngrdcol, nzt, rho_ds_zt, lh_rvm, gr%dzt )
     call stats_update( "lh_vwp", xtmp, stats )
 
     lh_wm = compute_sample_mean( nzt, num_samples, ngrdcol, &

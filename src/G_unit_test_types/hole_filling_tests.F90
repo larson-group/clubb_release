@@ -270,6 +270,9 @@ module hole_filling_tests
       testset_in,  & ! Testset input
       testset_out    ! Testset after hole filling
 
+    real( kind = core_rknd ), dimension(1,hgt_dim,hm_dim) :: &
+      batch_out ! One-column batch result for the existing profile assertions [units vary]
+
     logical, dimension(hgt_dim) :: &
       l_expect_not_filled_lev  ! Flag for expected the hole not to be filled
 
@@ -307,9 +310,10 @@ module hole_filling_tests
        print *, "testset_in(:,",i,") = ", testset_in(:,i)
     enddo
 
-    call fill_holes_hydromet_api( hgt_dim, hm_dim, testset_in, &
-                                  l_frozen_hm, l_mix_rat_hm, &
-                                  testset_out )
+    call fill_holes_hydromet_api( 1, hgt_dim, hm_dim, reshape(testset_in,[1,hgt_dim,hm_dim]), & ! In
+                                  l_frozen_hm, l_mix_rat_hm, & ! In
+                                  batch_out ) ! Out
+    testset_out = batch_out(1,:,:)
 
     call check_results_hm_filling( hgt_dim, hm_dim, & ! Intent(in)
                                    l_frozen_hm, l_mix_rat_hm, & ! Intent(in)

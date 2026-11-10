@@ -120,7 +120,7 @@ def calc_microphys_scheme_tendcies(
     # 229-243, 2000.
     # -----------------------------------------------------------------------
 
-    unit_sample_weight_2d = jnp.ones_like(rcm)
+    unit_sample_weight = jnp.ones_like(rcm)
     # TODO(port-mirror): propagate source ERROR STOP status as an extra return
     # for the host's ErrInfo until JAX supports these stops inside kernels.
     l_error = jnp.zeros(ngrdcol, dtype=bool)
@@ -268,7 +268,7 @@ def calc_microphys_scheme_tendcies(
             exner, rho, cloud_frac, wtmp,                            # In
             delta_zt, rcm, Ncm_microphys, chi, rtm - rcm, hydromet,  # In
             saturation_formula,                                      # In
-            unit_sample_weight_2d,                                   # In
+            unit_sample_weight,                                   # In
             stats,                                                   # InOut
         )
     elif (
@@ -299,7 +299,7 @@ def calc_microphys_scheme_tendcies(
                 thlm, wm_zt, p_in_Pa, exner, rho,           # In
                 cloud_frac, wtmp, delta_zt, rcm,            # In
                 Ncm_microphys, chi, rtm - rcm, hydromet,    # In
-                saturation_formula, unit_sample_weight_2d,  # In
+                saturation_formula, unit_sample_weight,  # In
                 stats,                                      # InOut
             )
         else:

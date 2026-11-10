@@ -719,15 +719,17 @@ module sfc_varnce_module
 
       !$acc update host( sclrp2, sclrprtp, sclrpthlp ) if ( sclr_dim > 0 )
 
+      call sfc_varnce_check( ngrdcol, sclr_dim, wp2(:,gr%k_lb_zm), & ! In
+                             up2(:,gr%k_lb_zm), vp2(:,gr%k_lb_zm), & ! In
+                             thlp2(:,gr%k_lb_zm), rtp2(:,gr%k_lb_zm), & ! In
+                             rtpthlp(:,gr%k_lb_zm), & ! In
+                             sclrp2(:,gr%k_lb_zm,:), & ! In
+                             sclrprtp(:,gr%k_lb_zm,:), & ! In
+                             sclrpthlp(:,gr%k_lb_zm,:), & ! In
+                             err_info ) ! InOut
+
       do i = 1, ngrdcol
-        call sfc_varnce_check( sclr_dim, wp2(i,gr%k_lb_zm),            & ! intent(in)
-                               up2(i,gr%k_lb_zm), vp2(i,gr%k_lb_zm),   & ! intent(in)
-                               thlp2(i,gr%k_lb_zm), rtp2(i,gr%k_lb_zm), & ! intent(in)
-                               rtpthlp(i,gr%k_lb_zm),                  & ! intent(in)
-                               sclrp2(i,gr%k_lb_zm,:),                 & ! intent(in)
-                               sclrprtp(i,gr%k_lb_zm,:),               & ! intent(in)
-                               sclrpthlp(i,gr%k_lb_zm,:),              & ! intent(in)
-                               err_info )                              ! intent(inout)
+
         if ( err_info%err_code(i) == clubb_fatal_error ) then
           write(fstderr, *) err_info%err_header(i)
         end if

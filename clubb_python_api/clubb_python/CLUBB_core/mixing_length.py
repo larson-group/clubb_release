@@ -114,7 +114,7 @@ def diagnose_lscale_from_tau(
     """
     set_fortran_grid(gr)
     set_fortran_err_info(err_info)
-    em_zt = clubb_f2py.f2py_zm2zt_2d(
+    em_zt = clubb_f2py.f2py_zm2zt(
         int(nzt), f_arr(em), nzm=int(nzm), ngrdcol=int(ngrdcol))
     sqrt_em_zt = np.sqrt(np.maximum(em_zt, 0.0))
     result = clubb_f2py.f2py_diagnose_lscale_from_tau(

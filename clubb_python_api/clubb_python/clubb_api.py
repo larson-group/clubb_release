@@ -111,7 +111,7 @@ from clubb_python.CLUBB_core.error_code import (
     initialize_error_headers,
 )
 from clubb_python.CLUBB_core.file_functions import file_read_1d
-from clubb_python.CLUBB_core.interpolation import lin_interpolate_two_points, mono_cubic_interp, zlinterp_fnc, plinterp_fnc
+from clubb_python.CLUBB_core.interpolation import lin_interpolate_two_points, mono_cubic_interp, zlinterp
 from clubb_python.CLUBB_core.index_mapping import (
     hydromet2pdf_idx,
     mvr_hm_max,
@@ -229,18 +229,6 @@ from clubb_python.CLUBB_core.stats_netcdf import (
     stats_begin_budget,
     stats_update_budget,
     stats_finalize_budget,
-    stats_update_scalar,
-    stats_update_1d,
-    stats_update_2d,
-    stats_begin_budget_scalar,
-    stats_begin_budget_1d,
-    stats_begin_budget_2d,
-    stats_update_budget_scalar,
-    stats_update_budget_1d,
-    stats_update_budget_2d,
-    stats_finalize_budget_scalar,
-    stats_finalize_budget_1d,
-    stats_finalize_budget_2d,
     var_on_stats_list,
     stats_update_grid,
     stats_lh_samples_init,

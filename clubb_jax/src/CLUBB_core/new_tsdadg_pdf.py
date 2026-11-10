@@ -216,9 +216,10 @@ def tsdadg_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, 
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           wm,     & ! Mean of w (overall)                [m/s]
           rtm,    & ! Mean of rt (overall)               [kg/kg]
           thlm,   & ! Mean of thl (overall)              [K]
@@ -232,7 +233,7 @@ def tsdadg_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp, 
           wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
           mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
           mu_rt_1,         & ! Mean of rt (1st PDF component)       [kg/kg]

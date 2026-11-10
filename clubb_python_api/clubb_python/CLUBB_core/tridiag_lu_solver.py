@@ -11,11 +11,6 @@ def tridiag_lu_solve(ndim: int, lhs, rhs):
     lhs_arr = np.asarray(lhs, dtype=np.float64)
     rhs_arr = np.asarray(rhs, dtype=np.float64)
 
-    if lhs_arr.ndim == 2 and rhs_arr.ndim == 1:
-        return clubb_f2py.f2py_tridiag_lu_solve_single_rhs_lhs(
-            f_arr(lhs_arr, dtype=np.float64), f_arr(rhs_arr, dtype=np.float64), ndim=int(ndim)
-        )
-
     if lhs_arr.ndim == 3 and rhs_arr.ndim == 2:
         return clubb_f2py.f2py_tridiag_lu_solve_single_rhs_multiple_lhs(
             f_arr(lhs_arr, dtype=np.float64), f_arr(rhs_arr, dtype=np.float64),

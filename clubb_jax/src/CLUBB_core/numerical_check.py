@@ -13,7 +13,7 @@ Porting deviations:
   `err_info`; JAX helper predicates return booleans where the caller only needs
   validity and uses `ErrInfo` updates only for `parameterization_check`,
   `check_negative`, and `check_nan`.
-- The Fortran generic `check_nan` has scalar, 1D, and 2D implementations. JAX
+- The Fortran generic `check_nan` has 1D and 2D implementations. JAX
   uses one broadcasting implementation because `jnp.isfinite` handles all
   ranks used by the port.
 - `check_clubb_settings_api` ports the parameter checks and the
@@ -486,9 +486,10 @@ def sfc_varnce_check(
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          sclr_dim
+          ngrdcol, & ! Number of grid columns [-]
+          sclr_dim ! Number of passive scalars [-]
 
-        real( kind = core_rknd ),intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
           wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
           up2_sfc,     & ! u'^2                              [m^2/s^2]
           vp2_sfc,     & ! u'^2                              [m^2/s^2]
@@ -496,7 +497,7 @@ def sfc_varnce_check(
           rtp2_sfc,    & ! rt variance                       [(kg/kg)^2]
           rtpthlp_sfc    ! thetal rt covariance              [kg K/kg]
 
-        real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,sclr_dim), intent(in) :: &
           sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
           sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
           sclrpthlp_sfc    ! Passive scalar theta_l covariance       [units K]
@@ -531,10 +532,11 @@ def length_check(Lscale, Lscale_up, Lscale_down):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nzt
+          nzt, & ! Number of thermodynamic levels [-]
+          ngrdcol ! Number of grid columns [-]
 
         !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
           Lscale,     & ! Mixing length                 [m]
           Lscale_up,  & ! Upward mixing length          [m]
           Lscale_down   ! Downward mixing length        [m]
@@ -560,11 +562,12 @@ def pdf_closure_check(closure_fields, pdf_params, sclr_dim=0, sclr_fields=None):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz, &
+          nz, & ! Number of vertical levels
+          ngrdcol, & ! Number of grid columns
           sclr_dim
 
         !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           wp4,             & ! w'^4                  [m^4/s^4]
           wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
           wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
@@ -590,7 +593,7 @@ def pdf_closure_check(closure_fields, pdf_params, sclr_dim=0, sclr_fields=None):
           pdf_params        ! PDF parameters          [units vary]
 
         ! Input (Optional passive scalar variables)
-        real( kind = core_rknd ), dimension(nz,sclr_dim), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
           sclrpthvp, &
           sclrprcp, &
           wpsclrp2, &
@@ -670,6 +673,7 @@ def invalid_model_arrays(**arrays):
         integer, intent(in) :: &
           nzm, &
           nzt, &
+          ngrdcol, & ! Number of grid columns [-]
           hydromet_dim, &
           sclr_dim, &
           edsclr_dim
@@ -677,7 +681,7 @@ def invalid_model_arrays(**arrays):
         character(len=10), dimension(hydromet_dim), intent(in) :: &
           hydromet_list
 
-        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
           um,       & ! eastward grid-mean wind comp. (thermo. levs.)  [m/s]
           vm,       & ! northward grid-mean wind comp. (thermo. levs.) [m/s]
           rtm,      & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
@@ -686,7 +690,7 @@ def invalid_model_arrays(**arrays):
           wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
           wp2up       ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
           wprtp,    & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
           wpthlp,   & ! w'th_l' (momentum levels)                      [(m/s) K]
           rtp2,     & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
@@ -696,14 +700,17 @@ def invalid_model_arrays(**arrays):
           rtpthvp,  & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
           thlpthvp    ! < th_l' th_v' > (momentum levels)              [K^2]
 
-        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
           hydromet    ! Array of hydrometeors                          [units vary]
 
-        real( kind = core_rknd ), dimension(nzt,sclr_dim), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) :: &
           sclrm    ! Passive scalar mean (thermo. levels)              [units vary]
 
-        real( kind = core_rknd ), dimension(nzt,edsclr_dim), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim), intent(in) :: &
           edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
+
+        !--------------------------- Output Variables ---------------------------
+        integer, intent(out) :: invalid_column ! First column with a nonfinite value; zero if valid [-]
     """
     for name, value in arrays.items():
         if value is None:

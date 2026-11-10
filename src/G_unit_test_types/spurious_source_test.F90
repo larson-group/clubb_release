@@ -305,6 +305,9 @@ module spurious_source_test
       w_1_n_zm, &
       w_2_n_zm
 
+    real( kind = core_rknd ), dimension(1) :: &
+      integral_tmp ! One-column reduction result used by scalar test assertions [units vary]
+
     real( kind = core_rknd ) :: &
       rtm_integral_before,   & ! Vert. integral of rtm before advance   [kg/m^2]
       rtm_integral_after,    & ! Vert. integral of rtm after advance    [kg/m^2]
@@ -380,7 +383,7 @@ module spurious_source_test
     type(nu_vertical_res_dep) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(1) :: &
       mixt_frac_max_mag, &
       lmin    ! Min. value for the length scale [m]
   
@@ -621,17 +624,18 @@ module spurious_source_test
     call init_default_err_info_api(1, err_info_dummy)
 
     ! Set up the vertical grid.
-    call setup_grid_api( nzm, sfc_elevation, l_implemented,  &
-                         .true., grid_type, deltaz, zm_init, zm_top, &
-                         momentum_heights, thermodynamic_heights, &
-                         gr, err_info_dummy )
+    call setup_grid_api( nzm, 1, [sfc_elevation], l_implemented, & ! In
+                         .true., grid_type, [deltaz], [zm_init], [zm_top], & ! In
+                         reshape(momentum_heights, [1,nzm]), & ! In
+                         reshape(thermodynamic_heights, [1,nzt]), & ! In
+                         gr, err_info_dummy ) ! InOut
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
-    call calc_derived_params_api( gr, grid_type, deltaz, &
-                           clubb_params(1,:), &
-                           l_prescribed_avg_deltaz, &
-                           nu_vert_res_dep, lmin, &
-                           mixt_frac_max_mag )
+    call calc_derived_params_api( gr, 1, grid_type, [deltaz], & ! In
+                                  clubb_params, & ! In
+                                  l_prescribed_avg_deltaz, & ! In
+                                  nu_vert_res_dep, lmin, & ! InOut
+                                  mixt_frac_max_mag ) ! InOut
 
     dt = 300.0_core_rknd
 
@@ -884,11 +888,11 @@ module spurious_source_test
        wm_zm(1,:) = zero
 
        ! Interpolate fields set on momentum levels to thermodynamic levels.
-       wm_zt(1,:) = zm2zt_api( gr, wm_zm(1,:) )
-       wp3_on_wp2_zt(1,:) = zm2zt_api( gr, wp3_on_wp2(1,:) )
-       wp3(1,:) = wp3_on_wp2_zt(1,:) * zm2zt_api( gr, wp2(1,:) )
-       Kh_zt(1,:) = zm2zt_api( gr, Kh_zm(1,:) )
-       rho_ds_zt(1,:) = zm2zt_api( gr, rho_ds_zm(1,:) )
+       wm_zt = zm2zt_api( nzm, nzt, 1, gr, wm_zm )
+       wp3_on_wp2_zt = zm2zt_api( nzm, nzt, 1, gr, wp3_on_wp2 )
+       wp3 = wp3_on_wp2_zt * zm2zt_api( nzm, nzt, 1, gr, wp2 )
+       Kh_zt = zm2zt_api( nzm, nzt, 1, gr, Kh_zm )
+       rho_ds_zt = zm2zt_api( nzm, nzt, 1, gr, rho_ds_zm )
 
        ! Calculate the value of skewness of w (momentum levels).
        Skw_zm(1,:) = wp3_on_wp2(1,:) / sqrt( wp2(1,:) )
@@ -953,15 +957,15 @@ module spurious_source_test
               + ( Lv / ( Cp * exner(1,:) ) - ep2 * 300.0_core_rknd ) * rcm(1,:)
 
        ! Interpolate fields set on thermodynamic levels to momentum levels.
-       thv_ds_zm(1,:) = max( zt2zm_api( gr, thvm(1,:) ), 0.0_core_rknd )
+       thv_ds_zm = max( zt2zm_api( nzm, nzt, 1, gr, thvm ), 0.0_core_rknd )
 
        ! Calculate the vertical integrals of rtm and thlm before the call to
        ! advance_xm_wpxp so that spurious source can be calculated.
-       rtm_integral_before &
-       = vertical_integral( gr%nzt, rho_ds_zt, rtm, gr%dzt )
+       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, rtm, gr%dzt )
+       rtm_integral_before = integral_tmp(1)
 
-      thlm_integral_before &
-      = vertical_integral( gr%nzt, rho_ds_zt, thlm, gr%dzt )
+       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, thlm, gr%dzt )
+       thlm_integral_before = integral_tmp(1)
 
       stats%enabled = .false.
       stats%l_sample = .false.
@@ -1022,11 +1026,11 @@ module spurious_source_test
 
        rtm_flux_sfc = rho_ds_zm(1,1) * wprtp(1,1)
 
-       rtm_integral_after &
-       = vertical_integral( gr%nzt, rho_ds_zt, rtm, gr%dzt )
+       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, rtm, gr%dzt )
+       rtm_integral_after = integral_tmp(1)
 
-       rtm_integral_forcing &
-       = vertical_integral( gr%nzt, rho_ds_zt, rtm_forcing, gr%dzt )
+       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, rtm_forcing, gr%dzt )
+       rtm_integral_forcing = integral_tmp(1)
 
        rtm_spur_src &
        = calculate_spurious_source( rtm_integral_after, &
@@ -1066,11 +1070,11 @@ module spurious_source_test
 
        thlm_flux_sfc = rho_ds_zm(1,1) * wpthlp(1,1)
 
-       thlm_integral_after &
-       = vertical_integral( gr%nzt, rho_ds_zt, thlm, gr%dzt )
+       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, thlm, gr%dzt )
+       thlm_integral_after = integral_tmp(1)
 
-       thlm_integral_forcing &
-       = vertical_integral( gr%nzt, rho_ds_zt, thlm_forcing, gr%dzt )
+       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, thlm_forcing, gr%dzt )
+       thlm_integral_forcing = integral_tmp(1)
 
        thlm_spur_src &
        = calculate_spurious_source( thlm_integral_after, &

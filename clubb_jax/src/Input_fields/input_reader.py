@@ -12,8 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.interpolation import zlinterp_fnc
+from clubb_jax.src.CLUBB_core.interpolation import zlinterp
 
 
 @dataclass
@@ -245,8 +246,14 @@ def linear_fill_blanks(dim_grid, grid, var, default_value):
     temp_grid = grid[valid]
     temp_var = var[valid]
     if reversed_grid:
-        return np.asarray(zlinterp_fnc(-grid, -temp_grid, temp_var))
-    return np.asarray(zlinterp_fnc(grid, temp_grid, temp_var))
+        return np.asarray(zlinterp(
+            1, dim_grid, amt, -jnp.asarray(grid)[None, :],
+            -jnp.asarray(temp_grid)[None, :], jnp.asarray(temp_var)[None, :],
+        ))[0]
+    return np.asarray(zlinterp(
+        1, dim_grid, amt, jnp.asarray(grid)[None, :],
+        jnp.asarray(temp_grid)[None, :], jnp.asarray(temp_var)[None, :],
+    ))[0]
 
 
 # ----------------------------------------------------------------------------

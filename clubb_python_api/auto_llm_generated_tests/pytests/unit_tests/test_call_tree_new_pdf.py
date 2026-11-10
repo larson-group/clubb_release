@@ -93,7 +93,7 @@ def test_calc_setter_var_params_matches_formula():
         mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, mixt_frac,
         coef_sigma_x_1_sqd, coef_sigma_x_2_sqd,
     ) = clubb_api.calc_setter_var_params(
-        nz=nz, xm=xm, xp2=xp2, skx=skx, sgn_wpxp=sgn_wpxp, f_x=f_x, zeta_x=zeta_x)
+        nz=nz, xm=xm, xp2=xp2, skx=skx, sgn_wpxp=sgn_wpxp, f_x=f_x, zeta_x=zeta_x, ngrdcol=(xm).shape[0])
 
     term_under_sqrt = (
         4.0 * f_x**3
@@ -140,7 +140,7 @@ def test_calc_responder_params_matches_formula_branches():
         mu_x_1, mu_x_2, sigma_x_1_sqd, sigma_x_2_sqd,
         coef_sigma_x_1_sqd, coef_sigma_x_2_sqd,
     ) = clubb_api.calc_responder_params(
-        nz=nz, xm=xm, xp2=xp2, skx=skx, sgn_wpxp=sgn_wpxp, f_x=f_x, mixt_frac=mixt_frac)
+        nz=nz, xm=xm, xp2=xp2, skx=skx, sgn_wpxp=sgn_wpxp, f_x=f_x, mixt_frac=mixt_frac, ngrdcol=(xm).shape[0])
 
     expected_mu_x_1 = np.array(mu_x_1, copy=True)
     expected_mu_x_2 = np.array(mu_x_2, copy=True)
@@ -201,6 +201,7 @@ def test_calc_limits_f_x_responder_matches_root_selection_logic():
         nz=nz, mixt_frac=mixt_frac, skx=skx, sgn_wpxp=sgn_wpxp,
         max_skx2_pos_skx_sgn_wpxp=max_skx2_pos_skx_sgn_wpxp,
         max_skx2_neg_skx_sgn_wpxp=max_skx2_neg_skx_sgn_wpxp,
+        ngrdcol=(mixt_frac).shape[0],
     )
 
     expected_min_f_x, expected_max_f_x = _expected_calc_limits_f_x_responder(
@@ -220,6 +221,7 @@ def test_calc_coef_wp4_implicit_matches_formula():
     got = clubb_api.calc_coef_wp4_implicit(
         nz=nz, mixt_frac=mixt_frac, f_w=f_w,
         coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
+        ngrdcol=(mixt_frac).shape[0],
     )
 
     expected = (
@@ -252,6 +254,7 @@ def test_calc_coef_wpxp2_implicit_matches_formula_branches():
         nz=nz, wp2=wp2, xp2=xp2, wpxp=wpxp, sgn_wpxp=sgn_wpxp, mixt_frac=mixt_frac,
         f_w=f_w, f_x=f_x, coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
         coef_sigma_x_1_sqd=coef_sigma_x_1_sqd, coef_sigma_x_2_sqd=coef_sigma_x_2_sqd,
+        ngrdcol=(wp2).shape[0],
     )
 
     expected = np.zeros_like(got)
@@ -312,6 +315,7 @@ def test_calc_coefs_wp2xp_semiimpl_matches_formula_branches():
         nz=nz, wp2=wp2, xp2=xp2, sgn_wpxp=sgn_wpxp, mixt_frac=mixt_frac, f_w=f_w, f_x=f_x,
         coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
         coef_sigma_x_1_sqd=coef_sigma_x_1_sqd, coef_sigma_x_2_sqd=coef_sigma_x_2_sqd,
+        ngrdcol=(wp2).shape[0],
     )
 
     expected_coef = np.zeros_like(got_coef)
@@ -385,6 +389,7 @@ def test_calc_coefs_wpxpyp_semiimpl_matches_formula_branches():
         coef_sigma_w_1_sqd=coef_sigma_w_1_sqd, coef_sigma_w_2_sqd=coef_sigma_w_2_sqd,
         coef_sigma_x_1_sqd=coef_sigma_x_1_sqd, coef_sigma_x_2_sqd=coef_sigma_x_2_sqd,
         coef_sigma_y_1_sqd=coef_sigma_y_1_sqd, coef_sigma_y_2_sqd=coef_sigma_y_2_sqd,
+        ngrdcol=(wp2).shape[0],
     )
 
     expected_coef = np.zeros_like(got_coef)

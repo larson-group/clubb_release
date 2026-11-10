@@ -335,16 +335,17 @@ def calc_coef_wp4_implicit(mixt_frac, F_w, coef_sigma_w_1_sqd, coef_sigma_w_2_sq
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real ( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           mixt_frac,          & ! Mixture fraction                               [-]
           F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
           coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
           coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
         !--------------------------- Output Variables ---------------------------
-        real ( kind = core_rknd ), dimension(nz) :: &
+        real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
           coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
     """
     omf = 1.0 - mixt_frac
@@ -371,16 +372,17 @@ def calc_mixture_fraction(Skx, F_x, zeta_x, sgn_wpxp):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           Skx,      & ! Skewness of x                                            [-]
           F_x,      & ! Parameter for the spread of the PDF component means of x [-]
           zeta_x,   & ! Parameter for the PDF component variances of x           [-]
           sgn_wpxp    ! Sign of the covariance of w and x                        [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
           mixt_frac    ! Mixture fraction    [-]
     """
     zp2 = zeta_x + 2.0
@@ -601,9 +603,10 @@ def calc_coef_wpxp2_implicit(wp2, xp2, wpxp, sgn_wpxp, mixt_frac, F_w, F_x,
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real ( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           wp2,                & ! Variance of w (overall)                  [m^2/s^2]
           xp2,                & ! Variance of x (overall)           [(units vary)^2]
           wpxp,               & ! Covariance of w and x           [m/s (units vary)]
@@ -617,7 +620,7 @@ def calc_coef_wpxp2_implicit(wp2, xp2, wpxp, sgn_wpxp, mixt_frac, F_w, F_x,
           coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
         !--------------------------- Output Variables ---------------------------
-        real ( kind = core_rknd ), dimension(nz) :: &
+        real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
           coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
     """
     omf = 1.0 - mixt_frac
@@ -662,9 +665,10 @@ def calc_setter_var_params(xm, xp2, Skx, sgn_wpxp, F_x, zeta_x):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           xm,       & ! Mean of x (overall)                             [units vary]
           xp2,      & ! Variance of x (overall)                     [(units vary)^2]
           Skx,      & ! Skewness of x                                            [-]
@@ -673,14 +677,14 @@ def calc_setter_var_params(xm, xp2, Skx, sgn_wpxp, F_x, zeta_x):
           zeta_x      ! Parameter for the PDF component variances of x           [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           mu_x_1,    & ! Mean of x (1st PDF component)                  [units vary]
           mu_x_2,    & ! Mean of x (2nd PDF component)                  [units vary]
           sigma_x_1, & ! Standard deviation of x (1st PDF component)    [units vary]
           sigma_x_2, & ! Standard deviation of x (2nd PDF component)    [units vary]
           mixt_frac    ! Mixture fraction                                        [-]
 
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
           coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
     """
@@ -723,9 +727,10 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           xm,       & ! Mean of x (overall)                             [units vary]
           xp2,      & ! Variance of x (overall)                     [(units vary)^2]
           Skx,      & ! Skewness of x                                            [-]
@@ -734,13 +739,13 @@ def calc_responder_params(xm, xp2, Skx, sgn_wpxp, F_x, mixt_frac):
           mixt_frac   ! Mixture fraction                                         [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
           mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
           sigma_x_1_sqd, & ! Variance of x (1st PDF component)      [(units vary)^2]
           sigma_x_2_sqd    ! Variance of x (2nd PDF component)      [(units vary)^2]
 
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
           coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
     """
@@ -800,13 +805,14 @@ def sort_roots(roots):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz,3), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz,3), intent(in) :: &
           roots    ! Roots    [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz,3) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz,3) :: &
           roots_sorted    ! Roots sorted from smallest to largest    [-]
     """
     roots_sorted = jnp.sort(roots, axis=-1)
@@ -825,19 +831,20 @@ def calc_limits_F_x_responder(mixt_frac, Skx, sgn_wpxp,
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           mixt_frac, & ! Mixture fraction                 [-]
           Skx,       & ! Skewness of x                    [-]
           sgn_wpxp     ! Sign of covariance of w and x    [-]
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
           max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           min_F_x, & ! Minimum allowable value of F_x    [-]
           max_F_x    ! Maximum allowable value of F_x    [-]
     """
@@ -1107,9 +1114,10 @@ def calc_coefs_wp2xp_semiimpl(wp2, xp2, sgn_wpxp, mixt_frac, F_w, F_x,
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real ( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           wp2,                & ! Variance of w (overall)                  [m^2/s^2]
           xp2,                & ! Variance of x (overall)           [(units vary)^2]
           sgn_wpxp,           & ! Sign of the covariance of w and x              [-]
@@ -1123,7 +1131,7 @@ def calc_coefs_wp2xp_semiimpl(wp2, xp2, sgn_wpxp, mixt_frac, F_w, F_x,
 
         !--------------------------- Output Variables ---------------------------
         ! Coefs.: <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit
-        real ( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           coef_wp2xp_implicit, & ! Coefficient that is multiplied by <w'x'>    [m/s]
           term_wp2xp_explicit    ! Term that is on the RHS    [m^2/s^2 (units vary)]
     """
@@ -1420,9 +1428,10 @@ def calc_coefs_wpxpyp_semiimpl(wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mi
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real ( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           wp2,                & ! Variance of w (overall)                  [m^2/s^2]
           xp2,                & ! Variance of x (overall)              [(x units)^2]
           yp2,                & ! Variance of y (overall)              [(y units)^2]
@@ -1443,7 +1452,7 @@ def calc_coefs_wpxpyp_semiimpl(wp2, xp2, yp2, wpxp, wpyp, sgn_wpxp, sgn_wpyp, mi
 
         !--------------------------- Output Variables ---------------------------
         ! Coefs.: <w'x'y'> = coef_wpxpyp_implicit * <x'y'> + term_wpxpyp_explicit
-        real ( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           coef_wpxpyp_implicit, & ! Coefficient that is multiplied by <x'y'>   [m/s]
           term_wpxpyp_explicit    ! Term that is on the RHS  [m/s(x units)(y units)]
     """

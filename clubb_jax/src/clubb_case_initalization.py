@@ -918,16 +918,16 @@ def init_clubb_case(namelist_path: str) -> dict:
         raise ValueError('Batch-mode stats NetCDF output does not yet support SILHS sample output')
 
     if parameters_microphys.lh_microphys_type != parameters_microphys.lh_microphys_disabled:
-        from clubb_jax.src.SILHS.silhs_api_module import latin_hypercube_2D_output_api
+        from clubb_jax.src.SILHS.silhs_api_module import latin_hypercube_output_init_api
 
         # Setup 2D output of all subcolumns (if enabled). The source API also
         # defines SILHS coordinates when both sample-output flags are false.
-        stats_writer, err_info = latin_hypercube_2D_output_api(
+        stats_writer, err_info = latin_hypercube_output_init_api(
             nzt, gr.zt[0, :], pdf_dim, num_samples, hm_metadata,  # In
             stats_writer, err_info,                             # InOut
         )
         if err_info.is_fatal():
-            raise RuntimeError("Fatal error calling latin_hypercube_2D_output_api in init_clubb_case")
+            raise RuntimeError("Fatal error calling latin_hypercube_output_init_api in init_clubb_case")
 
     # ── 14. Zero PDF params ─────────────────────────────────────────────
     pdf_params = init_pdf_params_py(nzt, ngrdcol)
@@ -1110,11 +1110,12 @@ def init_clubb_case(namelist_path: str) -> dict:
     time_dependent_input.l_input_xpwp_sfc = state['l_input_xpwp_sfc']
     if state['l_t_dependent']:
         time_dependent_input.initialize_t_dependent_input(
+            ngrdcol,
             0,
             runtype,
             nzt,
-            np.asarray(gr.zt[0, :]),
-            np.asarray(p_in_Pa)[0, :],
+            np.asarray(gr.zt),
+            np.asarray(p_in_Pa),
             int(cfg.get('grid_adapt_in_time_method', 0)),
         )
 
@@ -1167,7 +1168,7 @@ def init_clubb_case(namelist_path: str) -> dict:
                 state["thlp2_mc"], state["rtpthlp_mc"],
                 state["wpthlp_sfc"], state["wprtp_sfc"], state["upwp_sfc"], state["vpwp_sfc"],
             ) = restart_clubb(
-                gr, hydromet_dim, hm_metadata,                                             # In
+                gr, ngrdcol, hydromet_dim, hm_metadata,                                             # In
                 restart_path_case, time_restart,                                           # In
                 state["um"], state["upwp"], state["vm"], state["vpwp"], state["up2"], state["vp2"],       # InOut
                 state["rtm"],                                                                             # InOut
@@ -1362,7 +1363,7 @@ def clean_up_clubb(state: dict):
 
 # -----------------------------------------------------------------------------
 def restart_clubb(
-    gr, hydromet_dim, hm_metadata,                                                         # In
+    gr, ngrdcol, hydromet_dim, hm_metadata,                                                         # In
     restart_path_case, time_restart,                                                       # In
     um, upwp, vm, vpwp, up2, vp2, rtm,                                                     # InOut
     wprtp, thlm, wpthlp, rtp2, rtp3,                                                       # InOut
@@ -1486,6 +1487,138 @@ def restart_clubb(
         wprtp_sfc: w'rt' surface flux        [(m kg)/(kg s)]
         upwp_sfc: u'w' at surface           [m^2/s^2]
         vpwp_sfc: v'w' at surface           [m^2/s^2]
+
+    Fortran declarations (restart_clubb in src/clubb_driver.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        type(grid), intent(in) :: gr
+
+        integer, intent(in) :: ngrdcol ! Number of columns [-]
+
+        character(len=*), intent(in) :: &
+          restart_path_case     ! Path to netCDF data for restart
+
+        integer, intent(in) :: &
+          hydromet_dim
+
+        type (hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        real(kind=time_precision), intent(in) :: &
+          time_restart
+
+        ! Input/Output Variables
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+          um,                & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
+          vm,                & ! northward grid-mean wind component (thermo. levs.) [m/s]
+          rtm,               & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+          thlm,              & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+          rtp3,              & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+          thlp3,             & ! th_l'^3 (thermodynamic levels)                 [K^3]
+          wp3,               & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+          p_in_Pa,           & ! Air pressure (thermodynamic levels)            [Pa]
+          exner,             & ! Exner function (thermodynamic levels)          [-]
+          rcm,               & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+          cloud_frac,        & ! cloud fraction (thermodynamic levels)          [-]
+          wp2thvp,           & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+          wp2up,             & ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
+          wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+          wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+          wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+          wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+          ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
+          upwp,       & ! u'w' (momentum levels)                         [m^2/s^2]
+          vpwp,       & ! v'w' (momentum levels)                         [m^2/s^2]
+          up2,        & ! u'^2 (momentum levels)                         [m^2/s^2]
+          vp2,        & ! v'^2 (momentum levels)                         [m^2/s^2]
+          wprtp,      & ! w' r_t' (momentum levels)                      [kg/kg m/s]
+          wpthlp,     & ! w'th_l' (momentum levels)                      [(m/s) K]
+          rtp2,       & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+          thlp2,      & ! th_l'^2 (momentum levels)                      [K^2]
+          rtpthlp,    & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+          wp2,        & ! w'^2 (momentum levels)                         [m^2/s^2]
+          wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+          rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+          thlpthvp,   & ! < th_l' th_v' > (momentum levels)              [K^2]
+          uprcp,      & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+          vprcp,      & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+          rc_coef_zm, & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
+          wp4,        & ! w'^4 (momentum levels)               [m^4/s^4]
+          wp2up2,     & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+          wp2vp2        ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+          wm_zt,        & ! vertical mean wind component on thermo. levels  [m/s]
+          rho,          & ! Air density on thermodynamic levels             [kg/m^3]
+          rho_ds_zt,    & ! Dry, static density on thermo. levels           [kg/m^3]
+          thv_ds_zt,    & ! Dry, base-state theta_v on thermo levels        [K]
+          thlm_forcing, & ! liquid potential temp. forcing (thermo. levels) [K/s]
+          rtm_forcing     ! total water forcing (thermo. levels)      [(kg/kg)/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
+          rho_zm,          & ! Air density on momentum levels               [kg/m^3]
+          rho_ds_zm,       & ! Dry, static density on momentum levels       [kg/m^3]
+          thv_ds_zm,       & ! Dry, base-state theta_v on momentum levels   [K]
+          wprtp_forcing,   & ! total water turbulent flux forcing (m-levs) [m*K/s^2]
+          wpthlp_forcing,  & ! liq pot temp turb flux forcing (m-levs)[m(kg/kg)/s^2]
+          rtp2_forcing,    & ! total water variance forcing (m-levs)   [(kg/kg)^2/s]
+          thlp2_forcing,   & ! liq pot temp variance forcing (m-levs)  [K^2/s]
+          rtpthlp_forcing    ! <r_t'th_l'> covariance forcing (m-levs) [K*(kg/kg)/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim), intent(inout) :: &
+          hydromet       ! Array of hydrometeors                [hm units]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzm,hydromet_dim), intent(inout) :: &
+          hydrometp2,  & ! Variance of a hydrometeor (m-levs.)  [<hm units>^2]
+          wphydrometp    ! Covariance of w and a hydrometeor    [(m/s) <hm units>]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(inout) :: &
+          Ncm,            & ! Mean cloud droplet concentration, <N_c> (t-levs.)    [num/kg]
+          Nccnm,          & ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
+          thvm,           & ! Virtual potential temperature                        [K]
+          tau_zt,         & ! Eddy dissipation time scale on thermodynamic levels  [s]
+          Kh_zt,          & ! Eddy diffusivity coefficient on thermodynamic levels [m^2/s]
+          ug,             & ! u geostrophic wind                                   [m/s]
+          vg,             & ! v geostrophic wind                                   [m/s]
+          sigma_sqd_w_zt, & ! PDF width parameter interpolated to t-levs.          [-]
+          radht             ! SW + LW heating rate                                 [K/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(inout) :: &
+          em,          & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
+          tau_zm,      & ! Eddy dissipation time scale on momentum levels       [s]
+          Kh_zm,       & ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
+          thlprcp,     & ! thl'rc'                                              [K kg/kg]
+          sigma_sqd_w    ! PDF width parameter (momentum levels)                [-]
+
+        real( kind = core_rknd ), dimension(ngrdcol), intent(inout) :: &
+          deep_soil_T_in_K, &
+          sfc_soil_T_in_K, &
+          veg_T_in_K
+
+        type(pdf_parameter), intent(inout) :: &
+          pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+          pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
+
+        ! Output
+        real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+          wpthlp_sfc,      & ! w'theta_l' surface flux   [(m K)/s]
+          wprtp_sfc,       & ! w'rt' surface flux        [(m kg)/(kg s)]
+          upwp_sfc,        & ! u'w' at surface           [m^2/s^2]
+          vpwp_sfc           ! v'w' at surface           [m^2/s^2]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzt), intent(out) :: &
+          rcm_mc, &    ! Tendency of liquid water due to microphysics      [kg/kg/s]
+          rvm_mc, &    ! Tendency of vapor water due to microphysics       [kg/kg/s]
+          thlm_mc      ! Tendency of liquid pot. temp. due to microphysics [K/s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,gr%nzm), intent(out) :: &
+          wprtp_mc, &  ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+          wpthlp_mc, & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+          rtp2_mc, &   ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+          thlp2_mc, &  ! Microphysics tendency for <thl'^2>  [K^2/s]
+          rtpthlp_mc   ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
     """
     from clubb_jax.src.Input_fields import input_fields
     from clubb_jax.src.Microphys import parameters_microphys
@@ -1682,7 +1815,7 @@ def restart_clubb(
         deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K,
         pdf_params, pdf_params_zm
     ) = input_fields.stat_fields_reader(
-        gr, timestep, hydromet_dim, hm_metadata,
+        gr, ngrdcol, timestep, hydromet_dim, hm_metadata,
         microphys_scheme, parameters_microphys.l_predict_Nc,
         um, upwp, vm, vpwp,
         up2, vp2, rtm,
@@ -1712,64 +1845,64 @@ def restart_clubb(
     )
 
     rcm_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
-        input_fields.l_input_rcm_mc, stat_files[0], "rcm_mc", gr.nzt, timestep,            # In
-        gr.zt[0, :],                                                                       # In
+        input_fields.l_input_rcm_mc, stat_files[0], "rcm_mc", gr.nzt, ngrdcol, timestep,            # In
+        gr.zt,  # In
         rcm_mc,                                                                            # InOut
     )
     if l_read_error:
         raise ValueError("Failed to read rcm_mc for CLUBB restart")
 
     rvm_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
-        input_fields.l_input_rvm_mc, stat_files[0], "rvm_mc", gr.nzt, timestep,            # In
-        gr.zt[0, :],                                                                       # In
+        input_fields.l_input_rvm_mc, stat_files[0], "rvm_mc", gr.nzt, ngrdcol, timestep,            # In
+        gr.zt,  # In
         rvm_mc,                                                                            # InOut
     )
     if l_read_error:
         raise ValueError("Failed to read rvm_mc for CLUBB restart")
 
     thlm_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
-        input_fields.l_input_thlm_mc, stat_files[0], "thlm_mc", gr.nzt, timestep,          # In
-        gr.zt[0, :],                                                                       # In
+        input_fields.l_input_thlm_mc, stat_files[0], "thlm_mc", gr.nzt, ngrdcol, timestep,          # In
+        gr.zt,  # In
         thlm_mc,                                                                           # InOut
     )
     if l_read_error:
         raise ValueError("Failed to read thlm_mc for CLUBB restart")
 
     wprtp_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
-        input_fields.l_input_wprtp_mc, stat_files[1], "wprtp_mc", gr.nzm, timestep,        # In
-        gr.zm[0, :],                                                                       # In
+        input_fields.l_input_wprtp_mc, stat_files[1], "wprtp_mc", gr.nzm, ngrdcol, timestep,        # In
+        gr.zm,  # In
         wprtp_mc,                                                                          # InOut
     )
     if l_read_error:
         raise ValueError("Failed to read wprtp_mc for CLUBB restart")
 
     wpthlp_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
-        input_fields.l_input_wpthlp_mc, stat_files[1], "wpthlp_mc", gr.nzm, timestep,      # In
-        gr.zm[0, :],                                                                       # In
+        input_fields.l_input_wpthlp_mc, stat_files[1], "wpthlp_mc", gr.nzm, ngrdcol, timestep,      # In
+        gr.zm,  # In
         wpthlp_mc,                                                                         # InOut
     )
     if l_read_error:
         raise ValueError("Failed to read wpthlp_mc for CLUBB restart")
 
     rtp2_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
-        input_fields.l_input_rtp2_mc, stat_files[1], "rtp2_mc", gr.nzm, timestep,          # In
-        gr.zm[0, :],                                                                       # In
+        input_fields.l_input_rtp2_mc, stat_files[1], "rtp2_mc", gr.nzm, ngrdcol, timestep,          # In
+        gr.zm,  # In
         rtp2_mc,                                                                           # InOut
     )
     if l_read_error:
         raise ValueError("Failed to read rtp2_mc for CLUBB restart")
 
     thlp2_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
-        input_fields.l_input_thlp2_mc, stat_files[1], "thlp2_mc", gr.nzm, timestep,        # In
-        gr.zm[0, :],                                                                       # In
+        input_fields.l_input_thlp2_mc, stat_files[1], "thlp2_mc", gr.nzm, ngrdcol, timestep,        # In
+        gr.zm,  # In
         thlp2_mc,                                                                          # InOut
     )
     if l_read_error:
         raise ValueError("Failed to read thlp2_mc for CLUBB restart")
 
     rtpthlp_mc, l_read_error = input_fields.get_clubb_variable_interpolated(
-        input_fields.l_input_rtpthlp_mc, stat_files[1], "rtpthlp_mc", gr.nzm, timestep,    # In
-        gr.zm[0, :],                                                                       # In
+        input_fields.l_input_rtpthlp_mc, stat_files[1], "rtpthlp_mc", gr.nzm, ngrdcol, timestep,    # In
+        gr.zm,  # In
         rtpthlp_mc,                                                                        # InOut
     )
     if l_read_error:

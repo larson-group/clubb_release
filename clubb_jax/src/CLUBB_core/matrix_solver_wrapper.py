@@ -38,7 +38,6 @@ from clubb_jax.src.CLUBB_core.penta_lu_solver import (
 )
 from clubb_jax.src.CLUBB_core.tridiag_lu_solver import (
     tridiag_lu_solve_multiple_rhs_lhs,
-    tridiag_lu_solve_single_rhs_lhs,
     tridiag_lu_solve_single_rhs_multiple_lhs,
 )
 
@@ -556,88 +555,6 @@ def band_solve(
 # JAX port note: keep LAPACK branches fatal here until those Fortran solver paths
 # have true JAX equivalents.
 
-def tridiag_solve_single_rhs_lhs(
-    solve_name: str,
-    tridiag_solve_method: int,
-    ndim: int,
-    lhs,
-    rhs,
-    err_info,
-    l_use_rcond: bool = False,
-):
-    """Tridiagonal solve written for single RHS and single LHS.
-
-    Fortran declarations (tridiag_solve_single_rhs_lhs in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        ! ----------------------- Input Variables -----------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          tridiag_solve_method
-
-        integer, intent(in) :: &
-          ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
-
-        real( kind = core_rknd ), dimension(3,ndim), intent(inout) :: &
-          lhs ! Left hand side
-
-        real( kind = core_rknd ), dimension(ndim), intent(inout) :: &
-          rhs ! Right hand side(s)
-
-        type(err_info_type), intent(inout) :: &
-          err_info        ! err_info struct containing err_code and err_header
-
-        ! ----------------------- Output Variables -----------------------
-        real( kind = core_rknd ), dimension(ndim), intent(out) :: &
-          soln
-
-        ! ----------------------- Optional Out -----------------------
-
-        ! The estimate of the reciprocal condition number of matrix
-        ! after equilibration (if done).
-        real( kind = core_rknd ), dimension(1), optional, intent(out) :: &
-          rcond
-    """
-    # ----------------------- Begin Code -----------------------
-
-    # The estimate of the reciprocal condition number of matrix
-    # after equilibration (if done).
-    rcond = _optional_rcond(
-        l_use_rcond,
-        lambda: _tridiag_rcond_single_lhs(ndim, lhs),
-        jnp.zeros((1,)),
-    )
-
-    if tridiag_solve_method == lapack:
-        print(
-            "WARNING: matrix_solver_wrapper.tridiag_solve_single_rhs_lhs "
-            "does not yet support the LAPACK tridiagonal solver path.",
-            file=sys.stderr,
-        )
-        return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
-
-    if tridiag_solve_method == tridiag_lu:
-        # Solve the system with a tri-diagonal specific LU decomp
-        soln = tridiag_lu_solve_single_rhs_lhs(
-            ndim,
-            lhs, rhs,
-        )
-
-    else:
-        # The solve method should match one of the above
-        if clubb_at_least_debug_level(0):
-            jax.debug.callback(
-                lambda info: print(info.global_error_header_host(), "Error in tridiag_solve_single_rhs_lhs: ",
-                                   "  no case for tridiag_solve_method = ", tridiag_solve_method, sep="\n", file=sys.stderr),
-                err_info, ordered=True,
-            )
-        return err_info.set_fatal(), jnp.zeros_like(rhs), rcond
-
-    return check_nan_soln_1d(
-        solve_name, tridiag_solve_method, ndim, soln, err_info
-    ), soln, rcond
-
 
 def tridiag_solve_single_rhs_multiple_lhs(
     solve_name: str,
@@ -872,16 +789,6 @@ def tridiag_solve(
         real( kind = core_rknd ), optional, dimension(ngrdcol), intent(out) :: &
           rcond
     """
-    if lhs.ndim == 2 and rhs.ndim == 1:
-        return tridiag_solve_single_rhs_lhs(
-            solve_name,
-            tridiag_solve_method,
-            ndim,
-            lhs,
-            rhs,
-            err_info,
-            l_use_rcond=l_use_rcond,
-        )
     if lhs.ndim == 3 and rhs.ndim == 2:
         return tridiag_solve_single_rhs_multiple_lhs(
             solve_name,
@@ -908,44 +815,6 @@ def tridiag_solve(
             l_use_rcond=l_use_rcond,
         )
     raise ValueError("Unsupported lhs/rhs ranks for tridiag_solve")
-
-
-def check_nan_soln_1d(solve_name: str, solve_method: int, ndim: int, soln, err_info):
-    """
-    Fortran declarations (check_nan_soln_1d in src/CLUBB_core/matrix_solver_wrapper.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        character(len=*), intent(in) :: &
-          solve_name
-
-        integer, intent(in) :: &
-          solve_method, ndim
-
-        real( kind = core_rknd ), intent(in), dimension(ndim) :: &
-          soln
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(err_info_type), intent(inout) :: &
-          err_info
-    """
-    del ndim
-    l_has_nan = jnp.any(jnp.isnan(soln))
-    # Host I/O adaptation of source rank-specific loops; fatal state unchanged.
-    def print_nan_solution(values, info):
-        import numpy as np
-        for k in np.flatnonzero(np.isnan(values)):
-            print("ERROR: NaN detected: soln(", k+1, ") = ", values[k], file=sys.stderr)
-        print(info.global_error_header_host(), file=sys.stderr)
-        print("solve_method =", solve_method, file=sys.stderr)
-        print(solve_name.strip() + " NaNs in solution", file=sys.stderr)
-    jax.lax.cond(
-        jnp.any(l_has_nan),
-        lambda _: jax.debug.callback(print_nan_solution, soln, err_info, ordered=True),
-        lambda _: None, operand=None,
-    )
-    return err_info.set_fatal(
-        mask=jnp.full((int(err_info.ngrdcol),), l_has_nan, dtype=bool)
-    )
 
 
 def check_nan_soln_2d(

@@ -29,7 +29,7 @@ def test_coef_wp4_f2py():
         F = rng.uniform(0.0, 1.0, (NG, NZ))
         c1 = rng.uniform(0.0, 2.0, (NG, NZ))
         c2 = rng.uniform(0.0, 2.0, (NG, NZ))
-        ref = fortran.calc_coef_wp4_implicit(NZ, mf, F, c1, c2)
+        ref = fortran.calc_coef_wp4_implicit(NZ, NG, mf, F, c1, c2)
         got = np.asarray(calc_coef_wp4_implicit(mf, F, c1, c2))
         worst = max(worst, max_abs_diff("new_pdf", got, ref))
     assert worst < 1e-11, f"calc_coef_wp4_implicit Fortran mismatch {worst:.2e}"
@@ -49,7 +49,7 @@ def test_coef_wpxp2_f2py():
         if trial % 3 == 0:   # trigger the reduced branch (zero sigma products)
             cw1 = np.zeros((NG, NZ)); cw2 = np.zeros((NG, NZ)); n_branchB += 1
         ref = (fortran.calc_coef_wpxp2_implicit(
-            NZ, wp2, xp2, wpxp, sgn, mf, F_w, F_x, cw1, cw2, cx1, cx2))
+            NZ, NG, wp2, xp2, wpxp, sgn, mf, F_w, F_x, cw1, cw2, cx1, cx2))
         got = np.asarray(calc_coef_wpxp2_implicit(wp2, xp2, wpxp, sgn, mf, F_w, F_x, cw1, cw2, cx1, cx2))
         worst = max(worst, max_abs_diff("new_pdf", got, ref))
     assert worst < 1e-11, f"calc_coef_wpxp2_implicit Fortran mismatch {worst:.2e}"

@@ -26,7 +26,7 @@ def test_f2py_oracle():
     worst = 0.0
     for seed in (11, 22, 33):
         xm, xp2, Skx, sgn, F_x, zeta = _inputs(seed)
-        f = fortran.calc_setter_var_params(NZ, xm, xp2, Skx, sgn, F_x, zeta)
+        f = fortran.calc_setter_var_params(NZ, NG, xm, xp2, Skx, sgn, F_x, zeta)
         g = calc_setter_var_params(xm, xp2, Skx, sgn, F_x, zeta)
         worst = max(worst, max_abs_diff("setter_var_params", tuple(g), tuple(f)))
     assert worst < 1e-11, f"calc_setter_var_params Fortran mismatch {worst:.2e}"

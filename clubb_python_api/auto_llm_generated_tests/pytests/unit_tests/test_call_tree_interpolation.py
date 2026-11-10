@@ -30,18 +30,18 @@ def test_mono_cubic_interp_linear_profile():
     np.testing.assert_allclose(out, 1.5)
 
 
-def test_zlinterp_fnc_zero_outside_domain():
-    """zlinterp_fnc should interpolate inside the domain and zero outside it."""
+def test_zlinterp_zero_outside_domain():
+    """zlinterp should interpolate inside the domain and zero outside it."""
     grid_src = np.array([0.0, 1.0, 2.0], dtype=np.float64)
     var_src = np.array([0.0, 10.0, 20.0], dtype=np.float64)
     grid_out = np.array([-1.0, 0.5, 2.5], dtype=np.float64)
 
-    out = clubb_api.zlinterp_fnc(
-        dim_out=grid_out.size,
+    out = clubb_api.zlinterp(
+        ngrdcol=1, dim_out=grid_out.size,
         dim_src=grid_src.size,
-        grid_out=grid_out,
-        grid_src=grid_src,
-        var_src=var_src,
+        grid_out=grid_out[None, :],
+        grid_src=grid_src[None, :],
+        var_src=var_src[None, :],
     )
 
-    np.testing.assert_allclose(out, np.array([0.0, 5.0, 0.0], dtype=np.float64))
+    np.testing.assert_allclose(out, np.array([[0.0, 5.0, 0.0]], dtype=np.float64))

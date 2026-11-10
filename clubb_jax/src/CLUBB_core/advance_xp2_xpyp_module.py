@@ -358,29 +358,29 @@ def advance_xp2_xpyp(
     if l_C2_cloud_frac:
         cloud_frac_zm = zt2zm(nzm, nzt, ngrdcol, gr, cloud_frac)
         cloud_frac_mult = jnp.maximum(min_cloud_frac_mult, cloud_frac_zm)
-        C2rt_1d = jnp.where(
+        C2rt_zm = jnp.where(
             cloud_frac_zm >= cloud_frac_min,
             clubb_params[:, iC2rt][:, None] * cloud_frac_mult,
             clubb_params[:, iC2rt][:, None],
         )
-        C2thl_1d = jnp.where(
+        C2thl_zm = jnp.where(
             cloud_frac_zm >= cloud_frac_min,
             clubb_params[:, iC2thl][:, None] * cloud_frac_mult,
             clubb_params[:, iC2thl][:, None],
         )
-        C2rtthl_1d = jnp.where(
+        C2rtthl_zm = jnp.where(
             cloud_frac_zm >= cloud_frac_min,
             clubb_params[:, iC2rtthl][:, None] * cloud_frac_mult,
             clubb_params[:, iC2rtthl][:, None],
         )
     else:
-        C2rt_1d = jnp.broadcast_to(clubb_params[:, iC2rt][:, None], (ngrdcol, nzm))
-        C2thl_1d = jnp.broadcast_to(clubb_params[:, iC2thl][:, None], (ngrdcol, nzm))
-        C2rtthl_1d = jnp.broadcast_to(clubb_params[:, iC2rtthl][:, None], (ngrdcol, nzm))
+        C2rt_zm = jnp.broadcast_to(clubb_params[:, iC2rt][:, None], (ngrdcol, nzm))
+        C2thl_zm = jnp.broadcast_to(clubb_params[:, iC2thl][:, None], (ngrdcol, nzm))
+        C2rtthl_zm = jnp.broadcast_to(clubb_params[:, iC2rtthl][:, None], (ngrdcol, nzm))
 
-    C2sclr_1d = jnp.broadcast_to(clubb_params[:, iC2rt][:, None], (ngrdcol, nzm))
-    C4_1d = two_thirds * jnp.broadcast_to(clubb_params[:, iC4][:, None], (ngrdcol, nzm))
-    C14_1d = one_third * jnp.broadcast_to(clubb_params[:, iC14][:, None], (ngrdcol, nzm))
+    C2sclr_zm = jnp.broadcast_to(clubb_params[:, iC2rt][:, None], (ngrdcol, nzm))
+    C4_zm = two_thirds * jnp.broadcast_to(clubb_params[:, iC4][:, None], (ngrdcol, nzm))
+    C14_zm = one_third * jnp.broadcast_to(clubb_params[:, iC14][:, None], (ngrdcol, nzm))
 
     Kw2 = clubb_params[:, ic_K2][:, None] * Kh_zt
     Kw9 = clubb_params[:, ic_K9][:, None] * Kh_zt
@@ -447,7 +447,7 @@ def advance_xp2_xpyp(
     rtp2, thlp2, rtpthlp, sclrp2, sclrprtp, sclrpthlp, err_info, stats = (
         solve_xp2_xpyp_with_single_lhs(
             nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, sclr_idx,
-            C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp,
+            C2rt_zm, invrs_tau_xp2_zm, rtm, thlm, wprtp,
             wpthlp, rtp2_forcing, thlp2_forcing,
             rtpthlp_forcing, sclrm, wpsclrp,
             lhs_ta_wprtp2, lhs_ma, lhs_diff,
@@ -470,8 +470,8 @@ def advance_xp2_xpyp(
         up2_old = up2
         vp2_old = vp2
 
-    lhs_dp1_C4 = term_dp1_lhs(nzm, ngrdcol, gr, C4_1d, invrs_tau_C4_zm)
-    lhs_dp1_C14 = term_dp1_lhs(nzm, ngrdcol, gr, C14_1d, invrs_tau_C14_zm)
+    lhs_dp1_C4 = term_dp1_lhs(nzm, ngrdcol, gr, C4_zm, invrs_tau_C4_zm)
+    lhs_dp1_C14 = term_dp1_lhs(nzm, ngrdcol, gr, C14_zm, invrs_tau_C14_zm)
     lhs_dp1 = (lhs_dp1_C4 + lhs_dp1_C14) * gamma_over_implicit_ts
 
     if iiPDF_type == iiPDF_new_hybrid:
@@ -1165,7 +1165,7 @@ def solve_xp2_xpyp_with_single_lhs(
 )
 def solve_xp2_xpyp_with_multiple_lhs(
     nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, sclr_idx,
-    C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,
+    C2rt_zm, C2thl_zm, C2rtthl_zm, C2sclr_zm,
     invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,
     rtp2_forcing, thlp2_forcing, rtpthlp_forcing,
     sclrm, wpsclrp,
@@ -1204,7 +1204,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
           sclr_idx
 
         real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
-          C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
+          C2rt_zm, C2thl_zm, C2rtthl_zm, C2sclr_zm, &
           invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
           wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
           wpthlp,          & ! <w'th_l'> (momentum levels)           [(m K)/s]
@@ -1281,13 +1281,13 @@ def solve_xp2_xpyp_with_multiple_lhs(
         type(err_info_type), intent(inout) :: &
           err_info      ! err_info struct containing err_code and err_header
     """
-    lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2rt_1d, invrs_tau_xp2_zm)
+    lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2rt_zm, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
     lhs = xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta_wprtp2, lhs_ma, lhs_diff, lhs_dp1)
     rhs, stats = xp2_xpyp_rhs(
         nzm, nzt, ngrdcol, gr, xp2_xpyp_rtp2, dt,
         wprtp, wprtp, rtm, rtm, rtp2, rtp2_forcing,
-        C2rt_1d, invrs_tau_xp2_zm, rt_tol ** 2, lhs_ta_wprtp2, rhs_ta_wprtp2, stats,
+        C2rt_zm, invrs_tau_xp2_zm, rt_tol ** 2, lhs_ta_wprtp2, rhs_ta_wprtp2, stats,
     )
     rtp2_solution, err_info, stats = xp2_xpyp_solve(
         nzm, ngrdcol, xp2_xpyp_rtp2, l_implemented, gr,
@@ -1320,13 +1320,13 @@ def solve_xp2_xpyp_with_multiple_lhs(
 
     stats = stats.sampled(accumulate_stats)
 
-    lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2thl_1d, invrs_tau_xp2_zm)
+    lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2thl_zm, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
     lhs = xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta_wpthlp2, lhs_ma, lhs_diff, lhs_dp1)
     rhs, stats = xp2_xpyp_rhs(
         nzm, nzt, ngrdcol, gr, xp2_xpyp_thlp2, dt,
         wpthlp, wpthlp, thlm, thlm, thlp2, thlp2_forcing,
-        C2thl_1d, invrs_tau_xp2_zm, thl_tol ** 2, lhs_ta_wpthlp2, rhs_ta_wpthlp2, stats,
+        C2thl_zm, invrs_tau_xp2_zm, thl_tol ** 2, lhs_ta_wpthlp2, rhs_ta_wpthlp2, stats,
     )
     thlp2_solution, err_info, stats = xp2_xpyp_solve(
         nzm, ngrdcol, xp2_xpyp_thlp2, l_implemented, gr,
@@ -1359,13 +1359,13 @@ def solve_xp2_xpyp_with_multiple_lhs(
 
     stats = stats.sampled(accumulate_stats)
 
-    lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2rtthl_1d, invrs_tau_xp2_zm)
+    lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2rtthl_zm, invrs_tau_xp2_zm)
     lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
     lhs = xp2_xpyp_lhs(nzm, ngrdcol, dt, gr, lhs_ta_wprtpthlp, lhs_ma, lhs_diff, lhs_dp1)
     rhs, stats = xp2_xpyp_rhs(
         nzm, nzt, ngrdcol, gr, xp2_xpyp_rtpthlp, dt,
         wprtp, wpthlp, rtm, thlm, rtpthlp, rtpthlp_forcing,
-        C2rtthl_1d, invrs_tau_xp2_zm, zero_threshold, lhs_ta_wprtpthlp,
+        C2rtthl_zm, invrs_tau_xp2_zm, zero_threshold, lhs_ta_wprtpthlp,
         rhs_ta_wprtpthlp, stats,
     )
     rtpthlp_solution, err_info, stats = xp2_xpyp_solve(
@@ -1400,7 +1400,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
     stats = stats.sampled(accumulate_stats)
 
     if l_scalar_calc:
-        lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2sclr_1d, invrs_tau_xp2_zm)
+        lhs_dp1 = term_dp1_lhs(nzm, ngrdcol, gr, C2sclr_zm, invrs_tau_xp2_zm)
         lhs_dp1 = lhs_dp1 * gamma_over_implicit_ts
 
         if iiPDF_type != iiPDF_ADG1:
@@ -1415,7 +1415,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     wpsclrp[:, :, sclr], wpsclrp[:, :, sclr],
                     sclrm[:, :, sclr], sclrm[:, :, sclr],
                     sclrp2[:, :, sclr], sclrp2_forcing,
-                    C2sclr_1d, invrs_tau_xp2_zm, sclr_tol[sclr] ** 2,
+                    C2sclr_zm, invrs_tau_xp2_zm, sclr_tol[sclr] ** 2,
                     lhs_ta_wpsclrp2[:, :, :, sclr], rhs_ta_wpsclrp2[:, :, sclr],
                     stats,
                 )
@@ -1457,7 +1457,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrprtp, dt,
                     wpsclrp[:, :, sclr], wprtp,
                     sclrm[:, :, sclr], rtm, sclrprtp[:, :, sclr],
-                    sclrprtp_forcing, C2sclr_1d, invrs_tau_xp2_zm, threshold,
+                    sclrprtp_forcing, C2sclr_zm, invrs_tau_xp2_zm, threshold,
                     lhs_ta_wprtpsclrp[:, :, :, sclr], rhs_ta_wprtpsclrp[:, :, sclr],
                     stats,
                 )
@@ -1499,7 +1499,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrpthlp, dt,
                     wpsclrp[:, :, sclr], wpthlp,
                     sclrm[:, :, sclr], thlm, sclrpthlp[:, :, sclr],
-                    sclrpthlp_forcing, C2sclr_1d, invrs_tau_xp2_zm, threshold,
+                    sclrpthlp_forcing, C2sclr_zm, invrs_tau_xp2_zm, threshold,
                     lhs_ta_wpthlpsclrp[:, :, :, sclr], rhs_ta_wpthlpsclrp[:, :, sclr],
                     stats,
                 )
@@ -1539,7 +1539,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     wpsclrp[:, :, sclr], wpsclrp[:, :, sclr],
                     sclrm[:, :, sclr], sclrm[:, :, sclr],
                     sclrp2[:, :, sclr], sclrp2_forcing,
-                    C2sclr_1d, invrs_tau_xp2_zm, sclr_tol[sclr] ** 2,
+                    C2sclr_zm, invrs_tau_xp2_zm, sclr_tol[sclr] ** 2,
                     lhs_ta_wpsclrp2[:, :, :, 0], rhs_ta_wpsclrp2[:, :, sclr],
                     stats,
                 )
@@ -1554,7 +1554,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrprtp, dt,
                     wpsclrp[:, :, sclr], wprtp,
                     sclrm[:, :, sclr], rtm, sclrprtp[:, :, sclr],
-                    sclrprtp_forcing, C2sclr_1d, invrs_tau_xp2_zm, threshold,
+                    sclrprtp_forcing, C2sclr_zm, invrs_tau_xp2_zm, threshold,
                     lhs_ta_wpsclrp2[:, :, :, 0], rhs_ta_wprtpsclrp[:, :, sclr],
                     stats,
                 )
@@ -1569,7 +1569,7 @@ def solve_xp2_xpyp_with_multiple_lhs(
                     nzm, nzt, ngrdcol, gr, xp2_xpyp_sclrpthlp, dt,
                     wpsclrp[:, :, sclr], wpthlp,
                     sclrm[:, :, sclr], thlm, sclrpthlp[:, :, sclr],
-                    sclrpthlp_forcing, C2sclr_1d, invrs_tau_xp2_zm, threshold,
+                    sclrpthlp_forcing, C2sclr_zm, invrs_tau_xp2_zm, threshold,
                     lhs_ta_wpsclrp2[:, :, :, 0], rhs_ta_wpthlpsclrp[:, :, sclr],
                     stats,
                 )

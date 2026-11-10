@@ -183,11 +183,12 @@ module fill_holes_tests
                 print *, "filling holes of: easy_fill_test_" // &
                          trim(fill_type_names(fill_type))
             end if
-            call fill_holes_vertical_api( nz, ngrdcol, threshold, &
-                                        lower_hf_level, upper_hf_level, &
-                                        dz, rho_ds, grid_dir_indx, &
-                                        fill_types(fill_type), &
-                                        field )
+            call fill_holes_vertical_api( nz, ngrdcol, threshold, & ! In
+                                          lower_hf_level, & ! In
+                                          upper_hf_level, & ! In
+                                          dz, rho_ds, grid_dir_indx, & ! In
+                                          fill_types(fill_type), & ! In
+                                          field ) ! InOut
 
             ! This case is easily fillable, so no fields should be under threshold
             if ( any( field < threshold ) ) then
@@ -248,11 +249,12 @@ module fill_holes_tests
                 print *, "filling holes of: reverse_easy_fill_test_" // &
                          trim(fill_type_names(fill_type))
             end if
-            call fill_holes_vertical_api( nz, ngrdcol, threshold, &
-                                          lower_hf_level, upper_hf_level, &
-                                          dz_rev, rho_ds_rev, grid_dir_indx, &
-                                          fill_types(fill_type), &
-                                          field_rev )
+            call fill_holes_vertical_api( nz, ngrdcol, threshold, & ! In
+                                          lower_hf_level, & ! In
+                                          upper_hf_level, & ! In
+                                          dz_rev, rho_ds_rev, grid_dir_indx, & ! In
+                                          fill_types(fill_type), & ! In
+                                          field_rev ) ! InOut
 
             ! This new mass should also be close to original
             new_mass = sum( field_rev * rho_ds_rev * dz_rev ) 
@@ -374,11 +376,12 @@ module fill_holes_tests
                 print *, "filling holes of: below_thresh_test_" // &
                          trim(fill_type_names(fill_type))
             end if
-            call fill_holes_vertical_api( nz, ngrdcol, threshold, &
-                                        lower_hf_level, upper_hf_level, &
-                                        dz, rho_ds, grid_dir_indx, &
-                                        fill_types(fill_type), &
-                                        field )
+            call fill_holes_vertical_api( nz, ngrdcol, threshold, & ! In
+                                          lower_hf_level, & ! In
+                                          upper_hf_level, & ! In
+                                          dz, rho_ds, grid_dir_indx, & ! In
+                                          fill_types(fill_type), & ! In
+                                          field ) ! InOut
 
             ! Ensure that no above threshold values were driven below threshold
             if ( any( field_initial >= threshold .and. field < threshold ) ) then
@@ -434,11 +437,12 @@ module fill_holes_tests
                 print *, "filling holes of: reverse_below_thresh_test_" // &
                          trim(fill_type_names(fill_type))
             end if
-            call fill_holes_vertical_api( nz, ngrdcol, threshold, &
-                                          lower_hf_level, upper_hf_level, &
-                                          dz_rev, rho_ds_rev, grid_dir_indx, &
-                                          fill_types(fill_type), &
-                                          field_rev )
+            call fill_holes_vertical_api( nz, ngrdcol, threshold, & ! In
+                                          lower_hf_level, & ! In
+                                          upper_hf_level, & ! In
+                                          dz_rev, rho_ds_rev, grid_dir_indx, & ! In
+                                          fill_types(fill_type), & ! In
+                                          field_rev ) ! InOut
 
             ! This new mass should also be close to original
             new_mass = sum( field_rev * rho_ds_rev * dz_rev ) 

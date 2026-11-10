@@ -8,13 +8,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import jax
 import jax.numpy as jnp
 
 from clubb_jax.src.Benchmark_cases.time_dependent_input import time_select
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp, Lv, Rd, g_per_kg, sec_per_hr
 from clubb_jax.src.CLUBB_core.file_functions import file_read_1d, file_read_2d
-from clubb_jax.src.CLUBB_core.interpolation import linear_interp_factor, zlinterp_fnc
+from clubb_jax.src.CLUBB_core.interpolation import linear_interp_factor, zlinterp
 
 
 # These variables were moved here so that they could be
@@ -82,25 +81,31 @@ def mpace_a_tndcy(ngrdcol, sclr_dim, edsclr_dim, sclr_idx, gr, time, p_in_Pa):
         vm_obs[:, before_time],
     )
 
-    # Do linear interpolation in space using zlinterp_fnc
-    # TODO(port-mirror): vmap expresses the source loop over CLUBB columns.
-    dTdt_hoc_grid = jax.vmap(zlinterp_fnc, in_axes=(0, None, None))(
-        gr.zt, file_heights, dTdt_column
+    # Interpolate each forcing field over the complete model column batch.
+    source_heights = jnp.broadcast_to(file_heights, (ngrdcol, file_nlevels))
+    dTdt_hoc_grid = zlinterp(
+        ngrdcol, gr.nzt, file_nlevels, gr.zt, source_heights,
+        jnp.broadcast_to(dTdt_column, source_heights.shape),
     )
-    dqdt_hoc_grid = jax.vmap(zlinterp_fnc, in_axes=(0, None, None))(
-        gr.zt, file_heights, dqdt_column
+    dqdt_hoc_grid = zlinterp(
+        ngrdcol, gr.nzt, file_nlevels, gr.zt, source_heights,
+        jnp.broadcast_to(dqdt_column, source_heights.shape),
     )
-    vertT_hoc_grid = jax.vmap(zlinterp_fnc, in_axes=(0, None, None))(
-        gr.zt, file_heights, vertT_column
+    vertT_hoc_grid = zlinterp(
+        ngrdcol, gr.nzt, file_nlevels, gr.zt, source_heights,
+        jnp.broadcast_to(vertT_column, source_heights.shape),
     )
-    vertq_hoc_grid = jax.vmap(zlinterp_fnc, in_axes=(0, None, None))(
-        gr.zt, file_heights, vertq_column
+    vertq_hoc_grid = zlinterp(
+        ngrdcol, gr.nzt, file_nlevels, gr.zt, source_heights,
+        jnp.broadcast_to(vertq_column, source_heights.shape),
     )
-    um_hoc_grid = jax.vmap(zlinterp_fnc, in_axes=(0, None, None))(
-        gr.zt, file_heights, um_column
+    um_hoc_grid = zlinterp(
+        ngrdcol, gr.nzt, file_nlevels, gr.zt, source_heights,
+        jnp.broadcast_to(um_column, source_heights.shape),
     )
-    vm_hoc_grid = jax.vmap(zlinterp_fnc, in_axes=(0, None, None))(
-        gr.zt, file_heights, vm_column
+    vm_hoc_grid = zlinterp(
+        ngrdcol, gr.nzt, file_nlevels, gr.zt, source_heights,
+        jnp.broadcast_to(vm_column, source_heights.shape),
     )
 
     # Compute vertical motion

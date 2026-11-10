@@ -103,12 +103,12 @@ def test_calc_ri_zm_matches_formula(gr):
 
 def test_vertical_avg_and_integral():
     """vertical_avg and vertical_integral should match direct computation."""
-    rho_ds = np.array([1.0, 2.0, 3.0], dtype=np.float64)
-    field = np.array([10.0, 20.0, 30.0], dtype=np.float64)
-    dz = np.array([2.0, 2.0, 2.0], dtype=np.float64)
+    rho_ds = np.array([1.0, 2.0, 3.0], dtype=np.float64).reshape(1, -1)
+    field = np.array([10.0, 20.0, 30.0], dtype=np.float64).reshape(1, -1)
+    dz = np.array([2.0, 2.0, 2.0], dtype=np.float64).reshape(1, -1)
 
-    avg = clubb_api.vertical_avg(total_idx=rho_ds.shape[0], rho_ds=rho_ds, field=field, dz=dz)
-    integ = clubb_api.vertical_integral(total_idx=rho_ds.shape[0], rho_ds=rho_ds, field=field, dz=dz)
+    avg = clubb_api.vertical_avg(ngrdcol=rho_ds.shape[0], total_idx=rho_ds.shape[1], rho_ds=rho_ds, field=field, dz=dz)
+    integ = clubb_api.vertical_integral(ngrdcol=rho_ds.shape[0], total_idx=rho_ds.shape[1], rho_ds=rho_ds, field=field, dz=dz)
 
     expected_integral = float(np.sum(rho_ds * field * dz))
     expected_avg = expected_integral / float(np.sum(rho_ds * dz))

@@ -6,9 +6,8 @@ Description:
 Porting deviations:
 - The public routine names mirror the Fortran module where practical, while
   returning arrays instead of mutating Fortran out-arguments.
-- The Fortran generic interfaces for ``smooth_min``, ``smooth_max``, and
-  ``calc_xpwp`` are represented by JAX functions that rely on broadcasting or
-  input rank instead of separate scalar/array overloads.
+- The Fortran generic interfaces for ``smooth_min`` and ``smooth_max`` use
+  JAX functions that broadcast their scalar/array inputs.
 - Optional Fortran stats side effects are returned as diagnostic arrays from
   JAX helpers so callers can update stats outside JIT-compiled code.
 
@@ -147,65 +146,6 @@ def set_boundary_conditions_lhs(
         lhs = lhs.at[:, high2].set(0.0).at[diag2, high2].set(1.0)
 
     return lhs
-
-
-def set_boundary_conditions_rhs(
-    low_value,
-    low_bound,
-    high_value,
-    high_bound,
-    rhs,
-    low_value2=None,
-    low_bound2=None,
-    high_value2=None,
-    high_bound2=None,
-):
-    """Sets the boundary conditions for a right-hand side vector.
-
-    Returns:
-        rhs
-
-    Fortran declarations (set_boundary_conditions_rhs in src/CLUBB_core/advance_helper_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-
-        ! The values for the first variable
-        real( kind = core_rknd ), intent(in) :: low_value, high_value
-
-        ! The bounds for the first variable
-        integer, intent(in) :: low_bound, high_bound
-
-        ! Input / Output Variables
-
-        !--------------------------- Input/Output Variables ---------------------------
-        ! The right-hand side vector
-        real( kind = core_rknd ), dimension(:), intent(inout) :: rhs
-
-        !--------------------------- Optional Input Variables ---------------------------
-
-        ! The values for the second variable
-        real( kind = core_rknd ), intent(in), optional :: low_value2, high_value2
-
-        ! The bounds for the second variable
-        integer, intent(in), optional :: low_bound2, high_bound2
-    """
-    # Set the lower and upper bounds for the first variable.
-    rhs = rhs.at[int(low_bound) - 1].set(low_value)
-    rhs = rhs.at[int(high_bound) - 1].set(high_value)
-
-    if low_bound2 is not None:
-        if low_value2 is None:
-            raise ValueError("Boundary condition provided without value.")
-        # If a lower bound was given for the second variable, set it.
-        rhs = rhs.at[int(low_bound2) - 1].set(low_value2)
-
-    if high_bound2 is not None:
-        if high_value2 is None:
-            raise ValueError("Boundary condition provided without value.")
-        # If an upper bound was given for the second variable, set it.
-        rhs = rhs.at[int(high_bound2) - 1].set(high_value2)
-
-    return rhs
 
 
 @partial(jax.jit, static_argnames=("nzm", "nzt", "ngrdcol"))
@@ -850,7 +790,7 @@ def wp23_term_splat_lhs(
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol"))
 def smooth_min(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
-    """Computes a smoothed version of the min function, using two 1d arrays as inputs.
+    """Computes a smoothed version of the min function, using two column-by-level fields.
     This single JAX function covers all Fortran versions of the smooth_min
     interface (array and scalar inputs broadcast); the declarations below
     are those of smooth_min_arrays.
@@ -890,7 +830,7 @@ def smooth_min(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
 
 @partial(jax.jit, static_argnames=("nz", "ngrdcol"))
 def smooth_max(nz: int, ngrdcol: int, input_var1, input_var2, smth_coef: float):
-    """Computes a smoothed version of the max function, using two 1d arrays as inputs.
+    """Computes a smoothed version of the max function, using two column-by-level fields.
     This single JAX function covers all Fortran versions of the smooth_max
     interface (array and scalar inputs broadcast); the declarations below
     are those of smooth_max_arrays.
@@ -977,10 +917,7 @@ def smooth_heaviside_peskin(nz: int, ngrdcol: int, input, smth_range: float):
 def calc_xpwp(nzm: int, nzt: int, ngrdcol: int, gr, Km_zm, xm):
     """Compute x'w' from x<k>, x<k+1>, Kh and invrs_dzm
 
-    This single JAX function covers the Fortran calc_xpwp_1D and calc_xpwp_2D
-    versions; the declarations below are those of calc_xpwp_2D.
-
-    Fortran declarations (calc_xpwp_2D in src/CLUBB_core/advance_helper_module.F90):
+    Fortran declarations (calc_xpwp in src/CLUBB_core/advance_helper_module.F90):
 
         ! ----------------------- Input variables -----------------------
         integer, intent(in) :: &
@@ -1000,21 +937,17 @@ def calc_xpwp(nzm: int, nzt: int, ngrdcol: int, gr, Km_zm, xm):
         real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
           xpwp ! x'w'   [(units vary)(m/s)]
     """
-    del nzt, ngrdcol
-    if Km_zm.ndim == 1:
-        xpwp = jnp.zeros((nzm,))
-        # Solve for x'w' at all intermediate model levels.
-        interior = Km_zm[1:nzm - 1] * gr.invrs_dzm[0, 1:nzm - 1] * (xm[1:] - xm[:-1])
-        return xpwp.at[1:nzm - 1].set(interior)
-
-    xpwp = jnp.zeros((Km_zm.shape[0], nzm))
+    if Km_zm.shape != (ngrdcol, nzm) or xm.shape != (ngrdcol, nzt):
+        raise ValueError("calc_xpwp requires complete column/level fields")
+    xpwp = jnp.zeros((ngrdcol, nzm), dtype=Km_zm.dtype)
     # Solve for x'w' at all intermediate model levels.
     interior = Km_zm[:, 1:nzm - 1] * gr.invrs_dzm[:, 1:nzm - 1] * (xm[:, 1:] - xm[:, :-1])
     return xpwp.at[:, 1:nzm - 1].set(interior)
 
 
-def vertical_avg(total_idx: int, rho_ds, field, dz):
-    """Computes the density-weighted vertical average of a field.
+def vertical_avg(ngrdcol: int, total_idx: int, rho_ds, field, dz):
+    """Computes the density-weighted vertical average of each column of a field.
+    Accumulate levels in their input order, preserving each column's sum.
 
     The average value of a function, f, over a set domain, [a,b], is
     calculated by the equation:
@@ -1043,38 +976,45 @@ def vertical_avg(total_idx: int, rho_ds, field, dz):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          total_idx ! The total numer of indices within the range of averaging
+          ngrdcol, & ! Number of columns [-]
+          total_idx  ! Number of levels within the averaging range [-]
 
-        real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,total_idx), intent(in) ::  &
           rho_ds, & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
           field,  & ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
-          dz  ! Reciprocal of thermodynamic or momentum level thickness           [1/m]
+          dz  ! Thermodynamic or momentum level thickness [m]
                     ! depending on whether we're on zt or zm grid.
         ! Note:  The rho_ds and field points need to be arranged from
-        !        lowest to highest in altitude, with rho_ds(1) and
-        !        field(1) actually their respective values at level k = 1.
+        !        lowest to highest in altitude in each column, with rho_ds(i,1)
+        !        and field(i,1) holding their values at the first supplied level.
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
+        real( kind = core_rknd ), dimension(ngrdcol) :: &
           vertical_avg  ! Vertical average of field    [Units of field]
     """
-    # Initialize variable
-    # Compute the numerator and denominator integral.
-    # Multiply rho_ds at level k by the level thickness
-    # at level k.  Then, sum over all vertical levels.
-    vertical_avg_result = jnp.sum(rho_ds[:total_idx] * dz[:total_idx] * field[:total_idx]) / jnp.sum(
-        rho_ds[:total_idx] * dz[:total_idx]
+    if any(value.shape != (ngrdcol, total_idx) for value in (rho_ds, field, dz)):
+        raise ValueError("Vertical reductions require complete column/level fields")
+
+    # Carry one sum per column through levels in the Fortran input order.
+    def accumulate(k, integrals):
+        numer_integral, denom_integral = integrals
+        numer_integral = numer_integral + rho_ds[:, k] * dz[:, k] * field[:, k]
+        denom_integral = denom_integral + rho_ds[:, k] * dz[:, k]
+        return numer_integral, denom_integral
+
+    numer_integral, denom_integral = jax.lax.fori_loop(
+        0, total_idx, accumulate,
+        (jnp.zeros((ngrdcol,), dtype=field.dtype), jnp.zeros((ngrdcol,), dtype=field.dtype)),
     )
-    # Find the vertical average of 'field'.
+    vertical_avg_result = numer_integral / denom_integral
     return vertical_avg_result
 
 
-def vertical_integral(total_idx: int, rho_ds, field, dz):
-    """Computes the vertical integral. rho_ds, field, and dz must all be
-    of size total_idx and should all start at the same index.
-
-    field[0], rho_ds[0] and dz[0] are the values at the lowest level of the
-    integral.
+def vertical_integral(ngrdcol: int, total_idx: int, rho_ds, field, dz, l_active=None):
+    """Integrate field * rho_ds * dz independently over each column's levels.
+    The arrays start at the same level. Optional l_active skips columns
+    whose integrals are not needed, returning zero without reading them.
+    Accumulate levels in input order to preserve the original SUM ordering.
 
     Returns:
         vertical_integral
@@ -1083,32 +1023,37 @@ def vertical_integral(total_idx: int, rho_ds, field, dz):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          total_idx  ! The total numer of indices within the range of averaging
+          ngrdcol, & ! Number of columns [-]
+          total_idx  ! Number of levels within the integration range [-]
 
-        real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
-          rho_ds,  & ! Dry, static density                   [kg/m^3]
-          field,   & ! The field to be vertically averaged   [Units vary]
-          dz         ! Level thickness                       [1/m]
-        ! Note:  The rho_ds and field points need to be arranged from
-        !        lowest to highest in altitude, with rho_ds(1) and
-        !        field(1) actually their respective values at level k = k_start.
+        real( kind = core_rknd ), dimension(ngrdcol,total_idx), intent(in) :: &
+          rho_ds, & ! Dry, static density [kg/m^3]
+          field,  & ! Field to integrate [units vary]
+          dz        ! Level thickness [m]
+
+        !--------------------------- Optional Input Variables ---------------------------
+        logical, dimension(ngrdcol), optional, intent(in) :: &
+          l_active ! Columns whose integrals are needed [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ) :: &
-          vertical_integral ! Integral in the numerator (see description)
+        real( kind = core_rknd ), dimension(ngrdcol) :: &
+          vertical_integral ! Density-weighted vertical integral [field units kg/m^2]
     """
-    # Assertion checks: that k_start <= gr%nz - 1
-    #                   that k_end   >= 2
-    #                   that k_start <= k_end
+    if any(value.shape != (ngrdcol, total_idx) for value in (rho_ds, field, dz)):
+        raise ValueError("Vertical reductions require complete column/level fields")
 
-    # Initializing vertical_integral to avoid a compiler warning.
-    # Compute the integral.
-    # Multiply the field at level k by rho_ds at level k and by
-    # the level thickness at level k.  Then, sum over all vertical levels.
-    # Note:  The values of the field and rho_ds are passed into this function
-    #        so that field(1) and rho_ds(1) are actually the field and rho_ds
-    #        at level k_start.
-    vertical_integral = jnp.sum(field[:total_idx] * rho_ds[:total_idx] * dz[:total_idx])
+    l_reduce = jnp.ones((ngrdcol,), dtype=bool) if l_active is None else l_active
+
+    def accumulate(k, integral):
+        # Mask operands before arithmetic so inactive columns cannot introduce NaNs.
+        field_k = jnp.where(l_reduce, field[:, k], 0.0)
+        rho_k = jnp.where(l_reduce, rho_ds[:, k], 0.0)
+        dz_k = jnp.where(l_reduce, dz[:, k], 0.0)
+        return integral + field_k * rho_k * dz_k
+
+    vertical_integral = jax.lax.fori_loop(
+        0, total_idx, accumulate, jnp.zeros((ngrdcol,), dtype=field.dtype),
+    )
     return vertical_integral
 
 

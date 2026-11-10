@@ -389,12 +389,14 @@ module precipitation_fraction
 
     ! Assertion check for precip_frac, precip_frac_1, and precip_frac_2.
     if ( clubb_at_least_debug_level_api( 2 ) ) then
+      call precip_frac_assert_check( nzt, ngrdcol, hydromet_dim, hydromet_tol, & ! In
+                                     hydromet, mixt_frac, precip_frac, & ! In
+                                     precip_frac_1, precip_frac_2, & ! In
+                                     precip_frac_tol, & ! In
+                                     err_info ) ! InOut
+
       do j = 1, ngrdcol
-        call precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol,                   & ! In
-                                       hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), & ! In
-                                       precip_frac_1(j,:), precip_frac_2(j,:),            & ! In
-                                       precip_frac_tol(j),                                & ! In
-                                       err_info )                                           ! Inout
+
         if ( err_info%err_code(j) == clubb_fatal_error ) then
           write(fstderr, *) err_info%err_header(j)
           write(fstderr, *) "precip_frac_assert_check failed"
@@ -932,14 +934,14 @@ module precipitation_fraction
   end subroutine component_precip_frac_specify
 
   !=============================================================================
-  subroutine precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol, &
+  subroutine precip_frac_assert_check( nzt, ngrdcol, hydromet_dim, hydromet_tol, &
                                        hydromet, mixt_frac, precip_frac, &
                                        precip_frac_1, precip_frac_2, &
                                        precip_frac_tol, &
                                        err_info )
 
     ! Description:
-    ! Assertion check for the precipitation fraction code.
+    ! Check precipitation-fraction assertions for every column in the batch.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -963,22 +965,23 @@ module precipitation_fraction
 
     !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nzt,          & ! Number of model thermodynamic vertical grid levels
+      nzt,          & ! Number of thermodynamic levels [-]
+      ngrdcol,      & ! Number of grid columns [-]
       hydromet_dim    ! Number of hydrometeor species
 
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       mixt_frac,     & ! Mixture fraction                               [-]
       precip_frac,   & ! Precipitation fraction (overall)               [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
     !--------------------------- Input/Output Variables ---------------------------
@@ -986,191 +989,194 @@ module precipitation_fraction
       err_info        ! err_info struct containing err_code and err_header
 
     ! Local Variables
-    integer :: k  ! Loop index
+    integer :: i, k ! Column and level indices [-]
 
 
-    ! Loop over all vertical levels.
-    do k = 1, nzt, 1
+    column_loop: do i = 1, ngrdcol
 
-       if ( any( hydromet(k,:) >= hydromet_tol(:) ) ) then
+      ! Loop over all vertical levels.
+      do k = 1, nzt, 1
 
-          ! Overall precipitation fraction cannot be less than precip_frac_tol
-          ! when a hydrometeor is present at a grid level.
-          if ( precip_frac(k) < precip_frac_tol ) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac < precip_frac_tol when " &
-                              // "a hydrometeor is present"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac = ", precip_frac(k), &
-                              "precip_frac_tol = ", precip_frac_tol
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+         if ( any( hydromet(i,k,:) >= hydromet_tol(:) ) ) then
 
-          ! Overall precipitation fraction cannot exceed 1.
-          if ( precip_frac(k) > one ) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac > 1"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac = ", precip_frac(k)
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Overall precipitation fraction cannot be less than precip_frac_tol
+            ! when a hydrometeor is present at a grid level.
+            if ( precip_frac(i,k) < precip_frac_tol(i) ) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac < precip_frac_tol when " &
+                                // "a hydrometeor is present"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac = ", precip_frac(i,k), &
+                                "precip_frac_tol = ", precip_frac_tol(i)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-          ! Precipitation fraction in the 1st PDF component is allowed to be 0
-          ! when all the precipitation is found in the 2nd PDF component.
-          ! Otherwise, it cannot be less than precip_frac_tol when a hydrometeor
-          ! is present at a grid level.  In other words, it cannot have a value
-          ! that is greater than 0 but less than precip_frac_tol
-          if ( precip_frac_1(k) > zero &
-               .and. precip_frac_1(k) < precip_frac_tol - eps ) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "0 < precip_frac_1 < precip_frac_tol"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k), &
-                              "precip_frac_tol = ", precip_frac_tol
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Overall precipitation fraction cannot exceed 1.
+            if ( precip_frac(i,k) > one ) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac > 1"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac = ", precip_frac(i,k)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-          ! Precipitation fraction in the 1st PDF component cannot exceed 1.
-          if ( precip_frac_1(k) > one ) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac_1 > 1"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Precipitation fraction in the 1st PDF component is allowed to be 0
+            ! when all the precipitation is found in the 2nd PDF component.
+            ! Otherwise, it cannot be less than precip_frac_tol when a hydrometeor
+            ! is present at a grid level.  In other words, it cannot have a value
+            ! that is greater than 0 but less than precip_frac_tol
+            if ( precip_frac_1(i,k) > zero &
+                 .and. precip_frac_1(i,k) < precip_frac_tol(i) - eps ) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "0 < precip_frac_1 < precip_frac_tol"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac_1 = ", precip_frac_1(i,k), &
+                                "precip_frac_tol = ", precip_frac_tol(i)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-          ! Precipiation fraction in the 1st PDF component cannot be negative.
-          if ( precip_frac_1(k) < zero ) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac_1 < 0"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Precipitation fraction in the 1st PDF component cannot exceed 1.
+            if ( precip_frac_1(i,k) > one ) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac_1 > 1"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac_1 = ", precip_frac_1(i,k)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-          ! Precipitation fraction in the 2nd PDF component is allowed to be 0
-          ! when all the precipitation is found in the 1st PDF component.
-          ! Otherwise, it cannot be less than precip_frac_tol when a hydrometeor
-          ! is present at a grid level.  In other words, it cannot have a value
-          ! that is greater than 0 but less than precip_frac_tol
-          if ( precip_frac_2(k) > zero &
-               .and. precip_frac_2(k) < precip_frac_tol - eps ) then
-             write(fstderr,*) "0 < precip_frac_2 < precip_frac_tol"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k), &
-                              "precip_frac_tol = ", precip_frac_tol
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Precipiation fraction in the 1st PDF component cannot be negative.
+            if ( precip_frac_1(i,k) < zero ) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac_1 < 0"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac_1 = ", precip_frac_1(i,k)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-          ! Precipitation fraction in the 2nd PDF component cannot exceed 1.
-          if ( precip_frac_2(k) > one ) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac_2 > 1"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Precipitation fraction in the 2nd PDF component is allowed to be 0
+            ! when all the precipitation is found in the 1st PDF component.
+            ! Otherwise, it cannot be less than precip_frac_tol when a hydrometeor
+            ! is present at a grid level.  In other words, it cannot have a value
+            ! that is greater than 0 but less than precip_frac_tol
+            if ( precip_frac_2(i,k) > zero &
+                 .and. precip_frac_2(i,k) < precip_frac_tol(i) - eps ) then
+               write(fstderr,*) "0 < precip_frac_2 < precip_frac_tol"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac_2 = ", precip_frac_2(i,k), &
+                                "precip_frac_tol = ", precip_frac_tol(i)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-          ! Precipiation fraction in the 2nd PDF component cannot be negative.
-          if ( precip_frac_2(k) < zero ) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac_2 < 0"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Precipitation fraction in the 2nd PDF component cannot exceed 1.
+            if ( precip_frac_2(i,k) > one ) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac_2 > 1"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac_2 = ", precip_frac_2(i,k)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-       else  ! all( hydromet(k,:) < hydromet_tol(:) )
+            ! Precipiation fraction in the 2nd PDF component cannot be negative.
+            if ( precip_frac_2(i,k) < zero ) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac_2 < 0"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac_2 = ", precip_frac_2(i,k)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-          ! Overall precipitation fraction must be 0 when no hydrometeors are
-          ! found at a grid level.
-          if ( abs(precip_frac(k)) > eps) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac /= 0 when no hydrometeors are found"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac = ", precip_frac(k)
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+         else  ! all( hydromet(i,k,:) < hydromet_tol(:) )
 
-          ! Precipitation fraction in the 1st PDF component must be 0 when no
-          ! hydrometeors are found at a grid level.
-          if ( abs(precip_frac_1(k)) > eps) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac_1 /= 0 when no hydrometeors " &
-                              // "are found"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Overall precipitation fraction must be 0 when no hydrometeors are
+            ! found at a grid level.
+            if ( abs(precip_frac(i,k)) > eps) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac /= 0 when no hydrometeors are found"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac = ", precip_frac(i,k)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-          ! Precipitation fraction in the 2nd PDF component must be 0 when no
-          ! hydrometeors are found at a grid level.
-          if ( abs(precip_frac_2(k)) > eps) then
-             write(fstderr, *) err_info%err_header_global
-             write(fstderr,*) "precip_frac_2 /= 0 when no hydrometeors " &
-                              // "are found"
-             write(fstderr,*) "level = ", k
-             write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
-             ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-             err_info%err_code = clubb_fatal_error
-             return
-          endif
+            ! Precipitation fraction in the 1st PDF component must be 0 when no
+            ! hydrometeors are found at a grid level.
+            if ( abs(precip_frac_1(i,k)) > eps) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac_1 /= 0 when no hydrometeors " &
+                                // "are found"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac_1 = ", precip_frac_1(i,k)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-       endif  ! any( hydromet(k,:) >= hydromet_tol(:) )
+            ! Precipitation fraction in the 2nd PDF component must be 0 when no
+            ! hydrometeors are found at a grid level.
+            if ( abs(precip_frac_2(i,k)) > eps) then
+               write(fstderr, *) err_info%err_header_global
+               write(fstderr,*) "precip_frac_2 /= 0 when no hydrometeors " &
+                                // "are found"
+               write(fstderr,*) "level = ", k
+               write(fstderr,*) "precip_frac_2 = ", precip_frac_2(i,k)
+               ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+               err_info%err_code = clubb_fatal_error
+               cycle column_loop
+            endif
 
-       ! The precipitation fraction equation is:
-       !
-       ! precip_frac
-       !    = mixt_frac * precip_frac_1 + ( 1 - mixt_frac ) * precip_frac_2;
-       !
-       ! which means that:
-       !
-       ! precip_frac
-       ! - ( mixt_frac * precip_frac_1 + ( 1 - mixt_frac ) * precip_frac_2 )
-       ! = 0.
-       !
-       ! Check that this is true with numerical round off.
-       if ( ( precip_frac(k) &
-              - ( mixt_frac(k) * precip_frac_1(k) &
-                  + ( one - mixt_frac(k) ) * precip_frac_2(k) ) ) &
-            > eps ) then
-          write(fstderr, *) err_info%err_header_global
-          write(fstderr,*) "mixt_frac * precip_frac_1 " &
-                           // "+ ( 1 - mixt_frac ) * precip_frac_2 " &
-                           // "/= precip_frac within numerical roundoff"
-          write(fstderr,*) "level = ", k
-          write(fstderr,*) "mixt_frac * precip_frac_1 " &
-                           // "+ ( 1 - mixt_frac ) * precip_frac_2 = ", &
-                           mixt_frac(k) * precip_frac_1(k) &
-                           + ( one - mixt_frac(k) ) * precip_frac_2(k)
-          write(fstderr,*) "precip_frac = ", precip_frac(k)
-          ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
-          err_info%err_code = clubb_fatal_error
-          return
-       endif
+         endif  ! any( hydromet(i,k,:) >= hydromet_tol(:) )
 
-    enddo  ! k = 1, nzt, 1
+         ! The precipitation fraction equation is:
+         !
+         ! precip_frac
+         !    = mixt_frac * precip_frac_1 + ( 1 - mixt_frac ) * precip_frac_2;
+         !
+         ! which means that:
+         !
+         ! precip_frac
+         ! - ( mixt_frac * precip_frac_1 + ( 1 - mixt_frac ) * precip_frac_2 )
+         ! = 0.
+         !
+         ! Check that this is true with numerical round off.
+         if ( ( precip_frac(i,k) &
+                - ( mixt_frac(i,k) * precip_frac_1(i,k) &
+                    + ( one - mixt_frac(i,k) ) * precip_frac_2(i,k) ) ) &
+              > eps ) then
+            write(fstderr, *) err_info%err_header_global
+            write(fstderr,*) "mixt_frac * precip_frac_1 " &
+                             // "+ ( 1 - mixt_frac ) * precip_frac_2 " &
+                             // "/= precip_frac within numerical roundoff"
+            write(fstderr,*) "level = ", k
+            write(fstderr,*) "mixt_frac * precip_frac_1 " &
+                             // "+ ( 1 - mixt_frac ) * precip_frac_2 = ", &
+                             mixt_frac(i,k) * precip_frac_1(i,k) &
+                             + ( one - mixt_frac(i,k) ) * precip_frac_2(i,k)
+            write(fstderr,*) "precip_frac = ", precip_frac(i,k)
+            ! Error in grid column i -> set ith entry to clubb_fatal_error (FIX)
+            err_info%err_code = clubb_fatal_error
+            cycle column_loop
+         endif
 
+      enddo  ! k = 1, nzt, 1
+
+    end do column_loop
 
     return
 

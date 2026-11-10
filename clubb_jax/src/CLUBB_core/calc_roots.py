@@ -83,18 +83,16 @@ def cubic_solve(a_coef, b_coef, c_coef, d_coef):
     Fortran declarations (cubic_solve in src/CLUBB_core/calc_roots.F90):
 
         !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nz    ! Number of vertical levels
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), intent(in) :: &
           a_coef, & ! Coefficient a (of x^3) in a*x^3 + b*x^2 + c^x + d = 0    [-]
           b_coef, & ! Coefficient b (of x^2) in a*x^3 + b*x^2 + c^x + d = 0    [-]
           c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
           d_coef    ! Coefficient d in a*x^3 + b*x^2 + c^x + d = 0             [-]
 
         !--------------------------- Output Variables ---------------------------
-        complex( kind = core_rknd ), dimension(nz,3) :: &
-          roots    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0       [-]
+        complex( kind = core_rknd ), intent(out) :: &
+          root_1, root_2, root_3    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0       [-]
     """
 
     ba = b_coef / a_coef
@@ -184,17 +182,15 @@ def quadratic_solve(a_coef, b_coef, c_coef):
     Fortran declarations (quadratic_solve in src/CLUBB_core/calc_roots.F90):
 
         !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nz    ! Number of vertical levels
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), intent(in) :: &
           a_coef, & ! Coefficient a (of x^2) in a*x^2 + b*x + c = 0    [-]
           b_coef, & ! Coefficient b (of x) in a*x^2 + b*x + c = 0      [-]
           c_coef    ! Coefficient c in a*x^2 + b*x + c = 0             [-]
 
         !--------------------------- Output Variables ---------------------------
-        complex( kind = core_rknd ), dimension(nz,2) :: &
-          roots    ! Roots of x that satisfy a*x^2 + b*x + c = 0       [-]
+        complex( kind = core_rknd ), intent(out) :: &
+          root_1, root_2    ! Roots of x that satisfy a*x^2 + b*x + c = 0       [-]
     """
 
     # Find the value of the determinant D; where

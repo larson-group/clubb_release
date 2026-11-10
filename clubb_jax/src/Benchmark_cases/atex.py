@@ -18,7 +18,24 @@ from clubb_jax.src.CLUBB_core.interpolation import linear_interp_factor
 
 
 def calc_forcings(ngrdcol, gr, z_inversion):
-    """Calculate ATEX liquid-water and total-water tendencies."""
+    """Compute ATEX heat and moisture tendencies on each column's grid,
+    using its inversion height.
+
+    Returns:
+        (thlm_forcing, rtm_forcing)
+
+    Fortran declarations (calc_forcings in src/Benchmark_cases/atex.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: ngrdcol ! Number of columns [-]
+        type (grid), intent(in) :: gr ! Column grids [m]
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: z_inversion ! Inversion heights [m]
+
+        !--------------------- Output Variables ---------------------
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: &
+          thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
+          rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
+    """
     # --------------------- Begin Code ---------------------
     z_inversion = z_inversion[:, None]
 

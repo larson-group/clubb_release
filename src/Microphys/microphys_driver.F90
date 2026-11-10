@@ -105,6 +105,9 @@ module microphys_driver
 #ifdef COAMPS_MICRO
     use coamps_microphys_driver_module, only:  &
         coamps_microphys_driver  ! Procedure(s)
+
+    use T_in_K_module, only: &
+        thlm2T_in_K_api  ! Procedure(s)
 #endif
 
     use lh_microphys_driver_module, only: &
@@ -297,13 +300,15 @@ module microphys_driver
       wp3_zm, & ! w'^3 (momentum levels)                         [m^3/s^3]
       Skw_zm    ! Skewness of w on momentum levels  [-]
 
+#ifdef COAMPS_MICRO
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
+      T_in_K ! Temperature supplied to COAMPS [K]
+#endif
+
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       rvm,           & ! Vapor water mixing ratio                   [kg/kg]
       thlm_morr,     & ! Thlm fed into morrison microphysics        [K]
       Ncm_microphys    ! Mean cloud droplet concentration, <N_c>    [num/kg]
-
-    real( kind = core_rknd ), dimension(1,1,gr%nzt) :: &
-      cond ! COAMPS stat for condesation/evap of rcm
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
       wtmp,    & ! Standard dev. of w                   [m/s]
@@ -330,7 +335,7 @@ module microphys_driver
     logical :: l_latin_hypercube_input
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
-      unit_sample_weight_2d
+      unit_sample_weight
 
     ! Just to avoid typing hm_metadata%iixx everywhere
     integer :: &
@@ -349,7 +354,7 @@ module microphys_driver
     iirg = hm_metadata%iirg
     iiNr = hm_metadata%iiNr
     iiNi = hm_metadata%iiNi
-    unit_sample_weight_2d = one
+    unit_sample_weight = one
 
     ! We must initialize intent(out) variables. If we do not, and they do not
     ! otherwise get assigned (e.g. microphys_scheme=="none"), then we are not
@@ -435,32 +440,32 @@ module microphys_driver
 
     case ( "coamps" )
 
-      do i = 1, ngrdcol
 #ifdef COAMPS_MICRO
-        call coamps_microphys_driver &
-             ( gr, runtype, time_current, dt, & ! In
-               rtm(i,:), wm_zm(i,:), p_in_Pa(i,:), exner(i,:), rho(i,:), & ! In
-               thlm(i,:), hydromet(i,:,iiri), hydromet(i,:,iirr),  &  ! In
-               hydromet(i,:,iirg), hydromet(i,:,iirs), & ! In
-               rcm(i,:), Ncm_microphys(i,:), hydromet(i,:,iiNr), hydromet(i,:,iiNi), & !In
-               saturation_formula, &
-               stats, i,         &
-               Nccnm(i,:), cond, & ! Inout
-               hydromet_vel_zt(i,:,iirs), hydromet_vel_zt(i,:,iiri), & ! Out
-               hydromet_vel_zt(i,:,iirr), hydromet_vel_zt(i,:,iiNr),  &  ! Out
-               hydromet_vel_zt(i,:,iirg), &  ! Out
-               hydromet_mc(i,:,iiri), hydromet_mc(i,:,iirr), & ! Out
-               hydromet_mc(i,:,iirg), hydromet_mc(i,:,iirs), & ! Out
-               hydromet_mc(i,:,iiNr), & ! Out
-               Ncm_mc(i,:), hydromet_mc(i,:,iiNi), & ! Out
-               rvm_mc(i,:), rcm_mc(i,:), thlm_mc(i,:) )
-#else
-        error stop "Not compiled with COAMPS microphysics"
-        cond = -999._core_rknd
-        if ( cond(1,1,1) /= cond(1,1,1) ) error stop
-#endif
+      ! Calculate T_in_K for the batched COAMPS call.
+      !$acc data copyin( thlm, exner, rcm ) copyout( T_in_K )
+      T_in_K = thlm2T_in_K_api( gr%nzt, ngrdcol, thlm, exner, rcm )
+      !$acc end data
 
-      enddo
+      call coamps_microphys_driver( gr, ngrdcol, & ! In
+                                    runtype, time_current, dt, & ! In
+                                    rtm, wm_zm, p_in_Pa, exner, rho, & ! In
+                                    thlm, T_in_K, & ! In
+                                    hydromet(:,:,iiri), hydromet(:,:,iirr), & ! In
+                                    hydromet(:,:,iirg), hydromet(:,:,iirs), & ! In
+                                    rcm, Ncm_microphys, & ! In
+                                    hydromet(:,:,iiNr), hydromet(:,:,iiNi), & ! In
+                                    saturation_formula, & ! In
+                                    stats, Nccnm, & ! InOut
+                                    hydromet_vel_zt(:,:,iirs), hydromet_vel_zt(:,:,iiri), & ! Out
+                                    hydromet_vel_zt(:,:,iirr), hydromet_vel_zt(:,:,iiNr), & ! Out
+                                    hydromet_vel_zt(:,:,iirg), & ! Out
+                                    hydromet_mc(:,:,iiri), hydromet_mc(:,:,iirr), & ! Out
+                                    hydromet_mc(:,:,iirg), hydromet_mc(:,:,iirs), & ! Out
+                                    hydromet_mc(:,:,iiNr), Ncm_mc, hydromet_mc(:,:,iiNi), & ! Out
+                                    rvm_mc, rcm_mc, thlm_mc ) ! Out
+#else
+      error stop "Not compiled with COAMPS microphysics"
+#endif
 
       if ( stats%l_sample ) then
         ! Sedimentation velocity for rrm
@@ -549,21 +554,25 @@ module microphys_driver
         endif
 
         call morrison_microphys_driver( &
-               gr, ngrdcol, dt, gr%nzt, hydromet_dim, hm_metadata, &
-               l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, exner, rho, &
-               cloud_frac, wtmp, delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, &
-               saturation_formula, unit_sample_weight_2d, stats, &
-               hydromet_mc, hydromet_vel_zt, Ncm_mc, rcm_mc, rvm_mc, thlm_mc, &
-               rrm_auto_diag, rrm_accr_diag, rrm_evap_diag, &
-               Nrm_auto_diag, Nrm_evap_diag )
+               gr, ngrdcol, dt, gr%nzt, & ! In
+               hydromet_dim, hm_metadata, & ! In
+               l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, & ! In
+               exner, rho, cloud_frac, wtmp, & ! In
+               delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, & ! In
+               saturation_formula, & ! In
+               unit_sample_weight, & ! In
+               stats, & ! InOut
+               hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
+               rcm_mc, rvm_mc, thlm_mc, & ! Out
+               rrm_auto_diag, rrm_accr_diag, rrm_evap_diag, & ! Out
+               Nrm_auto_diag, Nrm_evap_diag ) ! Out
 
         if ( l_morr_xp2_mc ) then
-          call update_xp2_mc_api( &
-                 gr, gr%nzm, gr%nzt, ngrdcol, dt, & ! In
-                 cloud_frac, rcm, rvm, thlm_morr, wm_zt, exner, & ! In
-                 rrm_evap_diag, pdf_params, & ! In
-                 rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc, & ! InOut
-                 rtpthlp_mc ) ! InOut
+          call update_xp2_mc_api( gr, gr%nzm, gr%nzt, ngrdcol, dt, cloud_frac, rcm, rvm, & ! In
+                                  thlm_morr, & ! In
+                                  wm_zt, exner, rrm_evap_diag, pdf_params, & ! In
+                                  rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc, & ! InOut
+                                  rtpthlp_mc ) ! InOut
         endif
       endif
 
@@ -618,16 +627,19 @@ module microphys_driver
 
         if ( l_local_kk ) then
           call KK_local_microphys_driver( &
-                 gr, ngrdcol, dt, gr%nzt, hydromet_dim, hm_metadata, & ! In
-                 l_latin_hypercube_input, & ! In
-                 thlm, wm_zt, p_in_Pa, exner, rho, cloud_frac, wtmp, & ! In
-                 delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, & ! In
-                 saturation_formula, unit_sample_weight_2d, & ! In
-                 stats, & ! InOut
-                 hydromet_mc, hydromet_vel_zt, & ! Out
-                 Ncm_mc, rcm_mc, rvm_mc, thlm_mc, & ! Out
-                 rrm_auto_diag, rrm_accr_diag, rrm_evap_diag, & ! Out
-                 Nrm_auto_diag, Nrm_evap_diag ) ! Out
+               gr, ngrdcol, dt, gr%nzt, & ! In
+               hydromet_dim, hm_metadata, & ! In
+               l_latin_hypercube_input, & ! In
+               thlm, wm_zt, p_in_Pa, exner, rho, & ! In
+               cloud_frac, wtmp, delta_zt, rcm, & ! In
+               Ncm_microphys, chi, rvm, hydromet, & ! In
+               saturation_formula, unit_sample_weight, & ! In
+               stats, & ! InOut
+               hydromet_mc, hydromet_vel_zt, & ! Out
+               Ncm_mc, rcm_mc, rvm_mc, thlm_mc, & ! Out
+               rrm_auto_diag, rrm_accr_diag, & ! Out
+               rrm_evap_diag, Nrm_auto_diag, & ! Out
+               Nrm_evap_diag ) ! Out
         else
           call KK_upscaled_microphys( &
                  gr, ngrdcol, dt, gr%nzt, gr%nzm, & ! In

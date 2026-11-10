@@ -8,6 +8,7 @@ Fortran CUDA/MT95 generator branches are replaced by native JAX randomness.
 import jax
 import jax.numpy as jnp
 from clubb_jax.src.CLUBB_core.clubb_precision import core_rknd
+from clubb_jax.src.CLUBB_core.advance_helper_module import vertical_integral
 from clubb_jax.src.CLUBB_core.constants_clubb import (
     rc_tol,
     rt_tol,
@@ -37,8 +38,8 @@ from clubb_jax.src.SILHS.math_utilities import (
     rand_integer_in_range,
 )
 
-l_output_2D_lognormal_dist = False
-l_output_2D_uniform_dist = False
+l_output_lognormal_samples = False
+l_output_uniform_samples = False
 l_lh_old_cloud_weighted = False
 
 
@@ -194,8 +195,8 @@ def generate_silhs_sample(
             return stats
 
         stats = stats.sampled(accumulate_stats)
-    # Source 2D output flags are compile-time false. Host output initialization
-    # remains in latin_hypercube_2D_output_api; I/O never occurs in this kernel.
+    # Source sample-output flags are compile-time false. Host output initialization
+    # remains in latin_hypercube_output_init_api; I/O never occurs in this kernel.
     if clubb_at_least_debug_level(2):
         l_error |= jnp.any((X_u_all_levs <= 0.0) | (X_u_all_levs >= 1.0))
         l_error |= jnp.any(
@@ -634,16 +635,32 @@ def assert_correct_cloud_normal(
 
 
 # -----------------------------------------------------------------------------
-def latin_hypercube_2D_output_api(
+def latin_hypercube_output_init_api(
     nzt, zt, pdf_dim, num_samples, hm_metadata,  # In
     stats, err_info,                             # InOut
 ):
-    """Create/open optional SILHS 2D output through the host statistics writer.
+    """Register optional lognormal and uniform SILHS sample fields with the
+    statistics writer. Samples are indexed by column, sample and level.
 
-    Arguments:
-        hm_metadata: Hydrometeor/PDF variable index metadata
-        stats: JAX statistics state; updated state is returned
-        err_info: err_info struct containing err_code and err_header
+    Returns:
+        (stats, err_info)
+
+    Fortran declarations (latin_hypercube_output_init_api in src/SILHS/latin_hypercube_driver_module.F90):
+
+        integer, intent(in) :: nzt
+        integer, intent(in) :: pdf_dim
+        integer, intent(in) :: num_samples
+        real(kind=core_rknd), dimension(nzt), intent(in) :: zt
+
+        type (hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        type(stats_type), intent(inout), optional :: &
+          stats
+
+        ! Input/Output Variables
+        type(err_info_type), intent(inout) :: &
+          err_info              ! err_info struct containing err_code and err_header
     """
     # Host-only API; both source output flags are false in the normal build.
     if stats is None:
@@ -669,10 +686,10 @@ def latin_hypercube_2D_output_api(
     stats.stats_lh_samples_init(
         num_samples,
         nzt,
-        names if l_output_2D_lognormal_dist else (),
+        names if l_output_lognormal_samples else (),
         (
             names + ["dp1", "dp2", "X_mixt_comp", "lh_sample_point_weights"]
-            if l_output_2D_uniform_dist
+            if l_output_uniform_samples
             else ()
         ),
         zt,
@@ -775,25 +792,45 @@ def stats_accumulate_lh_api(
     lh_Nc_clipped,                                      # In
     stats,                                              # InOut
 ):
-    """Clip subcolumns from latin hypercube and create stats for diagnostic
-    purposes.
+    """Accumulate diagnostic statistics from clipped SILHS samples, including
+    water paths integrated independently over each model column.
 
-    Arguments:
-        gr: Grid metadata and coordinate arrays
-        nzt: Number of vertical model levels
-        ngrdcol: Number of model columns
-        num_samples: Number of calls to microphysics per timestep (normally=2)
-        pdf_dim: Number of variables to sample
-        rho_ds_zt: Dry, static density (thermo. levs.) [kg/m^3]
-        hydromet_dim: Number of hydrometeor species
-        hm_metadata: Hydrometeor/PDF variable index metadata
-        X_nl_all_levs: Sample that is transformed ultimately to normal-lognormal
-        lh_rt_clipped: rt generated from silhs sample points
-        lh_thl_clipped: thl generated from silhs sample points
-        lh_rc_clipped: rc generated from silhs sample points
-        lh_rv_clipped: rv generated from silhs sample points
-        lh_Nc_clipped: Nc generated from silhs sample points
-        stats: JAX statistics state; updated state is returned
+    Returns:
+        stats
+
+    Fortran declarations (stats_accumulate_lh_api in src/SILHS/latin_hypercube_driver_module.F90):
+
+        !-------------------------- Input Variables --------------------------
+        type (grid), intent(in) :: gr
+
+        integer, intent(in) :: &
+          pdf_dim,        & ! Number of variables to sample
+          num_samples,    & ! Number of calls to microphysics per timestep (normally=2)
+          nzt,             & ! Number of vertical model levels
+          ngrdcol,         & ! Number of model columns
+          hydromet_dim      ! Number of hydrometeor species
+
+        type (hm_metadata_type), intent(in) :: &
+          hm_metadata
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+          rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt) :: &
+          lh_sample_point_weights
+
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: &
+          X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+
+        real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt), intent(in) :: &
+          lh_rt_clipped,  & ! rt generated from silhs sample points
+          lh_thl_clipped, & ! thl generated from silhs sample points
+          lh_rc_clipped,  & ! rc generated from silhs sample points
+          lh_rv_clipped,  & ! rv generated from silhs sample points
+          lh_Nc_clipped     ! Nc generated from silhs sample points
+
+        type(stats_type), intent(inout), optional :: &
+          stats
     """
     if stats is None:
         return stats
@@ -806,8 +843,13 @@ def stats_accumulate_lh_api(
             lh_sample_point_weights, lh_rc_clipped,  # In
         )
         stats = stats.update("lh_rcm", lh_rcm)
-        stats = stats.update("lh_lwp", jnp.sum(rho_ds_zt * lh_rcm * gr.dzt, axis=1))
-        weights_sum = jnp.sum(lh_sample_point_weights, axis=(1, 2))
+        stats = stats.update("lh_lwp", vertical_integral(ngrdcol, nzt, rho_ds_zt, lh_rcm, gr.dzt))
+        # Match Fortran SUM order: sample index varies fastest within each level.
+        weights_sum = jax.lax.fori_loop(
+            0, num_samples * nzt,
+            lambda index, total: total + lh_sample_point_weights[:, index % num_samples, index // num_samples],
+            jnp.zeros((ngrdcol,), dtype=lh_sample_point_weights.dtype),
+        )
         stats = stats.update("lh_sample_weights_sum", weights_sum)
         stats = stats.update("lh_sample_weights_avg", weights_sum / (num_samples * nzt))
         lh_thlm = compute_sample_mean(
@@ -820,7 +862,7 @@ def stats_accumulate_lh_api(
             lh_sample_point_weights, lh_rv_clipped,  # In
         )
         stats = stats.update("lh_rvm", lh_rvm)
-        stats = stats.update("lh_vwp", jnp.sum(rho_ds_zt * lh_rvm * gr.dzt, axis=1))
+        stats = stats.update("lh_vwp", vertical_integral(ngrdcol, nzt, rho_ds_zt, lh_rvm, gr.dzt))
         w = X_nl_all_levs[..., hm_metadata.iiPDF_w]
         lh_wm = compute_sample_mean(nzt, num_samples, ngrdcol, lh_sample_point_weights, w)
         stats = stats.update("lh_wm", lh_wm)

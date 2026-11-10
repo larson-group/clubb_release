@@ -157,7 +157,7 @@ import numpy as np
 from clubb_jax.src.CLUBB_core.constants_clubb import Cp, eps
 from clubb_jax.src.CLUBB_core.interpolation import (
     lin_interpolate_two_points,
-    zlinterp_fnc,
+    zlinterp,
 )
 
 # These variables are for the LBA radiation
@@ -326,9 +326,11 @@ def simple_rad_lba(
     radhtz = lba_radhtz(time, radiation_parameters.lba_krad)
 
     # Radiative theta-l tendency
-    return jax.vmap(
-        lambda zt: zlinterp_fnc(zt, radiation_parameters.lba_zrad, radhtz)
-    )(gr.zt)
+    return zlinterp(
+        ngrdcol, gr.nzt, radiation_parameters.lba_zrad.shape[0], gr.zt,
+        jnp.broadcast_to(radiation_parameters.lba_zrad, (ngrdcol, radiation_parameters.lba_zrad.shape[0])),
+        jnp.broadcast_to(radhtz, (ngrdcol, radhtz.shape[0])),
+    )
 
 
 # JAX adaptation: source ``iunit`` is a Fortran file-unit argument; direct host

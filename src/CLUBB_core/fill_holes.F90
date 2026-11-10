@@ -23,11 +23,12 @@ module fill_holes
   contains
 
   !=============================================================================
-  subroutine fill_holes_vertical_api( nz, ngrdcol, threshold, &
-                                      lower_hf_level, upper_hf_level, &
-                                      dz, rho_ds, grid_dir_indx, &
-                                      fill_holes_type, &
-                                      field )
+  subroutine fill_holes_vertical_api( nz, ngrdcol, threshold, & ! In
+                                      lower_hf_level, & ! In
+                                      upper_hf_level, & ! In
+                                      dz, rho_ds, grid_dir_indx, & ! In
+                                      fill_holes_type, & ! In
+                                      field ) ! InOut
 
     ! Description:
     !   This subroutine calls a hole filling method, specified by fill_holes_type. 
@@ -1523,15 +1524,14 @@ module fill_holes
       !$acc loop gang vector collapse(2) 
       do k = lower_hf_level, upper_hf_level, grid_dir_indx
         do i = 1, ngrdcol
-          ! A column whose holes are all filled has n_holes(i) = 0 here. It has nothing
-          ! to fill, so give it no stealable mass instead of dividing by zero.
+          ! Other columns may need another pass after this one has finished.
           if ( n_holes(i) > 0 ) then
             stealable_scale = ( one - mf_min ) / n_holes(i)
+            stealable_mass(k,i) = max( field(i,k) - threshold, 0.0_core_rknd ) &
+                                   * rho_ds_dz(k,i) * stealable_scale
           else
-            stealable_scale = zero
-          end if
-          stealable_mass(k,i) =  max( field(i,k) - threshold, 0.0_core_rknd ) &
-                                 * rho_ds_dz(k,i) * stealable_scale
+            stealable_mass(k,i) = zero
+          endif
         end do  
       end do
   
@@ -2035,12 +2035,12 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_hydromet_api( nzt, hydromet_dim, hydromet, & ! Intent(in)
-                                      l_frozen_hm, l_mix_rat_hm, & ! Intent(in)
-                                      hydromet_filled ) ! Intent(out)
+  subroutine fill_holes_hydromet_api( ngrdcol, nzt, hydromet_dim, hydromet, & ! In
+                                      l_frozen_hm, l_mix_rat_hm, & ! In
+                                      hydromet_filled ) ! Out
 
   ! Description:
-  ! Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
+  ! Fills holes independently in each column between same-phase hydrometeors(i.e. for frozen hydrometeors).
   ! The hole filling conserves water substance between all same-phase (frozen or liquid)
   ! hydrometeors at each height level.
   !
@@ -2062,71 +2062,75 @@ module fill_holes
     implicit none
 
     !--------------------------- Input Variables ---------------------------
-    integer, intent(in) :: hydromet_dim, nzt
+    integer, intent(in) :: ngrdcol, nzt, hydromet_dim ! Columns, levels and species [-]
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
-      hydromet
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
+      hydromet ! Hydrometeor fields for all columns [units vary]
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
     !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
-      hydromet_filled
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(out) :: &
+      hydromet_filled ! Filled hydrometeor fields [units vary]
 
-    ! Local Variables
-    integer :: i,j ! Loop iterators
+    !--------------------------- Local Variables ---------------------------
+    integer :: i, k, ihm, j ! Column, level, species and packed species indices [-]
 
     integer :: num_frozen_hm ! Number of frozen hydrometeor mixing ratios
 
-    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+    real( kind = core_rknd ), dimension(:,:,:), allocatable :: &
       hydromet_frozen,       & ! Frozen hydrometeor mixing ratios
       hydromet_frozen_filled   ! Frozen hydrometeor mixing ratios after hole filling
 
   !-----------------------------------------------------------------------
 
-    !----- Begin Code -----
+    !--------------------------- Begin Code ---------------------------
 
     ! Determine the number of frozen hydrometeor mixing ratios
     num_frozen_hm = 0
-    do i=1,hydromet_dim
-       if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
+    do ihm=1,hydromet_dim
+       if ( l_frozen_hm(ihm) .and. l_mix_rat_hm(ihm) ) then
           num_frozen_hm = num_frozen_hm + 1
        endif
     enddo
 
     ! Allocation
-    allocate( hydromet_frozen(nzt,num_frozen_hm) )
-    allocate( hydromet_frozen_filled(nzt,num_frozen_hm) )
+    allocate( hydromet_frozen(ngrdcol,nzt,num_frozen_hm) )
+    allocate( hydromet_frozen_filled(ngrdcol,nzt,num_frozen_hm) )
 
     ! Determine frozen hydrometeor mixing ratios
     j = 1
-    do i = 1,hydromet_dim
-       if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
-          hydromet_frozen(:,j) = hydromet(:,i)
+    do ihm = 1,hydromet_dim
+       if ( l_frozen_hm(ihm) .and. l_mix_rat_hm(ihm) ) then
+          hydromet_frozen(:,:,j) = hydromet(:,:,ihm)
           j = j+1
        endif
     enddo
 
     ! Fill holes for the frozen hydrometeors
-    do i=1,nzt
-       if ( any( hydromet_frozen(i,:) < zero ) ) then
-          call hole_filling_hm_one_lev( num_frozen_hm, hydromet_frozen(i,:), & ! Intent(in)
-                                        hydromet_frozen_filled(i,:) ) ! Intent(out)
-       else
-          hydromet_frozen_filled(i,:) = hydromet_frozen(i,:)
-       endif
+    do k = 1, nzt
+      do i = 1, ngrdcol
+
+        if ( any( hydromet_frozen(i,k,:) < zero ) ) then
+          call hole_filling_hm_one_lev( num_frozen_hm, hydromet_frozen(i,k,:), & ! In
+                                       hydromet_frozen_filled(i,k,:) ) ! Out
+        else
+          hydromet_frozen_filled(i,k,:) = hydromet_frozen(i,k,:)
+        endif
+
+      enddo
     enddo
 
     ! Setup the filled hydromet array
     j = 1
-    do i=1, hydromet_dim
-       if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
-          hydromet_filled(:,i) = hydromet_frozen_filled(:,j)
+    do ihm=1, hydromet_dim
+       if ( l_frozen_hm(ihm) .and. l_mix_rat_hm(ihm) ) then
+          hydromet_filled(:,:,ihm) = hydromet_frozen_filled(:,:,j)
           j = j+1
        else
-          hydromet_filled(:,i) = hydromet(:,i)
+          hydromet_filled(:,:,ihm) = hydromet(:,:,ihm)
        endif
     enddo
 
@@ -2137,11 +2141,12 @@ module fill_holes
   !-----------------------------------------------------------------------
 
     !-----------------------------------------------------------------------
-  subroutine fill_holes_wv( nzt, dt, exner, hydromet_name, & ! Intent(in)
-                            rvm_mc, thlm_mc, hydromet )! Intent(inout)
+  subroutine fill_holes_wv( ngrdcol, nzt, dt, exner, hydromet_name, & ! In
+                            rvm_mc, thlm_mc, hydromet )! InOut
 
   ! Description:
-  ! Fills holes using the cloud water mixing ratio from the current height level.
+  ! Fills remaining hydrometeor holes from vapor in each column and adjusts
+  ! the vapor and liquid-water potential-temperature tendencies.
   !
   ! References:
   !
@@ -2160,58 +2165,60 @@ module fill_holes
     implicit none
 
     !--------------------------- Input Variables ---------------------------
-    integer, intent(in) :: nzt
+    integer, intent(in) :: ngrdcol, nzt ! Number of columns and levels [-]
 
     real( kind = core_rknd ), intent(in) ::  &
       dt           ! Timestep         [s]
 
-    character(len=10), intent(in) :: hydromet_name
-
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       exner        ! Exner function                            [-]
 
+    character(len=10), intent(in) :: hydromet_name ! Species name [-]
+
     !--------------------------- Input/Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(nzt), intent(inout) :: &
-      hydromet, &  ! Hydrometeor array                         [units vary]
-      rvm_mc, &
-      thlm_mc
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
+      rvm_mc,  & ! Vapor tendency [kg/kg/s]
+      thlm_mc, & ! Liquid-water potential-temperature tendency [K/s]
+      hydromet   ! Hydrometeor mixing ratio [kg/kg]
 
-    ! Local Variables
-    integer :: k ! Loop iterator
+    !--------------------------- Local Variables ---------------------------
+    integer :: i, k ! Column and vertical indices [-]
 
-    real( kind = core_rknd ) :: rvm_clip_tndcy
+    real( kind = core_rknd ) :: rvm_clip_tndcy ! Vapor adjustment [kg/kg/s]
   !-----------------------------------------------------------------------
 
-    !----- Begin Code -----
+    !--------------------------- Begin Code ---------------------------
 
-    do k = 1, nzt, 1
+    do k = 1, nzt
+      do i = 1, ngrdcol
 
-       if ( hydromet(k) < zero_threshold ) then
+        if ( hydromet(i,k) < zero_threshold ) then
 
           ! Set rvm_clip_tndcy to the time tendency applied to vapor and removed
           ! from the hydrometeor.
-          rvm_clip_tndcy = hydromet(k) / dt
+          rvm_clip_tndcy = hydromet(i,k) / dt
 
           ! Adjust the tendency rvm_mc accordingly
-          rvm_mc(k) = rvm_mc(k) + rvm_clip_tndcy
+          rvm_mc(i,k) = rvm_mc(i,k) + rvm_clip_tndcy
 
           ! Adjust the tendency of thlm_mc according to whether the
           ! effect is an evaporation or sublimation tendency.
           select case ( trim( hydromet_name ) )
           case( "rrm" )
-             thlm_mc(k) = thlm_mc(k) - rvm_clip_tndcy * ( Lv / ( Cp*exner(k) ) )
+            thlm_mc(i,k) = thlm_mc(i,k) - rvm_clip_tndcy * ( Lv / ( Cp*exner(i,k) ) )
           case( "rim", "rsm", "rgm" )
-             thlm_mc(k) = thlm_mc(k) - rvm_clip_tndcy * ( Ls / ( Cp*exner(k) ) )
+            thlm_mc(i,k) = thlm_mc(i,k) - rvm_clip_tndcy * ( Ls / ( Cp*exner(i,k) ) )
           case default
              error stop "Fatal error in microphys_driver"
           end select
 
           ! Set the mixing ratio to 0
-          hydromet(k) = zero_threshold
+          hydromet(i,k) = zero_threshold
 
-       endif ! hydromet(k,i) < 0
+        endif ! hydromet(i,k) < zero_threshold
 
-    enddo ! k = 1..gr%nzt
+      enddo ! i
+    enddo ! k
 
     return
   end subroutine fill_holes_wv
@@ -2310,9 +2317,18 @@ module fill_holes
       max_velocity    ! Maximum sedimentation velocity                     [m/s]
 
     integer :: &
+      j, n_fill_columns, & ! Packed index and number of columns with holes [-]
       i, &   ! Column loop index
       k, &   ! Vertical level index
       ihm    ! Hydrometeor species index
+
+    integer, allocatable, dimension(:) :: &
+      fill_columns ! Original indices of columns entering vertical filling [-]
+
+    real(kind=core_rknd), allocatable, dimension(:,:) :: &
+      field_to_fill, & ! Hydrometeor mixing ratios in eligible columns [kg/kg]
+      dz_to_fill,    & ! Layer thicknesses for those columns [m]
+      rho_to_fill     ! Dry densities for those columns [kg/m^3]
 
     character(len=10) :: &
       hydromet_name
@@ -2344,12 +2360,9 @@ module fill_holes
     ! holes proportionally from other same-phase hydrometeors at each height
     ! level.
     if ( any( hydromet < zero_threshold ) .and. l_fill_holes_hm ) then
-      do i = 1, ngrdcol
-        call fill_holes_hydromet_api( nzt, hydromet_dim, hydromet(i,:,:), &
-                                      hm_metadata%l_frozen_hm, &
-                                      hm_metadata%l_mix_rat_hm, &
-                                      hydromet_filled(i,:,:) )
-      enddo
+      call fill_holes_hydromet_api( ngrdcol, nzt, hydromet_dim, hydromet, & ! In
+                                    hm_metadata%l_frozen_hm, hm_metadata%l_mix_rat_hm, & ! In
+                                    hydromet_filled ) ! Out
       hydromet = hydromet_filled
     endif
 
@@ -2376,16 +2389,43 @@ module fill_holes
       ! then we apply the hole filling algorithm
       if ( any( hydromet(:,:,ihm) < zero_threshold ) &
            .and. hydromet_name(1:1) == "r" .and. l_hole_fill ) then
-        ! Fill holes one column at a time, only in columns that have holes
+        ! Batch only columns with holes. Some filling methods divide by the
+        ! hole count, so previously skipped columns must not enter the scheme.
+        n_fill_columns = count( any( hydromet(:,:,ihm) < zero_threshold, dim=2 ) )
+        allocate( fill_columns(n_fill_columns), field_to_fill(n_fill_columns,nzt), &
+                  dz_to_fill(n_fill_columns,nzt), rho_to_fill(n_fill_columns,nzt) )
+
+        j = 0
         do i = 1, ngrdcol
           if ( any( hydromet(i,:,ihm) < zero_threshold ) ) then
-            ! Apply the hole filling algorithm
-            ! upper_hf_level = nzt since we are filling the zt levels
-            call fill_holes_vertical_api( nzt, 1, zero_threshold, &
-                                          1, nzt, gr%dzt(i:i,:), rho_ds_zt(i:i,:), 1, &
-                                          fill_holes_type, hydromet(i:i,:,ihm) )
+            j = j + 1
+            fill_columns(j) = i
           endif
         enddo
+
+        do k = 1, nzt
+          do j = 1, n_fill_columns
+            i = fill_columns(j)
+            field_to_fill(j,k) = hydromet(i,k,ihm)
+            dz_to_fill(j,k) = gr%dzt(i,k)
+            rho_to_fill(j,k) = rho_ds_zt(i,k)
+          enddo
+        enddo
+
+        call fill_holes_vertical_api( nzt, n_fill_columns, zero_threshold, & ! In
+                                      1, & ! In
+                                      nzt, & ! In
+                                      dz_to_fill, rho_to_fill, 1, & ! In
+                                      fill_holes_type, & ! In
+                                      field_to_fill ) ! InOut
+
+        do k = 1, nzt
+          do j = 1, n_fill_columns
+            hydromet(fill_columns(j),k,ihm) = field_to_fill(j,k)
+          enddo
+        enddo
+
+        deallocate( fill_columns, field_to_fill, dz_to_fill, rho_to_fill )
       endif
 
       if ( stats%l_sample ) then
@@ -2398,16 +2438,9 @@ module fill_holes
       endif
 
       if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
-        do i = 1, ngrdcol
-          if ( any( hydromet(i,:,ihm) < zero_threshold ) ) then
-            ! If the hole filling algorithm failed, then we attempt to fill
-            ! the missing mass with water vapor mixing ratio.
-            ! We noticed this is needed for ASEX A209, particularly if Latin
-            ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
-            call fill_holes_wv( nzt, dt, exner(i,:), hydromet_name, &
-                                rvm_mc(i,:), thlm_mc(i,:), hydromet(i,:,ihm) )
-          endif
-        enddo
+        ! Fill any mass still missing after the vertical redistribution.
+        call fill_holes_wv( ngrdcol, nzt, dt, exner, hydromet_name, & ! In
+                            rvm_mc, thlm_mc, hydromet(:,:,ihm) ) ! InOut
       endif
 
       if ( stats%l_sample ) then
@@ -2459,10 +2492,9 @@ module fill_holes
     enddo
 
     ! Calculate clipping for hydrometeor concentrations.
-    do i = 1, ngrdcol
-      call clip_hydromet_conc_mvr( nzt, hydromet_dim, hm_metadata, &
-                                   hydromet(i,:,:), hydromet_clipped(i,:,:) )
-    enddo
+    call clip_hydromet_conc_mvr( ngrdcol, nzt, hydromet_dim, hm_metadata, & ! In
+                                hydromet, & ! In
+                                hydromet_clipped ) ! Out
 
     ! Clip hydrometeor concentrations and output stats.
     do ihm = 1, hydromet_dim
@@ -2485,9 +2517,9 @@ module fill_holes
   end subroutine fill_holes_driver_api
 
   !=============================================================================
-  subroutine clip_hydromet_conc_mvr( nzt, hydromet_dim, hm_metadata,  & ! Intent(in) 
-                                     hydromet,                        & ! Intent(in)
-                                     hydromet_clipped )                 ! Intent(out)
+  subroutine clip_hydromet_conc_mvr( ngrdcol, nzt, hydromet_dim, hm_metadata,  & ! In
+                                     hydromet,                        & ! In
+                                     hydromet_clipped )                 ! Out
 
     ! Description:
     ! Increases the value of a hydrometeor concentration when it is too small,
@@ -2520,7 +2552,8 @@ module fill_holes
 
     !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nzt
+      ngrdcol, & ! Number of columns [-]
+      nzt        ! Number of levels [-]
     
     integer, intent(in) :: &
       hydromet_dim    ! Number of hydrometeor fields
@@ -2528,18 +2561,19 @@ module fill_holes
     type (hm_metadata_type), intent(in) :: &
           hm_metadata
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor fields    [units vary]
 
     !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(out) :: &
       hydromet_clipped    ! Clipped mean of hydrometeor fields    [units vary]
 
-    ! Local Variables
+    !--------------------------- Local Variables ---------------------------
     real( kind = core_rknd ) :: &
       Nxm_min_coef    ! Coefficient for min mean value of a concentration [1/kg]
 
     integer :: &
+      i,   & ! Column index [-]
       k,   & ! Vertical grid index
       idx    ! Hydrometeor species index
 
@@ -2598,27 +2632,29 @@ module fill_holes
 
           ! Loop over vertical levels and increase hydrometeor concentrations
           ! when necessary.
-          do k = 1, nzt, 1
+          do k = 1, nzt
+            do i = 1, ngrdcol
 
-             if ( hydromet(k,Nx2rx_hm_idx(idx,hm_metadata)) > zero ) then
+              if ( hydromet(i,k,Nx2rx_hm_idx(idx,hm_metadata)) > zero ) then
 
                 ! Hydrometeor mixing ratio, <rx>, is found at the grid level.
-                hydromet_clipped(k,idx) &
-                = max( hydromet(k,idx), &
-                       Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(idx,hm_metadata)) )
+                hydromet_clipped(i,k,idx) &
+                = max( hydromet(i,k,idx), &
+                       Nxm_min_coef * hydromet(i,k,Nx2rx_hm_idx(idx,hm_metadata)) )
 
              else ! <rx> = 0
 
-                hydromet_clipped(k,idx) = zero
+                hydromet_clipped(i,k,idx) = zero
 
-             endif ! hydromet(k,Nx2rx_hm_idx(idx)) > 0
+              endif ! hydromet(i,k,Nx2rx_hm_idx(idx)) > 0
 
-          enddo ! k = 1, nzt, 1
+            enddo ! i
+          enddo ! k
 
        else ! l_mix_rat_hm(idx)
 
           ! The field is a hydrometeor mixing ratio.
-          hydromet_clipped(:,idx) = hydromet(:,idx)
+          hydromet_clipped(:,:,idx) = hydromet(:,:,idx)
 
        endif ! .not. l_mix_rat_hm(idx)
 

@@ -259,7 +259,7 @@ def _steffen_interp_1d(x: np.ndarray, y: np.ndarray, x_new: np.ndarray) -> np.nd
 def _fill_blanks(z_snd: np.ndarray, vals: np.ndarray) -> np.ndarray:
     """Fill missing (-999.9) values by linear interpolation at original z levels.
 
-    Mirrors Fortran fill_blanks_one_dim_vars / zlinterp_fnc behaviour:
+    Mirrors Fortran fill_blanks_one_dim_vars / zlinterp behaviour:
     - Within the range of known values: linear interpolation
     - Below or above the known range: set to 0.0
     """

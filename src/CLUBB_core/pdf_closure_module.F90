@@ -527,57 +527,54 @@ module pdf_closure_module
                             varnce_sclr1, varnce_sclr2, alpha_sclr )                ! Out
 
     elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
-      do i = 1, ngrdcol
-        call Luhar_3D_pdf_driver( nz, &
-                           wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:), & ! In
-                           Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),      & ! In
-                           pdf_params%w_1(i,:), pdf_params%w_2(i,:),                      & ! Out
-                           pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                    & ! Out
-                           pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                  & ! Out
-                           pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),        & ! Out
-                           pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),      & ! Out
-                           pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),    & ! Out
-                           pdf_params%mixt_frac(i,:) )                                      ! Out
-      end do
+      call Luhar_3D_pdf_driver( nz, ngrdcol, & ! In
+                                wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
+                                Skw, Skrt, Skthl, wprtp, wpthlp, & ! In
+                                pdf_params%w_1, pdf_params%w_2, & ! Out
+                                pdf_params%rt_1, pdf_params%rt_2, & ! Out
+                                pdf_params%thl_1, pdf_params%thl_2, & ! Out
+                                pdf_params%varnce_w_1, pdf_params%varnce_w_2, & ! Out
+                                pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, & ! Out
+                                pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, & ! Out
+                                pdf_params%mixt_frac ) ! Out
+
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
-      call new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
-                           Skw,                                               & ! In
-                           wprtp, wpthlp, rtpthlp,                            & ! In
-                           clubb_params,                                      & ! In
-                           Skrt, Skthl,                                       & ! In/Out
-                           pdf_params%w_1, pdf_params%w_2,                    & ! Out
-                           pdf_params%rt_1, pdf_params%rt_2,                  & ! Out
-                           pdf_params%thl_1, pdf_params%thl_2,                & ! Out
-                           pdf_params%varnce_w_1, pdf_params%varnce_w_2,      & ! Out
-                           pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,    & ! Out
-                           pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,  & ! Out
-                           pdf_params%mixt_frac,                              & ! Out
-                           pdf_implicit_coefs_terms )                           ! Out
+      call new_pdf_driver( nz, ngrdcol, & ! In
+                           wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
+                           Skw, wprtp, wpthlp, rtpthlp, & ! In
+                           clubb_params, & ! In
+                           Skrt, Skthl, pdf_implicit_coefs_terms, & ! InOut
+                           pdf_params%w_1, pdf_params%w_2, & ! Out
+                           pdf_params%rt_1, pdf_params%rt_2, & ! Out
+                           pdf_params%thl_1, pdf_params%thl_2, & ! Out
+                           pdf_params%varnce_w_1, pdf_params%varnce_w_2, & ! Out
+                           pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, & ! Out
+                           pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, & ! Out
+                           pdf_params%mixt_frac ) ! Out
     elseif ( iiPDF_type == iiPDF_TSDADG ) then
-      do i = 1, ngrdcol
-        call tsdadg_pdf_driver( nz, &
-                          wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:),  & ! In
-                          Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),       & ! In
-                          pdf_params%w_1(i,:), pdf_params%w_2(i,:),                       & ! Out
-                          pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                     & ! Out
-                          pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                   & ! Out
-                          pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),         & ! Out
-                          pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),       & ! Out
-                          pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),     & ! Out
-                          pdf_params%mixt_frac(i,:) )                                       ! Out
-      end do
+      call tsdadg_pdf_driver( nz, ngrdcol, & ! In
+                              wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
+                              Skw, Skrt, Skthl, wprtp, wpthlp, & ! In
+                              pdf_params%w_1, pdf_params%w_2, & ! Out
+                              pdf_params%rt_1, pdf_params%rt_2, & ! Out
+                              pdf_params%thl_1, pdf_params%thl_2, & ! Out
+                              pdf_params%varnce_w_1, pdf_params%varnce_w_2, & ! Out
+                              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, & ! Out
+                              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, & ! Out
+                              pdf_params%mixt_frac ) ! Out
+
     elseif ( iiPDF_type == iiPDF_LY93 ) then ! use LY93
-      do i = 1, ngrdcol
-        call LY93_driver( nz, wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:),       & ! In
-                          thlp2(i,:), Skw(i,:), Skrt(i,:), Skthl(i,:),                 & ! In
-                          pdf_params%w_1(i,:), pdf_params%w_2(i,:),                    & ! Out
-                          pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                  & ! Out
-                          pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                & ! Out
-                          pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),      & ! Out
-                          pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),    & ! Out
-                          pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),  & ! Out
-                          pdf_params%mixt_frac(i,:) )                                    ! Out
-      end do
+      call LY93_driver( nz, ngrdcol, & ! In
+                        wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
+                        Skw, Skrt, Skthl, & ! In
+                        pdf_params%w_1, pdf_params%w_2, & ! Out
+                        pdf_params%rt_1, pdf_params%rt_2, & ! Out
+                        pdf_params%thl_1, pdf_params%thl_2, & ! Out
+                        pdf_params%varnce_w_1, pdf_params%varnce_w_2, & ! Out
+                        pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, & ! Out
+                        pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, & ! Out
+                        pdf_params%mixt_frac ) ! Out
+
     elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
       call new_hybrid_pdf_driver( nz, ngrdcol, sclr_dim,                          & ! In
                                   wm, rtm, thlm, um, vm,                          & ! In
@@ -1347,23 +1344,18 @@ module pdf_closure_module
       !$acc update host( sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp ) &
       !$acc if ( sclr_dim > 0 )
 
+      call pdf_closure_check( nz, ngrdcol, sclr_dim, wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, & ! In
+                              cloud_frac, rcm, wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, & ! In
+                              wprcp, & ! In
+                              wp2rcp, rtprcp, thlprcp, rcp2, wprtpthlp, & ! In
+                              pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, & ! In
+                              pdf_params%cthl_2, & ! In
+                              pdf_params, sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, & ! In
+                              wpsclrpthlp, & ! In
+                              wp2sclrp, stats, & ! In
+                              err_info ) ! InOut
+
       do i = 1, ngrdcol
-
-        call pdf_closure_check( &
-               nz, sclr_dim, &
-               wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
-               wp2thlp(i,:), cloud_frac(i,:), rcm(i,:), wpthvp(i,:), wp2thvp(i,:), & ! intent(in)
-               wp2up(i,:), & ! intent(in)
-               rtpthvp(i,:), thlpthvp(i,:), wprcp(i,:), wp2rcp(i,:), & ! intent(in)
-               rtprcp(i,:), thlprcp(i,:), rcp2(i,:), wprtpthlp(i,:), & ! intent(in)
-               pdf_params%crt_1(i,:), pdf_params%crt_2(i,:), & ! intent(in)
-               pdf_params%cthl_1(i,:), pdf_params%cthl_2(i,:), & ! intent(in)
-               pdf_params, & ! intent(in)
-               sclrpthvp(i,:,:), sclrprcp(i,:,:), wpsclrp2(i,:,:), & ! intent(in)
-               wpsclrprtp(i,:,:), wpsclrpthlp(i,:,:), wp2sclrp(i,:,:), & ! intent(in)
-               stats,         & ! intent(in)
-               err_info ) ! intent(inout)
-
         if ( err_info%err_code(i) == clubb_fatal_error ) then
           write(fstderr, *) err_info%err_header(i)
         endif
@@ -3339,257 +3331,6 @@ module pdf_closure_module
 
   end subroutine calc_w_up_in_cloud
 
-  !=============================================================================
-  function interp_var_array( n_points, nz, k, z_vals, var )
-
-  ! Description:
-  !   Interpolates a variable to an array of values about a given level
-
-  ! References
-  !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd           ! Constant
-
-    implicit none
-
-  ! Input Variables
-    integer, intent(in) :: &
-      n_points, & ! Number of points to interpolate to (must be odd and >= 3)
-      nz,       & ! Total number of vertical levels
-      k           ! Center of interpolation array
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      z_vals, &         ! Height at each vertical level           [m]
-      var               ! Variable values on grid                 [units vary]
-
-  ! Output Variables
-    real( kind = core_rknd ), dimension(n_points) :: &
-      interp_var_array  ! Interpolated values of variable         [units vary]
-
-  ! Local Variables
-    real( kind = core_rknd ) :: &
-      dz    ! Distance between vertical levels
-
-    real( kind = core_rknd ) :: &
-      z_val             ! Height at some sub-grid level
-
-    integer :: &
-      i, &                      ! Loop iterator
-
-      subgrid_lev_count         ! Number of refined grid points located between
-                              ! two defined grid levels
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    ! Place a point at each of k-1, k, and k+1.
-    interp_var_array(1) = var_value_integer_height( nz, k-1, z_vals, var )
-    interp_var_array((n_points+1)/2) = var_value_integer_height( nz, k, z_vals, var )
-    interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )
-
-    subgrid_lev_count = (n_points - 3) / 2
-
-    ! Lower half
-    if ( k == 1 ) then
-      dz = (z_vals(2) - z_vals(1)) / real( subgrid_lev_count+1, kind=core_rknd )
-    else
-      dz = (z_vals(k) - z_vals(k-1)) / real( subgrid_lev_count+1, kind=core_rknd )
-    end if
-    do i=1, subgrid_lev_count
-      z_val = z_vals(k) - real( i, kind=core_rknd ) * dz
-      interp_var_array(1+i) &
-      = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.true. )
-    end do
-
-    ! Upper half
-    if ( k == nz ) then
-      dz = ( z_vals(nz) - z_vals(nz-1) ) / real( subgrid_lev_count+1, kind=core_rknd )
-    else
-      dz = ( z_vals(k+1) - z_vals(k) ) / real( subgrid_lev_count+1, kind=core_rknd )
-    end if
-    do i=1, (n_points-3)/2
-      z_val = z_vals(k) + real( i, kind=core_rknd ) * dz
-      interp_var_array((n_points+1)/2+i) &
-      = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.false. )
-    end do
-
-    return
-  end function interp_var_array
-
-  !=============================================================================
-  function var_value_integer_height( nz, k, z_vals, var_grid_value ) result( var_value )
-
-  ! Description
-  !   Returns the value of a variable at an integer height between 0 and
-  !   nz+1 inclusive, using extrapolation when k==0 or k==nz+1
-
-  ! References
-  !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd       ! Constant
-
-    use interpolation, only: &
-        mono_cubic_interp  ! Procedure
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz,    & ! Total number of vertical levels
-      k        ! Level to resolve variable value
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      z_vals,            & ! Height at each vertical level                  [m]
-      var_grid_value       ! Value of variable at each grid level           [units vary]
-
-    ! Output Variables
-    real( kind = core_rknd ) :: &
-      var_value            ! Value of variable at height level              [units vary]
-
-    ! Local Variables
-    integer :: km1, k00, kp1, kp2
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    if ( k >= 1 .and. k <= nz ) then
-      ! This is the simple case. No extrapolation necessary.
-      var_value = var_grid_value(k)
-    else if ( k == 0 ) then
-      ! Extrapolate below the lower boundary
-      km1 = nz
-      k00 = 1
-      kp1 = 2
-      kp2 = 3
-      var_value = mono_cubic_interp( z_vals(1)-(z_vals(2)-z_vals(1)), &
-                                     km1, k00, kp1, kp2, &
-                                     z_vals(km1), z_vals(k00), z_vals(kp1), z_vals(kp2), &
-                                     var_grid_value(km1), var_grid_value(k00), &
-                                     var_grid_value(kp1), var_grid_value(kp2) )
-    else if ( k == nz+1 ) then
-      ! Extrapolate above the upper boundary
-      km1 = nz
-      k00 = nz-1
-      kp1 = nz
-      kp2 = nz
-      var_value = mono_cubic_interp( z_vals(nz)+(z_vals(nz)-z_vals(nz-1)), &
-                                     km1, k00, kp1, kp2, &
-                                     z_vals(km1), z_vals(k00), z_vals(kp1), z_vals(kp2), &
-                                     var_grid_value(km1), var_grid_value(k00), &
-                                     var_grid_value(kp1), var_grid_value(kp2) )
-    else
-      ! Invalid height requested
-      var_value = -999._core_rknd
-    end if ! k > 1 .and. k < nz
-    return
-  end function var_value_integer_height
-
-  !=============================================================================
-  function var_subgrid_interp( nz, k, z_vals, var, z_interp, l_below ) result( var_value )
-
-  ! Description
-  !   Interpolates (or extrapolates) a variable to a value between grid
-  !   levels
-
-  ! References
-  !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd       ! Constant
-
-    use interpolation, only: &
-        mono_cubic_interp   ! Procedure
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz, &         ! Number of vertical levels
-      k             ! Grid level near interpolation target
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      z_vals, &     ! Height at each grid level          [m]
-      var           ! Variable values at grid levels     [units vary]
-
-    real( kind = core_rknd ), intent(in) :: &
-      z_interp      ! Interpolation target height        [m]
-
-    logical, intent(in) :: &
-      l_below       ! True if z_interp < z_vals(k), false otherwise
-
-    ! Output Variable
-    real( kind = core_rknd ) :: &
-      var_value     ! Interpolated value of variable     [units vary]
-
-    ! Local Variables
-    integer :: km1, k00, kp1, kp2 ! Parameters for call to mono_cubic_interp
-  !----------------------------------------------------------------------
-
-    !----- Begin Code -----
-    if ( l_below ) then
-
-      if ( k == 1 ) then ! Extrapolation
-        km1 = nz
-        k00 = 1
-        kp1 = 2
-        kp2 = 3
-      else if ( k == 2 ) then
-        km1 = 1
-        k00 = 1
-        kp1 = 2
-        kp2 = 3
-      else if ( k == nz ) then
-        km1 = nz-2
-        k00 = nz-1
-        kp1 = nz
-        kp2 = nz
-      else
-        km1 = k-2
-        k00 = k-1
-        kp1 = k
-        kp2 = k+1
-      end if ! k == 1
-
-    else ! .not. l_below
-
-      if ( k == 1 ) then
-        km1 = 1
-        k00 = 1
-        kp1 = 2
-        kp2 = 3
-      else if ( k == nz-1 ) then
-        km1 = nz-2
-        k00 = nz-1
-        kp1 = nz
-        kp2 = nz
-      else if ( k == nz ) then ! Extrapolation
-        km1 = nz
-        k00 = nz-1
-        kp1 = nz
-        kp2 = nz
-      else
-        km1 = k-1
-        k00 = k
-        kp1 = k+1
-        kp2 = k+2
-      end if ! k == 1
-
-    end if ! l_below
-
-    ! Now perform the interpolation
-    var_value = mono_cubic_interp( z_interp, km1, k00, kp1, kp2, &
-                                   z_vals(km1), z_vals(k00), z_vals(kp1), z_vals(kp2), &
-                                   var(km1), var(k00), var(kp1), var(kp2) )
-
-    return
-
-  end function var_subgrid_interp
-
-  !=============================================================================
-
   subroutine pdf_closure_driver( gr, nzm, nzt, ngrdcol,                   & ! Intent(in)
                                  dt, hydromet_dim, sclr_dim, sclr_tol,    & ! Intent(in)
                                  wprtp, thlm, wpthlp, rtp2, rtp3,         & ! Intent(in)
@@ -4040,7 +3781,10 @@ module pdf_closure_module
                    w_tol, clubb_params, &
                    Sku_zt )   
                       
-    vp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive definite                
+    ! Positive definite
+    vp2_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
+                             vp2(:,:), & ! In
+                             w_tol_sqd )
     call Skx_func( nzt, ngrdcol, vp2_zt, vp3, &
                    w_tol, clubb_params, &
                    Skv_zt )   
@@ -4076,7 +3820,8 @@ module pdf_closure_module
       sclrpthlp_zt(:,:,sclr) = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrpthlp(:,:,sclr) )
 
       ! Positive definite quantity
-      sclrp2_zt(:,:,sclr) = zm2zt_api( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), &
+      sclrp2_zt(:,:,sclr) = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
+                                       sclrp2(:,:,sclr), & ! In
                                        sclr_tol(sclr)**2 )
       
       call Skx_func( nzt, ngrdcol, sclrp2_zt(:,:,sclr), sclrp3(:,:,sclr), &

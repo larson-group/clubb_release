@@ -8,7 +8,7 @@ import numpy as np
 import clubb_python.CLUBB_core.remapping_module as fortran
 
 from clubb_jax.auto_llm_generated_tests.pytests.f2py_unit_test_helpers import max_abs_diff, setup_matching_grids
-from clubb_jax.src.CLUBB_core.remapping_module import remap_vals_to_target_same_grid
+from clubb_jax.src.CLUBB_core.remapping_module import remap_vals_to_target
 
 _NG, _DZ, _ZTOP = 2, 50.0, 1500.0
 
@@ -34,8 +34,6 @@ def test_f2py_oracle():
         src = rng.uniform(-2, 2, (ng, ncell))
         f = np.asarray(fortran.remap_vals_to_target(
             ng, fgr, fgr, ncell, src, ncell, rho_vals.shape[1], rho_vals, rho_levels, 1, p_sfc, 1, l_zt))
-        g = np.asarray(call_jax(remap_vals_to_target_same_grid,
-            src, np.asarray(jgr.zm), np.asarray(jgr.zt), rho_vals, rho_levels, p_sfc,
-            grid_remap_method=1, l_zt_variable=l_zt))
+        g = np.asarray(call_jax(remap_vals_to_target, ng, jgr, jgr, (src).shape[1], src, (src).shape[1], (rho_vals).shape[1], rho_vals, rho_levels, 1, p_sfc, 1, l_zt))
         worst = max(worst, max_abs_diff("remapping_module", g, f))
     assert worst < 1e-12, f"remap_vals_to_target_same_grid f2py mismatch {worst:.2e}"

@@ -29,7 +29,7 @@ def test_f2py_oracle():
     worst = 0.0
     for seed in (11, 22, 33):
         xm, xp2, mf, m, wpxp = _inputs(seed)
-        f = fortran.close_luhar_pdf(NZ, xm, xp2, mf, m, wpxp, _X_TOL_SQD)
+        f = fortran.close_luhar_pdf(NZ, NG, xm, xp2, mf, m, wpxp, _X_TOL_SQD)
         g = close_Luhar_pdf(xm, xp2, mf, m, wpxp, _X_TOL_SQD)
         assert len(f) == len(g)
         for fi, gi in zip(f, g):

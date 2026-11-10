@@ -643,7 +643,7 @@ class StatsWriter:
             print('stats netcdf error: runtime state not prepared', file=sys.stderr)
             raise RuntimeError("stats_update_grid must be called before remapped output is written.")
 
-        from clubb_jax.src.CLUBB_core.remapping_module import remap_vals_to_target
+        from clubb_jax.src.CLUBB_core.remapping_module import remap_vals_to_target_helper
 
         zt_src, zm_src, rho_vals, rho_levels, p_sfc = self._remap_state
         target_zt = np.broadcast_to(
@@ -661,15 +661,15 @@ class StatsWriter:
             source_edges = np.concatenate((zm_src[:, :1], zt_src, zm_src[:, -1:]), axis=1)
             target_edges = np.concatenate((target_zm[:, :1], target_zt, target_zm[:, -1:]), axis=1)
         return np.asarray(
-            remap_vals_to_target(
+            remap_vals_to_target_helper(
+                self.ngrdcol, source_edges.shape[1], target_edges.shape[1],
                 source_edges,
                 target_edges,
-                rho_vals,
+                rho_vals.shape[1], rho_vals,
                 rho_levels,
                 values,
-                p_sfc,
+                1, p_sfc,
                 self.grid_remap_method,
-                iv=1,
             )
         )
 

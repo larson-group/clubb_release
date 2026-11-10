@@ -39,8 +39,8 @@ def test_raw_values_units_and_distinct_columns(tmp_path, dims, units, divisor):
     data = np.array([[[0.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 0.0]]])
     _write_profile(path, data, units=units, dims=dims)
     result, error = input_fields.get_clubb_variable_interpolated(
-        True, path, "thlm", 2, 2,
-        np.array([0.0, 10.0]), jnp.zeros((2, 2)),
+        True, path, "thlm", 2, 2, 2,
+        np.broadcast_to(np.array([0.0, 10.0]), (2, 2)), jnp.zeros((2, 2)),
     )
     assert not error
     np.testing.assert_array_equal(result, data[1].T / divisor)
@@ -72,20 +72,22 @@ def test_single_column_broadcast_interpolation_and_errors(tmp_path):
     path = tmp_path / "case_stats.nc"
     _write_profile(path, np.array([[[1.0], [3.0]], [[2.0], [4.0]]]))
     result, error = input_fields.get_clubb_variable_interpolated(
-        True, path, "thlm", 3, 2,
-        np.array([-5.0, 5.0, 10.0]), jnp.zeros((2, 3)),
+        True, path, "thlm", 3, 2, 2,
+        np.broadcast_to(np.array([-5.0, 5.0, 10.0]), (2, 3)), jnp.zeros((2, 3)),
     )
     assert not error
     np.testing.assert_array_equal(result, [[2.0, 3.0, 4.0]] * 2)
     for name, heights, ncol in (("missing", [0.0, 10.0], 1), ("thlm", [0.0, 20.0], 1)):
         original = jnp.zeros((ncol, 2))
         result, error = input_fields.get_clubb_variable_interpolated(
-            True, path, name, 2, 1, np.array(heights), original,
+            True, path, name, 2, ncol, 1,
+            np.broadcast_to(heights, (ncol, 2)), original,
         )
         assert error
         np.testing.assert_array_equal(result, original)
     result, error = input_fields.get_clubb_variable_interpolated(
-        False, path, "missing", 2, 1, np.array([0.0, 10.0]), original,
+        False, path, "missing", 2, ncol, 1,
+        np.broadcast_to([0.0, 10.0], (ncol, 2)), original,
     )
     assert not error
 
@@ -135,3 +137,29 @@ def test_batched_restart_rejected_before_reading_reference(tmp_path):
     )
     with pytest.raises(ValueError, match='restart does not yet support runtime batching'):
         init_clubb_case(str(path))
+
+
+def test_interpolation_preserves_distinct_stored_columns_on_shared_grid(tmp_path):
+    """Shared brackets and ghost policy retain different saved column values."""
+    path = tmp_path / "case_stats.nc"
+    _write_profile(path, np.array([[[1., 10.], [3., 30.]], [[2., 20.], [4., 40.]]]))
+    heights = np.broadcast_to([-5., 5., 10.], (2, 3))
+    result, error = input_fields.get_clubb_variable_interpolated(
+        True, path, "thlm", 3, 2, 2, heights, jnp.zeros((2, 3)),
+    )
+    assert not error
+    assert result.shape == (2, 3)
+    np.testing.assert_array_equal(result, [[2., 3., 4.], [20., 30., 40.]])
+
+
+def test_input_interpolation_uses_each_columns_interior_heights(tmp_path):
+    """Equal target endpoints do not make interior interpolation brackets shared."""
+    path = tmp_path / "case_stats.nc"
+    _write_profile(path, np.array([[[1., 10.], [3., 30.]], [[2., 20.], [4., 40.]]]))
+    heights = np.array([[0., 2.5, 7.5, 10.], [0., 5., 9., 10.]])
+    result, error = input_fields.get_clubb_variable_interpolated(
+        True, path, "thlm", 4, 2, 2, heights, jnp.zeros((2, 4)),
+    )
+    assert not error
+    assert result.shape == (2, 4)
+    np.testing.assert_array_equal(result, [[2., 2.5, 3.5, 4.], [20., 30., 38., 40.]])

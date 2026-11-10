@@ -5,8 +5,9 @@ from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 
 
 import numpy as np
+import jax.numpy as jnp
 
-from clubb_jax.src.CLUBB_core.interpolation import lin_interpolate_two_points, mono_cubic_interp, linear_interp_factor, zlinterp_fnc, lin_interp_between_grids
+from clubb_jax.src.CLUBB_core.interpolation import lin_interpolate_two_points, mono_cubic_interp, linear_interp_factor, zlinterp, lin_interp_between_grids
 
 
 def _binary_search(array, var):
@@ -29,7 +30,7 @@ def _binary_search(array, var):
 
 
 def _zlinterp_ref(grid_out, grid_src, var_src):
-    """Literal Fortran zlinterp_fnc (binary_search + lin_interpolate_two_points, zero outside range)."""
+    """Literal Fortran zlinterp (binary_search + lin_interpolate_two_points, zero outside range)."""
     out = np.zeros(len(grid_out))
     for kint, go in enumerate(grid_out):
         if go < grid_src[0]:
@@ -80,13 +81,13 @@ def test_zlinterp():
     grid_src = np.sort(rng.uniform(0.0, 10000.0, 30))
     var_src = rng.standard_normal(30)
     grid_out = np.sort(rng.uniform(-500.0, 11000.0, 50))   # straddles both ends -> zero-fill exercised
-    got = np.asarray(zlinterp_fnc(grid_out, grid_src, var_src))
+    got = np.asarray(zlinterp(1, grid_out.size, grid_src.size, jnp.asarray(grid_out)[None, :], jnp.asarray(grid_src)[None, :], jnp.asarray(var_src)[None, :]))[0]
     ref = _zlinterp_ref(grid_out, grid_src, var_src)
     assert np.max(np.abs(got - ref)) < 1e-12, f"zlinterp mismatch {np.max(np.abs(got-ref)):.2e}"
     # Zero-fill below/above the source range.
     assert got[grid_out < grid_src[0]].tolist() == [0.0] * int((grid_out < grid_src[0]).sum())
     assert np.all(got[grid_out > grid_src[-1]] == 0.0)
-    print("  zlinterp_fnc: matches literal binary_search+lin_interp, zero-fill outside range  PASS")
+    print("  zlinterp: matches literal binary_search+lin_interp, zero-fill outside range  PASS")
 
 
 def _lin_interp_between_grids_ref(interp_alt, cur_alt, cur_val, tol=1e-6):
@@ -121,8 +122,9 @@ def test_lin_interp_between_grids():
             continue
         cur_val = rng.standard_normal(len(cur_alt))
         tgt = np.concatenate([rng.uniform(-200.0, 5200.0, 30), cur_alt])  # in-range + clamp + exact-match
-        got = np.asarray(call_jax(lin_interp_between_grids, tgt, cur_alt, cur_val))
+        got = np.asarray(call_jax(lin_interp_between_grids, 1, tgt.size, cur_alt.size, tgt[None, :], cur_alt[None, :], cur_val[None, :]))
+        assert got.shape == (1, tgt.size)
         ref = _lin_interp_between_grids_ref(tgt, cur_alt, cur_val)
-        worst = max(worst, float(np.max(np.abs(got - ref))))
+        worst = max(worst, float(np.max(np.abs(got[0] - ref))))
     assert worst < 1e-12, f"lin_interp_between_grids mismatch {worst:.2e}"
     print(f"  lin_interp_between_grids: matches literal Fortran loop (clamp+exact-match), worst {worst:.1e}  PASS")

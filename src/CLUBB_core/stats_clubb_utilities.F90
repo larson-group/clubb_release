@@ -39,6 +39,10 @@ contains
                      saturation_formula, &
                      stats )
 
+    ! Description:
+    !   Accumulate model fields and column diagnostics, including batched
+    !   vertical averages, water paths and eligible spurious-source estimates.
+
     use constants_clubb, only: &
           cloud_frac_min, &  ! Constant
           eps, &
@@ -148,7 +152,10 @@ contains
     type(stats_type), intent(inout) :: &
       stats
 
-    ! Local Variables
+    !--------------------------- Local Variables ---------------------------
+
+    logical, dimension(ngrdcol) :: &
+      l_calc_spur_src ! Columns without imposed mean advection, or host-model columns [-]
 
     integer :: sclr, edsclr, k, i
       
@@ -355,9 +362,8 @@ contains
       end if
 
       ! stats_sfc variables
-      do i = 1, ngrdcol
-        call stats_update( "cc", maxval( cloud_frac(i,:) ), stats, i )
-      end do
+      call stats_update( "cc", maxval( cloud_frac, dim=2 ), & ! In
+                         stats ) ! InOut
 
       if ( var_on_stats_list( stats, "z_cloud_base" ) ) then
         do i = 1, ngrdcol
@@ -378,40 +384,50 @@ contains
       end if
 
       if ( var_on_stats_list( stats, "lwp" ) ) then
-        do i = 1, ngrdcol
-          xtmp(i) = vertical_integral( nzt, rho_ds_zt(i,:), rcm(i,:), dzt(i,:) )
-        end do
+        xtmp = vertical_integral( ngrdcol, nzt, rho_ds_zt, rcm, dzt )
         call stats_update( "lwp", xtmp, stats )
       end if
 
       if ( var_on_stats_list( stats, "vwp" ) ) then
-        do i = 1, ngrdcol
-          xtmp(i) = vertical_integral( nzt, rho_ds_zt(i,:), &
-                                    ( rtm(i,:) - rcm(i,:) ), dzt(i,:) )
-        end do
+        xtmp = vertical_integral( ngrdcol, nzt, rho_ds_zt, rtm - rcm, dzt )
         call stats_update( "vwp", xtmp, stats )
       end if
 
-      do i = 1, ngrdcol
-        call stats_update( "thlm_vert_avg", &
-              vertical_avg( nzt, rho_ds_zt(i,:), thlm(i,:), dzt(i,:) ), stats, i)
-        call stats_update( "rtm_vert_avg", &
-              vertical_avg( nzt, rho_ds_zt(i,:), rtm(i,:), dzt(i,:) ), stats, i)
-        call stats_update( "um_vert_avg", &
-              vertical_avg( nzt, rho_ds_zt(i,:), um(i,:), dzt(i,:) ), stats, i)
-        call stats_update( "vm_vert_avg", &
-              vertical_avg( nzt, rho_ds_zt(i,:), vm(i,:), dzt(i,:) ), stats, i)
-        call stats_update( "wp2_vert_avg", &
-              vertical_avg( nzm, rho_ds_zm(i,:), wp2(i,:), dzm(i,:) ), stats, i)
-        call stats_update( "up2_vert_avg", &
-              vertical_avg( nzm, rho_ds_zm(i,:), up2(i,:), dzm(i,:) ), stats, i)
-        call stats_update( "vp2_vert_avg", &
-              vertical_avg( nzm, rho_ds_zm(i,:), vp2(i,:), dzm(i,:) ), stats, i)
-        call stats_update( "rtp2_vert_avg", &
-              vertical_avg( nzm, rho_ds_zm(i,:), rtp2(i,:), dzm(i,:) ), stats, i)
-        call stats_update( "thlp2_vert_avg", &
-              vertical_avg( nzm, rho_ds_zm(i,:), thlp2(i,:), dzm(i,:) ), stats, i)
-      end do
+      call stats_update( "thlm_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzt, rho_ds_zt, thlm, dzt ), & ! In
+                         stats ) ! InOut
+
+      call stats_update( "rtm_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzt, rho_ds_zt, rtm, dzt ), & ! In
+                         stats ) ! InOut
+
+      call stats_update( "um_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzt, rho_ds_zt, um, dzt ), & ! In
+                         stats ) ! InOut
+
+      call stats_update( "vm_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzt, rho_ds_zt, vm, dzt ), & ! In
+                         stats ) ! InOut
+
+      call stats_update( "wp2_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzm, rho_ds_zm, wp2, dzm ), & ! In
+                         stats ) ! InOut
+
+      call stats_update( "up2_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzm, rho_ds_zm, up2, dzm ), & ! In
+                         stats ) ! InOut
+
+      call stats_update( "vp2_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzm, rho_ds_zm, vp2, dzm ), & ! In
+                         stats ) ! InOut
+
+      call stats_update( "rtp2_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzm, rho_ds_zm, rtp2, dzm ), & ! In
+                         stats ) ! InOut
+
+      call stats_update( "thlp2_vert_avg", & ! In
+                         vertical_avg( ngrdcol, nzm, rho_ds_zm, thlp2, dzm ), & ! In
+                         stats ) ! InOut
 
       if ( var_on_stats_list( stats, "tot_vartn_normlzd_rtm" ) ) then
         do i = 1, ngrdcol
@@ -448,9 +464,35 @@ contains
 
       ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
       ! Therefore, wm must be zero or l_implemented must be true.
+      l_calc_spur_src = l_implemented .or. &
+        ( all( abs(wm_zt) < eps, dim=2 ) .and. all( abs(wm_zm) < eps, dim=2 ) )
+
+      rtm_integral_before = vertical_integral( ngrdcol, nzt, rho_ds_zt, rtm_before, & ! In
+                                               dzt, & ! In
+                                               l_calc_spur_src ) ! Optional In
+
+      rtm_integral_after = vertical_integral( ngrdcol, nzt, rho_ds_zt, rtm, & ! In
+                                              dzt, & ! In
+                                              l_calc_spur_src ) ! Optional In
+
+      rtm_integral_forcing = vertical_integral( ngrdcol, nzt, rho_ds_zt, rtm_forcing, & ! In
+                                                dzt, & ! In
+                                                l_calc_spur_src ) ! Optional In
+
+      thlm_integral_before = vertical_integral( ngrdcol, nzt, rho_ds_zt, thlm_before, & ! In
+                                                dzt, & ! In
+                                                l_calc_spur_src ) ! Optional In
+
+      thlm_integral_after = vertical_integral( ngrdcol, nzt, rho_ds_zt, thlm, & ! In
+                                               dzt, & ! In
+                                               l_calc_spur_src ) ! Optional In
+
+      thlm_integral_forcing = vertical_integral( ngrdcol, nzt, rho_ds_zt, thlm_forcing, & ! In
+                                                 dzt, & ! In
+                                                 l_calc_spur_src ) ! Optional In
+
       do i = 1, ngrdcol
-        if ( l_implemented .or. &
-             (all( abs(wm_zt(i,:)) < eps ) .and. all( abs(wm_zm(i,:)) < eps ))) then
+        if ( l_calc_spur_src(i) ) then
           rtm_flux_top(i) = rho_ds_zm(i,gr%k_ub_zm) * wprtp(i,gr%k_ub_zm)
 
           if ( .not. l_host_applies_sfc_fluxes ) then
@@ -458,17 +500,6 @@ contains
           else
             rtm_flux_sfc(i) = 0.0_core_rknd
           end if
-
-          ! Get the vertical integral of rtm before this function begins
-          ! so that spurious source can be calculated.
-          rtm_integral_before(i)  &
-          = vertical_integral( nzt, rho_ds_zt(i,:), rtm_before(i,:), dzt(i,:) )
-
-          rtm_integral_after(i)  &
-          = vertical_integral( nzt, rho_ds_zt(i,:), rtm(i,:), dzt(i,:) )
-
-          rtm_integral_forcing(i)  &
-          = vertical_integral( nzt, rho_ds_zt(i,:), rtm_forcing(i,:), dzt(i,:) )
 
           ! Calculate the spurious source for rtm.
           rtm_spur_src(i)  &
@@ -485,17 +516,6 @@ contains
           else
             thlm_flux_sfc(i) = 0.0_core_rknd
           end if
-
-          ! Get the vertical integral of thlm before this function begins
-          ! so that spurious source can be calculated.
-          thlm_integral_before(i)  &
-          = vertical_integral( nzt, rho_ds_zt(i,:), thlm_before(i,:), dzt(i,:) )
-
-          thlm_integral_after(i)  &
-          = vertical_integral( nzt, rho_ds_zt(i,:), thlm(i,:), dzt(i,:) )
-
-          thlm_integral_forcing(i)  &
-          = vertical_integral( nzt, rho_ds_zt(i,:), thlm_forcing(i,:), dzt(i,:) )
 
           ! Calculate the spurious source for thlm.
           thlm_spur_src(i)  &
@@ -567,12 +587,9 @@ contains
     type(stats_type), intent(inout) :: &
       stats
 
-    ! Local Variables
+    !--------------------------- Local Variables ---------------------------
     real(kind=core_rknd), dimension(ngrdcol) :: &
-      xtmp
-
-    integer :: &
-      i
+      xtmp ! Column water paths for the current hydrometeor species [kg/m^2]
 
     ! ---- Begin Code ----
     if ( .not. stats%l_sample ) return
@@ -604,28 +621,22 @@ contains
 
     ! Snow Water Path
     if ( var_on_stats_list( stats, "swp" ) .and. hm_metadata%iirs > 0 ) then
-      do i = 1, ngrdcol
-        xtmp(i) = vertical_integral( gr%nzt, rho_ds_zt(i,:), &
-                                     hydromet(i,:,hm_metadata%iirs), gr%dzt(i,:) )
-      enddo
+      xtmp = vertical_integral( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iirs), & ! In
+                                gr%dzt ) ! In
       call stats_update( "swp", xtmp, stats )
     endif
 
     ! Ice Water Path
     if ( var_on_stats_list( stats, "iwp" ) .and. hm_metadata%iiri > 0 ) then
-      do i = 1, ngrdcol
-        xtmp(i) = vertical_integral( gr%nzt, rho_ds_zt(i,:), &
-                                     hydromet(i,:,hm_metadata%iiri), gr%dzt(i,:) )
-      enddo
+      xtmp = vertical_integral( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iiri), & ! In
+                                gr%dzt ) ! In
       call stats_update( "iwp", xtmp, stats )
     endif
 
     ! Rain Water Path
     if ( var_on_stats_list( stats, "rwp" ) .and. hm_metadata%iirr > 0 ) then
-      do i = 1, ngrdcol
-        xtmp(i) = vertical_integral( gr%nzt, rho_ds_zt(i,:), &
-                                     hydromet(i,:,hm_metadata%iirr), gr%dzt(i,:) )
-      enddo
+      xtmp = vertical_integral( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iirr), & ! In
+                                gr%dzt ) ! In
       call stats_update( "rwp", xtmp, stats )
     endif
 

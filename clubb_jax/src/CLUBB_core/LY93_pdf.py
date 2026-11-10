@@ -45,16 +45,17 @@ def calc_params_LY93(xm, xp2, Skx, mixt_frac):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd), dimension(nz), intent(in) :: &
+        real( kind = core_rknd), dimension(ngrdcol,nz), intent(in) :: &
           xm,        & ! Mean of x (overall)        [units vary]
           xp2,       & ! Variance of x (overall)    [(units vary)^2]
           Skx,       & ! Skewness of x (overall)    [-]
           mixt_frac    ! Mixture fraction           [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd), dimension(nz), intent(out) :: &
+        real( kind = core_rknd), dimension(ngrdcol,nz), intent(out) :: &
           mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
           mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
           sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
@@ -96,13 +97,14 @@ def calc_mixt_frac_LY93(Sk_max, itermax=60):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd), dimension(nz), intent(in) :: &
+        real( kind = core_rknd), dimension(ngrdcol,nz), intent(in) :: &
           Sk_max    ! Maximum of magnitudes of skewness        [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd), dimension(nz) :: &
+        real( kind = core_rknd), dimension(ngrdcol,nz) :: &
           mixt_frac    ! Mixture fraction                      [-]
     """
     # Tolerance for mixture fraction in solver [-]
@@ -147,21 +149,22 @@ def LY93_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd), dimension(nz), intent(in) :: &
-          wm,    & ! Mean of w (overall)                      [m/s]
-          wp2,   & ! Variance of w (overall)                  [m^2/s^2]
-          Skw,   & ! Skewness of w (overall)                  [-]
-          rtm,   & ! Mean of rt (overall)                     [kg/kg]
-          rtp2,  & ! Variance of rt (overall)                 [kg^2/kg^2]
-          Skrt,  & ! Skewness of rt (overall)                 [-]
-          thlm,  & ! Mean of thl (overall)                    [K]
-          thlp2, & ! Variance of thl (overall)                [K^2]
-          Skthl    ! Skewness of thl (overall)                [-]
+        real( kind = core_rknd), dimension(ngrdcol,nz), intent(in) :: &
+          wm,      & ! Mean of w (overall)                      [m/s]
+          rtm,     & ! Mean of rt (overall)                     [kg/kg]
+          thlm,    & ! Mean of thl (overall)                    [K]
+          wp2,     & ! Variance of w (overall)                  [m^2/s^2]
+          rtp2,    & ! Variance of rt (overall)                 [kg^2/kg^2]
+          thlp2,   & ! Variance of thl (overall)                [K^2]
+          Skw,     & ! Skewness of w (overall)                  [-]
+          Skrt,    & ! Skewness of rt (overall)                 [-]
+          Skthl     ! Skewness of thl (overall)                [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd), dimension(nz), intent(out) :: &
+        real( kind = core_rknd), dimension(ngrdcol,nz), intent(out) :: &
           mu_w_1,          & ! Mean of w (1st PDF component)          [m/s]
           mu_w_2,          & ! Mean of w (2nd PDF component)          [m/s]
           mu_rt_1,         & ! Mean of rt (1st PDF component)         [kg/kg]

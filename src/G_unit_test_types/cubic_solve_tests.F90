@@ -58,7 +58,7 @@ contains
   subroutine cubic_solve_setup_tests(total_mismatches)
 
     ! Description:
-    !   Tests the function cubic_solve.  Each column is a cubic equation that
+    !   Tests cubic_solve.  Each column is a cubic equation that
     !   was built by multiplying out known roots, and all columns are solved
     !   in a single call.  Test cases are:
     !   Case 1: (x-1)(x^2+4)       = x^3 - x^2 + 4x - 4,  D > 0, R > 0,
@@ -167,7 +167,9 @@ contains
     roots_cmp(5,2) = cmplx( 4.0_core_rknd, zero, kind = core_rknd )
     roots_cmp(5,3) = cmplx( 5.0_core_rknd, zero, kind = core_rknd )
 
-    roots = cubic_solve( nz, a_coef, b_coef, c_coef, d_coef )
+    call cubic_solve( a_coef, b_coef, c_coef, d_coef, & ! In
+                      roots(:,1), roots(:,2), & ! Out
+                      roots(:,3) ) ! Out
 
     do k = 1, nz
 

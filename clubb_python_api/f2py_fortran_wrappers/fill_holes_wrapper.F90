@@ -16,9 +16,12 @@ subroutine f2py_fill_holes_vertical(nz, ngrdcol, threshold, &
   integer, intent(in) :: grid_dir_indx, fill_holes_type
   real(core_rknd), dimension(ngrdcol, nz), intent(inout) :: field
 
-  call fill_holes_vertical_api(nz, ngrdcol, threshold, &
-    lower_hf_level, upper_hf_level, dz, rho_ds, &
-    grid_dir_indx, fill_holes_type, field)
+  call fill_holes_vertical_api( nz, ngrdcol, threshold, & ! In
+                                lower_hf_level, & ! In
+                                upper_hf_level, & ! In
+                                dz, rho_ds, grid_dir_indx, & ! In
+                                fill_holes_type, & ! In
+                                field ) ! InOut
 
 end subroutine f2py_fill_holes_vertical
 

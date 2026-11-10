@@ -1,7 +1,7 @@
 module readiopdata_module
 
     use readiopdata_core_module, only: &
-        readiopdata_core_dims, readiopdata_core_snd, readiopdata_core_sfc, readiopdata_core_frc
+        readiopdata_core_dims, readiopdata_core_snd, readiopdata_core_sfc
 
     use netcdf, only: &
         NF90_OPEN, &
@@ -24,7 +24,8 @@ module readiopdata_module
 
     implicit none
 
-    public :: readiopdata_dims, readiopdata_snd, readiopdata_sfc, readiopdata_frc
+    public :: readiopdata_dims, readiopdata_snd, readiopdata_sfc
+    ! public :: readiopdata_frc ! Unused routine below is commented out.
 
     private
 
@@ -37,7 +38,7 @@ module readiopdata_module
     logical :: l_dims = .false.
     logical :: l_snd = .false.
     logical :: l_sfc = .false.
-    logical :: l_frc = .false.
+    ! logical :: l_frc = .false. ! Used only by the commented forcing reader.
 
     ! Subroutine variables
     real, allocatable :: dplevs(:)
@@ -46,7 +47,7 @@ module readiopdata_module
     logical :: get_add_surface_data, have_omega
 
     ! Repeatedly accessed variables
-    real, allocatable :: dtls(:,:), dqls(:,:)
+    ! real, allocatable :: dtls(:,:), dqls(:,:) ! Used only by the commented forcing reader.
 
 contains
 
@@ -240,53 +241,54 @@ subroutine readiopdata_sfc( tsfc, ubar, shsfc, lhsfc, timesfc )
     deallocate(shsfc_, lhsfc_, sstsfc, tausfc)
 end subroutine readiopdata_sfc
 
-subroutine readiopdata_frc( rtm, gr, thlm_forcing, rtm_forcing )
-
-    use grid_class, only: &
-        grid     ! Type
-
-    implicit none
-
-    type (grid), target, intent(in) :: gr
-
-        ! Input Variable
-    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
-      rtm    ! Total water mixing ratio (thermodynamic levels) 
-
-    real(kind=core_rknd), intent(out) ::  thlm_forcing(:), rtm_forcing(:)
-
-    integer :: nlevels
-
-    integer :: k
-
-        ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nzt) :: &
-      qtm_forcing  ! Specified total water spec. humidity tendency    [kg/kg/s]
-
-
-    ! Requires that readiopdata_dims and readiopdata_snd have been called
-    if ( .not. (l_dims .and. l_snd) ) then
-        error stop "readiopdata_dims or readiopdata_snd was not called before readiopdata_frc"
-    end if
-
-    ! Only read from the file once
-    if ( .not. l_frc ) then
-        call readiopdata_core_frc( masterproc, iopfilepath, get_add_surface_data, & ! Intent(in)
-                                 have_omega, dplevs, nlev, ntime,                 & ! Intent(in)
-                                 dtls, dqls )                                       ! Intent(out)
-
-        if ( get_add_surface_data ) then
-            nlevels = nlev + 1
-        else
-            nlevels = nlev
-        end if
-    end if
-
-    thlm_forcing(1:nlevels) = dtls(1:nlevels,1)
-    rtm_forcing(1:nlevels) = dqls(1:nlevels,1)
-
-    l_frc = .true.
-end subroutine readiopdata_frc
+! Unused: retained as commented source; there are no active callers.
+! subroutine readiopdata_frc( rtm, gr, thlm_forcing, rtm_forcing )
+!
+!     use grid_class, only: &
+!         grid     ! Type
+!
+!     implicit none
+!
+!     type (grid), target, intent(in) :: gr
+!
+!         ! Input Variable
+!     real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
+!       rtm    ! Total water mixing ratio (thermodynamic levels)
+!
+!     real(kind=core_rknd), intent(out) ::  thlm_forcing(:), rtm_forcing(:)
+!
+!     integer :: nlevels
+!
+!     integer :: k
+!
+!         ! Local Variables
+!     real( kind = core_rknd ), dimension(gr%nzt) :: &
+!       qtm_forcing  ! Specified total water spec. humidity tendency    [kg/kg/s]
+!
+!
+!     ! Requires that readiopdata_dims and readiopdata_snd have been called
+!     if ( .not. (l_dims .and. l_snd) ) then
+!         error stop "readiopdata_dims or readiopdata_snd was not called before readiopdata_frc"
+!     end if
+!
+!     ! Only read from the file once
+!     if ( .not. l_frc ) then
+!         call readiopdata_core_frc( masterproc, iopfilepath, get_add_surface_data, & ! Intent(in)
+!                                  have_omega, dplevs, nlev, ntime,                 & ! Intent(in)
+!                                  dtls, dqls )                                       ! Intent(out)
+!
+!         if ( get_add_surface_data ) then
+!             nlevels = nlev + 1
+!         else
+!             nlevels = nlev
+!         end if
+!     end if
+!
+!     thlm_forcing(1:nlevels) = dtls(1:nlevels,1)
+!     rtm_forcing(1:nlevels) = dqls(1:nlevels,1)
+!
+!     l_frc = .true.
+! end subroutine readiopdata_frc
 
 
 end module readiopdata_module

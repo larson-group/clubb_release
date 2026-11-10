@@ -16,17 +16,11 @@ def _fa_2d(arr):
     return out
 
 
-def _stack_column_outputs(column_outputs):
-    return f_arr(np.stack(column_outputs, axis=0))
-
-
 def sponge_damp_xm(
-    gr: Grid, nzm: int, nzt: int,
+    ngrdcol: int, nzm: int, nzt: int, gr: Grid,
     dt: float, zt, zm, xm_ref, xm, damping_profile,
 ):
     """Damp a mean-field profile toward a reference profile in sponge layer."""
-    ngrdcol = np.asarray(zt).shape[0]
-    ngrdcol = int(ngrdcol)
     tau_sponge_damp = getattr(damping_profile, "tau_sponge_damp", None)
     sponge_layer_depth = getattr(damping_profile, "sponge_layer_depth", None)
     if tau_sponge_damp is None or sponge_layer_depth is None:
@@ -37,23 +31,18 @@ def sponge_damp_xm(
     xm_ref_arr = _fa_2d(xm_ref)
     xm_arr = _fa_2d(xm)
     tau_arr = _fa_2d(tau_sponge_damp)
-    depth_arr = np.asarray(sponge_layer_depth, dtype=np.float64).reshape(ngrdcol)
-    return _stack_column_outputs([
-        clubb_f2py.f2py_sponge_damp_xm(
-            float(dt), zt_arr[i, :], zm_arr[i, :], xm_ref_arr[i, :], xm_arr[i, :],
-            tau_arr[i, :], float(depth_arr[i]), nzm=int(nzm), nzt=int(nzt)
-        )
-        for i in range(ngrdcol)
-    ])
+    depth = f_arr(sponge_layer_depth, dtype=np.float64)
+    return clubb_f2py.f2py_sponge_damp_xm(
+        float(dt), zt_arr, zm_arr, xm_ref_arr, xm_arr,
+        tau_arr, depth, ngrdcol=int(ngrdcol), nzm=int(nzm), nzt=int(nzt)
+    )
 
 
 def sponge_damp_xp2(
-    gr: Grid, nzm: int,
+    ngrdcol: int, nzm: int, gr: Grid,
     dt: float, zm, xp2, x_tol_sqd, damping_profile,
 ):
     """Damp variance profile in sponge layer with a lower floor."""
-    ngrdcol = np.asarray(zm).shape[0]
-    ngrdcol = int(ngrdcol)
     tau_sponge_damp = getattr(damping_profile, "tau_sponge_damp", None)
     sponge_layer_depth = getattr(damping_profile, "sponge_layer_depth", None)
     if tau_sponge_damp is None or sponge_layer_depth is None:
@@ -62,24 +51,19 @@ def sponge_damp_xp2(
     zm_arr = _fa_2d(zm)
     xp2_arr = _fa_2d(xp2)
     tau_arr = _fa_2d(tau_sponge_damp)
-    x_tol_arr = np.asarray(x_tol_sqd, dtype=np.float64).reshape(ngrdcol)
-    depth_arr = np.asarray(sponge_layer_depth, dtype=np.float64).reshape(ngrdcol)
-    return _stack_column_outputs([
-        clubb_f2py.f2py_sponge_damp_xp2(
-            float(dt), zm_arr[i, :], xp2_arr[i, :], float(x_tol_arr[i]),
-            tau_arr[i, :], float(depth_arr[i]), nzm=int(nzm)
-        )
-        for i in range(ngrdcol)
-    ])
+    x_tol = float(x_tol_sqd)
+    depth = f_arr(sponge_layer_depth, dtype=np.float64)
+    return clubb_f2py.f2py_sponge_damp_xp2(
+        float(dt), zm_arr, xp2_arr, x_tol,
+        tau_arr, depth, ngrdcol=int(ngrdcol), nzm=int(nzm)
+    )
 
 
 def sponge_damp_xp3(
-    gr: Grid, nzm: int, nzt: int,
+    ngrdcol: int, nzm: int, nzt: int, gr: Grid,
     dt: float, z, zm, xp3, damping_profile,
 ):
     """Damp third-moment profile in sponge layer."""
-    ngrdcol = np.asarray(z).shape[0]
-    ngrdcol = int(ngrdcol)
     tau_sponge_damp = getattr(damping_profile, "tau_sponge_damp", None)
     sponge_layer_depth = getattr(damping_profile, "sponge_layer_depth", None)
     if tau_sponge_damp is None or sponge_layer_depth is None:
@@ -89,11 +73,8 @@ def sponge_damp_xp3(
     zm_arr = _fa_2d(zm)
     xp3_arr = _fa_2d(xp3)
     tau_arr = _fa_2d(tau_sponge_damp)
-    depth_arr = np.asarray(sponge_layer_depth, dtype=np.float64).reshape(ngrdcol)
-    return _stack_column_outputs([
-        clubb_f2py.f2py_sponge_damp_xp3(
-            float(dt), z_arr[i, :], zm_arr[i, :], xp3_arr[i, :],
-            tau_arr[i, :], float(depth_arr[i]), nzm=int(nzm), nzt=int(nzt)
-        )
-        for i in range(ngrdcol)
-    ])
+    depth = f_arr(sponge_layer_depth, dtype=np.float64)
+    return clubb_f2py.f2py_sponge_damp_xp3(
+        float(dt), z_arr, zm_arr, xp3_arr,
+        tau_arr, depth, ngrdcol=int(ngrdcol), nzm=int(nzm), nzt=int(nzt)
+    )

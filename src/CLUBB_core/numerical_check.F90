@@ -26,16 +26,16 @@ module numerical_check
 
   ! Abstraction of check_nan
   interface check_nan
-    module procedure check_nan_sclr, check_nan_1d, check_nan_2d
+    module procedure check_nan_1d, check_nan_2d
   end interface
 
   contains
 !---------------------------------------------------------------------------------
-  subroutine length_check( nzt, Lscale, Lscale_up, Lscale_down, err_info )
+  subroutine length_check( nzt, ngrdcol, Lscale, Lscale_up, Lscale_down, & ! In
+                           err_info ) ! InOut
 !
-!        Description: This subroutine determines if any of the output
-!        variables for the length_new subroutine carry values that
-!        are NaNs.
+!        Description: Check the mixing lengths in every column for
+!        nonfinite values and set the fatal error status if any are found.
 !
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------------
@@ -50,14 +50,15 @@ module numerical_check
 
     !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nzt
+      nzt, & ! Number of thermodynamic levels [-]
+      ngrdcol ! Number of grid columns [-]
 
     !--------------------------- Local Variables ---------------------------
     ! Constant Parameters
     character(*), parameter :: proc_name = "compute_mixing_length"
 
     !--------------------------- Input Variables ---------------------------
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       Lscale,     & ! Mixing length                 [m]
       Lscale_up,  & ! Upward mixing length          [m]
       Lscale_down   ! Downward mixing length        [m]
@@ -78,16 +79,16 @@ module numerical_check
   end subroutine length_check
 
 !---------------------------------------------------------------------------
-  subroutine pdf_closure_check( nz, sclr_dim, &
-                                wp4, wprtp2, wp2rtp, wpthlp2, &
-                                wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, wp2up, &
-                                rtpthvp, thlpthvp, wprcp, wp2rcp, & 
-                                rtprcp, thlprcp, rcp2, wprtpthlp, & 
-                                crt_1, crt_2, cthl_1, cthl_2, pdf_params, &
-                                sclrpthvp, sclrprcp, wpsclrp2, & 
-                                wpsclrprtp, wpsclrpthlp, wp2sclrp, &
-                                stats,         &
-                                err_info )
+  subroutine pdf_closure_check( nz, ngrdcol, sclr_dim, wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, & ! In
+                                cloud_frac, rcm, wpthvp, wp2thvp, wp2up, rtpthvp, thlpthvp, & ! In
+                                wprcp, & ! In
+                                wp2rcp, rtprcp, thlprcp, rcp2, wprtpthlp, & ! In
+                                crt_1, crt_2, cthl_1, & ! In
+                                cthl_2, & ! In
+                                pdf_params, sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, & ! In
+                                wpsclrpthlp, & ! In
+                                wp2sclrp, stats, & ! In
+                                err_info ) ! InOut
 
 ! Description: This subroutine determines if any of the output
 !   variables for the pdf_closure subroutine carry values that
@@ -113,7 +114,8 @@ module numerical_check
 
     !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nz, &
+      nz, & ! Number of vertical levels
+      ngrdcol, & ! Number of grid columns
       sclr_dim
 
     !--------------------------- Local Variables ---------------------------
@@ -122,7 +124,7 @@ module numerical_check
       "pdf_closure"
 
     !--------------------------- Input Variables ---------------------------
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wp4,             & ! w'^4                  [m^4/s^4]
       wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
       wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
@@ -148,7 +150,7 @@ module numerical_check
       pdf_params        ! PDF parameters          [units vary]
 
     ! Input (Optional passive scalar variables)
-    real( kind = core_rknd ), dimension(nz,sclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
       sclrpthvp, &
       sclrprcp, &
       wpsclrp2, &
@@ -172,190 +174,189 @@ module numerical_check
     ! ---- Begin Code ----
 
     if ( var_on_stats_list( stats, "wp4" ) )         &
-      call check_nan( wp4, "wp4", proc_name, err_info ) ! intent(inout)
+      call check_nan( wp4, "wp4", proc_name, err_info ) ! InOut
     if ( var_on_stats_list( stats, "wprtp2" ) )         &
-      call check_nan( wprtp2, "wprtp2", proc_name, err_info ) ! intent(inout)
-    call check_nan( wp2rtp,"wp2rtp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
+      call check_nan( wprtp2, "wprtp2", proc_name, err_info ) ! InOut
+    call check_nan( wp2rtp,"wp2rtp", proc_name, & ! In
+                    err_info ) ! InOut
     if ( var_on_stats_list( stats, "wpthlp2" ) )         &
-      call check_nan( wpthlp2, "wpthlp2", proc_name, err_info ) ! intent(inout)
-    call check_nan( wp2thlp,"wp2thlp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( cloud_frac,"cloud_frac", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rcm,"rcm", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wpthvp, "wpthvp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wp2thvp, "wp2thvp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wp2up, "wp2up", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rtpthvp, "rtpthvp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( thlpthvp, "thlpthvp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wprcp, "wprcp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( wp2rcp, "wp2rcp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( rtprcp, "rtprcp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( thlprcp, "thlprcp", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
+      call check_nan( wpthlp2, "wpthlp2", proc_name, err_info ) ! InOut
+    call check_nan( wp2thlp,"wp2thlp", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( cloud_frac,"cloud_frac", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( rcm,"rcm", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( wpthvp, "wpthvp", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( wp2thvp, "wp2thvp", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( wp2up, "wp2up", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( rtpthvp, "rtpthvp", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( thlpthvp, "thlpthvp", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( wprcp, "wprcp", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( wp2rcp, "wp2rcp", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( rtprcp, "rtprcp", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( thlprcp, "thlprcp", proc_name, & ! In
+                    err_info ) ! InOut
     if ( var_on_stats_list( stats, "rcp2" ) )         &
-      call check_nan( rcp2, "rcp2", proc_name, err_info ) ! intent(inout)
+      call check_nan( rcp2, "rcp2", proc_name, err_info ) ! InOut
     if ( var_on_stats_list( stats, "wprtpthlp" ) )         &
-      call check_nan( wprtpthlp, "wprtpthlp", proc_name, err_info ) ! intent(inout)
-    call check_nan( crt_1, "crt_1", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( crt_2, "crt_2", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( cthl_1, "cthl_1", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( cthl_2, "cthl_2", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    ! Check each PDF parameter at the grid level sent in.
-    call check_nan( pdf_params%w_1(1,:), "pdf_params%w_1(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%w_2(1,:), "pdf_params%w_2(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%varnce_w_1(1,:), "pdf_params%varnce_w_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%varnce_w_2(1,:), "pdf_params%varnce_w_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%rt_1(1,:), "pdf_params%rt_1(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%rt_2(1,:), "pdf_params%rt_2(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%varnce_rt_1(1,:), "pdf_params%varnce_rt_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%varnce_rt_2(1,:), "pdf_params%varnce_rt_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%thl_1(1,:), "pdf_params%thl_1(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%thl_2(1,:), "pdf_params%thl_2(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%varnce_thl_1(1,:), "pdf_params%varnce_thl_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%varnce_thl_2(1,:), "pdf_params%varnce_thl_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%mixt_frac(1,:), "pdf_params%mixt_frac(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_w_rt_1(1,:), "pdf_params%corr_w_rt_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_w_rt_2(1,:), "pdf_params%corr_w_rt_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_w_thl_1(1,:), "pdf_params%corr_w_thl_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_w_thl_2(1,:), "pdf_params%corr_w_thl_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_rt_thl_1(1,:), "pdf_params%corr_rt_thl_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_rt_thl_2(1,:), "pdf_params%corr_rt_thl_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%rc_1(1,:), "pdf_params%rc_1(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%rc_2(1,:), "pdf_params%rc_2(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%rsatl_1(1,:), "pdf_params%rsatl_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%rsatl_2(1,:), "pdf_params%rsatl_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%cloud_frac_1(1,:), "pdf_params%cloud_frac_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%cloud_frac_2(1,:), "pdf_params%cloud_frac_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%chi_1(1,:), "pdf_params%chi_1(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%chi_2(1,:), "pdf_params%chi_2(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%stdev_chi_1(1,:), "pdf_params%stdev_chi_1(1,:)", &! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%stdev_chi_2(1,:), "pdf_params%stdev_chi_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%stdev_eta_1(1,:), "pdf_params%stdev_eta_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%stdev_eta_2(1,:), "pdf_params%stdev_eta_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%covar_chi_eta_1(1,:), "pdf_params%covar_chi_eta_1(1,:)",&!intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%covar_chi_eta_2(1,:), "pdf_params%covar_chi_eta_2(1,:)",&!intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_w_chi_1(1,:), "pdf_params%corr_w_chi_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_w_chi_2(1,:), "pdf_params%corr_w_chi_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_w_eta_1(1,:), "pdf_params%corr_w_eta_1(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_w_eta_2(1,:), "pdf_params%corr_w_eta_2(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_chi_eta_1(1,:), "pdf_params%corr_chi_eta_1(1,:)", & !intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%corr_chi_eta_2(1,:), "pdf_params%corr_chi_eta_2(1,:)", & !intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%alpha_thl(1,:), "pdf_params%alpha_thl(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%alpha_rt(1,:), "pdf_params%alpha_rt(1,:)", & ! intent(in)
-                    proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%ice_supersat_frac_1(1,:), & ! intent(in)
-                    "pdf_params%ice_supersat_frac_1(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
-    call check_nan( pdf_params%ice_supersat_frac_2(1,:), & ! intent(in)
-                    "pdf_params%ice_supersat_frac_2(1,:)", proc_name, & ! intent(in)
-                    err_info ) ! intent(inout)
+      call check_nan( wprtpthlp, "wprtpthlp", proc_name, err_info ) ! InOut
+    call check_nan( crt_1, "crt_1", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( crt_2, "crt_2", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( cthl_1, "cthl_1", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( cthl_2, "cthl_2", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%w_1, "pdf_params%w_1", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%w_2, "pdf_params%w_2", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%varnce_w_1, "pdf_params%varnce_w_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%varnce_w_2, "pdf_params%varnce_w_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%rt_1, "pdf_params%rt_1", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%rt_2, "pdf_params%rt_2", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%varnce_rt_1, "pdf_params%varnce_rt_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%varnce_rt_2, "pdf_params%varnce_rt_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%thl_1, "pdf_params%thl_1", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%thl_2, "pdf_params%thl_2", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%varnce_thl_1, "pdf_params%varnce_thl_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%varnce_thl_2, "pdf_params%varnce_thl_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%mixt_frac, "pdf_params%mixt_frac", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_w_rt_1, "pdf_params%corr_w_rt_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_w_rt_2, "pdf_params%corr_w_rt_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_w_thl_1, "pdf_params%corr_w_thl_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_w_thl_2, "pdf_params%corr_w_thl_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_rt_thl_1, "pdf_params%corr_rt_thl_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_rt_thl_2, "pdf_params%corr_rt_thl_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%rc_1, "pdf_params%rc_1", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%rc_2, "pdf_params%rc_2", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%rsatl_1, "pdf_params%rsatl_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%rsatl_2, "pdf_params%rsatl_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%cloud_frac_1, "pdf_params%cloud_frac_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%cloud_frac_2, "pdf_params%cloud_frac_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%chi_1, "pdf_params%chi_1", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%chi_2, "pdf_params%chi_2", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%stdev_chi_1, "pdf_params%stdev_chi_1", &! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%stdev_chi_2, "pdf_params%stdev_chi_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%stdev_eta_1, "pdf_params%stdev_eta_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%stdev_eta_2, "pdf_params%stdev_eta_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%covar_chi_eta_1, "pdf_params%covar_chi_eta_1",&!intent(in)
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%covar_chi_eta_2, "pdf_params%covar_chi_eta_2",&!intent(in)
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_w_chi_1, "pdf_params%corr_w_chi_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_w_chi_2, "pdf_params%corr_w_chi_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_w_eta_1, "pdf_params%corr_w_eta_1", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_w_eta_2, "pdf_params%corr_w_eta_2", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_chi_eta_1, "pdf_params%corr_chi_eta_1", & !intent(in)
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%corr_chi_eta_2, "pdf_params%corr_chi_eta_2", & !intent(in)
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%alpha_thl, "pdf_params%alpha_thl", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%alpha_rt, "pdf_params%alpha_rt", & ! In
+                    proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%ice_supersat_frac_1, & ! In
+                    "pdf_params%ice_supersat_frac_1", proc_name, & ! In
+                    err_info ) ! InOut
+    call check_nan( pdf_params%ice_supersat_frac_2, & ! In
+                    "pdf_params%ice_supersat_frac_2", proc_name, & ! In
+                    err_info ) ! InOut
 
     if ( sclr_dim > 0 ) then
        do sclr = 1, sclr_dim, 1
-          call check_nan( sclrpthvp(:,sclr),"sclrpthvp", & ! intent(in)
-                          proc_name, & ! intent(in)
-                          err_info ) ! intent(inout)
-          call check_nan( sclrprcp(:,sclr), "sclrprcp", & ! intent(in)
-                          proc_name, & ! intent(in)
-                          err_info ) ! intent(inout)
-          call check_nan( wpsclrprtp(:,sclr), "wpsclrprtp", & ! intent(in)
-                          proc_name, & ! intent(in)
-                          err_info ) ! intent(inout)
-          call check_nan( wpsclrp2(:,sclr), "wpsclrp2", & ! intent(in)
-                          proc_name, & ! intent(in)
-                          err_info ) ! intent(inout)
-          call check_nan( wpsclrpthlp(:,sclr), "wpsclrtlp", & ! intent(in)
-                          proc_name, & ! intent(in)
-                          err_info ) ! intent(inout)
-          call check_nan( wp2sclrp(:,sclr), "wp2sclrp", & ! intent(in)
-                          proc_name, & ! intent(in)
-                          err_info ) ! intent(inout)
+          call check_nan( sclrpthvp(:,:,sclr),"sclrpthvp", & ! In
+                          proc_name, & ! In
+                          err_info ) ! InOut
+          call check_nan( sclrprcp(:,:,sclr), "sclrprcp", & ! In
+                          proc_name, & ! In
+                          err_info ) ! InOut
+          call check_nan( wpsclrprtp(:,:,sclr), "wpsclrprtp", & ! In
+                          proc_name, & ! In
+                          err_info ) ! InOut
+          call check_nan( wpsclrp2(:,:,sclr), "wpsclrp2", & ! In
+                          proc_name, & ! In
+                          err_info ) ! InOut
+          call check_nan( wpsclrpthlp(:,:,sclr), "wpsclrtlp", & ! In
+                          proc_name, & ! In
+                          err_info ) ! InOut
+          call check_nan( wp2sclrp(:,:,sclr), "wp2sclrp", & ! In
+                          proc_name, & ! In
+                          err_info ) ! InOut
        enddo ! sclr = 1, sclr_dim, 1
     endif
 
@@ -610,7 +611,7 @@ module numerical_check
   end subroutine parameterization_check
 
 !-----------------------------------------------------------------------
-  subroutine sfc_varnce_check( sclr_dim, wp2_sfc, &
+  subroutine sfc_varnce_check( ngrdcol, sclr_dim, wp2_sfc, &
                                up2_sfc, vp2_sfc, &
                                thlp2_sfc, rtp2_sfc, & 
                                rtpthlp_sfc, &
@@ -619,9 +620,8 @@ module numerical_check
                                sclrpthlp_sfc, &
                                err_info )
 !
-!       Description:This subroutine determines if any of the output
-!       variables for the calc_surface_varnce subroutine carry values that
-!       are nans.
+!       Description: Check the surface variances and covariances in every
+!       column for nonfinite values and set the fatal error status if found.
 !
 !       Joshua Fasching February 2008
 !
@@ -643,9 +643,10 @@ module numerical_check
 
     !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      sclr_dim
+      ngrdcol, & ! Number of grid columns [-]
+      sclr_dim ! Number of passive scalars [-]
 
-    real( kind = core_rknd ),intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
       up2_sfc,     & ! u'^2                              [m^2/s^2]
       vp2_sfc,     & ! u'^2                              [m^2/s^2]
@@ -654,7 +655,7 @@ module numerical_check
       rtpthlp_sfc    ! thetal rt covariance              [kg K/kg]
 
 
-    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,sclr_dim), intent(in) :: &
       sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
       sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
       sclrpthlp_sfc    ! Passive scalar theta_l covariance       [units K]
@@ -773,15 +774,17 @@ module numerical_check
   end subroutine rad_check
 
 !-----------------------------------------------------------------------
-  logical function invalid_model_arrays( nzm, nzt, hydromet_dim, hydromet_list, &
-                                         sclr_dim, edsclr_dim, &
-                                         um, vm, rtm, wprtp, thlm, wpthlp, &
-                                         rtp2, thlp2, rtpthlp, wp2, wp3, &
-                                         wp2thvp, wp2up, rtpthvp, thlpthvp, &
-                                         hydromet, sclrm, edsclrm )
+  logical function invalid_model_arrays( nzm, nzt, ngrdcol, hydromet_dim, hydromet_list, & ! In
+                                         sclr_dim, edsclr_dim, & ! In
+                                         um, vm, rtm, wprtp, thlm, wpthlp, & ! In
+                                         rtp2, thlp2, rtpthlp, wp2, wp3, & ! In
+                                         wp2thvp, wp2up, rtpthvp, thlpthvp, & ! In
+                                         hydromet, sclrm, edsclrm, & ! In
+                                         invalid_column ) ! Out
 
 !       Description:
-!       Checks for invalid floating point values in select model arrays.
+!       Check each column for invalid floating point values in select model arrays.
+!       Return the first failing column, or zero if all columns are valid.
 
 !       References:
 !       None
@@ -802,6 +805,7 @@ module numerical_check
     integer, intent(in) :: &
       nzm, &
       nzt, &
+      ngrdcol, & ! Number of grid columns [-]
       hydromet_dim, &
       sclr_dim, &
       edsclr_dim
@@ -809,7 +813,7 @@ module numerical_check
     character(len=10), dimension(hydromet_dim), intent(in) :: &
       hydromet_list
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um,       & ! eastward grid-mean wind comp. (thermo. levs.)  [m/s]
       vm,       & ! northward grid-mean wind comp. (thermo. levs.) [m/s]
       rtm,      & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
@@ -818,7 +822,7 @@ module numerical_check
       wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
       wp2up       ! < w'^2 u' > (thermodynamic levels)             [m^3/s^3]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       wprtp,    & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
       wpthlp,   & ! w'th_l' (momentum levels)                      [(m/s) K]
       rtp2,     & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
@@ -828,146 +832,179 @@ module numerical_check
       rtpthvp,  & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp    ! < th_l' th_v' > (momentum levels)              [K^2]
 
-    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Array of hydrometeors                          [units vary]
 
-    real( kind = core_rknd ), dimension(nzt,sclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) :: &
       sclrm    ! Passive scalar mean (thermo. levels)              [units vary]
 
-    real( kind = core_rknd ), dimension(nzt,edsclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim), intent(in) :: &
       edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
 
-    ! Local Variables
-    integer :: i, sclr, edsclr
+    !--------------------------- Output Variables ---------------------------
+    integer, intent(out) :: invalid_column ! First column with a nonfinite value; zero if valid [-]
+
+    !--------------------------- Local Variables ---------------------------
+    integer :: i, k, h, sclr, edsclr ! Column, level, hydrometeor and passive-scalar indices [-]
+    logical :: l_invalid(ngrdcol,15) ! Nonfinite flags for the fixed model fields [-]
+    logical :: l_invalid_hydromet(ngrdcol,hydromet_dim) ! Nonfinite hydrometeor flags [-]
+    logical :: l_invalid_sclrm(ngrdcol,sclr_dim) ! Nonfinite passive-scalar flags [-]
+    logical :: l_invalid_edsclrm(ngrdcol,edsclr_dim) ! Nonfinite eddy-scalar flags [-]
+
+    !--------------------------- Begin Code ---------------------------
 
     invalid_model_arrays = .false.
+    invalid_column = 0
 
-    ! Check whether any variable array contains a NaN for
-    ! um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp,
-    ! wp2, & wp3.
-    if ( any( .not. ieee_is_finite( um ) ) ) then
+    ! Scan whole batches with columns contiguous, then report only the first
+    ! failing column in the same field order as the original diagnostics.
+    l_invalid = .false.
+    l_invalid_hydromet = .false.
+    l_invalid_sclrm = .false.
+    l_invalid_edsclrm = .false.
+
+    do k = 1, nzt
+      do i = 1, ngrdcol
+        l_invalid(i,1) = l_invalid(i,1) .or. .not. ieee_is_finite( um(i,k) )
+        l_invalid(i,2) = l_invalid(i,2) .or. .not. ieee_is_finite( vm(i,k) )
+        l_invalid(i,4) = l_invalid(i,4) .or. .not. ieee_is_finite( wp3(i,k) )
+        l_invalid(i,5) = l_invalid(i,5) .or. .not. ieee_is_finite( rtm(i,k) )
+        l_invalid(i,6) = l_invalid(i,6) .or. .not. ieee_is_finite( thlm(i,k) )
+        l_invalid(i,12) = l_invalid(i,12) .or. .not. ieee_is_finite( wp2thvp(i,k) )
+        l_invalid(i,13) = l_invalid(i,13) .or. .not. ieee_is_finite( wp2up(i,k) )
+      end do
+    end do
+
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        l_invalid(i,3) = l_invalid(i,3) .or. .not. ieee_is_finite( wp2(i,k) )
+        l_invalid(i,7) = l_invalid(i,7) .or. .not. ieee_is_finite( rtp2(i,k) )
+        l_invalid(i,8) = l_invalid(i,8) .or. .not. ieee_is_finite( thlp2(i,k) )
+        l_invalid(i,9) = l_invalid(i,9) .or. .not. ieee_is_finite( wprtp(i,k) )
+        l_invalid(i,10) = l_invalid(i,10) .or. .not. ieee_is_finite( wpthlp(i,k) )
+        l_invalid(i,11) = l_invalid(i,11) .or. .not. ieee_is_finite( rtpthlp(i,k) )
+        l_invalid(i,14) = l_invalid(i,14) .or. .not. ieee_is_finite( rtpthvp(i,k) )
+        l_invalid(i,15) = l_invalid(i,15) .or. .not. ieee_is_finite( thlpthvp(i,k) )
+      end do
+    end do
+
+    do h = 1, hydromet_dim
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          l_invalid_hydromet(i,h) = l_invalid_hydromet(i,h) .or. &
+            .not. ieee_is_finite( hydromet(i,k,h) )
+        end do
+      end do
+    end do
+
+    do sclr = 1, sclr_dim
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          l_invalid_sclrm(i,sclr) = l_invalid_sclrm(i,sclr) .or. &
+            .not. ieee_is_finite( sclrm(i,k,sclr) )
+        end do
+      end do
+    end do
+
+    do edsclr = 1, edsclr_dim
+      do k = 1, nzt
+        do i = 1, ngrdcol
+          l_invalid_edsclrm(i,edsclr) = l_invalid_edsclrm(i,edsclr) .or. &
+            .not. ieee_is_finite( edsclrm(i,k,edsclr) )
+        end do
+      end do
+    end do
+
+    do i = 1, ngrdcol
+      if ( any(l_invalid(i,:)) .or. any(l_invalid_hydromet(i,:)) .or. &
+           any(l_invalid_sclrm(i,:)) .or. any(l_invalid_edsclrm(i,:)) ) then
+        invalid_column = i
+        exit
+      end if
+    end do
+
+    if ( invalid_column == 0 ) return
+    invalid_model_arrays = .true.
+    i = invalid_column
+
+    if ( l_invalid(i,1) ) then
       write(fstderr,*) "NaN in um model array"
-!         write(fstderr,*) "um= ", um
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( vm ) ) ) then
+    if ( l_invalid(i,2) ) then
       write(fstderr,*) "NaN in vm model array"
-!         write(fstderr,*) "vm= ", vm
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( wp2 ) ) ) then
+    if ( l_invalid(i,3) ) then
       write(fstderr,*) "NaN in wp2 model array"
-!         write(fstderr,*) "wp2= ", wp2
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( wp3 ) ) ) then
+    if ( l_invalid(i,4) ) then
       write(fstderr,*) "NaN in wp3 model array"
-!         write(fstderr,*) "wp3= ", wp3
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( rtm ) ) ) then
+    if ( l_invalid(i,5) ) then
       write(fstderr,*) "NaN in rtm model array"
-!         write(fstderr,*) "rtm= ", rtm
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( thlm ) ) ) then
+    if ( l_invalid(i,6) ) then
       write(fstderr,*) "NaN in thlm model array"
-!         write(fstderr,*) "thlm= ", thlm
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( rtp2 ) ) ) then
+    if ( l_invalid(i,7) ) then
       write(fstderr,*) "NaN in rtp2 model array"
-!         write(fstderr,*) "rtp2= ", rtp2
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( thlp2 ) ) ) then
+    if ( l_invalid(i,8) ) then
       write(fstderr,*) "NaN in thlp2 model array"
-!         write(fstderr,*) "thlp2= ", thlp2
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( wprtp ) ) ) then
+    if ( l_invalid(i,9) ) then
       write(fstderr,*) "NaN in wprtp model array"
-!         write(fstderr,*) "wprtp= ", wprtp
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( wpthlp ) ) ) then
+    if ( l_invalid(i,10) ) then
       write(fstderr,*) "NaN in wpthlp model array"
-!         write(fstderr,*) "wpthlp= ", wpthlp
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( rtpthlp ) ) ) then
+    if ( l_invalid(i,11) ) then
       write(fstderr,*) "NaN in rtpthlp model array"
-!         write(fstderr,*) "rtpthlp= ", rtpthlp
-      invalid_model_arrays = .true.
     end if
 
     if ( hydromet_dim > 0 ) then
-      do i = 1, hydromet_dim, 1
-        if ( any( .not. ieee_is_finite( hydromet(:,i) ) ) ) then
+      do h = 1, hydromet_dim, 1
+        if ( l_invalid_hydromet(i,h) ) then
           write(fstderr,*) "NaN in a hydrometeor model array "// &
-            trim( hydromet_list(i) )
-!             write(fstderr,*) "hydromet= ", hydromet
-          invalid_model_arrays = .true.
-!             return
+            trim( hydromet_list(h) )
         end if
       end do
     end if
 
-!       if ( any( .not. ieee_is_finite( wm_zt ) ) ) then
-!         write(fstderr,*) "NaN in wm_zt model array"
-!         write(fstderr,*) "wm_zt= ", wm_zt
-!         invalid_model_arrays = .true.
-!       end if
-
-    if ( any( .not. ieee_is_finite( wp2thvp ) ) ) then
+    if ( l_invalid(i,12) ) then
       write(fstderr,*) "NaN in wp2thvp model array"
-!         write(fstderr,*) "wp2thvp = ", wp2thvp
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( wp2up ) ) ) then
+    if ( l_invalid(i,13) ) then
       write(fstderr,*) "NaN in wp2up model array"
-!         write(fstderr,*) "wp2up = ", wp2up
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( rtpthvp ) ) ) then
+    if ( l_invalid(i,14) ) then
       write(fstderr,*) "NaN in rtpthvp model array"
-!         write(fstderr,*) "rtpthvp = ", rtpthvp
-      invalid_model_arrays = .true.
     end if
 
-    if ( any( .not. ieee_is_finite( thlpthvp ) ) ) then
+    if ( l_invalid(i,15) ) then
       write(fstderr,*) "NaN in thlpthvp model array"
-!         write(fstderr,*) "thlpthvp = ", thlpthvp
-      invalid_model_arrays = .true.
     end if
 
     do sclr = 1, sclr_dim, 1
-      if ( any( .not. ieee_is_finite( sclrm(:,sclr) ) ) ) then
+      if ( l_invalid_sclrm(i,sclr) ) then
         write(fstderr,*) "NaN in sclrm", sclr, "model array"
-!           write(fstderr,'(a6,i2,a1)') "sclrm(", sclr, ")"
-!           write(fstderr,*) sclrm(:,sclr)
-        invalid_model_arrays = .true.
       end if
     end do
 
     do edsclr = 1, edsclr_dim, 1
-      if ( any( .not. ieee_is_finite( edsclrm(:,edsclr) ) ) ) then
+      if ( l_invalid_edsclrm(i,edsclr) ) then
         write(fstderr,*) "NaN in edsclrm", edsclr, "model array"
-!           write(fstderr,'(a8,i2,a1)') "edsclrm(", edsclr, ")"
-!           write(fstderr,*) edsclrm(:,edsclr)
-        invalid_model_arrays = .true.
       end if
     end do
 
@@ -1084,7 +1121,7 @@ module numerical_check
   subroutine check_nan_2d( var, varname, operation, err_info )
 !
 !  Description:
-!    Checks for a NaN in the var array and reports it.
+!    Check the full array for nonfinite values and report a fatal error.
 !
 !
 !------------------------------------------------------------------------
@@ -1105,9 +1142,6 @@ module numerical_check
 
     implicit none
 
-    ! External
-    intrinsic :: present
-
     !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in), dimension(:,:) :: var ! Variable being examined
 
@@ -1119,66 +1153,16 @@ module numerical_check
     type(err_info_type), intent(inout) :: &
       err_info      ! err_info struct containing err_code and err_header
 
+    !--------------------------- Begin Code ---------------------------
     if ( any( .not. ieee_is_finite( var ) ) ) then
       write(fstderr,*) err_info%err_header_global
       write(fstderr,*) varname, " is NaN in ",operation
-      ! Single col error, but col nr is not available
+      ! Preserve fatal status on every column when any value is nonfinite.
       err_info%err_code = clubb_fatal_error
     end if
 
     return
   end subroutine check_nan_2d
-
-!-----------------------------------------------------------------------
-  subroutine check_nan_sclr( var, varname, operation, err_info )
-!
-! Description:
-!   Checks for a NaN in the scalar var then reports it.
-!
-!-----------------------------------------------------------------------
-    use constants_clubb, only: &
-        fstderr ! Variable
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use, intrinsic :: ieee_arithmetic, only: &
-      ieee_is_finite
-
-    use error_code, only: &
-        clubb_fatal_error              ! Constant
-
-    use err_info_type_module, only: &
-      err_info_type     ! Type
-
-    implicit none
-
-    ! External
-    intrinsic :: present
-
-    !--------------------------- Input Variables ---------------------------
-    real( kind = core_rknd ), intent(in) :: var        ! Variable being examined
-
-    character(len=*), intent(in):: &
-      varname,    & ! Name of variable being examined
-      operation     ! Procedure calling check_nan
-
-    !--------------------------- Input/Output Variables ---------------------------
-    type(err_info_type), intent(inout) :: &
-      err_info      ! err_info struct containing err_code and err_header
-
-!--------------------------------------------------------------------
-    if ( .not. ieee_is_finite( var ) ) then
-      write(fstderr,*) err_info%err_header_global
-      write(fstderr,*) varname, " is NaN in ",operation
-      ! Single col error, but col nr is not available
-      err_info%err_code = clubb_fatal_error
-    end if
-
-    return
-
-  end subroutine check_nan_sclr
-!-------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
   function calculate_spurious_source( integral_after, integral_before, &

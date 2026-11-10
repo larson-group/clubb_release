@@ -9,98 +9,12 @@ module T_in_K_module
 
   public :: thlm2T_in_K_api, T_in_K2thlm_api
 
-  interface thlm2T_in_K_api
-    module procedure thlm2T_in_K_k    ! Works over a single vertical level
-    module procedure thlm2T_in_K_1D   ! Works over all vertical levels 
-    module procedure thlm2T_in_K_2D   ! Works over all vertical levels and columns
-  end interface thlm2T_in_K_api
 
   contains
 
-  !-------------------------------------------------------------------------------
-  ! Wrapped in interface thlm2T_in_K
-  function thlm2T_in_K_k( thlm, exner, rcm )  & 
-                  result( T_in_K )
-
-  ! Description:
-  !   Calculates absolute temperature from liquid water potential
-  !   temperature.  (Does not include ice.)
-
-  ! References: 
-  !   Cotton and Anthes (1989), "Storm and Cloud Dynamics", Eqn. (2.51). 
-  !-------------------------------------------------------------------------------
-    use constants_clubb, only: & 
-      ! Variable(s) 
-        Cp,  & ! Dry air specific heat at constant p [J/kg/K]
-        Lv     ! Latent heat of vaporization         [J/kg]
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! ---------------------- Input ----------------------
-    real( kind = core_rknd ), intent(in) :: & 
-      thlm,   & ! Liquid potential temperature  [K]
-      exner,  & ! Exner function                [-]
-      rcm       ! Liquid water mixing ratio     [kg/kg]
-
-    real( kind = core_rknd ) :: & 
-      T_in_K ! Result temperature [K]
-
-    ! ---------------------- Begin Code ----------------------
-    T_in_K = thlm * exner + Lv * rcm / Cp
-
-    return
-  end function thlm2T_in_K_k
 
   !-------------------------------------------------------------------------------
-  ! Wrapped in interface thlm2T_in_K
-  function thlm2T_in_K_1D( nz, thlm, exner, rcm )  & 
-                   result( T_in_K )
-
-  ! Description:
-  !   Calculates absolute temperature from liquid water potential
-  !   temperature.  (Does not include ice.)
-
-  ! References: 
-  !   Cotton and Anthes (1989), "Storm and Cloud Dynamics", Eqn. (2.51). 
-  !-------------------------------------------------------------------------------
-    use constants_clubb, only: & 
-      ! Variable(s) 
-        Cp,  & ! Dry air specific heat at constant p [J/kg/K]
-        Lv     ! Latent heat of vaporization         [J/kg]
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! ---------------------- Input ----------------------
-    integer, intent(in) :: &
-      nz
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
-      thlm,   & ! Liquid potential temperature  [K]
-      exner,  & ! Exner function                [-]
-      rcm       ! Liquid water mixing ratio     [kg/kg]
-
-    real( kind = core_rknd ), dimension(nz) :: & 
-      T_in_K ! Result temperature [K]
-
-    integer :: k
-
-    ! ---------------------- Begin Code ----------------------
-    do k = 1, nz
-      T_in_K(k) = thlm(k) * exner(k) + Lv * rcm(k) / Cp
-    end do
-
-    return
-  end function thlm2T_in_K_1D
-
-  !-------------------------------------------------------------------------------
-  ! Wrapped in interface thlm2T_in_K
-  function thlm2T_in_K_2D( nz, ngrdcol, thlm, exner, rcm )  & 
+  function thlm2T_in_K_api( nz, ngrdcol, thlm, exner, rcm )  &
                    result( T_in_K )
 
   ! Description:
@@ -146,7 +60,7 @@ module T_in_K_module
     !$acc end parallel loop
 
     return
-  end function thlm2T_in_K_2D
+  end function thlm2T_in_K_api
 
 !-------------------------------------------------------------------------------
   elemental function T_in_K2thlm_api( T_in_K, exner, rcm )  & 

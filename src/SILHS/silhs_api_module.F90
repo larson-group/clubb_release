@@ -93,9 +93,9 @@ module silhs_api_module
   use latin_hypercube_driver_module, only : &
     stats_accumulate_lh_api
 
-  ! latin_hypercube_2D_output_api - Creates and opens the SILHS 2D output files.
+  ! latin_hypercube_output_init_api - Registers optional SILHS sample output.
   use latin_hypercube_driver_module, only: &
-    latin_hypercube_2D_output_api
+    latin_hypercube_output_init_api
 
   use est_kessler_microphys_module, only: &
     est_kessler_microphys_api
@@ -136,8 +136,8 @@ module silhs_api_module
     genrand_srepr, &
     genrand_intg
 
-  public  & ! to print 2D lh samples
-    latin_hypercube_2D_output_api
+  public  & ! to initialize SILHS sample output
+    latin_hypercube_output_init_api
 
 contains
 

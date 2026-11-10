@@ -23,7 +23,7 @@ def test_calc_luhar_params_matches_formula():
     x_tol_sqd = 0.05
     nz = skx.shape[1]
 
-    mixt_frac, big_m, small_m = clubb_api.calc_luhar_params(nz=nz, skx=skx, wpxp=wpxp, xp2=xp2, x_tol_sqd=x_tol_sqd)
+    mixt_frac, big_m, small_m = clubb_api.calc_luhar_params(nz=nz, skx=skx, wpxp=wpxp, xp2=xp2, x_tol_sqd=x_tol_sqd, ngrdcol=(skx).shape[0])
 
     mask = xp2 > x_tol_sqd
     sgn_wpxp = np.where(wpxp >= 0.0, 1.0, -1.0)
@@ -66,7 +66,7 @@ def test_close_luhar_pdf_matches_formula():
         x_1_n, x_2_n, x_1, x_2,
     ) = clubb_api.close_luhar_pdf(
         nz=nz, xm=xm, xp2=xp2, mixt_frac=mixt_frac, small_m=small_m, wpxp=wpxp,
-        x_tol_sqd=x_tol_sqd)
+        x_tol_sqd=x_tol_sqd, ngrdcol=(xm).shape[0])
 
     mask = xp2 > x_tol_sqd
     sgn_wpxp = np.where(wpxp >= 0.0, 1.0, -1.0)
@@ -238,13 +238,14 @@ def test_luhar_3d_pdf_driver_column_consistency():
 
     got = clubb_api.luhar_3d_pdf_driver(
         nz=nz, wm=wm, rtm=rtm, thlm=thlm, wp2=wp2, rtp2=rtp2, thlp2=thlp2, skw=skw, skrt=skrt,
-        skthl=skthl, wprtp=wprtp, wpthlp=wpthlp)
+        skthl=skthl, wprtp=wprtp, wpthlp=wpthlp, ngrdcol=(wm).shape[0])
 
     for i in range(ncol):
         got_i = clubb_api.luhar_3d_pdf_driver(
             nz=nz, wm=wm[i:i+1, :], rtm=rtm[i:i+1, :], thlm=thlm[i:i+1, :], wp2=wp2[i:i+1, :],
             rtp2=rtp2[i:i+1, :], thlp2=thlp2[i:i+1, :], skw=skw[i:i+1, :], skrt=skrt[i:i+1, :],
             skthl=skthl[i:i+1, :], wprtp=wprtp[i:i+1, :], wpthlp=wpthlp[i:i+1, :],
+            ngrdcol=(wm[i:i+1, :]).shape[0],
         )
         for arr_multi, arr_single in zip(got, got_i):
             np.testing.assert_allclose(arr_multi[i:i+1, :], arr_single)

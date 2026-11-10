@@ -13,7 +13,7 @@ from clubb_jax.src.SILHS.parameters_silhs import (
 from clubb_jax.src.SILHS.latin_hypercube_driver_module import (
     generate_silhs_sample,
     clip_transform_silhs_output,
-    latin_hypercube_2D_output_api,
+    latin_hypercube_output_init_api,
     stats_accumulate_lh_api,
 )
 from clubb_jax.src.SILHS.est_kessler_microphys_module import est_kessler_microphys_api

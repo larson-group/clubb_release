@@ -16,41 +16,69 @@ from clubb_jax.src.CLUBB_core.saturation import sat_mixrat_liq
 
 
 # ----------------------------------------------------------------------
-def astex_a209_tndcy(sclr_dim, edsclr_dim, sclr_idx, gr):
+def astex_a209_tndcy(ngrdcol, sclr_dim, edsclr_dim, sclr_idx, gr):
     """Subroutine to set theta and water tendencies for ASTEX KK case.
 
     References:
         http://www.euclipse.nl/wp3/ASTEX_Lagrangian/Introduction.shtml
+
+    Fortran declarations (astex_a209_tndcy in src/Benchmark_cases/astex_a209.F90):
+
+        !--------------------- Input Variables ---------------------
+        integer, intent(in) :: &
+          ngrdcol, & ! Number of columns [-]
+          sclr_dim, &
+          edsclr_dim
+
+        type (sclr_idx_type), intent(in) :: &
+          sclr_idx
+
+        type (grid), intent(in) :: gr
+
+        !--------------------- Output Variables ---------------------
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) ::  &
+          wm_zt,         & ! w wind on the thermodynamic grid        [m/s]
+          thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
+          rtm_forcing      ! Total water mixing ratio tendency       [kg/kg/s]
+
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzm) ::  &
+          wm_zm            ! w wind on the momentum grid             [m/s]
+
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,sclr_dim) ::  &
+          sclrm_forcing ! Passive scalar forcing  [units/s]
+
+        real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt,edsclr_dim) ::  &
+          edsclrm_forcing ! Passive scalar forcing  [units/s]
     """
     # --------------------- Begin Code ---------------------
     # Compute large-scale subsidence
-    wm_zt = -5.0e-6 * gr.zt[0, :]
+    wm_zt = -5.0e-6 * gr.zt
 
     # Interpolate to momentum levels
-    wm_zm = zt2zm(gr.nzm, gr.nzt, 1, gr, wm_zt[jnp.newaxis, :])[0, :]
+    wm_zm = zt2zm(gr.nzm, gr.nzt, ngrdcol, gr, wm_zt)
 
     # Boundary conditions on zm
-    wm_zm = wm_zm.at[0].set(0.0)
-    wm_zm = wm_zm.at[gr.nzm - 1].set(0.0)
+    wm_zm = wm_zm.at[:, 0].set(0.0)
+    wm_zm = wm_zm.at[:, gr.nzm - 1].set(0.0)
 
     # Radiative theta-l tendency
-    thlm_forcing = jnp.zeros(gr.nzt)
+    thlm_forcing = jnp.zeros((ngrdcol, gr.nzt))
 
     # Large scale advective moisture tendency
-    rtm_forcing = jnp.zeros(gr.nzt)
+    rtm_forcing = jnp.zeros((ngrdcol, gr.nzt))
 
-    sclrm_forcing = jnp.zeros((gr.nzt, sclr_dim))
-    edsclrm_forcing = jnp.zeros((gr.nzt, edsclr_dim))
+    sclrm_forcing = jnp.zeros((ngrdcol, gr.nzt, sclr_dim))
+    edsclrm_forcing = jnp.zeros((ngrdcol, gr.nzt, edsclr_dim))
 
     # Test scalars with thetal and rt if desired
     if sclr_idx.iisclr_thl > 0:
-        sclrm_forcing = sclrm_forcing.at[:, sclr_idx.iisclr_thl - 1].set(thlm_forcing)
+        sclrm_forcing = sclrm_forcing.at[:, :, sclr_idx.iisclr_thl - 1].set(thlm_forcing)
     if sclr_idx.iisclr_rt > 0:
-        sclrm_forcing = sclrm_forcing.at[:, sclr_idx.iisclr_rt - 1].set(rtm_forcing)
+        sclrm_forcing = sclrm_forcing.at[:, :, sclr_idx.iisclr_rt - 1].set(rtm_forcing)
     if sclr_idx.iiedsclr_thl > 0:
-        edsclrm_forcing = edsclrm_forcing.at[:, sclr_idx.iiedsclr_thl - 1].set(thlm_forcing)
+        edsclrm_forcing = edsclrm_forcing.at[:, :, sclr_idx.iiedsclr_thl - 1].set(thlm_forcing)
     if sclr_idx.iiedsclr_rt > 0:
-        edsclrm_forcing = edsclrm_forcing.at[:, sclr_idx.iiedsclr_rt - 1].set(rtm_forcing)
+        edsclrm_forcing = edsclrm_forcing.at[:, :, sclr_idx.iiedsclr_rt - 1].set(rtm_forcing)
     return wm_zt, wm_zm, thlm_forcing, rtm_forcing, sclrm_forcing, edsclrm_forcing
 
 

@@ -19,7 +19,8 @@ Before editing:
 
 2. Identify every changed routine signature and every call site.
    - Include direct call sites, wrapper call sites, tests, Python/f2py wrapper signatures, and generated/ported driver mirrors if applicable.
-   - Keep call-site argument grouping aligned with the routine definition.
+   - Keep multiline call-site argument grouping aligned with the routine definition;
+     apply the compact-call exception below to small one-line calls.
 
 Routine header and description:
 
@@ -47,7 +48,15 @@ Argument order:
 
 Call-site formatting:
 
-1. Format call sites to mirror the routine definition grouping.
+1. Preserve argument order at every call. For a multiline call, match the
+   definition's argument grouping and breaks between corresponding arguments.
+   - A small routine call that fits readably on one line may stay compact even
+     when its definition spans several lines. This includes functions embedded
+     in larger expressions and short stats subroutine calls. Do not expand these
+     calls merely to copy the definition's line breaks.
+   - This exception changes layout only. Preserve argument order, intents and
+     optional arguments. When a call needs wrapping, use the definition's
+     grouping; do not pack a large call onto one line to claim the exception.
 2. Each continuation line at the call site must contain arguments from only one intent group.
 3. Add an end-of-line comment for each call-site continuation line using only:
    - `! In`
@@ -58,6 +67,11 @@ Call-site formatting:
    - `! Optional Out`
 4. Do not use longer comments such as `! Intent(in)` at call sites for new formatting.
 5. If preprocessor conditionals split a call argument list, keep the conditional argument in the correct intent group and comment it consistently.
+6. Minimize formatting-only diffs. When restoring compact calls, prefer the exact
+   base/master text wherever the executable statement is unchanged. If the
+   interface changed, retain the required arguments and reuse the compact source
+   layout where it remains readable; do not restore an obsolete interface. Check
+   the branch/base diff for unnecessary wrapping, indentation and comment churn.
 
 Declaration formatting inside routines:
 
@@ -122,8 +136,8 @@ not merely because every statement fits on one line.
    declarations should stand out without reading every token. Keep the pass
    within the requested scope rather than reformatting unrelated legacy code.
 
-For example, these short assignments read as a table, while the conditional and
-continued call have their own space:
+For example, these short assignments read as a table, and the short stats call
+stays compact inside the separated conditional:
 
 ```fortran
     first_index =   1
@@ -131,8 +145,7 @@ continued call have their own space:
 
     if ( l_stats ) then
 
-      call stats_update( "thlm", thlm, & ! In
-                         stats )        ! InOut
+      call stats_update( "thlm", thlm, stats )
 
     end if
 ```
@@ -151,7 +164,9 @@ Style details observed in this repo:
 Review checklist before finishing:
 
 1. Routine signature grouping and declaration grouping match.
-2. Every call site mirrors the new argument grouping and has intent comments.
+2. Multiline calls mirror the definition's argument grouping and have intent
+   comments on continuation lines. Small one-line calls remain compact; both
+   layouts preserve argument order. Review the base diff for avoidable churn.
 3. Every argument and local variable has a useful description and units where possible.
 4. `stats` and `err_info` are in the correct intent group at both definition and call sites.
 5. Optional arguments are declared and passed after required arguments.

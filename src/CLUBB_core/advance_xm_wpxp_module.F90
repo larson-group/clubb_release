@@ -1003,45 +1003,43 @@ module advance_xm_wpxp_module
         !$acc              um_old, upwp_old, vm_old, vpwp_old )
 
         write(fstderr, *) err_info%err_header_global
-        do i = 1, ngrdcol
-          call error_prints_xm_wpxp( nzm, nzt, sclr_dim, gr%zm(i,:), gr%zt(i,:), & ! intent(in) 
-                                     dt, sigma_sqd_w(i,:), wm_zm(i,:), wm_zt(i,:), & ! intent(in)
-                                     wp2(i,:), & ! intent(in)
-                                     Lscale_zm(i,:), wp3_on_wp2(i,:), & ! intent(in)
-                                     wp3_on_wp2_zt(i,:), & ! intent(in)
-                                     Kh_zt(i,:), Kh_zm(i,:), invrs_tau_C6_zm(i,:), & ! intent(in)
-                                     Skw_zm(i,:), & ! intent(in)
-                                     wp2rtp(i,:), rtpthvp(i,:), rtm_forcing(i,:), & ! intent(in)
-                                     wprtp_forcing(i,:), rtm_ref(i,:), wp2thlp(i,:), & ! intent(in)
-                                     thlpthvp(i,:), thlm_forcing(i,:), & ! intent(in)
-                                     wpthlp_forcing(i,:), thlm_ref(i,:), & ! intent(in)
-                                     rho_ds_zm(i,:), & ! intent(in)
-                                     rho_ds_zt(i,:), invrs_rho_ds_zm(i,:), & ! intent(in)
-                                     invrs_rho_ds_zt(i,:), thv_ds_zm(i,:), rtp2(i,:), & ! intent(in)
-                                     thlp2(i,:), w_1_zm(i,:), w_2_zm(i,:), & ! intent(in)
-                                     varnce_w_1_zm(i,:), varnce_w_2_zm(i,:), & ! intent(in)
-                                     mixt_frac_zm(i,:), l_implemented, em(i,:), & ! intent(in)
-                                     wp2sclrp(i,:,:), sclrpthvp(i,:,:), & ! intent(in) 
-                                     sclrm_forcing(i,:,:), & ! intent(in) 
-                                     sclrp2(i,:,:), Cx_fnc_Richardson(i,:), & ! intent(in)
-                                     pdf_implicit_coefs_terms, & ! intent(in)
-                                     um_forcing(i,:), vm_forcing(i,:), & ! intent(in)
-                                     ug(i,:), vg(i,:), & ! intent(in)
-                                     wpthvp(i,:), fcor(i), um_ref(i,:), & ! intent(in)
-                                     vm_ref(i,:), up2(i,:), & ! intent(in)
-                                     vp2(i,:), uprcp(i,:), vprcp(i,:), & ! intent(in)
-                                     rc_coef_zm(i,:), rtm(i,:), & ! intent(in)
-                                     wprtp(i,:), thlm(i,:), wpthlp(i,:), & ! intent(in)
-                                     sclrm(i,:,:), wpsclrp(i,:,:), & ! intent(in)
-                                     um(i,:), upwp(i,:), vm(i,:), & ! intent(in)
-                                     vpwp(i,:), rtm_old(i,:), & ! intent(in)
-                                     wprtp_old(i,:), thlm_old(i,:), & ! intent(in)
-                                     wpthlp_old(i,:), & ! intent(in)
-                                     sclrm_old(i,:,:), wpsclrp_old(i,:,:), & ! intent(in)
-                                     um_old(i,:), & ! intent(in)
-                                     upwp_old(i,:), vm_old(i,:), vpwp_old(i,:), & ! intent(in)
-                                     l_predict_upwp_vpwp, l_lmm_stepping ) ! intent(in)
-        end do
+        call error_prints_xm_wpxp( nzm, nzt, ngrdcol, sclr_dim, gr%zm, gr%zt, & ! In
+                                   dt, sigma_sqd_w, wm_zm, wm_zt, & ! In
+                                   wp2, & ! In
+                                   Lscale_zm, wp3_on_wp2, & ! In
+                                   wp3_on_wp2_zt, & ! In
+                                   Kh_zt, Kh_zm, invrs_tau_C6_zm, & ! In
+                                   Skw_zm, & ! In
+                                   wp2rtp, rtpthvp, rtm_forcing, & ! In
+                                   wprtp_forcing, rtm_ref, wp2thlp, & ! In
+                                   thlpthvp, thlm_forcing, & ! In
+                                   wpthlp_forcing, thlm_ref, & ! In
+                                   rho_ds_zm, & ! In
+                                   rho_ds_zt, invrs_rho_ds_zm, & ! In
+                                   invrs_rho_ds_zt, thv_ds_zm, rtp2, & ! In
+                                   thlp2, w_1_zm, w_2_zm, & ! In
+                                   varnce_w_1_zm, varnce_w_2_zm, & ! In
+                                   mixt_frac_zm, l_implemented, em, & ! In
+                                   wp2sclrp, sclrpthvp, & ! In
+                                   sclrm_forcing, & ! In
+                                   sclrp2, Cx_fnc_Richardson, & ! In
+                                   pdf_implicit_coefs_terms, & ! In
+                                   um_forcing, vm_forcing, & ! In
+                                   ug, vg, & ! In
+                                   wpthvp, fcor, um_ref, & ! In
+                                   vm_ref, up2, & ! In
+                                   vp2, uprcp, vprcp, & ! In
+                                   rc_coef_zm, rtm, & ! In
+                                   wprtp, thlm, wpthlp, & ! In
+                                   sclrm, wpsclrp, & ! In
+                                   um, upwp, vm, & ! In
+                                   vpwp, rtm_old, & ! In
+                                   wprtp_old, thlm_old, & ! In
+                                   wpthlp_old, & ! In
+                                   sclrm_old, wpsclrp_old, & ! In
+                                   um_old, & ! In
+                                   upwp_old, vm_old, vpwp_old, & ! In
+                                   l_predict_upwp_vpwp, l_lmm_stepping ) ! In
       end if
     end if
 
@@ -1053,10 +1051,8 @@ module advance_xm_wpxp_module
         call stats_begin_budget( "rtm_sdmp", rtm / dt, stats )
       end if
 
-      do i = 1, ngrdcol
-        rtm(i,:) = sponge_damp_xm( gr, nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), &
-                                   rtm_ref(i,:), rtm(i,:), rtm_sponge_damp_profile )
-      end do
+      rtm = sponge_damp_xm( ngrdcol, nzm, nzt, gr, dt, gr%zt, gr%zm, & ! In
+                            rtm_ref, rtm, rtm_sponge_damp_profile ) ! In
 
       if ( stats%l_sample ) then
         call stats_finalize_budget( "rtm_sdmp", rtm / dt, stats )
@@ -1074,10 +1070,8 @@ module advance_xm_wpxp_module
         call stats_begin_budget( "thlm_sdmp", thlm / dt, stats )
       end if
 
-      do i = 1, ngrdcol
-        thlm(i,:) = sponge_damp_xm( gr, nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), &
-                                    thlm_ref(i,:), thlm(i,:), thlm_sponge_damp_profile )
-      end do
+      thlm = sponge_damp_xm( ngrdcol, nzm, nzt, gr, dt, gr%zt, gr%zm, & ! In
+                             thlm_ref, thlm, thlm_sponge_damp_profile ) ! In
 
       if ( stats%l_sample ) then
         call stats_finalize_budget( "thlm_sdmp", thlm / dt, stats )
@@ -1098,15 +1092,11 @@ module advance_xm_wpxp_module
           call stats_begin_budget( "vm_sdmp", vm / dt, stats )
         end if
 
-        do i = 1, ngrdcol
-          um(i,:) = sponge_damp_xm( gr, nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), &
-                                    um_ref(i,:), um(i,:), uv_sponge_damp_profile )
-        end do
+        um = sponge_damp_xm( ngrdcol, nzm, nzt, gr, dt, gr%zt, gr%zm, & ! In
+                             um_ref, um, uv_sponge_damp_profile ) ! In
         
-        do i = 1, ngrdcol
-          vm(i,:) = sponge_damp_xm( gr, nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), &
-                                    vm_ref(i,:), vm(i,:), uv_sponge_damp_profile )
-        end do
+        vm = sponge_damp_xm( ngrdcol, nzm, nzt, gr, dt, gr%zt, gr%zm, & ! In
+                             vm_ref, vm, uv_sponge_damp_profile ) ! In
 
         if ( stats%l_sample ) then
           call stats_finalize_budget( "um_sdmp", um / dt, stats )
@@ -2284,8 +2274,10 @@ module advance_xm_wpxp_module
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the <w'x'> turbulent advection (ta) term.
-        a1_coef_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, a1_coef, &
-                                     zero_threshold )   ! Positive def. quantity
+        ! Positive def. quantity
+        a1_coef_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
+                                     a1_coef, & ! In
+                                     zero_threshold )
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzt
@@ -5001,11 +4993,12 @@ module advance_xm_wpxp_module
       end if
 
       ! upper_hf_level = nz since we are filling the zt levels
-      call fill_holes_vertical_api( nzt, ngrdcol, xm_threshold,           & ! In
-                                    gr%k_lb_zt, gr%k_ub_zt,               & ! In
-                                    gr%dzt, rho_ds_zt, gr%grid_dir_indx,  & ! In
-                                    fill_holes_type,                       & ! In
-                                    xm )                                    ! InOut
+      call fill_holes_vertical_api( nzt, ngrdcol, xm_threshold, & ! In
+                                    gr%k_lb_zt, & ! In
+                                    gr%k_ub_zt, & ! In
+                                    gr%dzt, rho_ds_zt, gr%grid_dir_indx, & ! In
+                                    fill_holes_type, & ! In
+                                    xm ) ! InOut
 
       if ( stats%l_sample .and. len_trim(name_xm_hf_after) > 0 ) then
         !$acc update host( xm )
@@ -6121,7 +6114,7 @@ module advance_xm_wpxp_module
   end subroutine diagnose_upxp
 
   !=============================================================================
-  subroutine error_prints_xm_wpxp( nzm, nzt, sclr_dim, zm, zt, &
+  subroutine error_prints_xm_wpxp( nzm, nzt, ngrdcol, sclr_dim, zm, zt, &
                                    dt, sigma_sqd_w, wm_zm, wm_zt, &
                                    wp2, &
                                    Lscale_zm, wp3_on_wp2, &
@@ -6160,7 +6153,7 @@ module advance_xm_wpxp_module
                                    l_predict_upwp_vpwp, l_lmm_stepping )
 
     ! Description:
-    ! Prints values of model fields when fatal errors (LU decomp.) occur.
+    ! Print every column of the model fields when fatal errors (LU decomp.) occur.
     ! All field that are passed into and out of subroutine advance_xm_wpxp are
     ! printed.  If additional fields are added to the call to subroutine
     ! advance_xm_wpxp, they should also be added here.
@@ -6180,12 +6173,13 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       nzm, &
       nzt, &
+      ngrdcol, & ! Number of grid columns [-]
       sclr_dim
       
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
 
-    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       zt,              & ! Thermo grid
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
@@ -6199,7 +6193,7 @@ module advance_xm_wpxp_module
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       zm,              & ! Momentum grid
       sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
       wm_zm,           & ! w wind component on momentum levels      [m/s]
@@ -6231,91 +6225,91 @@ module advance_xm_wpxp_module
       l_implemented      ! True if CLUBB is being implemented and run in a host model
 
     ! Additional variables for passive scalars
-    real( kind = core_rknd ), intent(in), dimension(nzt,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
       wp2sclrp,      & ! <w'^2 sclr'> (thermodynamic levels)   [Units vary]
       sclrm_forcing    ! sclrm forcing (thermodynamic levels)  [Units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
       sclrpthvp,     & ! <sclr' th_v'> (momentum levels)       [Units vary]
       sclrp2           ! For clipping Vince Larson             [Units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm) ::  &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
       Cx_fnc_Richardson  ! Cx_fnc computed from Richardson_num       [-]
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um_forcing, & ! <u> forcing term (thermodynamic levels)      [m/s^2]
       vm_forcing, & ! <v> forcing term (thermodynamic levels)      [m/s^2]
       ug,         & ! <u> geostrophic wind (thermodynamic levels)  [m/s]
       vg            ! <v> geostrophic wind (thermodynamic levels)  [m/s]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
       uprcp,      & ! < u' r_c' >                                  [(m kg)/(s kg)]
       vprcp,      & ! < v' r_c' >                                  [(m kg)/(s kg)]
       rc_coef_zm    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
 
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       fcor          ! Coriolis parameter                           [s^-1]
 
-    real( kind = core_rknd ), dimension(nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um_ref, & ! Reference u wind component for nudging       [m/s]
       vm_ref    ! Reference v wind component for nudging       [m/s]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
-    real( kind = core_rknd ), intent(in), dimension(nzt) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
       rtm,       & ! r_t  (total water mixing ratio)           [kg/kg]
       thlm         ! th_l (liquid water potential temperature) [K]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
       wprtp,     & ! w'r_t'                                    [(kg/kg) m/s]
       wpthlp       ! w'th_l'                                   [K m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(nzt,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) ::  &
       sclrm          !                                     [Units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) ::  &
       wpsclrp        !                                     [Units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), intent(in), dimension(nzt) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
       um,   & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
       vm      ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(nzm) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
       upwp, & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
       vpwp    ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
 
     ! Saved values of predictive fields, prior to being advanced, for use in
     ! print statements in case of fatal error.
-    real( kind = core_rknd ), dimension(nzt), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       rtm_old,    & ! Saved value of r_t        [kg/kg]
       thlm_old      ! Saved value of th_l       [K]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
       wprtp_old,  & ! Saved value of w'r_t'     [(kg/kg) m/s]
       wpthlp_old    ! Saved value of w'th_l'    [K m/s]
 
-    real( kind = core_rknd ), dimension(nzt,sclr_dim), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) ::  &
       sclrm_old      ! Saved value of sclrm     [units vary]
 
-    real( kind = core_rknd ), dimension(nzm,sclr_dim), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) ::  &
       wpsclrp_old    ! Saved value of wpsclrp   [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(nzt), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       um_old,   & ! Saved value of <u>       [m/s]
       vm_old      ! Saved value of <v>       [m/s]
 
-    real( kind = core_rknd ), dimension(nzm), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
       upwp_old, & ! Saved value of <u'w'>    [m^2/s^2]
       vpwp_old    ! Saved value of <v'w'>    [m^2/s^2]
 
@@ -6330,141 +6324,149 @@ module advance_xm_wpxp_module
       l_lmm_stepping         ! Apply Linear Multistep Method (LMM) Stepping
 
 
-    write(fstderr,*) "Error in advance_xm_wpxp", new_line('c')
+    !--------------------------- Local Variables ---------------------------
+    integer :: i ! Column index [-]
 
-    write(fstderr,*) "Intent(in)", new_line('c')
+    !--------------------------- Begin Code ---------------------------
+    do i = 1, ngrdcol
 
-    write(fstderr,*) "zt = ", zt, new_line('c')
-    write(fstderr,*) "zm = ", zm, new_line('c')
-    write(fstderr,*) "dt = ", dt, new_line('c')
-    write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w, new_line('c')
-    write(fstderr,*) "wm_zm = ", wm_zm, new_line('c')
-    write(fstderr,*) "wm_zt = ", wm_zt, new_line('c')
-    write(fstderr,*) "wp2 = ", wp2, new_line('c')
-    write(fstderr,*) "Lscale_zm = ", Lscale_zm, new_line('c')
-    write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2, new_line('c')
-    write(fstderr,*) "wp3_on_wp2_zt = ", wp3_on_wp2_zt, new_line('c')
-    write(fstderr,*) "Kh_zt = ", Kh_zt, new_line('c')
-    write(fstderr,*) "Kh_zm = ", Kh_zm, new_line('c')
-    write(fstderr,*) "invrs_tau_C6_zm = ", invrs_tau_C6_zm, new_line('c')
-    write(fstderr,*) "Skw_zm = ", Skw_zm, new_line('c')
-    write(fstderr,*) "wp2rtp = ", wp2rtp, new_line('c')
-    write(fstderr,*) "rtpthvp = ", rtpthvp, new_line('c')
-    write(fstderr,*) "rtm_forcing = ", rtm_forcing, new_line('c')
-    write(fstderr,*) "wprtp_forcing = ", wprtp_forcing, new_line('c')
-    write(fstderr,*) "rtm_ref = ", rtm_ref, new_line('c')
-    write(fstderr,*) "wp2thlp = ", wp2thlp, new_line('c')
-    write(fstderr,*) "thlpthvp = ", thlpthvp, new_line('c')
-    write(fstderr,*) "thlm_forcing = ", thlm_forcing, new_line('c')
-    write(fstderr,*) "wpthlp_forcing = ", wpthlp_forcing, new_line('c')
-    write(fstderr,*) "thlm_ref = ", thlm_ref, new_line('c')
-    write(fstderr,*) "rho_ds_zm = ", rho_ds_zm, new_line('c')
-    write(fstderr,*) "rho_ds_zt = ", rho_ds_zt, new_line('c')
-    write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm, new_line('c')
-    write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt, new_line('c')
-    write(fstderr,*) "thv_ds_zm = ", thv_ds_zm, new_line('c')
-    write(fstderr,*) "rtp2 = ", rtp2, new_line('c')
-    write(fstderr,*) "thlp2 = ", thlp2, new_line('c')
-    write(fstderr,*) "w_1_zm = ", w_1_zm, new_line('c')
-    write(fstderr,*) "w_2_zm = ", w_2_zm, new_line('c')
-    write(fstderr,*) "varnce_w_1_zm = ", varnce_w_1_zm, new_line('c')
-    write(fstderr,*) "varnce_w_2_zm = ", varnce_w_2_zm, new_line('c')
-    write(fstderr,*) "mixt_frac_zm = ", mixt_frac_zm, new_line('c')
-    write(fstderr,*) "l_implemented = ", l_implemented, new_line('c')
-    write(fstderr,*) "em = ", em, new_line('c')
-    write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
-    write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2rtp_implicit = ", &
-                     pdf_implicit_coefs_terms%coef_wp2rtp_implicit, &
-                     new_line('c')
-    write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2rtp_explicit = ", &
-                     pdf_implicit_coefs_terms%term_wp2rtp_explicit, &
-                     new_line('c')
-    write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2thlp_implicit = ", &
-                     pdf_implicit_coefs_terms%coef_wp2thlp_implicit, &
-                     new_line('c')
-    write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2thlp_explicit = ", &
-                     pdf_implicit_coefs_terms%term_wp2thlp_explicit, &
-                     new_line('c')
-     
-    if ( sclr_dim > 0 )  then
-       write(fstderr,*) "sclrp2 = ", sclrp2, new_line('c')
-       write(fstderr,*) "wp2sclrp = ", wp2sclrp, new_line('c')
-       write(fstderr,*) "sclrpthvp = ", sclrpthvp, new_line('c')
-       write(fstderr,*) "sclrm_forcing = ", sclrm_forcing, new_line('c')
-       write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = ", &
-                        pdf_implicit_coefs_terms%coef_wp2sclrp_implicit, &
-                        new_line('c')
-       write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2sclrp_explicit = ", &
-                        pdf_implicit_coefs_terms%term_wp2sclrp_explicit, &
-                        new_line('c')
-    endif
+      write(fstderr,*) "Error in advance_xm_wpxp", new_line('c')
 
-    if ( l_predict_upwp_vpwp ) then
-       write(fstderr,*) "um_forcing = ", um_forcing, new_line('c')
-       write(fstderr,*) "vm_forcing = ", vm_forcing, new_line('c')
-       write(fstderr,*) "ug = ", ug, new_line('c')
-       write(fstderr,*) "vg = ", vg, new_line('c')
-       write(fstderr,*) "wpthvp = ", wpthvp, new_line('c')
-       write(fstderr,*) "fcor = ", fcor, new_line('c')
-       write(fstderr,*) "um_ref = ", um_ref, new_line('c')
-       write(fstderr,*) "vm_ref = ", vm_ref, new_line('c')
-       write(fstderr,*) "up2 = ", up2, new_line('c')
-       write(fstderr,*) "vp2 = ", vp2, new_line('c')
-       write(fstderr,*) "uprcp = ", uprcp, new_line('c')
-       write(fstderr,*) "vprcp = ", vprcp, new_line('c')
-       write(fstderr,*) "rc_coef_zm = ",  rc_coef_zm, new_line('c')
-       write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2up_implicit = ", &
-                        pdf_implicit_coefs_terms%coef_wp2up_implicit, &
-                        new_line('c')
-       write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2up_explicit = ", &
-                        pdf_implicit_coefs_terms%term_wp2up_explicit, &
-                        new_line('c')
-       write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2vp_implicit = ", &
-                        pdf_implicit_coefs_terms%coef_wp2vp_implicit, &
-                        new_line('c')
-       write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2vp_explicit = ", &
-                        pdf_implicit_coefs_terms%term_wp2vp_explicit, &
-                        new_line('c')
-    endif ! l_predict_upwp_vpwp
+      write(fstderr,*) "Intent(in)", new_line('c')
 
-    write(fstderr,*) "Intent(inout)", new_line('c')
-     
-    if ( l_lmm_stepping ) &
-      write(fstderr,*) "rtm (pre-solve) = ", rtm_old, new_line('c')
-      write(fstderr,*) "rtm = ", rtm, new_line('c')
-    if ( l_lmm_stepping )  &
-      write(fstderr,*) "wprtp (pre-solve) = ", wprtp_old, new_line('c')
-      write(fstderr,*) "wprtp = ", wprtp, new_line('c')
-    if ( l_lmm_stepping ) &
-      write(fstderr,*) "thlm (pre-solve) = ", thlm_old, new_line('c')
-      write(fstderr,*) "thlm = ", thlm, new_line('c')
-    if ( l_lmm_stepping ) &
-      write(fstderr,*) "wpthlp (pre-solve) =", wpthlp_old, new_line('c')
-      write(fstderr,*) "wpthlp =", wpthlp, new_line('c')
+      write(fstderr,*) "zt = ", zt(i,:), new_line('c')
+      write(fstderr,*) "zm = ", zm(i,:), new_line('c')
+      write(fstderr,*) "dt = ", dt, new_line('c')
+      write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w(i,:), new_line('c')
+      write(fstderr,*) "wm_zm = ", wm_zm(i,:), new_line('c')
+      write(fstderr,*) "wm_zt = ", wm_zt(i,:), new_line('c')
+      write(fstderr,*) "wp2 = ", wp2(i,:), new_line('c')
+      write(fstderr,*) "Lscale_zm = ", Lscale_zm(i,:), new_line('c')
+      write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2(i,:), new_line('c')
+      write(fstderr,*) "wp3_on_wp2_zt = ", wp3_on_wp2_zt(i,:), new_line('c')
+      write(fstderr,*) "Kh_zt = ", Kh_zt(i,:), new_line('c')
+      write(fstderr,*) "Kh_zm = ", Kh_zm(i,:), new_line('c')
+      write(fstderr,*) "invrs_tau_C6_zm = ", invrs_tau_C6_zm(i,:), new_line('c')
+      write(fstderr,*) "Skw_zm = ", Skw_zm(i,:), new_line('c')
+      write(fstderr,*) "wp2rtp = ", wp2rtp(i,:), new_line('c')
+      write(fstderr,*) "rtpthvp = ", rtpthvp(i,:), new_line('c')
+      write(fstderr,*) "rtm_forcing = ", rtm_forcing(i,:), new_line('c')
+      write(fstderr,*) "wprtp_forcing = ", wprtp_forcing(i,:), new_line('c')
+      write(fstderr,*) "rtm_ref = ", rtm_ref(i,:), new_line('c')
+      write(fstderr,*) "wp2thlp = ", wp2thlp(i,:), new_line('c')
+      write(fstderr,*) "thlpthvp = ", thlpthvp(i,:), new_line('c')
+      write(fstderr,*) "thlm_forcing = ", thlm_forcing(i,:), new_line('c')
+      write(fstderr,*) "wpthlp_forcing = ", wpthlp_forcing(i,:), new_line('c')
+      write(fstderr,*) "thlm_ref = ", thlm_ref(i,:), new_line('c')
+      write(fstderr,*) "rho_ds_zm = ", rho_ds_zm(i,:), new_line('c')
+      write(fstderr,*) "rho_ds_zt = ", rho_ds_zt(i,:), new_line('c')
+      write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm(i,:), new_line('c')
+      write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt(i,:), new_line('c')
+      write(fstderr,*) "thv_ds_zm = ", thv_ds_zm(i,:), new_line('c')
+      write(fstderr,*) "rtp2 = ", rtp2(i,:), new_line('c')
+      write(fstderr,*) "thlp2 = ", thlp2(i,:), new_line('c')
+      write(fstderr,*) "w_1_zm = ", w_1_zm(i,:), new_line('c')
+      write(fstderr,*) "w_2_zm = ", w_2_zm(i,:), new_line('c')
+      write(fstderr,*) "varnce_w_1_zm = ", varnce_w_1_zm(i,:), new_line('c')
+      write(fstderr,*) "varnce_w_2_zm = ", varnce_w_2_zm(i,:), new_line('c')
+      write(fstderr,*) "mixt_frac_zm = ", mixt_frac_zm(i,:), new_line('c')
+      write(fstderr,*) "l_implemented = ", l_implemented, new_line('c')
+      write(fstderr,*) "em = ", em(i,:), new_line('c')
+      write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson(i,:), new_line('c')
+      write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2rtp_implicit = ", &
+                       pdf_implicit_coefs_terms%coef_wp2rtp_implicit, &
+                       new_line('c')
+      write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2rtp_explicit = ", &
+                       pdf_implicit_coefs_terms%term_wp2rtp_explicit, &
+                       new_line('c')
+      write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2thlp_implicit = ", &
+                       pdf_implicit_coefs_terms%coef_wp2thlp_implicit, &
+                       new_line('c')
+      write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2thlp_explicit = ", &
+                       pdf_implicit_coefs_terms%term_wp2thlp_explicit, &
+                       new_line('c')
 
-    if ( sclr_dim > 0 )  then
-      if ( l_lmm_stepping ) &
-        write(fstderr,*) "sclrm (pre-solve) = ", sclrm_old, new_line('c')
-        write(fstderr,*) "sclrm = ", sclrm, new_line('c')
-      if ( l_lmm_stepping ) &
-        write(fstderr,*) "wpsclrp (pre-solve) = ", wpsclrp_old, new_line('c')
-        write(fstderr,*) "wpsclrp = ", wpsclrp, new_line('c')
-    endif
+      if ( sclr_dim > 0 )  then
+         write(fstderr,*) "sclrp2 = ", sclrp2(i,:,:), new_line('c')
+         write(fstderr,*) "wp2sclrp = ", wp2sclrp(i,:,:), new_line('c')
+         write(fstderr,*) "sclrpthvp = ", sclrpthvp(i,:,:), new_line('c')
+         write(fstderr,*) "sclrm_forcing = ", sclrm_forcing(i,:,:), new_line('c')
+         write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = ", &
+                          pdf_implicit_coefs_terms%coef_wp2sclrp_implicit, &
+                          new_line('c')
+         write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2sclrp_explicit = ", &
+                          pdf_implicit_coefs_terms%term_wp2sclrp_explicit, &
+                          new_line('c')
+      endif
 
-    if ( l_predict_upwp_vpwp ) then
+      if ( l_predict_upwp_vpwp ) then
+         write(fstderr,*) "um_forcing = ", um_forcing(i,:), new_line('c')
+         write(fstderr,*) "vm_forcing = ", vm_forcing(i,:), new_line('c')
+         write(fstderr,*) "ug = ", ug(i,:), new_line('c')
+         write(fstderr,*) "vg = ", vg(i,:), new_line('c')
+         write(fstderr,*) "wpthvp = ", wpthvp(i,:), new_line('c')
+         write(fstderr,*) "fcor = ", fcor(i), new_line('c')
+         write(fstderr,*) "um_ref = ", um_ref(i,:), new_line('c')
+         write(fstderr,*) "vm_ref = ", vm_ref(i,:), new_line('c')
+         write(fstderr,*) "up2 = ", up2(i,:), new_line('c')
+         write(fstderr,*) "vp2 = ", vp2(i,:), new_line('c')
+         write(fstderr,*) "uprcp = ", uprcp(i,:), new_line('c')
+         write(fstderr,*) "vprcp = ", vprcp(i,:), new_line('c')
+         write(fstderr,*) "rc_coef_zm = ",  rc_coef_zm(i,:), new_line('c')
+         write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2up_implicit = ", &
+                          pdf_implicit_coefs_terms%coef_wp2up_implicit, &
+                          new_line('c')
+         write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2up_explicit = ", &
+                          pdf_implicit_coefs_terms%term_wp2up_explicit, &
+                          new_line('c')
+         write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2vp_implicit = ", &
+                          pdf_implicit_coefs_terms%coef_wp2vp_implicit, &
+                          new_line('c')
+         write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2vp_explicit = ", &
+                          pdf_implicit_coefs_terms%term_wp2vp_explicit, &
+                          new_line('c')
+      endif ! l_predict_upwp_vpwp
+
+      write(fstderr,*) "Intent(inout)", new_line('c')
+
       if ( l_lmm_stepping ) &
-        write(fstderr,*) "um (pre-solve) = ", um_old, new_line('c')
-        write(fstderr,*) "um = ", um, new_line('c')
+        write(fstderr,*) "rtm (pre-solve) = ", rtm_old(i,:), new_line('c')
+        write(fstderr,*) "rtm = ", rtm(i,:), new_line('c')
+      if ( l_lmm_stepping )  &
+        write(fstderr,*) "wprtp (pre-solve) = ", wprtp_old(i,:), new_line('c')
+        write(fstderr,*) "wprtp = ", wprtp(i,:), new_line('c')
       if ( l_lmm_stepping ) &
-        write(fstderr,*) "upwp (pre-solve) = ",  upwp_old, new_line('c')
-        write(fstderr,*) "upwp = ",  upwp, new_line('c')
+        write(fstderr,*) "thlm (pre-solve) = ", thlm_old(i,:), new_line('c')
+        write(fstderr,*) "thlm = ", thlm(i,:), new_line('c')
       if ( l_lmm_stepping ) &
-        write(fstderr,*) "vm (pre-solve) = ", vm_old, new_line('c')
-        write(fstderr,*) "vm = ", vm, new_line('c')
-      if ( l_lmm_stepping ) &
-        write(fstderr,*) "vpwp (pre-solve) = ",  vpwp_old, new_line('c')
-        write(fstderr,*) "vpwp = ",  vpwp, new_line('c')
-    end if ! l_predict_upwp_vpwp
+        write(fstderr,*) "wpthlp (pre-solve) =", wpthlp_old(i,:), new_line('c')
+        write(fstderr,*) "wpthlp =", wpthlp(i,:), new_line('c')
+
+      if ( sclr_dim > 0 )  then
+        if ( l_lmm_stepping ) &
+          write(fstderr,*) "sclrm (pre-solve) = ", sclrm_old(i,:,:), new_line('c')
+          write(fstderr,*) "sclrm = ", sclrm(i,:,:), new_line('c')
+        if ( l_lmm_stepping ) &
+          write(fstderr,*) "wpsclrp (pre-solve) = ", wpsclrp_old(i,:,:), new_line('c')
+          write(fstderr,*) "wpsclrp = ", wpsclrp(i,:,:), new_line('c')
+      endif
+
+      if ( l_predict_upwp_vpwp ) then
+        if ( l_lmm_stepping ) &
+          write(fstderr,*) "um (pre-solve) = ", um_old(i,:), new_line('c')
+          write(fstderr,*) "um = ", um(i,:), new_line('c')
+        if ( l_lmm_stepping ) &
+          write(fstderr,*) "upwp (pre-solve) = ",  upwp_old(i,:), new_line('c')
+          write(fstderr,*) "upwp = ",  upwp(i,:), new_line('c')
+        if ( l_lmm_stepping ) &
+          write(fstderr,*) "vm (pre-solve) = ", vm_old(i,:), new_line('c')
+          write(fstderr,*) "vm = ", vm(i,:), new_line('c')
+        if ( l_lmm_stepping ) &
+          write(fstderr,*) "vpwp (pre-solve) = ",  vpwp_old(i,:), new_line('c')
+          write(fstderr,*) "vpwp = ",  vpwp(i,:), new_line('c')
+      end if ! l_predict_upwp_vpwp
+
+    end do
 
     return
 

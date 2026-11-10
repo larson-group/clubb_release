@@ -19,7 +19,7 @@ def test_interpolated_surface_values_match_column_reference():
         ngrdcol,
         deltaz=np.array([10.0, 12.0, 15.0]),
         zm_init=0.0,
-        zm_top=100.0,
+        zm_top=np.array([100.0, 120.0, 150.0]),
     )
     offsets = jnp.arange(ngrdcol, dtype=jnp.float64)[:, None]
     um = 2.0 + 0.03 * gr.zt + offsets

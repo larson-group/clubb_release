@@ -193,10 +193,7 @@ def precip_fraction(
         )
     elif precip_frac_calc_type == 2:
         # Specified method.
-        if clubb_params.ndim == 1:
-            upsilon_precip_frac_rat = clubb_params[iupsilon_precip_frac_rat]
-        else:
-            upsilon_precip_frac_rat = clubb_params[:, iupsilon_precip_frac_rat][:, None]
+        upsilon_precip_frac_rat = clubb_params[:, iupsilon_precip_frac_rat][:, None]
         precip_frac_1, precip_frac_2 = component_precip_frac_specify(
             hydromet_dim,
             hydromet_tol,
@@ -850,22 +847,23 @@ def precip_frac_assert_check(
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nzt,          & ! Number of model thermodynamic vertical grid levels
+          nzt,          & ! Number of thermodynamic levels [-]
+          ngrdcol,      & ! Number of grid columns [-]
           hydromet_dim    ! Number of hydrometeor species
 
         real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
           hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
 
-        real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
           hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
 
-        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
           mixt_frac,     & ! Mixture fraction                               [-]
           precip_frac,   & ! Precipitation fraction (overall)               [-]
           precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
           precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
-        real( kind = core_rknd ), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
           precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
         !--------------------------- Input/Output Variables ---------------------------

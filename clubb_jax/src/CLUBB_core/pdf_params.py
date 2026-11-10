@@ -2,8 +2,7 @@
 
 Observed Fortran differences retained in this diagnostic pass:
 - Existing constructors group implicit-coefficient routines before PDF routines,
-  unlike the source order; the restored printer precedes pack/unpack as in Fortran.
-- The source single/multiple-column copy routines are absent from this subset.
+  unlike the source order.
 """
 
 from __future__ import annotations
@@ -355,59 +354,3 @@ def print_pdf_params(pdf_params, ngrdcol):
                 print("ice_supersat_frac_1(i,:) = ", values.ice_supersat_frac_1[i, :], file=sys.stderr)
                 print("ice_supersat_frac_2(i,:) = ", values.ice_supersat_frac_2[i, :], file=sys.stderr)
     jax.debug.callback(print_values, pdf_params, ordered=True)
-
-
-def pack_pdf_params_api(params: pdf_parameter, nz: int):
-    """Pack the first column of a pdf_parameter into a ``(nz, 47)`` array.
-
-    Fortran declarations (pack_pdf_params_api in src/CLUBB_core/pdf_parameter_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: nz ! Num Vert Model Levs
-
-        ! Input a pdf_parameter array with nz instances of pdf_parameter
-        type (pdf_parameter), intent(in) :: pdf_params
-
-        !--------------------------- Output Variables ---------------------------
-        ! Output a two dimensional real array with all values
-        real (kind = core_rknd), dimension(nz,num_pdf_params), intent(out) :: &
-           r_param_array
-
-        !--------------------------- Optional Input Variables ---------------------------
-        integer, optional, intent(in) :: k_start_in, k_end_in
-    """
-    slots = []
-    for field in pdf_parameter._fields[2:]:
-        value = getattr(params, field)
-        if value.ndim == 1:
-            slots.append(value[:nz])
-        else:
-            slots.append(value[0, :nz])
-    return jnp.stack(slots, axis=1)
-
-
-def unpack_pdf_params_api(r_param_array, nz: int, template: pdf_parameter) -> pdf_parameter:
-    """Unpack a ``(nz, 47)`` array into the first column of a pdf_parameter.
-
-    Fortran declarations (unpack_pdf_params_api in src/CLUBB_core/pdf_parameter_module.F90):
-
-        !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: nz ! Num Vert Model Levs
-
-        ! Input a two dimensional real array with pdf values
-        real (kind = core_rknd), dimension(nz,num_pdf_params), intent(in) :: &
-           r_param_array
-
-        !--------------------------- Input/Output Variables ---------------------------
-        ! Output a pdf_parameter array with nz instances of pdf_parameter
-        type (pdf_parameter), intent(inout) :: pdf_params
-
-        !--------------------------- Optional Input Variables ---------------------------
-        integer, optional, intent(in) :: k_start_in, k_end_in
-    """
-    values = {}
-    for idx, field in enumerate(pdf_parameter._fields[2:]):
-        arr = jnp.zeros((template.ngrdcol, nz))
-        arr = arr.at[0, :].set(r_param_array[:nz, idx])
-        values[field] = arr
-    return pdf_parameter(ngrdcol=template.ngrdcol, nz=nz, **values)

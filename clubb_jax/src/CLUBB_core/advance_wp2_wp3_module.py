@@ -1367,7 +1367,7 @@ def wp23_solve(
 
     if fill_holes_type != 0:
         if clubb_at_least_debug_level(3):
-            wp2_avg_before = vertical_avg(nzm, rho_ds_zm, wp2, gr.dzm)
+            wp2_avg_before = vertical_avg(ngrdcol, nzm, rho_ds_zm, wp2, gr.dzm)
         # Use a simple hole filling algorithm
         # upper_hf_level = nzm-1 since we are filling the zm levels
         wp2 = fill_holes_vertical(
@@ -1380,7 +1380,7 @@ def wp23_solve(
         )
 
         if clubb_at_least_debug_level(3):
-            wp2_avg_after = vertical_avg(nzm, rho_ds_zm, wp2, gr.dzm)
+            wp2_avg_after = vertical_avg(ngrdcol, nzm, rho_ds_zm, wp2, gr.dzm)
             difference = wp2_avg_after - wp2_avg_before
             jax.lax.cond(
                 jnp.any(jnp.abs(difference) > jnp.finfo(wp2.dtype).eps * 1000),

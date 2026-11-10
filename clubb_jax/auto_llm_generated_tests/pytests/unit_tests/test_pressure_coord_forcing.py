@@ -69,8 +69,8 @@ def test_apply_temperature_forcing_converts_to_thlm(monkeypatch):
     )
     monkeypatch.setattr(time_dependent_input, "t_dependent_forcing_data", forcing_data)
 
-    forcings_array = jnp.full((time_dependent_input.nforcings, nzt), -999.9)
-    forcings_array = forcings_array.at[1].set(temperature_forcing)
+    forcings_array = jnp.full((ngrdcol, time_dependent_input.nforcings, nzt), -999.9)
+    forcings_array = forcings_array.at[:, 1, :].set(temperature_forcing)
     zeros_zt = jnp.zeros((ngrdcol, nzt))
     zeros_zm = jnp.zeros((ngrdcol, nzt - 1))
     exner = jnp.linspace(1.0, 0.6, nzt)[None, :]
@@ -134,7 +134,7 @@ def test_unknown_forcing_name_is_rejected(monkeypatch):
             zeros_zt,
             jnp.ones_like(zeros_zt),
             jnp.ones_like(zeros_zt),
-            jnp.ones((time_dependent_input.nforcings, nzt)),
+            jnp.ones((1, time_dependent_input.nforcings, nzt)),
             zeros_zt,
             zeros_zt,
             zeros_zt,

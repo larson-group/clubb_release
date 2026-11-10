@@ -10,9 +10,6 @@
     }
   },
   "advance_helper_module": {
-    "calc_xpwp": {
-      "append": "This single JAX function covers the Fortran calc_xpwp_1D and calc_xpwp_2D\nversions; the declarations below are those of calc_xpwp_2D."
-    },
     "compute_Cx_fnc_Richardson": {
       "append": "The Fortran routine also contains a disabled path that vertically averages\nCx_fnc_Richardson over a distance of Lscale. Its flag is a compile-time\n.false. parameter there, so only the active path is ported; Lscale_zm and\nrho_ds_zm, used only by that path, are accepted for parity with Fortran."
     },
@@ -24,14 +21,6 @@
         ]
       ],
       "append": "The Fortran level indices are 1-based; they are converted to 0-based\nindices before lhs is updated."
-    },
-    "set_boundary_conditions_rhs": {
-      "replace": [
-        [
-          "right-hand side LAPACK vector",
-          "right-hand side vector"
-        ]
-      ]
     },
     "smooth_max": {
       "replace": [
@@ -48,9 +37,6 @@
           "This single JAX function covers all Fortran versions of the smooth_min\ninterface (array and scalar inputs broadcast); the declarations below\nare those of smooth_min_arrays."
         ]
       ]
-    },
-    "vertical_integral": {
-      "append": "field[0], rho_ds[0] and dz[0] are the values at the lowest level of the\nintegral."
     }
   },
   "advance_windm_edsclrm_module": {
@@ -324,7 +310,7 @@
   },
   "sponge_layer_damping": {
     "sponge_damp_xm": {
-      "append": "tau is inf outside the sponge layer, so dt/tau == 0 there and the damping\nformula leaves xm unchanged. z, zm_top and sponge_layer_depth are kept only\nfor signature compatibility."
+      "append": "The layer boundary follows each column's current heights."
     }
   },
   "turbulent_adv_pdf": {

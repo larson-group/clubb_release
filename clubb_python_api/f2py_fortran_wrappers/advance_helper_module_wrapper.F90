@@ -39,33 +39,64 @@ subroutine f2py_calc_ri_zm(nzm, ngrdcol, bv_freq_sqd, shear, lim_bv, lim_shear, 
 
 end subroutine f2py_calc_ri_zm
 
-subroutine f2py_vertical_avg(total_idx, rho_ds, field, dz, avg_out)
+subroutine f2py_vertical_avg( ngrdcol, total_idx, rho_ds, field, dz, & ! In
+                              avg_out ) ! Out
+
+  ! Description:
+  !   Call vertical_avg with complete column batches through the F2PY bridge.
 
   use clubb_precision, only: core_rknd
   use advance_helper_module, only: vertical_avg
 
   implicit none
 
-  integer, intent(in) :: total_idx
-  real(core_rknd), dimension(total_idx), intent(in) :: rho_ds, field, dz
-  real(core_rknd), intent(out) :: avg_out
+  !--------------------------- Input Variables ---------------------------
+  integer, intent(in) :: ngrdcol ! Number of grid columns [-]
+  integer, intent(in) :: total_idx ! Number of levels within the averaging range [-]
+  ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
+  real(core_rknd), dimension(ngrdcol, total_idx), intent(in) :: rho_ds
+  ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
+  real(core_rknd), dimension(ngrdcol, total_idx), intent(in) :: field
+  ! Thermodynamic or momentum level thickness [m]
+  real(core_rknd), dimension(ngrdcol, total_idx), intent(in) :: dz
 
-  avg_out = vertical_avg(total_idx, rho_ds, field, dz)
+  !--------------------------- Output Variables ---------------------------
+  ! Density-weighted vertical average by column [var-dependent]
+  real(core_rknd), dimension(ngrdcol), intent(out) :: avg_out
+
+  !--------------------------- Begin Code ---------------------------
+
+  avg_out = vertical_avg(ngrdcol, total_idx, rho_ds, field, dz)
 
 end subroutine f2py_vertical_avg
 
-subroutine f2py_vertical_integral(total_idx, rho_ds, field, dz, integral_out)
+subroutine f2py_vertical_integral( ngrdcol, total_idx, rho_ds, field, dz, & ! In
+                                   integral_out ) ! Out
+
+  ! Description:
+  !   Call vertical_integral with complete column batches through the F2PY bridge.
 
   use clubb_precision, only: core_rknd
   use advance_helper_module, only: vertical_integral
 
   implicit none
 
-  integer, intent(in) :: total_idx
-  real(core_rknd), dimension(total_idx), intent(in) :: rho_ds, field, dz
-  real(core_rknd), intent(out) :: integral_out
+  !--------------------------- Input Variables ---------------------------
+  integer, intent(in) :: ngrdcol ! Number of grid columns [-]
+  integer, intent(in) :: total_idx ! Number of levels within the integration range [-]
+  ! Dry, static density [kg/m^3]
+  real(core_rknd), dimension(ngrdcol, total_idx), intent(in) :: rho_ds
+  ! Field to integrate [units vary]
+  real(core_rknd), dimension(ngrdcol, total_idx), intent(in) :: field
+  real(core_rknd), dimension(ngrdcol, total_idx), intent(in) :: dz ! Level thickness [m]
 
-  integral_out = vertical_integral(total_idx, rho_ds, field, dz)
+  !--------------------------- Output Variables ---------------------------
+  ! Vertical integral by column [var-dependent]
+  real(core_rknd), dimension(ngrdcol), intent(out) :: integral_out
+
+  !--------------------------- Begin Code ---------------------------
+
+  integral_out = vertical_integral(ngrdcol, total_idx, rho_ds, field, dz)
 
 end subroutine f2py_vertical_integral
 
@@ -171,7 +202,8 @@ subroutine f2py_smooth_min_array_scalar(nz, ngrdcol, input_var1, input_var2, &
 
 end subroutine f2py_smooth_min_array_scalar
 
-subroutine f2py_calc_xpwp_2d(nzm, nzt, ngrdcol, km_zm, xm, xpwp)
+subroutine f2py_calc_xpwp( nzm, nzt, ngrdcol, km_zm, xm, & ! In
+                           xpwp ) ! Out
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid
@@ -186,7 +218,7 @@ subroutine f2py_calc_xpwp_2d(nzm, nzt, ngrdcol, km_zm, xm, xpwp)
 
   call calc_xpwp(nzm, nzt, ngrdcol, stored_grid, km_zm, xm, xpwp)
 
-end subroutine f2py_calc_xpwp_2d
+end subroutine f2py_calc_xpwp
 
 subroutine f2py_calc_ddzt_umvm_sqd(nzm, nzt, ngrdcol, um, vm, ddzt_umvm_sqd)
 

@@ -3671,12 +3671,13 @@ def error_prints_xm_wpxp(*args, **kwargs):
         integer, intent(in) :: &
           nzm, &
           nzt, &
+          ngrdcol, & ! Number of grid columns [-]
           sclr_dim
 
         real( kind = core_rknd ), intent(in) ::  &
           dt                 ! Timestep                                 [s]
 
-        real( kind = core_rknd ), intent(in), dimension(nzt) :: &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
           zt,              & ! Thermo grid
           wm_zt,           & ! w wind component on thermodynamic levels [m/s]
           wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
@@ -3690,7 +3691,7 @@ def error_prints_xm_wpxp(*args, **kwargs):
           rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
           invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-        real( kind = core_rknd ), intent(in), dimension(nzm) :: &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
           zm,              & ! Momentum grid
           sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
           wm_zm,           & ! w wind component on momentum levels      [m/s]
@@ -3722,91 +3723,91 @@ def error_prints_xm_wpxp(*args, **kwargs):
           l_implemented      ! True if CLUBB is being implemented and run in a host model
 
         ! Additional variables for passive scalars
-        real( kind = core_rknd ), intent(in), dimension(nzt,sclr_dim) :: &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
           wp2sclrp,      & ! <w'^2 sclr'> (thermodynamic levels)   [Units vary]
           sclrm_forcing    ! sclrm forcing (thermodynamic levels)  [Units vary]
 
-        real( kind = core_rknd ), intent(in), dimension(nzm,sclr_dim) :: &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
           sclrpthvp,     & ! <sclr' th_v'> (momentum levels)       [Units vary]
           sclrp2           ! For clipping Vince Larson             [Units vary]
 
-        real( kind = core_rknd ), intent(in), dimension(nzm) ::  &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
           Cx_fnc_Richardson  ! Cx_fnc computed from Richardson_num       [-]
 
         type(implicit_coefs_terms), intent(in) :: &
           pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
         ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
           um_forcing, & ! <u> forcing term (thermodynamic levels)      [m/s^2]
           vm_forcing, & ! <v> forcing term (thermodynamic levels)      [m/s^2]
           ug,         & ! <u> geostrophic wind (thermodynamic levels)  [m/s]
           vg            ! <v> geostrophic wind (thermodynamic levels)  [m/s]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
           wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
           uprcp,      & ! < u' r_c' >                                  [(m kg)/(s kg)]
           vprcp,      & ! < v' r_c' >                                  [(m kg)/(s kg)]
           rc_coef_zm    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
 
-        real( kind = core_rknd ), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
           fcor          ! Coriolis parameter                           [s^-1]
 
-        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
           um_ref, & ! Reference u wind component for nudging       [m/s]
           vm_ref    ! Reference v wind component for nudging       [m/s]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
           up2,    & ! Variance of the u wind component             [m^2/s^2]
           vp2       ! Variance of the v wind component             [m^2/s^2]
 
-        real( kind = core_rknd ), intent(in), dimension(nzt) ::  &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
           rtm,       & ! r_t  (total water mixing ratio)           [kg/kg]
           thlm         ! th_l (liquid water potential temperature) [K]
 
-        real( kind = core_rknd ), intent(in), dimension(nzm) ::  &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
           wprtp,     & ! w'r_t'                                    [(kg/kg) m/s]
           wpthlp       ! w'th_l'                                   [K m/s]
 
-        real( kind = core_rknd ), intent(in), dimension(nzt,sclr_dim) ::  &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) ::  &
           sclrm          !                                     [Units vary]
 
-        real( kind = core_rknd ), intent(in), dimension(nzm,sclr_dim) ::  &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) ::  &
           wpsclrp        !                                     [Units vary]
 
         ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-        real( kind = core_rknd ), intent(in), dimension(nzt) ::  &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
           um,   & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
           vm      ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
 
-        real( kind = core_rknd ), intent(in), dimension(nzm) ::  &
+        real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
           upwp, & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
           vpwp    ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
 
         ! Saved values of predictive fields, prior to being advanced, for use in
         ! print statements in case of fatal error.
-        real( kind = core_rknd ), dimension(nzt), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
           rtm_old,    & ! Saved value of r_t        [kg/kg]
           thlm_old      ! Saved value of th_l       [K]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
           wprtp_old,  & ! Saved value of w'r_t'     [(kg/kg) m/s]
           wpthlp_old    ! Saved value of w'th_l'    [K m/s]
 
-        real( kind = core_rknd ), dimension(nzt,sclr_dim), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt,sclr_dim), intent(in) ::  &
           sclrm_old      ! Saved value of sclrm     [units vary]
 
-        real( kind = core_rknd ), dimension(nzm,sclr_dim), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(in) ::  &
           wpsclrp_old    ! Saved value of wpsclrp   [units vary]
 
         ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-        real( kind = core_rknd ), dimension(nzt), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
           um_old,   & ! Saved value of <u>       [m/s]
           vm_old      ! Saved value of <v>       [m/s]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
           upwp_old, & ! Saved value of <u'w'>    [m^2/s^2]
           vpwp_old    ! Saved value of <v'w'>    [m^2/s^2]
 

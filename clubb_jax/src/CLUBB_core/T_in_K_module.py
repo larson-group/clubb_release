@@ -1,10 +1,9 @@
 """JAX port of `src/CLUBB_core/T_in_K_module.F90`.
 
 Porting deviations:
-- The Fortran module exposes scalar, 1D, and 2D ``thlm2T_in_K_api``
-  procedures plus an elemental ``T_in_K2thlm_api``.  The JAX functions use one
-  array-broadcasting implementation for each formula because JAX arrays cover
-  the scalar and array cases without separate overloads.
+- The Fortran forward conversion accepts full column/level batches; the
+  inverse is elemental. JAX expresses both formulas with array operations,
+  taking their dimensions from the supplied fields.
 """
 
 from __future__ import annotations
@@ -23,8 +22,7 @@ def thlm2T_in_K(thlm, exner, rcm):
       References:
         Cotton and Anthes (1989), "Storm and Cloud Dynamics", Eqn. (2.51).
 
-    JAX adaptation: the Fortran scalar, 1D, and 2D overloads share this
-    broadcasting implementation.
+    JAX adaptation: array operations apply the formula to every column and level.
     """
     # ---------------------- Begin Code ----------------------
     T_in_K = thlm * exner + Lv * rcm / Cp

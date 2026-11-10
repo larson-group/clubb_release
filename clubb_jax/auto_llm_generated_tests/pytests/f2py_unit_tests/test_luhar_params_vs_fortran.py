@@ -27,7 +27,7 @@ def test_f2py_oracle():
         Skx, wpxp, xp2 = _inputs(seed)
         if seed == 33:                          # force some constant-x points
             xp2[:, :2] = 1e-8; n_const += 1
-        f = fortran.calc_luhar_params(NZ, Skx, wpxp, xp2, _X_TOL_SQD)
+        f = fortran.calc_luhar_params(NZ, NG, Skx, wpxp, xp2, _X_TOL_SQD)
         g = calc_Luhar_params(Skx, wpxp, xp2, _X_TOL_SQD)
         worst = max(worst, max_abs_diff("calc_Luhar_params", tuple(g), tuple(f)))
     assert worst < 1e-11, f"calc_luhar_params Fortran mismatch {worst:.2e}"

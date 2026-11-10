@@ -1037,12 +1037,13 @@ module pdf_parameter_tests
 
                 ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
                 ! sigma_w_2, and mixt_frac.
-                call calc_setter_var_params( gr%nzt, wm, wp2(1,:), Skw, sgn_wp2,     & ! In
-                                             F_w, zeta_w,               & ! In
-                                             mu_w_1(1,:), mu_w_2(1,:), sigma_w_1, & ! Out
-                                             sigma_w_2, mixt_frac(1,:),      & ! Out
-                                             coef_sigma_w_1_sqd,        & ! Out
-                                             coef_sigma_w_2_sqd         ) ! Out
+                call calc_setter_var_params( gr%nzt, 1, & ! In
+                                             wm, wp2(1,:), Skw, & ! In
+                                             sgn_wp2, F_w, zeta_w, & ! In
+                                             mu_w_1(1,:), mu_w_2(1,:), & ! Out
+                                             sigma_w_1, sigma_w_2, & ! Out
+                                             mixt_frac(1,:), & ! Out
+                                             coef_sigma_w_1_sqd, coef_sigma_w_2_sqd ) ! Out
 
                 sigma_w_1_sqd(1,:) = sigma_w_1**2
                 sigma_w_2_sqd(1,:) = sigma_w_2**2
@@ -1068,9 +1069,9 @@ module pdf_parameter_tests
 
                 ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
                 coef_wp4_implicit &
-                = calc_coef_wp4_implicit( gr%nzt, mixt_frac(1,:), F_w, &
+                = reshape( calc_coef_wp4_implicit( gr%nzt, 1, mixt_frac(1,:), F_w, &
                                           coef_sigma_w_1_sqd, &
-                                          coef_sigma_w_2_sqd )
+                                          coef_sigma_w_2_sqd ), [gr%nzt] )
 
                 wp4_implicit_calc = coef_wp4_implicit * wp2(1,:)**2
 
@@ -1395,20 +1396,16 @@ module pdf_parameter_tests
 
               do idx = 1, nz, 1
 
-                 call calc_L_x_Skx_fnc( Skw(idx), sgn_wp2(idx),        & ! In
-                                        small_l_w_1, small_l_w_2,      & ! In
+                 call calc_L_x_Skx_fnc( Skw(idx), sgn_wp2(idx), small_l_w_1, small_l_w_2, & ! In
                                         big_L_w_1(idx), big_L_w_2(idx) ) ! Out
 
-                 call calc_setter_parameters( wm(idx), wp2(1,idx),        & ! In
-                                              Skw(idx), sgn_wp2(idx),   & ! In
-                                              big_L_w_1(idx),           & ! In
-                                              big_L_w_2(idx),           & ! In
+                 call calc_setter_parameters( wm(idx), wp2(1,idx), Skw(idx), sgn_wp2(idx), & ! In
+                                              big_L_w_1(idx), big_L_w_2(idx), & ! In
                                               mu_w_1(1,idx), mu_w_2(1,idx), & ! Out
-                                              sigma_w_1_sqd(1,idx),       & ! Out
-                                              sigma_w_2_sqd(1,idx),       & ! Out
-                                              mixt_frac(1,idx),           & ! Out
-                                              coef_sigma_w_1_sqd(idx),  & ! Out
-                                              coef_sigma_w_2_sqd(idx)   ) ! Out
+                                              sigma_w_1_sqd(1,idx), sigma_w_2_sqd(1,idx), & ! Out
+                                              mixt_frac(1,idx), & ! Out
+                                              coef_sigma_w_1_sqd(idx), & ! Out
+                                              coef_sigma_w_2_sqd(idx) ) ! Out
 
               enddo ! idx = 1, nz, 1
 
@@ -1468,11 +1465,11 @@ module pdf_parameter_tests
                            // "the setting variable (w is used here)."
           write(fstdout,*) ""
 
-          mixt_frac(1,:) = calc_mixt_frac_LY93( gr%nzt, abs( Skw ) )
+          mixt_frac = calc_mixt_frac_LY93( gr%nzt, 1, reshape( abs( Skw ), [1,gr%nzt] ) )
 
-          call calc_params_LY93( gr%nzt, wm, wp2(1,:), Skw, mixt_frac(1,:),     & ! In
-                                 mu_w_1(1,:), mu_w_2(1,:),              & ! Out
-                                 sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:) ) ! Out
+          call calc_params_LY93( gr%nzt, 1, wm, wp2(1,:), Skw, mixt_frac(1,:), & ! In
+                                 mu_w_1(1,:), mu_w_2(1,:), sigma_w_1_sqd(1,:), & ! Out
+                                 sigma_w_2_sqd(1,:) ) ! Out
 
           sigma_w_1 = sqrt( max( sigma_w_1_sqd(1,:), zero ) )
           sigma_w_2 = sqrt( max( sigma_w_2_sqd(1,:), zero ) )
@@ -1530,17 +1527,18 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_pdf_driver( gr%nzt, 1, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), & ! In
-                               Skw, & ! In
-                               wprtp(1,:), wpthlp(1,:), rtpthlp,                   & ! In
-                               clubb_params,                             & ! In
-                               Skrt, Skthl,                              & ! I/O
-                               mu_w_1(1,:), mu_w_2(1,:), mu_rt_1, mu_rt_2,         & ! Out
-                               mu_thl_1, mu_thl_2, sigma_w_1_sqd(1,:),        & ! Out
-                               sigma_w_2_sqd(1,:), sigma_rt_1_sqd,            & ! Out
-                               sigma_rt_2_sqd, sigma_thl_1_sqd,          & ! Out
-                               sigma_thl_2_sqd, mixt_frac(1,:),               & ! Out
-                               pdf_implicit_coefs_terms  ) ! Out
+          call new_pdf_driver( gr%nzt, 1, & ! In
+                               wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), & ! In
+                               Skw, wprtp(1,:), wpthlp(1,:), rtpthlp, & ! In
+                               clubb_params, & ! In
+                               Skrt, Skthl, pdf_implicit_coefs_terms, & ! InOut
+                               mu_w_1(1,:), mu_w_2(1,:), & ! Out
+                               mu_rt_1, mu_rt_2, & ! Out
+                               mu_thl_1, mu_thl_2, & ! Out
+                               sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:), & ! Out
+                               sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
+                               sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
+                               mixt_frac(1,:) ) ! Out
 
           ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
           ! to be clipped in new_pdf_driver.
@@ -1635,13 +1633,16 @@ module pdf_parameter_tests
                            // "the full PDF."
           write(fstdout,*) ""
 
-          call LY93_driver( gr%nzt, wm, rtm, thlm, wp2(1,:), rtp2(1,:),          & ! In
-                            thlp2(1,:), Skw, Skrt, Skthl,           & ! In
-                            mu_w_1(1,:), mu_w_2(1,:), mu_rt_1, mu_rt_2,  & ! Out
-                            mu_thl_1, mu_thl_2, sigma_w_1_sqd(1,:), & ! Out
-                            sigma_w_2_sqd(1,:), sigma_rt_1_sqd,     & ! Out
-                            sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
-                            sigma_thl_2_sqd, mixt_frac(1,:)         ) ! Out
+          call LY93_driver( gr%nzt, 1, & ! In
+                            wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), & ! In
+                            Skw, Skrt, Skthl, & ! In
+                            mu_w_1(1,:), mu_w_2(1,:), & ! Out
+                            mu_rt_1, mu_rt_2, & ! Out
+                            mu_thl_1, mu_thl_2, & ! Out
+                            sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:), & ! Out
+                            sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
+                            sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
+                            mixt_frac(1,:) ) ! Out
 
        endif ! test_PDF_type
 

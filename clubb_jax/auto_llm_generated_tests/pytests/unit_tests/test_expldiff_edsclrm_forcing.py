@@ -28,8 +28,8 @@ def test_expldiff_copies_get_no_time_dependent_forcing(monkeypatch, l_do_expldif
     thl_forcing = jnp.linspace(-2.0e-5, 1.0e-5, nzt)
     rt_forcing = jnp.linspace(-4.0e-8, 1.0e-8, nzt)
     # Rows after thetal_f and rtm_f are -999.9, i.e. missing, and are skipped.
-    forcings_array = jnp.full((time_dependent_input.nforcings, nzt), -999.9)
-    forcings_array = forcings_array.at[1].set(thl_forcing).at[2].set(rt_forcing)
+    forcings_array = jnp.full((ngrdcol, time_dependent_input.nforcings, nzt), -999.9)
+    forcings_array = forcings_array.at[:, 1, :].set(thl_forcing).at[:, 2, :].set(rt_forcing)
 
     sclr_idx = SclrIdx(iisclr_rt=-1, iisclr_thl=-1, iisclr_CO2=-1,
                        iiedsclr_rt=3, iiedsclr_thl=2, iiedsclr_CO2=1)

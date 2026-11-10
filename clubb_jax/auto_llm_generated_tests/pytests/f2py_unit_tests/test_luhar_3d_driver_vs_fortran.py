@@ -27,7 +27,7 @@ def test_f2py_oracle():
     worst = 0.0
     for _ in range(4):
         a = _inputs(rng)
-        f = fortran.luhar_3d_pdf_driver(NZ, *[a[k] for k in order])
+        f = fortran.luhar_3d_pdf_driver(NZ, NG, *[a[k] for k in order])
         g = call_jax(Luhar_3D_pdf_driver, *[a[k] for k in order])
         worst = max(worst, max_abs_diff("Luhar_3D_pdf_driver", tuple(g), tuple(f)))
     assert worst < 1e-9, f"luhar_3d_pdf_driver Fortran mismatch {worst:.2e}"

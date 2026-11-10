@@ -459,10 +459,8 @@ def calc_Luhar_params(Skx, wpxp, xp2, x_tol_sqd):
     Fortran declarations (calc_Luhar_params in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
 
         !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nz    ! Number of vertical levels
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), intent(in) :: &
           Skx,  & ! Skewness of x ( <x'^3> / <x'2>^(3/2) )      [-]
           wpxp, & ! Covariance of w and x                       [m/s (x units)]
           xp2     ! Variance of x                               [(x units)^2]
@@ -471,7 +469,7 @@ def calc_Luhar_params(Skx, wpxp, xp2, x_tol_sqd):
           x_tol_sqd    ! Tolerance value of x squared           [(x units)^2]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), intent(out) :: &
           mixt_frac, & ! Mixture fraction                       [-]
           big_m,     & ! Luhar's M                              [-]
           small_m      ! Luhar's m                              [-]
@@ -528,10 +526,8 @@ def close_Luhar_pdf(xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd):
     Fortran declarations (close_Luhar_pdf in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
 
         !--------------------------- Input Variables ---------------------------
-        integer, intent(in) :: &
-          nz    ! Number of vertical levels
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), intent(in) :: &
           xm,        & ! Mean (overall) of x, <x>                    [(x units)]
           xp2,       & ! Variance (overall) of x, <x'^2>             [(x units)^2]
           mixt_frac, & ! Mixture fraction                            [-]
@@ -542,7 +538,7 @@ def close_Luhar_pdf(xm, xp2, mixt_frac, small_m, wpxp, x_tol_sqd):
           x_tol_sqd    ! Tolerance value of x squared                [(x units)^2]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), intent(out) :: &
           sigma_sqd_x_1, & ! Normalized width parameter of x (1st PDF component) [-]
           sigma_sqd_x_2, & ! Normalized width parameter of x (1st PDF component) [-]
           varnce_x_1,    & ! Variance of x (1st PDF component)         [(x units)^2]
@@ -595,7 +591,7 @@ def max_cubic_root(a_coef, b_coef, c_coef, d_coef):
     Fortran declarations (max_cubic_root in src/CLUBB_core/adg1_adg2_3d_luhar_pdf.F90):
 
         !--------------------------- Input Variables ---------------------------
-        real( kind = core_rknd ), dimension(1), intent(in) :: &
+        real( kind = core_rknd ), intent(in) :: &
           a_coef, & ! Coefficient a (of x^3) in a*x^3 + b*x^2 + c^x + d = 0    [-]
           b_coef, & ! Coefficient b (of x^2) in a*x^3 + b*x^2 + c^x + d = 0    [-]
           c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
@@ -719,9 +715,10 @@ def Luhar_3D_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
           wm,     & ! Mean of w-wind component (vertical velocity)  [m/s]
           rtm,    & ! Mean of total water mixing ratio              [kg/kg]
           thlm,   & ! Mean of liquid water potential temperature    [K]
@@ -735,7 +732,7 @@ def Luhar_3D_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw, Skrt, Skthl, wprtp
           wpthlp    ! Covariance of w and th_l                      [K(m/s)]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) ::  &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
           w_1,          & ! Mean of w (1st PDF component)                      [m/s]
           w_2,          & ! Mean of w (2nd PDF component)                      [m/s]
           rt_1,         & ! Mean of r_t (1st PDF component)                  [kg/kg]

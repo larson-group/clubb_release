@@ -875,8 +875,9 @@ module advance_clubb_core_module
 
       if ( clubb_config_flags%iiPDF_type == iiPDF_ADG1 ) then
 
-        sigma_sqd_w_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, sigma_sqd_w(:,:), &
-                                        zero_threshold )
+        sigma_sqd_w_zt(:,:) = zm2zt_api( nzm, nzt, ngrdcol, gr, & ! In
+                                         sigma_sqd_w(:,:), & ! In
+                                         zero_threshold )
 
       else
 

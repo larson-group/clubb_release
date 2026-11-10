@@ -43,7 +43,7 @@
 !               
 !
 !   Call for each variable each timestep
-!     - stats_update(): accumulate sample values for a registered variable
+!     - stats_update(): accumulate a whole surface (col) or profile (col,level) batch
 !
 !     - stats_begin_budget(): start budget accumulation for a registered variable
 !
@@ -82,19 +82,26 @@
 !       stats_tend is omitted, the window is open-ended and stats will keep
 !       sampling on cadence until the caller stops calling stats.
 !
-!     - stats_update() calls are no-ops unless stats_begin_timestep_api() set
+!     - Stats updates are no-ops unless stats_begin_timestep_api() set
 !       stats%l_sample.  Each variable carries pointwise sample counters, and
 !       stats_end_timestep_api() averages each output point by the number of
 !       samples actually contributed before writing.
 !
-!     - Passing sub_timestep_average=.true. to stats_update() combines repeated
-!       calls for a variable into one pointwise mean before counting the current
+!     - Passing sub_timestep_average=.true. combines repeated updates for a
+!       variable into one pointwise mean before counting the current
 !       model timestep as a single stats sample. Do not mix regular and
 !       sub-timestep updates for the same variable within one timestep.
 !
 !     - stats_tsamp and stats_tout must align to dt_main.  If stats_tend is
 !       supplied, it must also align to dt_main.  If stats_tend falls between
 !       regular output boundaries, the trailing partial output window is omitted.
+!
+!   Update payloads:
+!     - A rank-1 payload is a full surface batch. Its registered grid must be
+!       sfc or lh_sfc, and its length must equal the batch column count.
+!     - A rank-2 payload is a full profile batch (col,level). A surface grid or
+!       mismatched profile shape is rejected. Single-column profile slices are
+!       not supported by either implementation.
 !
 !   Budget calls:
 !     - stats_begin_budget() subtracts the old state from the buffer,
@@ -145,7 +152,7 @@
 !       output; supplying only some of those arguments is an error.
 !
 !     - Runtime buffers are sized for the source grid, not the output grid.
-!       Callers should continue to pass normal model arrays to stats_update(),
+!       Callers should continue to pass normal model arrays to the stats update routines,
 !       stats_begin_budget(), stats_update_budget(), and stats_finalize_budget().
 !
 !     - At a write boundary, stats first averages all samples on the source grid,
@@ -210,28 +217,9 @@ module stats_netcdf
             var_on_stats_list
 
   interface stats_update
-    module procedure stats_update_scalar
-    module procedure stats_update_1d
-    module procedure stats_update_2d
-  end interface
-
-  interface stats_begin_budget
-    module procedure stats_begin_budget_scalar
-    module procedure stats_begin_budget_1d
-    module procedure stats_begin_budget_2d
-  end interface
-
-  interface stats_update_budget
-    module procedure stats_update_budget_scalar
-    module procedure stats_update_budget_1d
-    module procedure stats_update_budget_2d
-  end interface
-
-  interface stats_finalize_budget
-    module procedure stats_finalize_budget_scalar
-    module procedure stats_finalize_budget_1d
-    module procedure stats_finalize_budget_2d
-  end interface
+    module procedure stats_update_sfc
+    module procedure stats_update_var
+  end interface stats_update
 
   ! Various constants
   integer, parameter :: NAME_LEN = 64
@@ -299,8 +287,8 @@ module stats_netcdf
 
   end type stats_grid_module
 
-  ! A module to output stats
-  type stats_lh_2d
+  ! NetCDF dimensions and variable IDs for SILHS sample output.
+  type stats_lh_samples
     logical :: is_initialized = .false.           ! True when SILHS output is ready
     integer :: sample_dimid = -1                  ! NetCDF dim id for sample index
     integer :: lh_zt_dimid = -1                   ! NetCDF dim id for lh_zt
@@ -318,7 +306,7 @@ module stats_netcdf
       nl_names, &                                 ! Lognormal field names
       u_names                                     ! Uniform field names
 
-  end type stats_lh_2d
+  end type stats_lh_samples
 
   ! A module that tracks variable IDs in a cache, used to fast-match a string to an ID
   ! otherwise the string lookups are expensive
@@ -367,7 +355,7 @@ module stats_netcdf
       vars                                        ! Array of variable types
       
     type(stats_grid_module) :: grid               ! Module used for regridding
-    type(stats_lh_2d) :: lh_2d                    ! Special structure to output silhs data
+    type(stats_lh_samples) :: lh_samples                    ! Special structure to output silhs data
     type(stats_varname_lookup_cache) :: lookup    ! Cache to speed up string searches
 
     ! Various ids. might be nicer in its own type, but we've exhausted out percent-symbol budget
@@ -761,12 +749,12 @@ contains
       deallocate( stats%vars )
     end if
 
-    if ( stats%lh_2d%is_initialized ) then
-      if ( allocated( stats%lh_2d%nl_varids ) ) deallocate( stats%lh_2d%nl_varids )
-      if ( allocated( stats%lh_2d%u_varids ) ) deallocate( stats%lh_2d%u_varids )
-      if ( allocated( stats%lh_2d%nl_names ) ) deallocate( stats%lh_2d%nl_names )
-      if ( allocated( stats%lh_2d%u_names ) ) deallocate( stats%lh_2d%u_names )
-      stats%lh_2d%is_initialized = .false.
+    if ( stats%lh_samples%is_initialized ) then
+      if ( allocated( stats%lh_samples%nl_varids ) ) deallocate( stats%lh_samples%nl_varids )
+      if ( allocated( stats%lh_samples%u_varids ) ) deallocate( stats%lh_samples%u_varids )
+      if ( allocated( stats%lh_samples%nl_names ) ) deallocate( stats%lh_samples%nl_names )
+      if ( allocated( stats%lh_samples%u_names ) ) deallocate( stats%lh_samples%u_names )
+      stats%lh_samples%is_initialized = .false.
     end if
 
     if ( stats%grid%is_initialized ) then
@@ -1216,10 +1204,10 @@ contains
     ! Define lh_zt dimension (only if we actually have a lh_zt variable)
     if ( any( stats%vars(:)%grid_id == GRID_LH_ZT ) ) then
 
-      ret_code = nf90_def_dim( stats%ncid, "lh_zt", lh_nzt, stats%lh_2d%lh_zt_dimid )
+      ret_code = nf90_def_dim( stats%ncid, "lh_zt", lh_nzt, stats%lh_samples%lh_zt_dimid )
       ret_code = nf90_def_var( stats%ncid, "lh_zt", NF90_DOUBLE, &
-                               (/ stats%lh_2d%lh_zt_dimid /), stats%lh_2d%lh_zt_varid )
-      ret_code = nf90_put_att( stats%ncid, stats%lh_2d%lh_zt_varid, "units", "m" )
+                               (/ stats%lh_samples%lh_zt_dimid /), stats%lh_samples%lh_zt_varid )
+      ret_code = nf90_put_att( stats%ncid, stats%lh_samples%lh_zt_varid, "units", "m" )
     end if
 
     ! Define rad_zt and rad_zm dimensions
@@ -1292,7 +1280,7 @@ contains
       case ( GRID_LH_ZT ) ! --- lh_zt
 
         ret_code = nf90_def_var( stats%ncid, trim( stats%vars(i)%name ), NF90_DOUBLE, &
-                            (/ stats%col_dimid, stats%lh_2d%lh_zt_dimid, stats%time_dimid /), &
+                            (/ stats%col_dimid, stats%lh_samples%lh_zt_dimid, stats%time_dimid /), &
                             stats%vars(i)%varid )
       
       case default
@@ -1319,11 +1307,11 @@ contains
     ret_code = nf90_put_var( stats%ncid, stats%zm_varid, zm )
     ret_code = nf90_put_var( stats%ncid, stats%zt_varid, zt )
 
-    ! 2D silhs variables are not setup to work be output with adaptive gridding
+    ! SILHS sample output does not support adaptive gridding.
     if ( stats%l_different_output_grid ) then
-      ret_code = nf90_put_var(stats%ncid,stats%lh_2d%lh_zt_varid,stats%grid%gr_source%zt(1,:))
+      ret_code = nf90_put_var(stats%ncid,stats%lh_samples%lh_zt_varid,stats%grid%gr_source%zt(1,:))
     else
-      ret_code = nf90_put_var( stats%ncid, stats%lh_2d%lh_zt_varid, zt )
+      ret_code = nf90_put_var( stats%ncid, stats%lh_samples%lh_zt_varid, zt )
     end if
 
     ! Only write rad_zm and rad_zt if we're using them
@@ -1533,30 +1521,28 @@ contains
   !                         Sampling/Writing subroutines
   !----------------------------------------------------------------------------
 
-  subroutine stats_update_scalar( name, values, stats, icol, level, sub_timestep_average )
+  subroutine stats_update_sfc( name, values, & ! In
+                               stats, & ! InOut
+                               sub_timestep_average ) ! Optional In
 
     ! Description:
-    !   Add sampled scalar values to the accumulation buffer for a named
-    !   variable. Optional icol/level indexing determines whether this updates
-    !   a specific surface column point or a specific profile point.
+    !   Add sampled values for all columns to the accumulation buffer for a
+    !   named surface variable. Reject registered profile variables and partial
+    !   column batches before changing accumulation state.
     !-------------------------------------------------------------------------------
 
     ! ------------------------ Inputs ------------------------
     character(len=*), intent(in) :: &
       name              ! Registered variable name to update [-]
 
-    real(kind=core_rknd), intent(in) :: &
-      values            ! Sample value in variable units [var-dependent]
+    real(kind=core_rknd), intent(in), dimension(:) :: &
+      values              ! Surface values indexed by column [var-dependent]
 
     ! ---------------------- Input/Output ---------------------
     type(stats_type), intent(inout) :: &
       stats             ! Stats runtime context and accumulation buffers [-]
 
     ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol, &           ! Column index for single-point update [-]
-      level             ! Vertical index for profile single-point update [-]
-
     logical, intent(in), optional :: &
       sub_timestep_average ! Average this value with other calls in this timestep [-]
 
@@ -1569,6 +1555,20 @@ contains
     if ( .not. stats%enabled ) return
     id = stats_get_id( stats, name )
     if ( id <= 0 ) return
+
+    if ( stats%vars(id)%grid_id /= GRID_SFC .and. stats%vars(id)%grid_id /= GRID_LH_SFC ) then
+      write( fstderr,* ) "stats_update: rank-1 payload for profile variable ", trim(stats%vars(id)%name), &
+                         "; registered grid = ", trim(stats%vars(id)%grid)
+      error stop "stats_update requires a whole (col,level) batch for profile variables"
+    end if
+
+    if ( size(values) /= size(stats%vars(id)%buffer,1) .or. &
+         size(stats%vars(id)%buffer,2) /= 1 ) then
+      write( fstderr,* ) "stats_update: surface batch size mismatch for ", trim(stats%vars(id)%name), &
+                         "; received ", size(values), "; expected ", size(stats%vars(id)%buffer,1)
+      error stop "stats_update requires the complete surface column batch"
+    end if
+
     if ( .not. stats%l_sample ) return
 
     if ( stats%vars(id)%l_budget ) then
@@ -1590,17 +1590,10 @@ contains
       endif
       call stats_prepare_sub_timestep_average( stats%vars(id) )
       stats%vars(id)%l_sub_timestep_active = .true.
-      if ( present( level ) ) then
-        stats%vars(id)%sub_timestep_sum(icol,level) = &
-          stats%vars(id)%sub_timestep_sum(icol,level) + values
-        stats%vars(id)%sub_timestep_nsamples(icol,level) = &
-          stats%vars(id)%sub_timestep_nsamples(icol,level) + 1
-      else if ( present( icol ) ) then
-        stats%vars(id)%sub_timestep_sum(icol,1) = &
-          stats%vars(id)%sub_timestep_sum(icol,1) + values
-        stats%vars(id)%sub_timestep_nsamples(icol,1) = &
-          stats%vars(id)%sub_timestep_nsamples(icol,1) + 1
-      endif
+      stats%vars(id)%sub_timestep_sum(:,1) = &
+        stats%vars(id)%sub_timestep_sum(:,1) + values(:)
+      stats%vars(id)%sub_timestep_nsamples(:,1) = &
+        stats%vars(id)%sub_timestep_nsamples(:,1) + 1
       return
     endif
 
@@ -1611,15 +1604,9 @@ contains
     endif
     stats%vars(id)%l_regular_timestep_active = .true.
 
-    if ( present( level ) ) then
-      ! Updating a specific level and column in 2D field
-      stats%vars(id)%buffer(icol,level) = stats%vars(id)%buffer(icol,level) + values
-      stats%vars(id)%nsamples(icol,level) = stats%vars(id)%nsamples(icol,level) + 1
-    else if ( present( icol ) ) then
-      ! Updating a specific column in a surface field
-      stats%vars(id)%buffer(icol,1) = stats%vars(id)%buffer(icol,1) + values
-      stats%vars(id)%nsamples(icol,1) = stats%vars(id)%nsamples(icol,1) + 1
-    end if
+    ! Updating all columns in a surface field
+    stats%vars(id)%buffer(:,1) = stats%vars(id)%buffer(:,1) + values(:)
+    stats%vars(id)%nsamples(:,1) = stats%vars(id)%nsamples(:,1) + 1
 
     if ( any( stats%vars(id)%nsamples > stats%samples_per_write ) ) then
       write( fstderr,* ) "stats oversampling warning for ", trim( stats%vars(id)%name ), &
@@ -1627,108 +1614,16 @@ contains
                        " expected <=", stats%samples_per_write
     end if
 
-  end subroutine stats_update_scalar
+  end subroutine stats_update_sfc
 
-  subroutine stats_update_1d( name, values, stats, icol, sub_timestep_average )
-
-    ! Description:
-    !   Add sampled 1D values to the accumulation buffer for a named variable.
-    !   For profile variables with icol present this updates one column profile;
-    !   without icol this updates all surface columns.
-    !-------------------------------------------------------------------------------
-
-    ! ------------------------ Inputs ------------------------
-    character(len=*), intent(in) :: &
-      name                ! Registered variable name to update [-]
-
-    real(kind=core_rknd), intent(in), dimension(:) :: &
-      values              ! 1D payload in variable units [var-dependent]
-
-    ! ---------------------- Input/Output ---------------------
-    type(stats_type), intent(inout) :: &
-      stats               ! Stats runtime context and accumulation buffers [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol                ! Column index when values represents one-column profile [-]
-
-    logical, intent(in), optional :: &
-      sub_timestep_average ! Average this value with other calls in this timestep [-]
-
-    ! ------------------------- Locals ------------------------
-    integer :: id
-    logical :: l_sub_timestep_average
-
-    ! ------------------------ Begin Code ------------------------
-
-    if ( .not. stats%enabled ) return
-    id = stats_get_id( stats, name )
-    if ( id <= 0 ) return
-    if ( .not. stats%l_sample ) return
-
-    if ( stats%vars(id)%l_budget ) then
-      write( fstderr,* ) "stats error: called stat_update for variable" // &
-                       " currently in budget: ", trim( stats%vars(id)%name )
-      return
-    end if
-
-    !$acc update host( values ) if_present
-
-    l_sub_timestep_average = .false.
-    if ( present( sub_timestep_average ) ) l_sub_timestep_average = sub_timestep_average
-
-    if ( l_sub_timestep_average ) then
-      if ( stats%vars(id)%l_regular_timestep_active ) then
-        write( fstderr,* ) "stats error: mixed regular and sub-timestep updates for ", &
-                         trim( stats%vars(id)%name )
-        return
-      endif
-      call stats_prepare_sub_timestep_average( stats%vars(id) )
-      stats%vars(id)%l_sub_timestep_active = .true.
-      if ( present( icol ) ) then
-        stats%vars(id)%sub_timestep_sum(icol,:) = &
-          stats%vars(id)%sub_timestep_sum(icol,:) + values(:)
-        stats%vars(id)%sub_timestep_nsamples(icol,:) = &
-          stats%vars(id)%sub_timestep_nsamples(icol,:) + 1
-      else
-        stats%vars(id)%sub_timestep_sum(:,1) = &
-          stats%vars(id)%sub_timestep_sum(:,1) + values(:)
-        stats%vars(id)%sub_timestep_nsamples(:,1) = &
-          stats%vars(id)%sub_timestep_nsamples(:,1) + 1
-      endif
-      return
-    endif
-
-    if ( stats%vars(id)%l_sub_timestep_active ) then
-      write( fstderr,* ) "stats error: mixed sub-timestep and regular updates for ", &
-                       trim( stats%vars(id)%name )
-      return
-    endif
-    stats%vars(id)%l_regular_timestep_active = .true.
-
-    if ( present( icol ) ) then
-      ! Updating a specific column in a profile field
-      stats%vars(id)%buffer(icol,:) = stats%vars(id)%buffer(icol,:) + values(:)
-      stats%vars(id)%nsamples(icol,:) = stats%vars(id)%nsamples(icol,:) + 1
-    else
-      ! Updating all columns in a surface field
-      stats%vars(id)%buffer(:,1) = stats%vars(id)%buffer(:,1) + values(:)
-      stats%vars(id)%nsamples(:,1) = stats%vars(id)%nsamples(:,1) + 1
-    end if
-
-    if ( any( stats%vars(id)%nsamples > stats%samples_per_write ) ) then
-      write( fstderr,* ) "stats oversampling warning for ", trim( stats%vars(id)%name ), &
-                       ": max_count=", maxval( stats%vars(id)%nsamples ), &
-                       " expected <=", stats%samples_per_write
-    end if
-
-  end subroutine stats_update_1d
-
-  subroutine stats_update_2d( name, values, stats, sub_timestep_average )
+  subroutine stats_update_var( name, values, & ! In
+                               stats, & ! InOut
+                               sub_timestep_average ) ! Optional In
 
     ! Description:
     !   Add sampled full-field 2D values to the accumulation buffer for a named
-    !   profile variable. This path updates all columns and all levels at once.
+    !   profile variable. Reject surface variables and incomplete batch shapes
+    !   before changing accumulation state.
     !-------------------------------------------------------------------------------
 
     ! ------------------------ Inputs ------------------------
@@ -1754,21 +1649,26 @@ contains
     if ( .not. stats%enabled ) return
     id = stats_get_id( stats, name )
     if ( id <= 0 ) return
+
+    if ( stats%vars(id)%grid_id == GRID_SFC .or. stats%vars(id)%grid_id == GRID_LH_SFC ) then
+      write( fstderr,* ) "stats_update: rank-2 payload for surface variable ", trim(stats%vars(id)%name), &
+                         "; registered grid = ", trim(stats%vars(id)%grid)
+      error stop "stats_update requires a whole (col) batch for surface variables"
+    end if
+
+    if ( size(values,1) /= size(stats%vars(id)%buffer,1) &
+         .or. size(values,2) /= size(stats%vars(id)%buffer,2) ) then
+      write( fstderr,* ) "stats_update: profile batch shape mismatch for ", trim(stats%vars(id)%name), &
+                         "; received (col,level) = ", shape(values), &
+                         "; expected = ", shape(stats%vars(id)%buffer)
+      error stop "stats_update requires the complete profile column/level batch"
+    end if
+
     if ( .not. stats%l_sample ) return
 
     if ( stats%vars(id)%l_budget ) then
       write( fstderr,* ) "stats error: called stat_update for variable" // &
                        " currently in budget: ", trim( stats%vars(id)%name )
-      return
-    end if
-    
-    if ( size( values, 1 ) /= size( stats%vars(id)%buffer, 1 ) &
-         .or. size( values, 2 ) /= size( stats%vars(id)%buffer, 2 ) ) then
-      write( fstderr,* ) "stats shape mismatch for ", trim( stats%vars(id)%name ), &
-                       ": input nz =", size( values, 1 ), &
-                       " expected nz =", size( stats%vars(id)%buffer, 1 ), &
-                       ": input ngrdcol =", size( values, 2 ), &
-                       " expected ngrdcol ", size( stats%vars(id)%buffer, 2 )
       return
     end if
     
@@ -1808,108 +1708,12 @@ contains
                        " expected <=", stats%samples_per_write
     end if
 
-  end subroutine stats_update_2d
+  end subroutine stats_update_var
 
-  subroutine stats_begin_budget_scalar( name, values, stats, icol )
 
-    ! Description:
-    !   Begin budget accumulation for scalar payloads by subtracting the current
-    !   state from the buffer. This is used for per-column point updates.
-    !-------------------------------------------------------------------------------
-
-    ! ------------------------ Inputs ------------------------
-    character(len=*), intent(in) :: &
-      name            ! Registered budget variable name [-]
-
-    real(kind=core_rknd), intent(in) :: &
-      values          ! Current state value in variable units [var-dependent]
-
-    ! ---------------------- Input/Output ---------------------
-    type(stats_type), intent(inout) :: &
-      stats           ! Stats runtime context and budget buffer state [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol            ! Optional column index for single-point budget start [-]
-
-    ! ------------------------- Locals ------------------------
-    integer :: id
-
-    ! ------------------------ Begin Code ------------------------
-
-    if ( .not. stats%enabled ) return
-    id = stats_get_id( stats, name )
-    if ( id <= 0 ) return
-    if ( .not. stats%l_sample ) return
-    
-    if ( stats%vars(id)%l_in_budget ) then
-      write( fstderr,* ) "stats budget begin twice for ", trim( stats%vars(id)%name )
-      return
-    end if
-
-    !$acc update host( values ) if_present
-
-    ! Subtract the current state from the buffer to begin the budget accumulation.
-    stats%vars(id)%buffer(icol,1) = stats%vars(id)%buffer(icol,1) - values
-    stats%vars(id)%l_budget = .true.
-    stats%vars(id)%l_in_budget = .true.
-
-  end subroutine stats_begin_budget_scalar
-
-  subroutine stats_begin_budget_1d( name, values, stats, icol )
-
-    ! Description:
-    !   Begin budget accumulation for 1D payloads by subtracting the current
-    !   vector state from the buffer.
-    !-------------------------------------------------------------------------------
-
-    ! ------------------------ Inputs ------------------------
-    character(len=*), intent(in) :: &
-      name                  ! Registered budget variable name [-]
-
-    real(kind=core_rknd), intent(in), dimension(:) :: &
-      values                ! 1D state payload in variable units [var-dependent]
-
-    ! ---------------------- Input/Output ---------------------
-    type(stats_type), intent(inout) :: &
-      stats                 ! Stats runtime context and budget buffer state [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol                  ! Optional column index for one-column profile budget start [-]
-
-    ! ------------------------- Locals ------------------------
-    integer ::  id
-
-    ! ------------------------ Begin Code ------------------------
-
-    if ( .not. stats%enabled ) return
-    id = stats_get_id( stats, name )
-    if ( id <= 0 ) return
-    if ( .not. stats%l_sample ) return
-    if ( stats%vars(id)%l_in_budget ) then
-      write( fstderr,* ) "stats budget begin twice for ", trim( stats%vars(id)%name )
-      return
-    end if
-
-    !$acc update host( values ) if_present
-
-    if ( present( icol ) ) then
-      ! Updating a specific column in a profile field.
-      ! Subtract the current state from the buffer to begin the budget accumulation.
-      stats%vars(id)%buffer(icol,:) = stats%vars(id)%buffer(icol,:) - values(:)
-    else
-      ! Updating all columns in a surface field
-      ! Subtract the current state from the buffer to begin the budget accumulation.
-      stats%vars(id)%buffer(:,1) = stats%vars(id)%buffer(:,1) - values(:)
-    end if
-
-    stats%vars(id)%l_budget = .true.
-    stats%vars(id)%l_in_budget = .true.
-
-  end subroutine stats_begin_budget_1d
-
-  subroutine stats_begin_budget_2d( name, values, stats )
+  subroutine stats_begin_budget( name, & ! In
+                                 values, & ! In
+                                 stats ) ! InOut
 
     ! Description:
     !   Begin budget accumulation for full-field 2D payloads by subtracting the
@@ -1948,108 +1752,11 @@ contains
     stats%vars(id)%l_budget = .true.
     stats%vars(id)%l_in_budget = .true.
 
-  end subroutine stats_begin_budget_2d
+  end subroutine stats_begin_budget
 
-  subroutine stats_update_budget_scalar( name, values, stats, icol, level )
 
-    ! Description:
-    !   Add intermediate budget contributions from scalar payloads during an
-    !   active budget window.
-    !-------------------------------------------------------------------------------
-
-    ! ------------------------ Inputs ------------------------
-    character(len=*), intent(in) :: &
-      name                ! Registered budget variable name [-]
-
-    real(kind=core_rknd), intent(in) :: &
-      values              ! Incremental budget contribution in variable units [var-dependent]
-
-    ! ---------------------- Input/Output ---------------------
-    type(stats_type), intent(inout) :: &
-      stats               ! Stats runtime context and budget buffer state [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol, &             ! Optional column index for scalar update [-]
-      level               ! Optional level index for profile-point update [-]
-
-    ! ------------------------- Locals ------------------------
-    integer :: id
-
-    ! ------------------------ Begin Code ------------------------
-
-    if ( .not. stats%enabled ) return
-    if ( .not. stats%l_sample ) return
-    id = stats_get_id( stats, name )
-    if ( id <= 0 ) return
-
-    if ( .not. stats%vars(id)%l_in_budget ) then
-      write( fstderr,* ) "stats budget update without begin for ", trim( stats%vars(id)%name )
-      return
-    end if
-
-    !$acc update host( values ) if_present
-
-    if ( present( level ) ) then
-      ! Updating specific level and column in 2D field
-      stats%vars(id)%buffer(icol,level) = stats%vars(id)%buffer(icol,level) + values
-    else if ( present( icol ) ) then
-      ! Updating specific column in surface field
-      stats%vars(id)%buffer(icol,1) = stats%vars(id)%buffer(icol,1) + values
-    end if
-
-  end subroutine stats_update_budget_scalar
-
-  subroutine stats_update_budget_1d( name, values, stats, icol )
-
-    ! Description:
-    !   Add intermediate budget contributions from 1D payloads during an active
-    !   budget window.
-    !-------------------------------------------------------------------------------
-
-    ! ------------------------ Inputs ------------------------
-    character(len=*), intent(in) :: &
-      name                ! Registered budget variable name [-]
-
-    real(kind=core_rknd), intent(in), dimension(:) :: &
-      values              ! 1D incremental budget contribution [var-dependent]
-
-    ! ---------------------- Input/Output ---------------------
-    type(stats_type), intent(inout) :: &
-      stats               ! Stats runtime context and budget buffer state [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol                ! Optional column index for one-column profile update [-]
-
-    ! ------------------------- Locals ------------------------
-    integer :: id
-
-    ! ------------------------ Begin Code ------------------------
-
-    if ( .not. stats%enabled ) return
-    if ( .not. stats%l_sample ) return
-    id = stats_get_id( stats, name )
-    if ( id <= 0 ) return
-
-    if ( .not. stats%vars(id)%l_in_budget ) then
-      write( fstderr,* ) "stats budget update without begin for ", trim( stats%vars(id)%name )
-      return
-    end if
-
-    !$acc update host( values ) if_present
-
-    if ( present( icol ) ) then
-      ! Updating specific column in 2D field 
-      stats%vars(id)%buffer(icol,:) = stats%vars(id)%buffer(icol,:) + values(:)
-    else
-      ! Updating surface variable
-      stats%vars(id)%buffer(:,1) = stats%vars(id)%buffer(:,1) + values(:)
-    end if
-
-  end subroutine stats_update_budget_1d
-
-  subroutine stats_update_budget_2d( name, values, stats )
+  subroutine stats_update_budget( name, values, & ! In
+                                  stats ) ! InOut
 
     ! Description:
     !   Add intermediate budget contributions from full-field 2D payloads during
@@ -2087,148 +1794,12 @@ contains
 
     stats%vars(id)%buffer(:,:) = stats%vars(id)%buffer(:,:) + values(:,:)
 
-  end subroutine stats_update_budget_2d
+  end subroutine stats_update_budget
 
-  subroutine stats_finalize_budget_scalar( name, values, stats, icol, l_count_sample )
 
-    ! Description:
-    !   Close an active budget window using scalar payloads, and optionally
-    !   increment per-element sample counters for averaging.
-    !-------------------------------------------------------------------------------
-
-    ! ------------------------ Inputs ------------------------
-    character(len=*), intent(in) :: &
-      name                ! Registered budget variable name [-]
-
-    real(kind=core_rknd), intent(in) :: &
-      values              ! Closing state value in variable units [var-dependent]
-
-    ! ---------------------- Input/Output ---------------------
-    type(stats_type), intent(inout) :: &
-      stats               ! Stats runtime context and budget/sample state [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol                ! Optional column index for single-point finalize [-]
-
-    logical, intent(in), optional :: &
-      l_count_sample      ! If true, increment sample counters for averaging [-]
-
-    ! ------------------------- Locals ------------------------
-    integer :: &
-      id
-
-    logical :: &
-      do_count_sample
-
-    ! ------------------------ Begin Code ------------------------
-
-    if ( .not. stats%enabled ) return
-    if ( .not. stats%l_sample ) return
-    id = stats_get_id( stats, name )
-    if ( id <= 0 ) return
-
-    ! Don't sample if l_count_sample is false, useful for modifying without counting a sample
-    do_count_sample = .true.
-    if ( present( l_count_sample ) ) do_count_sample = l_count_sample
-
-    if ( .not. stats%vars(id)%l_in_budget ) then
-      write( fstderr,* ) "stats budget finalize without begin for ", trim( stats%vars(id)%name )
-      return
-    end if
-
-    !$acc update host( values ) if_present
-
-    stats%vars(id)%buffer(icol,1) = stats%vars(id)%buffer(icol,1) + values
-    if ( do_count_sample ) stats%vars(id)%nsamples(icol,1) = stats%vars(id)%nsamples(icol,1) + 1
-
-    stats%vars(id)%l_budget = .true.
-    stats%vars(id)%l_in_budget = .false.
-
-    if ( do_count_sample ) then
-      if ( any( stats%vars(id)%nsamples > stats%samples_per_write ) ) then
-        write( fstderr,* ) "stats oversampling warning for ", trim( stats%vars(id)%name ), &
-                        ": max_count=", maxval( stats%vars(id)%nsamples ), &
-                        " expected <=", stats%samples_per_write
-      end if
-    end if
-
-  end subroutine stats_finalize_budget_scalar
-
-  subroutine stats_finalize_budget_1d( name, values, stats, icol, l_count_sample )
-
-    ! Description:
-    !   Close an active budget window using 1D payloads, and optionally
-    !   increment per-element sample counters for averaging.
-    !-------------------------------------------------------------------------------
-
-    ! ------------------------ Inputs ------------------------
-    character(len=*), intent(in) :: &
-      name                ! Registered budget variable name [-]
-
-    real(kind=core_rknd), intent(in), dimension(:) :: &
-      values              ! 1D closing state payload in variable units [var-dependent]
-
-    ! ---------------------- Input/Output ---------------------
-    type(stats_type), intent(inout) :: &
-      stats               ! Stats runtime context and budget/sample state [-]
-
-    ! ------------------------ Optional Ins ------------------------
-    integer, intent(in), optional :: &
-      icol                ! Optional column index for one-column profile finalize [-]
-
-    logical, intent(in), optional :: &
-      l_count_sample      ! If true, increment sample counters for averaging [-]
-
-    ! ------------------------- Locals ------------------------
-    integer :: &
-      id
-
-    logical :: &
-      do_count_sample
-
-    ! ------------------------ Begin Code ------------------------
-
-    if ( .not. stats%enabled ) return
-    if ( .not. stats%l_sample ) return
-    id = stats_get_id( stats, name )
-    if ( id <= 0 ) return
-
-    ! Don't sample if l_count_sample is false, useful for modifying without counting a sample
-    do_count_sample = .true.
-    if ( present( l_count_sample ) ) do_count_sample = l_count_sample
-
-    if ( .not. stats%vars(id)%l_in_budget ) then
-      write( fstderr,* ) "stats budget finalize without begin for ", trim( stats%vars(id)%name )
-      return
-    end if
-
-    !$acc update host( values ) if_present
-
-    if ( present( icol ) ) then
-      ! Updating a specific column in a profile field
-      stats%vars(id)%buffer(icol,:) = stats%vars(id)%buffer(icol,:) + values(:)
-      if ( do_count_sample ) stats%vars(id)%nsamples(icol,:) = stats%vars(id)%nsamples(icol,:) + 1
-    else
-      ! Updating all columns in a surface field
-      stats%vars(id)%buffer(:,1) = stats%vars(id)%buffer(:,1) + values(:)
-      if ( do_count_sample ) stats%vars(id)%nsamples(:,1) = stats%vars(id)%nsamples(:,1) + 1
-    end if
-
-    stats%vars(id)%l_budget = .true.
-    stats%vars(id)%l_in_budget = .false.
-
-    if ( do_count_sample ) then
-      if ( any( stats%vars(id)%nsamples > stats%samples_per_write ) ) then
-        write( fstderr,* ) "stats oversampling warning for ", trim( stats%vars(id)%name ), &
-                        ": max_count=", maxval( stats%vars(id)%nsamples ), &
-                        " expected <=", stats%samples_per_write
-      end if
-    end if
-
-  end subroutine stats_finalize_budget_1d
-
-  subroutine stats_finalize_budget_2d( name, values, stats, l_count_sample )
+  subroutine stats_finalize_budget( name, values, & ! In
+                                    stats, & ! InOut
+                                    l_count_sample ) ! Optional In
 
     ! Description:
     !   Close an active budget window using full-field 2D payloads, and
@@ -2289,7 +1860,7 @@ contains
       end if
     end if
 
-  end subroutine stats_finalize_budget_2d
+  end subroutine stats_finalize_budget
 
   subroutine stats_avg_and_write( time_value, stats, ierr )
 
@@ -2398,19 +1969,20 @@ contains
           if ( stats%l_netcdf_output ) then
             ! netcdf write
 !$omp critical(clubb_netcdf)
-            ret_code = nf90_put_var( &
-                stats%ncid, stats%vars(i)%varid, &
-                remap_vals_to_target( stats%ncol_batch, &
-                                      stats%grid%gr_source, stats%grid%gr_output, &
-                                      stats%vars(i)%nz, &
-                                      real( stats%vars(i)%buffer, kind=core_rknd ), &
-                                      stats%vars(i)%out_nz, &
-                                      size( stats%grid%rho_lin_spline_vals, 2 ), &
-                                      stats%grid%rho_lin_spline_vals, &
-                                      stats%grid%rho_lin_spline_levels, iv, stats%grid%p_sfc, &
-                                      stats%grid%grid_remap_method, ( grid_id == GRID_ZT ) ), &
-                start=(/ col_start, 1, stats%time_index /), &
-                count=(/ stats%ncol_batch, stats%vars(i)%out_nz, 1 /) )
+            ret_code = nf90_put_var( stats%ncid, stats%vars(i)%varid, &
+              remap_vals_to_target( stats%ncol_batch, & ! In
+                                    stats%grid%gr_source, stats%grid%gr_output, & ! In
+                                    stats%vars(i)%nz, & ! In
+                                    real( stats%vars(i)%buffer, kind=core_rknd ), & ! In
+                                    stats%vars(i)%out_nz, & ! In
+                                    size( stats%grid%rho_lin_spline_vals, 2 ), & ! In
+                                    stats%grid%rho_lin_spline_vals, & ! In
+                                    stats%grid%rho_lin_spline_levels, & ! In
+                                    iv, stats%grid%p_sfc, & ! In
+                                    stats%grid%grid_remap_method, & ! In
+                                    ( grid_id == GRID_ZT ) ), &
+              start=(/ col_start, 1, stats%time_index /), &
+              count=(/ stats%ncol_batch, stats%vars(i)%out_nz, 1 /) )
 !$omp end critical(clubb_netcdf)
           end if
         else
@@ -2639,8 +2211,8 @@ contains
     nnl = size( nl_var_names )
     nu = size( u_var_names )
 
-    if ( stats%lh_2d%is_initialized ) then
-      if ( stats%lh_2d%num_samples /= num_samples .or. stats%lh_2d%nzt /= nzt ) then
+    if ( stats%lh_samples%is_initialized ) then
+      if ( stats%lh_samples%num_samples /= num_samples .or. stats%lh_samples%nzt /= nzt ) then
         write( fstderr,* ) err_info%err_header_global
         write( fstderr,* ) "stats lh init mismatch with existing definition"
         err_info%err_code = clubb_fatal_error
@@ -2652,56 +2224,56 @@ contains
 !$omp critical(clubb_netcdf)
     ret_code = nf90_redef( stats%ncid )
 
-    ret_code = nf90_def_dim( stats%ncid, "lh_sample_number", num_samples, stats%lh_2d%sample_dimid )
+    ret_code = nf90_def_dim( stats%ncid, "lh_sample_number", num_samples, stats%lh_samples%sample_dimid )
 
-    if ( stats%lh_2d%lh_zt_dimid < 0 ) then
-      ret_code = nf90_def_dim( stats%ncid, "lh_zt", nzt, stats%lh_2d%lh_zt_dimid )
+    if ( stats%lh_samples%lh_zt_dimid < 0 ) then
+      ret_code = nf90_def_dim( stats%ncid, "lh_zt", nzt, stats%lh_samples%lh_zt_dimid )
     end if
 
-    if ( stats%lh_2d%lh_zt_varid < 0 ) then
+    if ( stats%lh_samples%lh_zt_varid < 0 ) then
       ret_code = nf90_def_var( stats%ncid, "lh_zt", NF90_DOUBLE, &
-                          (/ stats%lh_2d%lh_zt_dimid /), stats%lh_2d%lh_zt_varid )
-      ret_code = nf90_put_att( stats%ncid, stats%lh_2d%lh_zt_varid, "units", "m" )
+                          (/ stats%lh_samples%lh_zt_dimid /), stats%lh_samples%lh_zt_varid )
+      ret_code = nf90_put_att( stats%ncid, stats%lh_samples%lh_zt_varid, "units", "m" )
     end if
 
-    stats%lh_2d%num_samples = num_samples
-    stats%lh_2d%nzt = nzt
-    stats%lh_2d%n_nl_vars = nnl
-    stats%lh_2d%n_u_vars = nu
+    stats%lh_samples%num_samples = num_samples
+    stats%lh_samples%nzt = nzt
+    stats%lh_samples%n_nl_vars = nnl
+    stats%lh_samples%n_u_vars = nu
 
     if ( nnl > 0 ) then
-      allocate( stats%lh_2d%nl_varids(nnl) )
-      allocate( stats%lh_2d%nl_names(nnl) )
+      allocate( stats%lh_samples%nl_varids(nnl) )
+      allocate( stats%lh_samples%nl_names(nnl) )
       do i = 1, nnl
 
         var_name = "lh_nl_" // trim( adjustl( nl_var_names(i) ) )
-        stats%lh_2d%nl_names(i) = var_name
+        stats%lh_samples%nl_names(i) = var_name
 
         ret_code = nf90_def_var( stats%ncid, trim( var_name ), NF90_DOUBLE, &
-                            (/ stats%col_dimid, stats%lh_2d%sample_dimid, &
-                               stats%lh_2d%lh_zt_dimid, stats%time_dimid /), &
-                            stats%lh_2d%nl_varids(i) )
+                            (/ stats%col_dimid, stats%lh_samples%sample_dimid, &
+                               stats%lh_samples%lh_zt_dimid, stats%time_dimid /), &
+                            stats%lh_samples%nl_varids(i) )
 
-        ret_code = nf90_def_var_fill( stats%ncid, stats%lh_2d%nl_varids(i), 0, 0.0_core_rknd )
+        ret_code = nf90_def_var_fill( stats%ncid, stats%lh_samples%nl_varids(i), 0, 0.0_core_rknd )
 
       end do
     end if
 
     if ( nu > 0 ) then
-      allocate( stats%lh_2d%u_varids(nu) )
-      allocate( stats%lh_2d%u_names(nu) )
+      allocate( stats%lh_samples%u_varids(nu) )
+      allocate( stats%lh_samples%u_names(nu) )
 
       do i = 1, nu
 
         var_name = "lh_u_" // trim( adjustl( u_var_names(i) ) )
-        stats%lh_2d%u_names(i) = var_name
+        stats%lh_samples%u_names(i) = var_name
 
         ret_code = nf90_def_var( stats%ncid, trim( var_name ), NF90_DOUBLE, &
-                            (/ stats%col_dimid, stats%lh_2d%sample_dimid, &
-                               stats%lh_2d%lh_zt_dimid, stats%time_dimid /), &
-                            stats%lh_2d%u_varids(i) )
+                            (/ stats%col_dimid, stats%lh_samples%sample_dimid, &
+                               stats%lh_samples%lh_zt_dimid, stats%time_dimid /), &
+                            stats%lh_samples%u_varids(i) )
 
-        ret_code = nf90_def_var_fill( stats%ncid, stats%lh_2d%u_varids(i), 0, 0.0_core_rknd )
+        ret_code = nf90_def_var_fill( stats%ncid, stats%lh_samples%u_varids(i), 0, 0.0_core_rknd )
       end do
 
     end if
@@ -2709,10 +2281,10 @@ contains
     ret_code = nf90_enddef( stats%ncid )
 
     ! Write
-    ret_code = nf90_put_var( stats%ncid, stats%lh_2d%lh_zt_varid, zt_vals )
+    ret_code = nf90_put_var( stats%ncid, stats%lh_samples%lh_zt_varid, zt_vals )
 !$omp end critical(clubb_netcdf)
 
-    stats%lh_2d%is_initialized = .true.
+    stats%lh_samples%is_initialized = .true.
 
   end subroutine stats_lh_samples_init
 
@@ -2742,28 +2314,28 @@ contains
 
     if ( .not. stats%enabled ) return
     if ( .not. stats%l_netcdf_output ) return
-    if ( .not. stats%lh_2d%is_initialized ) return
+    if ( .not. stats%lh_samples%is_initialized ) return
     if ( .not. stats%l_last_sample ) return
-    if ( stats%lh_2d%n_nl_vars <= 0 ) return
+    if ( stats%lh_samples%n_nl_vars <= 0 ) return
 
     if ( size( samples, 1 ) /= stats%ncol_batch ) return
-    if ( size( samples, 2 ) /= stats%lh_2d%num_samples ) return
-    if ( size( samples, 3 ) /= stats%lh_2d%nzt ) return
-    if ( size( samples, 4 ) /= stats%lh_2d%n_nl_vars ) return
+    if ( size( samples, 2 ) /= stats%lh_samples%num_samples ) return
+    if ( size( samples, 3 ) /= stats%lh_samples%nzt ) return
+    if ( size( samples, 4 ) /= stats%lh_samples%n_nl_vars ) return
 
     t = stats%time_index + 1
-    do v = 1, stats%lh_2d%n_nl_vars
+    do v = 1, stats%lh_samples%n_nl_vars
 
 !$omp critical(clubb_netcdf)
-      ret_code = nf90_put_var( stats%ncid, stats%lh_2d%nl_varids(v), samples(:,:,:,v:v), &
+      ret_code = nf90_put_var( stats%ncid, stats%lh_samples%nl_varids(v), samples(:,:,:,v:v), &
                            start = (/ 1, 1, 1, t /), &
-                           count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
-                                      stats%lh_2d%nzt, 1 /) )
+                           count = (/ stats%ncol_batch, stats%lh_samples%num_samples, &
+                                      stats%lh_samples%nzt, 1 /) )
 !$omp end critical(clubb_netcdf)
 
       if ( ret_code /= NF90_NOERR ) then
         write( fstderr,* ) err_info%err_header_global
-        write( fstderr,* ) "stats lh lognormal write failed for ", trim( stats%lh_2d%nl_names(v) )
+        write( fstderr,* ) "stats lh lognormal write failed for ", trim( stats%lh_samples%nl_names(v) )
         err_info%err_code = clubb_fatal_error
         return
       end if
@@ -2805,38 +2377,38 @@ contains
       
     if ( .not. stats%enabled ) return
     if ( .not. stats%l_netcdf_output ) return
-    if ( .not. stats%lh_2d%is_initialized ) return
+    if ( .not. stats%lh_samples%is_initialized ) return
     if ( .not. stats%l_last_sample ) return
-    if ( stats%lh_2d%n_u_vars <= 0 ) return
+    if ( stats%lh_samples%n_u_vars <= 0 ) return
 
     ! Sanity check for sizes
     if ( size( uniform_vals, 1 ) /= stats%ncol_batch ) return
-    if ( size( uniform_vals, 2 ) /= stats%lh_2d%num_samples ) return
-    if ( size( uniform_vals, 3 ) /= stats%lh_2d%nzt ) return
+    if ( size( uniform_vals, 2 ) /= stats%lh_samples%num_samples ) return
+    if ( size( uniform_vals, 3 ) /= stats%lh_samples%nzt ) return
     if ( size( mixture_comp, 1 ) /= stats%ncol_batch ) return
-    if ( size( mixture_comp, 2 ) /= stats%lh_2d%num_samples ) return
-    if ( size( mixture_comp, 3 ) /= stats%lh_2d%nzt ) return
+    if ( size( mixture_comp, 2 ) /= stats%lh_samples%num_samples ) return
+    if ( size( mixture_comp, 3 ) /= stats%lh_samples%nzt ) return
     if ( size( sample_weights, 1 ) /= stats%ncol_batch ) return
-    if ( size( sample_weights, 2 ) /= stats%lh_2d%num_samples ) return
-    if ( size( sample_weights, 3 ) /= stats%lh_2d%nzt ) return
+    if ( size( sample_weights, 2 ) /= stats%lh_samples%num_samples ) return
+    if ( size( sample_weights, 3 ) /= stats%lh_samples%nzt ) return
 
     dp2 = size( uniform_vals, 4 )
-    if ( stats%lh_2d%n_u_vars /= dp2 + 2 ) return
+    if ( stats%lh_samples%n_u_vars /= dp2 + 2 ) return
 
     t = stats%time_index + 1
     do v = 1, dp2
 
       ! Write
 !$omp critical(clubb_netcdf)
-      ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(v), uniform_vals(:,:,:,v:v), &
+      ret_code = nf90_put_var( stats%ncid, stats%lh_samples%u_varids(v), uniform_vals(:,:,:,v:v), &
                            start = (/ 1, 1, 1, t /), &
-                           count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
-                                      stats%lh_2d%nzt, 1 /) )
+                           count = (/ stats%ncol_batch, stats%lh_samples%num_samples, &
+                                      stats%lh_samples%nzt, 1 /) )
 !$omp end critical(clubb_netcdf)
       
       if ( ret_code /= NF90_NOERR ) then
         write( fstderr,* ) err_info%err_header_global
-        write( fstderr,* ) "stats lh uniform write failed for ", trim( stats%lh_2d%u_names(v) )
+        write( fstderr,* ) "stats lh uniform write failed for ", trim( stats%lh_samples%u_names(v) )
         err_info%err_code = clubb_fatal_error
         return
       end if
@@ -2845,32 +2417,32 @@ contains
 
     ! Write
 !$omp critical(clubb_netcdf)
-    ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(dp2+1), &
+    ret_code = nf90_put_var( stats%ncid, stats%lh_samples%u_varids(dp2+1), &
                          spread( real( mixture_comp, kind=core_rknd ), dim = 4, ncopies = 1 ), &
                          start = (/ 1, 1, 1, t /), &
-                         count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
-                                    stats%lh_2d%nzt, 1 /) )
+                         count = (/ stats%ncol_batch, stats%lh_samples%num_samples, &
+                                    stats%lh_samples%nzt, 1 /) )
 !$omp end critical(clubb_netcdf)
 
     if ( ret_code /= NF90_NOERR ) then
       write( fstderr,* ) err_info%err_header_global
-      write( fstderr,* ) "stats lh uniform write failed for ", trim( stats%lh_2d%u_names(dp2+1) )
+      write( fstderr,* ) "stats lh uniform write failed for ", trim( stats%lh_samples%u_names(dp2+1) )
       err_info%err_code = clubb_fatal_error
       return
     end if
 
     ! Write
 !$omp critical(clubb_netcdf)
-    ret_code = nf90_put_var( stats%ncid, stats%lh_2d%u_varids(dp2+2), &
+    ret_code = nf90_put_var( stats%ncid, stats%lh_samples%u_varids(dp2+2), &
                          spread( sample_weights, dim = 4, ncopies = 1 ), &
                          start = (/ 1, 1, 1, t /), &
-                         count = (/ stats%ncol_batch, stats%lh_2d%num_samples, &
-                                    stats%lh_2d%nzt, 1 /) )
+                         count = (/ stats%ncol_batch, stats%lh_samples%num_samples, &
+                                    stats%lh_samples%nzt, 1 /) )
 !$omp end critical(clubb_netcdf)
 
     if ( ret_code /= NF90_NOERR ) then
       write( fstderr,* ) err_info%err_header_global
-      write( fstderr,* ) "stats lh uniform write failed for ", trim( stats%lh_2d%u_names(dp2+2) )
+      write( fstderr,* ) "stats lh uniform write failed for ", trim( stats%lh_samples%u_names(dp2+2) )
       err_info%err_code = clubb_fatal_error
       return
     end if

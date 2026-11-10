@@ -12,10 +12,13 @@ module stat_file_utils
   contains
 
 !----------------------------------------------------------------------
-  function stat_file_average( filename, out_nz, &
-                              t1, t2, out_heights, variable_name,  & 
-                              npower, l_spec_bound_cond, l_error )
+  function stat_file_average( filename, out_nz, ngrdcol, & ! In
+                              t1, t2, out_heights, & ! In
+                              variable_name, & ! In
+                              npower, l_spec_bound_cond, & ! In
+                              l_error ) ! Out
 ! Description:
+!   Read each shared file profile once and average it on every column grid.
 !   Average a netCDF file variable over the interval t1 to t2
 
 ! References:
@@ -50,11 +53,12 @@ module stat_file_utils
       filename ! Name of the file
 
     integer, intent(in) ::  & 
-      out_nz,  & ! Number of vertial levels in the netCDF file.
+      out_nz,  & ! Number of output vertical levels [-]
+      ngrdcol, & ! Number of output columns [-]
       t1,      & ! Beginning timestep to look at
       t2         ! Ending timestep to look at
 
-    real( kind = core_rknd ), dimension(out_nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,out_nz), intent(in) :: &
       out_heights ! Heights of the output grid [m]
 
     character(len=*), intent(in) :: & 
@@ -71,7 +75,7 @@ module stat_file_utils
     !          -25m
     !                             -50m
     ! So we need to set the lowest model level to the -25m value.
-    logical, intent(in) :: &
+    logical, dimension(ngrdcol), intent(in) :: &
       l_spec_bound_cond 
 
     ! Output Variable
@@ -79,35 +83,38 @@ module stat_file_utils
       l_error ! error status for this function
 
     ! Return Variable for function
-    real( kind = core_rknd ), dimension(out_nz) :: stat_file_average
+    real( kind = core_rknd ), dimension(ngrdcol,out_nz) :: stat_file_average
 
     ! Local Variables
     type (stat_file) :: faverage ! Data file derived type
 
     real( kind = core_rknd ), allocatable, dimension(:) :: file_variable ! Temporary variable
 
-    real( kind = core_rknd ), dimension(out_nz) ::  interp_variable ! Temporary variable
+    real( kind = core_rknd ), dimension(ngrdcol,out_nz) ::  interp_variable ! Temporary variable
 
     integer :: & 
       t, &  ! Timestep loop index
-      k     ! Vertical loop index
+      k, &  ! Vertical loop index
+      i     ! Column loop index
 
     integer :: &
       file_nz ! Number of vertical levels in the file
 
-    logical :: l_interpolate
+    logical, dimension(ngrdcol) :: l_interpolate
 
-    logical, dimension(out_nz) :: l_lin_int
+    logical, dimension(ngrdcol,out_nz) :: l_lin_int
 
-    integer, dimension(out_nz) :: &
+    integer, dimension(ngrdcol,out_nz) :: &
       exact_lev_idx, &
       lower_lev_idx, &
       upper_lev_idx
 
     integer :: & 
-      num_timesteps,  & ! steps between t1 and t2
-      k_lowest_input, &
-      k_highest_input
+      num_timesteps ! Steps between t1 and t2
+
+    integer, dimension(ngrdcol) :: &
+      k_lowest_input, & ! First output level within the file domain [-]
+      k_highest_input   ! Last output level within the file domain [-]
 
     logical :: &
       l_convert_to_MKS ! convert inputs to MKS units
@@ -133,25 +140,28 @@ module stat_file_utils
 
     allocate( file_variable(file_nz) ) 
 
-    ! Do we need to interpolate?
-    if ( out_nz /= file_nz ) then
-      l_interpolate = .true.
-    else if ( any( abs(faverage%z(:)-out_heights(:)) > &
-                   abs(faverage%z(:)+out_heights(:))*eps/2 ) ) then
-      l_interpolate = .true.
-    else
-      l_interpolate = .false.
-    end if
+    ! Determine the interpolation needed on each column grid.
+    do i = 1, ngrdcol
+      if ( out_nz /= file_nz ) then
+        l_interpolate(i) = .true.
+      else
+        l_interpolate(i) = any( abs(faverage%z(:)-out_heights(i,:)) > &
+                               abs(faverage%z(:)+out_heights(i,:))*eps/2 )
+      end if
 
-    call CLUBB_levels_within_LES_domain( faverage, out_heights,  &
-                                         k_lowest_input, k_highest_input )
+    end do
 
-    do  k = k_lowest_input, k_highest_input, 1
-      ! CLUBB vertical level k is found at an altitude that is within the
-      ! domain of the LES output.
-      call LES_grid_to_CLUBB_grid( faverage, out_heights, k,  &
-                                   exact_lev_idx(k), lower_lev_idx(k),  &
-                                   upper_lev_idx(k), l_lin_int(k) )
+    call CLUBB_levels_within_LES_domain( faverage, out_nz, ngrdcol, out_heights, & ! In
+                                         k_lowest_input, & ! Out
+                                         k_highest_input ) ! Out
+
+    do k = 1, out_nz
+      do i = 1, ngrdcol
+        if ( k < k_lowest_input(i) .or. k > k_highest_input(i) ) cycle
+        call LES_grid_to_CLUBB_grid( faverage, out_heights(i,k), & ! In
+                                     exact_lev_idx(i,k), lower_lev_idx(i,k), & ! Out
+                                     upper_lev_idx(i,k), l_lin_int(i,k) ) ! Out
+      end do
     end do
 
     ! Read in variables from netCDF file
@@ -167,57 +177,34 @@ module stat_file_utils
         return
       end if
 
-      ! Interpolate as needed using the inputfields code
-      if ( l_interpolate ) then
-
-        do k = k_lowest_input, k_highest_input, 1
-          if ( l_lin_int(k) ) then
-            interp_variable(k) = lin_interpolate_two_points( out_heights(k), &
-              faverage%z(upper_lev_idx(k)), faverage%z(lower_lev_idx(k)), &
-              file_variable(upper_lev_idx(k)), file_variable(lower_lev_idx(k)) )
+      ! Interpolate within each column's domain and retain the legacy boundary policy.
+      do k = 1, out_nz
+        do i = 1, ngrdcol
+          if ( .not. l_interpolate(i) ) then
+            interp_variable(i,k) = file_variable(k)
+          else if ( k < k_lowest_input(i) ) then
+            if ( k == 1 .and. l_spec_bound_cond(i) ) then
+              interp_variable(i,k) = file_variable(1)
+            else
+              interp_variable(i,k) = real(PosInf, kind = core_rknd)
+            end if
+          else if ( k > k_highest_input(i) ) then
+            interp_variable(i,k) = real(PosInf, kind = core_rknd)
+          else if ( l_lin_int(i,k) ) then
+            interp_variable(i,k) = lin_interpolate_two_points( out_heights(i,k), &
+              faverage%z(upper_lev_idx(i,k)), faverage%z(lower_lev_idx(i,k)), &
+              file_variable(upper_lev_idx(i,k)), file_variable(lower_lev_idx(i,k)) )
           else
-            interp_variable(k) = file_variable(exact_lev_idx(k))
+            interp_variable(i,k) = file_variable(exact_lev_idx(i,k))
           end if
         end do
+      end do
 
-        do k = k_lowest_input-1, 1, -1
-          ! Do a linear extension on the lower points
-!         interp_variable(k) = lin_ext_zt_bottom( interp_variable(k+4), &
-!           interp_variable(k+1), out_heights(k+2), out_heights(k+1), out_heights(k) )
-
-          ! Set the ghost point if we have a special boundary condition
-          if ( k == 1 .and. l_spec_bound_cond ) then
-            interp_variable(k) = file_variable(1)
-          else
-            ! Set undefined points to NaN
-            interp_variable(k) = real(PosInf, kind = core_rknd)
-          end if
-        end do
-
-        do k = k_highest_input+1, out_nz, 1
-          ! Do the the dum-dum thing and set points above output domain 
-          ! to be constant with height
-!         interp_variable(k) = interp_variable(k-1)
-
-          ! Set undefined points to NaN
-          interp_variable(k) = real(PosInf, kind = core_rknd)
-        end do
-
-      else
-        interp_variable(1:out_nz) = file_variable(1:out_nz)
-
-      end if
-
-
-      ! Apply an exponent (for the tuner)
+      ! Apply an exponent (for the tuner), retaining the per-column time sum order.
       if ( npower /= 1 ) then
-        stat_file_average(1:out_nz) = stat_file_average(1:out_nz) &
-        + interp_variable(1:out_nz)**npower
-
+        stat_file_average = stat_file_average + interp_variable**npower
       else
-        stat_file_average(1:out_nz) = stat_file_average(1:out_nz) &
-        + interp_variable(1:out_nz)
-
+        stat_file_average = stat_file_average + interp_variable
       end if
 
     end do ! t = t1, t2
@@ -226,7 +213,7 @@ module stat_file_utils
     call close_netcdf_read( faverage )
 
     ! Take average over num_timesteps
-    stat_file_average(1:out_nz) = stat_file_average(1:out_nz) / &
+    stat_file_average = stat_file_average / &
                real( num_timesteps, kind = core_rknd )
 
     return
@@ -287,12 +274,14 @@ module stat_file_utils
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: stat_file_temp
 
+    real( kind = core_rknd ), dimension(1,nz) :: averaged_profile ! Shared reference profile
+
     integer ::  & 
       i,       & ! Loop variable 
       tdim,    & ! Dimension to read over for t variable
       divisor
 
-    logical :: l_spec_bound_cond ! special boundary condition for stat_file_average
+    logical, dimension(1) :: l_spec_bound_cond ! special boundary condition for stat_file_average
 
 !-------------------------------------------------------------------------
     l_error = .false.
@@ -312,11 +301,12 @@ module stat_file_utils
     end do
 
     l_spec_bound_cond = .false.
-    stat_file_average_interval & 
-    = stat_file_average( filename, nz, &
-                         t(1), t(2), out_heights, variable_name, &
-                         npower, l_spec_bound_cond, l_error )  & 
-          * real( t(2) - t(1), kind = core_rknd )
+    averaged_profile = stat_file_average( filename, nz, 1, & ! In
+                                          t(1), t(2), reshape(out_heights, [1,nz]), & ! In
+                                          variable_name, & ! In
+                                          npower, l_spec_bound_cond, & ! In
+                                          l_error ) ! Out
+    stat_file_average_interval = averaged_profile(1,:) * real( t(2) - t(1), kind = core_rknd )
 
     divisor = t(2) - t(1)
 
@@ -324,9 +314,12 @@ module stat_file_utils
 
     do i=3, tdim, 2
       l_spec_bound_cond = .false.
-      stat_file_temp = stat_file_average( filename, nz, &
-                               t(i), t(i+1), out_heights, variable_name, &
-                               npower, l_spec_bound_cond, l_error )
+      averaged_profile = stat_file_average( filename, nz, 1, & ! In
+                                            t(i), t(i+1), reshape(out_heights, [1,nz]), & ! In
+                                            variable_name, & ! In
+                                            npower, l_spec_bound_cond, & ! In
+                                            l_error ) ! Out
+      stat_file_temp = averaged_profile(1,:)
       stat_file_average_interval  & 
         = stat_file_average_interval + stat_file_temp * real( t(i+1) - t(i), kind = core_rknd )
       divisor = divisor + ( t(i+1) - t(i) )
@@ -465,126 +458,80 @@ module stat_file_utils
   end function l_netcdf_file
 
 !===============================================================================
-  subroutine CLUBB_levels_within_LES_domain( fread_var, CLUBB_grid,  &
-                                             k_lowest_input, k_highest_input )
+  subroutine CLUBB_levels_within_LES_domain( fread_var, nz, ngrdcol, CLUBB_grid, & ! In
+                                             k_lowest_input, & ! Out
+                                             k_highest_input ) ! Out
 
     ! Description:
-    ! This subroutine finds both the lowest and the highest CLUBB grid levels
-    ! (for either the thermodynamic grid or the momentum grid) that are with the
-    ! domain of the LES grid.
-
+    !   Find each column's lowest and highest grid levels within the LES domain.
+    !   The input column grids are ascending, as in the profile reader.
     ! References:
     !   None
     !-----------------------------------------------------------------------
 
+    use stat_file_module, only: stat_file ! Type
 
-    use stat_file_module, only:  &
-        stat_file  ! Variable type
+    use constants_clubb, only: fstderr ! Error output unit
 
-    use constants_clubb, only:  &
-        fstderr ! Constant
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
+    use clubb_precision, only: core_rknd ! Precision
 
     implicit none
 
-    ! Input Variables.
-    type(stat_file), intent(in) ::  &
-      fread_var  ! Information about LES run.
+    !--------------------------- Input Variables ---------------------------
+    type(stat_file), intent(in) :: fread_var ! LES grid and valid level indices
 
-    real( kind = core_rknd ), dimension(:), intent(in) ::  &
-      CLUBB_grid ! Altitude of CLUBB grid levels
-                 ! (either thermodynamic or momentum grid levels)  [m]
+    integer, intent(in) :: &
+      nz, & ! Number of CLUBB vertical levels [-]
+      ngrdcol ! Number of columns [-]
 
-    ! Output Variables
-    integer, intent(out) ::  &
-      k_lowest_input,  & ! The lowest CLUBB level that's within the LES domain.
-      k_highest_input    ! The highest CLUBB level that's within the LES domain.
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      CLUBB_grid ! Column heights on thermodynamic or momentum levels [m]
 
-    ! Local Variable
-    integer :: k, kmax  ! Array index
+    !--------------------------- Output Variables ---------------------------
+    integer, dimension(ngrdcol), intent(out) :: &
+      k_lowest_input, & ! Lowest CLUBB level within the LES domain [-]
+      k_highest_input ! Highest CLUBB level within the LES domain [-]
 
-    ! ---- Begin Code ----
+    !--------------------------- Local Variables ---------------------------
+    integer :: i, k ! Column and vertical indices
 
-    ! Find the lowest CLUBB level that falls within the LES domain.
-    k    = size( CLUBB_grid )
-    kmax = size( CLUBB_grid )
-    do
-      if ( CLUBB_grid(k) < fread_var%z(fread_var%ia) ) then
+    !--------------------------- Begin Code ---------------------------
 
-        if ( k == kmax ) then
-          ! The bottom of the LES domain is above the top of the CLUBB
-          ! domain.
-          write(fstderr,*) "The lowest LES input level is above the top ",  &
-                           "of the CLUBB model domain."
-          error stop "Error in CLUBB_levels_within_LES_domain"
-        else
-          ! Level k is the first CLUBB level below the LES domain.  Thus, the
-          ! lowest CLUBB level within the LES domain has the index k + 1.
-          k_lowest_input = k + 1
-          exit
-        endif
+    if ( any( CLUBB_grid(:,nz) < fread_var%z(fread_var%ia) ) ) then
+      write(fstderr,*) "The lowest LES input level is above the top ", &
+                       "of the CLUBB model domain."
+      error stop "Error in CLUBB_levels_within_LES_domain"
+    end if
 
-      elseif ( k == 1 ) then
+    if ( any( CLUBB_grid(:,1) > fread_var%z(fread_var%iz) ) ) then
+      write(fstderr,*) "The highest LES input level is below the bottom ", &
+                       "of the CLUBB model domain."
+      error stop "Error in CLUBB_levels_within_LES_domain"
+    end if
 
-        ! The bottom CLUBB level is within the LES domain.
-        k_lowest_input = 1
-        exit
+    k_lowest_input = 1
+    k_highest_input = nz
 
-      else   ! k > 1 and k <= kmax; level not yet found.
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( CLUBB_grid(i,k) < fread_var%z(fread_var%ia) ) k_lowest_input(i) = k + 1
+        if ( CLUBB_grid(i,k) > fread_var%z(fread_var%iz) ) &
+          k_highest_input(i) = min(k_highest_input(i), k - 1)
+      end do
+    end do
 
-        ! Increment one more CLUBB vertical level down.
-        k = k - 1
-
-      endif
-    enddo
-
-    ! Find the highest CLUBB level that falls within the LES domain.
-    k = 1
-    do
-      if ( CLUBB_grid(k) > fread_var%z(fread_var%iz) ) then
-
-        if ( k == 1 ) then
-          ! The top of the LES domain is below the bottom of the CLUBB
-          ! domain.
-          write(fstderr,*) "The highest LES input level is below the ",  &
-                           "bottom of the CLUBB model domain."
-          error stop "Error in CLUBB_levels_within_LES_domain"
-        else
-          ! Level k is the first CLUBB level above the LES domain.  Thus, the
-          ! highest CLUBB level within the LES domain has the index k - 1.
-          k_highest_input = k - 1
-          exit
-        endif
-
-      elseif ( k == kmax ) then
-
-        ! The top CLUBB level is within the LES domain.
-        k_highest_input = kmax 
-        exit
-
-      else   ! k < kmax and k >= 1; level not yet found.
-
-        ! Increment one more CLUBB vertical level up.
-        k = k + 1
-
-      endif
-    enddo
-
-    return
   end subroutine CLUBB_levels_within_LES_domain
 
 !===============================================================================
-  pure subroutine LES_grid_to_CLUBB_grid( fread_var, CLUBB_grid, k,  &
+  pure subroutine LES_grid_to_CLUBB_grid( fread_var, CLUBB_height,  &
                                           exact_lev_idx, lower_lev_idx,  &
                                           upper_lev_idx, l_lin_int )
 
     ! Description:
     !   Finds the level on the LES grid that is exactly even with the CLUBB
     !   grid level (either thermodynamic or momentum grid) that is input
-    !   (level k).  Else, it finds the two LES levels that sandwich the CLUBB
-    !   grid level that is input.
+    !   height. Else, it finds the two LES levels that sandwich the CLUBB
+    !   height that is input.
 
     !-----------------------------------------------------------------------
 
@@ -600,12 +547,9 @@ module stat_file_utils
     type(stat_file), intent(in) ::  &
       fread_var  ! Information about LES run.
 
-    real( kind = core_rknd ), dimension(:), intent(in) ::  &
-      CLUBB_grid ! Altitude of CLUBB grid levels
+    real( kind = core_rknd ), intent(in) ::  &
+      CLUBB_height ! Altitude of one CLUBB grid level
                  ! (either thermodynamic or momentum grid levels)  [m]
-
-    integer, intent(in) ::  &
-      k  ! Index of CLUBB vertical level that is being compared to.
 
     ! Output Variables.
     integer, intent(out) ::  &
@@ -633,20 +577,20 @@ module stat_file_utils
 
     do j = fread_var%ia, fread_var%iz, 1
 
-      if ( abs( fread_var%z(j) - CLUBB_grid(k) ) < 1e-6_core_rknd ) then
+      if ( abs( fread_var%z(j) - CLUBB_height ) < 1e-6_core_rknd ) then
 
         ! There is an LES level altitude at LES level j that is an exact
         ! match to the CLUBB level altitude at CLUBB grid level k.
         exact_lev_idx = j
         l_lin_int = .false.
 
-      else if ( fread_var%z(j) < CLUBB_grid(k) ) then
+      else if ( fread_var%z(j) < CLUBB_height ) then
 
         ! The LES level altitude at LES level j is lower than the CLUBB level
         ! altitude at CLUBB grid level k.
         lower_lev_idx = j
 
-      else  ! fread_var%z(j) > CLUBB_grid(k)
+      else  ! fread_var%z(j) > CLUBB_height
 
         ! The LES level altitude at LES level j is higher than the CLUBB level
         ! altitude at CLUBB grid level k.

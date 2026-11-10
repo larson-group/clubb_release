@@ -6,12 +6,11 @@ from numpy import asfortranarray as f_arr
 import clubb_f2py
 
 
-def thlm2t_in_k(nz: int, thlm: np.ndarray, exner: np.ndarray,
+def thlm2t_in_k(nz: int, ngrdcol: int, thlm: np.ndarray, exner: np.ndarray,
                 rcm: np.ndarray) -> np.ndarray:
     """Convert liquid water potential temperature to temperature in Kelvin."""
-    del nz
-    return clubb_f2py.f2py_thlm2t_in_k_1d(
+    return clubb_f2py.f2py_thlm2t_in_k(
         f_arr(thlm),
         f_arr(exner),
-        f_arr(rcm),
+        f_arr(rcm), nz=int(nz), ngrdcol=int(ngrdcol),
     )

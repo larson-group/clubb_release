@@ -1,83 +1,36 @@
-"""JAX port of `src/CLUBB_core/sponge_layer_damping.F90`.
+"""Batched sponge-damping kernels from sponge_layer_damping.F90.
 
-Description:
-  This module is used for damping variables in upper altitudes of the grid.
-
-References:
-  None
-
-Porting deviations:
-- The Fortran module-level `sponge_damp_settings` and `sponge_damp_profile`
-  derived types are not represented here. JAX callers pass the profile arrays
-  and layer depth directly.
-- `finalize_tau_sponge_damp_api` is omitted because JAX/Python does not
-  manually deallocate the tau profile.
-- `sponge_damp_xm` uses `tau = inf` below the sponge layer, produced by
-  `initialize_tau_sponge_damp`, so the vectorized formula is a no-op below the
-  layer instead of using the Fortran top-down loop exit.
+Time scales and layer depths follow each column's grid heights.
+Each damping call applies its own column's top-down layer exit. Standalone
+configuration guards continue to reject sponge damping until driver integration.
 """
 from __future__ import annotations
 
-import numpy as np
-import sys
+from typing import NamedTuple
+
 import jax.numpy as jnp
 
 
-def initialize_tau_sponge_damp(z, dt, zm_top, tau_min, tau_max, sponge_damp_depth):
-    """Initialize time scale, tau_sponge_damp, used for damping.
-
-    Description:
-      Initialize time scale, tau_sponge_damp, used for damping.  The time scale
-      attains its maximum value, tau_sponge_damp_max, at the bottom of the
-      "sponge" damping layer, which results in minimal damping.  Likewise, the
-      time scale attains its minimum value, tau_sponge_damp_min, at the top of
-      the model, which results in maximum damping.  At levels in-between the top
-      of the model and the base of the sponge damping layer, the value of
-      tau_sponge_damp is in-between tau_sponge_damp_min and tau_sponge_damp_max,
-      as calculated by an interpolation formula.
-
-    References:
-      None
-    """
-    nz = len(z)
-
-    # Calculate the depth of the sponge layer.
-    # The height of the model top is gr%zm(1,gr%k_ub_zm).
-    sponge_layer_depth = sponge_damp_depth * zm_top
-
-    # Check the value of tau_sponge_damp_min.
-    if tau_min < 2.0 * dt:
-        print("Error:  tau_sponge_damp_min is too small!", file=sys.stderr)
-        print("It must be at least 2.0 * dt", file=sys.stderr)
-        raise ValueError("tau_sponge_damp_min is too small (< 2*dt)")
-    tau = np.full(nz, np.inf, dtype=np.float64)
-    ratio = tau_max / tau_min
-    # Calculate the value of the damping time scale, tau_sponge_damp, at levels
-    # that are within the sponge damping layer.
-    for k in range(nz - 1, -1, -1):          # top down (ascending grid)
-        # The height of the model top is gr%zm(1,gr%k_ub_zm).
-        d = zm_top - z[k]
-        if d < sponge_layer_depth:
-            # Vince Larson added code to use standard linear interpolation.
-            # Brian Griffin reverted the linear interpolation in order to use code
-            # that is similar to what is found in SAM LES.
-            exponent = d / sponge_layer_depth
-            tau[k] = tau_min * ratio ** exponent
-            # End Vince Larson's change
-            # End Brian Griffin's rebellious reversion.
-        else:
-            # Below sponge damping layer; exit loop.
-            break
-    return tau, sponge_layer_depth
+class sponge_damp_settings(NamedTuple):
+    """Time-scale bounds in seconds and sponge depth as a domain-height fraction."""
+    tau_sponge_damp_min: float
+    tau_sponge_damp_max: float
+    sponge_damp_depth: float
+    l_sponge_damping: bool = False
 
 
-def sponge_damp_xm(xm, xm_ref, z, zm_top, tau, sponge_layer_depth, dt):
-    """Damps specified mean field toward a reference profile.  The module must be
-    initialized for this function to work.  Otherwise a stop is issued.
+class sponge_damp_profile(NamedTuple):
+    """Column/level time scales and column layer depths; None means uninitialized."""
+    tau_sponge_damp: object
+    sponge_layer_depth: object
 
-    tau is inf outside the sponge layer, so dt/tau == 0 there and the damping
-    formula leaves xm unchanged. z, zm_top and sponge_layer_depth are kept only
-    for signature compatibility.
+
+def sponge_damp_xm(ngrdcol, nzm, nzt, gr, dt, zt, zm, xm_ref, xm, damping_profile):
+    """Damps each column of a mean field toward its reference profile.
+    The damping profile must be initialized before calling this function;
+    otherwise a stop is issued.
+
+    The layer boundary follows each column's current heights.
 
     Returns:
         xm_p
@@ -85,43 +38,47 @@ def sponge_damp_xm(xm, xm_ref, z, zm_top, tau, sponge_layer_depth, dt):
     Fortran declarations (sponge_damp_xm in src/CLUBB_core/sponge_layer_damping.F90):
 
         !--------------------------- Input Variables ---------------------------
-        type( grid ), intent(in) :: &
-          gr
-
         integer, intent(in) :: &
-          nzm, & ! Number of momentum vertical levels
-          nzt    ! Number of thermodynamic vertical levels
+          ngrdcol, & ! Number of columns [-]
+          nzm,     & ! Number of momentum levels [-]
+          nzt        ! Number of thermodynamic levels [-]
+
+        type( grid ), intent(in) :: &
+          gr    ! Grid bounds and vertical direction
 
         real( kind = core_rknd ), intent(in) :: &
           dt    ! Model Timestep  [s]
 
-        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
-          zt,     & ! Height of model grid levels                [m]
-          xm_ref, & ! Reference profile of x to damp xm towards  [units vary]
-          xm        ! Mean field being damped                    [units vary]
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          zt    ! Thermodynamic grid heights [m]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
-          zm        ! Momentum grid
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          zm    ! Momentum grid heights [m]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xm_ref, & ! Reference mean field [units vary]
+          xm        ! Mean field before damping [units vary]
 
         type(sponge_damp_profile), intent(in) :: &
-          damping_profile
+          damping_profile    ! Column time scales and layer depths
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nzt) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
           xm_p   ! Damped value of xm  [units_vary]
     """
-    del z, zm_top, sponge_layer_depth
-    #  "Sponge"-layer damping at the domain top region
-    dt_on_tau = dt / tau
-    # Really, we should be using xm_ref at time n+1 rather than n.
-    # However, for steady profiles of xm_ref, it won't matter.
-    xm_p = (xm + dt_on_tau * xm_ref) / (1.0 + dt_on_tau)
+    if damping_profile.tau_sponge_damp is None:
+        raise ValueError("tau_sponge_damp in sponge_damp_xm used before initialization")
+    levels = gr.k_ub_zt - gr.grid_dir_indx * jnp.arange(nzt)
+    in_sponge = (zm[:, gr.k_ub_zm, None] - zt[:, levels]) < damping_profile.sponge_layer_depth[:, None]
+    l_damp = jnp.cumsum(~in_sponge, axis=1) == 0
+    dt_on_tau = dt / damping_profile.tau_sponge_damp[:, levels]
+    damped = (xm[:, levels] + dt_on_tau * xm_ref[:, levels]) / (1.0 + dt_on_tau)
+    xm_p = xm.at[:, levels].set(jnp.where(l_damp, damped, xm[:, levels]))
     return xm_p
 
 
-def sponge_damp_xp2(dt, zm, xp2, x_tol_sqd, tau, sponge_layer_depth):
-    """Calculates the effects of "sponge"-layer damping on the variance of x,
-    xp2.
+def sponge_damp_xp2(ngrdcol, nzm, gr, dt, zm, xp2, x_tol_sqd, damping_profile):
+    """Calculates "sponge"-layer damping of the variance xp2 in each column.
 
     Sponge damping on a local value of x is given by the equation:
 
@@ -160,40 +117,43 @@ def sponge_damp_xp2(dt, zm, xp2, x_tol_sqd, tau, sponge_layer_depth):
     Fortran declarations (sponge_damp_xp2 in src/CLUBB_core/sponge_layer_damping.F90):
 
         !--------------------------- Input Variables ---------------------------
-        type( grid ), intent(in) :: &
-          gr
-
         integer, intent(in) :: &
-          nzm
+          ngrdcol, & ! Number of columns [-]
+          nzm        ! Number of momentum levels [-]
+
+        type( grid ), intent(in) :: &
+          gr    ! Grid bounds and vertical direction
 
         real( kind = core_rknd ), intent(in) :: &
           dt    ! Model Timestep  [s]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
-          zm,  & ! Height of model grid levels               [m]
-          xp2    ! Variance of x, <x'^2>, prior to damping   [units vary]
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          zm,  & ! Momentum grid heights [m]
+          xp2    ! Variance before damping [units vary]
 
         real( kind = core_rknd ), intent(in) :: &
-          x_tol_sqd    ! Square of the tolerance value of x    [units vary]
+          x_tol_sqd    ! Minimum variance [units vary]
 
         type(sponge_damp_profile), intent(in) :: &
-          damping_profile
+          damping_profile    ! Column time scales and layer depths
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nzm) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
           xp2_damped    ! Variance of x, <x'^2>, after damping   [units vary]
     """
-    zm_top = zm[:, -1:]
-    in_sponge = (zm_top - zm) < sponge_layer_depth
-    # Calculate the damped value of <x'^2>.
-    # The damped value of <x'^2> needs to be greater than or equal to
-    # x_tol^2.
-    damped = jnp.maximum((1.0 - dt / tau) ** 2 * xp2, x_tol_sqd)
-    return jnp.where(in_sponge, damped, xp2)
+    if damping_profile.tau_sponge_damp is None:
+        raise ValueError("tau_sponge_damp in sponge_damp_xp2 used before initialization")
+    levels = gr.k_ub_zm - gr.grid_dir_indx * jnp.arange(nzm)
+    in_sponge = (zm[:, gr.k_ub_zm, None] - zm[:, levels]) < damping_profile.sponge_layer_depth[:, None]
+    l_damp = jnp.cumsum(~in_sponge, axis=1) == 0
+    dt_on_tau = dt / damping_profile.tau_sponge_damp[:, levels]
+    damped = jnp.maximum((1.0 - dt_on_tau)**2 * xp2[:, levels], x_tol_sqd)
+    xp2_damped = xp2.at[:, levels].set(jnp.where(l_damp, damped, xp2[:, levels]))
+    return xp2_damped
 
 
-def sponge_damp_xp3(dt, z, zm, xp3, tau, sponge_layer_depth):
-    """Calculates the effects of "sponge"-layer damping on xp3.
+def sponge_damp_xp3(ngrdcol, nzm, nzt, gr, dt, z, zm, xp3, damping_profile):
+    """Calculates "sponge"-layer damping of the third moment xp3 in each column.
 
     Sponge damping on a local value of x is given by the equation:
 
@@ -231,32 +191,106 @@ def sponge_damp_xp3(dt, z, zm, xp3, tau, sponge_layer_depth):
     Fortran declarations (sponge_damp_xp3 in src/CLUBB_core/sponge_layer_damping.F90):
 
         !--------------------------- Input Variables ---------------------------
-        type( grid ), intent(in) :: &
-          gr
-
         integer, intent(in) :: &
-          nzm,   &
-          nzt
+          ngrdcol, & ! Number of columns [-]
+          nzm,     & ! Number of momentum levels [-]
+          nzt        ! Number of thermodynamic levels [-]
+
+        type( grid ), intent(in) :: &
+          gr    ! Grid bounds and vertical direction
 
         real( kind = core_rknd ), intent(in) :: &
           dt    ! Model Timestep  [s]
 
-        real( kind = core_rknd ), dimension(nzt), intent(in) :: &
-          z,   & ! Height of model grid levels     [m]
-          xp3    ! <x'^3> prior to damping         [units vary]
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          z    ! Thermodynamic grid heights [m]
 
-        real( kind = core_rknd ), dimension(nzm), intent(in) :: &
-          zm     ! Momentum grid
+        real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+          zm    ! Momentum grid heights [m]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+          xp3    ! Third moment before damping [units vary]
 
         type(sponge_damp_profile), intent(in) :: &
-          damping_profile
+          damping_profile    ! Column time scales and layer depths
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nzt) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
           xp3_damped    ! <x'^3> after damping   [units vary]
     """
-    zm_top = zm[:, -1:]
-    in_sponge = (zm_top - z) < sponge_layer_depth
-    # Calculate the damped value of <x'^3>.
-    damped = (1.0 - dt / tau) ** 3 * xp3
-    return jnp.where(in_sponge, damped, xp3)
+    if damping_profile.tau_sponge_damp is None:
+        raise ValueError("tau_sponge_damp in sponge_damp_xp3 used before initialization")
+    levels = gr.k_ub_zt - gr.grid_dir_indx * jnp.arange(nzt)
+    in_sponge = (zm[:, gr.k_ub_zm, None] - z[:, levels]) < damping_profile.sponge_layer_depth[:, None]
+    l_damp = jnp.cumsum(~in_sponge, axis=1) == 0
+    dt_on_tau = dt / damping_profile.tau_sponge_damp[:, levels]
+    damped = (1.0 - dt_on_tau)**3 * xp3[:, levels]
+    xp3_damped = xp3.at[:, levels].set(jnp.where(l_damp, damped, xp3[:, levels]))
+    return xp3_damped
+
+
+def initialize_tau_sponge_damp_api(ngrdcol, nz, gr, dt, z, settings):
+    """Initialize the damping time scale independently in each column.  The time scale
+    attains its maximum value, tau_sponge_damp_max, at the bottom of the
+    "sponge" damping layer, which results in minimal damping.  Likewise, the
+    time scale attains its minimum value, tau_sponge_damp_min, at the top of
+    the model, which results in maximum damping.  At levels in-between the top
+    of the model and the base of the sponge damping layer, the value of
+    tau_sponge_damp is in-between tau_sponge_damp_min and tau_sponge_damp_max,
+    as calculated by an interpolation formula.
+
+    Returns:
+        damping_profile
+
+    Fortran declarations (initialize_tau_sponge_damp_api in src/CLUBB_core/sponge_layer_damping.F90):
+
+        !--------------------------- Input Variables ---------------------------
+        integer, intent(in) :: &
+          ngrdcol, & ! Number of columns [-]
+          nz         ! Number of vertical levels [-]
+
+        type (grid), intent(in) :: gr    ! Model grid
+
+        real( kind = core_rknd ), intent(in) :: &
+          dt    ! Model Timestep    [s]
+
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+          z     ! Height of model grid levels    [m]
+
+        type(sponge_damp_settings), intent(in) :: &
+          settings    ! Shared damping configuration
+
+        !--------------------------- Output Variables ---------------------------
+        type(sponge_damp_profile), intent(out) :: &
+          damping_profile    ! Column time scales and layer depths
+    """
+    if settings.tau_sponge_damp_min < 2.0 * dt:
+        raise ValueError("tau_sponge_damp_min is too small (< 2*dt)")
+    zm_top = jnp.asarray(gr.zm[:, gr.k_ub_zm])
+    sponge_layer_depth = settings.sponge_damp_depth * zm_top
+    levels = gr.k_ub_zm - gr.grid_dir_indx * jnp.arange(nz)
+    if nz != gr.nzm:
+        levels = gr.k_ub_zt - gr.grid_dir_indx * jnp.arange(nz)
+    distance = zm_top[:, None] - jnp.asarray(z)[:, levels]
+    l_damp = jnp.cumsum(~(distance < sponge_layer_depth[:, None]), axis=1) == 0
+    safe_depth = jnp.where(l_damp, sponge_layer_depth[:, None], 1.0)
+    exponent = jnp.where(l_damp, distance, 0.0) / safe_depth
+    tau_in_layer = settings.tau_sponge_damp_min * (
+        settings.tau_sponge_damp_max / settings.tau_sponge_damp_min
+    )**exponent
+    tau = jnp.full((ngrdcol, nz), settings.tau_sponge_damp_max)
+    tau = tau.at[:, levels].set(jnp.where(l_damp, tau_in_layer, settings.tau_sponge_damp_max))
+    damping_profile = sponge_damp_profile(tau, sponge_layer_depth)
+    return damping_profile
+
+
+def finalize_tau_sponge_damp_api(damping_profile):
+    """Frees memory allocated in initialize_tau_sponge_damp_api
+
+    Fortran declarations (finalize_tau_sponge_damp_api in src/CLUBB_core/sponge_layer_damping.F90):
+
+        ! Input/Output Variable(s)
+        type(sponge_damp_profile), intent(inout) :: &
+          damping_profile ! Information for damping the profile
+    """
+    return damping_profile._replace(tau_sponge_damp=None, sponge_layer_depth=None)

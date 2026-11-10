@@ -4,8 +4,8 @@ module sounding
   implicit none
 
   public ::  &
-    read_sounding, &
-    read_profile ! Not currently used in CLUBB
+    read_sounding
+  ! public :: read_profile ! Unused routine below is commented out.
 
   private :: read_sounding_file, read_sclr_sounding_file, &
     read_edsclr_sounding_file
@@ -21,14 +21,15 @@ module sounding
 
   contains
   !------------------------------------------------------------------------
-  subroutine read_sounding( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, &
-                            gr, iunit, runtype, zm_init, &
-                            saturation_formula, &
-                            l_readiopdata, l_modify_ic_with_cubic_int, &
-                            p_sfc, &
-                            thlm, temperature_type, rtm, um, vm, ugm, vgm, &
-                            altitude_type, press, subs_type, wm, &
-                            rtm_sfc, thlm_sfc, sclrm, edsclrm )
+  subroutine read_sounding( ngrdcol, sclr_dim, edsclr_dim, sclr_idx, & ! In
+                            gr, iunit, runtype, zm_init, & ! In
+                            saturation_formula, & ! In
+                            l_readiopdata, l_modify_ic_with_cubic_int, & ! In
+                            p_sfc, & ! InOut
+                            thlm, temperature_type, rtm, um, vm, & ! Out
+                            ugm, vgm, & ! Out
+                            altitude_type, press, subs_type, wm, & ! Out
+                            rtm_sfc, thlm_sfc, sclrm, edsclrm ) ! Out
 
     ! Description:
     !   Subroutine to initialize model variables from a namelist file
@@ -869,103 +870,104 @@ module sounding
   end subroutine read_edsclr_sounding_file
 
   !------------------------------------------------------------------------
-  subroutine read_profile( gr, fname, x )
-
-    !       Description:
-    !       Subroutine to initialize one generic model variable from file
-    !------------------------------------------------------------------------
-
-    use interpolation, only:  &
-        lin_interpolate_two_points ! Procedure
-
-    use constants_clubb, only:  &
-        fstderr ! Constant
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use grid_class, only: grid ! Type
-
-    implicit none
-
-    type(grid), intent(in) :: gr
-
-    ! External
-    intrinsic :: trim
-
-    ! Constant Parameter
-    integer, parameter :: nmaxsnd = 200
-
-    ! Input Variables
-    character(len=*), intent(in) :: fname
-
-    ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: x
-
-    ! Local variables
-
-    ! Input variables from namelist
-
-    integer :: nlevels
-
-    real( kind = core_rknd ), dimension(nmaxsnd) :: z, var
-
-    ! Loop indices
-    integer :: i,k
-
-    namelist /profile/ nlevels, z, var
-
-    ! ---- Begin Code ----
-
-    ! Read sounding namelist
-
-    open(10, file = trim( fname ), status = 'old' )
-    read(10, nml = profile )
-    close(10)
-
-    if ( nlevels > nmaxsnd ) then
-      write(fstderr,*) 'Error in sounding: nlevels > nmaxsnd'
-      write(fstderr,*) 'nlevels = ', nlevels
-      write(fstderr,*) 'nmaxsnd = ', nmaxsnd
-      error stop 'STOP in read_profile (sounding.F90)'
-    endif
-
-    ! Error check: if lowest above-model-surface themodynamic grid height
-    ! (gr%zt(1,1)) is lower than the lowest value from the input sounding,
-    ! then the linear interpolation scheme will fail.
-
-    if ( gr%zt(1,1) < z(1) ) then
-      write(fstderr,*) "Lowest level of input sounding, z(1), must be",  &
-      " below the first above-model-surface thermodynamic level, gr%zt(1,1)"
-      write(fstderr,*) " First sounding level z(1) = ", z(1)
-      write(fstderr,*) " First thermodynamic level gr%zt(1,1) = ", gr%zt(1,1)
-      error stop 'STOP in read_profile (sounding.F90)'
-    endif
-
-    ! Use linear interpolation from two nearest prescribed grid points
-    ! (one above and one below) to initialize mean quantities in the model
-    ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
-
-    do i = 1, gr%nzt
-      k = 1
-      do while ( z(k) < gr%zt(1,i) )
-        k = k + 1
-        if ( k > nlevels ) then
-          write(fstderr,*) 'STOP Not enough sounding data to ',  &
-                           'initialize grid:'
-          write(fstderr,'(a,f7.1,/a,f7.1)') ' Highest sounding level',  &
-               z(nlevels),  &
-               'should be higher than highest thermodynamic point',  &
-               gr%zt(1,gr%nzt)
-          write(*,*) ' Filename: ', fname
-          error stop 'STOP in read_profile (sounding.F90)'
-        endif
-        x(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), var(k), var(k-1) )
-      enddo ! while
-    enddo ! i = 1, gr%nzt
-
-    return
-  end subroutine read_profile
+! Unused: retained as commented source; there are no active callers.
+!   subroutine read_profile( gr, fname, x )
+!
+!     !       Description:
+!     !       Subroutine to initialize one generic model variable from file
+!     !------------------------------------------------------------------------
+!
+!     use interpolation, only:  &
+!         lin_interpolate_two_points ! Procedure
+!
+!     use constants_clubb, only:  &
+!         fstderr ! Constant
+!
+!     use clubb_precision, only: &
+!       core_rknd ! Variable(s)
+!
+!     use grid_class, only: grid ! Type
+!
+!     implicit none
+!
+!     type(grid), intent(in) :: gr
+!
+!     ! External
+!     intrinsic :: trim
+!
+!     ! Constant Parameter
+!     integer, parameter :: nmaxsnd = 200
+!
+!     ! Input Variables
+!     character(len=*), intent(in) :: fname
+!
+!     ! Output Variable
+!     real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: x
+!
+!     ! Local variables
+!
+!     ! Input variables from namelist
+!
+!     integer :: nlevels
+!
+!     real( kind = core_rknd ), dimension(nmaxsnd) :: z, var
+!
+!     ! Loop indices
+!     integer :: i,k
+!
+!     namelist /profile/ nlevels, z, var
+!
+!     ! ---- Begin Code ----
+!
+!     ! Read sounding namelist
+!
+!     open(10, file = trim( fname ), status = 'old' )
+!     read(10, nml = profile )
+!     close(10)
+!
+!     if ( nlevels > nmaxsnd ) then
+!       write(fstderr,*) 'Error in sounding: nlevels > nmaxsnd'
+!       write(fstderr,*) 'nlevels = ', nlevels
+!       write(fstderr,*) 'nmaxsnd = ', nmaxsnd
+!       error stop 'STOP in read_profile (sounding.F90)'
+!     endif
+!
+!     ! Error check: if lowest above-model-surface themodynamic grid height
+!     ! (gr%zt(1,1)) is lower than the lowest value from the input sounding,
+!     ! then the linear interpolation scheme will fail.
+!
+!     if ( gr%zt(1,1) < z(1) ) then
+!       write(fstderr,*) "Lowest level of input sounding, z(1), must be",  &
+!       " below the first above-model-surface thermodynamic level, gr%zt(1,1)"
+!       write(fstderr,*) " First sounding level z(1) = ", z(1)
+!       write(fstderr,*) " First thermodynamic level gr%zt(1,1) = ", gr%zt(1,1)
+!       error stop 'STOP in read_profile (sounding.F90)'
+!     endif
+!
+!     ! Use linear interpolation from two nearest prescribed grid points
+!     ! (one above and one below) to initialize mean quantities in the model
+!     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
+!
+!     do i = 1, gr%nzt
+!       k = 1
+!       do while ( z(k) < gr%zt(1,i) )
+!         k = k + 1
+!         if ( k > nlevels ) then
+!           write(fstderr,*) 'STOP Not enough sounding data to ',  &
+!                            'initialize grid:'
+!           write(fstderr,'(a,f7.1,/a,f7.1)') ' Highest sounding level',  &
+!                z(nlevels),  &
+!                'should be higher than highest thermodynamic point',  &
+!                gr%zt(1,gr%nzt)
+!           write(*,*) ' Filename: ', fname
+!           error stop 'STOP in read_profile (sounding.F90)'
+!         endif
+!         x(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), var(k), var(k-1) )
+!       enddo ! while
+!     enddo ! i = 1, gr%nzt
+!
+!     return
+!   end subroutine read_profile
 
   !-------------------------------------------------------------------------------------------------
   subroutine convert_snd2extended_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, &

@@ -27,15 +27,9 @@ def mono_cubic_interp(
     ))
 
 
-def zlinterp_fnc(dim_out: int, dim_src: int, grid_out, grid_src, var_src):
-    """Linearly interpolate a 1D profile onto a target grid."""
-    return clubb_f2py.f2py_zlinterp_fnc(
-        f_arr(grid_out), f_arr(grid_src), f_arr(var_src), dim_out=int(dim_out), dim_src=int(dim_src)
-    )
-
-
-def plinterp_fnc(dim_out: int, dim_src: int, grid_out, grid_src, var_src):
-    """Linearly interpolate a 1D profile onto a target grid in pressure coordinates."""
-    return clubb_f2py.f2py_plinterp_fnc(
-        f_arr(grid_out), f_arr(grid_src), f_arr(var_src), dim_out=int(dim_out), dim_src=int(dim_src)
+def zlinterp(ngrdcol: int, dim_out: int, dim_src: int, grid_out, grid_src, var_src):
+    """Interpolate complete column batches onto ascending target height grids."""
+    return clubb_f2py.f2py_zlinterp(
+        f_arr(grid_out), f_arr(grid_src), f_arr(var_src),
+        ngrdcol=int(ngrdcol), dim_out=int(dim_out), dim_src=int(dim_src),
     )

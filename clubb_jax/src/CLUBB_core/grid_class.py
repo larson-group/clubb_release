@@ -209,7 +209,8 @@ def setup_grid(
 ) -> Grid:
     """Grid Constructor
 
-    This subroutine sets up the CLUBB vertical grid.
+    Set up each column using its own grid bounds and a common level count.
+    Host models supply the heights for every column directly.
 
     References:
     ``Equations for CLUBB'',  Sec. 8,  Grid Configuration.
@@ -290,12 +291,10 @@ def setup_grid(
         )
 
     if grid_type == GRID_TYPE_EVEN:
-        nzm = int(
-            np.floor(
-                (zm_top_arr[0] - zm_init_arr[0] + deltaz_arr[0])
-                / deltaz_arr[0]
-            )
-        )
+        nzm = np.floor((zm_top_arr - zm_init_arr + deltaz_arr) / deltaz_arr).astype(int)
+        if np.any(nzm != nzm[0]):
+            raise ValueError("setup_grid requires the same number of levels in every column")
+        nzm = int(nzm[0])
         nzt = nzm - 1
         if nzm < 2 or nzt < 1:
             raise ValueError(
@@ -313,29 +312,34 @@ def setup_grid(
             raise ValueError(
                 "Stretched zt grid lowest thermodynamic level must be above zm_init."
             )
-        end_idx = int(np.searchsorted(zt_in[0], zm_top_arr[0], side="right") - 1)
-        if end_idx < 0:
+        end_idx = np.array([np.searchsorted(zt_in[i], zm_top_arr[i], side="right") - 1 for i in range(ngrdcol)])
+        if np.any(end_idx < 0):
             print("Stretched zt grid cannot fulfill zm_top requirement", file=sys.stderr)
             print("It is recommended to check the zt grid for all columns of the chunk", file=sys.stderr)
             raise ValueError("Stretched zt grid cannot fulfill zm_top requirement.")
-        zt = zt_in[:, : end_idx + 1]
+        if np.any(end_idx != end_idx[0]):
+            raise ValueError("setup_grid requires the same number of levels in every column")
+        zt = zt_in[:, : int(end_idx[0]) + 1]
         nzt = zt.shape[1]
         nzm = nzt + 1
         zm = _calc_zm_from_zt(nzm, nzt, ngrdcol, zt, zm_init_arr)
     else:
         zm_in = _prepare_height_array("momentum_heights", momentum_heights, ngrdcol)
         _validate_monotonic_increasing("momentum_heights", zm_in)
-        begin_idx = int(np.searchsorted(zm_in[0], zm_init_arr[0], side="left"))
-        end_idx = int(np.searchsorted(zm_in[0], zm_top_arr[0], side="right") - 1)
-        if begin_idx >= zm_in.shape[1]:
+        begin_idx = np.array([np.searchsorted(zm_in[i], zm_init_arr[i], side="left") for i in range(ngrdcol)])
+        end_idx = np.array([np.searchsorted(zm_in[i], zm_top_arr[i], side="right") - 1 for i in range(ngrdcol)])
+        if np.any(begin_idx >= zm_in.shape[1]):
             print("Stretched zm grid cannot fulfill zm_init requirement", file=sys.stderr)
             print("It is recommended to check the zm grid for all columns of the chunk", file=sys.stderr)
             raise ValueError("Stretched zm grid cannot fulfill zm_init requirement.")
-        if end_idx < begin_idx:
+        if np.any(end_idx < begin_idx):
             print("Stretched zm grid cannot fulfill zm_top requirement", file=sys.stderr)
             print("It is recommended to check the zt grid for all columns of the chunk", file=sys.stderr)
             raise ValueError("Stretched zm grid cannot fulfill zm_top requirement.")
-        zm = zm_in[:, begin_idx : end_idx + 1]
+        nzm = end_idx - begin_idx + 1
+        if np.any(nzm != nzm[0]):
+            raise ValueError("setup_grid requires the same number of levels in every column")
+        zm = np.stack([zm_in[i, begin_idx[i] : end_idx[i] + 1] for i in range(ngrdcol)])
         nzm = zm.shape[1]
         nzt = nzm - 1
         if nzm < 2 or nzt < 1:
@@ -603,16 +607,14 @@ def zm2zt2zm(nzm: int, nzt: int, ngrdcol: int, gr, azm, zm_min=None):
 
 
 def ddzm(nzm: int, nzt: int, ngrdcol: int, gr, azm):
-    """2D version of gradzm
-
-    Takes the derivative of variables that are located on momentum grid levels
+    """Takes the derivative of variables that are located on momentum grid levels
     across the thermodynamic grid levels. Output is located on thermodynamic
     levels.
 
     Returns:
         ddzm
 
-    Fortran declarations (gradzm_2D in src/CLUBB_core/grid_class.F90):
+    Fortran declarations (ddzm in src/CLUBB_core/grid_class.F90):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
@@ -627,7 +629,7 @@ def ddzm(nzm: int, nzt: int, ngrdcol: int, gr, azm):
 
         !--------------------------- Output Variables ---------------------------
         real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-          gradzm_2D    ! Vertical derivative of azm (thermo. levs.) [units vary / m]
+          ddzm    ! Vertical derivative of azm (thermo. levs.) [units vary / m]
     """
     # Vertical derivative of azm (thermo. levs.) [units vary / m]
     ddzm = (azm[:, 1:nzm] - azm[:, :nzt]) * gr.invrs_dzt
@@ -635,16 +637,14 @@ def ddzm(nzm: int, nzt: int, ngrdcol: int, gr, azm):
 
 
 def ddzt(nzm: int, nzt: int, ngrdcol: int, gr, azt):
-    """2D version of gradzt
-
-    Takes the derivative of variables that are located on thermodynamic
+    """Takes the derivative of variables that are located on thermodynamic
     grid levels across the momentum grid levels. Output is located on
     momentum levels.
 
     Returns:
-        gradzt_2D
+        ddzt
 
-    Fortran declarations (gradzt_2D in src/CLUBB_core/grid_class.F90):
+    Fortran declarations (ddzt in src/CLUBB_core/grid_class.F90):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
@@ -659,7 +659,7 @@ def ddzt(nzm: int, nzt: int, ngrdcol: int, gr, azt):
 
         !--------------------------- Output Variables ---------------------------
         real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-          gradzt_2D    ! Vertical derivative of azt (mom.levs.) [units vary / m]
+          ddzt    ! Vertical derivative of azt (mom.levs.) [units vary / m]
     """
     # Vertical derivative of azt (mom.levs.) [units vary / m]
     interior = (azt[:, 1:nzt] - azt[:, :nzt - 1]) * gr.invrs_dzm[:, 1:nzm - 1]

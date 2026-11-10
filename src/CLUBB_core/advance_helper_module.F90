@@ -9,7 +9,6 @@ module advance_helper_module
 
   public :: &
     set_boundary_conditions_lhs, &
-    set_boundary_conditions_rhs, &
     calc_stability_correction,   &
     calc_brunt_vaisala_freq_sqd, &
     compute_Cx_fnc_Richardson, &
@@ -26,10 +25,6 @@ module advance_helper_module
     calculate_thlp2_rad, &
     pvertinterp
 
-  interface calc_xpwp
-    module procedure calc_xpwp_1D
-    module procedure calc_xpwp_2D
-  end interface
 
   private ! Set Default Scope
 
@@ -305,76 +300,6 @@ module advance_helper_module
     return
   end subroutine set_boundary_conditions_lhs
 
-  !--------------------------------------------------------------------------
-  subroutine set_boundary_conditions_rhs( &
-               low_value, low_bound, high_value, high_bound, &
-               rhs, &
-               low_value2, low_bound2, high_value2, high_bound2 )
-
-  ! Description:
-  !   Sets the boundary conditions for a right-hand side LAPACK vector.
-  !
-  ! References:
-  !   none
-  !---------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Exernal
-    intrinsic :: present
-
-    !--------------------------- Input Variables ---------------------------
-
-    ! The values for the first variable
-    real( kind = core_rknd ), intent(in) :: low_value, high_value
-
-    ! The bounds for the first variable
-    integer, intent(in) :: low_bound, high_bound
-
-    ! Input / Output Variables
-
-    !--------------------------- Input/Output Variables ---------------------------
-    ! The right-hand side vector
-    real( kind = core_rknd ), dimension(:), intent(inout) :: rhs
-
-    !--------------------------- Optional Input Variables ---------------------------
-
-    ! The values for the second variable
-    real( kind = core_rknd ), intent(in), optional :: low_value2, high_value2
-
-    ! The bounds for the second variable
-    integer, intent(in), optional :: low_bound2, high_bound2
-
-
-    ! -------------------- BEGIN CODE ------------------------
-
-    ! Stop execution if a boundary was provided without a value
-    if ( (present( low_bound2 ) .and. (.not. present( low_value2 ))) .or. &
-         (present( high_bound2 ) .and. (.not. present( high_value2 ))) ) then
-
-      error stop "Boundary condition provided without value."
-
-    end if
-
-    ! Set the lower and upper bounds for the first variable
-    rhs(low_bound) = low_value
-    rhs(high_bound) = high_value
-
-    ! If a lower bound was given for the second variable, set it
-    if ( present( low_bound2 ) ) then
-      rhs(low_bound2) = low_value2
-    end if
-
-    ! If an upper bound was given for the second variable, set it
-    if ( present( high_bound2 ) ) then
-      rhs(high_bound2) = high_value2
-    end if
-
-    return
-  end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
   subroutine calc_stability_correction( nzm, ngrdcol, &
@@ -1306,7 +1231,7 @@ module advance_helper_module
 
   ! Description:
   !   Computes a smoothed version of the min function, using one scalar and
-  !   one 1d array as inputs. For more details, see the interface in this file.
+  !   one column-by-level field as inputs. For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1361,7 +1286,7 @@ module advance_helper_module
 
   ! Description:
   !   Computes a smoothed version of the min function, using one scalar and
-  !   one 1d array as inputs. For more details, see the interface in this file.
+  !   one column-by-level field as inputs. For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1415,7 +1340,7 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the min function, using two 1d arrays as inputs.
+  !   Computes a smoothed version of the min function, using two column-by-level fields.
   !   For more details, see the interface in this file.
 
   ! References:
@@ -1510,7 +1435,7 @@ module advance_helper_module
 
   ! Description:
   !   Computes a smoothed version of the max function, using one scalar and
-  !   one 1d array as inputs. For more details, see the interface in this file.
+  !   one column-by-level field as inputs. For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1565,7 +1490,7 @@ module advance_helper_module
 
   ! Description:
   !   Computes a smoothed version of the max function, using one scalar and
-  !   one 1d array as inputs. For more details, see the interface in this file.
+  !   one column-by-level field as inputs. For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1671,7 +1596,7 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the max function, using two 1d arrays as inputs.
+  !   Computes a smoothed version of the max function, using two column-by-level fields.
   !   For more details, see the interface in this file.
 
   ! References:
@@ -1831,52 +1756,9 @@ module advance_helper_module
 
   end function smooth_heaviside_peskin
 
-  !===============================================================================
-  subroutine calc_xpwp_1D( gr, Km_zm, xm, &
-                           xpwp )
-
-    ! Description:
-    ! Compute x'w' from x<k>, x<k-1>, Km_zm and invrs_dzm
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use grid_class, only: &
-        grid
-
-    implicit none
-
-    ! ----------------------- Input variables -----------------------
-    type (grid), intent(in) :: gr
-
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
-      Km_zm    ! Eddy diff. (k momentum level)                 [m^2/s]
-
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
-      xm       ! x (k thermo level)                            [units vary]
-
-    ! ----------------------- Output variable -----------------------
-    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
-      xpwp     ! x'w'   [(units vary)(m/s)]
-
-    integer :: k
-
-    ! ----------------------- Begin Code -----------------------
-
-    ! Solve for x'w' at all intermediate model levels.
-    do k = 2, gr%nzm-1
-       xpwp(k) = Km_zm(k) * gr%invrs_dzm(1,k) * ( xm(k) - xm(k-1) )
-    end do
-
-    return
-  end subroutine calc_xpwp_1D
 
   !===============================================================================
-  subroutine calc_xpwp_2D( nzm, nzt, ngrdcol, gr, &
+  subroutine calc_xpwp( nzm, nzt, ngrdcol, gr, &
                            Km_zm, xm, &
                            xpwp )
 
@@ -1928,13 +1810,14 @@ module advance_helper_module
 
     return
 
-  end subroutine calc_xpwp_2D
+  end subroutine calc_xpwp
 
   !===============================================================================
-  function vertical_avg( total_idx, rho_ds, field, dz )
+  function vertical_avg( ngrdcol, total_idx, rho_ds, field, dz )
 
     ! Description:
-    ! Computes the density-weighted vertical average of a field.
+    ! Computes the density-weighted vertical average of each column of a field.
+    ! Accumulate levels in their input order, preserving each column's sum.
     !
     ! The average value of a function, f, over a set domain, [a,b], is
     ! calculated by the equation:
@@ -2035,30 +1918,30 @@ module advance_helper_module
 
     !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      total_idx ! The total numer of indices within the range of averaging
+      ngrdcol, & ! Number of columns [-]
+      total_idx  ! Number of levels within the averaging range [-]
 
-    real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,total_idx), intent(in) ::  &
       rho_ds, & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
       field,  & ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
-      dz  ! Reciprocal of thermodynamic or momentum level thickness           [1/m]
+      dz  ! Thermodynamic or momentum level thickness [m]
                 ! depending on whether we're on zt or zm grid.
     ! Note:  The rho_ds and field points need to be arranged from
-    !        lowest to highest in altitude, with rho_ds(1) and
-    !        field(1) actually their respective values at level k = 1.
+    !        lowest to highest in altitude in each column, with rho_ds(i,1)
+    !        and field(i,1) holding their values at the first supplied level.
 
     !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       vertical_avg  ! Vertical average of field    [Units of field]
 
-    ! Local variables
-    real( kind = core_rknd ) :: &
-      numer_integral, & ! Integral in the numerator (see description)
-      denom_integral    ! Integral in the denominator (see description)
+    !--------------------------- Local Variables ---------------------------
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      numer_integral, & ! Density-weighted field integral [field units kg/m^2]
+      denom_integral    ! Integrated density [kg/m^2]
 
+    integer :: i, k ! Column and vertical indices [-]
 
-    integer :: k
-
-    !-----------------------------------------------------------------------
+    !--------------------------- Begin Code ---------------------------
 
     ! Initialize variable
     numer_integral = 0.0_core_rknd
@@ -2067,28 +1950,31 @@ module advance_helper_module
     ! Compute the numerator and denominator integral.
     ! Multiply rho_ds at level k by the level thickness
     ! at level k.  Then, sum over all vertical levels.
-    do k=1, total_idx
+    do k = 1, total_idx
+      do i = 1, ngrdcol
 
-        numer_integral = numer_integral + rho_ds(k) * dz(k) * field(k)
-        denom_integral = denom_integral + rho_ds(k) * dz(k)
+        numer_integral(i) = numer_integral(i) + rho_ds(i,k) * dz(i,k) * field(i,k)
+        denom_integral(i) = denom_integral(i) + rho_ds(i,k) * dz(i,k)
 
+      end do
     end do
 
     ! Find the vertical average of 'field'.
     vertical_avg = numer_integral / denom_integral
-    !vertical_avg = sum( rho_ds(:) * dz(:) * field(:) ) / sum( rho_ds(:) * dz(:) )
 
     return
   end function vertical_avg
 
   !===============================================================================
-  function vertical_integral( total_idx, rho_ds, &
-                                       field, dz )
+  function vertical_integral( ngrdcol, total_idx, rho_ds, field, & ! In
+                              dz, & ! In
+                              l_active ) ! Optional In
 
     ! Description:
-    ! Computes the vertical integral. rho_ds, field, and dz must all be
-    ! of size total_idx and should all start at the same index.
-    !
+    !   Integrate field * rho_ds * dz independently over each column's levels.
+    !   The arrays start at the same level. Optional l_active skips columns
+    !   whose integrals are not needed, returning zero without reading them.
+    !   Accumulate levels in input order to preserve the original SUM ordering.
 
     ! References:
     ! None
@@ -2101,39 +1987,43 @@ module advance_helper_module
 
     !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      total_idx  ! The total numer of indices within the range of averaging
+      ngrdcol, & ! Number of columns [-]
+      total_idx  ! Number of levels within the integration range [-]
 
-    real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
-      rho_ds,  & ! Dry, static density                   [kg/m^3]
-      field,   & ! The field to be vertically averaged   [Units vary]
-      dz         ! Level thickness                       [1/m]
-    ! Note:  The rho_ds and field points need to be arranged from
-    !        lowest to highest in altitude, with rho_ds(1) and
-    !        field(1) actually their respective values at level k = k_start.
+    real( kind = core_rknd ), dimension(ngrdcol,total_idx), intent(in) :: &
+      rho_ds, & ! Dry, static density [kg/m^3]
+      field,  & ! Field to integrate [units vary]
+      dz        ! Level thickness [m]
+
+    !--------------------------- Optional Input Variables ---------------------------
+    logical, dimension(ngrdcol), optional, intent(in) :: &
+      l_active ! Columns whose integrals are needed [-]
 
     !--------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ) :: &
-      vertical_integral ! Integral in the numerator (see description)
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      vertical_integral ! Density-weighted vertical integral [field units kg/m^2]
 
-    !-----------------------------------------------------------------------
+    !--------------------------- Local Variables ---------------------------
+    logical, dimension(ngrdcol) :: &
+      l_reduce ! Active reduction columns, including the default of all columns [-]
 
-    !  Assertion checks: that k_start <= gr%nz - 1
-    !                    that k_end   >= 2
-    !                    that k_start <= k_end
+    integer :: i, k ! Column and vertical indices [-]
 
+    !--------------------------- Begin Code ---------------------------
+    l_reduce = .true.
+    if ( present(l_active) ) l_reduce = l_active
 
-    ! Initializing vertical_integral to avoid a compiler warning.
     vertical_integral = 0.0_core_rknd
 
-    ! Compute the integral.
-    ! Multiply the field at level k by rho_ds at level k and by
-    ! the level thickness at level k.  Then, sum over all vertical levels.
-    ! Note:  The values of the field and rho_ds are passed into this function
-    !        so that field(1) and rho_ds(1) are actually the field and rho_ds
-    !        at level k_start.
-    vertical_integral = sum( field * rho_ds * dz )
+    do k = 1, total_idx
+      do i = 1, ngrdcol
 
-    !print *, vertical_integral
+        if ( l_reduce(i) ) then
+          vertical_integral(i) = vertical_integral(i) + field(i,k) * rho_ds(i,k) * dz(i,k)
+        end if
+
+      end do
+    end do
 
     return
   end function vertical_integral

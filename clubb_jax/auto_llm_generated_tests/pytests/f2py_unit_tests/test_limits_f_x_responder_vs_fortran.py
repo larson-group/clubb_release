@@ -27,7 +27,7 @@ def test_f2py_oracle():
     for seed in (11, 22, 33):
         mf, Skx, sgn = _inputs(seed)
         mp = np.full((NG, NZ), MAX_POS); mn = np.full((NG, NZ), MAX_NEG)
-        f_out = fortran.calc_limits_f_x_responder(NZ, mf, Skx, sgn, mp, mn)
+        f_out = fortran.calc_limits_f_x_responder(NZ, NG, mf, Skx, sgn, mp, mn)
         g_out = call_jax(calc_limits_F_x_responder, mf, Skx, sgn, mp, mn)
         worst = max(worst, max_abs_diff("calc_limits_F_x_responder", tuple(g_out), tuple(f_out)))
     assert worst < 1e-11, f"calc_limits_f_x_responder Fortran mismatch {worst:.2e}"

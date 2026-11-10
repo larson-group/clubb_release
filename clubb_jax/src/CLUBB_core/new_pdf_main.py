@@ -85,18 +85,21 @@ def calc_F_x_zeta_x_setter(Skx, slope_coef_spread_DG_means_x, pdf_component_stde
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           Skx    ! Skewness of x (overall)              [-]
 
-        real( kind = core_rknd ), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
           slope_coef_spread_DG_means_x, & ! Slope coef: spread PDF comp. means x [-]
-          pdf_component_stdev_factor_x, & ! Param.: PDF comp. standard devs.; x  [-]
+          pdf_component_stdev_factor_x    ! Param.: PDF comp. standard devs.; x  [-]
+
+        real( kind = core_rknd ), intent(in) :: &
           lambda                          ! Param. for Skx dependence            [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           F_x,     & ! Parameter for the spread of the PDF component means of x  [-]
           zeta_x,  & ! Parameter for the PDF component variances of x            [-]
           min_F_x, & ! Minimum allowable value of parameter F_x                  [-]
@@ -234,18 +237,19 @@ def calc_F_x_responder(coef_spread_DG_means_x, exp_factor_x, min_F_x, max_F_x):
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
           coef_spread_DG_means_x    ! Coef.: spread betw. PDF comp. means of x   [-]
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           exp_factor_x, & ! Factor of the form 1 - exp{}; reduces F_x  [-]
           min_F_x,      & ! Minimum allowable value of parameter F_x   [-]
           max_F_x         ! Maximum allowable value of parameter F_x   [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
           F_x    ! Parameter for the spread between the PDF component means of x [-]
     """
     cse = coef_spread_DG_means_x * exp_factor_x
@@ -269,39 +273,40 @@ def calc_responder_var(xm, xp2, sgn_wpxp, mixt_frac, coef_spread_DG_means_x, exp
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           xm,           & ! Mean of x (overall)                       [units vary]
           xp2,          & ! Variance of x (overall)               [(units vary)^2]
           sgn_wpxp,     & ! Sign of the covariance of w and x                  [-]
           mixt_frac,    & ! Mixture fraction                                   [-]
           exp_factor_x    ! Factor of the form 1 - exp{}; reduces F_x          [-]
 
-        real( kind = core_rknd ), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
           coef_spread_DG_means_x    ! Coef.: spread betw. PDF comp. means of x   [-]
 
-        real( kind = core_rknd ), dimension(nz), intent(in) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
           max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
         !--------------------------- Input/Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
           Skx    ! Skewness of x (overall)              [-]
 
         !--------------------------- Output Variables ---------------------------
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
           mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
           sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
           sigma_x_2_sqd    ! Variance of x (2nd PDF component)    [(units vary)^2]
 
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>    [-]
           coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>    [-]
 
         ! Output only for recording statistics.
-        real( kind = core_rknd ), dimension(nz), intent(out) :: &
+        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           F_x,     & ! Param. for the spread betw. the PDF component means of x  [-]
           min_F_x, & ! Minimum allowable value of parameter F_x                  [-]
           max_F_x    ! Maximum allowable value of parameter F_x                  [-]
@@ -347,8 +352,8 @@ def new_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw,
 
         !--------------------------- Input Variables ---------------------------
         integer, intent(in) :: &
-          nz, &
-          ngrdcol
+          nz, & ! Number of vertical levels
+          ngrdcol ! Number of grid columns
 
         real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
           wm,      & ! Mean of w (overall)                 [m/s]
@@ -373,6 +378,10 @@ def new_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw,
           Skrt,  & ! Skewness of rt (overall)            [-]
           Skthl    ! Skewness of thl (overall)           [-]
 
+        !--------------------------- Input/Output Variables ---------------------------
+        type(implicit_coefs_terms), intent(inout) :: &
+          pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
         !--------------------------- Output Variables ---------------------------
         real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
           mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
@@ -388,10 +397,6 @@ def new_pdf_driver(wm, rtm, thlm, wp2, rtp2, thlp2, Skw,
           sigma_thl_1_sqd, & ! Variance of thl (1st PDF component)  [K^2]
           sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
           mixt_frac          ! Mixture fraction                     [-]
-
-        !--------------------------- Input/Output Variables ---------------------------
-        type(implicit_coefs_terms), intent(inout) :: &
-          pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
     """
 
     # ------------------------- Begin Code -------------------------

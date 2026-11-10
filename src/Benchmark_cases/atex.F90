@@ -22,12 +22,16 @@ module atex
   subroutine calc_forcings( ngrdcol, gr, z_inversion, &
                             thlm_forcing, rtm_forcing )
 
+    ! Description:
+    !   Compute ATEX heat and moisture tendencies on each column's grid,
+    !   using its inversion height.
+
     implicit none
 
     !--------------------- Input Variables ---------------------
-    integer, intent(in) :: ngrdcol
-    type (grid), intent(in) :: gr
-    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: z_inversion
+    integer, intent(in) :: ngrdcol ! Number of columns [-]
+    type (grid), intent(in) :: gr ! Column grids [m]
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: z_inversion ! Inversion heights [m]
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,gr%nzt) :: & 
@@ -35,13 +39,13 @@ module atex
       rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
     !--------------------- Local Variables ---------------------
-    integer :: i, k
+    integer :: i, k ! Column and vertical indices
 
     !--------------------- Begin Code ---------------------
     ! Theta-l tendency
     !$acc parallel loop gang vector collapse(2) default(present)
-    do i = 1, ngrdcol
-      do k = 1, gr%nzt
+    do k = 1, gr%nzt
+      do i = 1, ngrdcol
 
         if ( gr%zt(i,k) > 0._core_rknd .and. gr%zt(i,k) < z_inversion(i) ) then
           ! Known magic number
@@ -275,11 +279,9 @@ module atex
 
     if ( l_add_dycore_grid ) then
 
-      do i = 1, ngrdcol
-        rtm_dycore(i,:) = lin_interp_between_grids( gr_dycore%nzt, gr%nzt, &
-                                                    gr_dycore%zt(i,:), gr%zt(i,:), &
-                                                    rtm(i,:) )
-      end do
+      rtm_dycore = lin_interp_between_grids( ngrdcol, gr_dycore%nzt, gr%nzt, & ! In
+                                             gr_dycore%zt, gr%zt, & ! In
+                                             rtm ) ! In
 
       ! calculate z_inversion for dycore grid (z_inversion_dycore) with interpolated rtm values on 
       ! dycore grid

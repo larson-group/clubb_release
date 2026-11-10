@@ -58,7 +58,10 @@ module mpace_a
                             um_hoc_grid, vm_hoc_grid, & 
                             sclrm_forcing, edsclrm_forcing )
 
-!        Description:
+! Description:
+!   Interpolate shared MPACE-A forcing data in time and onto every model
+!   column's vertical grid, then return thermodynamic/scalar tendencies and
+!   observed winds for nudging.
 !
 !        References:
 !          Liou, Wallace and Hobbs, Shettle and Weinman
@@ -76,7 +79,7 @@ module mpace_a
       grid ! Type
 
     use interpolation, only: &
-      zlinterp_fnc, &   ! Procedure(s)
+      zlinterp, &   ! Procedure(s)
       linear_interp_factor 
 
     use clubb_precision, only: &
@@ -150,12 +153,14 @@ module mpace_a
     real( kind = core_rknd ) :: ratio
 
     ! real, dimension(file_nlevels) :: omega_column
-    real( kind = core_rknd ), dimension(file_nlevels) :: dTdt_column
-    real( kind = core_rknd ), dimension(file_nlevels) :: dqdt_column
-    real( kind = core_rknd ), dimension(file_nlevels) :: vertT_column
-    real( kind = core_rknd ), dimension(file_nlevels) :: vertq_column
-    real( kind = core_rknd ), dimension(file_nlevels) :: um_column
-    real( kind = core_rknd ), dimension(file_nlevels) :: vm_column
+    real( kind = core_rknd ), dimension(ngrdcol,file_nlevels) :: &
+      dTdt_column,  & ! Time-interpolated temperature forcing [K/hr]
+      dqdt_column,  & ! Time-interpolated moisture forcing [g/kg/hr]
+      vertT_column, & ! Time-interpolated vertical temperature tendency [K/hr]
+      vertq_column, & ! Time-interpolated vertical moisture tendency [g/kg/hr]
+      um_column,    & ! Time-interpolated observed u wind [m/s]
+      vm_column,    & ! Time-interpolated observed v wind [m/s]
+      forcing_heights ! Shared file heights broadcast for batched interpolation [m]
 
     ! real, dimension(gr%nz) :: omega_hoc_grid
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
@@ -185,46 +190,52 @@ module mpace_a
 !     .                      -omega_forcing(k,before_time))
 !     .                     + omega_forcing(k,before_time)
 
-      dTdt_column(k)  = linear_interp_factor( ratio, dTdt_forcing(k, after_time), &
+      dTdt_column(:,k)  = linear_interp_factor( ratio, dTdt_forcing(k, after_time), &
                                               dTdt_forcing(k, before_time) )
 
-      dqdt_column(k)  = linear_interp_factor( ratio, dqdt_forcing(k, after_time), &
+      dqdt_column(:,k)  = linear_interp_factor( ratio, dqdt_forcing(k, after_time), &
                                               dqdt_forcing(k, before_time) )
 
-      vertT_column(k) = linear_interp_factor( ratio, vertT_forcing(k,after_time), &
+      vertT_column(:,k) = linear_interp_factor( ratio, vertT_forcing(k,after_time), &
                                               vertT_forcing(k,before_time) )
 
-      vertq_column(k) = linear_interp_factor( ratio, vertq_forcing(k,after_time), &
+      vertq_column(:,k) = linear_interp_factor( ratio, vertq_forcing(k,after_time), &
                                               vertq_forcing(k,before_time) )
 
-      um_column(k)    = linear_interp_factor( ratio, um_obs(k, after_time), um_obs(k, before_time) )
+      um_column(:,k)    = linear_interp_factor( ratio, um_obs(k, after_time), um_obs(k, &
+        before_time) )
 
-      vm_column(k)    = linear_interp_factor( ratio, vm_obs(k, after_time), vm_obs(k, before_time) )
+      vm_column(:,k)    = linear_interp_factor( ratio, vm_obs(k, after_time), vm_obs(k, &
+        before_time) )
 
     end do
 
-!     Do linear interpolation in space
-!     using zlinterp_fnc
-    do i = 1, ngrdcol
+    ! The forcing file is shared; each target column uses its own grid.
+    forcing_heights = spread( file_heights, dim=1, ncopies=ngrdcol )
 
-      dTdt_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
-                                          file_heights, dTdt_column )
+    dTdt_hoc_grid = zlinterp( ngrdcol, gr%nzt, & ! In
+                              file_nlevels, gr%zt, & ! In
+                              forcing_heights, dTdt_column ) ! In
 
-      dqdt_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
-                                          file_heights, dqdt_column )
+    dqdt_hoc_grid = zlinterp( ngrdcol, gr%nzt, & ! In
+                              file_nlevels, gr%zt, & ! In
+                              forcing_heights, dqdt_column ) ! In
 
-      vertT_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
-                                            file_heights, vertT_column )
+    vertT_hoc_grid = zlinterp( ngrdcol, gr%nzt, & ! In
+                               file_nlevels, gr%zt, & ! In
+                               forcing_heights, vertT_column ) ! In
 
-      vertq_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
-                                          file_heights, vertq_column )
+    vertq_hoc_grid = zlinterp( ngrdcol, gr%nzt, & ! In
+                               file_nlevels, gr%zt, & ! In
+                               forcing_heights, vertq_column ) ! In
 
-      um_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
-                                        file_heights, um_column )
+    um_hoc_grid = zlinterp( ngrdcol, gr%nzt, & ! In
+                            file_nlevels, gr%zt, & ! In
+                            forcing_heights, um_column ) ! In
 
-      vm_hoc_grid(i,:)  = zlinterp_fnc( gr%nzt, file_nlevels, gr%zt(i,:), & 
-                                        file_heights, vm_column )
-    end do
+    vm_hoc_grid = zlinterp( ngrdcol, gr%nzt, & ! In
+                            file_nlevels, gr%zt, & ! In
+                            forcing_heights, vm_column ) ! In
 
 ! eMFc
 

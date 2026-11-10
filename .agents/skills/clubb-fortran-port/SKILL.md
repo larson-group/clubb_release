@@ -223,8 +223,10 @@ Call sites:
 
 2. Format target-language calls to mirror the Fortran call formatting.
    - Use positional arguments when the target routine can safely accept them.
-   - Group call arguments on lines that correspond to the Fortran continuation
-     lines.
+   - Group multiline call arguments on lines that correspond to the Fortran
+     continuation lines. Apply the compact-call exception in
+     [routine formatting](../clubb-fortran-format/SKILL.md): preserve small
+     one-line calls instead of expanding them to match a multiline definition.
    - Keep related Fortran arguments together even if another grouping would be
      more idiomatic in the target language.
    - If a target call truly needs keywords, leave only that call keyworded and
@@ -574,7 +576,9 @@ Final review checklist:
 4. Argument names, order, grouping, optional status, and returns match the Fortran
    or documented target API surface.
 5. Calls appear in the same order as the Fortran.
-6. Call arguments are positional and grouped like the Fortran where practical.
+6. Call arguments are positional and grouped like the Fortran where practical,
+   including the compact-call exception in
+   [routine formatting](../clubb-fortran-format/SKILL.md).
 7. Comments and divider blocks match the Fortran.
 8. Calculations, temporaries, array dimensions, and conditionals are mechanically
    equivalent to the Fortran.

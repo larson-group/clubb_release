@@ -208,7 +208,7 @@ module rev_direction_grid_test
       nu_vert_res_dep_ascend,  & ! Vertical resolution dependent nu (ascending)
       nu_vert_res_dep_descend    ! Vertical resolution dependent nu (descending)
   
-    real( kind = core_rknd ) :: & 
+    real( kind = core_rknd ), dimension(1) :: &
       mixt_frac_max_mag, &
       lmin
 
@@ -321,22 +321,22 @@ module rev_direction_grid_test
        ! Call setup_grid_api for an ascending grid.
        l_ascending_grid = .true.
 
-       call setup_grid_api( nzm, sfc_elevation, &
-                            l_implemented, l_ascending_grid, &
-                            grid_type, deltaz, zm_init, zm_top, &
-                            momentum_heights, thermodynamic_heights, &
-                            gr_ascending, err_info_dummy )
+       call setup_grid_api( nzm, 1, [sfc_elevation], l_implemented, & ! In
+                            l_ascending_grid, grid_type, [deltaz], [zm_init], [zm_top], & ! In
+                            reshape(momentum_heights, [1,nzm]), & ! In
+                            reshape(thermodynamic_heights, [1,nzt]), & ! In
+                            gr_ascending, err_info_dummy ) ! InOut
 
        ! Call setup_grid_api for a descending grid.
        l_ascending_grid = .false.
        thermodynamic_heights = flip( thermodynamic_heights, nzt )
        momentum_heights = flip( momentum_heights, nzm )
 
-       call setup_grid_api( nzm, sfc_elevation, &
-                            l_implemented, l_ascending_grid, &
-                            grid_type, deltaz, zm_init, zm_top, &
-                            momentum_heights, thermodynamic_heights, &
-                            gr_descending, err_info_dummy )
+       call setup_grid_api( nzm, 1, [sfc_elevation], l_implemented, & ! In
+                            l_ascending_grid, grid_type, [deltaz], [zm_init], [zm_top], & ! In
+                            reshape(momentum_heights, [1,nzm]), & ! In
+                            reshape(thermodynamic_heights, [1,nzt]), & ! In
+                            gr_descending, err_info_dummy ) ! InOut
 
        !!!!! Grid Test 1 -- Test symmetry for grid variables.
 
@@ -815,16 +815,16 @@ module rev_direction_grid_test
                                           rhs_ta_godunov_descend ) ! Out
 
        ! calc_derived_params_api (called from within setup_parameters in CLUBB)
-       call calc_derived_params_api( gr_ascending, grid_type, deltaz, & ! Intent(in)
-                              clubb_params(1,:),               & ! Intent(in)
-                              l_prescribed_avg_deltaz,         & ! Intent(in)
-                              nu_vert_res_dep_ascend, lmin,    & ! intent(inout)
-                              mixt_frac_max_mag )                ! intent(inout)
-       call calc_derived_params_api( gr_descending, grid_type, deltaz, & ! Intent(in)
-                              clubb_params(1,:),                & ! Intent(in)
-                              l_prescribed_avg_deltaz,          & ! Intent(in)
-                              nu_vert_res_dep_descend, lmin,    & ! intent(inout)
-                              mixt_frac_max_mag )                 ! intent(inout)
+       call calc_derived_params_api( gr_ascending, 1, grid_type, [deltaz], & ! In
+                              clubb_params,               & ! In
+                              l_prescribed_avg_deltaz,         & ! In
+                              nu_vert_res_dep_ascend, lmin,    & ! InOut
+                              mixt_frac_max_mag )                ! InOut
+       call calc_derived_params_api( gr_descending, 1, grid_type, [deltaz], & ! In
+                              clubb_params,                & ! In
+                              l_prescribed_avg_deltaz,          & ! In
+                              nu_vert_res_dep_descend, lmin,    & ! InOut
+                              mixt_frac_max_mag )                 ! InOut
 
        ! Compare the symmetry of the results -- zt level variables
        do k = 1, nzt

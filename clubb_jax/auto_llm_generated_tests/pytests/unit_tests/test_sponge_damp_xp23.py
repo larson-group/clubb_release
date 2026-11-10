@@ -5,8 +5,10 @@ from clubb_jax.auto_llm_generated_tests.pytests.array_inputs import call_jax
 
 
 import numpy as np
+import jax.numpy as jnp
+from clubb_jax.src.CLUBB_core.grid_class import setup_grid
 
-from clubb_jax.src.CLUBB_core.sponge_layer_damping import sponge_damp_xp2, sponge_damp_xp3
+from clubb_jax.src.CLUBB_core.sponge_layer_damping import sponge_damp_xp2, sponge_damp_xp3, sponge_damp_profile
 
 _NG, _DZ, _ZTOP = 2, 40.0, 1200.0
 _TAU, _DEPTH, _DT, _XTOLSQ = 100.0, 300.0, 60.0, 1.0e-12
@@ -17,9 +19,11 @@ def test_below_sponge_noop():
     zm = np.tile(np.linspace(0, 1200, nzm)[None, :], (1, 1))
     zt = 0.5 * (zm[:, :-1] + zm[:, 1:])
     xp2 = np.ones((1, nzm)) * 0.5; xp3 = np.ones((1, nzm - 1)) * 0.3
-    tau2 = np.full((1, nzm), _TAU); tau3 = np.full((1, nzm - 1), _TAU)
-    g2 = np.asarray(sponge_damp_xp2(_DT, zm, xp2, _XTOLSQ, tau2, _DEPTH))
-    g3 = np.asarray(call_jax(sponge_damp_xp3, _DT, zt, zm, xp3, tau3, _DEPTH))
+    gr = setup_grid(1, 0.0, 0.0, 1200.0, grid_type=3, momentum_heights=zm)
+    profile2 = sponge_damp_profile(jnp.full((1, nzm), _TAU), jnp.full(1, _DEPTH))
+    profile3 = sponge_damp_profile(jnp.full((1, nzm - 1), _TAU), jnp.full(1, _DEPTH))
+    g2 = np.asarray(call_jax(sponge_damp_xp2, 1, nzm, gr, _DT, zm, xp2, _XTOLSQ, profile2))
+    g3 = np.asarray(call_jax(sponge_damp_xp3, 1, nzm, nzm - 1, gr, _DT, zt, zm, xp3, profile3))
     far = (zm[0, -1] - zm[0]) >= _DEPTH
     assert np.allclose(g2[0, far], xp2[0, far]), "xp2 modified below sponge"
     fart = (zm[0, -1] - zt[0]) >= _DEPTH

@@ -24,7 +24,7 @@ def test_f2py_oracle():
         cx1 = rng.uniform(0.1, 2.0, (NG, NZ)); cx2 = rng.uniform(0.1, 2.0, (NG, NZ))
         if trial % 4 == 0:   # reduced branch (zero sigma products)
             cw1 = np.zeros((NG, NZ)); cw2 = np.zeros((NG, NZ)); n_red += 1
-        fc, ft = fortran.calc_coefs_wp2xp_semiimpl(NZ, wp2, xp2, sgn, mf, F_w, F_x, cw1, cw2, cx1, cx2)
+        fc, ft = fortran.calc_coefs_wp2xp_semiimpl(NZ, NG, wp2, xp2, sgn, mf, F_w, F_x, cw1, cw2, cx1, cx2)
         gc, gt = calc_coefs_wp2xp_semiimpl(wp2, xp2, sgn, mf, F_w, F_x, cw1, cw2, cx1, cx2)
         worst = max(worst, max_abs_diff("coefs_semiimpl", (gc, gt), (fc, ft)))
     assert worst < 1e-11, f"calc_coefs_wp2xp_semiimpl Fortran mismatch {worst:.2e}"
@@ -62,7 +62,7 @@ def test_wpxpyp_f2py():
         if trial % 4 == 0:
             cx1 = np.zeros(sh); cx2 = np.zeros(sh); n_red += 1   # reduced branch
         args = (wp2, xp2, yp2, wpxp, wpyp, sx, sy, mf, F_w, F_x, F_y, cw1, cw2, cx1, cx2, cy1, cy2)
-        fc, ft = fortran.calc_coefs_wpxpyp_semiimpl(NZ, *args)
+        fc, ft = fortran.calc_coefs_wpxpyp_semiimpl(NZ, NG, *args)
         gc, gt = calc_coefs_wpxpyp_semiimpl(*args)
         worst = max(worst, max_abs_diff("coefs_semiimpl", (gc, gt), (fc, ft)))
     assert worst < 1e-11, f"calc_coefs_wpxpyp_semiimpl Fortran mismatch {worst:.2e}"

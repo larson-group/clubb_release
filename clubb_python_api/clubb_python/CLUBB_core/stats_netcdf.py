@@ -25,121 +25,40 @@ def _as_level_axis(values) -> np.ndarray:
     raise ValueError("Expected a 1D or 2D vertical coordinate array.")
 
 
-def stats_update(name: str, values, icol: int | None = None,
-                 level: int | None = None):
-    """Update a stats variable using scalar, 1D, or 2D payloads."""
+def stats_update(name: str, values):
+    """Update a complete surface column vector or a complete profile batch."""
     arr = _as_stats_array(values)
-    icol_idx = 0 if icol is None else int(icol) + 1
-    level_idx = 0 if level is None else int(level) + 1
-
-    if arr.ndim == 0:
-        if icol_idx <= 0:
-            raise ValueError("Scalar stats_update requires icol > 0.")
-        clubb_f2py.f2py_stats_update_scalar(name, float(arr), icol_idx, level_idx)
-        return
-
     if arr.ndim == 1:
-        if icol_idx > 0 and level_idx > 0:
-            raise ValueError("rank-1 stats_update accepts icol or level, not both.")
-        if level_idx > 0:
-            raise ValueError("rank-1 stats_update does not support level-specific dispatch.")
-        clubb_f2py.f2py_stats_update_1d(name, arr, icol_idx, n=arr.shape[0])
-        return
-
-    if arr.ndim == 2:
-        if icol_idx > 0 or level_idx > 0:
-            raise ValueError("rank-2 stats_update does not support icol or level.")
-        clubb_f2py.f2py_stats_update_2d(name, f_arr(arr), ncol=arr.shape[0], nz=arr.shape[1])
-        return
-
-    raise ValueError(f"stats_update only supports rank-0, rank-1, or rank-2 values; got rank-{arr.ndim}.")
+        clubb_f2py.f2py_stats_update_sfc(name, f_arr(arr), ncol=arr.shape[0])
+    elif arr.ndim == 2:
+        clubb_f2py.f2py_stats_update_var(name, f_arr(arr), ncol=arr.shape[0], nz=arr.shape[1])
+    else:
+        raise ValueError("stats_update requires a surface vector or a (col,level) batch.")
 
 
-def stats_begin_budget(name: str, values, icol: int | None = None):
-    """Begin budget accumulation using scalar, 1D, or 2D payloads."""
+def stats_begin_budget(name: str, values):
+    """Begin accumulation for a complete (col,level) budget field."""
     arr = _as_stats_array(values)
-    icol_idx = 0 if icol is None else int(icol) + 1
-
-    if arr.ndim == 0:
-        if icol_idx <= 0:
-            raise ValueError("Scalar stats_begin_budget requires icol > 0.")
-        clubb_f2py.f2py_stats_begin_budget_scalar(name, float(arr), icol_idx)
-        return
-
-    if arr.ndim == 1:
-        clubb_f2py.f2py_stats_begin_budget_1d(name, arr, icol_idx, n=arr.shape[0])
-        return
-
-    if arr.ndim == 2:
-        if icol_idx > 0:
-            raise ValueError("rank-2 stats_begin_budget does not support icol.")
-        clubb_f2py.f2py_stats_begin_budget_2d(name, f_arr(arr), ncol=arr.shape[0], nz=arr.shape[1])
-        return
-
-    raise ValueError(
-        f"stats_begin_budget only supports rank-0, rank-1, or rank-2 values; got rank-{arr.ndim}."
-    )
+    if arr.ndim != 2:
+        raise ValueError("stats_begin_budget requires a complete (col,level) batch.")
+    clubb_f2py.f2py_stats_begin_budget(name, f_arr(arr), ncol=arr.shape[0], nz=arr.shape[1])
 
 
-def stats_update_budget(name: str, values, icol: int | None = None,
-                        level: int | None = None):
-    """Update an active budget using scalar, 1D, or 2D payloads."""
+def stats_update_budget(name: str, values):
+    """Update a complete (col,level) budget field."""
     arr = _as_stats_array(values)
-    icol_idx = 0 if icol is None else int(icol) + 1
-    level_idx = 0 if level is None else int(level) + 1
-
-    if arr.ndim == 0:
-        if icol_idx <= 0:
-            raise ValueError("Scalar stats_update_budget requires icol > 0.")
-        clubb_f2py.f2py_stats_update_budget_scalar(name, float(arr), icol_idx, level_idx)
-        return
-
-    if arr.ndim == 1:
-        if icol_idx > 0 and level_idx > 0:
-            raise ValueError("rank-1 stats_update_budget accepts icol or level, not both.")
-        if level_idx > 0:
-            raise ValueError("rank-1 stats_update_budget does not support level-specific dispatch.")
-        clubb_f2py.f2py_stats_update_budget_1d(name, arr, icol_idx, n=arr.shape[0])
-        return
-
-    if arr.ndim == 2:
-        if icol_idx > 0 or level_idx > 0:
-            raise ValueError("rank-2 stats_update_budget does not support icol or level.")
-        clubb_f2py.f2py_stats_update_budget_2d(name, f_arr(arr), ncol=arr.shape[0], nz=arr.shape[1])
-        return
-
-    raise ValueError(
-        f"stats_update_budget only supports rank-0, rank-1, or rank-2 values; got rank-{arr.ndim}."
-    )
+    if arr.ndim != 2:
+        raise ValueError("stats_update_budget requires a complete (col,level) batch.")
+    clubb_f2py.f2py_stats_update_budget(name, f_arr(arr), ncol=arr.shape[0], nz=arr.shape[1])
 
 
-def stats_finalize_budget(name: str, values, icol: int | None = None,
-                          l_count_sample: bool = True):
-    """Finalize an active budget using scalar, 1D, or 2D payloads."""
+def stats_finalize_budget(name: str, values, l_count_sample: bool = True):
+    """Finalize a complete (col,level) budget field and optionally count a sample."""
     arr = _as_stats_array(values)
-    icol_idx = 0 if icol is None else int(icol) + 1
-
-    if arr.ndim == 0:
-        if icol_idx <= 0:
-            raise ValueError("Scalar stats_finalize_budget requires icol > 0.")
-        clubb_f2py.f2py_stats_finalize_budget_scalar(name, float(arr), icol_idx, l_count_sample)
-        return
-
-    if arr.ndim == 1:
-        clubb_f2py.f2py_stats_finalize_budget_1d(name, arr, icol_idx, l_count_sample, n=arr.shape[0])
-        return
-
-    if arr.ndim == 2:
-        if icol_idx > 0:
-            raise ValueError("rank-2 stats_finalize_budget does not support icol.")
-        clubb_f2py.f2py_stats_finalize_budget_2d(
-            name, f_arr(arr), l_count_sample, ncol=arr.shape[0], nz=arr.shape[1]
-        )
-        return
-
-    raise ValueError(
-        f"stats_finalize_budget only supports rank-0, rank-1, or rank-2 values; got rank-{arr.ndim}."
-    )
+    if arr.ndim != 2:
+        raise ValueError("stats_finalize_budget requires a complete (col,level) batch.")
+    clubb_f2py.f2py_stats_finalize_budget(
+        name, f_arr(arr), l_count_sample, ncol=arr.shape[0], nz=arr.shape[1])
 
 
 def init_stats(registry_path: str, output_path: str, ncol_batch: int,
@@ -235,71 +154,6 @@ def stats_end_timestep(time_value: float, err_info: ErrInfo):
     set_fortran_err_info(err_info)
     clubb_f2py.f2py_stats_end_timestep(time_value)
     return get_fortran_err_info()
-
-
-def stats_update_scalar(name: str, values: float, icol: int | None = None,
-                        level: int | None = None):
-    """Update a scalar stats variable using Python indexing."""
-    stats_update(name, values, icol=icol, level=level)
-
-
-def stats_update_1d(name: str, n: int, values: np.ndarray, icol: int | None = None):
-    """Update a 1D profile or surface stats variable using Python indexing."""
-    stats_update(name, np.asarray(values)[:n], icol=icol)
-
-
-def stats_update_2d(name: str, ncol: int, nz: int, values: np.ndarray):
-    """Update a 2D field stats variable."""
-    stats_update(name, np.asarray(values)[:ncol, :nz])
-
-
-def stats_begin_budget_scalar(name: str, values: float, icol: int | None = None):
-    """Begin budget tracking for a scalar variable using Python indexing."""
-    stats_begin_budget(name, values, icol=icol)
-
-
-def stats_begin_budget_1d(name: str, n: int, values: np.ndarray, icol: int | None = None):
-    """Begin budget tracking for a 1D variable using Python indexing."""
-    stats_begin_budget(name, np.asarray(values)[:n], icol=icol)
-
-
-def stats_begin_budget_2d(name: str, ncol: int, nz: int, values: np.ndarray):
-    """Begin budget tracking for a 2D variable."""
-    stats_begin_budget(name, np.asarray(values)[:ncol, :nz])
-
-
-def stats_update_budget_scalar(name: str, values: float, icol: int | None = None,
-                               level: int | None = None):
-    """Update budget accumulation for a scalar variable using Python indexing."""
-    stats_update_budget(name, values, icol=icol, level=level)
-
-
-def stats_update_budget_1d(name: str, n: int, values: np.ndarray, icol: int | None = None):
-    """Update budget accumulation for a 1D variable using Python indexing."""
-    stats_update_budget(name, np.asarray(values)[:n], icol=icol)
-
-
-def stats_update_budget_2d(name: str, ncol: int, nz: int, values: np.ndarray):
-    """Update budget accumulation for a 2D variable."""
-    stats_update_budget(name, np.asarray(values)[:ncol, :nz])
-
-
-def stats_finalize_budget_scalar(name: str, values: float, icol: int | None,
-                                 l_count_sample: bool):
-    """Finalize budget for a scalar variable using Python indexing."""
-    stats_finalize_budget(name, values, icol=icol, l_count_sample=l_count_sample)
-
-
-def stats_finalize_budget_1d(name: str, n: int, values: np.ndarray, icol: int | None,
-                             l_count: bool):
-    """Finalize budget for a 1D variable using Python indexing."""
-    stats_finalize_budget(name, np.asarray(values)[:n], icol=icol, l_count_sample=l_count)
-
-
-def stats_finalize_budget_2d(name: str, ncol: int, nz: int, values: np.ndarray,
-                             l_count: bool):
-    """Finalize budget for a 2D variable."""
-    stats_finalize_budget(name, np.asarray(values)[:ncol, :nz], l_count_sample=l_count)
 
 
 def var_on_stats_list(name: str) -> bool:

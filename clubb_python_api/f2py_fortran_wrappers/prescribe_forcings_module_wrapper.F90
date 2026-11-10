@@ -86,10 +86,11 @@ subroutine f2py_prescribe_forcings( &
   l_input_xpwp_sfc_mod = l_input_xpwp_sfc
 
   if ( l_t_dependent .and. (.not. l_tdep_initialized) ) then
-    call initialize_t_dependent_input( &
-        iunit, trim(runtype), l_readiopdata, rho, nzt, & ! Intent(in)
-        zt_in(1,:), p_in_pa(1,:),                      & ! Intent(in)
-        l_add_dycore_grid, grid_adapt_in_time_method )   ! Intent(in)
+    call initialize_t_dependent_input( ngrdcol, iunit, trim(runtype), l_readiopdata, rho, & ! In
+                                       nzt, & ! In
+                                       zt_in, p_in_pa, & ! In
+                                       l_add_dycore_grid, & ! In
+                                       grid_adapt_in_time_method ) ! In
     l_tdep_initialized = .true.
   end if
 

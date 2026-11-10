@@ -270,6 +270,31 @@ class JaxStats:
         new_value = jnp.bitwise_or(old_value, jnp.asarray(bit, dtype=jnp.int32))
         return issues.at[var_id].set(jnp.where(condition, new_value, old_value))
 
+    def _validate_payload(self, name: str, values, *, l_profile_only: bool):
+        """Require a complete field even when the current timestep is unsampled."""
+        var_id = self.name_to_id[name]
+        bank_id, _ = self.name_to_slot[name]
+        nlev = self.grid_nlev[bank_id]
+        grid = self.grids[var_id]
+        shape = jnp.shape(values)
+        if len(shape) == 1:
+            if l_profile_only:
+                raise ValueError("Budget updates require a complete profile field")
+            if grid not in ("sfc", "lh_sfc") or shape != (self.ncol,):
+                raise ValueError(
+                    f"Surface stats update for {name!r} requires an sfc/lh_sfc variable "
+                    f"and complete column shape ({self.ncol},); got grid {grid!r}, {shape}."
+                )
+        elif len(shape) == 2:
+            if grid in ("sfc", "lh_sfc") or shape != (self.ncol, nlev):
+                raise ValueError(
+                    f"Profile stats update for {name!r} requires a profile grid "
+                    f"and complete column/level shape ({self.ncol}, {nlev}); "
+                    f"got grid {grid!r}, {shape}."
+                )
+        else:
+            raise ValueError("Stats updates require a complete surface vector or profile field.")
+
     def _apply_payload(
         self,
         *,
@@ -278,8 +303,6 @@ class JaxStats:
         sign: int,
         l_count_sample: bool,
         allowed,
-        icol: int | None,
-        level: int | None,
         buffers: tuple,
         nsamples: tuple,
         issues,
@@ -288,50 +311,11 @@ class JaxStats:
         bank_id, slot = self.name_to_slot[name]
         bank = buffers[bank_id]
         count_bank = nsamples[bank_id]
-        nlev = self.grid_nlev[bank_id]
         arr = jnp.asarray(values, dtype=core_rknd)
-        if arr.ndim > 2:
-            raise ValueError(f"Stats values must have rank <= 2; got rank {arr.ndim}.")
-
-        if arr.ndim == 0:
-            if icol is None:
-                raise ValueError("Scalar stats operations require icol.")
-            row = int(icol)
-            column = 0 if level is None else int(level)
-            if row < 0 or row >= self.ncol or column < 0 or column >= nlev:
-                raise ValueError(f"Stats selector is out of bounds for {name!r}.")
-            candidate = bank.at[slot, row, column].add(sign * arr)
-            count_candidate = count_bank.at[slot, row, column].add(int(l_count_sample))
-        elif arr.ndim == 1:
-            if level is not None:
-                raise ValueError("Rank-1 stats operations do not accept level.")
-            if icol is None:
-                if nlev != 1 or arr.shape != (self.ncol,):
-                    raise ValueError(
-                        f"Rank-1 all-column stats update for {name!r} requires "
-                        f"surface shape ({self.ncol},); got {arr.shape}."
-                    )
-                candidate = bank.at[slot, :, 0].add(sign * arr)
-                count_candidate = count_bank.at[slot, :, 0].add(int(l_count_sample))
-            else:
-                row = int(icol)
-                if row < 0 or row >= self.ncol:
-                    raise ValueError(f"Stats column selector is out of bounds for {name!r}.")
-                if arr.shape != (nlev,):
-                    raise ValueError(
-                        f"Rank-1 column stats update for {name!r} requires shape "
-                        f"({nlev},); got {arr.shape}."
-                    )
-                candidate = bank.at[slot, row, :].add(sign * arr)
-                count_candidate = count_bank.at[slot, row, :].add(int(l_count_sample))
+        if arr.ndim == 1:
+            candidate = bank.at[slot, :, 0].add(sign * arr)
+            count_candidate = count_bank.at[slot, :, 0].add(int(l_count_sample))
         else:
-            if icol is not None or level is not None:
-                raise ValueError("Rank-2 stats operations do not accept icol or level.")
-            if arr.shape != (self.ncol, nlev):
-                raise ValueError(
-                    f"Rank-2 stats update for {name!r} requires "
-                    f"({self.ncol}, {nlev}); got {arr.shape}."
-                )
             candidate = bank.at[slot, :, :].add(sign * arr)
             count_candidate = count_bank.at[slot, :, :].add(int(l_count_sample))
 
@@ -343,11 +327,13 @@ class JaxStats:
             issues,
         )
 
-    def update(self, name: str, values, *, icol: int | None = None, level: int | None = None):
+    def update(self, name: str, values):
         """Mirror ``stats_update`` with direct JAX-bank accumulation."""
         clean_name = name.strip()
         if not clean_name or clean_name not in self.name_to_id:
             return self
+
+        self._validate_payload(clean_name, values, l_profile_only=False)
 
         def accumulate(stats):
             """Accumulate the requested variable on a sampled timestep."""
@@ -362,8 +348,6 @@ class JaxStats:
                 sign=1,
                 l_count_sample=True,
                 allowed=allowed,
-                icol=icol,
-                level=level,
                 buffers=stats.buffers,
                 nsamples=stats.nsamples,
                 issues=issues,
@@ -386,11 +370,13 @@ class JaxStats:
         )
         return self._new(buffers=buffers, nsamples=nsamples)
 
-    def begin_budget(self, name: str, values, *, icol: int | None = None):
+    def begin_budget(self, name: str, values):
         """Mirror ``stats_begin_budget``."""
         clean_name = name.strip()
         if not clean_name or clean_name not in self.name_to_id:
             return self
+
+        self._validate_payload(clean_name, values, l_profile_only=True)
 
         def accumulate(stats):
             """Accumulate the requested variable on a sampled timestep."""
@@ -405,8 +391,6 @@ class JaxStats:
                 sign=-1,
                 l_count_sample=False,
                 allowed=allowed,
-                icol=icol,
-                level=None,
                 buffers=stats.buffers,
                 nsamples=stats.nsamples,
                 issues=issues,
@@ -429,14 +413,13 @@ class JaxStats:
         self,
         name: str,
         values,
-        *,
-        icol: int | None = None,
-        level: int | None = None,
     ):
         """Mirror ``stats_update_budget``."""
         clean_name = name.strip()
         if not clean_name or clean_name not in self.name_to_id:
             return self
+
+        self._validate_payload(clean_name, values, l_profile_only=True)
 
         def accumulate(stats):
             """Accumulate the requested variable on a sampled timestep."""
@@ -451,8 +434,6 @@ class JaxStats:
                 sign=1,
                 l_count_sample=False,
                 allowed=allowed,
-                icol=icol,
-                level=level,
                 buffers=stats.buffers,
                 nsamples=stats.nsamples,
                 issues=issues,
@@ -466,13 +447,14 @@ class JaxStats:
         name: str,
         values,
         *,
-        icol: int | None = None,
         l_count_sample: bool = True,
     ):
         """Mirror ``stats_finalize_budget``."""
         clean_name = name.strip()
         if not clean_name or clean_name not in self.name_to_id:
             return self
+
+        self._validate_payload(clean_name, values, l_profile_only=True)
 
         def accumulate(stats):
             """Accumulate the requested variable on a sampled timestep."""
@@ -487,8 +469,6 @@ class JaxStats:
                 sign=1,
                 l_count_sample=bool(l_count_sample),
                 allowed=allowed,
-                icol=icol,
-                level=None,
                 buffers=stats.buffers,
                 nsamples=stats.nsamples,
                 issues=issues,
