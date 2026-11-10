@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Stop on failed checkouts or preparation; API violation statuses are captured below.
+set -euo pipefail
+
 ####################################################################################
 # run_full_api_diagnostics v1.3
 #
@@ -80,11 +83,11 @@ mv $clubbDir/src/CLUBB_core CLUBB_core
 echo ""
 
 echo "###Removing .git Folders###"
-find CLUBB_core -type d -name .git -exec rm -rf {} \;
-find $clubbDir -type d -name .git -exec rm -rf {} \;
-find $samDir -type d -name .git -exec rm -rf {} \;
-find $wrfDir -type d -name .git -exec rm -rf {} \;
-find $camDir -type d -name .git -exec rm -rf {} \;
+find CLUBB_core -type d -name .git -prune -exec rm -rf {} \;
+find $clubbDir -type d -name .git -prune -exec rm -rf {} \;
+find $samDir -type d -name .git -prune -exec rm -rf {} \;
+find $wrfDir -type d -name .git -prune -exec rm -rf {} \;
+find $camDir -type d -name .git -prune -exec rm -rf {} \;
 
 find CLUBB_core -type d -name .gitignore -exec rm -rf {} \;
 find $clubbDir -type d -name .gitignore -exec rm -rf {} \;
@@ -140,33 +143,36 @@ echo ""
 #echo ""
 
 echo "###Testing CLUBB_core's API Commitment###"
-python api_commitment_test.py -cpu CLUBB_core CLUBB_core > $clubbCoreTxt
+# Internal CLUBB imports are informational here, so status 1 is expected.
+coreExit=0
+python api_commitment_test.py -cpu CLUBB_core CLUBB_core > $clubbCoreTxt || coreExit=$?
+if (( coreExit > 1 )); then
+    cat "$clubbCoreTxt"
+    exit "$coreExit"
+fi
 #cat $clubbCoreTxt
 echo ""
 
 echo "###Testing SAM's API Commitment###"
-python api_commitment_test.py -cpu CLUBB_core $samDir -exclude_dir CLUBB SILHS > $samTxt
-# $? is a builtin bash variable storing the exit code of the last command
-# Here, this is the same value that is passed to sys.exit() within the api_commitment_test.py script
-samExit=$?
+samExit=0
+python api_commitment_test.py -cpu CLUBB_core $samDir -exclude_dir CLUBB SILHS > $samTxt || samExit=$?
+# The status above is the exit code from api_commitment_test.py.
 # Print output to console (and therefore the Jenkins site)
 cat $samTxt
 echo ""
 
 echo "###Testing CAM's API Commitment###"
-python api_commitment_test.py -cpu CLUBB_core $camDir -exclude_dir spcam cime clubb silhs > $camTxt
-# $? is a builtin bash variable storing the exit code of the last command
-# Here, this is the same value that is passed to sys.exit() within the api_commitment_test.py script
-camExit=$?
+camExit=0
+python api_commitment_test.py -cpu CLUBB_core $camDir -exclude_dir spcam cime clubb silhs > $camTxt || camExit=$?
+# The status above is the exit code from api_commitment_test.py.
 # Print output to console (and therefore the Jenkins site)
 cat $camTxt
 echo ""
 
 echo "###Testing WRF's API Commitment###"
-python api_commitment_test.py -cpu CLUBB_core $wrfDir/WRF -exclude_dir clubb silhs > $wrfTxt
-# $? is a builtin bash variable storing the exit code of the last command
-# Here, this is the same value that is passed to sys.exit() within the api_commitment_test.py script
-wrfExit=$?
+wrfExit=0
+python api_commitment_test.py -cpu CLUBB_core $wrfDir/WRF -exclude_dir clubb silhs > $wrfTxt || wrfExit=$?
+# The status above is the exit code from api_commitment_test.py.
 # Print output to console (and therefore the Jenkins site)
 cat $wrfTxt
 echo ""
@@ -190,7 +196,10 @@ echo "###Testing API Commitment###"
 # The details can be found in the output of the scripts above.
 echo ""
 
-if [[ $samExit+$camExit+$wrfExit -gt 0 ]] ; then
+if (( samExit > 1 || camExit > 1 || wrfExit > 1 )); then
+   echo "ERROR: An API check could not complete; inspect its input or execution error above."
+   exitCode=1
+elif [[ $samExit+$camExit+$wrfExit -gt 0 ]] ; then
    echo "#########################################################"
    echo "######ERROR: A host model is circumventing the API.######"
    echo "#########################################################"
