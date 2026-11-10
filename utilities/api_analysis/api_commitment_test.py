@@ -17,6 +17,8 @@ Next, it recursively searches through given folders for files with lines includi
 "use anyStringInThatArray" (except "use clubb_api_module").
 If found, the script exits with status 1 and prints the offending file.
 Missing, empty, or unreadable Fortran inputs exit with status 2 instead of passing.
+AppleDouble resource-fork files (._*) are excluded. Legacy-encoded comments do
+not prevent scanning the surrounding Fortran USE statements.
 
 Usage:
   python api_commitment_test.py [-h] [-cpu] clubbSrcDir searchDir [-exclude_dir EXCLUDEDIR [EXCLUDEDIR ...]]
@@ -46,7 +48,7 @@ def input_error(message):
 
 def findFiles(dir, exclude=[]):
     """
-    Returns a list of every file in a directory.
+    Returns files in a directory tree, excluding AppleDouble metadata files.
 
     This function is adapted from Stack Overflow:
     http://stackoverflow.com/questions/19932130/python-iterate-through-folders-then-subfolders-and-print-filenames-with-path-t
@@ -65,7 +67,8 @@ def findFiles(dir, exclude=[]):
         # If it is an actual file, combine foldername and filename and append to result
         if len(files) > 0:
             for file in files:
-                result.append(subdir + "/" + file)
+                if not file.startswith("._"):
+                    result.append(subdir + "/" + file)
     return result
 
 
@@ -99,7 +102,8 @@ def checkForStrings(bannedNames, file):
     :return: A list of the strings found in the file
     """
     foundNames = []
-    with open(file, 'r') as f:
+    # Preserve undecodable comment bytes; Fortran USE identifiers are ASCII.
+    with open(file, 'r', encoding='utf-8', errors='surrogateescape') as f:
         content = f.read().lower()
     for moduleName in bannedNames:
         res = re.search(bannedNamePattern.format(moduleName), content)
@@ -184,7 +188,9 @@ def main(clubbSrcDirectory, searchObjs, excludedDirectories, cpuMode):
             paths = [o]
         else:
             input_error("Host source path does not exist or is not a file/directory: " + o)
-        paths = [path for path in paths if path.lower().endswith(fortranFileExtensions)]
+        paths = [path for path in paths
+                 if not os.path.basename(path).startswith("._")
+                 and path.lower().endswith(fortranFileExtensions)]
         if not paths:
             input_error("No Fortran source files to check in " + o)
         searchFiles.extend(paths)
@@ -197,7 +203,7 @@ def main(clubbSrcDirectory, searchObjs, excludedDirectories, cpuMode):
         if file.lower().endswith(fortranFileExtensions):
             try:
                 foundFiles = checkForStrings(bannedNames, file)
-            except (OSError, UnicodeError) as error:
+            except OSError as error:
                 input_error("Cannot read " + file + ": " + str(error))
             if len(foundFiles) > 0:
                 errorDictionary[file] = foundFiles
