@@ -1,3 +1,6 @@
+// Compare native, JAX, GPU and solver outputs and publish plots to the Carson archive.
+// Run the stage commands from the repository root with the stated UWM compiler/NetCDF modules.
+// Plot reproduction also needs the archived reference output and SSH access shown below.
 // GPU SILHS requires straight Monte Carlo sampling in both comparison runs.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 // Capture checkout metadata locally so parallel stages do not share mutable environment values.
@@ -10,41 +13,44 @@ def withPlotMetadata(Closure workflow) {
 }
 
 pipeline {
-  agent none
+  agent any
   options { disableConcurrentBuilds() }
 
   stages {
-    // Each branch owns its executor, checkout, build, and output files.
+    // Parallel checks use separate workspaces and checkouts on the selected worker.
     stage('Independent workflows') {
       parallel {
         stage('Before/After last commit(s)') {
-          agent any
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              script {
-                withPlotMetadata {
-                  sh '''
-                    source /etc/profile.d/larson-group.sh
-                    module load intel netcdf-fortran
-                    ./compile.py -debug
-                  '''
-                  // Load the compiler and matching NetCDF runtime from the shared module setup.
-                  sh '''
-                    run_scripts/run_scm_all.py -workers 4
-                    mv output cpu_${commit}; mkdir output
-                  '''
-                  sh 'scp -r carson:/home/pub/web_plots/clubb_ifort_plots/master/cur_out .'
-                  sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb cpu_* cur_out/cpu_* -output_dir ${commit}_vs_master_$(cat cur_out/commit)'
-                  sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_ifort_plots/${branch_name}'"
-                  sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_ifort_plots/${branch_name}"
-                  sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_ifort_plots/'"
-                  if (env.branch_name == 'master') {
-                    sh 'rm -rf cur_out'
-                    sh 'mkdir cur_out'
-                    sh 'mv cpu_* cur_out'
-                    sh 'echo ${commit} > cur_out/commit'
-                    sh "ssh carson 'rm -rf /home/pub/web_plots/clubb_ifort_plots/master/cur_out'"
-                    sh 'scp -r cur_out carson:/home/pub/web_plots/clubb_ifort_plots/master/'
+            ws("${env.WORKSPACE}@before_after_last_commit_s") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                script {
+                  withPlotMetadata {
+                    sh '''
+                      source /etc/profile.d/larson-group.sh
+                      module load intel netcdf-fortran
+                      ./compile.py -debug
+                    '''
+                    // Load the compiler and matching NetCDF runtime from the shared module setup.
+                    sh '''
+                      run_scripts/run_scm_all.py -workers 4
+                      mv output cpu_${commit}; mkdir output
+                    '''
+                    sh 'scp -r carson:/home/pub/web_plots/clubb_ifort_plots/master/cur_out .'
+                    sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb cpu_* cur_out/cpu_* -output_dir ${commit}_vs_master_$(cat cur_out/commit)'
+                    sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_ifort_plots/${branch_name}'"
+                    sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_ifort_plots/${branch_name}"
+                    sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_ifort_plots/'"
+                    if (env.branch_name == 'master') {
+                      sh 'rm -rf cur_out'
+                      sh 'mkdir cur_out'
+                      sh 'mv cpu_* cur_out'
+                      sh 'echo ${commit} > cur_out/commit'
+                      sh "ssh carson 'rm -rf /home/pub/web_plots/clubb_ifort_plots/master/cur_out'"
+                      sh 'scp -r cur_out carson:/home/pub/web_plots/clubb_ifort_plots/master/'
+                    }
                   }
                 }
               }
@@ -52,83 +58,89 @@ pipeline {
           }
         }
         stage('Plot JAX vs Fortran') {
-          agent any
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              script {
-                withPlotMetadata {
-                  sh '''
-                    source /etc/profile.d/larson-group.sh
-                    module load intel netcdf-fortran
-                    ./compile.py -debug
-                  '''
-                  // Native cases with ported features; keep their settings and full durations.
-                  sh '''
-                    run_scripts/run_scm_all.py -workers 4 \
-                      -cases arm atex bomex clex9_oct14 \
-                        dycoms2_rf01 dycoms2_rf01_fixed_sst dycoms2_rf02_do \
-                        dycoms2_rf02_ds dycoms2_rf02_nd dycoms2_rf02_so \
-                        fire gabls2 gabls3_night jun25_altocu lba \
-                        neutral nov11_altocu rico rico_silhs wangara \
-                      -output_dir jax_vs_fortran/fortran_${commit}
-                    run_scripts/run_scm_all.py -jax=cpu -workers 4 \
-                      -cases arm atex bomex clex9_oct14 \
-                        dycoms2_rf01 dycoms2_rf01_fixed_sst dycoms2_rf02_do \
-                        dycoms2_rf02_ds dycoms2_rf02_nd dycoms2_rf02_so \
-                        fire gabls2 gabls3_night jun25_altocu lba \
-                        neutral nov11_altocu rico rico_silhs wangara \
-                      -output_dir jax_vs_fortran/jax_${commit}
-                    python3 postprocessing/pyplotgen/pyplotgen.py -les \
-                      -clubb output/jax_vs_fortran/fortran_${commit} output/jax_vs_fortran/jax_${commit} \
-                      -output_dir output/${commit}_jax_vs_fortran
-                  '''
-                  sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_jax_plots/${branch_name}'"
-                  sh "scp -r output/${commit}_jax_vs_fortran carson:/home/pub/web_plots/clubb_jax_plots/${branch_name}"
-                  sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_jax_plots/'"
+            ws("${env.WORKSPACE}@plot_jax_vs_fortran") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                script {
+                  withPlotMetadata {
+                    sh '''
+                      source /etc/profile.d/larson-group.sh
+                      module load intel netcdf-fortran
+                      ./compile.py -debug
+                    '''
+                    // Native cases with ported features; keep their settings and full durations.
+                    sh '''
+                      run_scripts/run_scm_all.py -workers 4 \
+                        -cases arm atex bomex clex9_oct14 \
+                          dycoms2_rf01 dycoms2_rf01_fixed_sst dycoms2_rf02_do \
+                          dycoms2_rf02_ds dycoms2_rf02_nd dycoms2_rf02_so \
+                          fire gabls2 gabls3_night jun25_altocu lba \
+                          neutral nov11_altocu rico rico_silhs wangara \
+                        -output_dir jax_vs_fortran/fortran_${commit}
+                      run_scripts/run_scm_all.py -jax=cpu -workers 4 \
+                        -cases arm atex bomex clex9_oct14 \
+                          dycoms2_rf01 dycoms2_rf01_fixed_sst dycoms2_rf02_do \
+                          dycoms2_rf02_ds dycoms2_rf02_nd dycoms2_rf02_so \
+                          fire gabls2 gabls3_night jun25_altocu lba \
+                          neutral nov11_altocu rico rico_silhs wangara \
+                        -output_dir jax_vs_fortran/jax_${commit}
+                      python3 postprocessing/pyplotgen/pyplotgen.py -les \
+                        -clubb output/jax_vs_fortran/fortran_${commit} output/jax_vs_fortran/jax_${commit} \
+                        -output_dir output/${commit}_jax_vs_fortran
+                    '''
+                    sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_jax_plots/${branch_name}'"
+                    sh "scp -r output/${commit}_jax_vs_fortran carson:/home/pub/web_plots/clubb_jax_plots/${branch_name}"
+                    sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_jax_plots/'"
+                  }
                 }
               }
             }
           }
         }
         stage('Plot CPU vs OpenACC') {
-          agent any
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              script {
-                withPlotMetadata {
-                  sh '''
-                    source /etc/profile.d/larson-group.sh
-                    module load nvhpc netcdf-fortran
-                    ./compile.py
-                  '''
-                  sh '''
-                    run_scripts/run_scm_all.py -workers 4 -priority_cases -override l_lh_straight_mc=.true.
-                    mv output cpu_${commit}; mkdir output
-                  '''
-                  sh '''
-                    source /etc/profile.d/larson-group.sh
-                    module load nvhpc netcdf-fortran
-                    ./compile.py -gpu openacc
-                  '''
-                  // Serialize GPU cases on this worker; other nodes may run concurrently.
-                  lock( "GPU_${env.NODE_NAME}" ) {
+            ws("${env.WORKSPACE}@plot_cpu_vs_openacc") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                script {
+                  withPlotMetadata {
                     sh '''
-                      run_scripts/run_scm_all.py -workers 1 -priority_cases -override l_lh_straight_mc=.true.
-                      mv output gpu_${commit}; mkdir output
+                      source /etc/profile.d/larson-group.sh
+                      module load nvhpc netcdf-fortran
+                      ./compile.py
                     '''
-                  }
-                  sh 'scp -r carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/master/cur_out .'
-                  sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb cpu_* cur_out/cpu_* gpu_* cur_out/gpu_* -output_dir ${commit}_vs_master_$(cat cur_out/commit)'
-                  sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}'"
-                  sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}"
-                  sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_nvhpc_gpu_plots/'"
-                  if (env.branch_name == 'master') {
-                    sh 'rm -rf cur_out'
-                    sh 'mkdir cur_out'
-                    sh 'mv cpu_* gpu_* cur_out'
-                    sh 'echo ${commit} > cur_out/commit'
-                    sh "ssh carson 'rm -rf /home/pub/web_plots/clubb_nvhpc_gpu_plots/master/cur_out'"
-                    sh 'scp -r cur_out carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/master/'
+                    sh '''
+                      run_scripts/run_scm_all.py -workers 4 -priority_cases -override l_lh_straight_mc=.true.
+                      mv output cpu_${commit}; mkdir output
+                    '''
+                    sh '''
+                      source /etc/profile.d/larson-group.sh
+                      module load nvhpc netcdf-fortran
+                      ./compile.py -gpu openacc
+                    '''
+                    // Serialize GPU cases on this worker; other nodes may run concurrently.
+                    lock( "GPU_${env.NODE_NAME}" ) {
+                      sh '''
+                        run_scripts/run_scm_all.py -workers 1 -priority_cases -override l_lh_straight_mc=.true.
+                        mv output gpu_${commit}; mkdir output
+                      '''
+                    }
+                    sh 'scp -r carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/master/cur_out .'
+                    sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb cpu_* cur_out/cpu_* gpu_* cur_out/gpu_* -output_dir ${commit}_vs_master_$(cat cur_out/commit)'
+                    sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}'"
+                    sh "scp -r *_vs_* carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/${branch_name}"
+                    sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_nvhpc_gpu_plots/'"
+                    if (env.branch_name == 'master') {
+                      sh 'rm -rf cur_out'
+                      sh 'mkdir cur_out'
+                      sh 'mv cpu_* gpu_* cur_out'
+                      sh 'echo ${commit} > cur_out/commit'
+                      sh "ssh carson 'rm -rf /home/pub/web_plots/clubb_nvhpc_gpu_plots/master/cur_out'"
+                      sh 'scp -r cur_out carson:/home/pub/web_plots/clubb_nvhpc_gpu_plots/master/'
+                    }
                   }
                 }
               }
@@ -136,28 +148,31 @@ pipeline {
           }
         }
         stage('Plot solver comparison') {
-          agent any
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              script {
-                withPlotMetadata {
-                  sh '''
-                    source /etc/profile.d/larson-group.sh
-                    module load intel netcdf-fortran
-                    ./compile.py
-                  '''
-                  sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
-                  sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/custom_lu_output'''
-                  // BiCGSTAB keeps the default tridiagonal LU solver; known failing cases are excluded below.
-                  catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS', catchInterruptions: false) {
-                    sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/bicgstab_output -override penta_solve_method=3'''
+            ws("${env.WORKSPACE}@plot_solver_comparison") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                script {
+                  withPlotMetadata {
+                    sh '''
+                      source /etc/profile.d/larson-group.sh
+                      module load intel netcdf-fortran
+                      ./compile.py
+                    '''
+                    sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/lapack_output -override penta_solve_method=1,tridiag_solve_method=1'''
+                    sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/custom_lu_output'''
+                    // BiCGSTAB keeps the default tridiagonal LU solver; known failing cases are excluded below.
+                    catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS', catchInterruptions: false) {
+                      sh '''run_scripts/run_scm_all.py -workers 4 -priority_cases -output_dir solver_compare/bicgstab_output -override penta_solve_method=3'''
+                    }
+                    sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf02_ds_*'''
+                    sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf01_*'''
+                    sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb output/solver_compare/lapack_output output/solver_compare/custom_lu_output output/solver_compare/bicgstab_output -output_dir output/${commit}_solver'
+                    sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_solver_plots/${branch_name}'"
+                    sh "scp -r output/${commit}_solver carson:/home/pub/web_plots/clubb_solver_plots/${branch_name}"
+                    sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_solver_plots/'"
                   }
-                  sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf02_ds_*'''
-                  sh '''rm output/solver_compare/bicgstab_output/dycoms2_rf01_*'''
-                  sh 'python postprocessing/pyplotgen/pyplotgen.py -les -clubb output/solver_compare/lapack_output output/solver_compare/custom_lu_output output/solver_compare/bicgstab_output -output_dir output/${commit}_solver'
-                  sh "ssh carson 'mkdir -p /home/pub/web_plots/clubb_solver_plots/${branch_name}'"
-                  sh "scp -r output/${commit}_solver carson:/home/pub/web_plots/clubb_solver_plots/${branch_name}"
-                  sh "ssh carson '/home/pub/web_plots/generate_plot_directory_page.py /home/pub/web_plots/clubb_solver_plots/'"
                 }
               }
             }

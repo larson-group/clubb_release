@@ -1,61 +1,76 @@
+// Check native/JAX restart equivalence, including distinct columns and SILHS sequence state.
+// From the repository root, load gcc/netcdf-fortran and run ./compile.py for native checks;
+// reproduce one native check with python3 human_reviewed_tests/run_restart_test.py bomex -multicol 4.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
-  agent none
+  agent any
   options { disableConcurrentBuilds() }
 
   stages {
-    // Each branch owns its executor, checkout, build, and output files.
+    // Parallel checks use separate workspaces and checkouts on the selected worker.
     stage('Independent workflows') {
       parallel {
         stage('JAX multicolumn restart') {
-          agent { label 'carson' }
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''
-                python3 human_reviewed_tests/run_restart_test.py bomex -jax -multicol C8/0.2:0.8/4 \
-                  -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.'
-              '''
+            ws("${env.WORKSPACE}@jax_multicolumn_restart") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  python3 human_reviewed_tests/run_restart_test.py bomex -jax -multicol C8/0.2:0.8/4 \
+                    -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.'
+                '''
+              }
             }
           }
         }
         stage('JAX SILHS sequence restart') {
-          agent { label 'carson' }
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''
-                # Restart after step 37, inside a three-timestep sequence.
-                python3 human_reviewed_tests/run_restart_test.py rico_silhs -jax \
-                  -max_iters 74 -dt_main 60 -dt_rad 60 -tout 60 -multicol C8/0.2:0.8/2 \
-                  -override 'stats_tsamp=60.,lh_sequence_length=3,l_lh_importance_sampling=.false.'
-              '''
+            ws("${env.WORKSPACE}@jax_silhs_sequence_restart") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  # Restart after step 37, inside a three-timestep sequence.
+                  python3 human_reviewed_tests/run_restart_test.py rico_silhs -jax \
+                    -max_iters 74 -dt_main 60 -dt_rad 60 -tout 60 -multicol C8/0.2:0.8/2 \
+                    -override 'stats_tsamp=60.,lh_sequence_length=3,l_lh_importance_sampling=.false.'
+                '''
+              }
             }
           }
         }
         stage('Run multicolumn restart test') {
-          agent any
           steps {
-            sh '''
-              source /etc/profile.d/larson-group.sh
-              module load gcc netcdf-fortran
-              ./compile.py
-            '''
+            ws("${env.WORKSPACE}@run_multicolumn_restart_test") {
+              checkout scm
 
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''python3 human_reviewed_tests/run_restart_test.py bomex -multicol 4'''
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                ./compile.py
+              '''
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''python3 human_reviewed_tests/run_restart_test.py bomex -multicol 4'''
+              }
             }
           }
         }
         stage('Run SILHS restart test') {
-          agent any
           steps {
-            sh '''
-              source /etc/profile.d/larson-group.sh
-              module load gcc netcdf-fortran
-              ./compile.py
-            '''
+            ws("${env.WORKSPACE}@run_silhs_restart_test") {
+              checkout scm
 
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''python3 human_reviewed_tests/run_restart_test.py rico_silhs'''
+              sh '''
+                source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                ./compile.py
+              '''
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''python3 human_reviewed_tests/run_restart_test.py rico_silhs'''
+              }
             }
           }
         }

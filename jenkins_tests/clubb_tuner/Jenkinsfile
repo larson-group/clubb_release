@@ -26,7 +26,7 @@ pipeline {
       }
       post {
         always {
-          // Publish before later agent checkouts can wipe this workspace.
+          // Publish the unit-test report before running the model checks.
           junit testResults: 'output/tests/pytests/tuner.xml', allowEmptyResults: true
         }
       }
@@ -126,7 +126,6 @@ pipeline {
       }
     }
     stage('JAX tuner command') {
-      agent { label 'carson' }
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''
@@ -141,7 +140,6 @@ pipeline {
     }
 
     stage('JAX gradient Adam') {
-      agent { label 'carson' }
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''

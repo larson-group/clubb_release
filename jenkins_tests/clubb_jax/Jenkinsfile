@@ -1,7 +1,9 @@
+// Compare CPU JAX kernels, statistics and model cases with the GNU Fortran reference.
+// From the repository root, load gcc/netcdf-fortran and run ./compile.py -debug -python,
+// then bash human_reviewed_tests/run_pytests.sh -jax; full comparisons are listed below.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
-  // Keep memory-heavy CPU JAX case workers on Carson; stages remain sequential.
-  agent { label 'carson' }
+  agent any
   environment { CLUBB_JAX_ACCELERATOR = 'cpu' }
   stages {
     stage('Compile') {

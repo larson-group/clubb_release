@@ -75,6 +75,14 @@ The reader should understand the workflow from the comments and commands.
 
 ## Parallel work and failure behavior
 
+Select the worker once with a pipeline-level `agent any`; do not allocate
+agents again inside stages. The current exception is
+`clubb_gpu_vs_cpu_diffness`, whose pipeline-level agent selects `carson` for
+its OpenMP GPU offload requirements. CPU JAX checks use any available worker.
+Parallel branches inherit that worker and use separate `ws` blocks with a
+`checkout scm` inside each block to isolate their source, builds and outputs.
+Keep dependent sequential stages in their shared pipeline workspace.
+
 Run independent tests or backend/compiler variants in parallel where practical.
 Give each parallel branch its own checkout, build and output files; do not race
 on a shared build directory, generated input or comparison output. Respect

@@ -28,12 +28,11 @@
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
 
-  agent none
+  agent any
   options { disableConcurrentBuilds() }
 
   stages {
     stage('Case runner lifecycle') {
-      agent any
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
           sh '''
@@ -64,71 +63,80 @@ pipeline {
         }
       }
     }
-    // Each branch owns its executor, checkout, build, and output files.
+    // Parallel checks use separate workspaces and checkouts on the selected worker.
     stage('Independent workflows') {
       parallel {
         stage('JAX reusable driver lifecycle') {
-          agent { label 'carson' }
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''
-                # Compare the same namelists through the normal and reset/rerun frontends.
-                run_scripts/run_scm_all.py -jax -cases bomex,atex -workers 1 \
-                  -multicol C8/0.2:0.8/4 -batch_size 2 -max_iters 8 \
-                  -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.' \
-                  -output_dir driver_test/standalone_jax
-                run_scripts/run_scm_all.py -jax -driver_test -cases bomex,atex -workers 1 \
-                  -multicol C8/0.2:0.8/4 -batch_size 2 -max_iters 8 \
-                  -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.' \
-                  -output_dir driver_test/driver_jax
-                run_scripts/run_bindiff_all.py output/driver_test/standalone_jax \
-                  output/driver_test/driver_jax -strict
-              '''
-            }
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''
-                # Human-reviewed JAX checks beyond src/clubb_driver_test.F90: split-window
-                # bit equality (used by the loss driver) and runtime-batch parameter selection.
-                python3 clubb_jax/human_reviewed_tests/run_driver_extensions_test.py
-              '''
+            ws("${env.WORKSPACE}@jax_reusable_driver_lifecycle") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  # Compare the same namelists through the normal and reset/rerun frontends.
+                  run_scripts/run_scm_all.py -jax -cases bomex,atex -workers 1 \
+                    -multicol C8/0.2:0.8/4 -batch_size 2 -max_iters 8 \
+                    -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.' \
+                    -output_dir driver_test/standalone_jax
+                  run_scripts/run_scm_all.py -jax -driver_test -cases bomex,atex -workers 1 \
+                    -multicol C8/0.2:0.8/4 -batch_size 2 -max_iters 8 \
+                    -dt_main 60 -dt_rad 60 -tout 60 -override 'stats_tsamp=60.' \
+                    -output_dir driver_test/driver_jax
+                  run_scripts/run_bindiff_all.py output/driver_test/standalone_jax \
+                    output/driver_test/driver_jax -strict
+                '''
+              }
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  # Human-reviewed JAX checks beyond src/clubb_driver_test.F90: split-window
+                  # bit equality (used by the loss driver) and runtime-batch parameter selection.
+                  python3 clubb_jax/human_reviewed_tests/run_driver_extensions_test.py
+                '''
+              }
             }
           }
         }
         stage('standard cases + multi_col with ifx') {
-          agent any
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load intel netcdf-fortran
-                ./compile.py
-                ulimit -s 8388608
-                run_scripts/run_scm_all.py -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/standalone_ifx
-                run_scripts/run_scm_all.py -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/driver_ifx -driver_test
-                run_scripts/run_bindiff_all.py output/driver_test/standalone_ifx output/driver_test/driver_ifx
-              '''
+            ws("${env.WORKSPACE}@standard_cases_multi_col_with_ifx") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load intel netcdf-fortran
+                  ./compile.py
+                  ulimit -s 8388608
+                  run_scripts/run_scm_all.py -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/standalone_ifx
+                  run_scripts/run_scm_all.py -workers 4 -multicol 4 -max_iters 500 -output_dir driver_test/driver_ifx -driver_test
+                  run_scripts/run_bindiff_all.py output/driver_test/standalone_ifx output/driver_test/driver_ifx
+                '''
+              }
             }
           }
         }
         stage('min_cases + multi_col with nvhpc + openacc') {
-          agent any
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load nvhpc netcdf-fortran
-                ./compile.py -gpu openacc -openacc_bfb
-              '''
-              // Serialize GPU cases on this worker; other nodes may run concurrently.
-              lock( "GPU_${env.NODE_NAME}" ) {
+            ws("${env.WORKSPACE}@min_cases_multi_col_with_nvhpc_openacc") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
                 sh '''
-                  # Allow the large Fortran automatic arrays used by these cases.
-                  ulimit -s 8388608
-                  run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
-                  run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
+                  source /etc/profile.d/larson-group.sh
+                  module load nvhpc netcdf-fortran
+                  ./compile.py -gpu openacc -openacc_bfb
                 '''
+                // Serialize GPU cases on this worker; other nodes may run concurrently.
+                lock( "GPU_${env.NODE_NAME}" ) {
+                  sh '''
+                    # Allow the large Fortran automatic arrays used by these cases.
+                    ulimit -s 8388608
+                    run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/standalone_nvhpc -override l_lh_straight_mc=.true.
+                    run_scripts/run_scm_all.py -workers 1 -min_cases -multicol 8 -max_iters 200 -output_dir driver_test/driver_nvhpc -driver_test -override l_lh_straight_mc=.true.
+                  '''
+                }
+                sh '''run_scripts/run_bindiff_all.py output/driver_test/standalone_nvhpc output/driver_test/driver_nvhpc'''
               }
-              sh '''run_scripts/run_bindiff_all.py output/driver_test/standalone_nvhpc output/driver_test/driver_nvhpc'''
             }
           }
         }

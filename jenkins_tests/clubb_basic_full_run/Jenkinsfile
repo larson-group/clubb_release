@@ -1,38 +1,47 @@
+// Run full-duration standard cases with GNU and NVHPC debug builds.
+// From the repository root, load the selected compiler and netcdf-fortran modules,
+// run ./compile.py -debug, then run_scripts/run_scm_all.py -workers 8.
 // Keep full-duration case runs separate from the compiler/CTest smoke matrix.
 // Record independent failures while allowing manual aborts to stop the pipeline.
 pipeline {
-  agent none
+  agent any
   options { disableConcurrentBuilds() }
 
   stages {
-    // Each compiler owns its checkout, build, and case output files.
+    // Parallel compiler checks use separate workspaces and checkouts on the selected worker.
     stage('Full model runs') {
       parallel {
         stage('All standard cases: gfortran debug') {
-          agent any
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load gcc netcdf-fortran
-                ./compile.py -debug
-                ulimit -s 8388608
-                run_scripts/run_scm_all.py -workers 8
-              '''
+            ws("${env.WORKSPACE}@all_standard_cases_gfortran_debug") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load gcc netcdf-fortran
+                  ./compile.py -debug
+                  ulimit -s 8388608
+                  run_scripts/run_scm_all.py -workers 8
+                '''
+              }
             }
           }
         }
         stage('All standard cases: nvfortran debug') {
-          agent any
           steps {
-            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
-              sh '''
-                source /etc/profile.d/larson-group.sh
-                module load nvhpc netcdf-fortran
-                ./compile.py -debug
-                ulimit -s 8388608
-                run_scripts/run_scm_all.py -workers 8
-              '''
+            ws("${env.WORKSPACE}@all_standard_cases_nvfortran_debug") {
+              checkout scm
+
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE', catchInterruptions: false) {
+                sh '''
+                  source /etc/profile.d/larson-group.sh
+                  module load nvhpc netcdf-fortran
+                  ./compile.py -debug
+                  ulimit -s 8388608
+                  run_scripts/run_scm_all.py -workers 8
+                '''
+              }
             }
           }
         }
