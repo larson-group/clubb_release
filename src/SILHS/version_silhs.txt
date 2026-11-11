@@ -1,0 +1,693 @@
+commit 743b524e866d22a3bf5721651c1131e0247bd948
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Nov 10 21:51:51 2026 -0600
+
+    Expose vertical integration and grid refresh through the CLUBB API (#1443)
+    
+    Give the batched implementations _api names and export them from clubb_api_module so SAM and WRF can use the supported interface.
+
+commit 105cfee91f017c2c977b41dc4a9d52928b1429ba
+Author: Daniel Ebel <124399436+shellwitz@users.noreply.github.com>
+Date:   Tue Nov 10 16:16:37 2026 -0600
+
+    Mirror the Fortran source file layout in clubb_jax/src (#1442)
+    
+    * Convert pressure soundings to heights in JAX case initialization
+    
+    JAX never called convert_pressure_sounding_to_z, so a Press[Pa] sounding's
+    pressures were interpolated onto the height grid as if they were altitudes.
+    mc3e started with thlm near 620 K above 2 km and twp_ice stopped on its first
+    step with rtm < 0. Convert these soundings inside read_sounding, as the
+    Fortran read_sounding_file does through read_z_profile.
+    
+    Tested with rad_scheme set to simplified in both models, against a Fortran
+    run with the same namelists. The full twp_ice run and 288 steps of mc3e now
+    finish, and their first output matches Fortran to about 1e-4 in thlm and rtm.
+    Agreement does not hold over the run: by the last twp_ice output rcm differs
+    by 98%. The new test fails if the conversion is bypassed.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Port JAX sounding reading from sounding.F90 and input_interpret.F90
+    
+    JAX sounding.py was a reorganization rather than a port. It had its own file
+    parser and interpolation, left out Fortran's fatal checks, and held the pressure
+    conversion under a name that does not exist in Fortran. A pressure sounding
+    treated as heights therefore ran on silently until rtm went negative.
+    
+    sounding.py now has Fortran's routines in Fortran's order, and the new
+    input_interpret.py holds read_z_profile, read_theta_profile and
+    read_subs_profile. Reading goes through input_reader.py, so blanks are filled
+    before the pressure conversion. read_sounding now owns the interpolation and
+    surface values. It restores the two sounding-range stops, the DYCOMS II RF02
+    profiles and the debug output. l_readiopdata now fails instead of being ignored.
+    read_one_dim_file reads only the first nCol columns, as Fortran does.
+    
+    Initial state of the 28 cases JAX can initialize matches the previous commit to
+    1.6e-13 relative, across every array in the state. No preset uses the
+    dycoms2_rf02 runtype, so its analytic profiles are covered only by a unit test.
+    The JAX pytest suite passes. A 24-step twp_ice run matches the previous commit to
+    4e-12 and stays the same distance from Fortran. Full-length runs were not repeated.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Convert T[K] soundings to potential temperature in JAX initialization
+    
+    init_clubb_case treated a T[K] sounding as if it held potential temperature,
+    which initialize_clubb_variables in clubb_driver.F90 does not. Fortran first
+    divides by the Exner function at the sounding's pressures, and stops for a z[m]
+    sounding with T[K]. Add both.
+    
+    Every T[K] case is rejected for other reasons today, so no preset changes. To test
+    the path, cgils_s6 ran for 3 steps from Fortran's namelist, with simplified
+    radiation, no microphysics or thlm/rtm sponge damping, and a local one-line patch
+    for its scalar sclr_tol_nl. thlm went from 17% (up to 102 K) away from Fortran to
+    1e-16. The new tests fail without this change.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Mirror the Fortran source files in clubb_jax/src
+    
+    The file-name parity test failed because many JAX files did not match the
+    Fortran file holding their code, so the JAX port was hard to navigate from the
+    Fortran. Rename JAX files to their Fortran names (for example clubb_driver.py,
+    array_index.py, err_info_type_module.py, Parabolic.py) and merge JAX-only
+    files into the file that mirrors the Fortran (advance_clubb_to_end and
+    clubb_case_initalization into clubb_driver, jax_stats into stats_netcdf, the
+    namelist reader into file_functions). Remove the unused tracer_numpy.py and
+    surface.py.
+    
+    The netCDF reading that the restart reader and the loss driver wrote inline
+    now lives in input_netcdf.py, stat_file_module.py and stat_file_utils.py,
+    ported from the Fortran routines, and radiation_variables_module.py holds the
+    radiation-array setup and reset. Only Parabolic_constants.f90 remains in the
+    parity failure list; JAX does not use those constants, so it needs an
+    allowlist entry in the test.
+    
+    Local checks: the JAX pytests (1039) pass as before; the JAX BOMEX restart
+    test is bit-for-bit; a 20-step BOMEX JAX vs Fortran comparison matches; the
+    F2PY unit tests have the same single failure (new_hybrid_pdf) as before.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Generate the missing matrix_vector_mult declaration docstring
+    
+    The Fortran declaration match check failed on master because
+    matrix_vector_mult's docstring lacked its y_vectors output declaration.
+    Regenerate it with port_fortran_declarations_to_jax_docstrings.py; only the
+    docstring changes.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Update the file-name parity allowlists for KK constants and #1402
+    
+    Allow Parabolic_constants.f90: Parabolic.py computes its mathematical
+    constants inline and fixes the epss tolerance at the source default, so
+    no JAX module mirrors it. Remove the SCM_Activation directory entry, whose
+    Fortran directory #1402 deleted. Point two reasons at clubb_driver.py and
+    Parabolic.py, the files that now hold the cited code.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Keep the reviewed driver and scalar-index file names in clubb_jax
+    
+    Review of #1442 asked to keep clubb_case_initialization.py and
+    advance_clubb_to_end.py as separate files and keep sclr_idx.py, because the
+    JAX time loop is structured very differently from clubb_driver.F90.
+    Split clubb_driver.py back into those two files, using the corrected
+    "initialization" spelling, and restore sclr_idx.py.
+    
+    Remove radiation_variables_module.py. It only created and zeroed the
+    radiation flux and heating-rate arrays; case initialization again creates
+    them inline, and the batch reset zeroes them as the Fortran
+    reset_radiation_variables does.
+    
+    List the approved exceptions in the file-name parity allowlists with a link
+    to #1442.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    * Remove the redundant radiation reset between parameter batches
+    
+    set_case_initial_conditions already restores the whole case state from the
+    copy saved at the end of initialization, where the radiation fluxes and
+    heating rates are JAX zero arrays. The extra reset was redundant and
+    replaced those arrays with NumPy arrays. This restores master's batch reset.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    
+    ---------
+    
+    Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+commit e4eb6cc31229d33e5aefd2a92892c865ede00776
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Nov 10 00:44:40 2026 -0600
+
+    Making jax tests runnable on any machine. Also little skill update
+
+commit 3a009beb440a90c14a9e989ac532ff6abe8940bc
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Nov 9 23:18:52 2026 -0600
+
+    Remove single-column profile paths from CLUBB core and SILHS (#1434)
+    
+    * Remove single-column profile calls from PDF closure
+    
+    Pass full column/level fields through the PDF drivers, responder and
+    coefficient helpers, and diagnostics. Use elemental Luhar and root math,
+    preserve column-dependent tunables and historical diagnostic coverage,
+    and remove three unused interpolation helpers. Update Fortran test callers.
+    
+    Local gfortran -O0 comparisons are BFB for the affected drivers and
+    four-column BOMEX ADG1/hybrid runs; PDF and root tests pass. Legacy PDFs
+    2-6 retain existing standalone initialization failures.
+    
+    * Remove profile calls from grid adaptation and remapping
+    
+    Move column handling into density normalization, filtering, grid creation,
+    conservative remapping and diagnostics. Pass all columns through PPM's
+    existing longitude dimension. The driver owns rank-2 density/accumulator
+    fields and updates profile stats once for the full batch. Preserve the
+    shared column-1 refinement criterion and adaptation trigger. Keep the old
+    interpolation entry for nongrid callers over the new batched calculation.
+    
+    Local gfortran -O0 ATEX runs are BFB against 4ccc97bed for 240 x 10s steps:
+    Ullrich/PPM dycore remapping with four columns, and adaptive remapping with
+    one column and three adaptations. Four identical adaptive columns also
+    match replicated original single-column outputs. Varied-grid/field kernel
+    comparisons pass for both methods, wind/scalar modes and optional matrices.
+    All ten adaptive-grid diagnostics are active and BFB in additional 126-step
+    1/4-column comparisons. The original four-column adaptive run fails invalid
+    profile/rank handling;
+    rank-2 storage now completes that path with distinct column parameters.
+    
+    * Remove single-column sponge damping calls
+    
+    Move column loops into the mean, variance and third-moment damping
+    functions. Pass full fields at all ten calls and full grids at the six
+    initializers, preserving shared column-1 time scales and per-column exits.
+    Use the actual grid width during the driver's one-column initialization.
+    
+    Matched gfortran -O0 double comparisons against bc63c2f43 are BFB for
+    all 633 outputs in BOMEX 180 x 10s runs: enabled damping with 1 and 4
+    columns, predicted/diagnosed wind fluxes, and a disabled 4-column control.
+    All eight damping budgets are active. Direct kernels pass 1,032 BFB
+    checks including both grid directions, layer boundaries and variance
+    clipping. Full Debug build and whitespace checks pass.
+    
+    * Initialize full column batches from one sounding
+    
+    Pass ngrdcol through initialize_clubb and into the six sponge initializers.
+    Read and convert one sounding column, then copy its initial fields inside
+    the initializer. Store full initial batches for later resets, with matching
+    allocation, scalar/soil indexing and cleanup. Preserve column-1 initial
+    physics and avoid repeated whole-array writes in TKE column loops.
+    
+    Matched gfortran -O0 double comparisons against 311c68f7c pass for
+    BOMEX damping modes, ATEX dycore, GABLS2 scalars, GABLS3 soil, ARM97
+    pressure input and COAMPS with predicted Nc. All 663 outputs match in
+    the scalar batch/reset check. A persistent worker switching from four
+    columns to one matches all 633 outputs per case. Full Debug build and
+    whitespace checks pass; GPU and Jenkins were not run.
+    
+    * Batch core and SILHS statistics reductions
+    
+    Move column loops into vertical_avg and vertical_integral, preserving
+    each column's vertical accumulation order. Migrate the 22 core/SILHS
+    reduction calls and cloud-cover updates to full batches. Mask ineligible
+    spurious-source columns without reading their fields. Preserve all
+    profile stats arguments and boundaries; stats_netcdf is unchanged.
+    
+    Make the two hole-filling debug averages per-column instead of reducing
+    flattened multicolumn storage. Remove the unused integral API adapter
+    and update the existing spurious-source test callers.
+    
+    Matched gfortran -O0 double runs against d202bd842 are BFB for all
+    633-643 saved variables: BOMEX 1/4 columns, GABLS2, RICO/SILHS and
+    ARM97/ice/SILHS, 60-120 ten-second steps. Direct reductions pass 3,000
+    BFB checks; nonzero rain/snow/ice accumulators match buffers and counts.
+    The existing spurious-source test and full Debug build pass. Per-column
+    debug checks remove baseline multicolumn conservation warnings; model
+    and stat values remain BFB. GPU and Jenkins were not run.
+    
+    * Batch hydrometeor filling and concentration clipping
+    
+    Move column handling into phase redistribution, vapor hole filling and
+    concentration clipping. Batch the SILHS clipping call per sample. Feed
+    only eligible columns to the vertical filler, and skip finished columns
+    in method 6 to avoid dividing by a zero hole count on later passes.
+    Preserve active-column math and existing stats/boundary conventions.
+    
+    Matched gfortran -O0 double runs against 1ab73bfaa are BFB for RICO/SILHS
+    1/4 columns, ARM97 and MPACE-A, 120 x 10s each (635-643 variables).
+    Direct original/new comparisons pass 1,536 checks across all six filling
+    methods. A temporary SILHS build with sample clipping enabled matches
+    all 635 outputs. Existing hole-filling tests and the full Debug build pass.
+    GPU and Jenkins were not run.
+    
+    * Batch MPACE-A forcing interpolation
+    
+    Replace six per-column profile interpolation calls with full-batch
+    zlinterp calls. Interpolate shared forcing data in time once per file
+    level and broadcast into column inputs; each column retains its own
+    target heights and pressure-dependent tendency calculation.
+    
+    Matched gfortran -O0 double comparisons against 2cbb13b50 are BFB for
+    all 639 MPACE-A outputs with 1/4 columns and a later forcing window,
+    180 x 10s each. Actual forcing-file module comparisons pass 320 BFB
+    checks across different grids/times, interpolation endpoints and both
+    scalar-forcing types. Full Debug build and whitespace checks pass.
+    GPU and Jenkins were not run.
+    
+    * Remove unused single-column routines and overloads
+    
+    Delete the 29 remaining unused routines from the standalone catalog and
+    collapse 12 obsolete generic interfaces. Keep the retained batched bodies
+    unchanged and update existing reverse-grid and spurious-source test callers.
+    External API consumers remain outside this standalone cleanup.
+    
+    Full gfortran double Debug -O0 build and both existing unit fixtures pass.
+    Against e87a74b43, all saved variables are BFB for 60 ten-second steps of
+    BOMEX with 1/4 columns and RICO/SILHS with 4 columns, including conservation
+    and column diagnostics. No Jenkins, GPU or optimized-build validation.
+    
+    * Batch the remaining core diagnostic calls
+    
+    Move column traversal into mixing-length and surface checks, the model-array
+    validity check, precipitation assertions and the LU failure printer. Preserve
+    the first failing driver column and the existing fatal-error policy.
+    
+    Full gfortran double Debug -O0 build passes. All saved outputs match a3790652b
+    bitwise in short BOMEX 1/4-column, GABLS2, RICO/SILHS and ARM97 comparisons.
+    Frozen/current probes pass 152 error-detection comparisons. No GPU, Jenkins
+    or optimized-build validation; the LU failure printer was audited only.
+    
+    * Remove the remaining profile interpolation wrappers
+    
+    Batch dycore/ATEX remapping, LBA radiation and forcing-file time samples in
+    the interpolation owners. Update file-reader and existing test callers, then
+    remove zlinterp_fnc and both legacy zt2zm redirectors. Preserve the SAM reader's
+    partial and empty output ranges. COAMPS remains outside this cleanup.
+    
+    Full gfortran double Debug -O0 build and the existing reverse-grid/spurious-source
+    fixtures pass. Against a3790652b, all saved outputs are BFB in short 4-column
+    ATEX/dycore, initial/later LBA and ARM97 runs. Frozen/current probes pass 7,600
+    bitwise interpolation and reader comparisons, including untouched boundaries.
+    No Jenkins, GPU, optimized or cubic-enabled build validation.
+    
+    * Batch the COAMPS microphysics driver
+    
+    Move column dispatch into coamps_microphys_driver_module and pass full CLUBB
+    fields with an explicit column count. Reuse the temperature batch already
+    computed by the caller, remove its unused 1D conversion, and batch four stats
+    updates with their original levels and precision conversions. Keep imported
+    COAMPS routines and their single-column call interface unchanged.
+    
+    Full gfortran double Debug -O0 bounds/FPE build passes; disabled-COAMPS driver
+    and caller also compile. All 639 saved variables are BFB against 9f0cb7633
+    for short MPACE-B 1/4-column, ice-off, graupel and 8-column/two-batch runs.
+    Frozen/current probes pass 1,920 output/stats comparisons. No ARM0003,
+    Jenkins, GPU, optimized-build or other-compiler coverage claim.
+    
+    * Remove unused single-column profile stats paths
+    
+    Drop the unused profile level argument from stats_update_scalar and the
+    profile column argument from stats_update_1d, including their regular and
+    sub-timestep branches. Retain the live scalar and column-vector surface
+    updates and leave the full-field profile implementation unchanged.
+    
+    Full gfortran double Debug -O0 bounds/FPE build passes. All saved variables
+    are BFB against 6736571da for 60 ten-second steps of BOMEX1, GABLS3 soil4,
+    RICO/SILHS4 and MPACE-B4. A frozen/current accumulator probe passes 256
+    buffer/counter/state comparisons. No Jenkins, GPU or optimized validation.
+    
+    * Batch the last scalar stats caller and remove its overload
+    
+    Save soil heat flux with one full surface-column batch call, then remove
+    the unused scalar stats implementation. Retain the existing host update
+    and leave the surface-vector and full-profile accumulators unchanged.
+    
+    Full gfortran double Debug -O0 bounds/FPE build passes. Against 673a6dc1a,
+    all 635 saved GABLS3 variables are BFB for 60 ten-second steps with 1/4
+    columns, including nonzero soil heat flux. No GPU/Jenkins validation.
+    
+    * Name stats updates by surface and profile payloads
+    
+    Expose stats_update_sfc for whole surface batches and stats_update_var for
+    whole profile batches. Replace all 620 generic calls and their imports,
+    then remove the generic stats_update interface. Both accumulator bodies
+    and every call argument expression remain unchanged.
+    
+    Classify calls using gfortran's resolved overloads and source-located dumps:
+    55 surface updates and 565 profile updates. Full double Debug -O0 bounds/FPE
+    build passes; all saved variables are BFB against 80dd618b8 for 60 ten-second
+    steps of four-column GABLS3, RICO/SILHS and MPACE-B. No GPU/Jenkins validation.
+    
+    * Keep stats_update generic and reject mismatched payloads
+    
+    Restore stats_update at every caller and expose it as the public generic.
+    Keep stats_update_sfc and stats_update_var as private implementations named
+    for their physical payloads. Reject rank-1 profile slices, rank-2 surface
+    payloads and incomplete batch shapes using registered grid metadata, before
+    changing sampling state. Scalar updates remain removed.
+    
+    Full gfortran double Debug -O0 bounds/FPE build passes. All saved variables
+    are BFB against 3deb9882b for short BOMEX1, GABLS3 soil4, RICO/SILHS4 and
+    MPACE-B4 runs. Registry-backed probes verify valid generic dispatch and
+    strict runtime/compile-time rejection of misuse. No GPU/Jenkins validation.
+    
+    * Tighten column loops and remove refactor leftovers
+    
+    Several batched routines still traversed profiles inside column loops.
+    Move column indices inward in grid adaptation/remapping, interpolation,
+    sponge damping and finite scans, retaining each column's cursor, reduction
+    order and first exit. Batch COAMPS preparation/results around its imported
+    scalar call and remove redundant native copies. Preserve its mutable eic
+    reset before each column.
+    
+    Remove four obsolete private grid-helper _2D suffixes and the orphan PDF
+    packing count. Keep the stats_update generic and genuine payload overloads.
+    Imported COAMPS code and catalog documents are unchanged.
+    
+    Local double gfortran -O0 Debug validation against 41dc2707d: all model/stats
+    NetCDF variables BFB across 14 short configurations (60-240 x 10s), including
+    adaptive grids, both remappers, sponge options, RICO/SILHS and MPACE-B
+    ice/warm/graupel. Grid/sponge/COAMPS kernels (including optional drizzle),
+    diagnostic comparisons, stats misuse guards and existing reversed-grid/
+    spurious-source unit checks pass. No Jenkins/GPU/optimized validation.
+    
+    * Wrap refactored Fortran lines to satisfy source standards
+    
+    Jenkins compiler jobs exposed lines over the 100-character source limit.
+    Wrap the refactored calls, declarations and expressions without changing
+    Fortran tokens or string contents.
+    
+    The full source standards check now passes. A local gfortran double Debug
+    build passes; BOMEX and multicolumn adaptive ATEX outputs remain BFB with
+    78212eba6. Broad Jenkins runs are tracked separately while pending.
+    
+    * Update Python bindings for batched Fortran profiles
+    
+    Removed single-column entry points left in-repo F2PY wrappers unable to
+    compile. Pass complete column batches through the PDF, temperature, sponge,
+    vertical-reduction and numerical-check bridges. Remove obsolete scalar and
+    per-column stats/budget dispatch and the deleted tridiagonal wrapper.
+    
+    Update Python callers and JAX oracle tests, and refresh generated Fortran
+    declarations in JAX docstrings without changing JAX executable code. Keep
+    the native core unchanged from the master-BFB-tested revision.
+    
+    Validation: GNU double Debug Python build, all 252 API tests, all 104
+    JAX/F2PY comparisons and the declaration check pass. Four-column BOMEX and
+    ATEX Python smokes complete; ATEX all-stats agrees with native Fortran at
+    the existing Python comparison threshold of 1e-7. Jenkins reruns follow.
+    
+    * Keep the compiler-selection fixture in sync with parser defaults
+    
+    The explicit-compiler checks construct their own arguments and omitted
+    openacc_bfb, so configure_cmake raised AttributeError before the compiler
+    selection assertions ran. Supply its normal false default; keep the
+    implementation and assertions unchanged.
+    
+    The same two failures reproduce on master 3d1a672a7. After the fixture fix,
+    the full local Python unit suite passes: 527 checks with the prepared
+    Python/JAX environments available to subprocesses.
+    
+    * Rename obsolete dimension labels after the column refactor
+    
+    Name full coefficient fields for their momentum levels and SILHS output for
+    its sample fields. Remove redundant _2d suffixes from the sole F2PY entry
+    points, updating all in-repo callers and matching JAX names. Correct stale
+    rank descriptions and remove obsolete docstring-generator entries.
+    
+    Inverse-renaming source checks preserve Python executable ASTs and Fortran
+    and directive tokens. Binding declarations and references agree; the JAX
+    Fortran-declaration check passes. Jenkins build/API checks are pending.
+    
+    * Mirror the column refactor in JAX kernels and statistics
+    
+    Move remaining column reductions and interpolation dispatch into batched
+    routines, enforce full surface/profile stats payloads, and remove obsolete
+    single-column solver and PDF packing paths. Align remapping ownership and
+    sponge/disabled COAMPS contracts with the current Fortran interfaces.
+    
+    Update unit and oracle callers and add column-independence, masking and
+    shape regressions. Python syntax, call-contract and Fortran declaration
+    checks pass. Runtime validation is pending: local JAX dependencies cannot
+    import together, and the Jenkins API connection timed out. Native Fortran
+    sources are unchanged by this checkpoint.
+    
+    * Keep inactive JAX interpolation columns out of arithmetic
+    
+    Mask interpolation operands before evaluating levels excluded by nout or
+    the source-grid exit. This preserves zero output and sensitivity for inactive
+    columns whose source values are NaN. Add the focused regression and clarify
+    the functional remapping cache contract. Runtime validation remains pending
+    Jenkins connectivity; syntax and declaration checks pass.
+    
+    * Use each column's grid for refinement, damping and forcing
+    
+    Grid-dependent calculations used column 1 for other columns, and one
+    adaptation decision reset and remapped the whole batch. Compute refinement,
+    normalization, grid cropping, sponge profiles and forcing interpolation for
+    each column. Keep adaptation history and averaging counts independent and
+    preserve every unselected column's field bits during remapping.
+    
+    Update standalone initialization and the in-repo Python API for the column
+    shapes. Retain the agreed shared input, random-stream and output paths.
+    
+    * Mirror independent column grids in JAX setup and forcing
+    
+    Use each column's crop bounds, sponge profile and forcing interpolation
+    grid. Match the Fortran remapping selection and retain the standalone
+    support gates for grid adaptation and sponge integration.
+    
+    Add distinct-column checks for crop offsets, incompatible level counts,
+    sponge profiles and shared forcing interpolation. Update generated fixtures
+    for the batch shapes and repair a missed remapping-helper import.
+    
+    Focused grid, forcing, sponge and remapping checks pass (18 tests). The
+    rebuilt Python API suite passes all 252 tests; sponge oracle checks also
+    agree with Fortran. The full Fortran declaration-docstring check passes.
+    
+    * Wrap the new grid expressions within the source line limit
+    
+    Jenkins source checks flagged four expressions over 100 characters. Split
+    the conditions and averaging assignment across continuation lines. A token
+    comparison confirms unchanged calculations, and the source standards check
+    passes for all touched native files.
+    
+    * Keep unselected columns on their original thermodynamic grid
+    
+    Batch grid construction derives thermodynamic levels from momentum
+    midpoints. When only some columns adapt, retain the other columns'
+    coordinates, spacings and interpolation weights so their unchanged fields
+    remain attached to the original geometry.
+    
+    A native mixed-decision probe with non-midpoint thermodynamic levels fails
+    before this fix and passes afterward for both remapping methods. It also
+    checks every unselected field bit and independent averaging-counter resets.
+    
+    * Check remapping selection through Python and JAX
+    
+    Exercise the optional column mask through the rebuilt F2PY bridge and the
+    JAX kernel. Require unchanged raw bits, including negative zero, in an
+    unselected column and verify conservative overlaps in a selected column.
+    
+    The full local API suite passes253 tests. The focused JAX grid, forcing,
+    remapping and sponge group passes19 tests.
+    
+    * Specify consistent column counts in the surface-input fixture
+    
+    The surface interpolation test requested a common top with spacings of
+    10,12 and15 metres, then relied on column1's count to produce actual tops
+    of100,120 and150 metres. Request those tops explicitly so the fixture keeps
+    its original grids while satisfying the new per-column count check.
+    
+    The focused surface-input test passes after reproducing its previous
+    inconsistent-count failure. No production validation is relaxed.
+    
+    * Describe the column axis in the forcing caches
+    
+    Clarify that Fortran stores a level/time record for each forcing and
+    column, while JAX shares each forcing's metadata and batches its values
+    with a leading column axis. Executable code is unchanged.
+    
+    * Read restart and input fields as column batches
+    
+    The standalone driver still read and adjusted each column separately. Pass
+    complete fields through restart and input-field readers, read each shared
+    file profile once, and interpolate on each target column grid. Preserve
+    values outside the input domain and the existing stored-column policy.
+    Mirror the batch interfaces in JAX and comment out the unused forcing and
+    profile readers.
+    
+    GNU double Debug/O0 validation: nine complete NetCDF files match master
+    afaf554a2 for BOMEX (1/4 columns) and RICO (4 columns), across normal,
+    restart and input-fields runs capped at 120 ten-second steps. Frozen-original
+    LES-reader comparisons pass for distinct grids and partial domain coverage;
+    focused JAX restart-reader checks and four-column initialization pass.
+    
+    * Check PDF parameters for nonfinite values in every column
+    
+    PDF parameter checks retained their old first-column restriction after the
+    column refactor. Remove that restriction and the unused scalar check_nan
+    specific, retaining the rank-1/rank-2 generic. Update the JAX description and
+    declarations and add permanent later-column PDF-check cases.
+    
+    All 43 PDF fields detect NaN and positive/negative infinity in column 4.
+    Four-column BOMEX and RICO retain full-file BFB against the pre-change
+    binary at GNU double Debug/O0, with a 120-step cap and ten-second steps.
+    Finite/surface checks, focused JAX validation checks and 11 CTests pass.
+    
+    * Batch dormant ASTEX tendencies and tighten ATEX loops
+    
+    ASTEX tendencies remained single-column because their dispatch is disabled.
+    Convert their grids, winds and scalar fields to column batches, and mirror
+    that contract in JAX without enabling the dispatch. Put columns innermost
+    in the pointwise ATEX forcing loop and pass the full surface-pressure vector
+    explicitly.
+    
+    The ASTEX routine matches frozen-original column-by-column results on
+    distinct grids. Four-column ATEX retains complete NetCDF BFB at GNU double
+    Debug/O0 for default grids and both Ullrich/PPM dycore remapping methods,
+    with a 120-step cap and ten-second steps. All 18 focused JAX diagnostic and
+    forcing checks pass; JAX forcing calculations are unchanged.
+    
+    * Match argument-list layouts between routines and callers
+    
+    Related PDF fields were packed into long lines, and callers wrapped at
+    different arguments from their definitions. Restore readable field pairs
+    and use matching argument groups throughout the modified Fortran call tree
+    and F2PY wrappers. Restore the existing COAMPS input order and mirror its
+    signature in the disabled JAX interface.
+    
+    All 38 COAMPS actual-to-dummy bindings and declaration attributes are
+    preserved. Other executable tokens and all OpenMP/OpenACC directives are
+    unchanged. The layout audit found no remaining mismatches in its scope.
+    
+    Validation: GNU double-precision Debug/O0 all-target build and 11 CTests
+    pass; the COAMPS-disabled interface compiles. Four varying-C11 MPACE_B
+    columns, 120 steps at dt=10s, retain byte-identical full NetCDF output
+    against the saved pre-ATEX-cleanup executable. JAX declaration parity passes.
+    
+    * Preserve compact calls and restore master formatting
+    
+    Keep short function expressions and stats calls on one line even when the
+    routine definition spans several lines. Update the Fortran formatting and
+    faithful-port skills with that exception; wrapped calls still follow the
+    definition's argument grouping.
+    
+    Restore 447 compact call statements, using exact master text for 419 and
+    retaining branch-specific interfaces for the others. Remove seven duplicate
+    comments introduced by the earlier formatting pass. Thirteen source files
+    now match master exactly, reducing the source PR diff by 1456 lines.
+    
+    Executable tokens and preprocessor/OpenMP/OpenACC directives are unchanged.
+    The GNU all-target build and all 11 CTests pass. The branch/master whitespace
+    check passes; one trailing space is restored verbatim from master.
+    
+    * Simplify column grid setup and restore master formatting
+    
+    Keep the original boundary searches and diagnostics while retaining each
+    column's bounds and requiring equal level counts. Simplify adaptation
+    search state and put column loops innermost in sponge and crop-copy work.
+    Restore incidental whitespace to the PR base and keep standalone cloud-top
+    initialization based on the shared initial profile. Extract sponge profile
+    initialization for reuse without changing when it runs in this commit.
+    
+    GCC 13.1.0 CPU Debug/-O0 build passes. Four-column adaptive sponge BOMEX
+    (130 steps, dt=30 s, C8=0.2:0.8) netCDF and grid history match parent
+    6ce8748db bytewise. Focused API setup/sponge tests and JAX-vs-F2PY sponge
+    checks pass, including differing bounds, counts, and layer depths. Native
+    ascending/descending sponge and auxiliary-grid probes pass. No GPU or
+    Jenkins validation.
+    
+    * Refresh sponge damping profiles after grid adaptation
+    
+    Adaptation moves grid levels while the cached sponge time scales still
+    refer to the initial heights. Reinitialize enabled profiles after the
+    adaptation call so damping follows each column's current geometry.
+    
+    BIT_CHANGING only for standalone runs when grid_adapt_in_time_method > 0
+    actually moves a grid and a *_sponge_damp_settings%l_sponge_damping option
+    is enabled. The thlm-sponge BOMEX comparison against 6ce8748db at GCC
+    13.1.0 CPU -O0 changed thlm by up to 1.156e-7 K over 130 steps. Fixed-grid
+    and sponge-disabled comparisons remain byte-identical in the tested cases.
+    
+    Adaptive four-column BOMEX at C8=0.2 and 0.8 matches separate single-column
+    runs bitwise in grid histories and all 26 sampled non-coordinate fields
+    (dt=30 s, 130 steps; thlm sponge tau_min=120 s, tau_max=600 s). CPU build
+    and focused sponge tests pass. No GPU or Jenkins validation.
+    
+    * Tiny formatting fix and adding a comment back
+
+commit 6d30925e345a9431a47593131e359c0580c5c88e
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Nov 9 22:12:01 2026 -0600
+
+    Scan legacy Fortran text and exclude AppleDouble metadata (#1441)
+    
+    Preserve undecodable comment bytes with UTF-8 surrogateescape instead of dropping an entire source file. Skip ._* resource-fork metadata during discovery and explicit-path selection. Real private-module imports still fail, and missing or metadata-only inputs remain errors. No unit tests or Jenkinsfile changes.
+
+commit 7a86e75a64c1b6a77d27f3673eec991dc8843f39
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Nov 9 21:49:51 2026 -0600
+
+    Use HTTPS for API commitment repository clones (#1440)
+    
+    Apply the four HTTPS URL changes directly to master after the earlier stacked PR merged into its prerequisite branch. Leave the Jenkinsfile and credential configuration unchanged.
+
+commit d80f7f08d4cb11a08b91d6b9a33181c2ecbf4442
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Nov 9 21:13:21 2026 -0600
+
+    Fail API commitment tests when checkout or source analysis is incomplete (#1438)
+    
+    Stop failed checkouts and preparation, prune Git metadata before deleting it, and reject missing, empty or unreadable checked inputs. Preserve informational core scanning and aggregate host API violations separately from execution errors. No new unit tests are included.
+
+commit 20dc8bde4f6251781fea8c588cf6d43949821fbd
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Nov 9 20:55:02 2026 -0600
+
+    Remove GFDL and SCM droplet activation (#1402)
+    
+    * Remove GFDL and SCM droplet activation
+    
+    Delete the optional activation subsystem, lookup tables, configuration, JAX stubs and activation-only diagnostics. Remove the driver temperature calculation and other code made unused by the purge. Preserve GFDL saturation formulas.
+    
+    Retire Nc_activated and Ncm_act from the statistics schema. Existing common-variable comparisons intentionally ignore removed stats. Jenkins varying-flag comparison #54 found no common-field differences in 589 comparisons at a zero reporting threshold; this is scoped numerical comparison evidence, not a universal bitwise claim. Compiler/CTest matrix #64, full standard cases #3 and driver workflows #54 passed.
+    
+    * Remove obsolete files restored by master merge
+    
+    Keep the case and statistics files deleted by master; their settings now live in the JSONC configuration.
+
+commit 9dfacabf0aa45feeb61b3a73cff5493705dca0da
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Mon Nov 9 17:47:33 2026 -0600
+
+    Add combined-loss gradients and clearer feedback to Dash
+    
+    Expose the loss runner's combined RMSE gradient in the Loss and gradient
+    explorer alongside the existing field-metric gradients. Keep field values
+    and response sweeps visible, and report evaluation time and session reuse.
+    
+    Validate shared request settings once across parameter ranges to reduce
+    input delays, and show validation and worker errors below the plots.
+    
+    Focused Dash gradient-response tests pass on master, covering scalar-loss
+    plot data, request handling and error display. No live-browser or full-model
+    performance validation.
+
+commit 15a95190ddf464ff79fe35ca57528e907a7f60b2
+Author: Gunther Huebler <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Nov 9 16:03:14 2026 -0600
+
+    Link CUDA SILHS consumers with cuRAND (#1437)
+    
+    * Link CUDA SILHS consumers with cuRAND
+    
+    * Use the CUDA link flag supported by both NVHPC stacks
+    
+    NVHPC 24.3 accepts -cuda but rejects -Mcuda combined with the SILHS -cudalib=curand option. Remove the version probe and use -cuda for GPU links. CUDA/cuRAND link probes pass with 24.3 and 26.9; CPU, OpenACC and OpenMP toolchain checks pass.
