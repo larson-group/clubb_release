@@ -156,7 +156,7 @@ module grid_class
 
   public :: grid, zt2zm_api, zm2zt_api, zt2zm2zt, zm2zt2zm, & 
             ddzm, ddzt, & 
-            setup_grid, cleanup_grid_api, setup_grid_heights, &
+            setup_grid, cleanup_grid_api, setup_grid_heights_api, &
             read_grid_heights, flip
 
   private :: t_above, t_below, m_above, m_below
@@ -626,7 +626,7 @@ module grid_class
 
     ! Set the values for the derived types used for heights, derivatives, and
     ! interpolation from the momentum/thermodynamic grid
-    call setup_grid_heights( &
+    call setup_grid_heights_api( &
                   gr%nzm, gr%nzt, ngrdcol, & ! intent(in)
                   l_implemented, l_ascending_grid, & ! intent(in)
                   grid_type, deltaz, zm_init, & ! intent(in)
@@ -637,7 +637,7 @@ module grid_class
     if ( clubb_at_least_debug_level_api( 0 ) ) then
       if ( any(err_info%err_code == clubb_fatal_error) ) then
         write(fstderr,*) err_info%err_header_global
-        write(fstderr,*) "Fatal error in setup_grid calling setup_grid_heights"
+        write(fstderr,*) "Fatal error in setup_grid calling setup_grid_heights_api"
         return
       end if
     end if
@@ -699,11 +699,11 @@ module grid_class
   end subroutine cleanup_grid_api
 
   !=============================================================================
-  subroutine setup_grid_heights( nzm, nzt, ngrdcol, &
-                                 l_implemented, l_ascending_grid, &
-                                 grid_type, deltaz, zm_init, &
-                                 momentum_heights, thermodynamic_heights, &
-                                 gr, err_info )
+  subroutine setup_grid_heights_api( nzm, nzt, ngrdcol, &
+                                     l_implemented, l_ascending_grid, &
+                                     grid_type, deltaz, zm_init, &
+                                     momentum_heights, thermodynamic_heights, &
+                                     gr, err_info )
 
     ! Description:
     !   Sets the heights and interpolation weights of the column.
@@ -1033,7 +1033,7 @@ module grid_class
 
     return
 
-  end subroutine setup_grid_heights
+  end subroutine setup_grid_heights_api
 
   !=============================================================================
   subroutine read_grid_heights( nzmax, grid_type,  & 

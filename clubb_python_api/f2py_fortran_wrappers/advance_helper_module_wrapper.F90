@@ -74,10 +74,10 @@ subroutine f2py_vertical_integral( ngrdcol, total_idx, rho_ds, field, dz, & ! In
                                    integral_out ) ! Out
 
   ! Description:
-  !   Call vertical_integral with complete column batches through the F2PY bridge.
+  !   Call vertical_integral_api with complete column batches through the F2PY bridge.
 
   use clubb_precision, only: core_rknd
-  use advance_helper_module, only: vertical_integral
+  use advance_helper_module, only: vertical_integral_api
 
   implicit none
 
@@ -96,7 +96,7 @@ subroutine f2py_vertical_integral( ngrdcol, total_idx, rho_ds, field, dz, & ! In
 
   !--------------------------- Begin Code ---------------------------
 
-  integral_out = vertical_integral(ngrdcol, total_idx, rho_ds, field, dz)
+  integral_out = vertical_integral_api(ngrdcol, total_idx, rho_ds, field, dz)
 
 end subroutine f2py_vertical_integral
 

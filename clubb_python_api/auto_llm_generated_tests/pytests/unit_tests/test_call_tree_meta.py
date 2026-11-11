@@ -33,7 +33,7 @@ ROUTINE_TO_API_NAMES = {
     "advance_helper_module::smooth_max": ("smooth_max",),
     "advance_helper_module::smooth_heaviside_peskin": ("smooth_heaviside_peskin",),
     "advance_helper_module::vertical_avg": ("vertical_avg",),
-    "advance_helper_module::vertical_integral": ("vertical_integral",),
+    "advance_helper_module::vertical_integral_api": ("vertical_integral",),
     "advance_helper_module::wp23_term_splat_lhs": ("wp23_term_splat_lhs",),
     "calc_pressure::calculate_thvm": ("calculate_thvm",),
     "calendar::compute_current_date_api": ("compute_current_date",),

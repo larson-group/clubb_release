@@ -188,7 +188,7 @@ subroutine f2py_setup_grid_heights(nzm, nzt, ngrdcol, &
 
   use clubb_precision, only: core_rknd
   use derived_type_storage, only: stored_grid, stored_err_info
-  use grid_class, only: setup_grid_heights
+  use grid_class, only: setup_grid_heights_api
 
   implicit none
 
@@ -198,7 +198,7 @@ subroutine f2py_setup_grid_heights(nzm, nzt, ngrdcol, &
   real(core_rknd), dimension(ngrdcol, nzm), intent(in) :: momentum_heights
   real(core_rknd), dimension(ngrdcol, nzt), intent(in) :: thermodynamic_heights
 
-  call setup_grid_heights( nzm, nzt, ngrdcol, & ! In
+  call setup_grid_heights_api( nzm, nzt, ngrdcol, & ! In
                            l_implemented, l_ascending_grid, & ! In
                            grid_type, deltaz, zm_init, & ! In
                            momentum_heights, thermodynamic_heights, & ! In

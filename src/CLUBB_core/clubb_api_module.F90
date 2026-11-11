@@ -174,6 +174,8 @@ module clubb_api_module
     finalize_tau_sponge_damp_api, &   ! Procedure(s)
     initialize_tau_sponge_damp_api
 
+  use advance_helper_module, only: vertical_integral_api
+
   use grid_class, only: grid ! Type
 
   use grid_class, only: &
@@ -182,6 +184,9 @@ module clubb_api_module
 
     ! Interpolate thermodynamic level variables to momentum levels
     zt2zm_api, &
+
+    ! Refresh grid heights and interpolation weights
+    setup_grid_heights_api, &
 
     ! Deallocate grid variable
     cleanup_grid_api
@@ -298,6 +303,7 @@ module clubb_api_module
   public &
     ! To Interact With CLUBB's Grid:
     ! For Varying Grids
+    setup_grid_heights_api, &
     setup_grid_api
 
   public &
@@ -334,6 +340,7 @@ module clubb_api_module
     fill_holes_vertical_api, &
     fill_holes_hydromet_api, &
     set_clubb_debug_level_api, &
+    vertical_integral_api, &
     num_hf_draw_points, &
     global_fill, & 
     sliding_window, & 

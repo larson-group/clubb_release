@@ -73,7 +73,7 @@ contains
     use advance_helper_module, only: &
         calc_wp3_on_wp2, &
         vertical_avg, &     ! Procedure(s)
-        vertical_integral
+        vertical_integral_api
 
     use interpolation, only: &
         lin_interpolate_two_points             ! Procedure
@@ -384,12 +384,12 @@ contains
       end if
 
       if ( var_on_stats_list( stats, "lwp" ) ) then
-        xtmp = vertical_integral( ngrdcol, nzt, rho_ds_zt, rcm, dzt )
+        xtmp = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, rcm, dzt )
         call stats_update( "lwp", xtmp, stats )
       end if
 
       if ( var_on_stats_list( stats, "vwp" ) ) then
-        xtmp = vertical_integral( ngrdcol, nzt, rho_ds_zt, rtm - rcm, dzt )
+        xtmp = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, rtm - rcm, dzt )
         call stats_update( "vwp", xtmp, stats )
       end if
 
@@ -467,27 +467,27 @@ contains
       l_calc_spur_src = l_implemented .or. &
         ( all( abs(wm_zt) < eps, dim=2 ) .and. all( abs(wm_zm) < eps, dim=2 ) )
 
-      rtm_integral_before = vertical_integral( ngrdcol, nzt, rho_ds_zt, rtm_before, & ! In
+      rtm_integral_before = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, rtm_before, & ! In
                                                dzt, & ! In
                                                l_calc_spur_src ) ! Optional In
 
-      rtm_integral_after = vertical_integral( ngrdcol, nzt, rho_ds_zt, rtm, & ! In
+      rtm_integral_after = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, rtm, & ! In
                                               dzt, & ! In
                                               l_calc_spur_src ) ! Optional In
 
-      rtm_integral_forcing = vertical_integral( ngrdcol, nzt, rho_ds_zt, rtm_forcing, & ! In
+      rtm_integral_forcing = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, rtm_forcing, & ! In
                                                 dzt, & ! In
                                                 l_calc_spur_src ) ! Optional In
 
-      thlm_integral_before = vertical_integral( ngrdcol, nzt, rho_ds_zt, thlm_before, & ! In
+      thlm_integral_before = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, thlm_before, & ! In
                                                 dzt, & ! In
                                                 l_calc_spur_src ) ! Optional In
 
-      thlm_integral_after = vertical_integral( ngrdcol, nzt, rho_ds_zt, thlm, & ! In
+      thlm_integral_after = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, thlm, & ! In
                                                dzt, & ! In
                                                l_calc_spur_src ) ! Optional In
 
-      thlm_integral_forcing = vertical_integral( ngrdcol, nzt, rho_ds_zt, thlm_forcing, & ! In
+      thlm_integral_forcing = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, thlm_forcing, & ! In
                                                  dzt, & ! In
                                                  l_calc_spur_src ) ! Optional In
 
@@ -554,7 +554,7 @@ contains
         hm_metadata_type
 
     use advance_helper_module, only: &
-        vertical_integral
+        vertical_integral_api
 
     use clubb_precision, only: &
         core_rknd
@@ -621,21 +621,21 @@ contains
 
     ! Snow Water Path
     if ( var_on_stats_list( stats, "swp" ) .and. hm_metadata%iirs > 0 ) then
-      xtmp = vertical_integral( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iirs), & ! In
+      xtmp = vertical_integral_api( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iirs), & ! In
                                 gr%dzt ) ! In
       call stats_update( "swp", xtmp, stats )
     endif
 
     ! Ice Water Path
     if ( var_on_stats_list( stats, "iwp" ) .and. hm_metadata%iiri > 0 ) then
-      xtmp = vertical_integral( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iiri), & ! In
+      xtmp = vertical_integral_api( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iiri), & ! In
                                 gr%dzt ) ! In
       call stats_update( "iwp", xtmp, stats )
     endif
 
     ! Rain Water Path
     if ( var_on_stats_list( stats, "rwp" ) .and. hm_metadata%iirr > 0 ) then
-      xtmp = vertical_integral( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iirr), & ! In
+      xtmp = vertical_integral_api( ngrdcol, gr%nzt, rho_ds_zt, hydromet(:,:,hm_metadata%iirr), & ! In
                                 gr%dzt ) ! In
       call stats_update( "rwp", xtmp, stats )
     endif

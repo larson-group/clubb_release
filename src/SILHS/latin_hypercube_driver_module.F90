@@ -1987,7 +1987,7 @@ module latin_hypercube_driver_module
       core_rknd    ! Constant
 
     use advance_helper_module, only: &
-      vertical_integral ! Procedure(s)
+      vertical_integral_api ! Procedure(s)
 
     use stats_netcdf, only: &
       stats_type, &
@@ -2103,7 +2103,7 @@ module latin_hypercube_driver_module
                                   lh_sample_point_weights, lh_rc_clipped )
     call stats_update( "lh_rcm", lh_rcm, stats )
 
-    xtmp = vertical_integral( ngrdcol, nzt, rho_ds_zt, lh_rcm, gr%dzt )
+    xtmp = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, lh_rcm, gr%dzt )
     call stats_update( "lh_lwp", xtmp, stats )
 
     do i = 1, ngrdcol
@@ -2122,7 +2122,7 @@ module latin_hypercube_driver_module
                                   lh_sample_point_weights, lh_rv_clipped )
     call stats_update( "lh_rvm", lh_rvm, stats )
 
-    xtmp = vertical_integral( ngrdcol, nzt, rho_ds_zt, lh_rvm, gr%dzt )
+    xtmp = vertical_integral_api( ngrdcol, nzt, rho_ds_zt, lh_rvm, gr%dzt )
     call stats_update( "lh_vwp", xtmp, stats )
 
     lh_wm = compute_sample_mean( nzt, num_samples, ngrdcol, &

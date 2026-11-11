@@ -20,7 +20,7 @@ module advance_helper_module
     smooth_heaviside_peskin, &
     calc_xpwp, &
     vertical_avg, &
-    vertical_integral, &
+    vertical_integral_api, &
     Lscale_width_vert_avg, &
     calculate_thlp2_rad, &
     pvertinterp
@@ -1966,9 +1966,9 @@ module advance_helper_module
   end function vertical_avg
 
   !===============================================================================
-  function vertical_integral( ngrdcol, total_idx, rho_ds, field, & ! In
-                              dz, & ! In
-                              l_active ) ! Optional In
+  function vertical_integral_api( ngrdcol, total_idx, rho_ds, field, & ! In
+                                  dz, & ! In
+                                  l_active ) ! Optional In
 
     ! Description:
     !   Integrate field * rho_ds * dz independently over each column's levels.
@@ -2001,7 +2001,7 @@ module advance_helper_module
 
     !--------------------------- Output Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol) :: &
-      vertical_integral ! Density-weighted vertical integral [field units kg/m^2]
+      vertical_integral_api ! Density-weighted vertical integral [field units kg/m^2]
 
     !--------------------------- Local Variables ---------------------------
     logical, dimension(ngrdcol) :: &
@@ -2013,20 +2013,20 @@ module advance_helper_module
     l_reduce = .true.
     if ( present(l_active) ) l_reduce = l_active
 
-    vertical_integral = 0.0_core_rknd
+    vertical_integral_api = 0.0_core_rknd
 
     do k = 1, total_idx
       do i = 1, ngrdcol
 
         if ( l_reduce(i) ) then
-          vertical_integral(i) = vertical_integral(i) + field(i,k) * rho_ds(i,k) * dz(i,k)
+          vertical_integral_api(i) = vertical_integral_api(i) + field(i,k) * rho_ds(i,k) * dz(i,k)
         end if
 
       end do
     end do
 
     return
-  end function vertical_integral
+  end function vertical_integral_api
 
   !-------------------------------------------------------------------------------
   subroutine pvertinterp( nzt, ngrdcol, gr, &

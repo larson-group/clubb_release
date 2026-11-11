@@ -72,7 +72,7 @@ module spurious_source_test
         nu_vertical_res_dep       ! Type(s)
 
     use advance_helper_module, only: &
-        vertical_integral    ! Procedure(s)
+        vertical_integral_api    ! Procedure(s)
 
     use numerical_check, only: & 
         calculate_spurious_source    ! Procedure(s)
@@ -961,10 +961,10 @@ module spurious_source_test
 
        ! Calculate the vertical integrals of rtm and thlm before the call to
        ! advance_xm_wpxp so that spurious source can be calculated.
-       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, rtm, gr%dzt )
+       integral_tmp = vertical_integral_api( 1, gr%nzt, rho_ds_zt, rtm, gr%dzt )
        rtm_integral_before = integral_tmp(1)
 
-       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, thlm, gr%dzt )
+       integral_tmp = vertical_integral_api( 1, gr%nzt, rho_ds_zt, thlm, gr%dzt )
        thlm_integral_before = integral_tmp(1)
 
       stats%enabled = .false.
@@ -1026,10 +1026,10 @@ module spurious_source_test
 
        rtm_flux_sfc = rho_ds_zm(1,1) * wprtp(1,1)
 
-       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, rtm, gr%dzt )
+       integral_tmp = vertical_integral_api( 1, gr%nzt, rho_ds_zt, rtm, gr%dzt )
        rtm_integral_after = integral_tmp(1)
 
-       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, rtm_forcing, gr%dzt )
+       integral_tmp = vertical_integral_api( 1, gr%nzt, rho_ds_zt, rtm_forcing, gr%dzt )
        rtm_integral_forcing = integral_tmp(1)
 
        rtm_spur_src &
@@ -1070,10 +1070,10 @@ module spurious_source_test
 
        thlm_flux_sfc = rho_ds_zm(1,1) * wpthlp(1,1)
 
-       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, thlm, gr%dzt )
+       integral_tmp = vertical_integral_api( 1, gr%nzt, rho_ds_zt, thlm, gr%dzt )
        thlm_integral_after = integral_tmp(1)
 
-       integral_tmp = vertical_integral( 1, gr%nzt, rho_ds_zt, thlm_forcing, gr%dzt )
+       integral_tmp = vertical_integral_api( 1, gr%nzt, rho_ds_zt, thlm_forcing, gr%dzt )
        thlm_integral_forcing = integral_tmp(1)
 
        thlm_spur_src &
